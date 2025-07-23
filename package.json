@@ -4,6 +4,7 @@
   "main": "index.js",
   "scripts": {
     "dev": "tsx watch --env-file .env src/http/server.ts",
+    "seed": "tsx --env-file .env src/db/seed.ts",
     "dbd:generate": "npx drizzle-kit generate",
     "dbd:migrate": "npx drizzle-kit migrate",
     "dbd:studio": "npx drizzle-kit studio"
@@ -21,6 +22,7 @@
   },
   "dependencies": {
     "@paralleldrive/cuid2": "^2.2.2",
+    "dayjs": "^1.11.13",
     "drizzle-orm": "^0.44.3",
     "fastify": "^5.4.0",
     "postgres": "^3.4.7",
