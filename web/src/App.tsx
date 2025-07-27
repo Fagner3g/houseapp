@@ -1,5 +1,10 @@
+import { ThemeProvider } from '@/components/theme-provider'
 import { Home } from './pages/home'
 
 export function App() {
-  return <Home />
+  return (
+    <ThemeProvider>
+      <Home />
+    </ThemeProvider>
+  )
 }
