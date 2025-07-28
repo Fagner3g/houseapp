@@ -32,7 +32,7 @@ export async function createGoalCompletion({ goalId }: CreateGoalCompletionReque
   const result = await db
     .with(goalCompletetionCounts)
     .select({
-      desiredWeekFrequency: goals.desiredWeekFrequency,
+      desiredWeekFrequency: goals.desiredWeeklyFrequency,
       completionCount: sql`COALESCE(${goalCompletetionCounts.completionCount}, 0)`.mapWith(Number),
     })
     .from(goals)

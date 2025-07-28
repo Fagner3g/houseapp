@@ -10,9 +10,9 @@ async function seed() {
   const result = await db
     .insert(goals)
     .values([
-      { title: 'Acordar cedo', desiredWeekFrequency: 5 },
-      { title: 'Me exercitar', desiredWeekFrequency: 2 },
-      { title: 'Meditar', desiredWeekFrequency: 1 },
+      { title: 'Acordar cedo', desiredWeeklyFrequency: 5 },
+      { title: 'Me exercitar', desiredWeeklyFrequency: 2 },
+      { title: 'Meditar', desiredWeeklyFrequency: 1 },
     ])
     .returning()
 

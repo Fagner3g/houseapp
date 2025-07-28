@@ -16,7 +16,7 @@ export async function getWeekPendingGoals() {
       .select({
         id: goals.id,
         title: goals.title,
-        desiredWeekFrequency: goals.desiredWeekFrequency,
+        desiredWeekFrequency: goals.desiredWeeklyFrequency,
         createdAt: goals.createdAt,
       })
       .from(goals)

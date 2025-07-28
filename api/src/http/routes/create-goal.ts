@@ -8,15 +8,22 @@ export const createGoalRoute: FastifyPluginAsyncZod = async app => {
     '/goals',
     {
       schema: {
+        tags: ['Goal'],
+        description: 'Create a goal',
         body: z.object({
           title: z.string(),
           desiredWeekFrequency: z.number(),
         }),
+        response: {
+          201: z.null(),
+        },
       },
     },
-    async request => {
+    async (request, reply) => {
       const { desiredWeekFrequency, title } = request.body
       await createGoal({ desiredWeekFrequency, title })
+
+      return reply.status(201).send()
     }
   )
 }
