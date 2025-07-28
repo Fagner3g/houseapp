@@ -1,7 +1,7 @@
 import { IconInnerShadowTop } from '@tabler/icons-react'
 
-import { NavMain } from '@/components/layout/navbar/nav-main'
-import { NavUser } from '@/components/layout/navbar/nav-user'
+import { NavMain } from '@/components/layout/sidebar/nav-main'
+import { NavUser } from '@/components/layout/sidebar/nav-user'
 import {
   Sidebar,
   SidebarContent,

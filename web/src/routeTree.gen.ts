@@ -13,8 +13,8 @@ import { Route as AuthLayoutRouteImport } from './pages/_auth/layout'
 import { Route as AppLayoutRouteImport } from './pages/_app/layout'
 import { Route as AuthSignUpRouteImport } from './pages/_auth/sign-up'
 import { Route as AuthSignInRouteImport } from './pages/_auth/sign-in'
-import { Route as AppDashboardRouteImport } from './pages/_app/dashboard'
 import { Route as AppgoalGoalsRouteImport } from './pages/_app/(goal)/goals'
+import { Route as AppdashboardDashboardRouteImport } from './pages/_app/(dashboard)/dashboard'
 
 const AuthLayoutRoute = AuthLayoutRouteImport.update({
   id: '/_auth',
@@ -34,50 +34,50 @@ const AuthSignInRoute = AuthSignInRouteImport.update({
   path: '/sign-in',
   getParentRoute: () => AuthLayoutRoute,
 } as any)
-const AppDashboardRoute = AppDashboardRouteImport.update({
-  id: '/dashboard',
-  path: '/dashboard',
-  getParentRoute: () => AppLayoutRoute,
-} as any)
 const AppgoalGoalsRoute = AppgoalGoalsRouteImport.update({
   id: '/(goal)/goals',
   path: '/goals',
   getParentRoute: () => AppLayoutRoute,
 } as any)
+const AppdashboardDashboardRoute = AppdashboardDashboardRouteImport.update({
+  id: '/(dashboard)/dashboard',
+  path: '/dashboard',
+  getParentRoute: () => AppLayoutRoute,
+} as any)
 
 export interface FileRoutesByFullPath {
-  '/dashboard': typeof AppDashboardRoute
   '/sign-in': typeof AuthSignInRoute
   '/sign-up': typeof AuthSignUpRoute
+  '/dashboard': typeof AppdashboardDashboardRoute
   '/goals': typeof AppgoalGoalsRoute
 }
 export interface FileRoutesByTo {
-  '/dashboard': typeof AppDashboardRoute
   '/sign-in': typeof AuthSignInRoute
   '/sign-up': typeof AuthSignUpRoute
+  '/dashboard': typeof AppdashboardDashboardRoute
   '/goals': typeof AppgoalGoalsRoute
 }
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
   '/_app': typeof AppLayoutRouteWithChildren
   '/_auth': typeof AuthLayoutRouteWithChildren
-  '/_app/dashboard': typeof AppDashboardRoute
   '/_auth/sign-in': typeof AuthSignInRoute
   '/_auth/sign-up': typeof AuthSignUpRoute
+  '/_app/(dashboard)/dashboard': typeof AppdashboardDashboardRoute
   '/_app/(goal)/goals': typeof AppgoalGoalsRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
-  fullPaths: '/dashboard' | '/sign-in' | '/sign-up' | '/goals'
+  fullPaths: '/sign-in' | '/sign-up' | '/dashboard' | '/goals'
   fileRoutesByTo: FileRoutesByTo
-  to: '/dashboard' | '/sign-in' | '/sign-up' | '/goals'
+  to: '/sign-in' | '/sign-up' | '/dashboard' | '/goals'
   id:
     | '__root__'
     | '/_app'
     | '/_auth'
-    | '/_app/dashboard'
     | '/_auth/sign-in'
     | '/_auth/sign-up'
+    | '/_app/(dashboard)/dashboard'
     | '/_app/(goal)/goals'
   fileRoutesById: FileRoutesById
 }
@@ -116,13 +116,6 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthSignInRouteImport
       parentRoute: typeof AuthLayoutRoute
     }
-    '/_app/dashboard': {
-      id: '/_app/dashboard'
-      path: '/dashboard'
-      fullPath: '/dashboard'
-      preLoaderRoute: typeof AppDashboardRouteImport
-      parentRoute: typeof AppLayoutRoute
-    }
     '/_app/(goal)/goals': {
       id: '/_app/(goal)/goals'
       path: '/goals'
@@ -130,16 +123,23 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AppgoalGoalsRouteImport
       parentRoute: typeof AppLayoutRoute
     }
+    '/_app/(dashboard)/dashboard': {
+      id: '/_app/(dashboard)/dashboard'
+      path: '/dashboard'
+      fullPath: '/dashboard'
+      preLoaderRoute: typeof AppdashboardDashboardRouteImport
+      parentRoute: typeof AppLayoutRoute
+    }
   }
 }
 
 interface AppLayoutRouteChildren {
-  AppDashboardRoute: typeof AppDashboardRoute
+  AppdashboardDashboardRoute: typeof AppdashboardDashboardRoute
   AppgoalGoalsRoute: typeof AppgoalGoalsRoute
 }
 
 const AppLayoutRouteChildren: AppLayoutRouteChildren = {
-  AppDashboardRoute: AppDashboardRoute,
+  AppdashboardDashboardRoute: AppdashboardDashboardRoute,
   AppgoalGoalsRoute: AppgoalGoalsRoute,
 }
 
