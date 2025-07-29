@@ -105,7 +105,7 @@ export const getCreateGoalUrl = () => {
 
   
 
-  return `http://localhost:3333/goals`
+  return `/goals`
 }
 
 export const createGoal = async (createGoalBody: CreateGoalBody, options?: RequestInit): Promise<void> => {
@@ -174,7 +174,7 @@ export const getCompleteGoalUrl = () => {
 
   
 
-  return `http://localhost:3333/completions`
+  return `/completions`
 }
 
 export const completeGoal = async (completeGoalBody: CompleteGoalBody, options?: RequestInit): Promise<void> => {
@@ -243,7 +243,7 @@ export const getGetPendingGoalsUrl = () => {
 
   
 
-  return `http://localhost:3333/pending-goals`
+  return `/pending-goals`
 }
 
 export const getPendingGoals = async ( options?: RequestInit): Promise<GetPendingGoals200> => {
@@ -260,7 +260,7 @@ export const getPendingGoals = async ( options?: RequestInit): Promise<GetPendin
 
 
 export const getGetPendingGoalsQueryKey = () => {
-    return [`http://localhost:3333/pending-goals`] as const;
+    return [`/pending-goals`] as const;
     }
 
     
@@ -336,7 +336,7 @@ export const getGetWeekSummaryUrl = () => {
 
   
 
-  return `http://localhost:3333/summary`
+  return `/summary`
 }
 
 export const getWeekSummary = async ( options?: RequestInit): Promise<GetWeekSummary200> => {
@@ -353,7 +353,7 @@ export const getWeekSummary = async ( options?: RequestInit): Promise<GetWeekSum
 
 
 export const getGetWeekSummaryQueryKey = () => {
-    return [`http://localhost:3333/summary`] as const;
+    return [`/summary`] as const;
     }
 
     
@@ -429,7 +429,7 @@ export const getCreateNewUserUrl = () => {
 
   
 
-  return `http://localhost:3333/new-user`
+  return `/new-user`
 }
 
 export const createNewUser = async (createNewUserBody: CreateNewUserBody, options?: RequestInit): Promise<void> => {
@@ -498,7 +498,7 @@ export const getValidateTokenUrl = () => {
 
   
 
-  return `http://localhost:3333/validate-token`
+  return `/validate-token`
 }
 
 export const validateToken = async (validateTokenBody: ValidateTokenBody, options?: RequestInit): Promise<ValidateToken200> => {
@@ -567,7 +567,7 @@ export const getSignInUrl = () => {
 
   
 
-  return `http://localhost:3333/sign-in`
+  return `/sign-in`
 }
 
 export const signIn = async (signInBody: SignInBody, options?: RequestInit): Promise<void> => {

@@ -1,5 +1,7 @@
 import Cookies from 'universal-cookie'
 
+import { env } from '@/env'
+
 async function getHeaders(headers?: HeadersInit): Promise<HeadersInit> {
   const cookies = new Cookies()
   const token = cookies.get('houseapp:token')
@@ -16,7 +18,9 @@ async function getHeaders(headers?: HeadersInit): Promise<HeadersInit> {
 export async function http<T>(path: string, optinos: RequestInit): Promise<T> {
   const headers = await getHeaders(optinos.headers)
 
-  const request = new Request(path, { ...optinos, headers })
+  const url = new URL(path, env.VITE_API_HOST)
+
+  const request = new Request(url, { ...optinos, headers })
   const response = await fetch(request)
 
   if (response.ok) {
