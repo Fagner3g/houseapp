@@ -5,7 +5,7 @@ import Cookies from 'universal-cookie'
 import z from 'zod'
 
 import { Button } from '@/components/ui/button'
-import { validateToken } from '@/http/generated/api'
+import { useValidateToken } from '@/http/generated/api'
 
 export const Route = createFileRoute('/_auth/validate-link')({
   component: RouteComponent,
@@ -15,31 +15,32 @@ export const Route = createFileRoute('/_auth/validate-link')({
 })
 
 function RouteComponent() {
-  const [isLoading, setIsLoading] = useState(false)
+  const [isLoading, setIsLoading] = useState(true)
   const [isError, setIsError] = useState(false)
   const { token = '' } = useSearch({ strict: false })
   const navigate = useNavigate()
 
-  useEffect(() => {
-    if (token) {
-      validateToken({ token }).then(resp => {
-        console.log('valid', resp)
-        if (resp.data.valid) {
-          const cookies = new Cookies()
-          cookies.set('token', token, { path: '/', maxAge: 60 * 60 * 24 }) // 1 day
-          setIsLoading(false)
-          setIsError(false)
+  const { mutateAsync: validateToken } = useValidateToken()
 
+  useEffect(() => {
+    setIsLoading(true)
+    if (token) {
+      validateToken({ data: { token } }).then(({ valid }) => {
+        if (valid) {
+          const cookies = new Cookies()
+          cookies.set('houseapp:token', token, { path: '/', maxAge: 60 * 60 * 24 }) // 1 day
           setTimeout(() => {
-            navigate({ to: '/dashboard' })
-          }, 3000)
+            setIsLoading(false)
+            setIsError(false)
+            navigate({ to: '/goals' })
+          }, 4000)
         } else {
           setIsLoading(false)
           setIsError(true)
         }
       })
     }
-  }, [token, navigate])
+  }, [token, navigate, validateToken])
 
   if (isLoading) {
     return (
@@ -52,14 +53,9 @@ function RouteComponent() {
 
   return (
     <div>
-      {isError ? (
+      {isError && (
         <div className="flex flex-col items-center justify-center gap-4">
           <p>Link Válido</p>
-        </div>
-      ) : (
-        <div className="flex flex-col items-center justify-center gap-4">
-          <p>Link Inválido</p>
-          <Button onClick={() => navigate({ to: '/sign-in' })}>Voltar</Button>
         </div>
       )}
     </div>

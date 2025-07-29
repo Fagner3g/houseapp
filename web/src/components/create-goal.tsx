@@ -5,7 +5,7 @@ import { Controller, useForm } from 'react-hook-form'
 import { toast } from 'sonner'
 import { z } from 'zod'
 
-import { createGoal } from '../http/create-goal'
+import { useCreateGoal } from '@/http/generated/api'
 import { Button } from './ui/button'
 import { DialogClose, DialogContent, DialogDescription, DialogTitle } from './ui/dialog'
 import { Input } from './ui/input'
@@ -20,6 +20,7 @@ const createGoalSchema = z.object({
 type CreateGoalSchema = z.infer<typeof createGoalSchema>
 
 export function CreateGoal() {
+  const { mutateAsync: createGoal } = useCreateGoal()
   const queryClient = useQueryClient()
 
   const {
@@ -34,10 +35,7 @@ export function CreateGoal() {
 
   async function handleCreateGoal({ title, desiredWeeklyFrequency }: CreateGoalSchema) {
     try {
-      await createGoal({
-        title,
-        desiredWeeklyFrequency,
-      })
+      await createGoal({ data: { title, desiredWeeklyFrequency } })
 
       reset()
 
@@ -99,11 +97,9 @@ export function CreateGoal() {
                         const frequency = String(i + 1)
 
                         return (
-                          <RadioGroupItem key={i} value={frequency}>
+                          <RadioGroupItem key={frequency} value={frequency}>
                             <RadioGroupIndicator />
-                            <span className="text-zinc-300 text-sm font-medium leading-none">
-                              {frequency}x na semana
-                            </span>
+                            <p className="text-white">{frequency}x na semana</p>
                             <span className="text-lg leading-none">🥱</span>
                           </RadioGroupItem>
                         )

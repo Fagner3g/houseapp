@@ -3,7 +3,13 @@ import { useState } from 'react'
 
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
-import { Status, signIn } from '@/http/sign-in'
+import { useSignIn } from '@/http/generated/api'
+
+enum Status {
+  Pending = 'pending',
+  Success = 'success',
+  Error = 'error',
+}
 
 export const Route = createFileRoute('/_auth/sign-in')({
   component: Index,
@@ -16,14 +22,15 @@ function Index() {
   const [email, setEmail] = useState('')
   const [status, setStatus] = useState<Status>()
   const navigate = useNavigate()
+  const { mutateAsync: signIn } = useSignIn()
 
   const handleSignIn = async () => {
     try {
       setStatus(Status.Pending)
-      const response = await signIn({ email })
-
-      setStatus(response.status)
-    } catch {
+      await signIn({ data: { email } })
+      setStatus(Status.Success)
+    } catch (e) {
+      console.error(e)
       setStatus(Status.Error)
     }
   }

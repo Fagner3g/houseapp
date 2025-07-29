@@ -1,11 +1,10 @@
-import { useQuery } from '@tanstack/react-query'
 import { createFileRoute } from '@tanstack/react-router'
 import { Loader2 } from 'lucide-react'
 
 import { CreateGoal } from '@/components/create-goal'
 import { EmptyGoals } from '@/components/empty-goals'
 import { Dialog } from '@/components/ui/dialog'
-import { getSummary } from '@/http/get-summary'
+import { useGetWeekSummary } from '@/http/generated/api'
 import { WeeklySummary } from './-components/weekly-summary'
 
 export const Route = createFileRoute('/_app/(goal)/goals')({
@@ -13,10 +12,7 @@ export const Route = createFileRoute('/_app/(goal)/goals')({
 })
 
 function Goals() {
-  const { data, isLoading } = useQuery({
-    queryKey: ['summary'],
-    queryFn: getSummary,
-  })
+  const { data, isLoading } = useGetWeekSummary()
 
   if (isLoading || !data) {
     return (
