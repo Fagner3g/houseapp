@@ -5,7 +5,11 @@ import { Controller, useForm } from 'react-hook-form'
 import { toast } from 'sonner'
 import { z } from 'zod'
 
-import { useCreateGoal } from '@/http/generated/api'
+import {
+  getGetPendingGoalsQueryKey,
+  getGetWeekSummaryQueryKey,
+  useCreateGoal,
+} from '@/http/generated/api'
 import { Button } from './ui/button'
 import { DialogClose, DialogContent, DialogDescription, DialogTitle } from './ui/dialog'
 import { Input } from './ui/input'
@@ -14,7 +18,7 @@ import { RadioGroup, RadioGroupIndicator, RadioGroupItem } from './ui/radio-grou
 
 const createGoalSchema = z.object({
   title: z.string().min(1, 'Informe a atividade que deseja praticar'),
-  desiredWeeklyFrequency: z.coerce.number().min(1).max(7),
+  desiredWeeklyFrequency: z.number().min(1).max(7),
 })
 
 type CreateGoalSchema = z.infer<typeof createGoalSchema>
@@ -39,8 +43,8 @@ export function CreateGoal() {
 
       reset()
 
-      queryClient.invalidateQueries({ queryKey: ['pending-goals'] })
-      queryClient.invalidateQueries({ queryKey: ['summary'] })
+      queryClient.invalidateQueries({ queryKey: getGetPendingGoalsQueryKey() })
+      queryClient.invalidateQueries({ queryKey: getGetWeekSummaryQueryKey() })
 
       toast.success('Meta criada com sucesso!')
     } catch {

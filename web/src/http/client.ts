@@ -20,7 +20,13 @@ export async function http<T>(path: string, optinos: RequestInit): Promise<T> {
   const response = await fetch(request)
 
   if (response.ok) {
-    const data = await response.json()
+    if (response.headers.get('content-type')?.includes('application/json')) {
+      const data = await response.json()
+
+      return data as T
+    }
+
+    const data = await response.text()
     return data as T
   }
 
