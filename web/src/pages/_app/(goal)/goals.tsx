@@ -17,7 +17,7 @@ function Goals() {
     queryKey: ['summary'],
     queryFn: getSummary,
   })
-  console.log('sumary', data?.summary)
+
   if (isLoading || !data) {
     return (
       <div className="h-screen flex items-center justify-center">

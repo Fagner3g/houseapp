@@ -6,11 +6,13 @@ export const Route = createFileRoute('/_auth')({
 
 function RouteComponent() {
   return (
-    <div className="bg-gray-100 h-screen flex flex-col items-center justify-center gap-4 p-4 text-center ">
-      <div>
+    <div className="flex flex-1 h-screen w-screen flex-col bg-gray-900">
+      <div className="flex flex-1 flex-col justify-center">
         <Outlet />
       </div>
-      <p>@ Copy Right 2025</p>
+      <footer className="py-4 bg-black w-full text-center justify-center">
+        <p>@ Copy Right 2025</p>
+      </footer>
     </div>
   )
 }

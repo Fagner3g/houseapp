@@ -11,6 +11,7 @@
 import { Route as rootRouteImport } from './pages/__root'
 import { Route as AuthLayoutRouteImport } from './pages/_auth/layout'
 import { Route as AppLayoutRouteImport } from './pages/_app/layout'
+import { Route as AuthValidateLinkRouteImport } from './pages/_auth/validate-link'
 import { Route as AuthSignUpRouteImport } from './pages/_auth/sign-up'
 import { Route as AuthSignInRouteImport } from './pages/_auth/sign-in'
 import { Route as AppgoalGoalsRouteImport } from './pages/_app/(goal)/goals'
@@ -23,6 +24,11 @@ const AuthLayoutRoute = AuthLayoutRouteImport.update({
 const AppLayoutRoute = AppLayoutRouteImport.update({
   id: '/_app',
   getParentRoute: () => rootRouteImport,
+} as any)
+const AuthValidateLinkRoute = AuthValidateLinkRouteImport.update({
+  id: '/validate-link',
+  path: '/validate-link',
+  getParentRoute: () => AuthLayoutRoute,
 } as any)
 const AuthSignUpRoute = AuthSignUpRouteImport.update({
   id: '/sign-up',
@@ -48,12 +54,14 @@ const AppdashboardDashboardRoute = AppdashboardDashboardRouteImport.update({
 export interface FileRoutesByFullPath {
   '/sign-in': typeof AuthSignInRoute
   '/sign-up': typeof AuthSignUpRoute
+  '/validate-link': typeof AuthValidateLinkRoute
   '/dashboard': typeof AppdashboardDashboardRoute
   '/goals': typeof AppgoalGoalsRoute
 }
 export interface FileRoutesByTo {
   '/sign-in': typeof AuthSignInRoute
   '/sign-up': typeof AuthSignUpRoute
+  '/validate-link': typeof AuthValidateLinkRoute
   '/dashboard': typeof AppdashboardDashboardRoute
   '/goals': typeof AppgoalGoalsRoute
 }
@@ -63,20 +71,27 @@ export interface FileRoutesById {
   '/_auth': typeof AuthLayoutRouteWithChildren
   '/_auth/sign-in': typeof AuthSignInRoute
   '/_auth/sign-up': typeof AuthSignUpRoute
+  '/_auth/validate-link': typeof AuthValidateLinkRoute
   '/_app/(dashboard)/dashboard': typeof AppdashboardDashboardRoute
   '/_app/(goal)/goals': typeof AppgoalGoalsRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
-  fullPaths: '/sign-in' | '/sign-up' | '/dashboard' | '/goals'
+  fullPaths:
+    | '/sign-in'
+    | '/sign-up'
+    | '/validate-link'
+    | '/dashboard'
+    | '/goals'
   fileRoutesByTo: FileRoutesByTo
-  to: '/sign-in' | '/sign-up' | '/dashboard' | '/goals'
+  to: '/sign-in' | '/sign-up' | '/validate-link' | '/dashboard' | '/goals'
   id:
     | '__root__'
     | '/_app'
     | '/_auth'
     | '/_auth/sign-in'
     | '/_auth/sign-up'
+    | '/_auth/validate-link'
     | '/_app/(dashboard)/dashboard'
     | '/_app/(goal)/goals'
   fileRoutesById: FileRoutesById
@@ -101,6 +116,13 @@ declare module '@tanstack/react-router' {
       fullPath: ''
       preLoaderRoute: typeof AppLayoutRouteImport
       parentRoute: typeof rootRouteImport
+    }
+    '/_auth/validate-link': {
+      id: '/_auth/validate-link'
+      path: '/validate-link'
+      fullPath: '/validate-link'
+      preLoaderRoute: typeof AuthValidateLinkRouteImport
+      parentRoute: typeof AuthLayoutRoute
     }
     '/_auth/sign-up': {
       id: '/_auth/sign-up'
@@ -150,11 +172,13 @@ const AppLayoutRouteWithChildren = AppLayoutRoute._addFileChildren(
 interface AuthLayoutRouteChildren {
   AuthSignInRoute: typeof AuthSignInRoute
   AuthSignUpRoute: typeof AuthSignUpRoute
+  AuthValidateLinkRoute: typeof AuthValidateLinkRoute
 }
 
 const AuthLayoutRouteChildren: AuthLayoutRouteChildren = {
   AuthSignInRoute: AuthSignInRoute,
   AuthSignUpRoute: AuthSignUpRoute,
+  AuthValidateLinkRoute: AuthValidateLinkRoute,
 }
 
 const AuthLayoutRouteWithChildren = AuthLayoutRoute._addFileChildren(
