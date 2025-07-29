@@ -4,8 +4,8 @@ import { client, db } from '.'
 import { goalCompletions, goals, users } from './schema'
 
 async function seed() {
-  await db.delete(goalCompletions)
   await db.delete(goals)
+  await db.delete(goalCompletions)
   await db.delete(users)
 
   const [user] = await db

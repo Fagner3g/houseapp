@@ -1,11 +1,14 @@
 import type { FastifyPluginAsyncZod } from 'fastify-type-provider-zod'
 import z from 'zod'
 
+import { authenticateUserHook } from '../hooks/authenticate-user'
+
 export const validateTokenRoute: FastifyPluginAsyncZod = async app => {
   app.post(
     '/validate-token',
     {
       schema: {
+        onRequest: [authenticateUserHook],
         tags: ['auth'],
         description: 'Validate Token',
         operationId: 'validateToken',
@@ -22,11 +25,13 @@ export const validateTokenRoute: FastifyPluginAsyncZod = async app => {
     async (request, reply) => {
       const { token } = request.body
 
-      await new Promise(resolve => setTimeout(resolve, 2000))
+      if (!token) {
+        return reply.status(401).send({
+          valid: false,
+        })
+      }
 
-      return reply.status(200).send({
-        valid: true,
-      })
+      return reply.status(200).send({ valid: true })
     }
   )
 }

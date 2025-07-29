@@ -158,33 +158,12 @@
                           "type": "number"
                         },
                         "total": {
-                          "type": "number"
+                          "type": "number",
+                          "nullable": true
                         },
                         "goalsPerDay": {
                           "type": "object",
-                          "additionalProperties": {
-                            "type": "array",
-                            "items": {
-                              "type": "object",
-                              "properties": {
-                                "id": {
-                                  "type": "string"
-                                },
-                                "title": {
-                                  "type": "string"
-                                },
-                                "completedAt": {
-                                  "type": "string"
-                                }
-                              },
-                              "required": [
-                                "id",
-                                "title",
-                                "completedAt"
-                              ],
-                              "additionalProperties": false
-                            }
-                          }
+                          "nullable": true
                         }
                       },
                       "required": [
@@ -334,44 +313,7 @@
         },
         "responses": {
           "200": {
-            "description": "Default Response",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "type": "object",
-                  "properties": {
-                    "user": {
-                      "type": "object",
-                      "properties": {
-                        "name": {
-                          "type": "string"
-                        },
-                        "email": {
-                          "type": "string"
-                        },
-                        "phone": {
-                          "type": "string"
-                        },
-                        "avatarUrl": {
-                          "type": "string"
-                        }
-                      },
-                      "required": [
-                        "name",
-                        "email",
-                        "phone",
-                        "avatarUrl"
-                      ],
-                      "additionalProperties": false
-                    }
-                  },
-                  "required": [
-                    "user"
-                  ],
-                  "additionalProperties": false
-                }
-              }
-            }
+            "description": "Default Response"
           },
           "400": {
             "description": "Default Response"

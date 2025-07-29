@@ -26,8 +26,8 @@ export async function getUser({ email, phone }: GetUserRequest) {
 
       const user = result[0]
 
-      return { user }
+      return user ? { ...user } : undefined
     }
-    return user ? { user } : undefined
+    return user ? { ...user } : undefined
   }
 }

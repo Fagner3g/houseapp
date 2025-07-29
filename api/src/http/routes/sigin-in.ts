@@ -2,6 +2,7 @@ import type { FastifyPluginAsyncZod } from 'fastify-type-provider-zod'
 import z from 'zod'
 
 import { getUser } from '../../functions/get-user'
+import { SignIn } from '../../functions/sign-in'
 
 export const signInRoute: FastifyPluginAsyncZod = async app => {
   app.post(
@@ -15,14 +16,7 @@ export const signInRoute: FastifyPluginAsyncZod = async app => {
           email: z.email('E-mail inválido'),
         }),
         response: {
-          200: z.object({
-            user: z.object({
-              name: z.string(),
-              email: z.string(),
-              phone: z.string(),
-              avatarUrl: z.string(),
-            }),
-          }),
+          200: z.null(),
           400: z.null(),
         },
       },
@@ -30,13 +24,13 @@ export const signInRoute: FastifyPluginAsyncZod = async app => {
     async (request, reply) => {
       const { email } = request.body
 
-      const resp = await getUser({ email })
-
-      if (!resp) {
+      if (!email) {
         return reply.status(400).send(null)
       }
 
-      return reply.status(200).send({ user: resp.user })
+      await SignIn({ email })
+
+      return reply.status(200).send(null)
     }
   )
 }
