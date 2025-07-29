@@ -22,6 +22,20 @@
       "when": 1753746242602,
       "tag": "0002_boring_dracula",
       "breakpoints": true
+    },
+    {
+      "idx": 3,
+      "version": "7",
+      "when": 1753801135865,
+      "tag": "0003_confused_salo",
+      "breakpoints": true
+    },
+    {
+      "idx": 4,
+      "version": "7",
+      "when": 1753801962688,
+      "tag": "0004_harsh_mongu",
+      "breakpoints": true
     }
   ]
 }

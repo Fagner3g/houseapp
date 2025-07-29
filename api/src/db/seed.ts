@@ -14,12 +14,14 @@ async function seed() {
       {
         name: 'Fagner Gomes',
         avatarUrl: 'https://github.com/fagner3g.png',
-        email: 'g9L3N@example.com',
+        email: 'fagner.egomes@gmail.com',
+        phone: '5511999999999',
       },
       {
         name: 'Diego Fernandes',
         avatarUrl: 'https://github.com/diego3g.png',
         email: 'g9L3N@example.com',
+        phone: '5511999999999',
       },
     ])
     .returning()

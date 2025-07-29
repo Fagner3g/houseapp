@@ -6,9 +6,10 @@ import { goalCompletions, goals } from '../db/schema'
 
 interface CreateGoalCompletionRequest {
   goalId: string
+  userId: string
 }
 
-export async function createGoalCompletion({ goalId }: CreateGoalCompletionRequest) {
+export async function createGoalCompletion({ userId, goalId }: CreateGoalCompletionRequest) {
   const firstDayOfWeek = dayjs().startOf('week').toDate()
   const lastDayOfWeek = dayjs().endOf('week').toDate()
 
@@ -19,11 +20,13 @@ export async function createGoalCompletion({ goalId }: CreateGoalCompletionReque
         completionCount: count(goalCompletions.id).as('completionCount'),
       })
       .from(goalCompletions)
+      .innerJoin(goals, eq(goals.id, goalCompletions.goalId))
       .where(
         and(
           gte(goalCompletions.createdAt, firstDayOfWeek),
           lte(goalCompletions.createdAt, lastDayOfWeek),
-          eq(goalCompletions.goalId, goalId)
+          eq(goalCompletions.goalId, goalId),
+          eq(goals.userId, userId)
         )
       )
       .groupBy(goalCompletions.goalId)
@@ -37,7 +40,7 @@ export async function createGoalCompletion({ goalId }: CreateGoalCompletionReque
     })
     .from(goals)
     .leftJoin(goalCompletetionCounts, eq(goals.id, goalCompletetionCounts.goalId))
-    .where(eq(goals.id, goalId))
+    .where(and(eq(goals.id, goalId), eq(goals.userId, userId)))
     .limit(1)
 
   const { desiredWeekFrequency, completionCount } = result[0]
