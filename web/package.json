@@ -5,7 +5,7 @@
   "type": "module",
   "scripts": {
     "dev": "concurrently yarn:dev:*",
-    "dev:vite": "vite",
+    "dev:vite": "vite --host",
     "dev:orval": "orval -w",
     "build": "tsc -b && vite build",
     "lint": "eslint .",
