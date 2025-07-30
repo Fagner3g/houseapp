@@ -11,6 +11,7 @@ import {
   SelectValue,
 } from '@/components/ui/select'
 import { useListExpenses } from '@/http/generated/api'
+import { useActiveOrganization } from '@/hooks/use-active-organization'
 
 export const Route = createFileRoute('/_app/$org/(expense)/expenses')({
   component: Expenses,
@@ -23,7 +24,8 @@ function Expenses() {
   const [dueDate, setDueDate] = useState('')
   const [description, setDescription] = useState('')
 
-  const { data, isPending } = useListExpenses({ organizationId: 'org-1' })
+  const { orgSlug } = useActiveOrganization()
+  const { data, isPending } = useListExpenses(orgSlug)
 
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault()

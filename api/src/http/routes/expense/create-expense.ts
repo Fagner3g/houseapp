@@ -6,17 +6,17 @@ import { authenticateUserHook } from '@/http/hooks/authenticate-user'
 
 export const createExpenseRoute: FastifyPluginAsyncZod = async app => {
   app.post(
-    '/expenses',
+    '/org/:slug/expenses',
     {
       onRequest: [authenticateUserHook],
       schema: {
         tags: ['Expense'],
         description: 'Create an expense',
         operationId: 'createExpense',
+        params: z.object({ slug: z.string() }),
         body: z.object({
           title: z.string(),
           payToId: z.string(),
-          organizationId: z.string(),
           amount: z.number(),
           dueDate: z.string(),
           description: z.string().optional(),
@@ -27,7 +27,8 @@ export const createExpenseRoute: FastifyPluginAsyncZod = async app => {
       },
     },
     async (request, reply) => {
-      const { title, payToId, organizationId, amount, dueDate, description } = request.body
+      const { slug } = request.params
+      const { title, payToId, amount, dueDate, description } = request.body
 
       const ownerId = request.user.sub
 
@@ -35,7 +36,7 @@ export const createExpenseRoute: FastifyPluginAsyncZod = async app => {
         title,
         ownerId,
         payToId,
-        organizationId,
+        organizationSlug: slug,
         amount,
         dueDate: new Date(dueDate),
         description,

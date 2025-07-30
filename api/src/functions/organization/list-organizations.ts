@@ -12,6 +12,7 @@ export async function listOrganizations({ userId }: ListOrganizationsRequest) {
     .select({
       id: organizations.id,
       name: organizations.name,
+      slug: organizations.slug,
       createdAt: organizations.createdAt,
     })
     .from(organizations)

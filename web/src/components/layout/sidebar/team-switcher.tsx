@@ -1,5 +1,4 @@
-import { AudioWaveform, ChevronsUpDown, Command, GalleryVerticalEnd, Plus } from 'lucide-react'
-import * as React from 'react'
+import { ChevronsUpDown, GalleryVerticalEnd, Plus } from 'lucide-react'
 
 import {
   DropdownMenu,
@@ -16,36 +15,23 @@ import {
   SidebarMenuItem,
   useSidebar,
 } from '@/components/ui/sidebar'
+import { useActiveOrganization } from '@/hooks/use-active-organization'
 import { useListOrganizations } from '@/http/generated/api'
 
 export function TeamSwitcher() {
   const { isMobile } = useSidebar()
-  const { data: organizations } = useListOrganizations()
-  const teams = [
-    {
-      name: organizations?.[0]?.name,
-      logo: GalleryVerticalEnd,
-      plan: 'Enterprise',
-    },
-    {
-      name: 'Acme Inc',
-      logo: GalleryVerticalEnd,
-      plan: 'Enterprise',
-    },
-    {
-      name: 'Acme Corp.',
-      logo: AudioWaveform,
-      plan: 'Startup',
-    },
-    {
-      name: 'Evil Corp.',
-      logo: Command,
-      plan: 'Free',
-    },
-  ]
-  const [activeTeam, setActiveTeam] = React.useState(teams[0])
+  const { data } = useListOrganizations()
+  const { orgSlug, setOrganization } = useActiveOrganization()
 
-  console.log(organizations)
+  const teams = (data?.organizations ?? []).map(org => ({
+    id: org.slug,
+    name: org.name,
+    logo: GalleryVerticalEnd,
+    plan: 'Enterprise',
+  }))
+
+  const activeTeam = teams.find(t => t.id === orgSlug) ?? teams[0]
+
   if (!activeTeam) {
     return null
   }
@@ -78,8 +64,8 @@ export function TeamSwitcher() {
             <DropdownMenuLabel className="text-muted-foreground text-xs">Teams</DropdownMenuLabel>
             {teams.map((team, index) => (
               <DropdownMenuItem
-                key={team.name}
-                onClick={() => setActiveTeam(team)}
+                key={team.id}
+                onClick={() => setOrganization(team.id)}
                 className="gap-2 p-2"
               >
                 <div className="flex size-6 items-center justify-center rounded-md border">

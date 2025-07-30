@@ -32,7 +32,7 @@ function RouteComponent() {
             setTimeout(() => {
               setIsLoading(false)
               setIsError(false)
-              navigate({ to: '/goals' })
+              navigate({ to: '/$org/goals', params: { org: 'my-house' } })
             }, 4000)
           } else {
             setIsLoading(false)
