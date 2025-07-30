@@ -15,7 +15,11 @@ import {
 import { env } from '../env'
 import { createCompletionRoute } from './routes/create-completion'
 import { createGoalRoute } from './routes/create-goal'
+import { createExpenseRoute } from './routes/create-expense'
+import { getExpenseRoute } from './routes/get-expense'
+import { listExpensesRoute } from './routes/list-expenses'
 import { createNewUserRoute } from './routes/create-new-user'
+import { listUsersRoute } from './routes/list-users'
 import { getPendingGoalsRoute } from './routes/get-pending-goals'
 import { getWeekSummaryRoute } from './routes/get-week-summary'
 import { signInRoute } from './routes/sigin-in'
@@ -52,7 +56,11 @@ app.register(createGoalRoute)
 app.register(createCompletionRoute)
 app.register(getPendingGoalsRoute)
 app.register(getWeekSummaryRoute)
+app.register(createExpenseRoute)
+app.register(getExpenseRoute)
+app.register(listExpensesRoute)
 app.register(createNewUserRoute)
+app.register(listUsersRoute)
 app.register(validateTokenRoute)
 app.register(signInRoute)
 
