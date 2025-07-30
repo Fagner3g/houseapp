@@ -1,8 +1,8 @@
 import type { FastifyPluginAsyncZod } from 'fastify-type-provider-zod'
 import z from 'zod'
 
-import { createGoal } from '../../functions/create-goals'
-import { authenticateUserHook } from '../hooks/authenticate-user'
+import { createGoal } from '@/functions/goal/create-goals'
+import { authenticateUserHook } from '@/http/hooks/authenticate-user'
 
 export const createGoalRoute: FastifyPluginAsyncZod = async app => {
   app.post(

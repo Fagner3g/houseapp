@@ -1,7 +1,7 @@
 import { eq } from 'drizzle-orm'
 
-import { db } from '../db'
-import { expenses } from '../db/schema'
+import { db } from '@/db'
+import { expenses } from '@/db/schema'
 
 interface GetExpenseRequest {
   id: string

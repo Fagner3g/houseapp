@@ -1,8 +1,8 @@
-import { env } from '../env'
-import { AuthenticateUser } from '../modules/auth'
-import { getUser } from './get-user'
-import { SendMail } from './send-mail'
-import { SendWhats } from './sendWhats'
+import { env } from '@/env'
+import { AuthenticateUser } from '@/modules/auth'
+import { SendMail } from '../send-mail'
+import { SendWhats } from '../sendWhats'
+import { getUser } from '../user/get-user'
 
 interface SignInRequest {
   email: string

@@ -1,25 +1,25 @@
 import type { FastifyPluginAsyncZod } from 'fastify-type-provider-zod'
 import z from 'zod'
 
-import { getExpense } from '../../functions/get-expense'
-import { authenticateUserHook } from '../hooks/authenticate-user'
+import { listExpenses } from '@/functions/expense/list-expenses'
+import { authenticateUserHook } from '@/http/hooks/authenticate-user'
 
-export const getExpenseRoute: FastifyPluginAsyncZod = async app => {
+export const listExpensesRoute: FastifyPluginAsyncZod = async app => {
   app.get(
-    '/expenses/:expenseId',
+    '/expenses',
     {
       onRequest: [authenticateUserHook],
       schema: {
         tags: ['Expense'],
-        description: 'Get expense by id',
-        operationId: 'getExpense',
-        params: z.object({
-          expenseId: z.string(),
+        description: 'List expenses for authenticated user',
+        operationId: 'listExpenses',
+        querystring: z.object({
+          organizationId: z.string(),
         }),
         response: {
           200: z.object({
-            expense: z
-              .object({
+            expenses: z.array(
+              z.object({
                 id: z.string(),
                 title: z.string(),
                 ownerId: z.string(),
@@ -29,17 +29,18 @@ export const getExpenseRoute: FastifyPluginAsyncZod = async app => {
                 description: z.string().nullable(),
                 createdAt: z.date(),
               })
-              .nullable(),
+            ),
           }),
         },
       },
     },
     async request => {
-      const { expenseId } = request.params
+      const userId = request.user.sub
+      const { organizationId } = request.query
 
-      const { expense } = await getExpense({ id: expenseId })
+      const { expenses } = await listExpenses({ userId, organizationId })
 
-      return { expense: expense ?? null }
+      return { expenses }
     }
   )
 }

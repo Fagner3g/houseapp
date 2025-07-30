@@ -1,8 +1,8 @@
 import type { FastifyPluginAsyncZod } from 'fastify-type-provider-zod'
 import z from 'zod'
 
-import { VerifyToken } from '../../modules/auth'
-import { authenticateUserHook } from '../hooks/authenticate-user'
+import { authenticateUserHook } from '@/http/hooks/authenticate-user'
+import { VerifyToken } from '@/modules/auth'
 
 export const validateTokenRoute: FastifyPluginAsyncZod = async app => {
   app.post(

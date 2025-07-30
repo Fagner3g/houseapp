@@ -1,5 +1,5 @@
-import { db } from '../db'
-import { organizations, userOrganizations } from '../db/schema'
+import { db } from '@/db'
+import { organizations, userOrganizations } from '@/db/schema'
 
 interface CreateOrganizationRequest {
   name: string

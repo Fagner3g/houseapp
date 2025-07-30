@@ -1,8 +1,8 @@
 import type { FastifyPluginAsyncZod } from 'fastify-type-provider-zod'
 import z from 'zod'
 
-import { createOrganization } from '../../functions/create-organization'
-import { authenticateUserHook } from '../hooks/authenticate-user'
+import { createOrganization } from '@/functions/organization/create-organization'
+import { authenticateUserHook } from '@/http/hooks/authenticate-user'
 
 export const createOrganizationRoute: FastifyPluginAsyncZod = async app => {
   app.post(

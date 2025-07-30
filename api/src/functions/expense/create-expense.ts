@@ -1,5 +1,5 @@
-import { db } from '../db'
-import { expenses } from '../db/schema'
+import { db } from '@/db'
+import { expenses } from '@/db/schema'
 
 interface CreateExpenseRequest {
   title: string

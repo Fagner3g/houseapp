@@ -1,7 +1,7 @@
 import { eq } from 'drizzle-orm'
 
-import { db } from '../db'
-import { organizations, userOrganizations } from '../db/schema'
+import { db } from '@/db'
+import { organizations, userOrganizations } from '@/db/schema'
 
 interface ListOrganizationsRequest {
   userId: string

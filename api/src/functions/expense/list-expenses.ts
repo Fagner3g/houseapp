@@ -1,7 +1,7 @@
 import { and, eq, or } from 'drizzle-orm'
 
-import { db } from '../db'
-import { expenses } from '../db/schema'
+import { db } from '@/db'
+import { expenses } from '@/db/schema'
 
 interface ListExpensesRequest {
   userId: string

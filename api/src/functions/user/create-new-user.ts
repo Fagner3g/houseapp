@@ -1,7 +1,7 @@
-import { env } from '../env'
-import { AuthenticateUser } from '../modules/auth'
-import { SendMail } from './send-mail'
-import { SendWhats } from './sendWhats'
+import { env } from '@/env'
+import { AuthenticateUser } from '@/modules/auth'
+import { SendMail } from '../send-mail'
+import { SendWhats } from '../sendWhats'
 
 interface CreateNewUserRequest {
   name: string
