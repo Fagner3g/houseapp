@@ -2,6 +2,7 @@ import { IconInnerShadowTop } from '@tabler/icons-react'
 
 import { NavMain } from '@/components/layout/sidebar/nav-main'
 import { NavUser } from '@/components/layout/sidebar/nav-user'
+import { OrganizationSwitcher } from '@/components/organization-switcher'
 import {
   Sidebar,
   SidebarContent,
@@ -29,6 +30,7 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
         </SidebarMenu>
       </SidebarHeader>
       <SidebarContent>
+        <OrganizationSwitcher />
         <NavMain items={data.navMain} />
       </SidebarContent>
       <SidebarFooter>
