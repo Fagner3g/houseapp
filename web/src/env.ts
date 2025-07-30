@@ -11,10 +11,8 @@ const result = envSchema.safeParse({
 })
 
 if (!result.success) {
-  console.error('🚨 Variáveis de ambiente inválidas:', result.error.format())
+  console.error('🚨 Variáveis de ambiente inválidas:', z.treeifyError(result.error))
   throw new Error('Falha na validação das env vars')
 }
-
-console.log('🚀 Variáveis de ambiente carregadas:', result.data)
 
 export const env = result.data

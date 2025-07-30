@@ -1,11 +1,11 @@
 import { createFileRoute, useNavigate, useSearch } from '@tanstack/react-router'
 import { Loader } from 'lucide-react'
 import { useEffect, useState } from 'react'
-import Cookies from 'universal-cookie'
 import z from 'zod'
 
 import { Button } from '@/components/ui/button'
 import { useValidateToken } from '@/http/generated/api'
+import { setAuthToken } from '@/lib/auth'
 
 export const Route = createFileRoute('/_auth/validate-link')({
   component: RouteComponent,
@@ -25,20 +25,24 @@ function RouteComponent() {
   useEffect(() => {
     setIsLoading(true)
     if (token) {
-      validateToken({ data: { token } }).then(({ valid }) => {
-        if (valid) {
-          const cookies = new Cookies()
-          cookies.set('houseapp:token', token, { path: '/', maxAge: 60 * 60 * 24 }) // 1 day
-          setTimeout(() => {
+      validateToken({ data: { token } })
+        .then(({ valid }) => {
+          if (valid) {
+            setAuthToken(token)
+            setTimeout(() => {
+              setIsLoading(false)
+              setIsError(false)
+              navigate({ to: '/goals' })
+            }, 4000)
+          } else {
             setIsLoading(false)
-            setIsError(false)
-            navigate({ to: '/goals' })
-          }, 4000)
-        } else {
+            setIsError(true)
+          }
+        })
+        .catch(() => {
           setIsLoading(false)
           setIsError(true)
-        }
-      })
+        })
     }
   }, [token, navigate, validateToken])
 
@@ -55,7 +59,8 @@ function RouteComponent() {
     <div>
       {isError && (
         <div className="flex flex-col items-center justify-center gap-4">
-          <p>Link Válido</p>
+          <p>Desculpe link expirado</p>
+          <Button onClick={() => navigate({ to: '/sign-in' })}>Voltar para login</Button>
         </div>
       )}
     </div>
