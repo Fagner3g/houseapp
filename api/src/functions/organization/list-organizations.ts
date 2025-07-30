@@ -8,6 +8,7 @@ interface ListOrganizationsRequest {
 }
 
 export async function listOrganizations({ userId }: ListOrganizationsRequest) {
+  console.log(userId)
   const result = await db
     .select({
       id: organizations.id,

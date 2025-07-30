@@ -22,7 +22,7 @@ export function TeamSwitcher() {
   const { isMobile } = useSidebar()
   const { data } = useListOrganizations()
   const { orgSlug, setOrganization } = useActiveOrganization()
-
+  console.log(data)
   const teams = (data?.organizations ?? []).map(org => ({
     id: org.slug,
     name: org.name,

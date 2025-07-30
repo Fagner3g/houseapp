@@ -192,49 +192,49 @@
           "Expense"
         ],
         "description": "Create an expense",
-      "parameters": [
-        {
-          "schema": {
-            "type": "string"
-          },
-          "in": "path",
-          "name": "slug",
-          "required": true
-        }
-      ],
-      "requestBody": {
-        "content": {
-          "application/json": {
-            "schema": {
-              "type": "object",
-              "properties": {
-                "title": {
-                  "type": "string"
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "title": {
+                    "type": "string"
+                  },
+                  "payToId": {
+                    "type": "string"
+                  },
+                  "amount": {
+                    "type": "number"
+                  },
+                  "dueDate": {
+                    "type": "string"
+                  },
+                  "description": {
+                    "type": "string"
+                  }
                 },
-                "payToId": {
-                  "type": "string"
-                },
-                "amount": {
-                  "type": "number"
-                },
-                "dueDate": {
-                  "type": "string"
-                },
-                "description": {
-                  "type": "string"
-                }
-              },
-              "required": [
-                "title",
-                "payToId",
-                "amount",
-                "dueDate"
-              ]
+                "required": [
+                  "title",
+                  "payToId",
+                  "amount",
+                  "dueDate"
+                ]
+              }
             }
-          }
+          },
+          "required": true
         },
-        "required": true
-      },
+        "parameters": [
+          {
+            "schema": {
+              "type": "string"
+            },
+            "in": "path",
+            "name": "slug",
+            "required": true
+          }
+        ],
         "responses": {
           "201": {
             "description": "Default Response"
@@ -516,7 +516,7 @@
         }
       }
     },
-    "/users": {
+    "/org/{slug}/users": {
       "get": {
         "operationId": "listUsers",
         "tags": [
