@@ -3,7 +3,6 @@ import { createRouter, RouterProvider } from '@tanstack/react-router'
 import { Toaster } from 'sonner'
 
 import { ThemeProvider } from './components/theme-provider.tsx'
-import { OrganizationProvider } from './hooks/use-organization'
 // Import the generated route tree
 import { routeTree } from './routeTree.gen.ts'
 
@@ -23,9 +22,7 @@ export function App() {
   return (
     <QueryClientProvider client={queryClient}>
       <ThemeProvider>
-        <OrganizationProvider>
-          <RouterProvider router={router} />
-        </OrganizationProvider>
+        <RouterProvider router={router} />
         <Toaster position="bottom-left" richColors />
       </ThemeProvider>
     </QueryClientProvider>

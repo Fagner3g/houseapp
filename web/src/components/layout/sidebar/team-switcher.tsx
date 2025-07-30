@@ -1,4 +1,4 @@
-import { ChevronsUpDown, Plus } from 'lucide-react'
+import { AudioWaveform, ChevronsUpDown, Command, GalleryVerticalEnd, Plus } from 'lucide-react'
 import * as React from 'react'
 
 import {
@@ -16,20 +16,34 @@ import {
   SidebarMenuItem,
   useSidebar,
 } from '@/components/ui/sidebar'
-import { useOrganization } from '@/hooks/use-organization'
+import { useListOrganizations } from '@/http/generated/api'
 
-interface Teams {
-  teams: {
-    name: string
-    logo: React.ComponentType
-    plan: string
-  }[]
-}
-
-export function TeamSwitcher({ teams }: Teams) {
+export function TeamSwitcher() {
   const { isMobile } = useSidebar()
+  const { data: organizations } = useListOrganizations()
+  const teams = [
+    {
+      name: organizations?.[0]?.name,
+      logo: GalleryVerticalEnd,
+      plan: 'Enterprise',
+    },
+    {
+      name: 'Acme Inc',
+      logo: GalleryVerticalEnd,
+      plan: 'Enterprise',
+    },
+    {
+      name: 'Acme Corp.',
+      logo: AudioWaveform,
+      plan: 'Startup',
+    },
+    {
+      name: 'Evil Corp.',
+      logo: Command,
+      plan: 'Free',
+    },
+  ]
   const [activeTeam, setActiveTeam] = React.useState(teams[0])
-  const { organizationId, organizations, setOrganizationId } = useOrganization()
 
   console.log(organizations)
   if (!activeTeam) {
