@@ -1,12 +1,18 @@
 import dayjs from 'dayjs'
 
 import { client, db } from '.'
-import { goalCompletions, goals, users } from './schema'
+import { goalCompletions, goals, houses, users } from './schema'
 
 async function seed() {
   await db.delete(goals)
   await db.delete(goalCompletions)
   await db.delete(users)
+  await db.delete(houses)
+
+  const [house] = await db
+    .insert(houses)
+    .values({ name: 'My House' })
+    .returning()
 
   const [user] = await db
     .insert(users)
@@ -17,6 +23,7 @@ async function seed() {
         email: 'fagner.egomes@gmail.com',
         phone: '5511999999999',
         ddd: '11',
+        houseId: house.id,
       },
       {
         name: 'Diego Fernandes',
@@ -24,6 +31,7 @@ async function seed() {
         email: 'g9L3N@example.com',
         phone: '5511999999999',
         ddd: '11',
+        houseId: house.id,
       },
     ])
     .returning()

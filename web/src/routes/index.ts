@@ -1,4 +1,4 @@
-import { LayoutDashboard, Rocket } from 'lucide-react'
+import { LayoutDashboard, Rocket, CreditCard } from 'lucide-react'
 
 export const data = {
   user: {
@@ -16,6 +16,11 @@ export const data = {
       title: 'Metas',
       url: '/goals',
       icon: Rocket,
+    },
+    {
+      title: 'Despesas',
+      url: '/expenses',
+      icon: CreditCard,
     },
   ],
 }
