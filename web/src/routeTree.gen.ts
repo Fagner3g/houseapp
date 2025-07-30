@@ -15,6 +15,7 @@ import { Route as AuthValidateLinkRouteImport } from './pages/_auth/validate-lin
 import { Route as AuthSignUpRouteImport } from './pages/_auth/sign-up'
 import { Route as AuthSignInRouteImport } from './pages/_auth/sign-in'
 import { Route as AppgoalGoalsRouteImport } from './pages/_app/(goal)/goals'
+import { Route as AppexpenseExpensesRouteImport } from './pages/_app/(expense)/expenses'
 import { Route as AppdashboardDashboardRouteImport } from './pages/_app/(dashboard)/dashboard'
 
 const AuthLayoutRoute = AuthLayoutRouteImport.update({
@@ -45,6 +46,11 @@ const AppgoalGoalsRoute = AppgoalGoalsRouteImport.update({
   path: '/goals',
   getParentRoute: () => AppLayoutRoute,
 } as any)
+const AppexpenseExpensesRoute = AppexpenseExpensesRouteImport.update({
+  id: '/(expense)/expenses',
+  path: '/expenses',
+  getParentRoute: () => AppLayoutRoute,
+} as any)
 const AppdashboardDashboardRoute = AppdashboardDashboardRouteImport.update({
   id: '/(dashboard)/dashboard',
   path: '/dashboard',
@@ -56,6 +62,7 @@ export interface FileRoutesByFullPath {
   '/sign-up': typeof AuthSignUpRoute
   '/validate-link': typeof AuthValidateLinkRoute
   '/dashboard': typeof AppdashboardDashboardRoute
+  '/expenses': typeof AppexpenseExpensesRoute
   '/goals': typeof AppgoalGoalsRoute
 }
 export interface FileRoutesByTo {
@@ -63,6 +70,7 @@ export interface FileRoutesByTo {
   '/sign-up': typeof AuthSignUpRoute
   '/validate-link': typeof AuthValidateLinkRoute
   '/dashboard': typeof AppdashboardDashboardRoute
+  '/expenses': typeof AppexpenseExpensesRoute
   '/goals': typeof AppgoalGoalsRoute
 }
 export interface FileRoutesById {
@@ -73,6 +81,7 @@ export interface FileRoutesById {
   '/_auth/sign-up': typeof AuthSignUpRoute
   '/_auth/validate-link': typeof AuthValidateLinkRoute
   '/_app/(dashboard)/dashboard': typeof AppdashboardDashboardRoute
+  '/_app/(expense)/expenses': typeof AppexpenseExpensesRoute
   '/_app/(goal)/goals': typeof AppgoalGoalsRoute
 }
 export interface FileRouteTypes {
@@ -82,9 +91,16 @@ export interface FileRouteTypes {
     | '/sign-up'
     | '/validate-link'
     | '/dashboard'
+    | '/expenses'
     | '/goals'
   fileRoutesByTo: FileRoutesByTo
-  to: '/sign-in' | '/sign-up' | '/validate-link' | '/dashboard' | '/goals'
+  to:
+    | '/sign-in'
+    | '/sign-up'
+    | '/validate-link'
+    | '/dashboard'
+    | '/expenses'
+    | '/goals'
   id:
     | '__root__'
     | '/_app'
@@ -93,6 +109,7 @@ export interface FileRouteTypes {
     | '/_auth/sign-up'
     | '/_auth/validate-link'
     | '/_app/(dashboard)/dashboard'
+    | '/_app/(expense)/expenses'
     | '/_app/(goal)/goals'
   fileRoutesById: FileRoutesById
 }
@@ -145,6 +162,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AppgoalGoalsRouteImport
       parentRoute: typeof AppLayoutRoute
     }
+    '/_app/(expense)/expenses': {
+      id: '/_app/(expense)/expenses'
+      path: '/expenses'
+      fullPath: '/expenses'
+      preLoaderRoute: typeof AppexpenseExpensesRouteImport
+      parentRoute: typeof AppLayoutRoute
+    }
     '/_app/(dashboard)/dashboard': {
       id: '/_app/(dashboard)/dashboard'
       path: '/dashboard'
@@ -157,11 +181,13 @@ declare module '@tanstack/react-router' {
 
 interface AppLayoutRouteChildren {
   AppdashboardDashboardRoute: typeof AppdashboardDashboardRoute
+  AppexpenseExpensesRoute: typeof AppexpenseExpensesRoute
   AppgoalGoalsRoute: typeof AppgoalGoalsRoute
 }
 
 const AppLayoutRouteChildren: AppLayoutRouteChildren = {
   AppdashboardDashboardRoute: AppdashboardDashboardRoute,
+  AppexpenseExpensesRoute: AppexpenseExpensesRoute,
   AppgoalGoalsRoute: AppgoalGoalsRoute,
 }
 
