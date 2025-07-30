@@ -1,4 +1,3 @@
-import { useMutation, useQuery } from '@tanstack/react-query'
 import { createFileRoute } from '@tanstack/react-router'
 import { useState } from 'react'
 
@@ -11,66 +10,23 @@ import {
   SelectTrigger,
   SelectValue,
 } from '@/components/ui/select'
-import { useOrganization } from '@/hooks/use-organization'
-import { http } from '@/http/client'
+import { useListExpenses } from '@/http/generated/api'
 
-interface User {
-  id: string
-  name: string
-}
-
-async function fetchUsers(organizationId: string) {
-  return http<{ users: User[] }>(`/users?organizationId=${organizationId}`, { method: 'GET' })
-}
-
-interface ExpenseRequest {
-  title: string
-  payToId: string
-  amount: number
-  dueDate: string
-  description?: string
-}
-
-async function createExpense(data: ExpenseRequest & { organizationId: string }) {
-  return http('/expenses', {
-    method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify(data),
-  })
-}
-
-export const Route = createFileRoute('/_app/(expense)/expenses')({
+export const Route = createFileRoute('/_app/$org/(expense)/expenses')({
   component: Expenses,
 })
 
 function Expenses() {
-  const { organizationId } = useOrganization()
-  const { data } = useQuery({
-    queryKey: ['users', organizationId],
-    queryFn: () => fetchUsers(organizationId ?? ''),
-    enabled: !!organizationId,
-  })
-  const { mutateAsync, isPending } = useMutation({
-    mutationFn: (payload: ExpenseRequest) =>
-      createExpense({ ...payload, organizationId: organizationId ?? '' }),
-  })
-
   const [title, setTitle] = useState('')
   const [payToId, setPayToId] = useState('')
   const [amount, setAmount] = useState('')
   const [dueDate, setDueDate] = useState('')
   const [description, setDescription] = useState('')
 
+  const { data, isPending } = useListExpenses({ organizationId: 'org-1' })
+
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault()
-    if (!organizationId) return
-    await mutateAsync({
-      title,
-      payToId,
-      amount: Number(amount),
-      dueDate,
-      description: description || undefined,
-    })
 
     setTitle('')
     setPayToId('')
@@ -87,9 +43,9 @@ function Expenses() {
           <SelectValue placeholder="Pagar para" />
         </SelectTrigger>
         <SelectContent>
-          {data?.users.map(user => (
+          {data?.expenses.map(user => (
             <SelectItem key={user.id} value={user.id} className="rounded-lg">
-              {user.name}
+              {user.title}
             </SelectItem>
           ))}
         </SelectContent>

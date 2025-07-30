@@ -14,9 +14,9 @@ import { Route as AppLayoutRouteImport } from './pages/_app/layout'
 import { Route as AuthValidateLinkRouteImport } from './pages/_auth/validate-link'
 import { Route as AuthSignUpRouteImport } from './pages/_auth/sign-up'
 import { Route as AuthSignInRouteImport } from './pages/_auth/sign-in'
-import { Route as AppgoalGoalsRouteImport } from './pages/_app/(goal)/goals'
-import { Route as AppexpenseExpensesRouteImport } from './pages/_app/(expense)/expenses'
-import { Route as AppdashboardDashboardRouteImport } from './pages/_app/(dashboard)/dashboard'
+import { Route as AppOrggoalGoalsRouteImport } from './pages/_app/$org/(goal)/goals'
+import { Route as AppOrgexpenseExpensesRouteImport } from './pages/_app/$org/(expense)/expenses'
+import { Route as AppOrgdashboardDashboardRouteImport } from './pages/_app/$org/(dashboard)/dashboard'
 
 const AuthLayoutRoute = AuthLayoutRouteImport.update({
   id: '/_auth',
@@ -41,37 +41,38 @@ const AuthSignInRoute = AuthSignInRouteImport.update({
   path: '/sign-in',
   getParentRoute: () => AuthLayoutRoute,
 } as any)
-const AppgoalGoalsRoute = AppgoalGoalsRouteImport.update({
-  id: '/(goal)/goals',
-  path: '/goals',
+const AppOrggoalGoalsRoute = AppOrggoalGoalsRouteImport.update({
+  id: '/$org/(goal)/goals',
+  path: '/$org/goals',
   getParentRoute: () => AppLayoutRoute,
 } as any)
-const AppexpenseExpensesRoute = AppexpenseExpensesRouteImport.update({
-  id: '/(expense)/expenses',
-  path: '/expenses',
+const AppOrgexpenseExpensesRoute = AppOrgexpenseExpensesRouteImport.update({
+  id: '/$org/(expense)/expenses',
+  path: '/$org/expenses',
   getParentRoute: () => AppLayoutRoute,
 } as any)
-const AppdashboardDashboardRoute = AppdashboardDashboardRouteImport.update({
-  id: '/(dashboard)/dashboard',
-  path: '/dashboard',
-  getParentRoute: () => AppLayoutRoute,
-} as any)
+const AppOrgdashboardDashboardRoute =
+  AppOrgdashboardDashboardRouteImport.update({
+    id: '/$org/(dashboard)/dashboard',
+    path: '/$org/dashboard',
+    getParentRoute: () => AppLayoutRoute,
+  } as any)
 
 export interface FileRoutesByFullPath {
   '/sign-in': typeof AuthSignInRoute
   '/sign-up': typeof AuthSignUpRoute
   '/validate-link': typeof AuthValidateLinkRoute
-  '/dashboard': typeof AppdashboardDashboardRoute
-  '/expenses': typeof AppexpenseExpensesRoute
-  '/goals': typeof AppgoalGoalsRoute
+  '/$org/dashboard': typeof AppOrgdashboardDashboardRoute
+  '/$org/expenses': typeof AppOrgexpenseExpensesRoute
+  '/$org/goals': typeof AppOrggoalGoalsRoute
 }
 export interface FileRoutesByTo {
   '/sign-in': typeof AuthSignInRoute
   '/sign-up': typeof AuthSignUpRoute
   '/validate-link': typeof AuthValidateLinkRoute
-  '/dashboard': typeof AppdashboardDashboardRoute
-  '/expenses': typeof AppexpenseExpensesRoute
-  '/goals': typeof AppgoalGoalsRoute
+  '/$org/dashboard': typeof AppOrgdashboardDashboardRoute
+  '/$org/expenses': typeof AppOrgexpenseExpensesRoute
+  '/$org/goals': typeof AppOrggoalGoalsRoute
 }
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
@@ -80,9 +81,9 @@ export interface FileRoutesById {
   '/_auth/sign-in': typeof AuthSignInRoute
   '/_auth/sign-up': typeof AuthSignUpRoute
   '/_auth/validate-link': typeof AuthValidateLinkRoute
-  '/_app/(dashboard)/dashboard': typeof AppdashboardDashboardRoute
-  '/_app/(expense)/expenses': typeof AppexpenseExpensesRoute
-  '/_app/(goal)/goals': typeof AppgoalGoalsRoute
+  '/_app/$org/(dashboard)/dashboard': typeof AppOrgdashboardDashboardRoute
+  '/_app/$org/(expense)/expenses': typeof AppOrgexpenseExpensesRoute
+  '/_app/$org/(goal)/goals': typeof AppOrggoalGoalsRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
@@ -90,17 +91,17 @@ export interface FileRouteTypes {
     | '/sign-in'
     | '/sign-up'
     | '/validate-link'
-    | '/dashboard'
-    | '/expenses'
-    | '/goals'
+    | '/$org/dashboard'
+    | '/$org/expenses'
+    | '/$org/goals'
   fileRoutesByTo: FileRoutesByTo
   to:
     | '/sign-in'
     | '/sign-up'
     | '/validate-link'
-    | '/dashboard'
-    | '/expenses'
-    | '/goals'
+    | '/$org/dashboard'
+    | '/$org/expenses'
+    | '/$org/goals'
   id:
     | '__root__'
     | '/_app'
@@ -108,9 +109,9 @@ export interface FileRouteTypes {
     | '/_auth/sign-in'
     | '/_auth/sign-up'
     | '/_auth/validate-link'
-    | '/_app/(dashboard)/dashboard'
-    | '/_app/(expense)/expenses'
-    | '/_app/(goal)/goals'
+    | '/_app/$org/(dashboard)/dashboard'
+    | '/_app/$org/(expense)/expenses'
+    | '/_app/$org/(goal)/goals'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
@@ -155,40 +156,40 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthSignInRouteImport
       parentRoute: typeof AuthLayoutRoute
     }
-    '/_app/(goal)/goals': {
-      id: '/_app/(goal)/goals'
-      path: '/goals'
-      fullPath: '/goals'
-      preLoaderRoute: typeof AppgoalGoalsRouteImport
+    '/_app/$org/(goal)/goals': {
+      id: '/_app/$org/(goal)/goals'
+      path: '/$org/goals'
+      fullPath: '/$org/goals'
+      preLoaderRoute: typeof AppOrggoalGoalsRouteImport
       parentRoute: typeof AppLayoutRoute
     }
-    '/_app/(expense)/expenses': {
-      id: '/_app/(expense)/expenses'
-      path: '/expenses'
-      fullPath: '/expenses'
-      preLoaderRoute: typeof AppexpenseExpensesRouteImport
+    '/_app/$org/(expense)/expenses': {
+      id: '/_app/$org/(expense)/expenses'
+      path: '/$org/expenses'
+      fullPath: '/$org/expenses'
+      preLoaderRoute: typeof AppOrgexpenseExpensesRouteImport
       parentRoute: typeof AppLayoutRoute
     }
-    '/_app/(dashboard)/dashboard': {
-      id: '/_app/(dashboard)/dashboard'
-      path: '/dashboard'
-      fullPath: '/dashboard'
-      preLoaderRoute: typeof AppdashboardDashboardRouteImport
+    '/_app/$org/(dashboard)/dashboard': {
+      id: '/_app/$org/(dashboard)/dashboard'
+      path: '/$org/dashboard'
+      fullPath: '/$org/dashboard'
+      preLoaderRoute: typeof AppOrgdashboardDashboardRouteImport
       parentRoute: typeof AppLayoutRoute
     }
   }
 }
 
 interface AppLayoutRouteChildren {
-  AppdashboardDashboardRoute: typeof AppdashboardDashboardRoute
-  AppexpenseExpensesRoute: typeof AppexpenseExpensesRoute
-  AppgoalGoalsRoute: typeof AppgoalGoalsRoute
+  AppOrgdashboardDashboardRoute: typeof AppOrgdashboardDashboardRoute
+  AppOrgexpenseExpensesRoute: typeof AppOrgexpenseExpensesRoute
+  AppOrggoalGoalsRoute: typeof AppOrggoalGoalsRoute
 }
 
 const AppLayoutRouteChildren: AppLayoutRouteChildren = {
-  AppdashboardDashboardRoute: AppdashboardDashboardRoute,
-  AppexpenseExpensesRoute: AppexpenseExpensesRoute,
-  AppgoalGoalsRoute: AppgoalGoalsRoute,
+  AppOrgdashboardDashboardRoute: AppOrgdashboardDashboardRoute,
+  AppOrgexpenseExpensesRoute: AppOrgexpenseExpensesRoute,
+  AppOrggoalGoalsRoute: AppOrggoalGoalsRoute,
 }
 
 const AppLayoutRouteWithChildren = AppLayoutRoute._addFileChildren(

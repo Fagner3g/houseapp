@@ -7,7 +7,7 @@ import { Dialog } from '@/components/ui/dialog'
 import { useGetWeekSummary } from '@/http/generated/api'
 import { WeeklySummary } from './-components/weekly-summary'
 
-export const Route = createFileRoute('/_app/(goal)/goals')({
+export const Route = createFileRoute('/_app/$org/(goal)/goals')({
   component: Goals,
 })
 

@@ -4,7 +4,7 @@ import { ChartAreaInteractive } from '@/components/chart-area-interactive'
 import { DataTable } from '@/components/data-table'
 import { SectionCards } from '@/components/section-cards'
 
-export const Route = createFileRoute('/_app/(dashboard)/dashboard')({
+export const Route = createFileRoute('/_app/$org/(dashboard)/dashboard')({
   component: RouteComponent,
 })
 
