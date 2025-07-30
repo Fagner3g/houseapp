@@ -2,12 +2,18 @@ import { eq } from 'drizzle-orm'
 
 import { db } from '@/db'
 import { userOrganizations, users } from '@/db/schema'
+import { getOrganizationBySlug } from '../organization/get-organization-by-slug'
 
 interface ListUsersRequest {
-  organizationId: string
+  organizationSlug: string
 }
 
-export async function listUsers({ organizationId }: ListUsersRequest) {
+export async function listUsers({ organizationSlug }: ListUsersRequest) {
+  const { organization } = await getOrganizationBySlug({ slug: organizationSlug })
+
+  if (!organization) {
+    return { users: [] }
+  }
   const result = await db
     .select({
       id: users.id,
@@ -20,7 +26,7 @@ export async function listUsers({ organizationId }: ListUsersRequest) {
     })
     .from(users)
     .innerJoin(userOrganizations, eq(users.id, userOrganizations.userId))
-    .where(eq(userOrganizations.organizationId, organizationId))
+    .where(eq(userOrganizations.organizationId, organization.id))
 
   return { users: result }
 }

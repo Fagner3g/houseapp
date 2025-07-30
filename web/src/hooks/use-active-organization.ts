@@ -6,12 +6,12 @@ import { useRouter, useRouterState } from '@tanstack/react-router'
 export function useActiveOrganization() {
   const router = useRouter()
   const pathname = useRouterState({ select: s => s.location.pathname })
-  const [, orgId] = pathname.split('/')
+  const [, orgSlug] = pathname.split('/')
 
-  function setOrganization(newOrgId: string) {
+  function setOrganization(newSlug: string) {
     const [, , ...rest] = pathname.split('/')
-    router.navigate({ to: `/${newOrgId}/${rest.join('/')}` })
+    router.navigate({ to: `/${newSlug}/${rest.join('/')}` })
   }
 
-  return { orgId, setOrganization }
+  return { orgSlug, setOrganization }
 }

@@ -21,16 +21,16 @@ import { useListOrganizations } from '@/http/generated/api'
 export function TeamSwitcher() {
   const { isMobile } = useSidebar()
   const { data } = useListOrganizations()
-  const { orgId, setOrganization } = useActiveOrganization()
+  const { orgSlug, setOrganization } = useActiveOrganization()
 
   const teams = (data?.organizations ?? []).map(org => ({
-    id: org.id,
+    id: org.slug,
     name: org.name,
     logo: GalleryVerticalEnd,
     plan: 'Enterprise',
   }))
 
-  const activeTeam = teams.find(t => t.id === orgId) ?? teams[0]
+  const activeTeam = teams.find(t => t.id === orgSlug) ?? teams[0]
 
   if (!activeTeam) {
     return null

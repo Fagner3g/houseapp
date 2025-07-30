@@ -18,7 +18,7 @@ export const createOrganizationRoute: FastifyPluginAsyncZod = async app => {
         }),
         response: {
           201: z.object({
-            organizationId: z.string(),
+            organizationSlug: z.string(),
           }),
         },
       },
@@ -29,7 +29,7 @@ export const createOrganizationRoute: FastifyPluginAsyncZod = async app => {
 
       const { organization } = await createOrganization({ name, userId })
 
-      return reply.status(201).send({ organizationId: organization.id })
+      return reply.status(201).send({ organizationSlug: organization.slug })
     }
   )
 }

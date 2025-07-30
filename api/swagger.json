@@ -185,50 +185,56 @@
         }
       }
     },
-    "/expenses": {
+    "/org/{slug}/expenses": {
       "post": {
         "operationId": "createExpense",
         "tags": [
           "Expense"
         ],
         "description": "Create an expense",
-        "requestBody": {
-          "content": {
-            "application/json": {
-              "schema": {
-                "type": "object",
-                "properties": {
-                  "title": {
-                    "type": "string"
-                  },
-                  "payToId": {
-                    "type": "string"
-                  },
-                  "organizationId": {
-                    "type": "string"
-                  },
-                  "amount": {
-                    "type": "number"
-                  },
-                  "dueDate": {
-                    "type": "string"
-                  },
-                  "description": {
-                    "type": "string"
-                  }
-                },
-                "required": [
-                  "title",
-                  "payToId",
-                  "organizationId",
-                  "amount",
-                  "dueDate"
-                ]
-              }
-            }
+      "parameters": [
+        {
+          "schema": {
+            "type": "string"
           },
+          "in": "path",
+          "name": "slug",
           "required": true
+        }
+      ],
+      "requestBody": {
+        "content": {
+          "application/json": {
+            "schema": {
+              "type": "object",
+              "properties": {
+                "title": {
+                  "type": "string"
+                },
+                "payToId": {
+                  "type": "string"
+                },
+                "amount": {
+                  "type": "number"
+                },
+                "dueDate": {
+                  "type": "string"
+                },
+                "description": {
+                  "type": "string"
+                }
+              },
+              "required": [
+                "title",
+                "payToId",
+                "amount",
+                "dueDate"
+              ]
+            }
+          }
         },
+        "required": true
+      },
         "responses": {
           "201": {
             "description": "Default Response"
@@ -246,8 +252,8 @@
             "schema": {
               "type": "string"
             },
-            "in": "query",
-            "name": "organizationId",
+            "in": "path",
+            "name": "slug",
             "required": true
           }
         ],
@@ -391,12 +397,12 @@
                 "schema": {
                   "type": "object",
                   "properties": {
-                    "organizationId": {
+                    "organizationSlug": {
                       "type": "string"
                     }
                   },
                   "required": [
-                    "organizationId"
+                    "organizationSlug"
                   ],
                   "additionalProperties": false
                 }
@@ -430,6 +436,9 @@
                           "name": {
                             "type": "string"
                           },
+                          "slug": {
+                            "type": "string"
+                          },
                           "createdAt": {
                             "type": "string",
                             "format": "date-time"
@@ -438,6 +447,7 @@
                         "required": [
                           "id",
                           "name",
+                          "slug",
                           "createdAt"
                         ],
                         "additionalProperties": false
@@ -518,8 +528,8 @@
             "schema": {
               "type": "string"
             },
-            "in": "query",
-            "name": "organizationId",
+            "in": "path",
+            "name": "slug",
             "required": true
           }
         ],

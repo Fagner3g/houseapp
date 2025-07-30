@@ -6,16 +6,14 @@ import { authenticateUserHook } from '@/http/hooks/authenticate-user'
 
 export const listExpensesRoute: FastifyPluginAsyncZod = async app => {
   app.get(
-    '/expenses',
+    '/org/:slug/expenses',
     {
       onRequest: [authenticateUserHook],
       schema: {
         tags: ['Expense'],
         description: 'List expenses for authenticated user',
         operationId: 'listExpenses',
-        querystring: z.object({
-          organizationId: z.string(),
-        }),
+        params: z.object({ slug: z.string() }),
         response: {
           200: z.object({
             expenses: z.array(
@@ -36,9 +34,12 @@ export const listExpensesRoute: FastifyPluginAsyncZod = async app => {
     },
     async request => {
       const userId = request.user.sub
-      const { organizationId } = request.query
+      const { slug } = request.params
 
-      const { expenses } = await listExpenses({ userId, organizationId })
+      const { expenses } = await listExpenses({
+        userId,
+        organizationSlug: slug,
+      })
 
       return { expenses }
     }

@@ -7,7 +7,7 @@ export const Route = createFileRoute('/_auth')({
   beforeLoad: async () => {
     const token = getAuthToken()
     if (token) {
-      throw redirect({ to: '/goals' })
+      throw redirect({ to: '/$org/goals', params: { org: 'my-house' } })
     }
   },
 })

@@ -1,4 +1,5 @@
 import dayjs from 'dayjs'
+import slugify from 'slugify'
 
 import { client, db } from '.'
 import { goalCompletions, goals, organizations, userOrganizations, users } from './schema'
@@ -10,9 +11,15 @@ async function seed() {
   await db.delete(userOrganizations)
   await db.delete(organizations)
 
-  const [org] = await db.insert(organizations).values({ name: 'My House' }).returning()
+  const [org, otherOrg] = await db
+    .insert(organizations)
+    .values([
+      { name: 'My House', slug: slugify('My House', { lower: true }) },
+      { name: 'Work Place', slug: slugify('Work Place', { lower: true }) },
+    ])
+    .returning()
 
-  const [user, otherUser] = await db
+  const [user, otherUser, thirdUser] = await db
     .insert(users)
     .values([
       {
@@ -31,12 +38,21 @@ async function seed() {
         ddd: '11',
         defaultOrganizationId: org.id,
       },
+      {
+        name: 'Ana Souza',
+        avatarUrl: 'https://example.com/ana.png',
+        email: 'ana@example.com',
+        phone: '5511988888888',
+        ddd: '11',
+        defaultOrganizationId: otherOrg.id,
+      },
     ])
     .returning()
 
   await db.insert(userOrganizations).values([
     { userId: user.id, organizationId: org.id },
     { userId: otherUser.id, organizationId: org.id },
+    { userId: thirdUser.id, organizationId: otherOrg.id },
   ])
 
   const result = await db

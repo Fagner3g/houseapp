@@ -6,6 +6,7 @@ export const organizations = pgTable('organizations', {
     .primaryKey()
     .$defaultFn(() => createId()),
   name: text('name').notNull(),
+  slug: text('slug').notNull().unique(),
   createdAt: timestamp('created_at', { withTimezone: true }).notNull().defaultNow(),
 })
 
