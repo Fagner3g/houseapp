@@ -1,6 +1,11 @@
 import React from 'react'
-
-import { http } from '@/http/client'
+import { create } from 'zustand'
+import { persist } from 'zustand/middleware'
+import {
+  useCreateOrganization,
+  useListOrganizations,
+} from '@/http/generated/api'
+import { useQueryClient } from '@tanstack/react-query'
 
 export type Organization = {
   id: string
@@ -8,45 +13,39 @@ export type Organization = {
   createdAt: string
 }
 
-type OrganizationContextProps = {
+interface OrganizationState {
   organizationId: string | null
   setOrganizationId: (id: string) => void
-  organizations: Organization[]
-  setOrganizations: React.Dispatch<React.SetStateAction<Organization[]>>
 }
 
-const OrganizationContext = React.createContext<OrganizationContextProps | null>(null)
-
-export function OrganizationProvider({ children }: { children: React.ReactNode }) {
-  const [organizationId, setOrganizationId] = React.useState<string | null>(null)
-  const [organizations, setOrganizations] = React.useState<Organization[]>([])
-
-  React.useEffect(() => {
-    async function load() {
-      const { organizations } = await http<{ organizations: Organization[] }>('/organizations', {
-        method: 'GET',
-      })
-      setOrganizations(organizations)
-      if (!organizationId && organizations.length > 0) {
-        setOrganizationId(organizations[0].id)
-      }
-    }
-
-    load().catch(console.error)
-  }, [organizationId])
-  return (
-    <OrganizationContext.Provider
-      value={{ organizationId, setOrganizationId, organizations, setOrganizations }}
-    >
-      {children}
-    </OrganizationContext.Provider>
-  )
-}
+const useOrganizationStore = create<OrganizationState>()(
+  persist(
+    set => ({
+      organizationId: null,
+      setOrganizationId: id => set({ organizationId: id }),
+    }),
+    { name: 'organization-store' },
+  ),
+)
 
 export function useOrganization() {
-  const context = React.useContext(OrganizationContext)
-  if (!context) {
-    throw new Error('useOrganization must be used within OrganizationProvider')
+  const queryClient = useQueryClient()
+  const store = useOrganizationStore()
+  const { data } = useListOrganizations()
+  const organizations = data?.organizations ?? []
+
+  React.useEffect(() => {
+    if (!store.organizationId && organizations.length > 0) {
+      store.setOrganizationId(organizations[0].id)
+    }
+  }, [store, organizations])
+
+  const createOrgMutation = useCreateOrganization(undefined, queryClient)
+
+  return {
+    organizationId: store.organizationId,
+    setOrganizationId: store.setOrganizationId,
+    organizations,
+    createOrganization: createOrgMutation.mutateAsync,
   }
-  return context
 }

@@ -7,7 +7,6 @@ import {
   DropdownMenuItem,
   DropdownMenuLabel,
   DropdownMenuSeparator,
-  DropdownMenuShortcut,
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu'
 import {
@@ -18,23 +17,21 @@ import {
 } from '@/components/ui/sidebar'
 import { useOrganization } from '@/hooks/use-organization'
 
-interface Teams {
-  teams: {
-    name: string
-    logo: React.ComponentType
-    plan: string
-  }[]
-}
-
-export function TeamSwitcher({ teams }: Teams) {
+export function TeamSwitcher() {
   const { isMobile } = useSidebar()
-  const [activeTeam, setActiveTeam] = React.useState(teams[0])
-  const { organizationId, organizations, setOrganizationId } = useOrganization()
+  const { organizationId, organizations, setOrganizationId, createOrganization } =
+    useOrganization()
 
-  console.log(organizations)
-  if (!activeTeam) {
-    return null
+  const activeTeam = organizations.find(org => org.id === organizationId)
+
+  async function handleCreate() {
+    const name = window.prompt('Nome da organização')
+    if (!name) return
+    const result = await createOrganization({ data: { name } })
+    setOrganizationId(result.organizationId)
   }
+
+  if (!activeTeam) return null
 
   return (
     <SidebarMenu>
@@ -46,11 +43,10 @@ export function TeamSwitcher({ teams }: Teams) {
               className="data-[state=open]:bg-sidebar-accent data-[state=open]:text-sidebar-accent-foreground"
             >
               <div className="bg-sidebar-primary text-sidebar-primary-foreground flex aspect-square size-8 items-center justify-center rounded-lg">
-                <activeTeam.logo className="size-4" />
+                {activeTeam.name.charAt(0)}
               </div>
               <div className="grid flex-1 text-left text-sm leading-tight">
                 <span className="truncate font-medium">{activeTeam.name}</span>
-                <span className="truncate text-xs">{activeTeam.plan}</span>
               </div>
               <ChevronsUpDown className="ml-auto" />
             </SidebarMenuButton>
@@ -61,26 +57,25 @@ export function TeamSwitcher({ teams }: Teams) {
             side={isMobile ? 'bottom' : 'right'}
             sideOffset={4}
           >
-            <DropdownMenuLabel className="text-muted-foreground text-xs">Teams</DropdownMenuLabel>
-            {teams.map((team, index) => (
+            <DropdownMenuLabel className="text-muted-foreground text-xs">Organizações</DropdownMenuLabel>
+            {organizations.map(org => (
               <DropdownMenuItem
-                key={team.name}
-                onClick={() => setActiveTeam(team)}
+                key={org.id}
+                onClick={() => setOrganizationId(org.id)}
                 className="gap-2 p-2"
               >
-                <div className="flex size-6 items-center justify-center rounded-md border">
-                  <team.logo />
+                <div className="flex size-6 items-center justify-center rounded-md border bg-transparent">
+                  {org.name.charAt(0)}
                 </div>
-                {team.name}
-                <DropdownMenuShortcut>⌘{index + 1}</DropdownMenuShortcut>
+                {org.name}
               </DropdownMenuItem>
             ))}
             <DropdownMenuSeparator />
-            <DropdownMenuItem className="gap-2 p-2">
+            <DropdownMenuItem className="gap-2 p-2" onClick={handleCreate}>
               <div className="flex size-6 items-center justify-center rounded-md border bg-transparent">
                 <Plus className="size-4" />
               </div>
-              <div className="text-muted-foreground font-medium">Add team</div>
+              <div className="text-muted-foreground font-medium">Nova organização</div>
             </DropdownMenuItem>
           </DropdownMenuContent>
         </DropdownMenu>
