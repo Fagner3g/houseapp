@@ -6,9 +6,7 @@ export const organizations = pgTable('organizations', {
     .primaryKey()
     .$defaultFn(() => createId()),
   name: text('name').notNull(),
-  createdAt: timestamp('created_at', { withTimezone: true })
-    .notNull()
-    .defaultNow(),
+  createdAt: timestamp('created_at', { withTimezone: true }).notNull().defaultNow(),
 })
 
 export const users = pgTable('users', {
@@ -18,7 +16,7 @@ export const users = pgTable('users', {
   name: text('name').notNull(),
   email: text('email').notNull(),
   phone: text('phone').notNull(),
-  ddd: text('phone').notNull(),
+  ddd: text('ddd').notNull(),
   avatarUrl: text('avatar_url').notNull(),
   /* Default organization used on signup */
   defaultOrganizationId: text('default_organization_id')
@@ -34,9 +32,7 @@ export const userOrganizations = pgTable('user_organizations', {
   organizationId: text('organization_id')
     .notNull()
     .references(() => organizations.id),
-  createdAt: timestamp('created_at', { withTimezone: true })
-    .notNull()
-    .defaultNow(),
+  createdAt: timestamp('created_at', { withTimezone: true }).notNull().defaultNow(),
 })
 
 export const goals = pgTable('goals', {

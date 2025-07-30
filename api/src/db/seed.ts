@@ -1,7 +1,7 @@
 import dayjs from 'dayjs'
 
 import { client, db } from '.'
-import { goalCompletions, goals, organizations, users, userOrganizations } from './schema'
+import { goalCompletions, goals, organizations, userOrganizations, users } from './schema'
 
 async function seed() {
   await db.delete(goals)
@@ -10,10 +10,7 @@ async function seed() {
   await db.delete(userOrganizations)
   await db.delete(organizations)
 
-  const [org] = await db
-    .insert(organizations)
-    .values({ name: 'My House' })
-    .returning()
+  const [org] = await db.insert(organizations).values({ name: 'My House' }).returning()
 
   const [user, otherUser] = await db
     .insert(users)
