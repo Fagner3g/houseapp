@@ -1,5 +1,7 @@
 import { createFileRoute } from '@tanstack/react-router'
-import { useState } from 'react'
+import { useForm } from 'react-hook-form'
+import { zodResolver } from '@hookform/resolvers/zod'
+import { z } from 'zod'
 
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
@@ -17,30 +19,31 @@ export const Route = createFileRoute('/_app/$org/(expense)/expenses')({
   component: Expenses,
 })
 
+const schema = z.object({
+  title: z.string(),
+  payToId: z.string(),
+  amount: z.string(),
+  dueDate: z.string(),
+  description: z.string().optional(),
+})
+
+type FormValues = z.infer<typeof schema>
+
 function Expenses() {
-  const [title, setTitle] = useState('')
-  const [payToId, setPayToId] = useState('')
-  const [amount, setAmount] = useState('')
-  const [dueDate, setDueDate] = useState('')
-  const [description, setDescription] = useState('')
+  const form = useForm<FormValues>({ resolver: zodResolver(schema) })
 
   const { orgSlug } = useActiveOrganization()
   const { data, isPending } = useListExpenses(orgSlug)
 
-  async function handleSubmit(e: React.FormEvent) {
-    e.preventDefault()
-
-    setTitle('')
-    setPayToId('')
-    setAmount('')
-    setDueDate('')
-    setDescription('')
+  async function handleSubmit(values: FormValues) {
+    console.log(values)
+    form.reset()
   }
 
   return (
-    <form onSubmit={handleSubmit} className="flex flex-col gap-4 p-4">
-      <Input placeholder="Título" value={title} onChange={e => setTitle(e.target.value)} />
-      <Select value={payToId} onValueChange={setPayToId}>
+    <form onSubmit={form.handleSubmit(handleSubmit)} className="flex flex-col gap-4 p-4">
+      <Input placeholder="Título" {...form.register('title')} />
+      <Select value={form.watch('payToId')} onValueChange={value => form.setValue('payToId', value)}>
         <SelectTrigger>
           <SelectValue placeholder="Pagar para" />
         </SelectTrigger>
@@ -52,23 +55,9 @@ function Expenses() {
           ))}
         </SelectContent>
       </Select>
-      <Input
-        placeholder="Valor"
-        type="number"
-        value={amount}
-        onChange={e => setAmount(e.target.value)}
-      />
-      <Input
-        placeholder="Data de vencimento"
-        type="date"
-        value={dueDate}
-        onChange={e => setDueDate(e.target.value)}
-      />
-      <Input
-        placeholder="Descrição"
-        value={description}
-        onChange={e => setDescription(e.target.value)}
-      />
+      <Input placeholder="Valor" type="number" {...form.register('amount')} />
+      <Input placeholder="Data de vencimento" type="date" {...form.register('dueDate')} />
+      <Input placeholder="Descrição" {...form.register('description')} />
       <Button type="submit" disabled={isPending} isLoading={isPending}>
         Cadastrar
       </Button>

@@ -77,3 +77,16 @@ export const expenses = pgTable('expenses', {
   description: text('description'),
   createdAt: timestamp('created_at', { withTimezone: true }).notNull().defaultNow(),
 })
+
+export const invites = pgTable('invites', {
+  id: text('id')
+    .primaryKey()
+    .$defaultFn(() => createId()),
+  organizationId: text('organization_id')
+    .notNull()
+    .references(() => organizations.id),
+  email: text('email').notNull(),
+  token: text('token').notNull(),
+  acceptedAt: timestamp('accepted_at', { withTimezone: true }),
+  createdAt: timestamp('created_at', { withTimezone: true }).notNull().defaultNow(),
+})

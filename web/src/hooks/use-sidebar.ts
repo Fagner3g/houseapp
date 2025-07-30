@@ -1,10 +1,10 @@
 import { useRouterState } from '@tanstack/react-router'
-
-import { data } from '@/routes'
+import { useNavItems } from '@/routes/navigation'
 
 export const useSidebar = () => {
   const router = useRouterState()
-  const route = data.navMain.find(route => route.url === router.location.pathname)
+  const items = useNavItems()
+  const route = items.find(r => r.url === router.location.pathname)
 
   return {
     route,
