@@ -4,13 +4,19 @@ import { db } from '../db'
 import { users } from '../db/schema'
 
 interface GetUserRequest {
+  id?: string
   email?: string
   phone?: string
 }
 
-export async function getUser({ email, phone }: GetUserRequest) {
-  if (!email && !phone) {
-    throw new Error('Informe um email ou telefone')
+export async function getUser({ id, email, phone }: GetUserRequest) {
+  if (!id && !email && !phone) {
+    throw new Error('Informe um identificador de usuário')
+  }
+
+  if (id) {
+    const result = await db.select().from(users).where(eq(users.id, id))
+    return result[0] ? { ...result[0] } : undefined
   }
 
   if (email) {

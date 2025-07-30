@@ -63,6 +63,63 @@ export type GetWeekSummary200 = {
   summary: GetWeekSummary200Summary;
 };
 
+export type CreateExpenseBody = {
+  title: string;
+  payToId: string;
+  organizationId: string;
+  amount: number;
+  dueDate: string;
+  description?: string;
+};
+
+export type ListExpensesParams = {
+organizationId: string;
+};
+
+export type ListExpenses200ExpensesItem = {
+  id: string;
+  title: string;
+  ownerId: string;
+  payToId: string;
+  amount: number;
+  dueDate: string;
+  /** @nullable */
+  description: string | null;
+  createdAt: string;
+};
+
+export type ListExpenses200 = {
+  expenses: ListExpenses200ExpensesItem[];
+};
+
+/**
+ * @nullable
+ */
+export type GetExpense200Expense = { [key: string]: unknown } | null;
+
+export type GetExpense200 = {
+  /** @nullable */
+  expense: GetExpense200Expense;
+};
+
+export type CreateOrganizationBody = {
+  name: string;
+};
+
+export type CreateOrganization201 = {
+  organizationId: string;
+};
+
+export type ListOrganizations200OrganizationsItem = {
+  id: string;
+  name: string;
+  createdAt: string;
+};
+
+export type ListOrganizations200 = {
+  organizations: ListOrganizations200OrganizationsItem[];
+};
+
 export type CreateNewUserBody = {
   /**
    * @minLength 2
@@ -78,6 +135,24 @@ export type CreateNewUserBody = {
   name: string;
   /** @pattern ^(?!\.)(?!.*\.\.)([A-Za-z0-9_'+\-\.]*)[A-Za-z0-9_+-]@([A-Za-z0-9][A-Za-z0-9\-]*\.)+[A-Za-z]{2,}$ */
   email: string;
+};
+
+export type ListUsersParams = {
+organizationId: string;
+};
+
+export type ListUsers200UsersItem = {
+  id: string;
+  name: string;
+  email: string;
+  phone: string;
+  ddd: string;
+  avatarUrl: string;
+  createdAt: string;
+};
+
+export type ListUsers200 = {
+  users: ListUsers200UsersItem[];
 };
 
 export type ValidateTokenBody = {
@@ -422,6 +497,430 @@ export function useGetWeekSummary<TData = Awaited<ReturnType<typeof getWeekSumma
 
 
 /**
+ * Create an expense
+ */
+export const getCreateExpenseUrl = () => {
+
+
+  
+
+  return `/expenses`
+}
+
+export const createExpense = async (createExpenseBody: CreateExpenseBody, options?: RequestInit): Promise<void> => {
+  
+  return http<void>(getCreateExpenseUrl(),
+  {      
+    ...options,
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json', ...options?.headers },
+    body: JSON.stringify(
+      createExpenseBody,)
+  }
+);}
+
+
+
+
+export const getCreateExpenseMutationOptions = <TError = unknown,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof createExpense>>, TError,{data: CreateExpenseBody}, TContext>, request?: SecondParameter<typeof http>}
+): UseMutationOptions<Awaited<ReturnType<typeof createExpense>>, TError,{data: CreateExpenseBody}, TContext> => {
+
+const mutationKey = ['createExpense'];
+const {mutation: mutationOptions, request: requestOptions} = options ?
+      options.mutation && 'mutationKey' in options.mutation && options.mutation.mutationKey ?
+      options
+      : {...options, mutation: {...options.mutation, mutationKey}}
+      : {mutation: { mutationKey, }, request: undefined};
+
+      
+
+
+      const mutationFn: MutationFunction<Awaited<ReturnType<typeof createExpense>>, {data: CreateExpenseBody}> = (props) => {
+          const {data} = props ?? {};
+
+          return  createExpense(data,requestOptions)
+        }
+
+        
+
+
+  return  { mutationFn, ...mutationOptions }}
+
+    export type CreateExpenseMutationResult = NonNullable<Awaited<ReturnType<typeof createExpense>>>
+    export type CreateExpenseMutationBody = CreateExpenseBody
+    export type CreateExpenseMutationError = unknown
+
+    export const useCreateExpense = <TError = unknown,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof createExpense>>, TError,{data: CreateExpenseBody}, TContext>, request?: SecondParameter<typeof http>}
+ , queryClient?: QueryClient): UseMutationResult<
+        Awaited<ReturnType<typeof createExpense>>,
+        TError,
+        {data: CreateExpenseBody},
+        TContext
+      > => {
+
+      const mutationOptions = getCreateExpenseMutationOptions(options);
+
+      return useMutation(mutationOptions , queryClient);
+    }
+    
+/**
+ * List expenses for authenticated user
+ */
+export const getListExpensesUrl = (params: ListExpensesParams,) => {
+  const normalizedParams = new URLSearchParams();
+
+  Object.entries(params || {}).forEach(([key, value]) => {
+    
+    if (value !== undefined) {
+      normalizedParams.append(key, value === null ? 'null' : value.toString())
+    }
+  });
+
+  const stringifiedParams = normalizedParams.toString();
+
+  return stringifiedParams.length > 0 ? `/expenses?${stringifiedParams}` : `/expenses`
+}
+
+export const listExpenses = async (params: ListExpensesParams, options?: RequestInit): Promise<ListExpenses200> => {
+  
+  return http<ListExpenses200>(getListExpensesUrl(params),
+  {      
+    ...options,
+    method: 'GET'
+    
+    
+  }
+);}
+
+
+
+export const getListExpensesQueryKey = (params: ListExpensesParams,) => {
+    return [`/expenses`, ...(params ? [params]: [])] as const;
+    }
+
+    
+export const getListExpensesQueryOptions = <TData = Awaited<ReturnType<typeof listExpenses>>, TError = unknown>(params: ListExpensesParams, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof listExpenses>>, TError, TData>>, request?: SecondParameter<typeof http>}
+) => {
+
+const {query: queryOptions, request: requestOptions} = options ?? {};
+
+  const queryKey =  queryOptions?.queryKey ?? getListExpensesQueryKey(params);
+
+  
+
+    const queryFn: QueryFunction<Awaited<ReturnType<typeof listExpenses>>> = ({ signal }) => listExpenses(params, { signal, ...requestOptions });
+
+      
+
+      
+
+   return  { queryKey, queryFn, ...queryOptions} as UseQueryOptions<Awaited<ReturnType<typeof listExpenses>>, TError, TData> & { queryKey: DataTag<QueryKey, TData, TError> }
+}
+
+export type ListExpensesQueryResult = NonNullable<Awaited<ReturnType<typeof listExpenses>>>
+export type ListExpensesQueryError = unknown
+
+
+export function useListExpenses<TData = Awaited<ReturnType<typeof listExpenses>>, TError = unknown>(
+ params: ListExpensesParams, options: { query:Partial<UseQueryOptions<Awaited<ReturnType<typeof listExpenses>>, TError, TData>> & Pick<
+        DefinedInitialDataOptions<
+          Awaited<ReturnType<typeof listExpenses>>,
+          TError,
+          Awaited<ReturnType<typeof listExpenses>>
+        > , 'initialData'
+      >, request?: SecondParameter<typeof http>}
+ , queryClient?: QueryClient
+  ):  DefinedUseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> }
+export function useListExpenses<TData = Awaited<ReturnType<typeof listExpenses>>, TError = unknown>(
+ params: ListExpensesParams, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof listExpenses>>, TError, TData>> & Pick<
+        UndefinedInitialDataOptions<
+          Awaited<ReturnType<typeof listExpenses>>,
+          TError,
+          Awaited<ReturnType<typeof listExpenses>>
+        > , 'initialData'
+      >, request?: SecondParameter<typeof http>}
+ , queryClient?: QueryClient
+  ):  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> }
+export function useListExpenses<TData = Awaited<ReturnType<typeof listExpenses>>, TError = unknown>(
+ params: ListExpensesParams, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof listExpenses>>, TError, TData>>, request?: SecondParameter<typeof http>}
+ , queryClient?: QueryClient
+  ):  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> }
+
+export function useListExpenses<TData = Awaited<ReturnType<typeof listExpenses>>, TError = unknown>(
+ params: ListExpensesParams, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof listExpenses>>, TError, TData>>, request?: SecondParameter<typeof http>}
+ , queryClient?: QueryClient 
+ ):  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> } {
+
+  const queryOptions = getListExpensesQueryOptions(params,options)
+
+  const query = useQuery(queryOptions , queryClient) as  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> };
+
+  query.queryKey = queryOptions.queryKey ;
+
+  return query;
+}
+
+
+
+
+/**
+ * Get expense by id
+ */
+export const getGetExpenseUrl = (expenseId: string,) => {
+
+
+  
+
+  return `/expenses/${expenseId}`
+}
+
+export const getExpense = async (expenseId: string, options?: RequestInit): Promise<GetExpense200> => {
+  
+  return http<GetExpense200>(getGetExpenseUrl(expenseId),
+  {      
+    ...options,
+    method: 'GET'
+    
+    
+  }
+);}
+
+
+
+export const getGetExpenseQueryKey = (expenseId: string,) => {
+    return [`/expenses/${expenseId}`] as const;
+    }
+
+    
+export const getGetExpenseQueryOptions = <TData = Awaited<ReturnType<typeof getExpense>>, TError = unknown>(expenseId: string, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof getExpense>>, TError, TData>>, request?: SecondParameter<typeof http>}
+) => {
+
+const {query: queryOptions, request: requestOptions} = options ?? {};
+
+  const queryKey =  queryOptions?.queryKey ?? getGetExpenseQueryKey(expenseId);
+
+  
+
+    const queryFn: QueryFunction<Awaited<ReturnType<typeof getExpense>>> = ({ signal }) => getExpense(expenseId, { signal, ...requestOptions });
+
+      
+
+      
+
+   return  { queryKey, queryFn, enabled: !!(expenseId), ...queryOptions} as UseQueryOptions<Awaited<ReturnType<typeof getExpense>>, TError, TData> & { queryKey: DataTag<QueryKey, TData, TError> }
+}
+
+export type GetExpenseQueryResult = NonNullable<Awaited<ReturnType<typeof getExpense>>>
+export type GetExpenseQueryError = unknown
+
+
+export function useGetExpense<TData = Awaited<ReturnType<typeof getExpense>>, TError = unknown>(
+ expenseId: string, options: { query:Partial<UseQueryOptions<Awaited<ReturnType<typeof getExpense>>, TError, TData>> & Pick<
+        DefinedInitialDataOptions<
+          Awaited<ReturnType<typeof getExpense>>,
+          TError,
+          Awaited<ReturnType<typeof getExpense>>
+        > , 'initialData'
+      >, request?: SecondParameter<typeof http>}
+ , queryClient?: QueryClient
+  ):  DefinedUseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> }
+export function useGetExpense<TData = Awaited<ReturnType<typeof getExpense>>, TError = unknown>(
+ expenseId: string, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof getExpense>>, TError, TData>> & Pick<
+        UndefinedInitialDataOptions<
+          Awaited<ReturnType<typeof getExpense>>,
+          TError,
+          Awaited<ReturnType<typeof getExpense>>
+        > , 'initialData'
+      >, request?: SecondParameter<typeof http>}
+ , queryClient?: QueryClient
+  ):  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> }
+export function useGetExpense<TData = Awaited<ReturnType<typeof getExpense>>, TError = unknown>(
+ expenseId: string, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof getExpense>>, TError, TData>>, request?: SecondParameter<typeof http>}
+ , queryClient?: QueryClient
+  ):  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> }
+
+export function useGetExpense<TData = Awaited<ReturnType<typeof getExpense>>, TError = unknown>(
+ expenseId: string, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof getExpense>>, TError, TData>>, request?: SecondParameter<typeof http>}
+ , queryClient?: QueryClient 
+ ):  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> } {
+
+  const queryOptions = getGetExpenseQueryOptions(expenseId,options)
+
+  const query = useQuery(queryOptions , queryClient) as  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> };
+
+  query.queryKey = queryOptions.queryKey ;
+
+  return query;
+}
+
+
+
+
+/**
+ * Create a new organization
+ */
+export const getCreateOrganizationUrl = () => {
+
+
+  
+
+  return `/organizations`
+}
+
+export const createOrganization = async (createOrganizationBody: CreateOrganizationBody, options?: RequestInit): Promise<CreateOrganization201> => {
+  
+  return http<CreateOrganization201>(getCreateOrganizationUrl(),
+  {      
+    ...options,
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json', ...options?.headers },
+    body: JSON.stringify(
+      createOrganizationBody,)
+  }
+);}
+
+
+
+
+export const getCreateOrganizationMutationOptions = <TError = unknown,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof createOrganization>>, TError,{data: CreateOrganizationBody}, TContext>, request?: SecondParameter<typeof http>}
+): UseMutationOptions<Awaited<ReturnType<typeof createOrganization>>, TError,{data: CreateOrganizationBody}, TContext> => {
+
+const mutationKey = ['createOrganization'];
+const {mutation: mutationOptions, request: requestOptions} = options ?
+      options.mutation && 'mutationKey' in options.mutation && options.mutation.mutationKey ?
+      options
+      : {...options, mutation: {...options.mutation, mutationKey}}
+      : {mutation: { mutationKey, }, request: undefined};
+
+      
+
+
+      const mutationFn: MutationFunction<Awaited<ReturnType<typeof createOrganization>>, {data: CreateOrganizationBody}> = (props) => {
+          const {data} = props ?? {};
+
+          return  createOrganization(data,requestOptions)
+        }
+
+        
+
+
+  return  { mutationFn, ...mutationOptions }}
+
+    export type CreateOrganizationMutationResult = NonNullable<Awaited<ReturnType<typeof createOrganization>>>
+    export type CreateOrganizationMutationBody = CreateOrganizationBody
+    export type CreateOrganizationMutationError = unknown
+
+    export const useCreateOrganization = <TError = unknown,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof createOrganization>>, TError,{data: CreateOrganizationBody}, TContext>, request?: SecondParameter<typeof http>}
+ , queryClient?: QueryClient): UseMutationResult<
+        Awaited<ReturnType<typeof createOrganization>>,
+        TError,
+        {data: CreateOrganizationBody},
+        TContext
+      > => {
+
+      const mutationOptions = getCreateOrganizationMutationOptions(options);
+
+      return useMutation(mutationOptions , queryClient);
+    }
+    
+/**
+ * List organizations for authenticated user
+ */
+export const getListOrganizationsUrl = () => {
+
+
+  
+
+  return `/organizations`
+}
+
+export const listOrganizations = async ( options?: RequestInit): Promise<ListOrganizations200> => {
+  
+  return http<ListOrganizations200>(getListOrganizationsUrl(),
+  {      
+    ...options,
+    method: 'GET'
+    
+    
+  }
+);}
+
+
+
+export const getListOrganizationsQueryKey = () => {
+    return [`/organizations`] as const;
+    }
+
+    
+export const getListOrganizationsQueryOptions = <TData = Awaited<ReturnType<typeof listOrganizations>>, TError = unknown>( options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof listOrganizations>>, TError, TData>>, request?: SecondParameter<typeof http>}
+) => {
+
+const {query: queryOptions, request: requestOptions} = options ?? {};
+
+  const queryKey =  queryOptions?.queryKey ?? getListOrganizationsQueryKey();
+
+  
+
+    const queryFn: QueryFunction<Awaited<ReturnType<typeof listOrganizations>>> = ({ signal }) => listOrganizations({ signal, ...requestOptions });
+
+      
+
+      
+
+   return  { queryKey, queryFn, ...queryOptions} as UseQueryOptions<Awaited<ReturnType<typeof listOrganizations>>, TError, TData> & { queryKey: DataTag<QueryKey, TData, TError> }
+}
+
+export type ListOrganizationsQueryResult = NonNullable<Awaited<ReturnType<typeof listOrganizations>>>
+export type ListOrganizationsQueryError = unknown
+
+
+export function useListOrganizations<TData = Awaited<ReturnType<typeof listOrganizations>>, TError = unknown>(
+  options: { query:Partial<UseQueryOptions<Awaited<ReturnType<typeof listOrganizations>>, TError, TData>> & Pick<
+        DefinedInitialDataOptions<
+          Awaited<ReturnType<typeof listOrganizations>>,
+          TError,
+          Awaited<ReturnType<typeof listOrganizations>>
+        > , 'initialData'
+      >, request?: SecondParameter<typeof http>}
+ , queryClient?: QueryClient
+  ):  DefinedUseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> }
+export function useListOrganizations<TData = Awaited<ReturnType<typeof listOrganizations>>, TError = unknown>(
+  options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof listOrganizations>>, TError, TData>> & Pick<
+        UndefinedInitialDataOptions<
+          Awaited<ReturnType<typeof listOrganizations>>,
+          TError,
+          Awaited<ReturnType<typeof listOrganizations>>
+        > , 'initialData'
+      >, request?: SecondParameter<typeof http>}
+ , queryClient?: QueryClient
+  ):  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> }
+export function useListOrganizations<TData = Awaited<ReturnType<typeof listOrganizations>>, TError = unknown>(
+  options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof listOrganizations>>, TError, TData>>, request?: SecondParameter<typeof http>}
+ , queryClient?: QueryClient
+  ):  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> }
+
+export function useListOrganizations<TData = Awaited<ReturnType<typeof listOrganizations>>, TError = unknown>(
+  options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof listOrganizations>>, TError, TData>>, request?: SecondParameter<typeof http>}
+ , queryClient?: QueryClient 
+ ):  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> } {
+
+  const queryOptions = getListOrganizationsQueryOptions(options)
+
+  const query = useQuery(queryOptions , queryClient) as  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> };
+
+  query.queryKey = queryOptions.queryKey ;
+
+  return query;
+}
+
+
+
+
+/**
  * Authenticate with email
  */
 export const getCreateNewUserUrl = () => {
@@ -490,6 +989,106 @@ const {mutation: mutationOptions, request: requestOptions} = options ?
       return useMutation(mutationOptions , queryClient);
     }
     
+/**
+ * List all users in an organization
+ */
+export const getListUsersUrl = (params: ListUsersParams,) => {
+  const normalizedParams = new URLSearchParams();
+
+  Object.entries(params || {}).forEach(([key, value]) => {
+    
+    if (value !== undefined) {
+      normalizedParams.append(key, value === null ? 'null' : value.toString())
+    }
+  });
+
+  const stringifiedParams = normalizedParams.toString();
+
+  return stringifiedParams.length > 0 ? `/users?${stringifiedParams}` : `/users`
+}
+
+export const listUsers = async (params: ListUsersParams, options?: RequestInit): Promise<ListUsers200> => {
+  
+  return http<ListUsers200>(getListUsersUrl(params),
+  {      
+    ...options,
+    method: 'GET'
+    
+    
+  }
+);}
+
+
+
+export const getListUsersQueryKey = (params: ListUsersParams,) => {
+    return [`/users`, ...(params ? [params]: [])] as const;
+    }
+
+    
+export const getListUsersQueryOptions = <TData = Awaited<ReturnType<typeof listUsers>>, TError = unknown>(params: ListUsersParams, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof listUsers>>, TError, TData>>, request?: SecondParameter<typeof http>}
+) => {
+
+const {query: queryOptions, request: requestOptions} = options ?? {};
+
+  const queryKey =  queryOptions?.queryKey ?? getListUsersQueryKey(params);
+
+  
+
+    const queryFn: QueryFunction<Awaited<ReturnType<typeof listUsers>>> = ({ signal }) => listUsers(params, { signal, ...requestOptions });
+
+      
+
+      
+
+   return  { queryKey, queryFn, ...queryOptions} as UseQueryOptions<Awaited<ReturnType<typeof listUsers>>, TError, TData> & { queryKey: DataTag<QueryKey, TData, TError> }
+}
+
+export type ListUsersQueryResult = NonNullable<Awaited<ReturnType<typeof listUsers>>>
+export type ListUsersQueryError = unknown
+
+
+export function useListUsers<TData = Awaited<ReturnType<typeof listUsers>>, TError = unknown>(
+ params: ListUsersParams, options: { query:Partial<UseQueryOptions<Awaited<ReturnType<typeof listUsers>>, TError, TData>> & Pick<
+        DefinedInitialDataOptions<
+          Awaited<ReturnType<typeof listUsers>>,
+          TError,
+          Awaited<ReturnType<typeof listUsers>>
+        > , 'initialData'
+      >, request?: SecondParameter<typeof http>}
+ , queryClient?: QueryClient
+  ):  DefinedUseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> }
+export function useListUsers<TData = Awaited<ReturnType<typeof listUsers>>, TError = unknown>(
+ params: ListUsersParams, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof listUsers>>, TError, TData>> & Pick<
+        UndefinedInitialDataOptions<
+          Awaited<ReturnType<typeof listUsers>>,
+          TError,
+          Awaited<ReturnType<typeof listUsers>>
+        > , 'initialData'
+      >, request?: SecondParameter<typeof http>}
+ , queryClient?: QueryClient
+  ):  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> }
+export function useListUsers<TData = Awaited<ReturnType<typeof listUsers>>, TError = unknown>(
+ params: ListUsersParams, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof listUsers>>, TError, TData>>, request?: SecondParameter<typeof http>}
+ , queryClient?: QueryClient
+  ):  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> }
+
+export function useListUsers<TData = Awaited<ReturnType<typeof listUsers>>, TError = unknown>(
+ params: ListUsersParams, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof listUsers>>, TError, TData>>, request?: SecondParameter<typeof http>}
+ , queryClient?: QueryClient 
+ ):  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> } {
+
+  const queryOptions = getListUsersQueryOptions(params,options)
+
+  const query = useQuery(queryOptions , queryClient) as  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> };
+
+  query.queryKey = queryOptions.queryKey ;
+
+  return query;
+}
+
+
+
+
 /**
  * Validate Token
  */
