@@ -147,6 +147,15 @@ export type ListUsers200 = {
   users: ListUsers200UsersItem[];
 };
 
+export type CreateInviteBody = {
+  /** @pattern ^(?!\.)(?!.*\.\.)([A-Za-z0-9_'+\-\.]*)[A-Za-z0-9_+-]@([A-Za-z0-9][A-Za-z0-9\-]*\.)+[A-Za-z]{2,}$ */
+  email: string;
+};
+
+export type CreateInvite201 = {
+  token: string;
+};
+
 export type ValidateTokenBody = {
   token: string;
 };
@@ -1068,6 +1077,146 @@ export function useListUsers<TData = Awaited<ReturnType<typeof listUsers>>, TErr
 
 
 
+/**
+ * Create invite to organization
+ */
+export const getCreateInviteUrl = (slug: string,) => {
+
+
+  
+
+  return `/org/${slug}/invites`
+}
+
+export const createInvite = async (slug: string,
+    createInviteBody: CreateInviteBody, options?: RequestInit): Promise<CreateInvite201> => {
+  
+  return http<CreateInvite201>(getCreateInviteUrl(slug),
+  {      
+    ...options,
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json', ...options?.headers },
+    body: JSON.stringify(
+      createInviteBody,)
+  }
+);}
+
+
+
+
+export const getCreateInviteMutationOptions = <TError = unknown,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof createInvite>>, TError,{slug: string;data: CreateInviteBody}, TContext>, request?: SecondParameter<typeof http>}
+): UseMutationOptions<Awaited<ReturnType<typeof createInvite>>, TError,{slug: string;data: CreateInviteBody}, TContext> => {
+
+const mutationKey = ['createInvite'];
+const {mutation: mutationOptions, request: requestOptions} = options ?
+      options.mutation && 'mutationKey' in options.mutation && options.mutation.mutationKey ?
+      options
+      : {...options, mutation: {...options.mutation, mutationKey}}
+      : {mutation: { mutationKey, }, request: undefined};
+
+      
+
+
+      const mutationFn: MutationFunction<Awaited<ReturnType<typeof createInvite>>, {slug: string;data: CreateInviteBody}> = (props) => {
+          const {slug,data} = props ?? {};
+
+          return  createInvite(slug,data,requestOptions)
+        }
+
+        
+
+
+  return  { mutationFn, ...mutationOptions }}
+
+    export type CreateInviteMutationResult = NonNullable<Awaited<ReturnType<typeof createInvite>>>
+    export type CreateInviteMutationBody = CreateInviteBody
+    export type CreateInviteMutationError = unknown
+
+    export const useCreateInvite = <TError = unknown,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof createInvite>>, TError,{slug: string;data: CreateInviteBody}, TContext>, request?: SecondParameter<typeof http>}
+ , queryClient?: QueryClient): UseMutationResult<
+        Awaited<ReturnType<typeof createInvite>>,
+        TError,
+        {slug: string;data: CreateInviteBody},
+        TContext
+      > => {
+
+      const mutationOptions = getCreateInviteMutationOptions(options);
+
+      return useMutation(mutationOptions , queryClient);
+    }
+    
+/**
+ * Accept organization invite
+ */
+export const getAcceptInviteUrl = (slug: string,
+    token: string,) => {
+
+
+  
+
+  return `/org/${slug}/invites/${token}/accept`
+}
+
+export const acceptInvite = async (slug: string,
+    token: string, options?: RequestInit): Promise<void> => {
+  
+  return http<void>(getAcceptInviteUrl(slug,token),
+  {      
+    ...options,
+    method: 'POST'
+    
+    
+  }
+);}
+
+
+
+
+export const getAcceptInviteMutationOptions = <TError = unknown,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof acceptInvite>>, TError,{slug: string;token: string}, TContext>, request?: SecondParameter<typeof http>}
+): UseMutationOptions<Awaited<ReturnType<typeof acceptInvite>>, TError,{slug: string;token: string}, TContext> => {
+
+const mutationKey = ['acceptInvite'];
+const {mutation: mutationOptions, request: requestOptions} = options ?
+      options.mutation && 'mutationKey' in options.mutation && options.mutation.mutationKey ?
+      options
+      : {...options, mutation: {...options.mutation, mutationKey}}
+      : {mutation: { mutationKey, }, request: undefined};
+
+      
+
+
+      const mutationFn: MutationFunction<Awaited<ReturnType<typeof acceptInvite>>, {slug: string;token: string}> = (props) => {
+          const {slug,token} = props ?? {};
+
+          return  acceptInvite(slug,token,requestOptions)
+        }
+
+        
+
+
+  return  { mutationFn, ...mutationOptions }}
+
+    export type AcceptInviteMutationResult = NonNullable<Awaited<ReturnType<typeof acceptInvite>>>
+    
+    export type AcceptInviteMutationError = unknown
+
+    export const useAcceptInvite = <TError = unknown,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof acceptInvite>>, TError,{slug: string;token: string}, TContext>, request?: SecondParameter<typeof http>}
+ , queryClient?: QueryClient): UseMutationResult<
+        Awaited<ReturnType<typeof acceptInvite>>,
+        TError,
+        {slug: string;token: string},
+        TContext
+      > => {
+
+      const mutationOptions = getAcceptInviteMutationOptions(options);
+
+      return useMutation(mutationOptions , queryClient);
+    }
+    
 /**
  * Validate Token
  */

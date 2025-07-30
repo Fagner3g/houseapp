@@ -1,5 +1,5 @@
 import { createId } from '@paralleldrive/cuid2'
-import { integer, pgTable, text, timestamp } from 'drizzle-orm/pg-core'
+import { integer, pgTable, text, timestamp, unique } from 'drizzle-orm/pg-core'
 
 export const organizations = pgTable('organizations', {
   id: text('id')
@@ -26,15 +26,19 @@ export const users = pgTable('users', {
   createdAt: timestamp('created_at', { withTimezone: true }).notNull().defaultNow(),
 })
 
-export const userOrganizations = pgTable('user_organizations', {
-  userId: text('user_id')
-    .notNull()
-    .references(() => users.id),
-  organizationId: text('organization_id')
-    .notNull()
-    .references(() => organizations.id),
-  createdAt: timestamp('created_at', { withTimezone: true }).notNull().defaultNow(),
-})
+export const userOrganizations = pgTable(
+  'user_organizations',
+  {
+    userId: text('user_id')
+      .notNull()
+      .references(() => users.id),
+    organizationId: text('organization_id')
+      .notNull()
+      .references(() => organizations.id),
+    createdAt: timestamp('created_at', { withTimezone: true }).notNull().defaultNow(),
+  },
+  table => [unique().on(table.userId, table.organizationId)]
+)
 
 export const goals = pgTable('goals', {
   id: text('id')
