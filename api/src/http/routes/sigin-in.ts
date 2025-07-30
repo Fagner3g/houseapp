@@ -28,7 +28,11 @@ export const signInRoute: FastifyPluginAsyncZod = async app => {
         return reply.status(400).send(null)
       }
 
-      await SignIn({ email })
+      try {
+        await SignIn({ email })
+      } catch {
+        return reply.status(200).send(null)
+      }
 
       return reply.status(200).send(null)
     }
