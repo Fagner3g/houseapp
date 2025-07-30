@@ -1,13 +1,20 @@
 import { createFileRoute } from '@tanstack/react-router'
 import { useState } from 'react'
+import { toast } from 'sonner'
+
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
-import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table'
+import {
+  Table,
+  TableBody,
+  TableCell,
+  TableHead,
+  TableHeader,
+  TableRow,
+} from '@/components/ui/table'
 import { useActiveOrganization } from '@/hooks/use-active-organization'
-import { useListUsers } from '@/http/generated/api'
-import { getAuthToken } from '@/lib/auth'
-import { toast } from 'sonner'
+import { useCreateInvite, useListUsers } from '@/http/generated/api'
 
 export const Route = createFileRoute('/_app/$org/(user)/users')({
   component: Users,
@@ -17,18 +24,13 @@ function Users() {
   const { orgSlug } = useActiveOrganization()
   const { data } = useListUsers(orgSlug)
   const [email, setEmail] = useState('')
+  const { mutateAsync: createInvite } = useCreateInvite()
 
   async function handleInvite(e: React.FormEvent) {
     e.preventDefault()
-    const res = await fetch(`/api/org/${orgSlug}/invites`, {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-        Authorization: `Bearer ${getAuthToken()}`,
-      },
-      body: JSON.stringify({ email }),
-    })
-    if (res.ok) {
+
+    const res = await createInvite({ data: { email }, slug: orgSlug })
+    if (res) {
       toast.success('Convite enviado!')
       setEmail('')
     } else {
