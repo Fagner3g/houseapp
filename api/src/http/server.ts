@@ -26,6 +26,8 @@ import { createOrganizationRoute } from './routes/organization/create-organizati
 import { listOrganizationsRoute } from './routes/organization/list-organizations'
 import { createNewUserRoute } from './routes/user/create-new-user'
 import { listUsersRoute } from './routes/user/list-users'
+import { createInviteRoute } from './routes/invite/create-invite'
+import { acceptInviteRoute } from './routes/invite/accept-invite'
 
 const app = fastify().withTypeProvider<ZodTypeProvider>()
 
@@ -65,6 +67,8 @@ app.register(createOrganizationRoute)
 app.register(createNewUserRoute)
 app.register(listUsersRoute)
 app.register(listOrganizationsRoute)
+app.register(createInviteRoute)
+app.register(acceptInviteRoute)
 app.register(validateTokenRoute)
 app.register(signInRoute)
 

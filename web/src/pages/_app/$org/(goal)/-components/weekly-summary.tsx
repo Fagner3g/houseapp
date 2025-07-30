@@ -1,5 +1,5 @@
 import dayjs from 'dayjs'
-import ptBR from 'dayjs/locale/pt-BR'
+import ptBR from 'dayjs/locale/pt-br'
 import { CheckCircle2, Plus } from 'lucide-react'
 
 import { Button } from '@/components/ui/button'
