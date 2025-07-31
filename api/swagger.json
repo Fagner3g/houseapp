@@ -496,6 +496,9 @@
                     "type": "string",
                     "format": "email",
                     "pattern": "^(?!\\.)(?!.*\\.\\.)([A-Za-z0-9_'+\\-\\.]*)[A-Za-z0-9_+-]@([A-Za-z0-9][A-Za-z0-9\\-]*\\.)+[A-Za-z]{2,}$"
+                  },
+                  "inviteToken": {
+                    "type": "string"
                   }
                 },
                 "required": [
@@ -510,7 +513,7 @@
           "required": true
         },
         "responses": {
-          "200": {
+          "201": {
             "description": "Default Response"
           }
         }
@@ -761,6 +764,9 @@
                   "properties": {
                     "valid": {
                       "type": "boolean"
+                    },
+                    "slug": {
+                      "type": "string"
                     }
                   },
                   "required": [

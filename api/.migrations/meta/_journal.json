@@ -5,64 +5,8 @@
     {
       "idx": 0,
       "version": "7",
-      "when": 1753744017548,
-      "tag": "0000_black_ink",
-      "breakpoints": true
-    },
-    {
-      "idx": 1,
-      "version": "7",
-      "when": 1753746041021,
-      "tag": "0001_amazing_rhino",
-      "breakpoints": true
-    },
-    {
-      "idx": 2,
-      "version": "7",
-      "when": 1753746242602,
-      "tag": "0002_boring_dracula",
-      "breakpoints": true
-    },
-    {
-      "idx": 3,
-      "version": "7",
-      "when": 1753801135865,
-      "tag": "0003_confused_salo",
-      "breakpoints": true
-    },
-    {
-      "idx": 4,
-      "version": "7",
-      "when": 1753801962688,
-      "tag": "0004_harsh_mongu",
-      "breakpoints": true
-    },
-    {
-      "idx": 5,
-      "version": "7",
-      "when": 1753907961522,
-      "tag": "0005_harsh_mephistopheles",
-      "breakpoints": true
-    },
-    {
-      "idx": 6,
-      "version": "7",
-      "when": 1753908170031,
-      "tag": "0006_new_lady_ursula",
-      "breakpoints": true
-    },
-    {
-      "idx": 7,
-      "version": "7",
-      "when": 1753912518394,
-      "tag": "0007_classy_blob",
-      "breakpoints": true
-    },
-    {
-      "idx": 8,
-      "version": "7",
-      "when": 1753913228458,
-      "tag": "0008_dry_marvel_zombies",
+      "when": 1753960607967,
+      "tag": "0000_optimal_sunspot",
       "breakpoints": true
     }
   ]
