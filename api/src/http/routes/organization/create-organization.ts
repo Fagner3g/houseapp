@@ -1,35 +1,30 @@
-import type { FastifyPluginAsyncZod } from 'fastify-type-provider-zod'
+import type { FastifyPluginAsyncZod, ZodTypeProvider } from 'fastify-type-provider-zod'
 import z from 'zod'
 
+import { createOrganizationController } from '@/http/controllers/organization/create-organization'
 import { authenticateUserHook } from '@/http/hooks/authenticate-user'
-import { createOrganization } from '@/use-cases/organization/create-organization'
+
+export const bodySchema = z.object({ name: z.string() })
+
+export const createOrganizationSchema = {
+  tags: ['Organization'],
+  description: 'Create a new organization',
+  operationId: 'createOrganization',
+  body: bodySchema,
+  response: {
+    201: z.object({
+      organizationSlug: z.string(),
+    }),
+  },
+} as const
 
 export const createOrganizationRoute: FastifyPluginAsyncZod = async app => {
-  app.post(
+  app.withTypeProvider<ZodTypeProvider>().post(
     '/organizations',
     {
       onRequest: [authenticateUserHook],
-      schema: {
-        tags: ['Organization'],
-        description: 'Create a new organization',
-        operationId: 'createOrganization',
-        body: z.object({
-          name: z.string(),
-        }),
-        response: {
-          201: z.object({
-            organizationSlug: z.string(),
-          }),
-        },
-      },
+      schema: createOrganizationSchema,
     },
-    async (request, reply) => {
-      const { name } = request.body
-      const userId = request.user.sub
-
-      const { organization } = await createOrganization({ name, userId })
-
-      return reply.status(201).send({ organizationSlug: organization.slug })
-    }
+    createOrganizationController
   )
 }

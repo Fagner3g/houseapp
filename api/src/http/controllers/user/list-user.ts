@@ -1,8 +1,8 @@
 import { and, eq } from 'drizzle-orm'
 import type { FastifyReply } from 'fastify'
 
-import { db } from '@/db'
-import { organizations, userOrganizations } from '@/db/schemas/invites'
+import { db } from '@/database'
+import { organizations, userOrganizations } from '@/database/schema'
 import type { ListUsersRequest } from '@/http/schemas/user/list-users'
 import { getUser } from '@/use-cases/user/get-user'
 import { listUsers } from '@/use-cases/user/list-users'
