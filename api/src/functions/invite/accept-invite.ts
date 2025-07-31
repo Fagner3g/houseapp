@@ -13,6 +13,10 @@ export async function acceptInvite({ token, userId }: AcceptInviteRequest) {
     throw new Error('Invite not found')
   }
 
+  if (invite.acceptedAt) {
+    throw new Error('Invite already accepted')
+  }
+
   await db.insert(userOrganizations).values({
     userId,
     organizationId: invite.organizationId,

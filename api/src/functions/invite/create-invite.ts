@@ -1,7 +1,9 @@
 import { createId } from '@paralleldrive/cuid2'
 import { db } from '@/db'
 import { invites } from '@/db/schema'
+import { env } from '@/env'
 import { getOrganizationBySlug } from '../organization/get-organization-by-slug'
+import { sendInviteMail } from '../send-invite-mail'
 
 interface CreateInviteRequest {
   email: string
@@ -24,6 +26,11 @@ export async function createInvite({ email, organizationSlug }: CreateInviteRequ
       token,
     })
     .returning()
+
+  const url = new URL(`${env.WEB_URL}/invite`)
+  url.searchParams.set('token', token)
+
+  await sendInviteMail({ email, url: url.toString() })
 
   return { invite }
 }
