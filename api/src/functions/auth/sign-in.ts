@@ -1,8 +1,11 @@
 import { env } from '@/env'
+import { db } from '@/db'
+import { invites, userOrganizations } from '@/db/schema'
 import { AuthenticateUser } from '@/modules/auth'
 import { SendMail } from '../send-mail'
 import { SendWhats } from '../sendWhats'
 import { getUser } from '../user/get-user'
+import { eq, and, isNull } from 'drizzle-orm'
 
 interface SignInRequest {
   email: string
@@ -13,6 +16,22 @@ export async function SignIn({ email }: SignInRequest) {
 
   if (!user) {
     throw new Error('Usuário não encontrado')
+  }
+
+  const pendingInvites = await db
+    .select()
+    .from(invites)
+    .where(and(eq(invites.email, email), isNull(invites.acceptedAt)))
+
+  for (const invite of pendingInvites) {
+    await db
+      .insert(userOrganizations)
+      .values({ userId: user.id, organizationId: invite.organizationId })
+      .onConflictDoNothing()
+    await db
+      .update(invites)
+      .set({ acceptedAt: new Date() })
+      .where(eq(invites.id, invite.id))
   }
 
   const token = await AuthenticateUser(user.id)

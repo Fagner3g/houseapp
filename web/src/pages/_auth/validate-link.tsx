@@ -29,10 +29,16 @@ function RouteComponent() {
         .then(({ valid }) => {
           if (valid) {
             setAuthToken(token)
+            const invite = localStorage.getItem('invite-token')
             setTimeout(() => {
               setIsLoading(false)
               setIsError(false)
-              navigate({ to: '/$org/goals', params: { org: 'my-house' } })
+              if (invite) {
+                localStorage.removeItem('invite-token')
+                navigate({ to: '/invite', search: { token: invite } })
+              } else {
+                navigate({ to: '/$org/goals', params: { org: 'my-house' } })
+              }
             }, 4000)
           } else {
             setIsLoading(false)
