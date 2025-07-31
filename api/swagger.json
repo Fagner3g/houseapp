@@ -685,6 +685,47 @@
         }
       }
     },
+    "/invites/{token}": {
+      "get": {
+        "operationId": "getInvite",
+        "tags": [
+          "Invite"
+        ],
+        "description": "Get invite by token",
+        "parameters": [
+          {
+            "schema": {
+              "type": "string"
+            },
+            "in": "path",
+            "name": "token",
+            "required": true
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Default Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "invite": {
+                      "type": "object",
+                      "nullable": true
+                    }
+                  },
+                  "required": [
+                    "invite"
+                  ],
+                  "additionalProperties": false
+                }
+              }
+            }
+          }
+        }
+      }
+    },
     "/validate-token": {
       "post": {
         "operationId": "validateToken",
@@ -737,7 +778,7 @@
       "post": {
         "operationId": "signIn",
         "tags": [
-          "auth"
+          "Auth"
         ],
         "description": "Sigin In",
         "requestBody": {

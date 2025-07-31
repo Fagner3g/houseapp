@@ -8,7 +8,7 @@ export const signInRoute: FastifyPluginAsyncZod = async app => {
     '/sign-in',
     {
       schema: {
-        tags: ['auth'],
+        tags: ['Auth'],
         description: 'Sigin In',
         operationId: 'signIn',
         body: z.object({
@@ -24,7 +24,7 @@ export const signInRoute: FastifyPluginAsyncZod = async app => {
       const { email } = request.body
 
       if (!email) {
-        return reply.status(400).send(null)
+        return reply.status(400).send()
       }
 
       try {

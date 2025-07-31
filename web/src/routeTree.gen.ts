@@ -9,6 +9,7 @@
 // Additionally, you should also exclude this file from your linter and/or formatter to prevent it from being checked or modified.
 
 import { Route as rootRouteImport } from './pages/__root'
+import { Route as InviteRouteImport } from './pages/invite'
 import { Route as AuthLayoutRouteImport } from './pages/_auth/layout'
 import { Route as AppLayoutRouteImport } from './pages/_app/layout'
 import { Route as AuthValidateLinkRouteImport } from './pages/_auth/validate-link'
@@ -19,6 +20,11 @@ import { Route as AppOrggoalGoalsRouteImport } from './pages/_app/$org/(goal)/go
 import { Route as AppOrgexpenseExpensesRouteImport } from './pages/_app/$org/(expense)/expenses'
 import { Route as AppOrgdashboardDashboardRouteImport } from './pages/_app/$org/(dashboard)/dashboard'
 
+const InviteRoute = InviteRouteImport.update({
+  id: '/invite',
+  path: '/invite',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const AuthLayoutRoute = AuthLayoutRouteImport.update({
   id: '/_auth',
   getParentRoute: () => rootRouteImport,
@@ -65,6 +71,7 @@ const AppOrgdashboardDashboardRoute =
   } as any)
 
 export interface FileRoutesByFullPath {
+  '/invite': typeof InviteRoute
   '/sign-in': typeof AuthSignInRoute
   '/sign-up': typeof AuthSignUpRoute
   '/validate-link': typeof AuthValidateLinkRoute
@@ -74,6 +81,7 @@ export interface FileRoutesByFullPath {
   '/$org/users': typeof AppOrguserUsersRoute
 }
 export interface FileRoutesByTo {
+  '/invite': typeof InviteRoute
   '/sign-in': typeof AuthSignInRoute
   '/sign-up': typeof AuthSignUpRoute
   '/validate-link': typeof AuthValidateLinkRoute
@@ -86,6 +94,7 @@ export interface FileRoutesById {
   __root__: typeof rootRouteImport
   '/_app': typeof AppLayoutRouteWithChildren
   '/_auth': typeof AuthLayoutRouteWithChildren
+  '/invite': typeof InviteRoute
   '/_auth/sign-in': typeof AuthSignInRoute
   '/_auth/sign-up': typeof AuthSignUpRoute
   '/_auth/validate-link': typeof AuthValidateLinkRoute
@@ -97,6 +106,7 @@ export interface FileRoutesById {
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
   fullPaths:
+    | '/invite'
     | '/sign-in'
     | '/sign-up'
     | '/validate-link'
@@ -106,6 +116,7 @@ export interface FileRouteTypes {
     | '/$org/users'
   fileRoutesByTo: FileRoutesByTo
   to:
+    | '/invite'
     | '/sign-in'
     | '/sign-up'
     | '/validate-link'
@@ -117,6 +128,7 @@ export interface FileRouteTypes {
     | '__root__'
     | '/_app'
     | '/_auth'
+    | '/invite'
     | '/_auth/sign-in'
     | '/_auth/sign-up'
     | '/_auth/validate-link'
@@ -129,10 +141,18 @@ export interface FileRouteTypes {
 export interface RootRouteChildren {
   AppLayoutRoute: typeof AppLayoutRouteWithChildren
   AuthLayoutRoute: typeof AuthLayoutRouteWithChildren
+  InviteRoute: typeof InviteRoute
 }
 
 declare module '@tanstack/react-router' {
   interface FileRoutesByPath {
+    '/invite': {
+      id: '/invite'
+      path: '/invite'
+      fullPath: '/invite'
+      preLoaderRoute: typeof InviteRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/_auth': {
       id: '/_auth'
       path: ''
@@ -236,6 +256,7 @@ const AuthLayoutRouteWithChildren = AuthLayoutRoute._addFileChildren(
 const rootRouteChildren: RootRouteChildren = {
   AppLayoutRoute: AppLayoutRouteWithChildren,
   AuthLayoutRoute: AuthLayoutRouteWithChildren,
+  InviteRoute: InviteRoute,
 }
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)

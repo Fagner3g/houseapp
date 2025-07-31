@@ -29,8 +29,7 @@ function Index() {
       setStatus(Status.Pending)
       await signIn({ data: { email } })
       setStatus(Status.Success)
-    } catch (e) {
-      console.error(e)
+    } catch {
       setStatus(Status.Error)
     }
   }

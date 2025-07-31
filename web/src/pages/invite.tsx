@@ -1,16 +1,16 @@
-import { createFileRoute, useSearch, useNavigate } from '@tanstack/react-router'
+import { createFileRoute, useNavigate, useSearch } from '@tanstack/react-router'
 import { useEffect, useState } from 'react'
-import z from 'zod'
 import { toast } from 'sonner'
+import z from 'zod'
 
 import { Button } from '@/components/ui/button'
-import { getInvite } from '@/http/invite'
 import { useAcceptInvite } from '@/http/generated/api'
+import { getInvite } from '@/http/invite'
 import { getAuthToken } from '@/lib/auth'
 
 export const Route = createFileRoute('/invite')({
   component: InvitePage,
-  validateSearch: z => z.object({ token: z.string() }),
+  validateSearch: z.object({ token: z.string() }),
 })
 
 function InvitePage() {
@@ -56,7 +56,9 @@ function InvitePage() {
   if (!authToken) {
     return (
       <div className="p-4 flex flex-col items-center gap-4">
-        <p>Convite para {slug || 'organização'} enviado para {email}</p>
+        <p>
+          Convite para {slug || 'organização'} enviado para {email}
+        </p>
         <Button onClick={() => navigate({ to: '/sign-in' })}>Fazer login</Button>
       </div>
     )
