@@ -2,13 +2,23 @@ import dayjs from 'dayjs'
 import slugify from 'slugify'
 
 import { client, db } from '.'
-import { goalCompletions, goals, organizations, userOrganizations, users } from './schema'
+import {
+  goalCompletions,
+  goals,
+  organizations,
+  userOrganizations,
+  users,
+  expenses,
+  invites,
+} from './schema'
 
 async function seed() {
-  await db.delete(goals)
   await db.delete(goalCompletions)
-  await db.delete(users)
+  await db.delete(goals)
+  await db.delete(expenses)
+  await db.delete(invites)
   await db.delete(userOrganizations)
+  await db.delete(users)
   await db.delete(organizations)
 
   const [org, otherOrg] = await db
@@ -53,6 +63,27 @@ async function seed() {
     { userId: user.id, organizationId: org.id },
     { userId: otherUser.id, organizationId: org.id },
     { userId: thirdUser.id, organizationId: otherOrg.id },
+  ])
+
+  await db.insert(expenses).values([
+    {
+      title: 'Aluguel',
+      ownerId: user.id,
+      payToId: otherUser.id,
+      organizationId: org.id,
+      amount: 1000,
+      dueDate: dayjs().add(5, 'day').toDate(),
+      description: 'Mensalidade do apartamento',
+    },
+    {
+      title: 'Internet',
+      ownerId: otherUser.id,
+      payToId: thirdUser.id,
+      organizationId: otherOrg.id,
+      amount: 200,
+      dueDate: dayjs().add(3, 'day').toDate(),
+      description: 'Plano mensal',
+    },
   ])
 
   const result = await db

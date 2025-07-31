@@ -1,15 +1,16 @@
 import type { FastifyPluginAsyncZod } from 'fastify-type-provider-zod'
 import z from 'zod'
 
-import { authenticateUserHook } from '@/http/hooks/authenticate-user'
 import { VerifyToken } from '@/modules/auth'
+import { db } from '@/db'
+import { organizations, users } from '@/db/schema'
+import { eq } from 'drizzle-orm'
 
 export const validateTokenRoute: FastifyPluginAsyncZod = async app => {
   app.post(
     '/validate-token',
     {
       schema: {
-        onRequest: [authenticateUserHook],
         tags: ['auth'],
         description: 'Validate Token',
         operationId: 'validateToken',
@@ -19,6 +20,7 @@ export const validateTokenRoute: FastifyPluginAsyncZod = async app => {
         response: {
           200: z.object({
             valid: z.boolean(),
+            slug: z.string().optional(),
           }),
         },
       },
@@ -39,11 +41,30 @@ export const validateTokenRoute: FastifyPluginAsyncZod = async app => {
             valid: false,
           })
         }
+
+        const [user] = await db
+          .select({
+            id: users.id,
+            defaultOrganizationId: users.defaultOrganizationId,
+          })
+          .from(users)
+          .where(eq(users.id, String(payload.sub)))
+          .limit(1)
+
+        if (!user) {
+          return reply.status(401).send({ valid: false })
+        }
+
+        const [org] = await db
+          .select({ slug: organizations.slug })
+          .from(organizations)
+          .where(eq(organizations.id, user.defaultOrganizationId))
+          .limit(1)
+
+        return reply.status(200).send({ valid: true, slug: org?.slug })
       } catch {
         return reply.status(401).send({ valid: false })
       }
-
-      return reply.status(200).send({ valid: true })
     }
   )
 }
