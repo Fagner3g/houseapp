@@ -1,11 +1,11 @@
 import { and, eq } from 'drizzle-orm'
 import type { FastifyReply } from 'fastify'
 
-import { db } from '@/database'
-import { organizations, userOrganizations } from '@/database/schema'
+import { db } from '@/db'
+import { organizations, userOrganizations } from '@/db/schema'
+import { getUser } from '@/domain/user/get-user'
+import { listUsers } from '@/domain/user/list-users'
 import type { ListUsersRequest } from '@/http/schemas/user/list-users'
-import { getUser } from '@/use-cases/user/get-user'
-import { listUsers } from '@/use-cases/user/list-users'
 
 export async function listUsersController(req: ListUsersRequest, reply: FastifyReply) {
   const userId = req.user.sub

@@ -2,11 +2,11 @@ import { and, eq } from 'drizzle-orm'
 import type { FastifyPluginAsyncZod } from 'fastify-type-provider-zod'
 import z from 'zod'
 
-import { db } from '@/database'
-import { organizations, userOrganizations } from '@/database/schema'
+import { db } from '@/db'
+import { organizations, userOrganizations } from '@/db/schema'
+import { getUser } from '@/domain/user/get-user'
+import { listUsers } from '@/domain/user/list-users'
 import { authenticateUserHook } from '@/http/hooks/authenticate-user'
-import { getUser } from '@/use-cases/user/get-user'
-import { listUsers } from '@/use-cases/user/list-users'
 
 export const listUsersRoute: FastifyPluginAsyncZod = async app => {
   app.get(

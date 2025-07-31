@@ -1,8 +1,8 @@
 import type { FastifyReply, FastifyRequest } from 'fastify'
 import type { z } from 'zod'
 
+import { createOrganization } from '@/domain/organization/create-organization'
 import type { createOrganizationSchema } from '@/http/schemas/create-organization.schema'
-import { createOrganization } from '@/use-cases/organization/create-organization'
 
 export async function createOrganizationController(request: FastifyRequest, reply: FastifyReply) {
   const { name } = request.body as z.infer<typeof createOrganizationSchema.body>

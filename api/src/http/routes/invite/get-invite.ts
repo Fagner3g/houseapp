@@ -1,7 +1,7 @@
 import type { FastifyPluginAsyncZod } from 'fastify-type-provider-zod'
 import z from 'zod'
 
-import { getInvite } from '@/use-cases/invite/get-invite'
+import { getInvite } from '@/domain/invite/get-invite'
 
 export const getInviteRoute: FastifyPluginAsyncZod = async app => {
   app.get(

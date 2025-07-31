@@ -1,7 +1,7 @@
 import type { FastifyPluginAsyncZod } from 'fastify-type-provider-zod'
 import z from 'zod'
 
-import { SignIn } from '@/use-cases/auth/sign-in'
+import { SignIn } from '@/domain/auth/sign-in'
 
 export const signInRoute: FastifyPluginAsyncZod = async app => {
   app.post(

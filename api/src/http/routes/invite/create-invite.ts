@@ -1,8 +1,8 @@
 import type { FastifyPluginAsyncZod } from 'fastify-type-provider-zod'
 import z from 'zod'
 
+import { createInvite } from '@/domain/invite/create-invite'
 import { authenticateUserHook } from '@/http/hooks/authenticate-user'
-import { createInvite } from '@/use-cases/invite/create-invite'
 
 export const createInviteRoute: FastifyPluginAsyncZod = async app => {
   app.post(
