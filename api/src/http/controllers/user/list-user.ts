@@ -3,9 +3,9 @@ import type { FastifyReply } from 'fastify'
 
 import { db } from '@/db'
 import { organizations, userOrganizations } from '@/db/schemas/invites'
-import { getUser } from '@/functions/user/get-user'
-import { listUsers } from '@/functions/user/list-users'
 import type { ListUsersRequest } from '@/http/schemas/user/list-users'
+import { getUser } from '@/use-cases/user/get-user'
+import { listUsers } from '@/use-cases/user/list-users'
 
 export async function listUsersController(req: ListUsersRequest, reply: FastifyReply) {
   const userId = req.user.sub

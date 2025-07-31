@@ -1,8 +1,8 @@
 import type { FastifyPluginAsyncZod } from 'fastify-type-provider-zod'
 import z from 'zod'
 
-import { getWeekSummary } from '@/functions/goal/get-week-summary'
 import { authenticateUserHook } from '@/http/hooks/authenticate-user'
+import { getWeekSummary } from '@/use-cases/goal/get-week-summary'
 
 export const getWeekSummaryRoute: FastifyPluginAsyncZod = async app => {
   app.get(

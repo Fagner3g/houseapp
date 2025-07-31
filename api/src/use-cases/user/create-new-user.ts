@@ -4,7 +4,7 @@ import slugify from 'slugify'
 import { db } from '@/db'
 import { invites, organizations, userOrganizations, users } from '@/db/schema'
 import { env } from '@/env'
-import { AuthenticateUser } from '@/modules/auth'
+import { AuthenticateUser } from '@/lib/auth'
 import { SendMail } from '../send-mail'
 import { SendWhats } from '../sendWhats'
 

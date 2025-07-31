@@ -1,6 +1,7 @@
 import type { FastifyInstance } from 'fastify'
 import z, { ZodError } from 'zod'
 
+import { env } from '@/env'
 import { BadRequestError } from './routes/_errors/bad-request-error'
 import { UnauthorizedError } from './routes/_errors/unauthorized-error'
 
@@ -26,7 +27,10 @@ export const errorHandler: FastifyErrorHandler = (error, _request, reply) => {
     })
   }
 
-  console.error(error)
+  if (env.NODE_ENV !== 'production') {
+    console.error(error)
+  }
+
   // TODO: send error to some observability platform.
 
   return reply.status(500).send({ message: 'Internal server error' })

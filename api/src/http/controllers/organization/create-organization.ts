@@ -1,6 +1,6 @@
 import type { FastifyReply, FastifyRequest } from 'fastify'
 
-import { createOrganization } from '@/functions/organization/create-organization'
+import { createOrganization } from '@/use-cases/organization/create-organization'
 
 export async function createOrganizationController(request: FastifyRequest, reply: FastifyReply) {
   const { name } = request.body as { name: string }

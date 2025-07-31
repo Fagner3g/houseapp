@@ -1,7 +1,8 @@
 import type { FastifyPluginAsyncZod } from 'fastify-type-provider-zod'
 import z from 'zod'
-import { acceptInvite } from '@/functions/invite/accept-invite'
+
 import { authenticateUserHook } from '@/http/hooks/authenticate-user'
+import { acceptInvite } from '@/use-cases/invite/accept-invite'
 
 export const acceptInviteRoute: FastifyPluginAsyncZod = async app => {
   app.post(
@@ -21,6 +22,6 @@ export const acceptInviteRoute: FastifyPluginAsyncZod = async app => {
       const userId = request.user.sub
       await acceptInvite({ token, userId })
       return reply.status(200).send()
-    },
+    }
   )
 }

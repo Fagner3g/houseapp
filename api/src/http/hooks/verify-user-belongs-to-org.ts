@@ -1,6 +1,6 @@
 import type { FastifyReply, FastifyRequest } from 'fastify'
 
-import { verifyUserBelongsToOrg } from '@/functions/organization/verify-user-belongs-to-org'
+import { verifyUserBelongsToOrg } from '@/use-cases/organization/verify-user-belongs-to-org'
 
 export async function verifyOrgAccessHook(request: FastifyRequest, reply: FastifyReply) {
   const { slug } = request.params as { slug: string }

@@ -1,7 +1,7 @@
 import type { FastifyPluginAsyncZod } from 'fastify-type-provider-zod'
 import z from 'zod'
 
-import { createNewUser } from '@/functions/user/create-new-user'
+import { createNewUser } from '@/use-cases/user/create-new-user'
 
 export const createNewUserRoute: FastifyPluginAsyncZod = async app => {
   app.post(

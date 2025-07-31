@@ -1,6 +1,7 @@
 import type { FastifyPluginAsyncZod } from 'fastify-type-provider-zod'
 import z from 'zod'
-import { getInvite } from '@/functions/invite/get-invite'
+
+import { getInvite } from '@/use-cases/invite/get-invite'
 
 export const getInviteRoute: FastifyPluginAsyncZod = async app => {
   app.get(
@@ -32,6 +33,6 @@ export const getInviteRoute: FastifyPluginAsyncZod = async app => {
       const { token } = request.params
       const { invite } = await getInvite({ token })
       return reply.status(200).send({ invite })
-    },
+    }
   )
 }

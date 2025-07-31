@@ -1,10 +1,10 @@
+import { eq } from 'drizzle-orm'
 import type { FastifyPluginAsyncZod } from 'fastify-type-provider-zod'
 import z from 'zod'
 
-import { VerifyToken } from '@/modules/auth'
 import { db } from '@/db'
 import { organizations, users } from '@/db/schema'
-import { eq } from 'drizzle-orm'
+import { VerifyToken } from '@/lib/auth'
 
 export const validateTokenRoute: FastifyPluginAsyncZod = async app => {
   app.post(

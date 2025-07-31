@@ -1,7 +1,8 @@
 import type { FastifyPluginAsyncZod } from 'fastify-type-provider-zod'
 import z from 'zod'
-import { createInvite } from '@/functions/invite/create-invite'
+
 import { authenticateUserHook } from '@/http/hooks/authenticate-user'
+import { createInvite } from '@/use-cases/invite/create-invite'
 
 export const createInviteRoute: FastifyPluginAsyncZod = async app => {
   app.post(
@@ -22,6 +23,6 @@ export const createInviteRoute: FastifyPluginAsyncZod = async app => {
       const { email } = request.body
       const { invite } = await createInvite({ email, organizationSlug: slug })
       return reply.status(201).send({ token: invite.token })
-    },
+    }
   )
 }

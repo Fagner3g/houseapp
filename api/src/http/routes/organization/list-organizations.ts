@@ -1,8 +1,8 @@
 import type { FastifyPluginAsyncZod } from 'fastify-type-provider-zod'
 import z from 'zod'
 
-import { listOrganizations } from '@/functions/organization/list-organizations'
 import { authenticateUserHook } from '@/http/hooks/authenticate-user'
+import { listOrganizations } from '@/use-cases/organization/list-organizations'
 
 export const listOrganizationsRoute: FastifyPluginAsyncZod = async app => {
   app.get(

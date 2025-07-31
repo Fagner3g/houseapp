@@ -1,12 +1,12 @@
+import { and, eq } from 'drizzle-orm'
 import type { FastifyPluginAsyncZod } from 'fastify-type-provider-zod'
 import z from 'zod'
 
-import { getUser } from '@/functions/user/get-user'
-import { listUsers } from '@/functions/user/list-users'
-import { authenticateUserHook } from '@/http/hooks/authenticate-user'
 import { db } from '@/db'
 import { organizations, userOrganizations } from '@/db/schema'
-import { eq, and } from 'drizzle-orm'
+import { authenticateUserHook } from '@/http/hooks/authenticate-user'
+import { getUser } from '@/use-cases/user/get-user'
+import { listUsers } from '@/use-cases/user/list-users'
 
 export const listUsersRoute: FastifyPluginAsyncZod = async app => {
   app.get(
@@ -61,7 +61,7 @@ export const listUsersRoute: FastifyPluginAsyncZod = async app => {
         .where(
           and(
             eq(userOrganizations.userId, userId),
-            eq(userOrganizations.organizationId, organization.id),
+            eq(userOrganizations.organizationId, organization.id)
           )
         )
         .limit(1)
