@@ -4,6 +4,9 @@ import z from 'zod'
 import { getUser } from '@/functions/user/get-user'
 import { listUsers } from '@/functions/user/list-users'
 import { authenticateUserHook } from '@/http/hooks/authenticate-user'
+import { db } from '@/db'
+import { organizations, userOrganizations } from '@/db/schema'
+import { eq, and } from 'drizzle-orm'
 
 export const listUsersRoute: FastifyPluginAsyncZod = async app => {
   app.get(
@@ -39,6 +42,31 @@ export const listUsersRoute: FastifyPluginAsyncZod = async app => {
       const user = await getUser({ id: userId })
 
       if (!user) {
+        return { users: [] }
+      }
+
+      const [organization] = await db
+        .select({ id: organizations.id })
+        .from(organizations)
+        .where(eq(organizations.slug, slug))
+        .limit(1)
+
+      if (!organization) {
+        return { users: [] }
+      }
+
+      const [membership] = await db
+        .select()
+        .from(userOrganizations)
+        .where(
+          and(
+            eq(userOrganizations.userId, userId),
+            eq(userOrganizations.organizationId, organization.id),
+          )
+        )
+        .limit(1)
+
+      if (!membership) {
         return { users: [] }
       }
 

@@ -26,7 +26,7 @@ function RouteComponent() {
     setIsLoading(true)
     if (token) {
       validateToken({ data: { token } })
-        .then(({ valid }) => {
+        .then(({ valid, slug }) => {
           if (valid) {
             setAuthToken(token)
             const invite = localStorage.getItem('invite-token')
@@ -36,10 +36,10 @@ function RouteComponent() {
               if (invite) {
                 localStorage.removeItem('invite-token')
                 navigate({ to: '/invite', search: { token: invite } })
-              } else {
-                navigate({ to: '/$org/goals', params: { org: 'my-house' } })
+              } else if (slug) {
+                navigate({ to: '/$org/expenses', params: { org: slug } })
               }
-            }, 4000)
+            }, 1000)
           } else {
             setIsLoading(false)
             setIsError(true)

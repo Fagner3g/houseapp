@@ -1,6 +1,8 @@
 import { Separator } from '@/components/ui/separator'
 import { SidebarTrigger } from '@/components/ui/sidebar'
 import { useSidebar } from '@/hooks/use-sidebar'
+import { Bell } from 'lucide-react'
+import { DropdownMenu, DropdownMenuContent, DropdownMenuTrigger } from '@/components/ui/dropdown-menu'
 import { ModeToggle } from '../mode-toggle'
 
 export function Header() {
@@ -13,6 +15,16 @@ export function Header() {
         <Separator orientation="vertical" className="mx-2 data-[orientation=vertical]:h-4" />
         <p>{route?.title}</p>
       </div>
+      <DropdownMenu>
+        <DropdownMenuTrigger asChild>
+          <button className="p-2" aria-label="Notificações">
+            <Bell className="size-5" />
+          </button>
+        </DropdownMenuTrigger>
+        <DropdownMenuContent className="p-2 text-sm">
+          <p>Nenhuma notificação</p>
+        </DropdownMenuContent>
+      </DropdownMenu>
       <ModeToggle />
     </header>
   )

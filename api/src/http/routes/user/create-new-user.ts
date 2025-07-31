@@ -23,24 +23,26 @@ export const createNewUserRoute: FastifyPluginAsyncZod = async app => {
             .max(10, 'Informe um telefone válido'),
           name: z.string('Informe o seu nome'),
           email: z.email('E-mail inválido'),
+          inviteToken: z.string().optional(),
         }),
         response: {
-          200: z.null(),
+          201: z.null(),
         },
       },
     },
     async (request, reply) => {
-      const { email, name, phone, ddd } = request.body
+      const { email, name, phone, ddd, inviteToken } = request.body
 
       await createNewUser({
         name,
         email,
         phone,
         ddd,
-        avatarUrl: 'https://robohash.org/$%7BMath.random().toString(36).slice(2)%7D?size=200x200',
+        avatarUrl: `https://robohash.org/${Math.random().toString(36).slice(2)}?size=200x200`,
+        inviteToken,
       })
 
-      return reply.status(200).send()
+      return reply.status(201).send()
     }
   )
 }

@@ -131,6 +131,7 @@ export type CreateNewUserBody = {
   name: string;
   /** @pattern ^(?!\.)(?!.*\.\.)([A-Za-z0-9_'+\-\.]*)[A-Za-z0-9_+-]@([A-Za-z0-9][A-Za-z0-9\-]*\.)+[A-Za-z]{2,}$ */
   email: string;
+  inviteToken?: string;
 };
 
 export type ListUsers200UsersItem = {
@@ -172,6 +173,7 @@ export type ValidateTokenBody = {
 
 export type ValidateToken200 = {
   valid: boolean;
+  slug?: string;
 };
 
 export type SignInBody = {
