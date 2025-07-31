@@ -1,4 +1,5 @@
 import { eq } from 'drizzle-orm'
+
 import { db } from '@/db'
 import { invites, organizations } from '@/db/schema'
 

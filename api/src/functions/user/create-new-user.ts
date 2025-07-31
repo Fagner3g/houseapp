@@ -1,17 +1,12 @@
+import { eq } from 'drizzle-orm'
 import slugify from 'slugify'
 
 import { db } from '@/db'
-import {
-  invites,
-  organizations,
-  userOrganizations,
-  users,
-} from '@/db/schema'
+import { invites, organizations, userOrganizations, users } from '@/db/schema'
 import { env } from '@/env'
 import { AuthenticateUser } from '@/modules/auth'
 import { SendMail } from '../send-mail'
 import { SendWhats } from '../sendWhats'
-import { eq } from 'drizzle-orm'
 
 interface CreateNewUserRequest {
   name: string
@@ -33,11 +28,7 @@ export async function createNewUser({
   let organizationId: string | null = null
 
   if (inviteToken) {
-    const [invite] = await db
-      .select()
-      .from(invites)
-      .where(eq(invites.token, inviteToken))
-      .limit(1)
+    const [invite] = await db.select().from(invites).where(eq(invites.token, inviteToken)).limit(1)
 
     if (!invite) {
       throw new Error('Invite not found')
@@ -45,10 +36,7 @@ export async function createNewUser({
 
     organizationId = invite.organizationId
 
-    await db
-      .update(invites)
-      .set({ acceptedAt: new Date() })
-      .where(eq(invites.id, invite.id))
+    await db.update(invites).set({ acceptedAt: new Date() }).where(eq(invites.id, invite.id))
   } else {
     const [organization] = await db
       .insert(organizations)

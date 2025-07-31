@@ -1,11 +1,12 @@
-import { env } from '@/env'
+import { and, eq, isNull } from 'drizzle-orm'
+
 import { db } from '@/db'
 import { invites, userOrganizations } from '@/db/schema'
+import { env } from '@/env'
 import { AuthenticateUser } from '@/modules/auth'
 import { SendMail } from '../send-mail'
 import { SendWhats } from '../sendWhats'
 import { getUser } from '../user/get-user'
-import { eq, and, isNull } from 'drizzle-orm'
 
 interface SignInRequest {
   email: string
@@ -28,10 +29,7 @@ export async function SignIn({ email }: SignInRequest) {
       .insert(userOrganizations)
       .values({ userId: user.id, organizationId: invite.organizationId })
       .onConflictDoNothing()
-    await db
-      .update(invites)
-      .set({ acceptedAt: new Date() })
-      .where(eq(invites.id, invite.id))
+    await db.update(invites).set({ acceptedAt: new Date() }).where(eq(invites.id, invite.id))
   }
 
   const token = await AuthenticateUser(user.id)
