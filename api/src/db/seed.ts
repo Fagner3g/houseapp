@@ -2,15 +2,13 @@ import dayjs from 'dayjs'
 import slugify from 'slugify'
 
 import { client, db } from '.'
-import {
-  goalCompletions,
-  goals,
-  organizations,
-  userOrganizations,
-  users,
-  expenses,
-  invites,
-} from './schema'
+import { expenses } from './schemas/expenses'
+import { goalCompletions } from './schemas/goalCompletions'
+import { goals } from './schemas/goals'
+import { invites } from './schemas/invites'
+import { organizations } from './schemas/organization'
+import { userOrganizations } from './schemas/userOrganization'
+import { users } from './schemas/users'
 
 async function seed() {
   await db.delete(goalCompletions)

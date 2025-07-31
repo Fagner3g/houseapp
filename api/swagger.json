@@ -6,6 +6,13 @@
     "version": "1.0.0"
   },
   "components": {
+    "securitySchemes": {
+      "bearerAuth": {
+        "type": "http",
+        "scheme": "bearer",
+        "bearerFormat": "JWT"
+      }
+    },
     "schemas": {}
   },
   "paths": {
@@ -469,7 +476,7 @@
       "post": {
         "operationId": "createNewUser",
         "tags": [
-          "auth"
+          "User"
         ],
         "description": "Authenticate with email",
         "requestBody": {
@@ -515,83 +522,6 @@
         "responses": {
           "201": {
             "description": "Default Response"
-          }
-        }
-      }
-    },
-    "/org/{slug}/users": {
-      "get": {
-        "operationId": "listUsers",
-        "tags": [
-          "User"
-        ],
-        "description": "List all users in an organization",
-        "parameters": [
-          {
-            "schema": {
-              "type": "string"
-            },
-            "in": "path",
-            "name": "slug",
-            "required": true
-          }
-        ],
-        "responses": {
-          "200": {
-            "description": "Default Response",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "type": "object",
-                  "properties": {
-                    "users": {
-                      "type": "array",
-                      "items": {
-                        "type": "object",
-                        "properties": {
-                          "id": {
-                            "type": "string"
-                          },
-                          "name": {
-                            "type": "string"
-                          },
-                          "email": {
-                            "type": "string"
-                          },
-                          "phone": {
-                            "type": "string"
-                          },
-                          "ddd": {
-                            "type": "string"
-                          },
-                          "avatarUrl": {
-                            "type": "string"
-                          },
-                          "createdAt": {
-                            "type": "string",
-                            "format": "date-time"
-                          }
-                        },
-                        "required": [
-                          "id",
-                          "name",
-                          "email",
-                          "phone",
-                          "ddd",
-                          "avatarUrl",
-                          "createdAt"
-                        ],
-                        "additionalProperties": false
-                      }
-                    }
-                  },
-                  "required": [
-                    "users"
-                  ],
-                  "additionalProperties": false
-                }
-              }
-            }
           }
         }
       }
@@ -733,7 +663,7 @@
       "post": {
         "operationId": "validateToken",
         "tags": [
-          "auth"
+          "Auth"
         ],
         "description": "Validate Token",
         "requestBody": {
@@ -817,5 +747,10 @@
         }
       }
     }
-  }
+  },
+  "security": [
+    {
+      "bearerAuth": []
+    }
+  ]
 }
