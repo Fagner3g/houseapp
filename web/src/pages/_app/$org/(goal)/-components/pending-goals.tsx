@@ -2,6 +2,7 @@ import { useQueryClient } from '@tanstack/react-query'
 import { Plus } from 'lucide-react'
 
 import { OutlineButton } from '@/components/ui/outline-button'
+import { useActiveOrganization } from '@/hooks/use-active-organization'
 import {
   getGetPendingGoalsQueryKey,
   getGetWeekSummaryQueryKey,
@@ -10,7 +11,8 @@ import {
 } from '@/http/generated/api'
 
 export function PendingGoals() {
-  const { data, isLoading } = useGetPendingGoals()
+  const { slug } = useActiveOrganization()
+  const { data, isLoading } = useGetPendingGoals(slug)
   const queryClient = useQueryClient()
   const { mutateAsync: completeGoal } = useCompleteGoal()
   if (isLoading || !data) {
@@ -20,8 +22,8 @@ export function PendingGoals() {
   async function handleCreateGoalCompletion(goalId: string) {
     await completeGoal({ data: { goalId } })
 
-    queryClient.invalidateQueries({ queryKey: getGetPendingGoalsQueryKey() })
-    queryClient.invalidateQueries({ queryKey: getGetWeekSummaryQueryKey() })
+    queryClient.invalidateQueries({ queryKey: getGetPendingGoalsQueryKey(slug) })
+    queryClient.invalidateQueries({ queryKey: getGetWeekSummaryQueryKey(slug) })
   }
 
   return (
