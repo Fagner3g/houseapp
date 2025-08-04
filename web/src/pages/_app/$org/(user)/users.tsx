@@ -54,7 +54,7 @@ function Users() {
     }
   }
 
-  if (isLoading || !data) {
+  if (isLoading) {
     return (
       <div className="h-screen flex items-center justify-center">
         <Loader2 className="text-zinc-500 animate-spin size-10" />
@@ -87,6 +87,7 @@ function Users() {
                   <AvatarFallback>{user.name.slice(0, 2)}</AvatarFallback>
                 </Avatar>
                 {user.name}
+                {user.isOwner && <span className="text-sm text-zinc-400"> (Admin)</span>}
               </TableCell>
               <TableCell>{user.email}</TableCell>
             </TableRow>

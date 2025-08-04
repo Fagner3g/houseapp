@@ -15,18 +15,18 @@ export async function getUser({ userId, email, phone }: GetUserRequest) {
   }
 
   if (userId) {
-    const result = await db.select().from(users).where(eq(users.id, userId))
+    const result = await db.select().from(users).where(eq(users.id, userId)).limit(1)
     return result[0]
   }
 
   if (email) {
-    const result = await db.select().from(users).where(eq(users.email, email))
+    const result = await db.select().from(users).where(eq(users.email, email)).limit(1)
 
     return result[0]
   }
 
   if (phone) {
-    const result = await db.select().from(users).where(eq(users.phone, phone))
+    const result = await db.select().from(users).where(eq(users.phone, phone)).limit(1)
 
     return result[0]
   }

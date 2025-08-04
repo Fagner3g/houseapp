@@ -2,11 +2,13 @@ import { NavMain } from '@/components/layout/sidebar/nav-main'
 import { NavUser } from '@/components/layout/sidebar/nav-user'
 import { TeamSwitcher } from '@/components/layout/sidebar/team-switcher'
 import { Sidebar, SidebarContent, SidebarFooter, SidebarHeader } from '@/components/ui/sidebar'
-import { data } from '@/routes'
+import { useGetProfile } from '@/http/generated/api'
 import { useNavItems } from '@/routes/navigation'
 
 export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
   const navItems = useNavItems()
+  const { data } = useGetProfile()
+
   return (
     <Sidebar {...props}>
       <SidebarHeader>
@@ -15,9 +17,7 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
       <SidebarContent>
         <NavMain items={navItems} />
       </SidebarContent>
-      <SidebarFooter>
-        <NavUser user={data.user} />
-      </SidebarFooter>
+      <SidebarFooter>{data?.user && <NavUser user={data.user} />}</SidebarFooter>
     </Sidebar>
   )
 }

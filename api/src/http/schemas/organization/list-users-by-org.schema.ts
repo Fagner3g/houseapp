@@ -14,6 +14,7 @@ export const listUsersByOrgSchema = {
           phone: z.string(),
           ddd: z.string(),
           avatarUrl: z.string(),
+          isOwner: z.boolean(),
         })
       ),
     }),

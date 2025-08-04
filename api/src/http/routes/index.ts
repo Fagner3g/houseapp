@@ -16,6 +16,7 @@ import {
   listUsersByOrgRoute,
   renameOrgRoute,
 } from './organization.routes'
+import { getProfileRoute } from './user.routes'
 
 export function createRoutes(app: FastifyInstance) {
   // Auth
@@ -24,6 +25,7 @@ export function createRoutes(app: FastifyInstance) {
   app.register(validateTokenRoute)
 
   // User
+  app.register(getProfileRoute)
 
   // Organization
   app.register(createOrgRoute)

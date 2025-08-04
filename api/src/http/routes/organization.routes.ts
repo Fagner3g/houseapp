@@ -1,4 +1,4 @@
-import type { FastifyPluginAsyncZod, ZodTypeProvider } from 'fastify-type-provider-zod'
+import type { FastifyPluginAsyncZod } from 'fastify-type-provider-zod'
 
 import { createOrganizationController } from '@/http/controllers/organization/create-organization.controller'
 import { authenticateUserHook } from '@/http/hooks/authenticate-user'
@@ -14,7 +14,7 @@ import { listUsersByOrgSchema } from '../schemas/organization/list-users-by-org.
 import { renameOrgSchema } from '../schemas/organization/rename-org.schema'
 
 export const createOrgRoute: FastifyPluginAsyncZod = async app => {
-  app.withTypeProvider<ZodTypeProvider>().post('/org', {
+  app.post('/org', {
     onRequest: [authenticateUserHook],
     schema: createOrganizationSchema,
     handler: createOrganizationController,
@@ -32,7 +32,7 @@ export const listOrgRoute: FastifyPluginAsyncZod = async app => {
 export const renameOrgRoute: FastifyPluginAsyncZod = async app => {
   app.put('/org/:slug', {
     onRequest: [authenticateUserHook],
-    // preHandler: [verifyOrgAccessHook],
+    preHandler: [verifyOrgAccessHook],
     schema: renameOrgSchema,
     handler: renameOrgController,
   })
@@ -41,7 +41,7 @@ export const renameOrgRoute: FastifyPluginAsyncZod = async app => {
 export const deleteOrgRoute: FastifyPluginAsyncZod = async app => {
   app.delete('/org/:slug', {
     onRequest: [authenticateUserHook],
-    // preHandler: [verifyOrgAccessHook],
+    preHandler: [verifyOrgAccessHook],
     schema: deleteOrgSchema,
     handler: deleteOrgController,
   })

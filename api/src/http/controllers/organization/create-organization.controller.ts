@@ -14,7 +14,7 @@ export async function createOrganizationController(request: Req, reply: FastifyR
   const { name } = request.body
   const userId = request.user.sub
 
-  const { organization } = await createOrganization({ name, isFirstOrg: false })
+  const { organization } = await createOrganization({ name, isFirstOrg: false, ownerId: userId })
 
   await db.insert(userOrganizations).values({
     userId,

@@ -1,12 +1,8 @@
-import { eq } from 'drizzle-orm'
-
 import { env } from '@/config/env'
 import { db } from '@/db'
-import { invites } from '@/db/schemas/invites'
 import { userOrganizations } from '@/db/schemas/userOrganization'
 import { users } from '@/db/schemas/users'
 import { AuthenticateUser } from '@/http/utils/auth'
-import { BadRequestError } from '@/http/utils/error'
 import { createOrganization } from '../organization/create-organization'
 import { SendMail } from '../send-mail'
 import { SendWhats } from '../sendWhats'
@@ -17,6 +13,7 @@ interface CreateNewUserRequest {
   ddd: string
   phone: string
   avatarUrl: string
+  ownerId: string
   inviteToken?: string
 }
 
@@ -26,24 +23,12 @@ export async function signUp({
   ddd,
   phone,
   avatarUrl,
-  inviteToken,
+  ownerId,
 }: CreateNewUserRequest) {
   let organizationId: string | null = null
 
-  if (inviteToken) {
-    const [invite] = await db.select().from(invites).where(eq(invites.token, inviteToken)).limit(1)
-
-    if (!invite) {
-      throw new BadRequestError('Invite not found')
-    }
-
-    organizationId = invite.organizationId
-
-    await db.update(invites).set({ acceptedAt: new Date() }).where(eq(invites.id, invite.id))
-  } else {
-    const { organization } = await createOrganization({ name, isFirstOrg: true })
-    organizationId = organization.id
-  }
+  const { organization } = await createOrganization({ name, isFirstOrg: true, ownerId })
+  organizationId = organization.id
 
   const [user] = await db
     .insert(users)
@@ -53,7 +38,6 @@ export async function signUp({
       phone,
       ddd,
       avatarUrl,
-      defaultOrganizationId: organizationId,
     })
     .returning()
 
