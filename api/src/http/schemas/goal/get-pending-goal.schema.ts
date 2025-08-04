@@ -3,7 +3,7 @@ import z from 'zod'
 export const getPendingGoalsSchema = {
   tags: ['Goal'],
   description: 'get pending goals',
-  operationId: 'getPendingGoal',
+  operationId: 'getPendingGoals',
   response: {
     200: z.object({
       pendingGoals: z.array(

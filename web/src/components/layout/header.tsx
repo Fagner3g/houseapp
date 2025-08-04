@@ -1,9 +1,15 @@
+import { Bell } from 'lucide-react'
+
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuTrigger,
+} from '@/components/ui/dropdown-menu'
 import { Separator } from '@/components/ui/separator'
 import { SidebarTrigger } from '@/components/ui/sidebar'
 import { useSidebar } from '@/hooks/use-sidebar'
-import { Bell } from 'lucide-react'
-import { DropdownMenu, DropdownMenuContent, DropdownMenuTrigger } from '@/components/ui/dropdown-menu'
 import { ModeToggle } from '../mode-toggle'
+import { Button } from '../ui/button'
 
 export function Header() {
   const { route } = useSidebar()
@@ -17,9 +23,9 @@ export function Header() {
       </div>
       <DropdownMenu>
         <DropdownMenuTrigger asChild>
-          <button className="p-2" aria-label="Notificações">
+          <Button variant="ghost" className="p-2" aria-label="Notificações">
             <Bell className="size-5" />
-          </button>
+          </Button>
         </DropdownMenuTrigger>
         <DropdownMenuContent className="p-2 text-sm">
           <p>Nenhuma notificação</p>

@@ -21,15 +21,15 @@ export const Route = createFileRoute('/_app/$org/(user)/users')({
 })
 
 function Users() {
-  const { orgSlug } = useActiveOrganization()
-  const { data } = useListUsersByOrg(orgSlug)
+  const { slug } = useActiveOrganization()
+  const { data } = useListUsersByOrg(slug)
   const [email, setEmail] = useState('')
   const { mutateAsync: createInvite } = useCreateInvite()
 
   async function handleInvite(e: React.FormEvent) {
     e.preventDefault()
 
-    const res = await createInvite({ data: { email }, slug: orgSlug })
+    const res = await createInvite({ data: { email }, slug })
     if (res) {
       toast.success('Convite enviado!')
       setEmail('')

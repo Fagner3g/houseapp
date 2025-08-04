@@ -5,6 +5,7 @@ import { Controller, useForm } from 'react-hook-form'
 import { toast } from 'sonner'
 import { z } from 'zod'
 
+import { useActiveOrganization } from '@/hooks/use-active-organization'
 import {
   getGetPendingGoalsQueryKey,
   getGetWeekSummaryQueryKey,
@@ -26,6 +27,7 @@ type CreateGoalSchema = z.infer<typeof createGoalSchema>
 export function CreateGoal() {
   const { mutateAsync: createGoal } = useCreateGoal()
   const queryClient = useQueryClient()
+  const { slug } = useActiveOrganization()
 
   const {
     register,
@@ -39,12 +41,15 @@ export function CreateGoal() {
 
   async function handleCreateGoal({ title, desiredWeeklyFrequency }: CreateGoalSchema) {
     try {
-      await createGoal({ data: { title, desiredWeeklyFrequency } })
+      await createGoal({
+        data: { title, desiredWeeklyFrequency },
+        slug,
+      })
 
       reset()
 
-      queryClient.invalidateQueries({ queryKey: getGetPendingGoalsQueryKey() })
-      queryClient.invalidateQueries({ queryKey: getGetWeekSummaryQueryKey() })
+      queryClient.invalidateQueries({ queryKey: getGetPendingGoalsQueryKey(slug) })
+      queryClient.invalidateQueries({ queryKey: getGetWeekSummaryQueryKey(slug) })
 
       toast.success('Meta criada com sucesso!')
     } catch {

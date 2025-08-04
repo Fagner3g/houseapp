@@ -1,5 +1,6 @@
 import { useRouter, useRouterState } from '@tanstack/react-router'
 import { useEffect } from 'react'
+
 import { useOrgStore } from '../stores/org'
 
 /**
@@ -23,5 +24,5 @@ export function useActiveOrganization() {
     router.navigate({ to: `/${newSlug}/${rest.join('/')}` })
   }
 
-  return { orgSlug: slug, setOrganization }
+  return { slug, setOrganization }
 }

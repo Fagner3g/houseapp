@@ -42,14 +42,14 @@ type FormValues = z.infer<typeof schema>
 function Expenses() {
   const form = useForm<FormValues>({ resolver: zodResolver(schema) })
 
-  const { orgSlug } = useActiveOrganization()
-  const { data } = useListExpenses(orgSlug)
-  const { data: usersData } = useListUsersByOrg(orgSlug)
+  const { slug } = useActiveOrganization()
+  const { data } = useListExpenses(slug)
+  const { data: usersData } = useListUsersByOrg(slug)
   const { mutateAsync: createExpense } = useCreateExpense()
 
   async function handleSubmit(values: FormValues) {
     await createExpense({
-      slug: orgSlug,
+      slug,
       data: {
         ...values,
         amount: Number(values.amount),

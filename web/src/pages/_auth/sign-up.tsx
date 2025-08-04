@@ -6,7 +6,7 @@ import { z } from 'zod'
 
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
-import { useCreateNewUser } from '@/http/generated/api'
+import { useSignUp } from '@/http/generated/api'
 
 export const Route = createFileRoute('/_auth/sign-up')({
   component: Index,
@@ -26,7 +26,7 @@ type FormValues = z.infer<typeof schema>
 
 function Index() {
   const navigate = useNavigate()
-  const { mutateAsync: createUser } = useCreateNewUser()
+  const { mutateAsync: createUser } = useSignUp()
 
   const form = useForm<FormValues>({ resolver: zodResolver(schema) })
 

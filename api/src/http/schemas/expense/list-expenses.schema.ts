@@ -4,7 +4,7 @@ export const listExpensesSchema = {
   tags: ['Expense'],
   description: 'List expenses for authenticated user',
   operationId: 'listExpenses',
-  params: z.object({ slug: z.string() }),
+  params: z.object({ slug: z.string().nonempty() }),
   response: {
     200: z.object({
       expenses: z.array(

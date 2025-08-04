@@ -1,4 +1,5 @@
 import { useRouterState } from '@tanstack/react-router'
+
 import { useNavItems } from '@/routes/navigation'
 
 export const useSidebar = () => {
