@@ -1,5 +1,5 @@
-import { createFileRoute, useNavigate } from '@tanstack/react-router'
 import { zodResolver } from '@hookform/resolvers/zod'
+import { createFileRoute, useNavigate } from '@tanstack/react-router'
 import { useForm } from 'react-hook-form'
 import { toast } from 'sonner'
 import { z } from 'zod'
@@ -43,10 +43,7 @@ function Index() {
 
   return (
     <div className="justify-center items-center text-center flex flex-col">
-      <form
-        onSubmit={form.handleSubmit(handleSubmit)}
-        className="flex flex-col gap-3 w-sm"
-      >
+      <form onSubmit={form.handleSubmit(handleSubmit)} className="flex flex-col gap-3 w-sm">
         <h1>Fazer cadastro</h1>
         <Input placeholder="Nome" {...form.register('name')} />
         <Input placeholder="Email" {...form.register('email')} />

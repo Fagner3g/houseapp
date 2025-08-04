@@ -29,17 +29,8 @@ export const listOrganizationsRoute: FastifyPluginAsyncZod = async app => {
   })
 }
 
-export const listUsersByOrgRoute: FastifyPluginAsyncZod = async app => {
-  app.get('/org/:slug/users', {
-    onRequest: [authenticateUserHook],
-    schema: listUsersByOrgSchema,
-    preHandler: [verifyOrgAccessHook],
-    handler: listUsersByOrgController,
-  })
-}
-
 export const renameOrgRoute: FastifyPluginAsyncZod = async app => {
-  app.put('/org/:slug/rename', {
+  app.put('/org/:slug', {
     onRequest: [authenticateUserHook],
     preHandler: [verifyOrgAccessHook],
     schema: renameOrgSchema,
@@ -48,10 +39,19 @@ export const renameOrgRoute: FastifyPluginAsyncZod = async app => {
 }
 
 export const deleteOrgRoute: FastifyPluginAsyncZod = async app => {
-  app.delete('/org/:slug/delete', {
+  app.delete('/org/:slug', {
     onRequest: [authenticateUserHook],
     preHandler: [verifyOrgAccessHook],
     schema: deleteOrgSchema,
     handler: deleteOrgController,
+  })
+}
+
+export const listUsersByOrgRoute: FastifyPluginAsyncZod = async app => {
+  app.get('/org/:slug/users', {
+    onRequest: [authenticateUserHook],
+    schema: listUsersByOrgSchema,
+    preHandler: [verifyOrgAccessHook],
+    handler: listUsersByOrgController,
   })
 }

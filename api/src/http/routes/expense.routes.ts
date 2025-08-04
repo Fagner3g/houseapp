@@ -11,7 +11,8 @@ import { listExpensesSchema } from '../schemas/expense/list-expenses.schema'
 
 export const createExpenseRoute: FastifyPluginAsyncZod = async app => {
   app.post('/org/:slug/expenses', {
-    onRequest: [authenticateUserHook, verifyOrgAccessHook],
+    onRequest: [authenticateUserHook],
+    preHandler: [verifyOrgAccessHook],
     schema: createExpenseSchema,
     handler: createExpenseController,
   })
@@ -19,7 +20,8 @@ export const createExpenseRoute: FastifyPluginAsyncZod = async app => {
 
 export const getExpenseRoute: FastifyPluginAsyncZod = async app => {
   app.get('/org/:slug/expenses/:expenseId', {
-    onRequest: [authenticateUserHook, verifyOrgAccessHook],
+    onRequest: [authenticateUserHook],
+    preHandler: [verifyOrgAccessHook],
     schema: getExpenseSchema,
     handler: getExpenseController,
   })
@@ -27,7 +29,8 @@ export const getExpenseRoute: FastifyPluginAsyncZod = async app => {
 
 export const listExpensesRoute: FastifyPluginAsyncZod = async app => {
   app.get('/org/:slug/expenses', {
-    onRequest: [authenticateUserHook, verifyOrgAccessHook],
+    onRequest: [authenticateUserHook],
+    preHandler: [verifyOrgAccessHook],
     schema: listExpensesSchema,
     handler: listExpenseController,
   })

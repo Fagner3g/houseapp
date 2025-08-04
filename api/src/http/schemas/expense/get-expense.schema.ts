@@ -4,8 +4,10 @@ export const getExpenseSchema = {
   tags: ['Expense'],
   description: 'Get expense by id',
   operationId: 'getExpense',
+
   params: z.object({
     expenseId: z.string(),
+    slug: z.string(),
   }),
   response: {
     200: z.object({

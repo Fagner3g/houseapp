@@ -9,6 +9,8 @@ import {
   serializerCompiler,
   validatorCompiler,
 } from 'fastify-type-provider-zod'
+import { writeFile } from 'fs'
+import { resolve } from 'path'
 
 import { env } from '@/config/env'
 import { version } from '../../../package.json'
@@ -88,17 +90,17 @@ export async function buildServer() {
     createRoutes(app)
   })
 
-  // if (env.NODE_ENV === 'development') {
-  //   const specFile = resolve(__dirname, '../../swagger.json')
+  if (env.NODE_ENV === 'development') {
+    const specFile = resolve(__dirname, '../../../swagger.json')
 
-  //   app.ready().then(() => {
-  //     const spec = JSON.stringify(app.swagger(), null, 2)
+    app.ready().then(() => {
+      const spec = JSON.stringify(app.swagger(), null, 2)
 
-  //     writeFile(specFile, spec, () => {
-  //       console.log(`Swagger spec generated! ${specFile}`)
-  //     })
-  //   })
-  // }
+      writeFile(specFile, spec, () => {
+        console.log(`Swagger spec generated! ${specFile}`)
+      })
+    })
+  }
 
   return app
 }

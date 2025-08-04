@@ -14,7 +14,7 @@ import {
   TableRow,
 } from '@/components/ui/table'
 import { useActiveOrganization } from '@/hooks/use-active-organization'
-import { useCreateInvite, useListUsers } from '@/http/generated/api'
+import { useCreateInvite, useListUsersByOrg } from '@/http/generated/api'
 
 export const Route = createFileRoute('/_app/$org/(user)/users')({
   component: Users,
@@ -22,7 +22,7 @@ export const Route = createFileRoute('/_app/$org/(user)/users')({
 
 function Users() {
   const { orgSlug } = useActiveOrganization()
-  const { data } = useListUsers(orgSlug)
+  const { data } = useListUsersByOrg(orgSlug)
   const [email, setEmail] = useState('')
   const { mutateAsync: createInvite } = useCreateInvite()
 
@@ -53,7 +53,7 @@ function Users() {
         </TableHeader>
         <TableBody>
           {data?.users.map(user => (
-            <TableRow key={user.id}>
+            <TableRow key={user.name}>
               <TableCell className="flex items-center gap-2">
                 <Avatar className="h-8 w-8">
                   <AvatarImage src={user.avatarUrl} />

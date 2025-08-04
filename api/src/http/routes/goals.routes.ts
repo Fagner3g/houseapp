@@ -14,6 +14,7 @@ import { getWeekSummarySchema } from '../schemas/goal/get-week-summary.schema'
 export const completionGoalRoute: FastifyPluginAsyncZod = async app => {
   app.post('/complete-goal', {
     onRequest: [authenticateUserHook],
+    preHandler: [verifyOrgAccessHook],
     schema: completeGoalSchema,
     handler: completeGoalController,
   })
@@ -22,25 +23,25 @@ export const completionGoalRoute: FastifyPluginAsyncZod = async app => {
 export const createGoalRoute: FastifyPluginAsyncZod = async app => {
   app.post('/org/:slug/goal', {
     onRequest: [authenticateUserHook],
+    preHandler: [verifyOrgAccessHook],
     schema: createGoalSchema,
     handler: createGoalController,
   })
 }
 
 export const getPendingGoalsRoute: FastifyPluginAsyncZod = async app => {
-  app.get(
-    '/org/:slug/pending-goals',
-    {
-      onRequest: [authenticateUserHook, verifyOrgAccessHook],
-      schema: getPendingGoalsSchema,
-    },
-    getPendingGoalsController
-  )
+  app.get('/org/:slug/pending-goals', {
+    onRequest: [authenticateUserHook],
+    preHandler: [verifyOrgAccessHook],
+    schema: getPendingGoalsSchema,
+    handler: getPendingGoalsController,
+  })
 }
 
 export const getWeekSummaryRoute: FastifyPluginAsyncZod = async app => {
   app.get('/org/:slug/summary', {
-    onRequest: [authenticateUserHook, verifyOrgAccessHook],
+    onRequest: [authenticateUserHook],
+    preHandler: [verifyOrgAccessHook],
     schema: getWeekSummarySchema,
     handler: getWeekSummaryController,
   })

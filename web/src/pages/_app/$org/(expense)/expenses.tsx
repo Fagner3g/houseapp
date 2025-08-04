@@ -1,10 +1,11 @@
-import { createFileRoute } from '@tanstack/react-router'
-import { useForm } from 'react-hook-form'
 import { zodResolver } from '@hookform/resolvers/zod'
-import { z } from 'zod'
+import { createFileRoute } from '@tanstack/react-router'
 import dayjs from 'dayjs'
+import { useForm } from 'react-hook-form'
+import { z } from 'zod'
 
 import { Button } from '@/components/ui/button'
+import { Dialog, DialogContent, DialogTrigger } from '@/components/ui/dialog'
 import { Input } from '@/components/ui/input'
 import {
   Select,
@@ -13,7 +14,6 @@ import {
   SelectTrigger,
   SelectValue,
 } from '@/components/ui/select'
-import { Dialog, DialogContent, DialogTrigger } from '@/components/ui/dialog'
 import {
   Table,
   TableBody,
@@ -22,8 +22,8 @@ import {
   TableHeader,
   TableRow,
 } from '@/components/ui/table'
-import { useListExpenses, useCreateExpense, useListUsers } from '@/http/generated/api'
 import { useActiveOrganization } from '@/hooks/use-active-organization'
+import { useCreateExpense, useListExpenses, useListUsersByOrg } from '@/http/generated/api'
 
 export const Route = createFileRoute('/_app/$org/(expense)/expenses')({
   component: Expenses,
@@ -44,7 +44,7 @@ function Expenses() {
 
   const { orgSlug } = useActiveOrganization()
   const { data } = useListExpenses(orgSlug)
-  const { data: usersData } = useListUsers(orgSlug)
+  const { data: usersData } = useListUsersByOrg(orgSlug)
   const { mutateAsync: createExpense } = useCreateExpense()
 
   async function handleSubmit(values: FormValues) {
@@ -76,7 +76,7 @@ function Expenses() {
               </SelectTrigger>
               <SelectContent>
                 {usersData?.users.map(user => (
-                  <SelectItem key={user.id} value={user.id} className="rounded-lg">
+                  <SelectItem key={user.name} value={user.name} className="rounded-lg">
                     {user.name}
                   </SelectItem>
                 ))}
