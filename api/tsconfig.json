@@ -12,6 +12,7 @@
       "@/*": ["./src/*"]
     },
 
+    "resolveJsonModule": true,
     "strict": true,
     "esModuleInterop": true,
     "skipLibCheck": true,

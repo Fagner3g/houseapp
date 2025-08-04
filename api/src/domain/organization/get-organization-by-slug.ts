@@ -1,18 +1,14 @@
 import { eq } from 'drizzle-orm'
 
 import { db } from '@/db'
-import { organizations } from '@/db/schema'
+import { organizations } from '@/db/schemas/organization'
 
-interface GetOrganizationBySlugRequest {
-  slug: string
+interface GetOrganizationById {
+  idOrg: string
 }
 
-export async function getOrganizationBySlug({ slug }: GetOrganizationBySlugRequest) {
-  const result = await db
-    .select()
-    .from(organizations)
-    .where(eq(organizations.slug, slug))
-    .limit(1)
+export async function getOrganizationById({ idOrg }: GetOrganizationById) {
+  const result = await db.select().from(organizations).where(eq(organizations.id, idOrg)).limit(1)
 
   return { organization: result[0] }
 }

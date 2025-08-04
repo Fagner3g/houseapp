@@ -17,7 +17,7 @@ export const expenses = pgTable('expenses', {
     .references(() => users.id),
   organizationId: text('organization_id')
     .notNull()
-    .references(() => organizations.id),
+    .references(() => organizations.id, { onDelete: 'cascade' }),
   amount: integer('amount').notNull(),
   dueDate: timestamp('due_date', { withTimezone: true }).notNull(),
   description: text('description'),

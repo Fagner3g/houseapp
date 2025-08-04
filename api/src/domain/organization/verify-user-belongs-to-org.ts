@@ -2,7 +2,8 @@ import { and, eq } from 'drizzle-orm'
 import type { FastifyRequest } from 'fastify'
 
 import { db } from '@/db'
-import { organizations, userOrganizations } from '@/db/schema'
+import { organizations } from '@/db/schemas/organization'
+import { userOrganizations } from '@/db/schemas/userOrganization'
 
 export async function verifyUserBelongsToOrg(request: FastifyRequest, slug: string) {
   const userId = request.user.sub

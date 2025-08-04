@@ -13,8 +13,8 @@ export async function SendMail({ email, name, ddd, phone, url }: SendMailRequest
     host: 'smtp.ethereal.email',
     port: 587,
     auth: {
-      user: 'peggie82@ethereal.email',
-      pass: 'Y1CREBUcRPZwBw46fr',
+      user: 'lauren31@ethereal.email',
+      pass: 'xSgzGT7je24WXpj4a1',
     },
   })
 

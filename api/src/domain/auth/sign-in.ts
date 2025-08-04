@@ -1,9 +1,10 @@
 import { and, eq, isNull } from 'drizzle-orm'
 
+import { env } from '@/config/env'
 import { db } from '@/db'
-import { invites, userOrganizations } from '@/db/schema'
-import { env } from '@/env'
-import { AuthenticateUser } from '@/lib/auth'
+import { invites } from '@/db/schemas/invites'
+import { userOrganizations } from '@/db/schemas/userOrganization'
+import { AuthenticateUser } from '@/http/utils/auth'
 import { SendMail } from '../send-mail'
 import { SendWhats } from '../sendWhats'
 import { getUser } from '../user/get-user'

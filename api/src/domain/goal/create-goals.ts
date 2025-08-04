@@ -1,5 +1,5 @@
 import { db } from '@/db'
-import { goals } from '@/db/schema'
+import { goals } from '@/db/schemas/goals'
 
 interface CreateGoalRequest {
   title: string

@@ -1,23 +1,42 @@
+import { PostgresError } from 'postgres'
 import slugify from 'slugify'
 
 import { db } from '@/db'
-import { organizations, userOrganizations } from '@/db/schema'
+import { organizations } from '@/db/schemas/organization'
 
-interface CreateOrganizationRequest {
+interface CreateOrganization {
   name: string
-  userId: string
+  isFirstOrg: boolean
 }
 
-export async function createOrganization({ name, userId }: CreateOrganizationRequest) {
-  const [organization] = await db
-    .insert(organizations)
-    .values({ name, slug: slugify(name, { lower: true }) })
-    .returning()
+export async function createOrganization({ name, isFirstOrg }: CreateOrganization) {
+  let attempt = 0
+  const base = slugify(name, { lower: true, remove: /[*+~.()'"!:@]/g })
 
-  await db.insert(userOrganizations).values({
-    userId,
-    organizationId: organization.id,
-  })
+  while (true) {
+    const slug = attempt === 0 ? base : `${base}-${attempt}`
 
-  return { organization }
+    try {
+      const [organization] = await db
+        .insert(organizations)
+        .values({
+          name: isFirstOrg ? 'My House' : `${name.split(' ')[0]} House`,
+          slug,
+        })
+        .returning()
+
+      return { organization }
+    } catch (err) {
+      const cause = (err as { cause?: unknown }).cause
+
+      if (cause instanceof PostgresError) {
+        if (cause.code === '23505') {
+          attempt++
+          continue
+        }
+      }
+      // Case of some other error
+      throw err
+    }
+  }
 }

@@ -1,14 +1,19 @@
-import type { FastifyReply, FastifyRequest } from 'fastify'
+import type { FastifyRequest } from 'fastify'
 
 import { verifyUserBelongsToOrg } from '@/domain/organization/verify-user-belongs-to-org'
+import { ForbiddenError } from '../utils/error'
 
-export async function verifyOrgAccessHook(request: FastifyRequest, reply: FastifyReply) {
-  const { slug } = request.params as { slug: string }
+export async function verifyOrgAccessHook(request: FastifyRequest) {
+  const { slug } = request.params as { slug?: string }
+
+  if (!slug) {
+    throw new ForbiddenError()
+  }
 
   const org = await verifyUserBelongsToOrg(request, slug)
 
   if (!org) {
-    return reply.status(403).send({ message: 'Access denied to this organization.' })
+    throw new ForbiddenError('Access denied to this organization.')
   }
 
   // opcional: deixar o `org.id` disponível no request

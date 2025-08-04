@@ -1,7 +1,8 @@
 import { eq } from 'drizzle-orm'
 
 import { db } from '@/db'
-import { invites, userOrganizations } from '@/db/schema'
+import { invites } from '@/db/schemas/invites'
+import { userOrganizations } from '@/db/schemas/userOrganization'
 
 interface AcceptInviteRequest {
   token: string

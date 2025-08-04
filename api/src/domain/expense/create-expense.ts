@@ -1,6 +1,6 @@
 import { db } from '@/db'
-import { expenses } from '@/db/schema'
-import { getOrganizationBySlug } from '../organization/get-organization-by-slug'
+import { expenses } from '@/db/schemas/expenses'
+import { getOrganizationById } from '../organization/get-organization-by-slug'
 
 interface CreateExpenseRequest {
   title: string
@@ -21,7 +21,7 @@ export async function createExpense({
   dueDate,
   description,
 }: CreateExpenseRequest) {
-  const { organization } = await getOrganizationBySlug({ slug: organizationSlug })
+  const { organization } = await getOrganizationById({ slug: organizationSlug })
 
   if (!organization) {
     throw new Error('Organization not found')

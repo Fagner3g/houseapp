@@ -1,14 +1,14 @@
 import { eq } from 'drizzle-orm'
 
 import { db } from '@/db'
-import { organizations, userOrganizations } from '@/db/schema'
+import { organizations } from '@/db/schemas/organization'
+import { userOrganizations } from '@/db/schemas/userOrganization'
 
-interface ListOrganizationsRequest {
+interface ListOrganizations {
   userId: string
 }
 
-export async function listOrganizations({ userId }: ListOrganizationsRequest) {
-  console.log(userId)
+export async function listOrganizations({ userId }: ListOrganizations) {
   const result = await db
     .select({
       id: organizations.id,

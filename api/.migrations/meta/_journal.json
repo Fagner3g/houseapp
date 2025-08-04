@@ -22,6 +22,20 @@
       "when": 1753975380156,
       "tag": "0002_long_logan",
       "breakpoints": true
+    },
+    {
+      "idx": 3,
+      "version": "7",
+      "when": 1754322469135,
+      "tag": "0003_illegal_ultimo",
+      "breakpoints": true
+    },
+    {
+      "idx": 4,
+      "version": "7",
+      "when": 1754326038461,
+      "tag": "0004_dizzy_doctor_faustus",
+      "breakpoints": true
     }
   ]
 }

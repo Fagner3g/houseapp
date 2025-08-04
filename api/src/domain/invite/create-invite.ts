@@ -1,9 +1,9 @@
 import { createId } from '@paralleldrive/cuid2'
 
+import { env } from '@/config/env'
 import { db } from '@/db'
-import { invites } from '@/db/schema'
-import { env } from '@/env'
-import { getOrganizationBySlug } from '../organization/get-organization-by-slug'
+import { invites } from '@/db/schemas/invites'
+import { getOrganizationById } from '../organization/get-organization-by-slug'
 import { sendInviteMail } from '../send-invite-mail'
 
 interface CreateInviteRequest {
@@ -12,7 +12,7 @@ interface CreateInviteRequest {
 }
 
 export async function createInvite({ email, organizationSlug }: CreateInviteRequest) {
-  const { organization } = await getOrganizationBySlug({ slug: organizationSlug })
+  const { organization } = await getOrganizationById({ slug: organizationSlug })
   if (!organization) {
     throw new Error('Organization not found')
   }

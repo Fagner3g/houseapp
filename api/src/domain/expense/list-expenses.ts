@@ -1,8 +1,8 @@
 import { and, eq, or } from 'drizzle-orm'
 
 import { db } from '@/db'
-import { expenses } from '@/db/schema'
-import { getOrganizationBySlug } from '../organization/get-organization-by-slug'
+import { expenses } from '@/db/schemas/expenses'
+import { getOrganizationById } from '../organization/get-organization-by-slug'
 
 interface ListExpensesRequest {
   userId: string
@@ -10,7 +10,7 @@ interface ListExpensesRequest {
 }
 
 export async function listExpenses({ userId, organizationSlug }: ListExpensesRequest) {
-  const { organization } = await getOrganizationBySlug({ slug: organizationSlug })
+  const { organization } = await getOrganizationById({ slug: organizationSlug })
 
   if (!organization) {
     return { expenses: [] }
