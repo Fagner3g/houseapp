@@ -1,6 +1,9 @@
+import { zodResolver } from '@hookform/resolvers/zod'
 import { createFileRoute } from '@tanstack/react-router'
-import { useState } from 'react'
+import { Loader2 } from 'lucide-react'
+import { useForm } from 'react-hook-form'
 import { toast } from 'sonner'
+import z from 'zod'
 
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar'
 import { Button } from '@/components/ui/button'
@@ -16,32 +19,56 @@ import {
 import { useActiveOrganization } from '@/hooks/use-active-organization'
 import { useCreateInvite, useListUsersByOrg } from '@/http/generated/api'
 
+const createInviteSchema = z.object({ email: z.email('E-mail inválido') })
+
+type CreateInviteSchema = z.infer<typeof createInviteSchema>
+
 export const Route = createFileRoute('/_app/$org/(user)/users')({
   component: Users,
 })
 
 function Users() {
   const { slug } = useActiveOrganization()
-  const { data } = useListUsersByOrg(slug)
-  const [email, setEmail] = useState('')
+  const { data, isLoading } = useListUsersByOrg(slug)
   const { mutateAsync: createInvite } = useCreateInvite()
 
-  async function handleInvite(e: React.FormEvent) {
-    e.preventDefault()
+  const {
+    register,
+    handleSubmit,
+    formState: { errors },
+    reset,
+  } = useForm<CreateInviteSchema>({
+    resolver: zodResolver(createInviteSchema),
+  })
 
-    const res = await createInvite({ data: { email }, slug })
-    if (res) {
+  async function handleInvite({ email }: CreateInviteSchema) {
+    try {
+      await createInvite({ data: { email }, slug })
       toast.success('Convite enviado!')
-      setEmail('')
-    } else {
-      toast.error('Erro ao enviar convite')
+      reset()
+    } catch (error) {
+      if (error instanceof Error) {
+        toast.error(error.message)
+        return
+      }
     }
+  }
+
+  if (isLoading || !data) {
+    return (
+      <div className="h-screen flex items-center justify-center">
+        <Loader2 className="text-zinc-500 animate-spin size-10" />
+      </div>
+    )
   }
 
   return (
     <div className="p-4 space-y-4">
-      <form onSubmit={handleInvite} className="flex gap-2">
-        <Input placeholder="E-mail" value={email} onChange={e => setEmail(e.target.value)} />
+      <form onSubmit={handleSubmit(handleInvite)} className="flex gap-2">
+        <div className="flex flex-col gap-2 w-lg">
+          <Input placeholder="E-mail" {...register('email')} />
+          {errors.email && <p className="text-sm text-red-400">{errors.email.message}</p>}
+        </div>
         <Button type="submit">Convidar</Button>
       </form>
       <Table>

@@ -442,7 +442,7 @@
         }
       }
     },
-    "/org/{slug}/invites/{token}/accept": {
+    "/org/{slug}/invite/{token}/accept": {
       "post": {
         "operationId": "acceptInvite",
         "tags": [
@@ -474,7 +474,7 @@
         }
       }
     },
-    "/org/{slug}/invites": {
+    "/org/{slug}/invite": {
       "post": {
         "operationId": "createInvite",
         "tags": [
@@ -513,41 +513,25 @@
         ],
         "responses": {
           "201": {
-            "description": "Default Response",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "type": "object",
-                  "properties": {
-                    "token": {
-                      "type": "string"
-                    }
-                  },
-                  "required": [
-                    "token"
-                  ],
-                  "additionalProperties": false
-                }
-              }
-            }
+            "description": "Default Response"
           }
         }
       }
     },
-    "/invites/{token}": {
+    "/org/{slug}/invites": {
       "get": {
         "operationId": "getInvite",
         "tags": [
           "Invite"
         ],
-        "description": "Get invite by token",
+        "description": "Get invite by user",
         "parameters": [
           {
             "schema": {
               "type": "string"
             },
             "in": "path",
-            "name": "token",
+            "name": "slug",
             "required": true
           }
         ],
@@ -559,13 +543,40 @@
                 "schema": {
                   "type": "object",
                   "properties": {
-                    "invite": {
-                      "type": "object",
-                      "nullable": true
+                    "invites": {
+                      "type": "array",
+                      "items": {
+                        "type": "object",
+                        "properties": {
+                          "id": {
+                            "type": "string"
+                          },
+                          "organization": {
+                            "type": "string"
+                          },
+                          "email": {
+                            "type": "string"
+                          },
+                          "slug": {
+                            "type": "string"
+                          },
+                          "owner": {
+                            "type": "string"
+                          }
+                        },
+                        "required": [
+                          "id",
+                          "organization",
+                          "email",
+                          "slug",
+                          "owner"
+                        ],
+                        "additionalProperties": false
+                      }
                     }
                   },
                   "required": [
-                    "invite"
+                    "invites"
                   ],
                   "additionalProperties": false
                 }

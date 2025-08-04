@@ -19,14 +19,6 @@ async function seed() {
   await db.delete(users)
   await db.delete(organizations)
 
-  const [org, otherOrg] = await db
-    .insert(organizations)
-    .values([
-      { name: 'My House', slug: slugify('My House', { lower: true }) },
-      { name: 'Work Place', slug: slugify('Work Place', { lower: true }) },
-    ])
-    .returning()
-
   const [user, otherUser, thirdUser] = await db
     .insert(users)
     .values([
@@ -36,24 +28,29 @@ async function seed() {
         email: 'fagner.egomes@gmail.com',
         phone: '5511999999999',
         ddd: '11',
-        defaultOrganizationId: org.id,
       },
       {
         name: 'Diego Fernandes',
         avatarUrl: 'https://github.com/diego3g.png',
-        email: 'g9L3N@example.com',
+        email: 'diego@gmail.com',
         phone: '5511999999999',
         ddd: '11',
-        defaultOrganizationId: org.id,
       },
       {
         name: 'Ana Souza',
         avatarUrl: 'https://example.com/ana.png',
-        email: 'ana@example.com',
+        email: 'ana@gmail.com',
         phone: '5511988888888',
         ddd: '11',
-        defaultOrganizationId: otherOrg.id,
       },
+    ])
+    .returning()
+
+  const [org, otherOrg] = await db
+    .insert(organizations)
+    .values([
+      { name: 'My House', slug: slugify('My House', { lower: true }), ownerId: user.id },
+      { name: 'Work Place', slug: slugify('Work Place', { lower: true }), ownerId: otherUser.id },
     ])
     .returning()
 

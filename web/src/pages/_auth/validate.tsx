@@ -7,7 +7,7 @@ import { Button } from '@/components/ui/button'
 import { useValidateToken } from '@/http/generated/api'
 import { setAuthToken } from '@/lib/auth'
 
-export const Route = createFileRoute('/_auth/validate-link')({
+export const Route = createFileRoute('/_auth/validate')({
   component: RouteComponent,
   validateSearch: z.object({
     token: z.string().or(z.undefined()),
@@ -17,7 +17,7 @@ export const Route = createFileRoute('/_auth/validate-link')({
 function RouteComponent() {
   const [isLoading, setIsLoading] = useState(true)
   const [isError, setIsError] = useState(false)
-  const { token = '' } = useSearch({ strict: false })
+  const { token = null } = useSearch({ strict: false })
   const navigate = useNavigate()
 
   const { mutateAsync: validateToken } = useValidateToken()

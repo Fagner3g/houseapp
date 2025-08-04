@@ -1,11 +1,11 @@
 import type { FastifyRequest } from 'fastify'
 
-import { listUsers } from '@/domain/user/list-users'
+import { userService } from '@/domain/user'
 
 export async function listUsersByOrgController(req: FastifyRequest) {
   const idOrg = req.organization.id
 
-  const { users } = await listUsers({ idOrg })
+  const { users } = await userService.listUsers({ idOrg })
 
   return { users }
 }

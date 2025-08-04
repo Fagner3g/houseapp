@@ -36,6 +36,20 @@
       "when": 1754326038461,
       "tag": "0004_dizzy_doctor_faustus",
       "breakpoints": true
+    },
+    {
+      "idx": 5,
+      "version": "7",
+      "when": 1754335547936,
+      "tag": "0005_lying_wong",
+      "breakpoints": true
+    },
+    {
+      "idx": 6,
+      "version": "7",
+      "when": 1754341549150,
+      "tag": "0006_motionless_squadron_supreme",
+      "breakpoints": true
     }
   ]
 }

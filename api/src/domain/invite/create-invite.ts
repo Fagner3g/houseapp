@@ -8,11 +8,12 @@ import { sendInviteMail } from '../send-invite-mail'
 
 interface CreateInviteRequest {
   email: string
-  organizationSlug: string
+  orgId: string
+  userId: string
 }
 
-export async function createInvite({ email, organizationSlug }: CreateInviteRequest) {
-  const { organization } = await getOrganizationById({ slug: organizationSlug })
+export async function createInvite({ email, userId, orgId }: CreateInviteRequest) {
+  const { organization } = await getOrganizationById({ orgId })
   if (!organization) {
     throw new Error('Organization not found')
   }
@@ -24,11 +25,11 @@ export async function createInvite({ email, organizationSlug }: CreateInviteRequ
     .values({
       organizationId: organization.id,
       email,
-      token,
+      userId,
     })
     .returning()
 
-  const url = new URL(`${env.WEB_URL}/invite`)
+  const url = new URL(`${env.WEB_URL}/invites/accept`)
   url.searchParams.set('token', token)
 
   await sendInviteMail({ email, url: url.toString() })

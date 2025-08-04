@@ -8,11 +8,11 @@ import {
   getPendingGoalsRoute,
   getWeekSummaryRoute,
 } from './goals.routes'
-import { acceptInviteRoute, createInviteRoute, getInviteRoute } from './invite.routes'
+import { acceptInviteRoute, createInviteRoute, getInvitesRoute } from './invite.routes'
 import {
   createOrgRoute,
   deleteOrgRoute,
-  listOrganizationsRoute as listOrgRoute,
+  listOrgRoute,
   listUsersByOrgRoute,
   renameOrgRoute,
 } from './organization.routes'
@@ -35,7 +35,7 @@ export function createRoutes(app: FastifyInstance) {
   // Invite
   app.register(acceptInviteRoute)
   app.register(createInviteRoute)
-  app.register(getInviteRoute)
+  app.register(getInvitesRoute)
 
   // Goal
   app.register(completionGoalRoute)

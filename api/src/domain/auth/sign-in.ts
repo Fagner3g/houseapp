@@ -35,7 +35,7 @@ export async function SignIn({ email }: SignInRequest) {
 
   const token = await AuthenticateUser(user.id)
 
-  const url = new URL(`${env.WEB_URL}/validate-link`)
+  const url = new URL(`${env.WEB_URL}/validate`)
   url.searchParams.set('token', token)
 
   await SendMail({ name: user.name, email, ddd: user.ddd, phone: user.phone, url: url.toString() })

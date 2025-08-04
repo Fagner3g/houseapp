@@ -3,26 +3,25 @@ import { eq } from 'drizzle-orm'
 import { db } from '@/db'
 import { invites } from '@/db/schemas/invites'
 import { organizations } from '@/db/schemas/organization'
+import { users } from '@/db/schemas/users'
 
 interface GetInviteRequest {
-  token: string
+  email: string
 }
 
-export async function getInvite({ token }: GetInviteRequest) {
-  const [invite] = await db
+export async function getInvites({ email }: GetInviteRequest) {
+  const resp = await db
     .select({
       id: invites.id,
       email: invites.email,
-      organizationId: invites.organizationId,
-      token: invites.token,
-      acceptedAt: invites.acceptedAt,
-      createdAt: invites.createdAt,
-      organizationSlug: organizations.slug,
+      organization: organizations.name,
+      slug: organizations.slug,
+      owner: users.name,
     })
     .from(invites)
     .leftJoin(organizations, eq(invites.organizationId, organizations.id))
-    .where(eq(invites.token, token))
-    .limit(1)
+    .innerJoin(users, eq(invites.userId, users.id))
+    .where(eq(invites.email, email))
 
-  return { invite }
+  return { invites: resp }
 }

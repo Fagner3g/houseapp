@@ -1,12 +1,19 @@
 import type { FastifyReply, FastifyRequest } from 'fastify'
 
-import { getInvite } from '@/domain/invite/get-invite'
-import type { GetInviteParams } from '@/http/schemas/invite/get-invite.schema'
+import { inviteService } from '@/domain/invite'
+import { userService } from '@/domain/user'
+import { BadRequestError } from '@/http/utils/error'
 
-type Req = FastifyRequest<{ Params: GetInviteParams }>
+export async function getInviteController(request: FastifyRequest, reply: FastifyReply) {
+  const userId = request.user.sub
 
-export async function getInviteController(request: Req, reply: FastifyReply) {
-  const { token } = request.params
-  const { invite } = await getInvite({ token })
-  return reply.status(200).send({ invite })
+  const user = await userService.getUser({ userId })
+
+  if (!user) {
+    throw new BadRequestError('User not found')
+  }
+
+  const { invites } = await inviteService.getInvites({ email: user.email })
+
+  return reply.status(200).send({ invites })
 }

@@ -111,18 +111,16 @@ export type CreateInviteBody = {
   email: string;
 };
 
-export type CreateInvite201 = {
-  token: string;
+export type GetInvite200InvitesItem = {
+  id: string;
+  organization: string;
+  email: string;
+  slug: string;
+  owner: string;
 };
 
-/**
- * @nullable
- */
-export type GetInvite200Invite = { [key: string]: unknown } | null;
-
 export type GetInvite200 = {
-  /** @nullable */
-  invite: GetInvite200Invite;
+  invites: GetInvite200InvitesItem[];
 };
 
 export type CompleteGoalBody = {
@@ -810,7 +808,7 @@ export const getAcceptInviteUrl = (slug: string,
 
   
 
-  return `/org/${slug}/invites/${token}/accept`
+  return `/org/${slug}/invite/${token}/accept`
 }
 
 export const acceptInvite = async (slug: string,
@@ -879,13 +877,13 @@ export const getCreateInviteUrl = (slug: string,) => {
 
   
 
-  return `/org/${slug}/invites`
+  return `/org/${slug}/invite`
 }
 
 export const createInvite = async (slug: string,
-    createInviteBody: CreateInviteBody, options?: RequestInit): Promise<CreateInvite201> => {
+    createInviteBody: CreateInviteBody, options?: RequestInit): Promise<void> => {
   
-  return http<CreateInvite201>(getCreateInviteUrl(slug),
+  return http<void>(getCreateInviteUrl(slug),
   {      
     ...options,
     method: 'POST',
@@ -942,19 +940,19 @@ const {mutation: mutationOptions, request: requestOptions} = options ?
     }
     
 /**
- * Get invite by token
+ * Get invite by user
  */
-export const getGetInviteUrl = (token: string,) => {
+export const getGetInviteUrl = (slug: string,) => {
 
 
   
 
-  return `/invites/${token}`
+  return `/org/${slug}/invites`
 }
 
-export const getInvite = async (token: string, options?: RequestInit): Promise<GetInvite200> => {
+export const getInvite = async (slug: string, options?: RequestInit): Promise<GetInvite200> => {
   
-  return http<GetInvite200>(getGetInviteUrl(token),
+  return http<GetInvite200>(getGetInviteUrl(slug),
   {      
     ...options,
     method: 'GET'
@@ -965,27 +963,27 @@ export const getInvite = async (token: string, options?: RequestInit): Promise<G
 
 
 
-export const getGetInviteQueryKey = (token: string,) => {
-    return [`/invites/${token}`] as const;
+export const getGetInviteQueryKey = (slug: string,) => {
+    return [`/org/${slug}/invites`] as const;
     }
 
     
-export const getGetInviteQueryOptions = <TData = Awaited<ReturnType<typeof getInvite>>, TError = unknown>(token: string, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof getInvite>>, TError, TData>>, request?: SecondParameter<typeof http>}
+export const getGetInviteQueryOptions = <TData = Awaited<ReturnType<typeof getInvite>>, TError = unknown>(slug: string, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof getInvite>>, TError, TData>>, request?: SecondParameter<typeof http>}
 ) => {
 
 const {query: queryOptions, request: requestOptions} = options ?? {};
 
-  const queryKey =  queryOptions?.queryKey ?? getGetInviteQueryKey(token);
+  const queryKey =  queryOptions?.queryKey ?? getGetInviteQueryKey(slug);
 
   
 
-    const queryFn: QueryFunction<Awaited<ReturnType<typeof getInvite>>> = ({ signal }) => getInvite(token, { signal, ...requestOptions });
+    const queryFn: QueryFunction<Awaited<ReturnType<typeof getInvite>>> = ({ signal }) => getInvite(slug, { signal, ...requestOptions });
 
       
 
       
 
-   return  { queryKey, queryFn, enabled: !!(token), ...queryOptions} as UseQueryOptions<Awaited<ReturnType<typeof getInvite>>, TError, TData> & { queryKey: DataTag<QueryKey, TData, TError> }
+   return  { queryKey, queryFn, enabled: !!(slug), ...queryOptions} as UseQueryOptions<Awaited<ReturnType<typeof getInvite>>, TError, TData> & { queryKey: DataTag<QueryKey, TData, TError> }
 }
 
 export type GetInviteQueryResult = NonNullable<Awaited<ReturnType<typeof getInvite>>>
@@ -993,7 +991,7 @@ export type GetInviteQueryError = unknown
 
 
 export function useGetInvite<TData = Awaited<ReturnType<typeof getInvite>>, TError = unknown>(
- token: string, options: { query:Partial<UseQueryOptions<Awaited<ReturnType<typeof getInvite>>, TError, TData>> & Pick<
+ slug: string, options: { query:Partial<UseQueryOptions<Awaited<ReturnType<typeof getInvite>>, TError, TData>> & Pick<
         DefinedInitialDataOptions<
           Awaited<ReturnType<typeof getInvite>>,
           TError,
@@ -1003,7 +1001,7 @@ export function useGetInvite<TData = Awaited<ReturnType<typeof getInvite>>, TErr
  , queryClient?: QueryClient
   ):  DefinedUseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> }
 export function useGetInvite<TData = Awaited<ReturnType<typeof getInvite>>, TError = unknown>(
- token: string, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof getInvite>>, TError, TData>> & Pick<
+ slug: string, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof getInvite>>, TError, TData>> & Pick<
         UndefinedInitialDataOptions<
           Awaited<ReturnType<typeof getInvite>>,
           TError,
@@ -1013,16 +1011,16 @@ export function useGetInvite<TData = Awaited<ReturnType<typeof getInvite>>, TErr
  , queryClient?: QueryClient
   ):  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> }
 export function useGetInvite<TData = Awaited<ReturnType<typeof getInvite>>, TError = unknown>(
- token: string, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof getInvite>>, TError, TData>>, request?: SecondParameter<typeof http>}
+ slug: string, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof getInvite>>, TError, TData>>, request?: SecondParameter<typeof http>}
  , queryClient?: QueryClient
   ):  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> }
 
 export function useGetInvite<TData = Awaited<ReturnType<typeof getInvite>>, TError = unknown>(
- token: string, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof getInvite>>, TError, TData>>, request?: SecondParameter<typeof http>}
+ slug: string, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof getInvite>>, TError, TData>>, request?: SecondParameter<typeof http>}
  , queryClient?: QueryClient 
  ):  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> } {
 
-  const queryOptions = getGetInviteQueryOptions(token,options)
+  const queryOptions = getGetInviteQueryOptions(slug,options)
 
   const query = useQuery(queryOptions , queryClient) as  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> };
 

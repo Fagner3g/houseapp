@@ -8,7 +8,7 @@ import { useAcceptInvite } from '@/http/generated/api'
 import { getInvite } from '@/http/invite'
 import { getAuthToken } from '@/lib/auth'
 
-export const Route = createFileRoute('/invite')({
+export const Route = createFileRoute('/_auth/invite')({
   component: InvitePage,
   validateSearch: z.object({ token: z.string() }),
 })

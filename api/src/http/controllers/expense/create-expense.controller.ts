@@ -9,7 +9,7 @@ import type {
 type Req = FastifyRequest<{ Params: CreateExpenseSchemaParams; Body: CreateExpenseSchemaBody }>
 
 export async function createExpenseController(request: Req, reply: FastifyReply) {
-  const slug = request.organization.id
+  const organizationId = request.organization.id
   const { title, payToId, amount, dueDate, description } = request.body
 
   const ownerId = request.user.sub
@@ -18,7 +18,7 @@ export async function createExpenseController(request: Req, reply: FastifyReply)
     title,
     ownerId,
     payToId,
-    organizationSlug: slug,
+    organizationId,
     amount,
     dueDate: new Date(dueDate),
     description,

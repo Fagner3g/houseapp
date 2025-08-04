@@ -1,3 +1,4 @@
+import { toast } from 'sonner'
 import Cookies from 'universal-cookie'
 
 import { env } from '@/env'
@@ -37,6 +38,21 @@ export async function http<T>(path: string, optinos: RequestInit): Promise<T> {
     if (response.status === 401) {
       const cookies = new Cookies()
       cookies.remove('houseapp:token')
+    }
+
+    if (response.status === 400) {
+      const data = await response.json()
+      toast.error(data.message)
+    }
+
+    if (response.status === 403) {
+      const data = await response.json()
+      toast.error(data.message)
+    }
+
+    if (response.status === 500) {
+      const data = await response.json()
+      toast.error(data.message)
     }
   }
 
