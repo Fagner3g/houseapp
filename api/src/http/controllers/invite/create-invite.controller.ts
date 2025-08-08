@@ -13,7 +13,7 @@ export async function createInviteController(request: Req, reply: FastifyReply) 
   const userId = request.user.sub
   const { email } = request.body
 
-  await inviteService.createInvite({ email, orgId, userId })
+  await inviteService.create({ email, orgId, userId })
 
   return reply.status(201).send(null)
 }

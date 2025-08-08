@@ -10,7 +10,6 @@ export const getProfileSchema = {
         name: z.string(),
         email: z.string(),
         phone: z.string(),
-        ddd: z.string(),
         avatarUrl: z.string(),
       }),
     }),

@@ -1,8 +1,10 @@
 import { createId } from '@paralleldrive/cuid2'
-import { integer, pgTable, text, timestamp } from 'drizzle-orm/pg-core'
+import { boolean, integer, pgTable, text, timestamp } from 'drizzle-orm/pg-core'
 
 import { organizations } from './organization'
 import { users } from './users'
+
+type ExpenseCategory = 'expense' | 'income'
 
 export const expenses = pgTable('expenses', {
   id: text('id')
@@ -22,4 +24,13 @@ export const expenses = pgTable('expenses', {
   dueDate: timestamp('due_date', { withTimezone: true }).notNull(),
   description: text('description'),
   createdAt: timestamp('created_at', { withTimezone: true }).notNull().defaultNow(),
+  updatedAt: timestamp('updated_at', { withTimezone: true }).notNull().defaultNow(),
+  paidAt: timestamp('paid_at', { withTimezone: true }),
+  isRecurring: boolean('is_recurring').notNull().default(false),
+  recurrenceType: text('recurrence_type')
+    .$type<'monthly' | 'weekly' | 'yearly' | 'custom'>()
+    .default('monthly'),
+  recurrenceUntil: timestamp('recurrence_until', { withTimezone: true }),
+  recurrenceInterval: integer('recurrence_interval'),
+  type: text('type').$type<ExpenseCategory>().notNull().default('expense'),
 })

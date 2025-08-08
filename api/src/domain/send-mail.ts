@@ -3,18 +3,17 @@ import nodemailer from 'nodemailer'
 interface SendMailRequest {
   name: string
   email: string
-  ddd: string
   phone: string
   url: string
 }
 
-export async function SendMail({ email, name, ddd, phone, url }: SendMailRequest) {
+export async function SendMail({ email, name, phone, url }: SendMailRequest) {
   const transporter = nodemailer.createTransport({
     host: 'smtp.ethereal.email',
     port: 587,
     auth: {
-      user: 'lauren31@ethereal.email',
-      pass: 'xSgzGT7je24WXpj4a1',
+      user: 'peggie2@ethereal.email',
+      pass: 'ZvYx7uz7Wc4VcvnJC2',
     },
   })
 
@@ -37,7 +36,7 @@ export async function SendMail({ email, name, ddd, phone, url }: SendMailRequest
                           Para entrar no seu painel de controle, clique no botão abaixo.  
                         </p>
                         <p style="margin:0 0 24px;font-size:16px;color:#555555;line-height:1.5;">
-                          Telefone: ${ddd} ${phone}
+                          Telefone: ${phone}
                         </p>
                         <a
                           href="${url}"

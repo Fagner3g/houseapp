@@ -12,7 +12,6 @@ export const listUsersByOrgSchema = {
           name: z.string(),
           email: z.string(),
           phone: z.string(),
-          ddd: z.string(),
           avatarUrl: z.string(),
           isOwner: z.boolean(),
         })

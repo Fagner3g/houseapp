@@ -1,3 +1,5 @@
+import { writeFile } from 'node:fs'
+import { resolve } from 'node:path'
 import fastifyCors from '@fastify/cors'
 import fastifyJwt from '@fastify/jwt'
 import fastifySwagger from '@fastify/swagger'
@@ -9,8 +11,6 @@ import {
   serializerCompiler,
   validatorCompiler,
 } from 'fastify-type-provider-zod'
-import { writeFile } from 'fs'
-import { resolve } from 'path'
 
 import { env } from '@/config/env'
 import { version } from '../../../package.json'

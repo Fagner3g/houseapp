@@ -1,9 +1,9 @@
 import z from 'zod'
 
-export const sigInUpSchema = {
-  tags: ['Auth'],
-  description: 'Create new user',
-  operationId: 'signUp',
+export const createUserWithInviteSchema = {
+  tags: ['User'],
+  description: 'Create new user with invite',
+  operationId: 'createUserWithInvite',
   body: z.object({
     phone: z.string().min(10, 'Informe um telefone válido').max(11, 'Informe um telefone válido'),
     name: z.string('Informe o seu nome'),
@@ -14,4 +14,4 @@ export const sigInUpSchema = {
   },
 }
 
-export type SignInUpBody = z.infer<typeof sigInUpSchema.body>
+export type CreateUserWithInviteBody = z.infer<typeof createUserWithInviteSchema.body>

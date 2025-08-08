@@ -65,16 +65,10 @@
               "schema": {
                 "type": "object",
                 "properties": {
-                  "ddd": {
-                    "type": "string",
-                    "minLength": 2,
-                    "maxLength": 2,
-                    "pattern": "^\\d+$"
-                  },
                   "phone": {
                     "type": "string",
-                    "minLength": 8,
-                    "maxLength": 10
+                    "minLength": 10,
+                    "maxLength": 11
                   },
                   "name": {
                     "type": "string"
@@ -83,13 +77,9 @@
                     "type": "string",
                     "format": "email",
                     "pattern": "^(?!\\.)(?!.*\\.\\.)([A-Za-z0-9_'+\\-\\.]*)[A-Za-z0-9_+-]@([A-Za-z0-9][A-Za-z0-9\\-]*\\.)+[A-Za-z]{2,}$"
-                  },
-                  "inviteToken": {
-                    "type": "string"
                   }
                 },
                 "required": [
-                  "ddd",
                   "phone",
                   "name",
                   "email"
@@ -184,9 +174,6 @@
                         "phone": {
                           "type": "string"
                         },
-                        "ddd": {
-                          "type": "string"
-                        },
                         "avatarUrl": {
                           "type": "string"
                         }
@@ -195,7 +182,6 @@
                         "name",
                         "email",
                         "phone",
-                        "ddd",
                         "avatarUrl"
                       ],
                       "additionalProperties": false
@@ -208,6 +194,60 @@
                 }
               }
             }
+          }
+        }
+      }
+    },
+    "/org/{slug}/create-user-with-invite": {
+      "post": {
+        "operationId": "createUserWithInvite",
+        "tags": [
+          "User"
+        ],
+        "description": "Create new user with invite",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "phone": {
+                    "type": "string",
+                    "minLength": 10,
+                    "maxLength": 11
+                  },
+                  "name": {
+                    "type": "string"
+                  },
+                  "email": {
+                    "type": "string",
+                    "format": "email",
+                    "pattern": "^(?!\\.)(?!.*\\.\\.)([A-Za-z0-9_'+\\-\\.]*)[A-Za-z0-9_+-]@([A-Za-z0-9][A-Za-z0-9\\-]*\\.)+[A-Za-z]{2,}$"
+                  }
+                },
+                "required": [
+                  "phone",
+                  "name",
+                  "email"
+                ]
+              }
+            }
+          },
+          "required": true
+        },
+        "parameters": [
+          {
+            "schema": {
+              "type": "string"
+            },
+            "in": "path",
+            "name": "slug",
+            "required": true
+          }
+        ],
+        "responses": {
+          "201": {
+            "description": "Default Response"
           }
         }
       }
@@ -468,9 +508,6 @@
                           "phone": {
                             "type": "string"
                           },
-                          "ddd": {
-                            "type": "string"
-                          },
                           "avatarUrl": {
                             "type": "string"
                           },
@@ -482,7 +519,6 @@
                           "name",
                           "email",
                           "phone",
-                          "ddd",
                           "avatarUrl",
                           "isOwner"
                         ],

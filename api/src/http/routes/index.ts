@@ -16,7 +16,7 @@ import {
   listUsersByOrgRoute,
   renameOrgRoute,
 } from './organization.routes'
-import { getProfileRoute } from './user.routes'
+import { createUserWithInviteRoute, getProfileRoute } from './user.routes'
 
 export function createRoutes(app: FastifyInstance) {
   // Auth
@@ -26,6 +26,7 @@ export function createRoutes(app: FastifyInstance) {
 
   // User
   app.register(getProfileRoute)
+  app.register(createUserWithInviteRoute)
 
   // Organization
   app.register(createOrgRoute)

@@ -9,7 +9,7 @@ export async function acceptInviteController(request: Req, reply: FastifyReply) 
   const { token } = request.params
   const userId = request.user.sub
 
-  await acceptInvite({ token, userId })
+  //await acceptInvite({ token, userId })
 
   return reply.status(200).send()
 }

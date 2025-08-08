@@ -1,16 +1,14 @@
 import type { FastifyRequest } from 'fastify'
 
+import { signUp } from '@/domain/auth/sigin-up'
 import { getUser } from '@/domain/user/get-user'
-import { signUp } from '@/domain/user/sigin-up'
 import type { SignInUpBody } from '@/http/schemas/auth/sign-up.schema'
 import { UserAlreadyExistsError } from '@/http/utils/error'
 
-type Req = FastifyRequest<{
-  Body: SignInUpBody
-}>
+type Req = FastifyRequest<{ Body: SignInUpBody }>
 
 export async function sigInUpController(request: Req) {
-  const { email, name, phone, ddd, inviteToken } = request.body
+  const { email, name, phone } = request.body
 
   let user = await getUser({ email })
 
@@ -28,8 +26,6 @@ export async function sigInUpController(request: Req) {
     name,
     email,
     phone,
-    ddd,
     avatarUrl: `https://robohash.org/${Math.random().toString(36).slice(2)}?size=200x200`,
-    inviteToken,
   })
 }
