@@ -15,20 +15,24 @@ export const Route = createFileRoute('/_auth/sign-up')({
   }),
 })
 
-const schema = z.object({
-  name: z.string().min(1),
-  email: z.string().email(),
-  ddd: z.string().min(2).max(2),
-  phone: z.string().min(8).max(10),
+export const schemaSignUp = z.object({
+  name: z.string('O nome é obrigatório').min(1).max(50),
+  email: z.email('E-mail inválido'),
+  phone: z
+    .string()
+    .transform(val => val.replace(/\D/g, ''))
+    .refine(val => val.length === 10 || val.length === 11, {
+      error: 'Informe um telefone válido com DDD',
+    }),
 })
 
-type FormValues = z.infer<typeof schema>
+type FormValues = z.infer<typeof schemaSignUp>
 
 function Index() {
   const navigate = useNavigate()
   const { mutateAsync: createUser } = useSignUp()
 
-  const form = useForm<FormValues>({ resolver: zodResolver(schema) })
+  const form = useForm<FormValues>({ resolver: zodResolver(schemaSignUp) })
 
   async function handleSubmit(values: FormValues) {
     const inviteToken = localStorage.getItem('invite-token') || undefined
@@ -47,7 +51,6 @@ function Index() {
         <h1>Fazer cadastro</h1>
         <Input placeholder="Nome" {...form.register('name')} />
         <Input placeholder="Email" {...form.register('email')} />
-        <Input placeholder="DDD" {...form.register('ddd')} />
         <Input placeholder="Telefone" {...form.register('phone')} />
         <Button type="submit">Cadastrar</Button>
         <Button
