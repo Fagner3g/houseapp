@@ -1,11 +1,10 @@
 import { toast } from 'sonner'
-import Cookies from 'universal-cookie'
 
 import { env } from '@/env'
+import { getAuthToken, removeAuthToken } from '@/lib/auth'
 
 async function getHeaders(headers?: HeadersInit): Promise<HeadersInit> {
-  const cookies = new Cookies()
-  const token = cookies.get('houseapp:token')
+  const token = getAuthToken()
 
   if (token) {
     return {
@@ -36,8 +35,7 @@ export async function http<T>(path: string, optinos: RequestInit): Promise<T> {
 
   if (!response.ok) {
     if (response.status === 401) {
-      const cookies = new Cookies()
-      cookies.remove('houseapp:token')
+      removeAuthToken()
     }
 
     if (response.status === 400) {
