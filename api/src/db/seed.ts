@@ -11,13 +11,13 @@ import { userOrganizations } from './schemas/userOrganization'
 import { users } from './schemas/users'
 
 async function seed() {
+  await db.delete(organizations)
+  await db.delete(users)
   await db.delete(goalCompletions)
   await db.delete(goals)
   await db.delete(expenses)
   await db.delete(invites)
   await db.delete(userOrganizations)
-  await db.delete(users)
-  await db.delete(organizations)
 
   const [user, otherUser, thirdUser] = await db
     .insert(users)
