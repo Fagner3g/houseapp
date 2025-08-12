@@ -58,14 +58,9 @@ export function ModalNewTransaction() {
             return [olds || [], data]
           }
         )
-
-        console.log({ previous, slug })
-
         return { previous, slug }
       },
       onError: (_err, _vars, ctx) => {
-        console.log({ ctx })
-
         if (ctx) {
           queryClient.setQueryData(getListTransactionsQueryKey(ctx.slug), ctx.previous)
         }
@@ -80,8 +75,6 @@ export function ModalNewTransaction() {
   const isExpense = form.watch('type') === RegisterType.EXPENSE
   const isRecurring = form.watch('isRecurring')
   const mode = form.getValues('recurrenceSelector')
-
-  console.log(form.watch('type'))
 
   useEffect(() => {
     if (!isRecurring) return
