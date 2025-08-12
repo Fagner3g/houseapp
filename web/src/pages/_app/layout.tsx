@@ -3,15 +3,13 @@ import { createFileRoute, Outlet, redirect } from '@tanstack/react-router'
 import { Header } from '@/components/layout/header'
 import { AppSidebar } from '@/components/layout/sidebar'
 import { SidebarInset, SidebarProvider } from '@/components/ui/sidebar'
-import { getAuthToken } from '@/lib/auth'
+import { useAuthStore } from '@/stores/auth'
 
 export const Route = createFileRoute('/_app')({
   component: RouteComponent,
-  beforeLoad: async () => {
-    const token = getAuthToken()
-    if (!token) {
-      throw redirect({ to: '/sign-in' })
-    }
+  beforeLoad: () => {
+    const { user } = useAuthStore.getState()
+    if (!user) throw redirect({ to: '/sign-in' })
   },
 })
 

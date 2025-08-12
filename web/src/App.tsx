@@ -1,7 +1,6 @@
 import { createRouter, RouterProvider } from '@tanstack/react-router'
 import { Toaster } from 'sonner'
 
-import { AuthProvider } from './providers/auth-provider.tsx'
 import { QueryProvider } from './providers/query-provider.tsx'
 import { ThemeProvider } from './providers/theme-provider.tsx'
 // Import the generated route tree
@@ -21,10 +20,8 @@ export function App() {
   return (
     <ThemeProvider defaultTheme="dark" storageKey="vite-ui-theme">
       <QueryProvider>
-        <AuthProvider>
-          <RouterProvider router={router} />
-          <Toaster position="bottom-left" richColors />
-        </AuthProvider>
+        <RouterProvider router={router} />
+        <Toaster position="bottom-left" richColors />
       </QueryProvider>
     </ThemeProvider>
   )
