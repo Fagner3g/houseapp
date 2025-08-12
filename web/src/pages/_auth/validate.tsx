@@ -37,7 +37,7 @@ function RouteComponent() {
                 localStorage.removeItem('invite-token')
                 navigate({ to: '/invite', search: { token: invite } })
               } else if (slug) {
-                navigate({ to: '/$org/expenses', params: { org: slug } })
+                navigate({ to: '/$org/transactions', params: { org: slug } })
               }
             }, 1000)
           } else {

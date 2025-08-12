@@ -3,11 +3,12 @@ import { drizzle, type PostgresJsDatabase } from 'drizzle-orm/postgres-js'
 import postgres from 'postgres'
 
 import { env } from '@/config/env'
-import { expenses } from './schemas/expenses'
 import { goalCompletions } from './schemas/goalCompletions'
 import { goals } from './schemas/goals'
 import { invites } from './schemas/invites'
 import { organizations } from './schemas/organization'
+import { transactions } from './schemas/transactions'
+import { transactionTags } from './schemas/transactionTags'
 import { userOrganizations } from './schemas/userOrganization'
 import { users } from './schemas/users'
 
@@ -18,7 +19,8 @@ const schema = {
   userOrganizations,
   goals,
   goalCompletions,
-  expenses,
+  transactions,
+  transactionTags,
 }
 
 type Database = PostgresJsDatabase<typeof schema>

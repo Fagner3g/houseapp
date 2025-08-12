@@ -1,7 +1,6 @@
 import type { FastifyInstance } from 'fastify'
 
 import { signInRoute, signUpRoute, validateTokenRoute } from './auth.routes'
-import { createExpenseRoute, getExpenseRoute, listExpensesRoute } from './expense.routes'
 import {
   completionGoalRoute,
   createGoalRoute,
@@ -16,6 +15,11 @@ import {
   listUsersByOrgRoute,
   renameOrgRoute,
 } from './organization.routes'
+import {
+  createTransactionRoute,
+  getTransactionRoute,
+  listTransactionRoute,
+} from './transaction.routes'
 import { createUserWithInviteRoute, getProfileRoute } from './user.routes'
 
 export function createRoutes(app: FastifyInstance) {
@@ -46,8 +50,8 @@ export function createRoutes(app: FastifyInstance) {
   app.register(getPendingGoalsRoute)
   app.register(getWeekSummaryRoute)
 
-  // Expense
-  app.register(createExpenseRoute)
-  app.register(getExpenseRoute)
-  app.register(listExpensesRoute)
+  // Transaction
+  app.register(createTransactionRoute)
+  app.register(getTransactionRoute)
+  app.register(listTransactionRoute)
 }

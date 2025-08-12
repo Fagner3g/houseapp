@@ -1,10 +1,11 @@
 import { CreditCard, LayoutDashboard, Rocket, Users } from 'lucide-react'
+
 import { useOrgStore } from '@/stores/org'
 
 const baseItems = [
   { title: 'Dashboard', path: 'dashboard', icon: LayoutDashboard },
   { title: 'Metas', path: 'goals', icon: Rocket },
-  { title: 'Despesas', path: 'expenses', icon: CreditCard },
+  { title: 'Despesas', path: 'transactions', icon: CreditCard },
   { title: 'Usuários', path: 'users', icon: Users },
 ]
 

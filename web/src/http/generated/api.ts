@@ -23,19 +23,20 @@ import type {
 
 import type {
   CompleteGoalBody,
-  CreateExpenseBody,
   CreateGoalBody,
   CreateInviteBody,
   CreateOrganization201,
   CreateOrganizationBody,
+  CreateTransaction201,
+  CreateTransactionBody,
   CreateUserWithInviteBody,
-  GetExpense200,
   GetInvite200,
   GetPendingGoals200,
   GetProfile200,
+  GetTransactionById200,
   GetWeekSummary200,
-  ListExpenses200,
   ListOrganizations200,
+  ListTransactions200,
   ListUsersByOrg200,
   RenameOrg200,
   RenameOrgBody,
@@ -1880,43 +1881,43 @@ export function useGetWeekSummary<
 }
 
 /**
- * Create an expense
+ * Create an transaction
  */
-export const getCreateExpenseUrl = (slug: string) => {
-  return `/org/${slug}/expenses`;
+export const getCreateTransactionUrl = (slug: string) => {
+  return `/org/${slug}/transaction`;
 };
 
-export const createExpense = async (
+export const createTransaction = async (
   slug: string,
-  createExpenseBody: CreateExpenseBody,
+  createTransactionBody: CreateTransactionBody,
   options?: RequestInit,
-): Promise<null> => {
-  return http<null>(getCreateExpenseUrl(slug), {
+): Promise<CreateTransaction201> => {
+  return http<CreateTransaction201>(getCreateTransactionUrl(slug), {
     ...options,
     method: "POST",
     headers: { "Content-Type": "application/json", ...options?.headers },
-    body: JSON.stringify(createExpenseBody),
+    body: JSON.stringify(createTransactionBody),
   });
 };
 
-export const getCreateExpenseMutationOptions = <
+export const getCreateTransactionMutationOptions = <
   TError = unknown,
   TContext = unknown,
 >(options?: {
   mutation?: UseMutationOptions<
-    Awaited<ReturnType<typeof createExpense>>,
+    Awaited<ReturnType<typeof createTransaction>>,
     TError,
-    { slug: string; data: CreateExpenseBody },
+    { slug: string; data: CreateTransactionBody },
     TContext
   >;
   request?: SecondParameter<typeof http>;
 }): UseMutationOptions<
-  Awaited<ReturnType<typeof createExpense>>,
+  Awaited<ReturnType<typeof createTransaction>>,
   TError,
-  { slug: string; data: CreateExpenseBody },
+  { slug: string; data: CreateTransactionBody },
   TContext
 > => {
-  const mutationKey = ["createExpense"];
+  const mutationKey = ["createTransaction"];
   const { mutation: mutationOptions, request: requestOptions } = options
     ? options.mutation &&
       "mutationKey" in options.mutation &&
@@ -1926,117 +1927,130 @@ export const getCreateExpenseMutationOptions = <
     : { mutation: { mutationKey }, request: undefined };
 
   const mutationFn: MutationFunction<
-    Awaited<ReturnType<typeof createExpense>>,
-    { slug: string; data: CreateExpenseBody }
+    Awaited<ReturnType<typeof createTransaction>>,
+    { slug: string; data: CreateTransactionBody }
   > = (props) => {
     const { slug, data } = props ?? {};
 
-    return createExpense(slug, data, requestOptions);
+    return createTransaction(slug, data, requestOptions);
   };
 
   return { mutationFn, ...mutationOptions };
 };
 
-export type CreateExpenseMutationResult = NonNullable<
-  Awaited<ReturnType<typeof createExpense>>
+export type CreateTransactionMutationResult = NonNullable<
+  Awaited<ReturnType<typeof createTransaction>>
 >;
-export type CreateExpenseMutationBody = CreateExpenseBody;
-export type CreateExpenseMutationError = unknown;
+export type CreateTransactionMutationBody = CreateTransactionBody;
+export type CreateTransactionMutationError = unknown;
 
-export const useCreateExpense = <TError = unknown, TContext = unknown>(
+export const useCreateTransaction = <TError = unknown, TContext = unknown>(
   options?: {
     mutation?: UseMutationOptions<
-      Awaited<ReturnType<typeof createExpense>>,
+      Awaited<ReturnType<typeof createTransaction>>,
       TError,
-      { slug: string; data: CreateExpenseBody },
+      { slug: string; data: CreateTransactionBody },
       TContext
     >;
     request?: SecondParameter<typeof http>;
   },
   queryClient?: QueryClient,
 ): UseMutationResult<
-  Awaited<ReturnType<typeof createExpense>>,
+  Awaited<ReturnType<typeof createTransaction>>,
   TError,
-  { slug: string; data: CreateExpenseBody },
+  { slug: string; data: CreateTransactionBody },
   TContext
 > => {
-  const mutationOptions = getCreateExpenseMutationOptions(options);
+  const mutationOptions = getCreateTransactionMutationOptions(options);
 
   return useMutation(mutationOptions, queryClient);
 };
 
 /**
- * List expenses for authenticated user
+ * Get transaction by id
  */
-export const getListExpensesUrl = (slug: string) => {
-  return `/org/${slug}/expenses`;
+export const getGetTransactionByIdUrl = (slug: string, id: string) => {
+  return `/org/${slug}/transaction/${id}`;
 };
 
-export const listExpenses = async (
+export const getTransactionById = async (
   slug: string,
+  id: string,
   options?: RequestInit,
-): Promise<ListExpenses200> => {
-  return http<ListExpenses200>(getListExpensesUrl(slug), {
+): Promise<GetTransactionById200> => {
+  return http<GetTransactionById200>(getGetTransactionByIdUrl(slug, id), {
     ...options,
     method: "GET",
   });
 };
 
-export const getListExpensesQueryKey = (slug?: string) => {
-  return [`/org/${slug}/expenses`] as const;
+export const getGetTransactionByIdQueryKey = (slug?: string, id?: string) => {
+  return [`/org/${slug}/transaction/${id}`] as const;
 };
 
-export const getListExpensesQueryOptions = <
-  TData = Awaited<ReturnType<typeof listExpenses>>,
+export const getGetTransactionByIdQueryOptions = <
+  TData = Awaited<ReturnType<typeof getTransactionById>>,
   TError = unknown,
 >(
   slug: string,
+  id: string,
   options?: {
     query?: Partial<
-      UseQueryOptions<Awaited<ReturnType<typeof listExpenses>>, TError, TData>
+      UseQueryOptions<
+        Awaited<ReturnType<typeof getTransactionById>>,
+        TError,
+        TData
+      >
     >;
     request?: SecondParameter<typeof http>;
   },
 ) => {
   const { query: queryOptions, request: requestOptions } = options ?? {};
 
-  const queryKey = queryOptions?.queryKey ?? getListExpensesQueryKey(slug);
+  const queryKey =
+    queryOptions?.queryKey ?? getGetTransactionByIdQueryKey(slug, id);
 
-  const queryFn: QueryFunction<Awaited<ReturnType<typeof listExpenses>>> = ({
-    signal,
-  }) => listExpenses(slug, { signal, ...requestOptions });
+  const queryFn: QueryFunction<
+    Awaited<ReturnType<typeof getTransactionById>>
+  > = ({ signal }) =>
+    getTransactionById(slug, id, { signal, ...requestOptions });
 
   return {
     queryKey,
     queryFn,
-    enabled: !!slug,
+    enabled: !!(slug && id),
     ...queryOptions,
   } as UseQueryOptions<
-    Awaited<ReturnType<typeof listExpenses>>,
+    Awaited<ReturnType<typeof getTransactionById>>,
     TError,
     TData
   > & { queryKey: DataTag<QueryKey, TData, TError> };
 };
 
-export type ListExpensesQueryResult = NonNullable<
-  Awaited<ReturnType<typeof listExpenses>>
+export type GetTransactionByIdQueryResult = NonNullable<
+  Awaited<ReturnType<typeof getTransactionById>>
 >;
-export type ListExpensesQueryError = unknown;
+export type GetTransactionByIdQueryError = unknown;
 
-export function useListExpenses<
-  TData = Awaited<ReturnType<typeof listExpenses>>,
+export function useGetTransactionById<
+  TData = Awaited<ReturnType<typeof getTransactionById>>,
   TError = unknown,
 >(
   slug: string,
+  id: string,
   options: {
     query: Partial<
-      UseQueryOptions<Awaited<ReturnType<typeof listExpenses>>, TError, TData>
+      UseQueryOptions<
+        Awaited<ReturnType<typeof getTransactionById>>,
+        TError,
+        TData
+      >
     > &
       Pick<
         DefinedInitialDataOptions<
-          Awaited<ReturnType<typeof listExpenses>>,
+          Awaited<ReturnType<typeof getTransactionById>>,
           TError,
-          Awaited<ReturnType<typeof listExpenses>>
+          Awaited<ReturnType<typeof getTransactionById>>
         >,
         "initialData"
       >;
@@ -2046,20 +2060,25 @@ export function useListExpenses<
 ): DefinedUseQueryResult<TData, TError> & {
   queryKey: DataTag<QueryKey, TData, TError>;
 };
-export function useListExpenses<
-  TData = Awaited<ReturnType<typeof listExpenses>>,
+export function useGetTransactionById<
+  TData = Awaited<ReturnType<typeof getTransactionById>>,
   TError = unknown,
 >(
   slug: string,
+  id: string,
   options?: {
     query?: Partial<
-      UseQueryOptions<Awaited<ReturnType<typeof listExpenses>>, TError, TData>
+      UseQueryOptions<
+        Awaited<ReturnType<typeof getTransactionById>>,
+        TError,
+        TData
+      >
     > &
       Pick<
         UndefinedInitialDataOptions<
-          Awaited<ReturnType<typeof listExpenses>>,
+          Awaited<ReturnType<typeof getTransactionById>>,
           TError,
-          Awaited<ReturnType<typeof listExpenses>>
+          Awaited<ReturnType<typeof getTransactionById>>
         >,
         "initialData"
       >;
@@ -2069,14 +2088,19 @@ export function useListExpenses<
 ): UseQueryResult<TData, TError> & {
   queryKey: DataTag<QueryKey, TData, TError>;
 };
-export function useListExpenses<
-  TData = Awaited<ReturnType<typeof listExpenses>>,
+export function useGetTransactionById<
+  TData = Awaited<ReturnType<typeof getTransactionById>>,
   TError = unknown,
 >(
   slug: string,
+  id: string,
   options?: {
     query?: Partial<
-      UseQueryOptions<Awaited<ReturnType<typeof listExpenses>>, TError, TData>
+      UseQueryOptions<
+        Awaited<ReturnType<typeof getTransactionById>>,
+        TError,
+        TData
+      >
     >;
     request?: SecondParameter<typeof http>;
   },
@@ -2085,14 +2109,19 @@ export function useListExpenses<
   queryKey: DataTag<QueryKey, TData, TError>;
 };
 
-export function useListExpenses<
-  TData = Awaited<ReturnType<typeof listExpenses>>,
+export function useGetTransactionById<
+  TData = Awaited<ReturnType<typeof getTransactionById>>,
   TError = unknown,
 >(
   slug: string,
+  id: string,
   options?: {
     query?: Partial<
-      UseQueryOptions<Awaited<ReturnType<typeof listExpenses>>, TError, TData>
+      UseQueryOptions<
+        Awaited<ReturnType<typeof getTransactionById>>,
+        TError,
+        TData
+      >
     >;
     request?: SecondParameter<typeof http>;
   },
@@ -2100,7 +2129,7 @@ export function useListExpenses<
 ): UseQueryResult<TData, TError> & {
   queryKey: DataTag<QueryKey, TData, TError>;
 } {
-  const queryOptions = getListExpensesQueryOptions(slug, options);
+  const queryOptions = getGetTransactionByIdQueryOptions(slug, id, options);
 
   const query = useQuery(queryOptions, queryClient) as UseQueryResult<
     TData,
@@ -2113,81 +2142,85 @@ export function useListExpenses<
 }
 
 /**
- * Get expense by id
+ * List transactions for authenticated user
  */
-export const getGetExpenseUrl = (slug: string, expenseId: string) => {
-  return `/org/${slug}/expenses/${expenseId}`;
+export const getListTransactionsUrl = (slug: string) => {
+  return `/org/${slug}/transactions`;
 };
 
-export const getExpense = async (
+export const listTransactions = async (
   slug: string,
-  expenseId: string,
   options?: RequestInit,
-): Promise<GetExpense200> => {
-  return http<GetExpense200>(getGetExpenseUrl(slug, expenseId), {
+): Promise<ListTransactions200> => {
+  return http<ListTransactions200>(getListTransactionsUrl(slug), {
     ...options,
     method: "GET",
   });
 };
 
-export const getGetExpenseQueryKey = (slug?: string, expenseId?: string) => {
-  return [`/org/${slug}/expenses/${expenseId}`] as const;
+export const getListTransactionsQueryKey = (slug?: string) => {
+  return [`/org/${slug}/transactions`] as const;
 };
 
-export const getGetExpenseQueryOptions = <
-  TData = Awaited<ReturnType<typeof getExpense>>,
+export const getListTransactionsQueryOptions = <
+  TData = Awaited<ReturnType<typeof listTransactions>>,
   TError = unknown,
 >(
   slug: string,
-  expenseId: string,
   options?: {
     query?: Partial<
-      UseQueryOptions<Awaited<ReturnType<typeof getExpense>>, TError, TData>
+      UseQueryOptions<
+        Awaited<ReturnType<typeof listTransactions>>,
+        TError,
+        TData
+      >
     >;
     request?: SecondParameter<typeof http>;
   },
 ) => {
   const { query: queryOptions, request: requestOptions } = options ?? {};
 
-  const queryKey =
-    queryOptions?.queryKey ?? getGetExpenseQueryKey(slug, expenseId);
+  const queryKey = queryOptions?.queryKey ?? getListTransactionsQueryKey(slug);
 
-  const queryFn: QueryFunction<Awaited<ReturnType<typeof getExpense>>> = ({
-    signal,
-  }) => getExpense(slug, expenseId, { signal, ...requestOptions });
+  const queryFn: QueryFunction<
+    Awaited<ReturnType<typeof listTransactions>>
+  > = ({ signal }) => listTransactions(slug, { signal, ...requestOptions });
 
   return {
     queryKey,
     queryFn,
-    enabled: !!(slug && expenseId),
+    enabled: !!slug,
     ...queryOptions,
   } as UseQueryOptions<
-    Awaited<ReturnType<typeof getExpense>>,
+    Awaited<ReturnType<typeof listTransactions>>,
     TError,
     TData
   > & { queryKey: DataTag<QueryKey, TData, TError> };
 };
 
-export type GetExpenseQueryResult = NonNullable<
-  Awaited<ReturnType<typeof getExpense>>
+export type ListTransactionsQueryResult = NonNullable<
+  Awaited<ReturnType<typeof listTransactions>>
 >;
-export type GetExpenseQueryError = unknown;
+export type ListTransactionsQueryError = unknown;
 
-export function useGetExpense<
-  TData = Awaited<ReturnType<typeof getExpense>>,
+export function useListTransactions<
+  TData = Awaited<ReturnType<typeof listTransactions>>,
   TError = unknown,
 >(
   slug: string,
-  expenseId: string,
   options: {
     query: Partial<
-      UseQueryOptions<Awaited<ReturnType<typeof getExpense>>, TError, TData>
+      UseQueryOptions<
+        Awaited<ReturnType<typeof listTransactions>>,
+        TError,
+        TData
+      >
     > &
       Pick<
         DefinedInitialDataOptions<
-          Awaited<ReturnType<typeof getExpense>>,
+          Awaited<ReturnType<typeof listTransactions>>,
           TError,
-          Awaited<ReturnType<typeof getExpense>>
+          Awaited<ReturnType<typeof listTransactions>>
         >,
         "initialData"
       >;
@@ -2197,21 +2230,24 @@ export function useGetExpense<
 ): DefinedUseQueryResult<TData, TError> & {
   queryKey: DataTag<QueryKey, TData, TError>;
 };
-export function useGetExpense<
-  TData = Awaited<ReturnType<typeof getExpense>>,
+export function useListTransactions<
+  TData = Awaited<ReturnType<typeof listTransactions>>,
   TError = unknown,
 >(
   slug: string,
-  expenseId: string,
   options?: {
     query?: Partial<
-      UseQueryOptions<Awaited<ReturnType<typeof getExpense>>, TError, TData>
+      UseQueryOptions<
+        Awaited<ReturnType<typeof listTransactions>>,
+        TError,
+        TData
+      >
     > &
       Pick<
         UndefinedInitialDataOptions<
-          Awaited<ReturnType<typeof getExpense>>,
+          Awaited<ReturnType<typeof listTransactions>>,
           TError,
-          Awaited<ReturnType<typeof getExpense>>
+          Awaited<ReturnType<typeof listTransactions>>
         >,
         "initialData"
       >;
@@ -2221,15 +2257,18 @@ export function useGetExpense<
 ): UseQueryResult<TData, TError> & {
   queryKey: DataTag<QueryKey, TData, TError>;
 };
-export function useGetExpense<
-  TData = Awaited<ReturnType<typeof getExpense>>,
+export function useListTransactions<
+  TData = Awaited<ReturnType<typeof listTransactions>>,
   TError = unknown,
 >(
   slug: string,
-  expenseId: string,
   options?: {
     query?: Partial<
-      UseQueryOptions<Awaited<ReturnType<typeof getExpense>>, TError, TData>
+      UseQueryOptions<
+        Awaited<ReturnType<typeof listTransactions>>,
+        TError,
+        TData
+      >
     >;
     request?: SecondParameter<typeof http>;
   },
@@ -2238,15 +2277,18 @@ export function useGetExpense<
   queryKey: DataTag<QueryKey, TData, TError>;
 };
 
-export function useGetExpense<
-  TData = Awaited<ReturnType<typeof getExpense>>,
+export function useListTransactions<
+  TData = Awaited<ReturnType<typeof listTransactions>>,
   TError = unknown,
 >(
   slug: string,
-  expenseId: string,
   options?: {
     query?: Partial<
-      UseQueryOptions<Awaited<ReturnType<typeof getExpense>>, TError, TData>
+      UseQueryOptions<
+        Awaited<ReturnType<typeof listTransactions>>,
+        TError,
+        TData
+      >
     >;
     request?: SecondParameter<typeof http>;
   },
@@ -2254,7 +2296,7 @@ export function useGetExpense<
 ): UseQueryResult<TData, TError> & {
   queryKey: DataTag<QueryKey, TData, TError>;
 } {
-  const queryOptions = getGetExpenseQueryOptions(slug, expenseId, options);
+  const queryOptions = getListTransactionsQueryOptions(slug, options);
 
   const query = useQuery(queryOptions, queryClient) as UseQueryResult<
     TData,

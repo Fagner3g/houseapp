@@ -5,71 +5,15 @@
     {
       "idx": 0,
       "version": "7",
-      "when": 1753960607967,
-      "tag": "0000_optimal_sunspot",
+      "when": 1754999270625,
+      "tag": "0000_far_frog_thor",
       "breakpoints": true
     },
     {
       "idx": 1,
       "version": "7",
-      "when": 1753975106352,
-      "tag": "0001_petite_wallflower",
-      "breakpoints": true
-    },
-    {
-      "idx": 2,
-      "version": "7",
-      "when": 1753975380156,
-      "tag": "0002_long_logan",
-      "breakpoints": true
-    },
-    {
-      "idx": 3,
-      "version": "7",
-      "when": 1754322469135,
-      "tag": "0003_illegal_ultimo",
-      "breakpoints": true
-    },
-    {
-      "idx": 4,
-      "version": "7",
-      "when": 1754326038461,
-      "tag": "0004_dizzy_doctor_faustus",
-      "breakpoints": true
-    },
-    {
-      "idx": 5,
-      "version": "7",
-      "when": 1754335547936,
-      "tag": "0005_lying_wong",
-      "breakpoints": true
-    },
-    {
-      "idx": 6,
-      "version": "7",
-      "when": 1754341549150,
-      "tag": "0006_motionless_squadron_supreme",
-      "breakpoints": true
-    },
-    {
-      "idx": 7,
-      "version": "7",
-      "when": 1754398701118,
-      "tag": "0007_brave_archangel",
-      "breakpoints": true
-    },
-    {
-      "idx": 8,
-      "version": "7",
-      "when": 1754432492415,
-      "tag": "0008_woozy_blade",
-      "breakpoints": true
-    },
-    {
-      "idx": 9,
-      "version": "7",
-      "when": 1754521508682,
-      "tag": "0009_equal_warlock",
+      "when": 1755003570178,
+      "tag": "0001_cuddly_mandrill",
       "breakpoints": true
     }
   ]

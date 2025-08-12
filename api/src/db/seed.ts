@@ -1,23 +1,27 @@
 import dayjs from 'dayjs'
+import { sql } from 'drizzle-orm'
 import slugify from 'slugify'
 
 import { client, db } from '.'
-import { expenses } from './schemas/expenses'
 import { goalCompletions } from './schemas/goalCompletions'
 import { goals } from './schemas/goals'
-import { invites } from './schemas/invites'
 import { organizations } from './schemas/organization'
+import { transactions } from './schemas/transactions'
 import { userOrganizations } from './schemas/userOrganization'
 import { users } from './schemas/users'
 
 async function seed() {
-  await db.delete(organizations)
-  await db.delete(users)
-  await db.delete(goalCompletions)
-  await db.delete(goals)
-  await db.delete(expenses)
-  await db.delete(invites)
-  await db.delete(userOrganizations)
+  await db.execute(sql`
+    TRUNCATE TABLE
+      "goal_completions",
+      "goals",
+      "transactions",
+      "invites",
+      "user_organizations",
+      "organizations",
+      "users"
+    RESTART IDENTITY CASCADE;
+  `)
 
   const [user, otherUser, thirdUser] = await db
     .insert(users)
@@ -57,7 +61,7 @@ async function seed() {
     { userId: thirdUser.id, organizationId: otherOrg.id },
   ])
 
-  await db.insert(expenses).values([
+  await db.insert(transactions).values([
     {
       title: 'Aluguel',
       ownerId: user.id,
@@ -66,15 +70,40 @@ async function seed() {
       amount: 1000,
       dueDate: dayjs().add(5, 'day').toDate(),
       description: 'Mensalidade do apartamento',
+      type: 'expense',
     },
     {
       title: 'Internet',
-      ownerId: otherUser.id,
+      ownerId: user.id,
       payToId: thirdUser.id,
-      organizationId: otherOrg.id,
+      organizationId: org.id,
       amount: 200,
       dueDate: dayjs().add(3, 'day').toDate(),
       description: 'Plano mensal',
+      type: 'expense',
+    },
+    {
+      title: 'Gás',
+      ownerId: user.id,
+      payToId: thirdUser.id,
+      organizationId: org.id,
+      amount: 200,
+      dueDate: dayjs().add(3, 'day').toDate(),
+      description: 'Plano mensal',
+      type: 'income',
+    },
+    {
+      title: 'Aluguel',
+      ownerId: user.id,
+      payToId: thirdUser.id,
+      organizationId: org.id,
+      amount: 1000,
+      dueDate: dayjs().add(5, 'day').toDate(),
+      description: 'Mensalidade do apartamento',
+      type: 'expense',
+      isRecurring: true,
+      recurrenceType: 'monthly',
+      recurrenceInterval: 1,
     },
   ])
 

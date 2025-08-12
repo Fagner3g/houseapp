@@ -16,8 +16,8 @@ import { Route as AuthSignUpRouteImport } from './pages/_auth/sign-up'
 import { Route as AuthSignInRouteImport } from './pages/_auth/sign-in'
 import { Route as AuthInviteRouteImport } from './pages/_auth/invite'
 import { Route as AppOrguserUsersRouteImport } from './pages/_app/$org/(user)/users'
+import { Route as AppOrgtransactionsTransactionsRouteImport } from './pages/_app/$org/(transactions)/transactions'
 import { Route as AppOrggoalGoalsRouteImport } from './pages/_app/$org/(goal)/goals'
-import { Route as AppOrgexpenseExpensesRouteImport } from './pages/_app/$org/(expense)/expenses'
 import { Route as AppOrgdashboardDashboardRouteImport } from './pages/_app/$org/(dashboard)/dashboard'
 
 const AuthLayoutRoute = AuthLayoutRouteImport.update({
@@ -53,14 +53,15 @@ const AppOrguserUsersRoute = AppOrguserUsersRouteImport.update({
   path: '/$org/users',
   getParentRoute: () => AppLayoutRoute,
 } as any)
+const AppOrgtransactionsTransactionsRoute =
+  AppOrgtransactionsTransactionsRouteImport.update({
+    id: '/$org/(transactions)/transactions',
+    path: '/$org/transactions',
+    getParentRoute: () => AppLayoutRoute,
+  } as any)
 const AppOrggoalGoalsRoute = AppOrggoalGoalsRouteImport.update({
   id: '/$org/(goal)/goals',
   path: '/$org/goals',
-  getParentRoute: () => AppLayoutRoute,
-} as any)
-const AppOrgexpenseExpensesRoute = AppOrgexpenseExpensesRouteImport.update({
-  id: '/$org/(expense)/expenses',
-  path: '/$org/expenses',
   getParentRoute: () => AppLayoutRoute,
 } as any)
 const AppOrgdashboardDashboardRoute =
@@ -76,8 +77,8 @@ export interface FileRoutesByFullPath {
   '/sign-up': typeof AuthSignUpRoute
   '/validate': typeof AuthValidateRoute
   '/$org/dashboard': typeof AppOrgdashboardDashboardRoute
-  '/$org/expenses': typeof AppOrgexpenseExpensesRoute
   '/$org/goals': typeof AppOrggoalGoalsRoute
+  '/$org/transactions': typeof AppOrgtransactionsTransactionsRoute
   '/$org/users': typeof AppOrguserUsersRoute
 }
 export interface FileRoutesByTo {
@@ -86,8 +87,8 @@ export interface FileRoutesByTo {
   '/sign-up': typeof AuthSignUpRoute
   '/validate': typeof AuthValidateRoute
   '/$org/dashboard': typeof AppOrgdashboardDashboardRoute
-  '/$org/expenses': typeof AppOrgexpenseExpensesRoute
   '/$org/goals': typeof AppOrggoalGoalsRoute
+  '/$org/transactions': typeof AppOrgtransactionsTransactionsRoute
   '/$org/users': typeof AppOrguserUsersRoute
 }
 export interface FileRoutesById {
@@ -99,8 +100,8 @@ export interface FileRoutesById {
   '/_auth/sign-up': typeof AuthSignUpRoute
   '/_auth/validate': typeof AuthValidateRoute
   '/_app/$org/(dashboard)/dashboard': typeof AppOrgdashboardDashboardRoute
-  '/_app/$org/(expense)/expenses': typeof AppOrgexpenseExpensesRoute
   '/_app/$org/(goal)/goals': typeof AppOrggoalGoalsRoute
+  '/_app/$org/(transactions)/transactions': typeof AppOrgtransactionsTransactionsRoute
   '/_app/$org/(user)/users': typeof AppOrguserUsersRoute
 }
 export interface FileRouteTypes {
@@ -111,8 +112,8 @@ export interface FileRouteTypes {
     | '/sign-up'
     | '/validate'
     | '/$org/dashboard'
-    | '/$org/expenses'
     | '/$org/goals'
+    | '/$org/transactions'
     | '/$org/users'
   fileRoutesByTo: FileRoutesByTo
   to:
@@ -121,8 +122,8 @@ export interface FileRouteTypes {
     | '/sign-up'
     | '/validate'
     | '/$org/dashboard'
-    | '/$org/expenses'
     | '/$org/goals'
+    | '/$org/transactions'
     | '/$org/users'
   id:
     | '__root__'
@@ -133,8 +134,8 @@ export interface FileRouteTypes {
     | '/_auth/sign-up'
     | '/_auth/validate'
     | '/_app/$org/(dashboard)/dashboard'
-    | '/_app/$org/(expense)/expenses'
     | '/_app/$org/(goal)/goals'
+    | '/_app/$org/(transactions)/transactions'
     | '/_app/$org/(user)/users'
   fileRoutesById: FileRoutesById
 }
@@ -194,18 +195,18 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AppOrguserUsersRouteImport
       parentRoute: typeof AppLayoutRoute
     }
+    '/_app/$org/(transactions)/transactions': {
+      id: '/_app/$org/(transactions)/transactions'
+      path: '/$org/transactions'
+      fullPath: '/$org/transactions'
+      preLoaderRoute: typeof AppOrgtransactionsTransactionsRouteImport
+      parentRoute: typeof AppLayoutRoute
+    }
     '/_app/$org/(goal)/goals': {
       id: '/_app/$org/(goal)/goals'
       path: '/$org/goals'
       fullPath: '/$org/goals'
       preLoaderRoute: typeof AppOrggoalGoalsRouteImport
-      parentRoute: typeof AppLayoutRoute
-    }
-    '/_app/$org/(expense)/expenses': {
-      id: '/_app/$org/(expense)/expenses'
-      path: '/$org/expenses'
-      fullPath: '/$org/expenses'
-      preLoaderRoute: typeof AppOrgexpenseExpensesRouteImport
       parentRoute: typeof AppLayoutRoute
     }
     '/_app/$org/(dashboard)/dashboard': {
@@ -220,15 +221,15 @@ declare module '@tanstack/react-router' {
 
 interface AppLayoutRouteChildren {
   AppOrgdashboardDashboardRoute: typeof AppOrgdashboardDashboardRoute
-  AppOrgexpenseExpensesRoute: typeof AppOrgexpenseExpensesRoute
   AppOrggoalGoalsRoute: typeof AppOrggoalGoalsRoute
+  AppOrgtransactionsTransactionsRoute: typeof AppOrgtransactionsTransactionsRoute
   AppOrguserUsersRoute: typeof AppOrguserUsersRoute
 }
 
 const AppLayoutRouteChildren: AppLayoutRouteChildren = {
   AppOrgdashboardDashboardRoute: AppOrgdashboardDashboardRoute,
-  AppOrgexpenseExpensesRoute: AppOrgexpenseExpensesRoute,
   AppOrggoalGoalsRoute: AppOrggoalGoalsRoute,
+  AppOrgtransactionsTransactionsRoute: AppOrgtransactionsTransactionsRoute,
   AppOrguserUsersRoute: AppOrguserUsersRoute,
 }
 

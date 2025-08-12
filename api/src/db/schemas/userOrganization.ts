@@ -11,7 +11,7 @@ export const userOrganizations = pgTable(
       .references(() => users.id),
     organizationId: text('organization_id')
       .notNull()
-      .references(() => organizations.id),
+      .references(() => organizations.id, { onDelete: 'cascade' }),
     createdAt: timestamp('created_at', { withTimezone: true }).notNull().defaultNow(),
   },
   table => [unique().on(table.userId, table.organizationId)]
