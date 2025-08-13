@@ -1,5 +1,5 @@
-import { PostgresError } from 'postgres'
 import { and, eq } from 'drizzle-orm'
+import { PostgresError } from 'postgres'
 
 import { db } from '@/db'
 import { tags } from '@/db/schemas/tags'
