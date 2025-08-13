@@ -15,11 +15,12 @@ import {
   listUsersByOrgRoute,
   renameOrgRoute,
 } from './organization.routes'
+import { listTagsRoute } from './tag.routes'
 import {
   createTransactionRoute,
+  deleteTransactionsRoute,
   getTransactionRoute,
   listTransactionRoute,
-  deleteTransactionsRoute,
   updateTransactionRoute,
 } from './transaction.routes'
 import { createUserWithInviteRoute, getProfileRoute } from './user.routes'

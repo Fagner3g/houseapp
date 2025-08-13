@@ -27,6 +27,7 @@ export async function createTransactionController(request: Req, reply: FastifyRe
     amount,
     dueDate,
     description,
+    tags,
   } = request.body
 
   const ownerId = request.user.sub
@@ -46,6 +47,7 @@ export async function createTransactionController(request: Req, reply: FastifyRe
     amount,
     dueDate: new Date(dueDate),
     description,
+    tags,
     isRecurring,
     recurrenceSelector,
     recurrenceType,

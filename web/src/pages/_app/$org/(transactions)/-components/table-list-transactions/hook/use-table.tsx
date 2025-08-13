@@ -22,6 +22,7 @@ import { AlertOctagon, LucideClockFading, TrendingDown, TrendingUp } from 'lucid
 import { useState } from 'react'
 import { toast } from 'sonner'
 
+import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
 import { Checkbox } from '@/components/ui/checkbox'
 import {
@@ -163,6 +164,19 @@ export const useTable = (data: ListTransactions200TransactionsItem[]) => {
       header: 'Para',
       cell: ({ row }) => (
         <Label className="text-muted-foreground px-1.5">{row.original.payTo}</Label>
+      ),
+    },
+    {
+      accessorKey: 'tags',
+      header: 'Tags',
+      cell: ({ row }) => (
+        <div className="flex flex-wrap gap-1 px-1.5">
+          {row.original.tags?.map(tag => (
+            <Badge key={tag.name} style={{ backgroundColor: tag.color }} className="text-white">
+              #{tag.name}
+            </Badge>
+          ))}
+        </div>
       ),
     },
     {

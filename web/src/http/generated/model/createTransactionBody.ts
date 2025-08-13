@@ -6,8 +6,8 @@
  * OpenAPI spec version: 1.0.0
  */
 import type { CreateTransactionBodyAnyOf } from "./createTransactionBodyAnyOf";
-import type { CreateTransactionBodyAnyOfFive } from "./createTransactionBodyAnyOfFive";
+import type { CreateTransactionBodyAnyOfSix } from "./createTransactionBodyAnyOfSix";
 
 export type CreateTransactionBody =
   | CreateTransactionBodyAnyOf
-  | CreateTransactionBodyAnyOfFive;
+  | CreateTransactionBodyAnyOfSix;

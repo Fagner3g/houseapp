@@ -7,6 +7,10 @@ export const listTransactionSchema = {
   description: 'List transactions for authenticated user',
   operationId: 'listTransactions',
   params: z.object({ slug: z.string().nonempty() }),
+  querystring: z.object({
+    tags: z.array(z.string()).optional(),
+    tagFilterMode: z.enum(['any', 'all']).default('any'),
+  }),
   response: {
     200: z.object({
       transactions: z.array(transactionResponseSchema),
@@ -15,3 +19,4 @@ export const listTransactionSchema = {
 }
 
 export type ListTransactionSchemaParams = z.infer<typeof listTransactionSchema.params>
+export type ListTransactionSchemaQuery = z.infer<typeof listTransactionSchema.querystring>
