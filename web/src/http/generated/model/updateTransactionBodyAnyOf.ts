@@ -6,6 +6,7 @@
  * OpenAPI spec version: 1.0.0
  */
 import type { UpdateTransactionBodyAnyOfType } from "./updateTransactionBodyAnyOfType";
+import type { UpdateTransactionBodyAnyOfTagsItem } from "./updateTransactionBodyAnyOfTagsItem";
 import type { UpdateTransactionBodyAnyOfRecurrenceSelector } from "./updateTransactionBodyAnyOfRecurrenceSelector";
 import type { UpdateTransactionBodyAnyOfRecurrenceType } from "./updateTransactionBodyAnyOfRecurrenceType";
 
@@ -22,6 +23,7 @@ export type UpdateTransactionBodyAnyOf = {
   /** @pattern ^(?!\.)(?!.*\.\.)([A-Za-z0-9_'+\-\.]*)[A-Za-z0-9_+-]@([A-Za-z0-9][A-Za-z0-9\-]*\.)+[A-Za-z]{2,}$ */
   payToEmail: string;
   description?: string;
+  tags?: UpdateTransactionBodyAnyOfTagsItem[];
   isRecurring: boolean;
   recurrenceSelector: UpdateTransactionBodyAnyOfRecurrenceSelector;
   recurrenceType: UpdateTransactionBodyAnyOfRecurrenceType;

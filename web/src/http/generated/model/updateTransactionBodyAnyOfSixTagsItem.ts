@@ -6,8 +6,9 @@
  * OpenAPI spec version: 1.0.0
  */
 
-export type ListTags200TagsItem = {
-  id: string;
+export type UpdateTransactionBodyAnyOfSixTagsItem = {
+  /** @minLength 1 */
   name: string;
+  /** @minLength 1 */
   color: string;
 };

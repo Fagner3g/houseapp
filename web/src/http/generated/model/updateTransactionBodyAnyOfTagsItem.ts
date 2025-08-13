@@ -5,8 +5,10 @@
  * API for HouseApp
  * OpenAPI spec version: 1.0.0
  */
-import type { ListTags200TagsItem } from "./listTags200TagsItem";
 
-export type ListTags200 = {
-  tags: ListTags200TagsItem[];
+export type UpdateTransactionBodyAnyOfTagsItem = {
+  /** @minLength 1 */
+  name: string;
+  /** @minLength 1 */
+  color: string;
 };
