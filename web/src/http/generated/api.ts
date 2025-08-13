@@ -27,6 +27,8 @@ import type {
   CreateInviteBody,
   CreateOrganization201,
   CreateOrganizationBody,
+  CreateTag201,
+  CreateTagBody,
   CreateTransactionBody,
   CreateUserWithInviteBody,
   DeleteTransactionsBody,
@@ -44,6 +46,8 @@ import type {
   RenameOrgBody,
   SignInBody,
   SignUpBody,
+  UpdateTag200,
+  UpdateTagBody,
   UpdateTransactionBody,
   ValidateToken200,
   ValidateTokenBody,
@@ -2663,3 +2667,260 @@ export function useListTags<
 
   return query;
 }
+
+/**
+ * Create tag
+ */
+export const getCreateTagUrl = (slug: string) => {
+  return `/org/${slug}/tags`;
+};
+
+export const createTag = async (
+  slug: string,
+  createTagBody: CreateTagBody,
+  options?: RequestInit,
+): Promise<CreateTag201> => {
+  return http<CreateTag201>(getCreateTagUrl(slug), {
+    ...options,
+    method: "POST",
+    headers: { "Content-Type": "application/json", ...options?.headers },
+    body: JSON.stringify(createTagBody),
+  });
+};
+
+export const getCreateTagMutationOptions = <
+  TError = unknown,
+  TContext = unknown,
+>(options?: {
+  mutation?: UseMutationOptions<
+    Awaited<ReturnType<typeof createTag>>,
+    TError,
+    { slug: string; data: CreateTagBody },
+    TContext
+  >;
+  request?: SecondParameter<typeof http>;
+}): UseMutationOptions<
+  Awaited<ReturnType<typeof createTag>>,
+  TError,
+  { slug: string; data: CreateTagBody },
+  TContext
+> => {
+  const mutationKey = ["createTag"];
+  const { mutation: mutationOptions, request: requestOptions } = options
+    ? options.mutation &&
+      "mutationKey" in options.mutation &&
+      options.mutation.mutationKey
+      ? options
+      : { ...options, mutation: { ...options.mutation, mutationKey } }
+    : { mutation: { mutationKey }, request: undefined };
+
+  const mutationFn: MutationFunction<
+    Awaited<ReturnType<typeof createTag>>,
+    { slug: string; data: CreateTagBody }
+  > = (props) => {
+    const { slug, data } = props ?? {};
+
+    return createTag(slug, data, requestOptions);
+  };
+
+  return { mutationFn, ...mutationOptions };
+};
+
+export type CreateTagMutationResult = NonNullable<
+  Awaited<ReturnType<typeof createTag>>
+>;
+export type CreateTagMutationBody = CreateTagBody;
+export type CreateTagMutationError = unknown;
+
+export const useCreateTag = <TError = unknown, TContext = unknown>(
+  options?: {
+    mutation?: UseMutationOptions<
+      Awaited<ReturnType<typeof createTag>>,
+      TError,
+      { slug: string; data: CreateTagBody },
+      TContext
+    >;
+    request?: SecondParameter<typeof http>;
+  },
+  queryClient?: QueryClient,
+): UseMutationResult<
+  Awaited<ReturnType<typeof createTag>>,
+  TError,
+  { slug: string; data: CreateTagBody },
+  TContext
+> => {
+  const mutationOptions = getCreateTagMutationOptions(options);
+
+  return useMutation(mutationOptions, queryClient);
+};
+
+/**
+ * Update tag
+ */
+export const getUpdateTagUrl = (slug: string, id: string) => {
+  return `/org/${slug}/tags/${id}`;
+};
+
+export const updateTag = async (
+  slug: string,
+  id: string,
+  updateTagBody: UpdateTagBody,
+  options?: RequestInit,
+): Promise<UpdateTag200> => {
+  return http<UpdateTag200>(getUpdateTagUrl(slug, id), {
+    ...options,
+    method: "PUT",
+    headers: { "Content-Type": "application/json", ...options?.headers },
+    body: JSON.stringify(updateTagBody),
+  });
+};
+
+export const getUpdateTagMutationOptions = <
+  TError = unknown,
+  TContext = unknown,
+>(options?: {
+  mutation?: UseMutationOptions<
+    Awaited<ReturnType<typeof updateTag>>,
+    TError,
+    { slug: string; id: string; data: UpdateTagBody },
+    TContext
+  >;
+  request?: SecondParameter<typeof http>;
+}): UseMutationOptions<
+  Awaited<ReturnType<typeof updateTag>>,
+  TError,
+  { slug: string; id: string; data: UpdateTagBody },
+  TContext
+> => {
+  const mutationKey = ["updateTag"];
+  const { mutation: mutationOptions, request: requestOptions } = options
+    ? options.mutation &&
+      "mutationKey" in options.mutation &&
+      options.mutation.mutationKey
+      ? options
+      : { ...options, mutation: { ...options.mutation, mutationKey } }
+    : { mutation: { mutationKey }, request: undefined };
+
+  const mutationFn: MutationFunction<
+    Awaited<ReturnType<typeof updateTag>>,
+    { slug: string; id: string; data: UpdateTagBody }
+  > = (props) => {
+    const { slug, id, data } = props ?? {};
+
+    return updateTag(slug, id, data, requestOptions);
+  };
+
+  return { mutationFn, ...mutationOptions };
+};
+
+export type UpdateTagMutationResult = NonNullable<
+  Awaited<ReturnType<typeof updateTag>>
+>;
+export type UpdateTagMutationBody = UpdateTagBody;
+export type UpdateTagMutationError = unknown;
+
+export const useUpdateTag = <TError = unknown, TContext = unknown>(
+  options?: {
+    mutation?: UseMutationOptions<
+      Awaited<ReturnType<typeof updateTag>>,
+      TError,
+      { slug: string; id: string; data: UpdateTagBody },
+      TContext
+    >;
+    request?: SecondParameter<typeof http>;
+  },
+  queryClient?: QueryClient,
+): UseMutationResult<
+  Awaited<ReturnType<typeof updateTag>>,
+  TError,
+  { slug: string; id: string; data: UpdateTagBody },
+  TContext
+> => {
+  const mutationOptions = getUpdateTagMutationOptions(options);
+
+  return useMutation(mutationOptions, queryClient);
+};
+
+/**
+ * Delete tag
+ */
+export const getDeleteTagUrl = (slug: string, id: string) => {
+  return `/org/${slug}/tags/${id}`;
+};
+
+export const deleteTag = async (
+  slug: string,
+  id: string,
+  options?: RequestInit,
+): Promise<null> => {
+  return http<null>(getDeleteTagUrl(slug, id), {
+    ...options,
+    method: "DELETE",
+  });
+};
+
+export const getDeleteTagMutationOptions = <
+  TError = unknown,
+  TContext = unknown,
+>(options?: {
+  mutation?: UseMutationOptions<
+    Awaited<ReturnType<typeof deleteTag>>,
+    TError,
+    { slug: string; id: string },
+    TContext
+  >;
+  request?: SecondParameter<typeof http>;
+}): UseMutationOptions<
+  Awaited<ReturnType<typeof deleteTag>>,
+  TError,
+  { slug: string; id: string },
+  TContext
+> => {
+  const mutationKey = ["deleteTag"];
+  const { mutation: mutationOptions, request: requestOptions } = options
+    ? options.mutation &&
+      "mutationKey" in options.mutation &&
+      options.mutation.mutationKey
+      ? options
+      : { ...options, mutation: { ...options.mutation, mutationKey } }
+    : { mutation: { mutationKey }, request: undefined };
+
+  const mutationFn: MutationFunction<
+    Awaited<ReturnType<typeof deleteTag>>,
+    { slug: string; id: string }
+  > = (props) => {
+    const { slug, id } = props ?? {};
+
+    return deleteTag(slug, id, requestOptions);
+  };
+
+  return { mutationFn, ...mutationOptions };
+};
+
+export type DeleteTagMutationResult = NonNullable<
+  Awaited<ReturnType<typeof deleteTag>>
+>;
+
+export type DeleteTagMutationError = unknown;
+
+export const useDeleteTag = <TError = unknown, TContext = unknown>(
+  options?: {
+    mutation?: UseMutationOptions<
+      Awaited<ReturnType<typeof deleteTag>>,
+      TError,
+      { slug: string; id: string },
+      TContext
+    >;
+    request?: SecondParameter<typeof http>;
+  },
+  queryClient?: QueryClient,
+): UseMutationResult<
+  Awaited<ReturnType<typeof deleteTag>>,
+  TError,
+  { slug: string; id: string },
+  TContext
+> => {
+  const mutationOptions = getDeleteTagMutationOptions(options);
+
+  return useMutation(mutationOptions, queryClient);
+};
