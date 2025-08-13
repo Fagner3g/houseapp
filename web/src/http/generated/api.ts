@@ -29,6 +29,7 @@ import type {
   CreateOrganizationBody,
   CreateTransactionBody,
   CreateUserWithInviteBody,
+  DeleteTransactionsBody,
   GetInvite200,
   GetPendingGoals200,
   GetProfile200,
@@ -41,6 +42,7 @@ import type {
   RenameOrgBody,
   SignInBody,
   SignUpBody,
+  UpdateTransactionBody,
   ValidateToken200,
   ValidateTokenBody,
 } from "./model";
@@ -2141,6 +2143,93 @@ export function useGetTransactionById<
 }
 
 /**
+ * Update a transaction
+ */
+export const getUpdateTransactionUrl = (slug: string, id: string) => {
+  return `/org/${slug}/transaction/${id}`;
+};
+
+export const updateTransaction = async (
+  slug: string,
+  id: string,
+  updateTransactionBody: UpdateTransactionBody,
+  options?: RequestInit,
+): Promise<null> => {
+  return http<null>(getUpdateTransactionUrl(slug, id), {
+    ...options,
+    method: "PATCH",
+    headers: { "Content-Type": "application/json", ...options?.headers },
+    body: JSON.stringify(updateTransactionBody),
+  });
+};
+
+export const getUpdateTransactionMutationOptions = <
+  TError = unknown,
+  TContext = unknown,
+>(options?: {
+  mutation?: UseMutationOptions<
+    Awaited<ReturnType<typeof updateTransaction>>,
+    TError,
+    { slug: string; id: string; data: UpdateTransactionBody },
+    TContext
+  >;
+  request?: SecondParameter<typeof http>;
+}): UseMutationOptions<
+  Awaited<ReturnType<typeof updateTransaction>>,
+  TError,
+  { slug: string; id: string; data: UpdateTransactionBody },
+  TContext
+> => {
+  const mutationKey = ["updateTransaction"];
+  const { mutation: mutationOptions, request: requestOptions } = options
+    ? options.mutation &&
+      "mutationKey" in options.mutation &&
+      options.mutation.mutationKey
+      ? options
+      : { ...options, mutation: { ...options.mutation, mutationKey } }
+    : { mutation: { mutationKey }, request: undefined };
+
+  const mutationFn: MutationFunction<
+    Awaited<ReturnType<typeof updateTransaction>>,
+    { slug: string; id: string; data: UpdateTransactionBody }
+  > = (props) => {
+    const { slug, id, data } = props ?? {};
+
+    return updateTransaction(slug, id, data, requestOptions);
+  };
+
+  return { mutationFn, ...mutationOptions };
+};
+
+export type UpdateTransactionMutationResult = NonNullable<
+  Awaited<ReturnType<typeof updateTransaction>>
+>;
+export type UpdateTransactionMutationBody = UpdateTransactionBody;
+export type UpdateTransactionMutationError = unknown;
+
+export const useUpdateTransaction = <TError = unknown, TContext = unknown>(
+  options?: {
+    mutation?: UseMutationOptions<
+      Awaited<ReturnType<typeof updateTransaction>>,
+      TError,
+      { slug: string; id: string; data: UpdateTransactionBody },
+      TContext
+    >;
+    request?: SecondParameter<typeof http>;
+  },
+  queryClient?: QueryClient,
+): UseMutationResult<
+  Awaited<ReturnType<typeof updateTransaction>>,
+  TError,
+  { slug: string; id: string; data: UpdateTransactionBody },
+  TContext
+> => {
+  const mutationOptions = getUpdateTransactionMutationOptions(options);
+
+  return useMutation(mutationOptions, queryClient);
+};
+
+/**
  * List transactions for authenticated user
  */
 export const getListTransactionsUrl = (slug: string) => {
@@ -2306,3 +2395,89 @@ export function useListTransactions<
 
   return query;
 }
+
+/**
+ * Delete multiple transactions
+ */
+export const getDeleteTransactionsUrl = (slug: string) => {
+  return `/org/${slug}/transactions`;
+};
+
+export const deleteTransactions = async (
+  slug: string,
+  deleteTransactionsBody: DeleteTransactionsBody,
+  options?: RequestInit,
+): Promise<null> => {
+  return http<null>(getDeleteTransactionsUrl(slug), {
+    ...options,
+    method: "DELETE",
+    headers: { "Content-Type": "application/json", ...options?.headers },
+    body: JSON.stringify(deleteTransactionsBody),
+  });
+};
+
+export const getDeleteTransactionsMutationOptions = <
+  TError = unknown,
+  TContext = unknown,
+>(options?: {
+  mutation?: UseMutationOptions<
+    Awaited<ReturnType<typeof deleteTransactions>>,
+    TError,
+    { slug: string; data: DeleteTransactionsBody },
+    TContext
+  >;
+  request?: SecondParameter<typeof http>;
+}): UseMutationOptions<
+  Awaited<ReturnType<typeof deleteTransactions>>,
+  TError,
+  { slug: string; data: DeleteTransactionsBody },
+  TContext
+> => {
+  const mutationKey = ["deleteTransactions"];
+  const { mutation: mutationOptions, request: requestOptions } = options
+    ? options.mutation &&
+      "mutationKey" in options.mutation &&
+      options.mutation.mutationKey
+      ? options
+      : { ...options, mutation: { ...options.mutation, mutationKey } }
+    : { mutation: { mutationKey }, request: undefined };
+
+  const mutationFn: MutationFunction<
+    Awaited<ReturnType<typeof deleteTransactions>>,
+    { slug: string; data: DeleteTransactionsBody }
+  > = (props) => {
+    const { slug, data } = props ?? {};
+
+    return deleteTransactions(slug, data, requestOptions);
+  };
+
+  return { mutationFn, ...mutationOptions };
+};
+
+export type DeleteTransactionsMutationResult = NonNullable<
+  Awaited<ReturnType<typeof deleteTransactions>>
+>;
+export type DeleteTransactionsMutationBody = DeleteTransactionsBody;
+export type DeleteTransactionsMutationError = unknown;
+
+export const useDeleteTransactions = <TError = unknown, TContext = unknown>(
+  options?: {
+    mutation?: UseMutationOptions<
+      Awaited<ReturnType<typeof deleteTransactions>>,
+      TError,
+      { slug: string; data: DeleteTransactionsBody },
+      TContext
+    >;
+    request?: SecondParameter<typeof http>;
+  },
+  queryClient?: QueryClient,
+): UseMutationResult<
+  Awaited<ReturnType<typeof deleteTransactions>>,
+  TError,
+  { slug: string; data: DeleteTransactionsBody },
+  TContext
+> => {
+  const mutationOptions = getDeleteTransactionsMutationOptions(options);
+
+  return useMutation(mutationOptions, queryClient);
+};
