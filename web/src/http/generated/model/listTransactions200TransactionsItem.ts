@@ -34,5 +34,5 @@ export type ListTransactions200TransactionsItem = {
    * @maximum 9007199254740991
    */
   recurrenceInterval?: number
-  tags: string[]
+  tags: { name: string; color: string }[]
 }

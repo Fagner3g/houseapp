@@ -154,8 +154,8 @@ export const useTable = (data: ListTransactions200TransactionsItem[]) => {
       cell: ({ row }) => (
         <div className="flex flex-wrap gap-1 px-1.5">
           {row.original.tags?.map(tag => (
-            <Badge key={tag} variant="secondary">
-              {tag}
+            <Badge key={tag.name} style={{ backgroundColor: tag.color }} className="text-white">
+              #{tag.name}
             </Badge>
           ))}
         </div>

@@ -23,7 +23,7 @@ export type CreateTransactionBodyAnyOf = {
   /** @pattern ^(?!\.)(?!.*\.\.)([A-Za-z0-9_'+\-\.]*)[A-Za-z0-9_+-]@([A-Za-z0-9][A-Za-z0-9\-]*\.)+[A-Za-z]{2,}$ */
   payToEmail: string
   description?: string
-  tags?: string[]
+  tags?: { name: string; color: string }[]
   isRecurring: boolean
   recurrenceSelector: CreateTransactionBodyAnyOfRecurrenceSelector
   recurrenceType: CreateTransactionBodyAnyOfRecurrenceType

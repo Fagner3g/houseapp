@@ -40,25 +40,32 @@ export async function createTransactionService({
   const transaction = result[0]
 
   if (tags.length > 0) {
+    const names = tags.map(t => t.name)
     const existing = await db
       .select()
       .from(tagsTable)
-      .where(and(eq(tagsTable.organizationId, organizationId), inArray(tagsTable.name, tags)))
+      .where(and(eq(tagsTable.organizationId, organizationId), inArray(tagsTable.name, names)))
 
     const existingMap = new Map(existing.map(tag => [tag.name, tag.id]))
-    const toCreate = tags.filter(name => !existingMap.has(name))
+    const toCreate = tags.filter(tag => !existingMap.has(tag.name))
 
     if (toCreate.length > 0) {
       const inserted = await db
         .insert(tagsTable)
-        .values(toCreate.map(name => ({ name, organizationId })))
+        .values(
+          toCreate.map(tag => ({
+            name: tag.name,
+            color: tag.color,
+            organizationId,
+          }))
+        )
         .returning()
       for (const tag of inserted) {
         existingMap.set(tag.name, tag.id)
       }
     }
 
-    const rows = tags.map(name => ({
+    const rows = names.map(name => ({
       transactionId: transaction.id,
       tagId: existingMap.get(name)!,
     }))

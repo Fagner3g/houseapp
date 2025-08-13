@@ -41,7 +41,13 @@ export async function listTransactionsService({
     .select({
       ...getTableColumns(transactions),
       payTo: users.name,
-      tags: sql<string[]>`coalesce(array_agg(distinct ${tagsTable.name}), array[]::text[])`,
+      tags: sql<{ name: string; color: string }[]>`
+        coalesce(
+          json_agg(distinct jsonb_build_object('name', ${tagsTable.name}, 'color', ${tagsTable.color}))
+            filter (where ${tagsTable.id} is not null),
+          '[]'::jsonb
+        )
+      `,
       status: sql /*sql*/`
       CASE
         WHEN ${transactions.paidAt} IS NOT NULL THEN 'paid'

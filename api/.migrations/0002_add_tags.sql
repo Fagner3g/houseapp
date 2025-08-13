@@ -2,6 +2,7 @@ CREATE TABLE "tags" (
         "id" text PRIMARY KEY NOT NULL,
         "organization_id" text NOT NULL,
         "name" text NOT NULL,
+        "color" text NOT NULL,
         "created_at" timestamp with time zone DEFAULT now() NOT NULL,
         "updated_at" timestamp with time zone DEFAULT now() NOT NULL,
         CONSTRAINT "tags_organization_id_name_unique" UNIQUE("organization_id","name"),
