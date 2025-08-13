@@ -1,18 +1,29 @@
 import dayjs from 'dayjs'
+import { sql } from 'drizzle-orm'
+import slugify from 'slugify'
 
 import { client, db } from '.'
-import { goalCompletions, goals, organizations, userOrganizations, users } from './schema'
+import { goalCompletions } from './schemas/goalCompletions'
+import { goals } from './schemas/goals'
+import { organizations } from './schemas/organization'
+import { transactions } from './schemas/transactions'
+import { userOrganizations } from './schemas/userOrganization'
+import { users } from './schemas/users'
 
 async function seed() {
-  await db.delete(goals)
-  await db.delete(goalCompletions)
-  await db.delete(users)
-  await db.delete(userOrganizations)
-  await db.delete(organizations)
+  await db.execute(sql`
+    TRUNCATE TABLE
+      "goal_completions",
+      "goals",
+      "transactions",
+      "invites",
+      "user_organizations",
+      "organizations",
+      "users"
+    RESTART IDENTITY CASCADE;
+  `)
 
-  const [org] = await db.insert(organizations).values({ name: 'My House' }).returning()
-
-  const [user, otherUser] = await db
+  const [user, otherUser, thirdUser] = await db
     .insert(users)
     .values([
       {
@@ -20,23 +31,80 @@ async function seed() {
         avatarUrl: 'https://github.com/fagner3g.png',
         email: 'fagner.egomes@gmail.com',
         phone: '5511999999999',
-        ddd: '11',
-        defaultOrganizationId: org.id,
       },
       {
         name: 'Diego Fernandes',
         avatarUrl: 'https://github.com/diego3g.png',
-        email: 'g9L3N@example.com',
+        email: 'diego@gmail.com',
         phone: '5511999999999',
-        ddd: '11',
-        defaultOrganizationId: org.id,
       },
+      {
+        name: 'Ana Souza',
+        avatarUrl: 'https://example.com/ana.png',
+        email: 'ana@gmail.com',
+        phone: '5511988888888',
+      },
+    ])
+    .returning()
+
+  const [org, otherOrg] = await db
+    .insert(organizations)
+    .values([
+      { name: 'My House', slug: slugify('My House', { lower: true }), ownerId: user.id },
+      { name: 'Work Place', slug: slugify('Work Place', { lower: true }), ownerId: otherUser.id },
     ])
     .returning()
 
   await db.insert(userOrganizations).values([
     { userId: user.id, organizationId: org.id },
     { userId: otherUser.id, organizationId: org.id },
+    { userId: thirdUser.id, organizationId: otherOrg.id },
+  ])
+
+  await db.insert(transactions).values([
+    {
+      title: 'Aluguel',
+      ownerId: user.id,
+      payToId: otherUser.id,
+      organizationId: org.id,
+      amount: 1000,
+      dueDate: dayjs().add(5, 'day').toDate(),
+      description: 'Mensalidade do apartamento',
+      type: 'expense',
+    },
+    {
+      title: 'Internet',
+      ownerId: user.id,
+      payToId: thirdUser.id,
+      organizationId: org.id,
+      amount: 200,
+      dueDate: dayjs().add(3, 'day').toDate(),
+      description: 'Plano mensal',
+      type: 'expense',
+    },
+    {
+      title: 'Gás',
+      ownerId: user.id,
+      payToId: thirdUser.id,
+      organizationId: org.id,
+      amount: 200,
+      dueDate: dayjs().add(3, 'day').toDate(),
+      description: 'Plano mensal',
+      type: 'income',
+    },
+    {
+      title: 'Aluguel',
+      ownerId: user.id,
+      payToId: thirdUser.id,
+      organizationId: org.id,
+      amount: 1000,
+      dueDate: dayjs().add(5, 'day').toDate(),
+      description: 'Mensalidade do apartamento',
+      type: 'expense',
+      isRecurring: true,
+      recurrenceType: 'monthly',
+      recurrenceInterval: 1,
+    },
   ])
 
   const result = await db

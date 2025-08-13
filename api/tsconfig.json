@@ -7,7 +7,12 @@
     "lib": ["es2024", "ESNext.Array", "ESNext.Collection", "ESNext.Iterator"],
     "module": "nodenext",
     "target": "es2022",
+    "baseUrl": "./",
+    "paths": {
+      "@/*": ["./src/*"]
+    },
 
+    "resolveJsonModule": true,
     "strict": true,
     "esModuleInterop": true,
     "skipLibCheck": true,

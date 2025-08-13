@@ -1,5 +1,4 @@
-import { ChevronsUpDown, Plus } from 'lucide-react'
-import * as React from 'react'
+import { ChevronsUpDown, GalleryVerticalEnd, Plus } from 'lucide-react'
 
 import {
   DropdownMenu,
@@ -16,22 +15,22 @@ import {
   SidebarMenuItem,
   useSidebar,
 } from '@/components/ui/sidebar'
-import { useOrganization } from '@/hooks/use-organization'
+import { useActiveOrganization } from '@/hooks/use-active-organization'
+import { useListOrganizations } from '@/http/generated/api'
 
-interface Teams {
-  teams: {
-    name: string
-    logo: React.ComponentType
-    plan: string
-  }[]
-}
-
-export function TeamSwitcher({ teams }: Teams) {
+export function TeamSwitcher() {
   const { isMobile } = useSidebar()
-  const [activeTeam, setActiveTeam] = React.useState(teams[0])
-  const { organizationId, organizations, setOrganizationId } = useOrganization()
+  const { data } = useListOrganizations()
+  const { slug, setOrganization } = useActiveOrganization()
+  const teams = (data?.organizations ?? []).map(org => ({
+    id: org.slug,
+    name: org.name,
+    logo: GalleryVerticalEnd,
+    plan: 'Enterprise',
+  }))
 
-  console.log(organizations)
+  const activeTeam = teams.find(t => t.id === slug) ?? teams[0]
+
   if (!activeTeam) {
     return null
   }
@@ -64,8 +63,8 @@ export function TeamSwitcher({ teams }: Teams) {
             <DropdownMenuLabel className="text-muted-foreground text-xs">Teams</DropdownMenuLabel>
             {teams.map((team, index) => (
               <DropdownMenuItem
-                key={team.name}
-                onClick={() => setActiveTeam(team)}
+                key={team.id}
+                onClick={() => setOrganization(team.id)}
                 className="gap-2 p-2"
               >
                 <div className="flex size-6 items-center justify-center rounded-md border">

@@ -1,52 +1,24 @@
-import { IconInnerShadowTop } from '@tabler/icons-react'
-import { AudioWaveform, Command, GalleryVerticalEnd } from 'lucide-react'
-
 import { NavMain } from '@/components/layout/sidebar/nav-main'
 import { NavUser } from '@/components/layout/sidebar/nav-user'
-import { OrganizationSwitcher } from '@/components/organization-switcher'
-import {
-  Sidebar,
-  SidebarContent,
-  SidebarFooter,
-  SidebarHeader,
-  SidebarMenu,
-  SidebarMenuButton,
-  SidebarMenuItem,
-} from '@/components/ui/sidebar'
-import { data } from '@/routes'
-import { TeamSwitcher } from './team-switcher'
-
-const teams = [
-  {
-    name: 'Acme Inc',
-    logo: GalleryVerticalEnd,
-    plan: 'Enterprise',
-  },
-  {
-    name: 'Acme Corp.',
-    logo: AudioWaveform,
-    plan: 'Startup',
-  },
-  {
-    name: 'Evil Corp.',
-    logo: Command,
-    plan: 'Free',
-  },
-]
+import { TeamSwitcher } from '@/components/layout/sidebar/team-switcher'
+import { Sidebar, SidebarContent, SidebarFooter, SidebarHeader } from '@/components/ui/sidebar'
+import { useNavItems } from '@/routes/navigation'
+import { useAuthStore } from '@/stores/auth'
 
 export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
+  const navItems = useNavItems()
+
+  const user = useAuthStore.getState().user
+
   return (
     <Sidebar {...props}>
       <SidebarHeader>
-        <TeamSwitcher teams={teams} />
+        <TeamSwitcher />
       </SidebarHeader>
       <SidebarContent>
-        <OrganizationSwitcher />
-        <NavMain items={data.navMain} />
+        <NavMain items={navItems} />
       </SidebarContent>
-      <SidebarFooter>
-        <NavUser user={data.user} />
-      </SidebarFooter>
+      <SidebarFooter>{user && <NavUser user={user} />}</SidebarFooter>
     </Sidebar>
   )
 }

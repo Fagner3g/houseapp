@@ -1,0 +1,24 @@
+import { eq } from 'drizzle-orm'
+
+import { db } from '@/db'
+import { organizations } from '@/db/schemas/organization'
+import { userOrganizations } from '@/db/schemas/userOrganization'
+
+interface ListOrganizations {
+  userId: string
+}
+
+export async function listOrganizations({ userId }: ListOrganizations) {
+  const result = await db
+    .select({
+      id: organizations.id,
+      name: organizations.name,
+      slug: organizations.slug,
+      createdAt: organizations.createdAt,
+    })
+    .from(organizations)
+    .innerJoin(userOrganizations, eq(organizations.id, userOrganizations.organizationId))
+    .where(eq(userOrganizations.userId, userId))
+
+  return { organizations: result }
+}

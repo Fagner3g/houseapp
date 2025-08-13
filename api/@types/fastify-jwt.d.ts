@@ -7,3 +7,9 @@ declare module '@fastify/jwt' {
     }
   }
 }
+
+declare module 'fastify' {
+  interface FastifyRequest {
+    organization: { id: string }
+  }
+}

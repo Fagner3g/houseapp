@@ -11,12 +11,14 @@
 import { Route as rootRouteImport } from './pages/__root'
 import { Route as AuthLayoutRouteImport } from './pages/_auth/layout'
 import { Route as AppLayoutRouteImport } from './pages/_app/layout'
-import { Route as AuthValidateLinkRouteImport } from './pages/_auth/validate-link'
+import { Route as AuthValidateRouteImport } from './pages/_auth/validate'
 import { Route as AuthSignUpRouteImport } from './pages/_auth/sign-up'
 import { Route as AuthSignInRouteImport } from './pages/_auth/sign-in'
-import { Route as AppgoalGoalsRouteImport } from './pages/_app/(goal)/goals'
-import { Route as AppexpenseExpensesRouteImport } from './pages/_app/(expense)/expenses'
-import { Route as AppdashboardDashboardRouteImport } from './pages/_app/(dashboard)/dashboard'
+import { Route as AuthInviteRouteImport } from './pages/_auth/invite'
+import { Route as AppOrguserUsersRouteImport } from './pages/_app/$org/(user)/users'
+import { Route as AppOrgtransactionsTransactionsRouteImport } from './pages/_app/$org/(transactions)/transactions'
+import { Route as AppOrggoalGoalsRouteImport } from './pages/_app/$org/(goal)/goals'
+import { Route as AppOrgdashboardDashboardRouteImport } from './pages/_app/$org/(dashboard)/dashboard'
 
 const AuthLayoutRoute = AuthLayoutRouteImport.update({
   id: '/_auth',
@@ -26,9 +28,9 @@ const AppLayoutRoute = AppLayoutRouteImport.update({
   id: '/_app',
   getParentRoute: () => rootRouteImport,
 } as any)
-const AuthValidateLinkRoute = AuthValidateLinkRouteImport.update({
-  id: '/validate-link',
-  path: '/validate-link',
+const AuthValidateRoute = AuthValidateRouteImport.update({
+  id: '/validate',
+  path: '/validate',
   getParentRoute: () => AuthLayoutRoute,
 } as any)
 const AuthSignUpRoute = AuthSignUpRouteImport.update({
@@ -41,76 +43,100 @@ const AuthSignInRoute = AuthSignInRouteImport.update({
   path: '/sign-in',
   getParentRoute: () => AuthLayoutRoute,
 } as any)
-const AppgoalGoalsRoute = AppgoalGoalsRouteImport.update({
-  id: '/(goal)/goals',
-  path: '/goals',
+const AuthInviteRoute = AuthInviteRouteImport.update({
+  id: '/invite',
+  path: '/invite',
+  getParentRoute: () => AuthLayoutRoute,
+} as any)
+const AppOrguserUsersRoute = AppOrguserUsersRouteImport.update({
+  id: '/$org/(user)/users',
+  path: '/$org/users',
   getParentRoute: () => AppLayoutRoute,
 } as any)
-const AppexpenseExpensesRoute = AppexpenseExpensesRouteImport.update({
-  id: '/(expense)/expenses',
-  path: '/expenses',
+const AppOrgtransactionsTransactionsRoute =
+  AppOrgtransactionsTransactionsRouteImport.update({
+    id: '/$org/(transactions)/transactions',
+    path: '/$org/transactions',
+    getParentRoute: () => AppLayoutRoute,
+  } as any)
+const AppOrggoalGoalsRoute = AppOrggoalGoalsRouteImport.update({
+  id: '/$org/(goal)/goals',
+  path: '/$org/goals',
   getParentRoute: () => AppLayoutRoute,
 } as any)
-const AppdashboardDashboardRoute = AppdashboardDashboardRouteImport.update({
-  id: '/(dashboard)/dashboard',
-  path: '/dashboard',
-  getParentRoute: () => AppLayoutRoute,
-} as any)
+const AppOrgdashboardDashboardRoute =
+  AppOrgdashboardDashboardRouteImport.update({
+    id: '/$org/(dashboard)/dashboard',
+    path: '/$org/dashboard',
+    getParentRoute: () => AppLayoutRoute,
+  } as any)
 
 export interface FileRoutesByFullPath {
+  '/invite': typeof AuthInviteRoute
   '/sign-in': typeof AuthSignInRoute
   '/sign-up': typeof AuthSignUpRoute
-  '/validate-link': typeof AuthValidateLinkRoute
-  '/dashboard': typeof AppdashboardDashboardRoute
-  '/expenses': typeof AppexpenseExpensesRoute
-  '/goals': typeof AppgoalGoalsRoute
+  '/validate': typeof AuthValidateRoute
+  '/$org/dashboard': typeof AppOrgdashboardDashboardRoute
+  '/$org/goals': typeof AppOrggoalGoalsRoute
+  '/$org/transactions': typeof AppOrgtransactionsTransactionsRoute
+  '/$org/users': typeof AppOrguserUsersRoute
 }
 export interface FileRoutesByTo {
+  '/invite': typeof AuthInviteRoute
   '/sign-in': typeof AuthSignInRoute
   '/sign-up': typeof AuthSignUpRoute
-  '/validate-link': typeof AuthValidateLinkRoute
-  '/dashboard': typeof AppdashboardDashboardRoute
-  '/expenses': typeof AppexpenseExpensesRoute
-  '/goals': typeof AppgoalGoalsRoute
+  '/validate': typeof AuthValidateRoute
+  '/$org/dashboard': typeof AppOrgdashboardDashboardRoute
+  '/$org/goals': typeof AppOrggoalGoalsRoute
+  '/$org/transactions': typeof AppOrgtransactionsTransactionsRoute
+  '/$org/users': typeof AppOrguserUsersRoute
 }
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
   '/_app': typeof AppLayoutRouteWithChildren
   '/_auth': typeof AuthLayoutRouteWithChildren
+  '/_auth/invite': typeof AuthInviteRoute
   '/_auth/sign-in': typeof AuthSignInRoute
   '/_auth/sign-up': typeof AuthSignUpRoute
-  '/_auth/validate-link': typeof AuthValidateLinkRoute
-  '/_app/(dashboard)/dashboard': typeof AppdashboardDashboardRoute
-  '/_app/(expense)/expenses': typeof AppexpenseExpensesRoute
-  '/_app/(goal)/goals': typeof AppgoalGoalsRoute
+  '/_auth/validate': typeof AuthValidateRoute
+  '/_app/$org/(dashboard)/dashboard': typeof AppOrgdashboardDashboardRoute
+  '/_app/$org/(goal)/goals': typeof AppOrggoalGoalsRoute
+  '/_app/$org/(transactions)/transactions': typeof AppOrgtransactionsTransactionsRoute
+  '/_app/$org/(user)/users': typeof AppOrguserUsersRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
   fullPaths:
+    | '/invite'
     | '/sign-in'
     | '/sign-up'
-    | '/validate-link'
-    | '/dashboard'
-    | '/expenses'
-    | '/goals'
+    | '/validate'
+    | '/$org/dashboard'
+    | '/$org/goals'
+    | '/$org/transactions'
+    | '/$org/users'
   fileRoutesByTo: FileRoutesByTo
   to:
+    | '/invite'
     | '/sign-in'
     | '/sign-up'
-    | '/validate-link'
-    | '/dashboard'
-    | '/expenses'
-    | '/goals'
+    | '/validate'
+    | '/$org/dashboard'
+    | '/$org/goals'
+    | '/$org/transactions'
+    | '/$org/users'
   id:
     | '__root__'
     | '/_app'
     | '/_auth'
+    | '/_auth/invite'
     | '/_auth/sign-in'
     | '/_auth/sign-up'
-    | '/_auth/validate-link'
-    | '/_app/(dashboard)/dashboard'
-    | '/_app/(expense)/expenses'
-    | '/_app/(goal)/goals'
+    | '/_auth/validate'
+    | '/_app/$org/(dashboard)/dashboard'
+    | '/_app/$org/(goal)/goals'
+    | '/_app/$org/(transactions)/transactions'
+    | '/_app/$org/(user)/users'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
@@ -134,11 +160,11 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AppLayoutRouteImport
       parentRoute: typeof rootRouteImport
     }
-    '/_auth/validate-link': {
-      id: '/_auth/validate-link'
-      path: '/validate-link'
-      fullPath: '/validate-link'
-      preLoaderRoute: typeof AuthValidateLinkRouteImport
+    '/_auth/validate': {
+      id: '/_auth/validate'
+      path: '/validate'
+      fullPath: '/validate'
+      preLoaderRoute: typeof AuthValidateRouteImport
       parentRoute: typeof AuthLayoutRoute
     }
     '/_auth/sign-up': {
@@ -155,40 +181,56 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthSignInRouteImport
       parentRoute: typeof AuthLayoutRoute
     }
-    '/_app/(goal)/goals': {
-      id: '/_app/(goal)/goals'
-      path: '/goals'
-      fullPath: '/goals'
-      preLoaderRoute: typeof AppgoalGoalsRouteImport
+    '/_auth/invite': {
+      id: '/_auth/invite'
+      path: '/invite'
+      fullPath: '/invite'
+      preLoaderRoute: typeof AuthInviteRouteImport
+      parentRoute: typeof AuthLayoutRoute
+    }
+    '/_app/$org/(user)/users': {
+      id: '/_app/$org/(user)/users'
+      path: '/$org/users'
+      fullPath: '/$org/users'
+      preLoaderRoute: typeof AppOrguserUsersRouteImport
       parentRoute: typeof AppLayoutRoute
     }
-    '/_app/(expense)/expenses': {
-      id: '/_app/(expense)/expenses'
-      path: '/expenses'
-      fullPath: '/expenses'
-      preLoaderRoute: typeof AppexpenseExpensesRouteImport
+    '/_app/$org/(transactions)/transactions': {
+      id: '/_app/$org/(transactions)/transactions'
+      path: '/$org/transactions'
+      fullPath: '/$org/transactions'
+      preLoaderRoute: typeof AppOrgtransactionsTransactionsRouteImport
       parentRoute: typeof AppLayoutRoute
     }
-    '/_app/(dashboard)/dashboard': {
-      id: '/_app/(dashboard)/dashboard'
-      path: '/dashboard'
-      fullPath: '/dashboard'
-      preLoaderRoute: typeof AppdashboardDashboardRouteImport
+    '/_app/$org/(goal)/goals': {
+      id: '/_app/$org/(goal)/goals'
+      path: '/$org/goals'
+      fullPath: '/$org/goals'
+      preLoaderRoute: typeof AppOrggoalGoalsRouteImport
+      parentRoute: typeof AppLayoutRoute
+    }
+    '/_app/$org/(dashboard)/dashboard': {
+      id: '/_app/$org/(dashboard)/dashboard'
+      path: '/$org/dashboard'
+      fullPath: '/$org/dashboard'
+      preLoaderRoute: typeof AppOrgdashboardDashboardRouteImport
       parentRoute: typeof AppLayoutRoute
     }
   }
 }
 
 interface AppLayoutRouteChildren {
-  AppdashboardDashboardRoute: typeof AppdashboardDashboardRoute
-  AppexpenseExpensesRoute: typeof AppexpenseExpensesRoute
-  AppgoalGoalsRoute: typeof AppgoalGoalsRoute
+  AppOrgdashboardDashboardRoute: typeof AppOrgdashboardDashboardRoute
+  AppOrggoalGoalsRoute: typeof AppOrggoalGoalsRoute
+  AppOrgtransactionsTransactionsRoute: typeof AppOrgtransactionsTransactionsRoute
+  AppOrguserUsersRoute: typeof AppOrguserUsersRoute
 }
 
 const AppLayoutRouteChildren: AppLayoutRouteChildren = {
-  AppdashboardDashboardRoute: AppdashboardDashboardRoute,
-  AppexpenseExpensesRoute: AppexpenseExpensesRoute,
-  AppgoalGoalsRoute: AppgoalGoalsRoute,
+  AppOrgdashboardDashboardRoute: AppOrgdashboardDashboardRoute,
+  AppOrggoalGoalsRoute: AppOrggoalGoalsRoute,
+  AppOrgtransactionsTransactionsRoute: AppOrgtransactionsTransactionsRoute,
+  AppOrguserUsersRoute: AppOrguserUsersRoute,
 }
 
 const AppLayoutRouteWithChildren = AppLayoutRoute._addFileChildren(
@@ -196,15 +238,17 @@ const AppLayoutRouteWithChildren = AppLayoutRoute._addFileChildren(
 )
 
 interface AuthLayoutRouteChildren {
+  AuthInviteRoute: typeof AuthInviteRoute
   AuthSignInRoute: typeof AuthSignInRoute
   AuthSignUpRoute: typeof AuthSignUpRoute
-  AuthValidateLinkRoute: typeof AuthValidateLinkRoute
+  AuthValidateRoute: typeof AuthValidateRoute
 }
 
 const AuthLayoutRouteChildren: AuthLayoutRouteChildren = {
+  AuthInviteRoute: AuthInviteRoute,
   AuthSignInRoute: AuthSignInRoute,
   AuthSignUpRoute: AuthSignUpRoute,
-  AuthValidateLinkRoute: AuthValidateLinkRoute,
+  AuthValidateRoute: AuthValidateRoute,
 }
 
 const AuthLayoutRouteWithChildren = AuthLayoutRoute._addFileChildren(
