@@ -15,14 +15,36 @@ export async function listTransactionsController(request: Req, reply: FastifyRep
   const userId = request.user.sub
   const orgId = request.organization.id
 
-  const { tags, tagFilterMode } = request.query
+  const { tags, tagFilterMode, type, dateFrom, dateTo, page, perPage } =
+    request.query
 
-  const { transactions } = await listTransactionsService({
-    userId,
-    orgId,
-    tags,
-    tagFilterMode,
-  })
+  const {
+    transactions,
+    page: currentPage,
+    perPage: currentPerPage,
+    totalItems,
+    totalPages,
+    pagesRemaining,
+  } = await listTransactionsService({
+      userId,
+      orgId,
+      tags,
+      tagFilterMode,
+      type,
+      dateFrom,
+      dateTo,
+      page,
+      perPage,
+    })
 
-  return reply.status(200).send({ transactions })
+  return reply
+    .status(200)
+    .send({
+      transactions,
+      page: currentPage,
+      perPage: currentPerPage,
+      totalItems,
+      totalPages,
+      pagesRemaining,
+    })
 }

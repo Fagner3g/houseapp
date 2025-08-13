@@ -1,4 +1,13 @@
-import { and, desc, eq, getTableColumns, inArray, sql } from 'drizzle-orm'
+import {
+  and,
+  desc,
+  eq,
+  getTableColumns,
+  gte,
+  inArray,
+  lte,
+  sql,
+} from 'drizzle-orm'
 
 import { db } from '@/db'
 import { tags as tagsTable } from '@/db/schemas/tags'
@@ -11,6 +20,11 @@ interface ListTransactionsRequest {
   orgId: string
   tags?: string[]
   tagFilterMode?: 'any' | 'all'
+  type?: 'all' | 'income' | 'expense'
+  dateFrom: Date
+  dateTo: Date
+  page: number
+  perPage: number
 }
 
 export async function listTransactionsService({
@@ -18,8 +32,22 @@ export async function listTransactionsService({
   orgId,
   tags = [],
   tagFilterMode = 'any',
+  type = 'all',
+  dateFrom,
+  dateTo,
+  page,
+  perPage,
 }: ListTransactionsRequest) {
-  let where = and(eq(transactions.ownerId, userId), eq(transactions.organizationId, orgId))
+  let where = and(
+    eq(transactions.ownerId, userId),
+    eq(transactions.organizationId, orgId),
+    gte(transactions.dueDate, dateFrom),
+    lte(transactions.dueDate, dateTo),
+  )
+
+  if (type !== 'all') {
+    where = and(where, eq(transactions.type, type))
+  }
 
   if (tags.length > 0) {
     if (tagFilterMode === 'all') {
@@ -37,31 +65,60 @@ export async function listTransactionsService({
     }
   }
 
-  const result = await db
-    .select({
-      ...getTableColumns(transactions),
-      payTo: users.name,
-      tags: sql<{ name: string; color: string }[]>`
-        coalesce(
-          jsonb_agg(distinct jsonb_build_object('name', ${tagsTable.name}, 'color', ${tagsTable.color}))
-            filter (where ${tagsTable.id} is not null),
-          '[]'::jsonb
-        )
-      `,
-      status: sql /*sql*/`
-      CASE
-        WHEN ${transactions.paidAt} IS NOT NULL THEN 'paid'
-        WHEN ${transactions.paidAt} IS NULL AND ${transactions.dueDate}::date > CURRENT_DATE THEN 'scheduled'
-        ELSE 'overdue'
-      END`,
-    })
-    .from(transactions)
-    .innerJoin(users, eq(transactions.payToId, users.id))
-    .leftJoin(transactionTags, eq(transactionTags.transactionId, transactions.id))
-    .leftJoin(tagsTable, eq(transactionTags.tagId, tagsTable.id))
-    .where(where)
-    .groupBy(transactions.id, users.name)
-    .orderBy(desc(transactions.dueDate))
+  const [result, total] = await Promise.all([
+    db
+      .select({
+        ...getTableColumns(transactions),
+        payTo: users.name,
+        tags: sql<{ name: string; color: string }[]>`
+          coalesce(
+            jsonb_agg(distinct jsonb_build_object('name', ${tagsTable.name}, 'color', ${tagsTable.color}))
+              filter (where ${tagsTable.id} is not null),
+            '[]'::jsonb
+          )
+        `,
+        status: sql /*sql*/`
+        CASE
+          WHEN ${transactions.paidAt} IS NOT NULL THEN 'paid'
+          WHEN ${transactions.paidAt} IS NULL AND ${transactions.dueDate}::date > CURRENT_DATE THEN 'scheduled'
+          ELSE 'overdue'
+        END`,
+        overdueDays: sql<number>`
+          CASE
+            WHEN ${transactions.paidAt} IS NOT NULL OR ${transactions.dueDate}::date >= CURRENT_DATE THEN 0
+            ELSE GREATEST(0, (CURRENT_DATE - ${transactions.dueDate}::date))
+          END
+        `,
+      })
+      .from(transactions)
+      .innerJoin(users, eq(transactions.payToId, users.id))
+      .leftJoin(transactionTags, eq(transactionTags.transactionId, transactions.id))
+      .leftJoin(tagsTable, eq(transactionTags.tagId, tagsTable.id))
+      .where(where)
+      .groupBy(transactions.id, users.name)
+      .orderBy(desc(transactions.dueDate))
+      .limit(perPage)
+      .offset((page - 1) * perPage),
+    db
+      .select({
+        value: sql<number>`count(distinct ${transactions.id})`,
+      })
+      .from(transactions)
+      .leftJoin(transactionTags, eq(transactionTags.transactionId, transactions.id))
+      .leftJoin(tagsTable, eq(transactionTags.tagId, tagsTable.id))
+      .where(where),
+  ])
 
-  return { transactions: result }
+  const totalItems = total[0]?.value ?? 0
+  const totalPages = Math.ceil(totalItems / perPage)
+  const pagesRemaining = Math.max(0, totalPages - page)
+
+  return {
+    transactions: result,
+    page,
+    perPage,
+    totalItems,
+    totalPages,
+    pagesRemaining,
+  }
 }

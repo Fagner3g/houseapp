@@ -49,6 +49,7 @@ export * from "./listTransactions200TransactionsItemTagsItem";
 export * from "./listTransactions200TransactionsItemType";
 export * from "./listTransactionsParams";
 export * from "./listTransactionsTagFilterMode";
+export * from "./listTransactionsType";
 export * from "./listUsersByOrg200";
 export * from "./listUsersByOrg200UsersItem";
 export * from "./renameOrg200";

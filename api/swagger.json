@@ -1467,6 +1467,58 @@
           },
           {
             "schema": {
+              "default": "all",
+              "type": "string",
+              "enum": [
+                "all",
+                "income",
+                "expense"
+              ]
+            },
+            "in": "query",
+            "name": "type",
+            "required": false
+          },
+          {
+            "schema": {
+              "type": "string",
+              "format": "date"
+            },
+            "in": "query",
+            "name": "dateFrom",
+            "required": false
+          },
+          {
+            "schema": {
+              "type": "string",
+              "format": "date"
+            },
+            "in": "query",
+            "name": "dateTo",
+            "required": false
+          },
+          {
+            "schema": {
+              "default": 1,
+              "type": "integer",
+              "minimum": 1
+            },
+            "in": "query",
+            "name": "page",
+            "required": false
+          },
+          {
+            "schema": {
+              "default": 10,
+              "type": "integer",
+              "minimum": 1
+            },
+            "in": "query",
+            "name": "perPage",
+            "required": false
+          },
+          {
+            "schema": {
               "type": "string",
               "minLength": 1
             },
@@ -1534,6 +1586,9 @@
                               "scheduled"
                             ]
                           },
+                          "overdueDays": {
+                            "type": "integer"
+                          },
                           "isRecurring": {
                             "type": "boolean"
                           },
@@ -1593,15 +1648,36 @@
                           "description",
                           "createdAt",
                           "status",
+                          "overdueDays",
                           "isRecurring",
                           "tags"
                         ],
                         "additionalProperties": false
                       }
+                    },
+                    "page": {
+                      "type": "integer"
+                    },
+                    "perPage": {
+                      "type": "integer"
+                    },
+                    "totalItems": {
+                      "type": "integer"
+                    },
+                    "totalPages": {
+                      "type": "integer"
+                    },
+                    "pagesRemaining": {
+                      "type": "integer"
                     }
                   },
                   "required": [
-                    "transactions"
+                    "transactions",
+                    "page",
+                    "perPage",
+                    "totalItems",
+                    "totalPages",
+                    "pagesRemaining"
                   ],
                   "additionalProperties": false
                 }

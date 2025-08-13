@@ -116,12 +116,22 @@ export const useTable = (data: ListTransactions200TransactionsItem[]) => {
       accessorKey: 'Status',
       header: 'Status',
       cell: ({ row }) => (
-        <div className="px-1.5">
+        <div className="px-1.5 flex items-center gap-2">
           {row.original.status === 'paid' && (
             <IconCircleCheckFilled className="fill-green-500 dark:fill-green-400" />
           )}
-          {row.original.status === 'overdue' && <AlertOctagon className="text-red-600" />}
-          {row.original.status === 'scheduled' && <IconCalendarClock className="text-orange-500" />}
+          {row.original.status === 'overdue' && (
+            <>
+              <AlertOctagon className="text-red-600" />
+              <Label className="text-red-600 text-xs">
+                Vencida
+                {row.original.overdueDays > 0 && ` há ${row.original.overdueDays} dias`}
+              </Label>
+            </>
+          )}
+          {row.original.status === 'scheduled' && (
+            <IconCalendarClock className="text-orange-500" />
+          )}
           {row.original.status === undefined && (
             <LucideClockFading className="animate-spin text-gray-500" />
           )}

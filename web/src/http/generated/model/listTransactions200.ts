@@ -9,4 +9,9 @@ import type { ListTransactions200TransactionsItem } from "./listTransactions200T
 
 export type ListTransactions200 = {
   transactions: ListTransactions200TransactionsItem[];
+  page: number;
+  perPage: number;
+  totalItems: number;
+  totalPages: number;
+  pagesRemaining: number;
 };
