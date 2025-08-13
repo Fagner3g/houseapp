@@ -9,11 +9,7 @@ const base = z.object({
   type: z.enum(['expense', 'income']).default('expense').nonoptional('O tipo é obrigatório'),
   title: z.string('O título é obrigatório').nonempty(),
   amount: z.number('Valor da transação é obrigatório').min(1),
-  dueDate: z
-    .date({ error: 'A data de vencimento é obrigatória' })
-    .refine(date => date >= new Date(), {
-      message: 'A data de vencimento deve ser no futuro',
-    }),
+  dueDate: z.date({ error: 'A data de vencimento é obrigatória' }),
   payToEmail: z.string('Defina o pra quem vai o registro').nonempty(),
   tags: z.array(z.string()).optional(),
   description: z.string().optional(),
