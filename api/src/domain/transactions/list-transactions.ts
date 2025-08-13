@@ -1,5 +1,5 @@
 import dayjs from 'dayjs'
-import { and, desc, eq, gte, lte, getTableColumns, sql } from 'drizzle-orm'
+import { and, desc, eq, getTableColumns, gte, lte, sql } from 'drizzle-orm'
 
 import { db } from '@/db'
 import { transactions } from '@/db/schemas/transactions'
@@ -53,17 +53,14 @@ export async function listTransactionsService({
       overdueDays: sql<number>`
         CASE
           WHEN ${transactions.paidAt} IS NOT NULL OR ${transactions.dueDate}::date >= CURRENT_DATE THEN 0
-          ELSE GREATEST(0, DATE_PART('day', CURRENT_DATE - ${transactions.dueDate}::date))
+          ELSE GREATEST(0, (CURRENT_DATE - ${transactions.dueDate}::date))
         END`,
     })
     .from(transactions)
     .innerJoin(users, eq(transactions.payToId, users.id))
     .where(and(...filters))
 
-  const result = await baseQuery
-    .orderBy(desc(transactions.dueDate))
-    .limit(perPage)
-    .offset(offset)
+  const result = await baseQuery.orderBy(desc(transactions.dueDate)).limit(perPage).offset(offset)
 
   const [{ count }] = await db
     .select({ count: sql<number>`count(*)` })

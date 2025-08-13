@@ -9,14 +9,16 @@ import type { ListTransactionsType } from "./listTransactionsType";
 
 export type ListTransactionsParams = {
   type?: ListTransactionsType;
-  dateFrom?: string;
-  dateTo?: string;
+  dateFrom?: unknown;
+  dateTo?: unknown;
   /**
    * @minimum 1
+   * @maximum 9007199254740991
    */
   page?: number;
   /**
    * @minimum 1
+   * @maximum 9007199254740991
    */
   perPage?: number;
 };

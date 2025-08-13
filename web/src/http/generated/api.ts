@@ -29,7 +29,6 @@ import type {
   CreateOrganizationBody,
   CreateTransactionBody,
   CreateUserWithInviteBody,
-  DeleteOrgParams,
   GetInvite200,
   GetPendingGoals200,
   GetProfile200,
@@ -41,7 +40,6 @@ import type {
   ListUsersByOrg200,
   RenameOrg200,
   RenameOrgBody,
-  RenameOrgParams,
   SignInBody,
   SignUpBody,
   ValidateToken200,
@@ -615,29 +613,16 @@ export const useCreateOrganization = <TError = unknown, TContext = unknown>(
 /**
  * Rename an organization
  */
-export const getRenameOrgUrl = (slug: string, params?: RenameOrgParams) => {
-  const normalizedParams = new URLSearchParams();
-
-  Object.entries(params || {}).forEach(([key, value]) => {
-    if (value !== undefined) {
-      normalizedParams.append(key, value === null ? "null" : value.toString());
-    }
-  });
-
-  const stringifiedParams = normalizedParams.toString();
-
-  return stringifiedParams.length > 0
-    ? `/org/${slug}?${stringifiedParams}`
-    : `/org/${slug}`;
+export const getRenameOrgUrl = (slug: string) => {
+  return `/org/${slug}`;
 };
 
 export const renameOrg = async (
   slug: string,
   renameOrgBody: RenameOrgBody,
-  params?: RenameOrgParams,
   options?: RequestInit,
 ): Promise<RenameOrg200> => {
-  return http<RenameOrg200>(getRenameOrgUrl(slug, params), {
+  return http<RenameOrg200>(getRenameOrgUrl(slug), {
     ...options,
     method: "PUT",
     headers: { "Content-Type": "application/json", ...options?.headers },
@@ -652,14 +637,14 @@ export const getRenameOrgMutationOptions = <
   mutation?: UseMutationOptions<
     Awaited<ReturnType<typeof renameOrg>>,
     TError,
-    { slug: string; data: RenameOrgBody; params?: RenameOrgParams },
+    { slug: string; data: RenameOrgBody },
     TContext
   >;
   request?: SecondParameter<typeof http>;
 }): UseMutationOptions<
   Awaited<ReturnType<typeof renameOrg>>,
   TError,
-  { slug: string; data: RenameOrgBody; params?: RenameOrgParams },
+  { slug: string; data: RenameOrgBody },
   TContext
 > => {
   const mutationKey = ["renameOrg"];
@@ -673,11 +658,11 @@ export const getRenameOrgMutationOptions = <
 
   const mutationFn: MutationFunction<
     Awaited<ReturnType<typeof renameOrg>>,
-    { slug: string; data: RenameOrgBody; params?: RenameOrgParams }
+    { slug: string; data: RenameOrgBody }
   > = (props) => {
-    const { slug, data, params } = props ?? {};
+    const { slug, data } = props ?? {};
 
-    return renameOrg(slug, data, params, requestOptions);
+    return renameOrg(slug, data, requestOptions);
   };
 
   return { mutationFn, ...mutationOptions };
@@ -694,7 +679,7 @@ export const useRenameOrg = <TError = unknown, TContext = unknown>(
     mutation?: UseMutationOptions<
       Awaited<ReturnType<typeof renameOrg>>,
       TError,
-      { slug: string; data: RenameOrgBody; params?: RenameOrgParams },
+      { slug: string; data: RenameOrgBody },
       TContext
     >;
     request?: SecondParameter<typeof http>;
@@ -703,7 +688,7 @@ export const useRenameOrg = <TError = unknown, TContext = unknown>(
 ): UseMutationResult<
   Awaited<ReturnType<typeof renameOrg>>,
   TError,
-  { slug: string; data: RenameOrgBody; params?: RenameOrgParams },
+  { slug: string; data: RenameOrgBody },
   TContext
 > => {
   const mutationOptions = getRenameOrgMutationOptions(options);
@@ -714,28 +699,15 @@ export const useRenameOrg = <TError = unknown, TContext = unknown>(
 /**
  * Delete an organization
  */
-export const getDeleteOrgUrl = (slug: string, params?: DeleteOrgParams) => {
-  const normalizedParams = new URLSearchParams();
-
-  Object.entries(params || {}).forEach(([key, value]) => {
-    if (value !== undefined) {
-      normalizedParams.append(key, value === null ? "null" : value.toString());
-    }
-  });
-
-  const stringifiedParams = normalizedParams.toString();
-
-  return stringifiedParams.length > 0
-    ? `/org/${slug}?${stringifiedParams}`
-    : `/org/${slug}`;
+export const getDeleteOrgUrl = (slug: string) => {
+  return `/org/${slug}`;
 };
 
 export const deleteOrg = async (
   slug: string,
-  params?: DeleteOrgParams,
   options?: RequestInit,
 ): Promise<null> => {
-  return http<null>(getDeleteOrgUrl(slug, params), {
+  return http<null>(getDeleteOrgUrl(slug), {
     ...options,
     method: "DELETE",
   });
@@ -748,14 +720,14 @@ export const getDeleteOrgMutationOptions = <
   mutation?: UseMutationOptions<
     Awaited<ReturnType<typeof deleteOrg>>,
     TError,
-    { slug: string; params?: DeleteOrgParams },
+    { slug: string },
     TContext
   >;
   request?: SecondParameter<typeof http>;
 }): UseMutationOptions<
   Awaited<ReturnType<typeof deleteOrg>>,
   TError,
-  { slug: string; params?: DeleteOrgParams },
+  { slug: string },
   TContext
 > => {
   const mutationKey = ["deleteOrg"];
@@ -769,11 +741,11 @@ export const getDeleteOrgMutationOptions = <
 
   const mutationFn: MutationFunction<
     Awaited<ReturnType<typeof deleteOrg>>,
-    { slug: string; params?: DeleteOrgParams }
+    { slug: string }
   > = (props) => {
-    const { slug, params } = props ?? {};
+    const { slug } = props ?? {};
 
-    return deleteOrg(slug, params, requestOptions);
+    return deleteOrg(slug, requestOptions);
   };
 
   return { mutationFn, ...mutationOptions };
@@ -790,7 +762,7 @@ export const useDeleteOrg = <TError = unknown, TContext = unknown>(
     mutation?: UseMutationOptions<
       Awaited<ReturnType<typeof deleteOrg>>,
       TError,
-      { slug: string; params?: DeleteOrgParams },
+      { slug: string },
       TContext
     >;
     request?: SecondParameter<typeof http>;
@@ -799,7 +771,7 @@ export const useDeleteOrg = <TError = unknown, TContext = unknown>(
 ): UseMutationResult<
   Awaited<ReturnType<typeof deleteOrg>>,
   TError,
-  { slug: string; params?: DeleteOrgParams },
+  { slug: string },
   TContext
 > => {
   const mutationOptions = getDeleteOrgMutationOptions(options);
