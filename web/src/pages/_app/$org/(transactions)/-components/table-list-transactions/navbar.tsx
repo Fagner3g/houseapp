@@ -15,26 +15,55 @@ import {
   SelectTrigger,
   SelectValue,
 } from '@/components/ui/select'
-import type { ListTransactions200TransactionsItem } from '@/http/generated/model'
+import type {
+  ListTransactions200TransactionsItem,
+  ListTransactionsType,
+} from '@/http/generated/model'
 import { ModalNewTransaction } from '../modal-new-transaction'
 
 interface Props {
   table: Table<ListTransactions200TransactionsItem>
+  type: ListTransactionsType
+  dateFrom: string
+  dateTo: string
+  onTypeChange: (type: ListTransactionsType) => void
+  onDateChange: (from: string, to: string) => void
 }
 
-export function NavbarTable({ table }: Props) {
+export function NavbarTable({
+  table,
+  type,
+  dateFrom,
+  dateTo,
+  onTypeChange,
+  onDateChange,
+}: Props) {
   return (
     <div className="flex items-center justify-between px-4 lg:px-6">
-      <Select defaultValue="all">
-        <SelectTrigger className="flex w-fit @4xl/main:hidden" id="view-selector">
-          <SelectValue placeholder="View" />
-        </SelectTrigger>
-        <SelectContent>
-          <SelectItem value="all">Todas</SelectItem>
-          <SelectItem value="expenses">Despesas</SelectItem>
-          <SelectItem value="incomes">Receitas</SelectItem>
-        </SelectContent>
-      </Select>
+      <div className="flex items-center gap-2">
+        <Select value={type} onValueChange={v => onTypeChange(v as ListTransactionsType)}>
+          <SelectTrigger className="flex w-fit" id="type-selector">
+            <SelectValue placeholder="Tipo" />
+          </SelectTrigger>
+          <SelectContent>
+            <SelectItem value="all">Todas</SelectItem>
+            <SelectItem value="income">Receitas</SelectItem>
+            <SelectItem value="expense">Despesas</SelectItem>
+          </SelectContent>
+        </Select>
+        <input
+          type="date"
+          value={dateFrom}
+          onChange={e => onDateChange(e.target.value, dateTo)}
+          className="border rounded px-2 py-1 text-sm"
+        />
+        <input
+          type="date"
+          value={dateTo}
+          onChange={e => onDateChange(dateFrom, e.target.value)}
+          className="border rounded px-2 py-1 text-sm"
+        />
+      </div>
 
       <div className="flex items-center gap-2">
         <DropdownMenu>

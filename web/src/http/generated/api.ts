@@ -29,6 +29,7 @@ import type {
   CreateOrganizationBody,
   CreateTransactionBody,
   CreateUserWithInviteBody,
+  DeleteOrgParams,
   GetInvite200,
   GetPendingGoals200,
   GetProfile200,
@@ -36,9 +37,11 @@ import type {
   GetWeekSummary200,
   ListOrganizations200,
   ListTransactions200,
+  ListTransactionsParams,
   ListUsersByOrg200,
   RenameOrg200,
   RenameOrgBody,
+  RenameOrgParams,
   SignInBody,
   SignUpBody,
   ValidateToken200,
@@ -612,16 +615,29 @@ export const useCreateOrganization = <TError = unknown, TContext = unknown>(
 /**
  * Rename an organization
  */
-export const getRenameOrgUrl = (slug: string) => {
-  return `/org/${slug}`;
+export const getRenameOrgUrl = (slug: string, params?: RenameOrgParams) => {
+  const normalizedParams = new URLSearchParams();
+
+  Object.entries(params || {}).forEach(([key, value]) => {
+    if (value !== undefined) {
+      normalizedParams.append(key, value === null ? "null" : value.toString());
+    }
+  });
+
+  const stringifiedParams = normalizedParams.toString();
+
+  return stringifiedParams.length > 0
+    ? `/org/${slug}?${stringifiedParams}`
+    : `/org/${slug}`;
 };
 
 export const renameOrg = async (
   slug: string,
   renameOrgBody: RenameOrgBody,
+  params?: RenameOrgParams,
   options?: RequestInit,
 ): Promise<RenameOrg200> => {
-  return http<RenameOrg200>(getRenameOrgUrl(slug), {
+  return http<RenameOrg200>(getRenameOrgUrl(slug, params), {
     ...options,
     method: "PUT",
     headers: { "Content-Type": "application/json", ...options?.headers },
@@ -636,14 +652,14 @@ export const getRenameOrgMutationOptions = <
   mutation?: UseMutationOptions<
     Awaited<ReturnType<typeof renameOrg>>,
     TError,
-    { slug: string; data: RenameOrgBody },
+    { slug: string; data: RenameOrgBody; params?: RenameOrgParams },
     TContext
   >;
   request?: SecondParameter<typeof http>;
 }): UseMutationOptions<
   Awaited<ReturnType<typeof renameOrg>>,
   TError,
-  { slug: string; data: RenameOrgBody },
+  { slug: string; data: RenameOrgBody; params?: RenameOrgParams },
   TContext
 > => {
   const mutationKey = ["renameOrg"];
@@ -657,11 +673,11 @@ export const getRenameOrgMutationOptions = <
 
   const mutationFn: MutationFunction<
     Awaited<ReturnType<typeof renameOrg>>,
-    { slug: string; data: RenameOrgBody }
+    { slug: string; data: RenameOrgBody; params?: RenameOrgParams }
   > = (props) => {
-    const { slug, data } = props ?? {};
+    const { slug, data, params } = props ?? {};
 
-    return renameOrg(slug, data, requestOptions);
+    return renameOrg(slug, data, params, requestOptions);
   };
 
   return { mutationFn, ...mutationOptions };
@@ -678,7 +694,7 @@ export const useRenameOrg = <TError = unknown, TContext = unknown>(
     mutation?: UseMutationOptions<
       Awaited<ReturnType<typeof renameOrg>>,
       TError,
-      { slug: string; data: RenameOrgBody },
+      { slug: string; data: RenameOrgBody; params?: RenameOrgParams },
       TContext
     >;
     request?: SecondParameter<typeof http>;
@@ -687,7 +703,7 @@ export const useRenameOrg = <TError = unknown, TContext = unknown>(
 ): UseMutationResult<
   Awaited<ReturnType<typeof renameOrg>>,
   TError,
-  { slug: string; data: RenameOrgBody },
+  { slug: string; data: RenameOrgBody; params?: RenameOrgParams },
   TContext
 > => {
   const mutationOptions = getRenameOrgMutationOptions(options);
@@ -698,15 +714,28 @@ export const useRenameOrg = <TError = unknown, TContext = unknown>(
 /**
  * Delete an organization
  */
-export const getDeleteOrgUrl = (slug: string) => {
-  return `/org/${slug}`;
+export const getDeleteOrgUrl = (slug: string, params?: DeleteOrgParams) => {
+  const normalizedParams = new URLSearchParams();
+
+  Object.entries(params || {}).forEach(([key, value]) => {
+    if (value !== undefined) {
+      normalizedParams.append(key, value === null ? "null" : value.toString());
+    }
+  });
+
+  const stringifiedParams = normalizedParams.toString();
+
+  return stringifiedParams.length > 0
+    ? `/org/${slug}?${stringifiedParams}`
+    : `/org/${slug}`;
 };
 
 export const deleteOrg = async (
   slug: string,
+  params?: DeleteOrgParams,
   options?: RequestInit,
 ): Promise<null> => {
-  return http<null>(getDeleteOrgUrl(slug), {
+  return http<null>(getDeleteOrgUrl(slug, params), {
     ...options,
     method: "DELETE",
   });
@@ -719,14 +748,14 @@ export const getDeleteOrgMutationOptions = <
   mutation?: UseMutationOptions<
     Awaited<ReturnType<typeof deleteOrg>>,
     TError,
-    { slug: string },
+    { slug: string; params?: DeleteOrgParams },
     TContext
   >;
   request?: SecondParameter<typeof http>;
 }): UseMutationOptions<
   Awaited<ReturnType<typeof deleteOrg>>,
   TError,
-  { slug: string },
+  { slug: string; params?: DeleteOrgParams },
   TContext
 > => {
   const mutationKey = ["deleteOrg"];
@@ -740,11 +769,11 @@ export const getDeleteOrgMutationOptions = <
 
   const mutationFn: MutationFunction<
     Awaited<ReturnType<typeof deleteOrg>>,
-    { slug: string }
+    { slug: string; params?: DeleteOrgParams }
   > = (props) => {
-    const { slug } = props ?? {};
+    const { slug, params } = props ?? {};
 
-    return deleteOrg(slug, requestOptions);
+    return deleteOrg(slug, params, requestOptions);
   };
 
   return { mutationFn, ...mutationOptions };
@@ -761,7 +790,7 @@ export const useDeleteOrg = <TError = unknown, TContext = unknown>(
     mutation?: UseMutationOptions<
       Awaited<ReturnType<typeof deleteOrg>>,
       TError,
-      { slug: string },
+      { slug: string; params?: DeleteOrgParams },
       TContext
     >;
     request?: SecondParameter<typeof http>;
@@ -770,7 +799,7 @@ export const useDeleteOrg = <TError = unknown, TContext = unknown>(
 ): UseMutationResult<
   Awaited<ReturnType<typeof deleteOrg>>,
   TError,
-  { slug: string },
+  { slug: string; params?: DeleteOrgParams },
   TContext
 > => {
   const mutationOptions = getDeleteOrgMutationOptions(options);
@@ -2143,22 +2172,41 @@ export function useGetTransactionById<
 /**
  * List transactions for authenticated user
  */
-export const getListTransactionsUrl = (slug: string) => {
-  return `/org/${slug}/transactions`;
+export const getListTransactionsUrl = (
+  slug: string,
+  params?: ListTransactionsParams,
+) => {
+  const normalizedParams = new URLSearchParams();
+
+  Object.entries(params || {}).forEach(([key, value]) => {
+    if (value !== undefined) {
+      normalizedParams.append(key, value === null ? "null" : value.toString());
+    }
+  });
+
+  const stringifiedParams = normalizedParams.toString();
+
+  return stringifiedParams.length > 0
+    ? `/org/${slug}/transactions?${stringifiedParams}`
+    : `/org/${slug}/transactions`;
 };
 
 export const listTransactions = async (
   slug: string,
+  params?: ListTransactionsParams,
   options?: RequestInit,
 ): Promise<ListTransactions200> => {
-  return http<ListTransactions200>(getListTransactionsUrl(slug), {
+  return http<ListTransactions200>(getListTransactionsUrl(slug, params), {
     ...options,
     method: "GET",
   });
 };
 
-export const getListTransactionsQueryKey = (slug?: string) => {
-  return [`/org/${slug}/transactions`] as const;
+export const getListTransactionsQueryKey = (
+  slug?: string,
+  params?: ListTransactionsParams,
+) => {
+  return [`/org/${slug}/transactions`, ...(params ? [params] : [])] as const;
 };
 
 export const getListTransactionsQueryOptions = <
@@ -2166,6 +2214,7 @@ export const getListTransactionsQueryOptions = <
   TError = unknown,
 >(
   slug: string,
+  params?: ListTransactionsParams,
   options?: {
     query?: Partial<
       UseQueryOptions<
@@ -2179,11 +2228,13 @@ export const getListTransactionsQueryOptions = <
 ) => {
   const { query: queryOptions, request: requestOptions } = options ?? {};
 
-  const queryKey = queryOptions?.queryKey ?? getListTransactionsQueryKey(slug);
+  const queryKey =
+    queryOptions?.queryKey ?? getListTransactionsQueryKey(slug, params);
 
   const queryFn: QueryFunction<
     Awaited<ReturnType<typeof listTransactions>>
-  > = ({ signal }) => listTransactions(slug, { signal, ...requestOptions });
+  > = ({ signal }) =>
+    listTransactions(slug, params, { signal, ...requestOptions });
 
   return {
     queryKey,
@@ -2207,6 +2258,7 @@ export function useListTransactions<
   TError = unknown,
 >(
   slug: string,
+  params: undefined | ListTransactionsParams,
   options: {
     query: Partial<
       UseQueryOptions<
@@ -2234,6 +2286,7 @@ export function useListTransactions<
   TError = unknown,
 >(
   slug: string,
+  params?: ListTransactionsParams,
   options?: {
     query?: Partial<
       UseQueryOptions<
@@ -2261,6 +2314,7 @@ export function useListTransactions<
   TError = unknown,
 >(
   slug: string,
+  params?: ListTransactionsParams,
   options?: {
     query?: Partial<
       UseQueryOptions<
@@ -2281,6 +2335,7 @@ export function useListTransactions<
   TError = unknown,
 >(
   slug: string,
+  params?: ListTransactionsParams,
   options?: {
     query?: Partial<
       UseQueryOptions<
@@ -2295,7 +2350,7 @@ export function useListTransactions<
 ): UseQueryResult<TData, TError> & {
   queryKey: DataTag<QueryKey, TData, TError>;
 } {
-  const queryOptions = getListTransactionsQueryOptions(slug, options);
+  const queryOptions = getListTransactionsQueryOptions(slug, params, options);
 
   const query = useQuery(queryOptions, queryClient) as UseQueryResult<
     TData,

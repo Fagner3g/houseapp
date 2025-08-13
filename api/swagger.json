@@ -339,6 +339,49 @@
             "in": "path",
             "name": "slug",
             "required": true
+          },
+          {
+            "schema": {
+              "type": "string",
+              "enum": ["all", "income", "expense"],
+              "default": "all"
+            },
+            "in": "query",
+            "name": "type"
+          },
+          {
+            "schema": {
+              "type": "string",
+              "format": "date-time"
+            },
+            "in": "query",
+            "name": "dateFrom"
+          },
+          {
+            "schema": {
+              "type": "string",
+              "format": "date-time"
+            },
+            "in": "query",
+            "name": "dateTo"
+          },
+          {
+            "schema": {
+              "type": "integer",
+              "minimum": 1,
+              "default": 1
+            },
+            "in": "query",
+            "name": "page"
+          },
+          {
+            "schema": {
+              "type": "integer",
+              "minimum": 1,
+              "default": 10
+            },
+            "in": "query",
+            "name": "perPage"
           }
         ],
         "responses": {
@@ -405,6 +448,54 @@
             "in": "path",
             "name": "slug",
             "required": true
+          },
+          {
+            "schema": {
+              "type": "string",
+              "enum": ["all", "income", "expense"],
+              "default": "all"
+            },
+            "in": "query",
+            "name": "type",
+            "required": false
+          },
+          {
+            "schema": {
+              "type": "string",
+              "format": "date-time"
+            },
+            "in": "query",
+            "name": "dateFrom",
+            "required": false
+          },
+          {
+            "schema": {
+              "type": "string",
+              "format": "date-time"
+            },
+            "in": "query",
+            "name": "dateTo",
+            "required": false
+          },
+          {
+            "schema": {
+              "type": "integer",
+              "minimum": 1,
+              "default": 1
+            },
+            "in": "query",
+            "name": "page",
+            "required": false
+          },
+          {
+            "schema": {
+              "type": "integer",
+              "minimum": 1,
+              "default": 10
+            },
+            "in": "query",
+            "name": "perPage",
+            "required": false
           }
         ],
         "responses": {
@@ -1192,6 +1283,54 @@
             "in": "path",
             "name": "slug",
             "required": true
+          },
+          {
+            "schema": {
+              "type": "string",
+              "enum": ["all", "income", "expense"],
+              "default": "all"
+            },
+            "in": "query",
+            "name": "type",
+            "required": false
+          },
+          {
+            "schema": {
+              "type": "string",
+              "format": "date-time"
+            },
+            "in": "query",
+            "name": "dateFrom",
+            "required": false
+          },
+          {
+            "schema": {
+              "type": "string",
+              "format": "date-time"
+            },
+            "in": "query",
+            "name": "dateTo",
+            "required": false
+          },
+          {
+            "schema": {
+              "type": "integer",
+              "minimum": 1,
+              "default": 1
+            },
+            "in": "query",
+            "name": "page",
+            "required": false
+          },
+          {
+            "schema": {
+              "type": "integer",
+              "minimum": 1,
+              "default": 10
+            },
+            "in": "query",
+            "name": "perPage",
+            "required": false
           }
         ],
         "responses": {
@@ -1253,6 +1392,9 @@
                               "scheduled"
                             ]
                           },
+                          "overdueDays": {
+                            "type": "integer"
+                          },
                           "isRecurring": {
                             "type": "boolean"
                           },
@@ -1293,14 +1435,25 @@
                           "description",
                           "createdAt",
                           "status",
+                          "overdueDays",
                           "isRecurring"
                         ],
                         "additionalProperties": false
                       }
-                    }
+                    },
+                    "page": { "type": "integer" },
+                    "perPage": { "type": "integer" },
+                    "totalItems": { "type": "integer" },
+                    "totalPages": { "type": "integer" },
+                    "pagesRemaining": { "type": "integer" }
                   },
                   "required": [
-                    "transactions"
+                    "transactions",
+                    "page",
+                    "perPage",
+                    "totalItems",
+                    "totalPages",
+                    "pagesRemaining"
                   ],
                   "additionalProperties": false
                 }

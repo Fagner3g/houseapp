@@ -34,14 +34,17 @@ import { Label } from '@/components/ui/label'
 import type { ListTransactions200TransactionsItem } from '@/http/generated/model'
 import { DrawerEdit } from '../drawer-edit'
 
-export const useTable = (data: ListTransactions200TransactionsItem[]) => {
+export const useTable = (
+  data: ListTransactions200TransactionsItem[],
+  pageSize = 10,
+) => {
   const [rowSelection, setRowSelection] = useState({})
   const [columnVisibility, setColumnVisibility] = useState<VisibilityState>({ Pagamento: false })
   const [columnFilters, setColumnFilters] = useState<ColumnFiltersState>([])
   const [sorting, setSorting] = useState<SortingState>([])
   const [pagination, setPagination] = useState({
     pageIndex: 0,
-    pageSize: 10,
+    pageSize,
   })
 
   const columns: ColumnDef<ListTransactions200TransactionsItem>[] = [
@@ -125,6 +128,11 @@ export const useTable = (data: ListTransactions200TransactionsItem[]) => {
       cell: ({ row }) => (
         <Label className="text-muted-foreground px-1.5">
           {dayjs(row.original.dueDate).format('DD/MM/YYYY')}
+          {row.original.status === 'overdue' && (
+            <span className="ml-2 text-red-600">
+              Vencida{row.original.overdueDays > 0 ? ` há ${row.original.overdueDays} dias` : ''}
+            </span>
+          )}
         </Label>
       ),
     },
