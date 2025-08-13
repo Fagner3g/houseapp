@@ -17,3 +17,9 @@ export class UserAlreadyExistsError extends Error {
     super(message ?? 'User already exists')
   }
 }
+
+export class TagAlreadyExistsError extends Error {
+  constructor(message?: string) {
+    super(message ?? 'Tag already exists')
+  }
+}
