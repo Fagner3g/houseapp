@@ -6,8 +6,20 @@
  * OpenAPI spec version: 1.0.0
  */
 import type { ListTransactionsTagFilterMode } from "./listTransactionsTagFilterMode";
+import type { ListTransactionsType } from "./listTransactionsType";
 
 export type ListTransactionsParams = {
   tags?: string[];
   tagFilterMode?: ListTransactionsTagFilterMode;
+  type?: ListTransactionsType;
+  dateFrom?: string;
+  dateTo?: string;
+  /**
+   * @minimum 1
+   */
+  page?: number;
+  /**
+   * @minimum 1
+   */
+  perPage?: number;
 };

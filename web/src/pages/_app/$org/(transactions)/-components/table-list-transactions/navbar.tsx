@@ -8,13 +8,6 @@ import {
   DropdownMenuContent,
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu'
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from '@/components/ui/select'
 import type { ListTransactions200TransactionsItem } from '@/http/generated/model'
 import { ModalNewTransaction } from '../modal-new-transaction'
 import { DeleteSelected } from './delete-selected'
@@ -26,17 +19,6 @@ interface Props {
 export function NavbarTable({ table }: Props) {
   return (
     <div className="flex items-center justify-between px-4 lg:px-6">
-      <Select defaultValue="all">
-        <SelectTrigger className="flex w-fit @4xl/main:hidden" id="view-selector">
-          <SelectValue placeholder="View" />
-        </SelectTrigger>
-        <SelectContent>
-          <SelectItem value="all">Todas</SelectItem>
-          <SelectItem value="expenses">Despesas</SelectItem>
-          <SelectItem value="incomes">Receitas</SelectItem>
-        </SelectContent>
-      </Select>
-
       <div className="flex items-center gap-2">
         <DropdownMenu>
           <DropdownMenuTrigger asChild>
