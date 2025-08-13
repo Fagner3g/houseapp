@@ -928,6 +928,26 @@
                       "description": {
                         "type": "string"
                       },
+                      "tags": {
+                        "type": "array",
+                        "items": {
+                          "type": "object",
+                          "properties": {
+                            "name": {
+                              "type": "string",
+                              "minLength": 1
+                            },
+                            "color": {
+                              "type": "string",
+                              "minLength": 1
+                            }
+                          },
+                          "required": [
+                            "name",
+                            "color"
+                          ]
+                        }
+                      },
                       "isRecurring": {
                         "type": "boolean",
                         "enum": [
@@ -995,6 +1015,26 @@
                       },
                       "description": {
                         "type": "string"
+                      },
+                      "tags": {
+                        "type": "array",
+                        "items": {
+                          "type": "object",
+                          "properties": {
+                            "name": {
+                              "type": "string",
+                              "minLength": 1
+                            },
+                            "color": {
+                              "type": "string",
+                              "minLength": 1
+                            }
+                          },
+                          "required": [
+                            "name",
+                            "color"
+                          ]
+                        }
                       },
                       "isRecurring": {
                         "type": "boolean",
@@ -1146,6 +1186,25 @@
                           "type": "integer",
                           "minimum": -9007199254740991,
                           "maximum": 9007199254740991
+                        },
+                        "tags": {
+                          "type": "array",
+                          "items": {
+                            "type": "object",
+                            "properties": {
+                              "name": {
+                                "type": "string"
+                              },
+                              "color": {
+                                "type": "string"
+                              }
+                            },
+                            "required": [
+                              "name",
+                              "color"
+                            ],
+                            "additionalProperties": false
+                          }
                         }
                       },
                       "required": [
@@ -1160,7 +1219,8 @@
                         "description",
                         "createdAt",
                         "status",
-                        "isRecurring"
+                        "isRecurring",
+                        "tags"
                       ],
                       "additionalProperties": false
                     }
@@ -1184,6 +1244,30 @@
         ],
         "description": "List transactions for authenticated user",
         "parameters": [
+          {
+            "schema": {
+              "type": "array",
+              "items": {
+                "type": "string"
+              }
+            },
+            "in": "query",
+            "name": "tags",
+            "required": false
+          },
+          {
+            "schema": {
+              "default": "any",
+              "type": "string",
+              "enum": [
+                "any",
+                "all"
+              ]
+            },
+            "in": "query",
+            "name": "tagFilterMode",
+            "required": false
+          },
           {
             "schema": {
               "type": "string",
@@ -1279,6 +1363,25 @@
                             "type": "integer",
                             "minimum": -9007199254740991,
                             "maximum": 9007199254740991
+                          },
+                          "tags": {
+                            "type": "array",
+                            "items": {
+                              "type": "object",
+                              "properties": {
+                                "name": {
+                                  "type": "string"
+                                },
+                                "color": {
+                                  "type": "string"
+                                }
+                              },
+                              "required": [
+                                "name",
+                                "color"
+                              ],
+                              "additionalProperties": false
+                            }
                           }
                         },
                         "required": [
@@ -1293,7 +1396,8 @@
                           "description",
                           "createdAt",
                           "status",
-                          "isRecurring"
+                          "isRecurring",
+                          "tags"
                         ],
                         "additionalProperties": false
                       }
@@ -1301,6 +1405,66 @@
                   },
                   "required": [
                     "transactions"
+                  ],
+                  "additionalProperties": false
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/org/{slug}/tags": {
+      "get": {
+        "operationId": "listTags",
+        "tags": [
+          "Tag"
+        ],
+        "description": "List tags for organization",
+        "parameters": [
+          {
+            "schema": {
+              "type": "string"
+            },
+            "in": "path",
+            "name": "slug",
+            "required": true
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Default Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "tags": {
+                      "type": "array",
+                      "items": {
+                        "type": "object",
+                        "properties": {
+                          "id": {
+                            "type": "string"
+                          },
+                          "name": {
+                            "type": "string"
+                          },
+                          "color": {
+                            "type": "string"
+                          }
+                        },
+                        "required": [
+                          "id",
+                          "name",
+                          "color"
+                        ],
+                        "additionalProperties": false
+                      }
+                    }
+                  },
+                  "required": [
+                    "tags"
                   ],
                   "additionalProperties": false
                 }

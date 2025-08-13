@@ -15,6 +15,7 @@ import {
   listUsersByOrgRoute,
   renameOrgRoute,
 } from './organization.routes'
+import { listTagsRoute } from './tag.routes'
 import {
   createTransactionRoute,
   getTransactionRoute,
@@ -54,4 +55,5 @@ export function createRoutes(app: FastifyInstance) {
   app.register(createTransactionRoute)
   app.register(getTransactionRoute)
   app.register(listTransactionRoute)
+  app.register(listTagsRoute)
 }

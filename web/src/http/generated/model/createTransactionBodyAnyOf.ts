@@ -6,6 +6,7 @@
  * OpenAPI spec version: 1.0.0
  */
 import type { CreateTransactionBodyAnyOfType } from "./createTransactionBodyAnyOfType";
+import type { CreateTransactionBodyAnyOfTagsItem } from "./createTransactionBodyAnyOfTagsItem";
 import type { CreateTransactionBodyAnyOfRecurrenceSelector } from "./createTransactionBodyAnyOfRecurrenceSelector";
 import type { CreateTransactionBodyAnyOfRecurrenceType } from "./createTransactionBodyAnyOfRecurrenceType";
 
@@ -22,6 +23,7 @@ export type CreateTransactionBodyAnyOf = {
   /** @pattern ^(?!\.)(?!.*\.\.)([A-Za-z0-9_'+\-\.]*)[A-Za-z0-9_+-]@([A-Za-z0-9][A-Za-z0-9\-]*\.)+[A-Za-z]{2,}$ */
   payToEmail: string;
   description?: string;
+  tags?: CreateTransactionBodyAnyOfTagsItem[];
   isRecurring: boolean;
   recurrenceSelector: CreateTransactionBodyAnyOfRecurrenceSelector;
   recurrenceType: CreateTransactionBodyAnyOfRecurrenceType;

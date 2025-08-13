@@ -5,10 +5,11 @@
  * API for HouseApp
  * OpenAPI spec version: 1.0.0
  */
-import type { CreateTransactionBodyAnyOfFiveType } from "./createTransactionBodyAnyOfFiveType";
+import type { CreateTransactionBodyAnyOfSixType } from "./createTransactionBodyAnyOfSixType";
+import type { CreateTransactionBodyAnyOfSixTagsItem } from "./createTransactionBodyAnyOfSixTagsItem";
 
-export type CreateTransactionBodyAnyOfFive = {
-  type: CreateTransactionBodyAnyOfFiveType;
+export type CreateTransactionBodyAnyOfSix = {
+  type: CreateTransactionBodyAnyOfSixType;
   /**
    * @minLength 1
    * @maxLength 50
@@ -20,6 +21,7 @@ export type CreateTransactionBodyAnyOfFive = {
   /** @pattern ^(?!\.)(?!.*\.\.)([A-Za-z0-9_'+\-\.]*)[A-Za-z0-9_+-]@([A-Za-z0-9][A-Za-z0-9\-]*\.)+[A-Za-z]{2,}$ */
   payToEmail: string;
   description?: string;
+  tags?: CreateTransactionBodyAnyOfSixTagsItem[];
   isRecurring: boolean;
   recurrenceSelector?: unknown;
   recurrenceType?: unknown;

@@ -9,6 +9,7 @@ import type { ListTransactions200TransactionsItemType } from "./listTransactions
 import type { ListTransactions200TransactionsItemStatus } from "./listTransactions200TransactionsItemStatus";
 import type { ListTransactions200TransactionsItemRecurrenceSelector } from "./listTransactions200TransactionsItemRecurrenceSelector";
 import type { ListTransactions200TransactionsItemRecurrenceType } from "./listTransactions200TransactionsItemRecurrenceType";
+import type { ListTransactions200TransactionsItemTagsItem } from "./listTransactions200TransactionsItemTagsItem";
 
 export type ListTransactions200TransactionsItem = {
   id: string;
@@ -33,4 +34,5 @@ export type ListTransactions200TransactionsItem = {
    * @maximum 9007199254740991
    */
   recurrenceInterval?: number;
+  tags: ListTransactions200TransactionsItemTagsItem[];
 };

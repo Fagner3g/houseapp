@@ -6,11 +6,11 @@
  * OpenAPI spec version: 1.0.0
  */
 
-export type CreateTransactionBodyAnyOfFiveType =
-  (typeof CreateTransactionBodyAnyOfFiveType)[keyof typeof CreateTransactionBodyAnyOfFiveType];
+export type CreateTransactionBodyAnyOfSixType =
+  (typeof CreateTransactionBodyAnyOfSixType)[keyof typeof CreateTransactionBodyAnyOfSixType];
 
 // eslint-disable-next-line @typescript-eslint/no-redeclare
-export const CreateTransactionBodyAnyOfFiveType = {
+export const CreateTransactionBodyAnyOfSixType = {
   expense: "expense",
   income: "income",
 } as const;

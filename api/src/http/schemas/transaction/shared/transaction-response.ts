@@ -17,6 +17,7 @@ export const transactionResponseSchema = z.object({
   recurrenceType: z.enum(['weekly', 'monthly', 'yearly']).optional(),
   recurrenceUntil: z.coerce.date().optional(),
   recurrenceInterval: z.coerce.number().int().optional(),
+  tags: z.array(z.object({ name: z.string(), color: z.string() })),
 })
 
 export type TransactionResponse = z.infer<typeof transactionResponseSchema>

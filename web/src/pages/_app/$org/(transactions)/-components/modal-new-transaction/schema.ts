@@ -11,7 +11,7 @@ const base = z.object({
   amount: z.number('Valor da transação é obrigatório').min(1),
   dueDate: z.date({ error: 'A data de vencimento é obrigatória' }),
   payToEmail: z.string('Defina o pra quem vai o registro').nonempty(),
-  tags: z.array(z.string()).optional(),
+  tags: z.array(z.object({ name: z.string(), color: z.string() })).optional(),
   description: z.string().optional(),
 })
 
