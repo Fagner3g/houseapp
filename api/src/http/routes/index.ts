@@ -19,6 +19,7 @@ import {
   createTransactionRoute,
   getTransactionRoute,
   listTransactionRoute,
+  deleteTransactionsRoute,
 } from './transaction.routes'
 import { createUserWithInviteRoute, getProfileRoute } from './user.routes'
 
@@ -54,4 +55,5 @@ export function createRoutes(app: FastifyInstance) {
   app.register(createTransactionRoute)
   app.register(getTransactionRoute)
   app.register(listTransactionRoute)
+  app.register(deleteTransactionsRoute)
 }

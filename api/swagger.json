@@ -1308,10 +1308,48 @@
             }
           }
         }
+        }
+      },
+      "delete": {
+        "operationId": "deleteTransactions",
+        "tags": [
+          "Transaction"
+        ],
+        "description": "Delete multiple transactions",
+        "parameters": [
+          {
+            "schema": {
+              "type": "string",
+              "minLength": 1
+            },
+            "in": "path",
+            "name": "slug",
+            "required": true
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "ids": {
+                    "type": "array",
+                    "items": { "type": "string" }
+                  }
+                },
+                "required": ["ids"],
+                "additionalProperties": false
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": { "description": "Default Response" }
+        }
       }
-    }
-  },
-  "servers": [
+    },
+    "servers": [
     {
       "url": "http://localhost:3333",
       "description": "Development server"

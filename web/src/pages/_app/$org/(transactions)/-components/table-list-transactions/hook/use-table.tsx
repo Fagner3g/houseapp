@@ -20,6 +20,7 @@ import {
 import dayjs from 'dayjs'
 import { AlertOctagon, LucideClockFading, TrendingDown, TrendingUp } from 'lucide-react'
 import { useState } from 'react'
+import { toast } from 'sonner'
 
 import { Button } from '@/components/ui/button'
 import { Checkbox } from '@/components/ui/checkbox'
@@ -32,6 +33,8 @@ import {
 } from '@/components/ui/dropdown-menu'
 import { Label } from '@/components/ui/label'
 import type { ListTransactions200TransactionsItem } from '@/http/generated/model'
+import { useActiveOrganization } from '@/hooks/use-active-organization'
+import { useDeleteTransactions } from '@/http/transactions'
 import { DrawerEdit } from '../drawer-edit'
 
 export const useTable = (data: ListTransactions200TransactionsItem[]) => {
@@ -43,6 +46,14 @@ export const useTable = (data: ListTransactions200TransactionsItem[]) => {
     pageIndex: 0,
     pageSize: 10,
   })
+  const { slug } = useActiveOrganization()
+  const { mutate: deleteTransactions } = useDeleteTransactions(slug)
+
+  function copyLink(id: string) {
+    const url = `${window.location.origin}/transactions?openId=${id}`
+    navigator.clipboard.writeText(url)
+    toast.success('Link copiado!')
+  }
 
   const columns: ColumnDef<ListTransactions200TransactionsItem>[] = [
     {
@@ -161,7 +172,7 @@ export const useTable = (data: ListTransactions200TransactionsItem[]) => {
 
     {
       id: 'actions',
-      cell: () => (
+      cell: ({ row }) => (
         <DropdownMenu>
           <DropdownMenuTrigger asChild>
             <Button
@@ -173,12 +184,26 @@ export const useTable = (data: ListTransactions200TransactionsItem[]) => {
               <span className="sr-only">Open menu</span>
             </Button>
           </DropdownMenuTrigger>
-          <DropdownMenuContent align="end" className="w-32">
-            <DropdownMenuItem>Edit</DropdownMenuItem>
-            <DropdownMenuItem>Make a copy</DropdownMenuItem>
-            <DropdownMenuItem>Favorite</DropdownMenuItem>
+          <DropdownMenuContent align="end" className="w-40">
+            <DropdownMenuItem>Editar</DropdownMenuItem>
+            <DropdownMenuItem
+              onClick={() => copyLink(row.original.id)}
+            >
+              Duplicar
+            </DropdownMenuItem>
+            <DropdownMenuItem>Favoritar</DropdownMenuItem>
+            <DropdownMenuItem
+              onClick={() => copyLink(row.original.id)}
+            >
+              Copiar link
+            </DropdownMenuItem>
             <DropdownMenuSeparator />
-            <DropdownMenuItem variant="destructive">Delete</DropdownMenuItem>
+            <DropdownMenuItem
+              variant="destructive"
+              onClick={() => row.table.options.meta?.deleteRows?.([row.original.id])}
+            >
+              Excluir
+            </DropdownMenuItem>
           </DropdownMenuContent>
         </DropdownMenu>
       ),
@@ -208,6 +233,11 @@ export const useTable = (data: ListTransactions200TransactionsItem[]) => {
     getSortedRowModel: getSortedRowModel(),
     getFacetedRowModel: getFacetedRowModel(),
     getFacetedUniqueValues: getFacetedUniqueValues(),
+    meta: {
+      deleteRows: (ids: string[]) => {
+        deleteTransactions(ids)
+      },
+    },
   })
 
   return { table, columns }
