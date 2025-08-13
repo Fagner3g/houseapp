@@ -2,7 +2,13 @@ import type { FastifyInstance } from 'fastify'
 import { StatusCodes } from 'http-status-codes'
 
 import { env } from '@/config/env'
-import { BadRequestError, ForbiddenError, UnauthorizedError, UserAlreadyExistsError } from '.'
+import {
+  BadRequestError,
+  ForbiddenError,
+  TagAlreadyExistsError,
+  UnauthorizedError,
+  UserAlreadyExistsError,
+} from '.'
 
 type FastifyErrorHandler = FastifyInstance['errorHandler']
 
@@ -21,6 +27,7 @@ export const errorHandler: FastifyErrorHandler = (error, _request, reply) => {
     [UnauthorizedError, StatusCodes.UNAUTHORIZED],
     [ForbiddenError, StatusCodes.FORBIDDEN],
     [UserAlreadyExistsError, StatusCodes.CONFLICT],
+    [TagAlreadyExistsError, StatusCodes.CONFLICT],
   ])
 
   for (const [ErrorType, status] of errorMap) {

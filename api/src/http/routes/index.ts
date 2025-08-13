@@ -15,7 +15,12 @@ import {
   listUsersByOrgRoute,
   renameOrgRoute,
 } from './organization.routes'
-import { listTagsRoute } from './tag.routes'
+import {
+  createTagRoute,
+  deleteTagRoute,
+  listTagsRoute,
+  updateTagRoute,
+} from './tag.routes'
 import {
   createTransactionRoute,
   deleteTransactionsRoute,
@@ -62,4 +67,7 @@ export function createRoutes(app: FastifyInstance) {
 
   // Tag
   app.register(listTagsRoute)
+  app.register(createTagRoute)
+  app.register(updateTagRoute)
+  app.register(deleteTagRoute)
 }
