@@ -7,6 +7,7 @@ const base = z.object({
   dueDate: z.coerce.date({ error: 'A data de vencimento é obrigatória' }),
   payToEmail: z.email('Defina o pra quem vai o registro'),
   description: z.string().optional(),
+  tags: z.array(z.string().trim().min(1)).optional(),
 })
 
 const recurring = base.extend({
