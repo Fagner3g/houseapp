@@ -6,11 +6,11 @@
  * OpenAPI spec version: 1.0.0
  */
 
-export type CreateTransaction201TransactionType =
-  (typeof CreateTransaction201TransactionType)[keyof typeof CreateTransaction201TransactionType];
+export type GetTransactionById200TransactionType =
+  (typeof GetTransactionById200TransactionType)[keyof typeof GetTransactionById200TransactionType];
 
 // eslint-disable-next-line @typescript-eslint/no-redeclare
-export const CreateTransaction201TransactionType = {
+export const GetTransactionById200TransactionType = {
   expense: "expense",
   income: "income",
 } as const;

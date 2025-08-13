@@ -5,10 +5,32 @@
  * API for HouseApp
  * OpenAPI spec version: 1.0.0
  */
+import type { GetTransactionById200TransactionType } from "./getTransactionById200TransactionType";
+import type { GetTransactionById200TransactionStatus } from "./getTransactionById200TransactionStatus";
+import type { GetTransactionById200TransactionRecurrenceSelector } from "./getTransactionById200TransactionRecurrenceSelector";
+import type { GetTransactionById200TransactionRecurrenceType } from "./getTransactionById200TransactionRecurrenceType";
 
-/**
- * @nullable
- */
 export type GetTransactionById200Transaction = {
-  [key: string]: unknown;
-} | null;
+  id: string;
+  type: GetTransactionById200TransactionType;
+  title: string;
+  ownerId: string;
+  payTo: string;
+  amount: number;
+  dueDate: string;
+  /** @nullable */
+  paidAt: string | null;
+  /** @nullable */
+  description: string | null;
+  createdAt: string;
+  status: GetTransactionById200TransactionStatus;
+  isRecurring: boolean;
+  recurrenceSelector?: GetTransactionById200TransactionRecurrenceSelector;
+  recurrenceType?: GetTransactionById200TransactionRecurrenceType;
+  recurrenceUntil?: string;
+  /**
+   * @minimum -9007199254740991
+   * @maximum 9007199254740991
+   */
+  recurrenceInterval?: number;
+};

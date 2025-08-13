@@ -1,123 +1,72 @@
-# Build a REST API like a senior developer
+# HouseApp – Gerenciamento de Metas e Transações
 
-## Need help?
-The best place to get help is on Discord or X.
+## 📋 Visão Geral
+O **HouseApp** é uma aplicação web para gestão pessoal e organizacional que permite:
+- Registro e acompanhamento de **metas**.
+- Registro e controle de **transações financeiras**.
+- **Cadastro de usuário** com autenticação via **Magic Link**.
 
-Discord: fagner8943
-X: https://x.com/Fagner3g
+---
 
-# New Features:
+## 🚀 Tecnologias
+- **Vite.js** + **React**
+- **Fastify** (API)
+- **PostgreSQL** + **Drizzle ORM**
+- **TypeScript**
+- **Magic Link Authentication**
+- **Shadcn/UI**
+- **Biome** (formatação e linting)
+- **Docker** (desenvolvimento e produção)
 
-- [x] Sending message to whatsapp 
+---
 
-## What you will learn
-* Basic Principals of REST APIs
-* How to structure your applications
-* How to test REST APIs
-* How to use Docker for local development
-* How to use Drizzle for database interactions
-* How to use JSON Schema for API design
-* Basic TypeScript
-* How to capture and visualise metrics
+## 🗺️ Roadmap
 
+### **Fase 1 – Fundamentos**
+- [x] Configuração inicial do projeto (frontend com Vite e backend com Fastify)
+- [x] Setup do banco de dados com Drizzle ORM
+- [x] Integração com Docker para desenvolvimento local
+- [x] Configuração de autenticação via Magic Link
 
-## Modules
-### User
-* Functional style
-* json-schema
+### **Fase 2 – Funcionalidades Principais**
+- [x] **Registro de Metas**
+  - Criar, listar, editar e excluir metas
+  - Status de conclusão
+  - Datas de início e término
+- [x] **Registro de Transações**
+  - Criar, listar, editar e excluir transações
+  - Tipos: receita/despesa
+  - Filtros por período, status e categoria
+- [x] **Cadastro de Usuário**
+  - Registro via Magic Link
+  - Perfil do usuário
 
-### Job
-* Object-oriented
-* Dependency injection
-* json-schema
+### **Fase 3 – Melhorias e Integrações**
+- [ ] Dashboard com indicadores de metas e transações
+- [ ] Notificações por e-mail
+- [ ] Exportação de dados (CSV/Excel)
+- [ ] Multi-usuário / Multi-organização
 
-## Job application
-* Object-oriented
-* Dependency injection
-* Zod schema
+---
 
-## Features
-* Authentication
-* User management
-* Job management
-* Metrics
+## 📦 Instalação e Uso
 
+```bash
+# Clone o repositório
+git clone https://github.com/seu-usuario/houseapp.git
 
+# Acesse a pasta
+cd houseapp
 
-## Technology
-* Node.js
-* Fastify
-* Drizzle
-* Postgres
-* TypeScript
-* Pino
-* Prometheus
-* Grafana
+# Instale as dependências
+pnpm install
 
-## What you'll need
-* A code editor - VSCode/Cursor
-* A HTTP client - Postman
-* Node.js installed
-* Docker installed (Optional) or a Postgres instance
-* SQL client - [TablePlus](https://tableplus.com) (Optional)
+# Rode o projeto (dev)
+pnpm dev
+```
 
-## Options for Postgres
-* Docker (Recommended)
-* Local Postgres instance
-* DBngin (local) https://dbngin.com/
-* Neon (Cloud) https://neon.tech/
-* Supabase (Cloud) https://supabase.com/
+---
 
-## Part 1 - Design
-* Database design
-* API design
-
-## Part 2 - Setup Docker (Optional)
-* Postgres
-* API
-* Dozzle (Logs)
-
-## Part 3 - Project setup
-* Install dependencies
-* Install dev dependencies
-* Initalise project
-* Setup database
-* Setup logging
-* Configure server
-
-## Part 4 - User module
-* Register user
-* Login
-* Get user
-* Testing
-
-## Part 5 - Job module
-* Create job
-* Get job
-* Update job
-* Delete job
-* Testing
-
-## Part 6 - Job application
-* Create job application
-* Get job applications for a job
-* Update job application status
-* Delete job application
-* Testing
-
-## Part 7 - Metrics
-* Setup Prometheus
-* Capture default metrics
-* Add a histogram for all requests
-* Add a custom metric for database calls
-* Visualise metrics with Grafana
-
-## Challenges
-1. Verify the user's account via email
-2. Add an OAuth flow with an identity provider like Google or GitHub
-3. Add multi-tenancy
-
-## Need help?
-Discord: https://discord.gg/4ae2Esm6P7
-Twitter: https://twitter.com/tomdoes_tech
-Bluesky: https://tomdoestech.bsky.social
+## 🛠️ Contribuindo
+Contribuições são bem-vindas!  
+Abra uma **issue** ou envie um **pull request** com melhorias ou correções.

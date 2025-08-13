@@ -8,6 +8,5 @@
 import type { GetTransactionById200Transaction } from "./getTransactionById200Transaction";
 
 export type GetTransactionById200 = {
-  /** @nullable */
   transaction: GetTransactionById200Transaction;
 };

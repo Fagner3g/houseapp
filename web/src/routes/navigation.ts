@@ -5,7 +5,7 @@ import { useOrgStore } from '@/stores/org'
 const baseItems = [
   { title: 'Dashboard', path: 'dashboard', icon: LayoutDashboard },
   { title: 'Metas', path: 'goals', icon: Rocket },
-  { title: 'Despesas', path: 'transactions', icon: CreditCard },
+  { title: 'Transações', path: 'transactions', icon: CreditCard },
   { title: 'Usuários', path: 'users', icon: Users },
 ]
 

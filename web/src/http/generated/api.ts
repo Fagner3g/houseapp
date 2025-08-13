@@ -27,7 +27,6 @@ import type {
   CreateInviteBody,
   CreateOrganization201,
   CreateOrganizationBody,
-  CreateTransaction201,
   CreateTransactionBody,
   CreateUserWithInviteBody,
   GetInvite200,
@@ -1891,8 +1890,8 @@ export const createTransaction = async (
   slug: string,
   createTransactionBody: CreateTransactionBody,
   options?: RequestInit,
-): Promise<CreateTransaction201> => {
-  return http<CreateTransaction201>(getCreateTransactionUrl(slug), {
+): Promise<null> => {
+  return http<null>(getCreateTransactionUrl(slug), {
     ...options,
     method: "POST",
     headers: { "Content-Type": "application/json", ...options?.headers },

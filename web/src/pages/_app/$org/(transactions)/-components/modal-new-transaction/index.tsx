@@ -1,7 +1,9 @@
 import { zodResolver } from '@hookform/resolvers/zod'
+import { IconPlus } from '@tabler/icons-react'
 import { useQueryClient } from '@tanstack/react-query'
-import { useEffect } from 'react'
+import { useEffect, useState } from 'react'
 import { useForm } from 'react-hook-form'
+import { toast } from 'sonner'
 
 import { Button } from '@/components/ui/button'
 import {
@@ -19,6 +21,11 @@ import {
   useCreateTransaction,
   useListUsersByOrg,
 } from '@/http/generated/api'
+import type {
+  CreateTransactionBody,
+  ListTransactions200,
+  ListTransactions200TransactionsItem,
+} from '@/http/generated/model'
 import { showToastOnErrorSubmit } from '@/lib/utils'
 import { AmountField } from './amount-field'
 import { DescriptionField } from './description-field'
@@ -35,6 +42,7 @@ import { TitleField } from './title-filed'
 import { TypeField } from './type-field'
 
 export function ModalNewTransaction() {
+  const [open, setOpen] = useState(false)
   const { slug } = useActiveOrganization()
   const queryClient = useQueryClient()
   const { data: userData } = useListUsersByOrg(slug)
@@ -52,22 +60,39 @@ export function ModalNewTransaction() {
 
         const previous = queryClient.getQueryData(getListTransactionsQueryKey(slug))
 
-        queryClient.setQueryData(
-          getListTransactionsQueryKey(slug),
-          (olds: NewTransactionSchema[]) => {
-            return [olds || [], data]
+        queryClient.setQueryData(getListTransactionsQueryKey(slug), (olds: ListTransactions200) => {
+          const list = olds?.transactions ?? []
+
+          const optimistic: CreateTransactionBody & { id: string } = {
+            ...data,
+            id: `optimistic-${Date.now()}`,
           }
-        )
-        return { previous, slug }
+
+          const resp = {
+            ...(olds ?? { transactions: [] as ListTransactions200TransactionsItem[] }),
+            transactions: [...list, optimistic],
+          }
+          return resp
+        })
+
+        const toastCtx = toast.loading('Criando transação...')
+        return { previous, slug, toastCtx }
+      },
+      onSuccess: (_, _vars, ctx) => {
+        if (ctx) {
+          toast.dismiss(ctx.toastCtx)
+        }
+        toast.success('Transação criada com sucesso!')
       },
       onError: (_err, _vars, ctx) => {
         if (ctx) {
           queryClient.setQueryData(getListTransactionsQueryKey(ctx.slug), ctx.previous)
+          toast.dismiss(ctx.toastCtx)
         }
+        toast.error('Erro ao criar transação')
       },
-
-      onSettled: (_data, _err, vars) => {
-        queryClient.invalidateQueries({ queryKey: getListTransactionsQueryKey(vars.slug) })
+      onSettled: () => {
+        queryClient.invalidateQueries({ queryKey: getListTransactionsQueryKey(slug) })
       },
     },
   })
@@ -99,13 +124,17 @@ export function ModalNewTransaction() {
 
   async function handleSubmit(data: NewTransactionSchema) {
     createTransaction({ slug, data })
+    setOpen(false)
     // form.reset()
   }
 
   return (
-    <Dialog>
+    <Dialog open={open} onOpenChange={setOpen}>
       <DialogTrigger asChild>
-        <Button>Novo +</Button>
+        <Button variant="outline" size="sm">
+          <IconPlus />
+          <span className="hidden lg:inline">Adicionar transação</span>
+        </Button>
       </DialogTrigger>
 
       <DialogContent>

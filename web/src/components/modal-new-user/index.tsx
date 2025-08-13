@@ -77,7 +77,7 @@ export function ModalNewUser() {
                 <FormItem>
                   <FormLabel>Nome</FormLabel>
                   <FormControl>
-                    <Input placeholder="Nome completo" {...field} />
+                    <Input {...field} placeholder="Nome completo" value={field.value || ''} />
                   </FormControl>
                 </FormItem>
               )}
@@ -90,7 +90,7 @@ export function ModalNewUser() {
                 <FormItem>
                   <FormLabel>E-mail</FormLabel>
                   <FormControl>
-                    <Input placeholder="E-mail" {...field} />
+                    <Input placeholder="E-mail" {...field} value={field.value || ''} />
                   </FormControl>
                 </FormItem>
               )}
@@ -108,6 +108,7 @@ export function ModalNewUser() {
                       {...registerWithMask('phone', ['(99) 99999-9999', '(99) 9999-9999'], {
                         required: true,
                       })}
+                      value={field.value || ''}
                       placeholder="Telefone"
                       type="tel"
                     />

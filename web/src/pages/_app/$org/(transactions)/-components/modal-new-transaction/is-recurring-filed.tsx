@@ -16,10 +16,9 @@ export function RecurrenceField({ form }: RecurrenceFieldProps) {
       name="isRecurring"
       render={({ field }) => (
         <FormItem className="flex-1 items-end">
-          <FormControl>
+          <FormControl className="flex gap-2">
             <Label className="hover:bg-accent/50 rounded-lg border p-2.5 has-[[aria-checked=true]]:border-blue-600 has-[[aria-checked=true]]:bg-blue-50 dark:has-[[aria-checked=true]]:border-blue-900 dark:has-[[aria-checked=true]]:bg-blue-950">
               <Checkbox
-                id="toggle-2"
                 defaultChecked={false}
                 value={field.value ? 1 : 0}
                 onCheckedChange={checked => field.onChange(!!checked)}
