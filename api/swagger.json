@@ -1160,6 +1160,9 @@
                             "scheduled"
                           ]
                         },
+                        "overdueDays": {
+                          "type": "number"
+                        },
                         "isRecurring": {
                           "type": "boolean"
                         },
@@ -1219,6 +1222,7 @@
                         "description",
                         "createdAt",
                         "status",
+                        "overdueDays",
                         "isRecurring",
                         "tags"
                       ],
@@ -1481,8 +1485,7 @@
           },
           {
             "schema": {
-              "type": "string",
-              "format": "date"
+              "default": "2025-08-01T03:00:00.000Z"
             },
             "in": "query",
             "name": "dateFrom",
@@ -1490,8 +1493,7 @@
           },
           {
             "schema": {
-              "type": "string",
-              "format": "date"
+              "default": "2025-09-01T02:59:59.999Z"
             },
             "in": "query",
             "name": "dateTo",
@@ -1501,7 +1503,8 @@
             "schema": {
               "default": 1,
               "type": "integer",
-              "minimum": 1
+              "minimum": -9007199254740991,
+              "maximum": 9007199254740991
             },
             "in": "query",
             "name": "page",
@@ -1511,7 +1514,8 @@
             "schema": {
               "default": 10,
               "type": "integer",
-              "minimum": 1
+              "minimum": -9007199254740991,
+              "maximum": 9007199254740991
             },
             "in": "query",
             "name": "perPage",
@@ -1587,7 +1591,7 @@
                             ]
                           },
                           "overdueDays": {
-                            "type": "integer"
+                            "type": "number"
                           },
                           "isRecurring": {
                             "type": "boolean"
@@ -1656,19 +1660,19 @@
                       }
                     },
                     "page": {
-                      "type": "integer"
+                      "type": "number"
                     },
                     "perPage": {
-                      "type": "integer"
+                      "type": "number"
                     },
                     "totalItems": {
-                      "type": "integer"
+                      "type": "number"
                     },
                     "totalPages": {
-                      "type": "integer"
+                      "type": "number"
                     },
                     "pagesRemaining": {
-                      "type": "integer"
+                      "type": "number"
                     }
                   },
                   "required": [

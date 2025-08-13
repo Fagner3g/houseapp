@@ -25,6 +25,7 @@ export type GetTransactionById200Transaction = {
   description: string | null;
   createdAt: string;
   status: GetTransactionById200TransactionStatus;
+  overdueDays: number;
   isRecurring: boolean;
   recurrenceSelector?: GetTransactionById200TransactionRecurrenceSelector;
   recurrenceType?: GetTransactionById200TransactionRecurrenceType;

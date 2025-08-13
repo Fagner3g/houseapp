@@ -1,13 +1,4 @@
-import {
-  and,
-  desc,
-  eq,
-  getTableColumns,
-  gte,
-  inArray,
-  lte,
-  sql,
-} from 'drizzle-orm'
+import { and, desc, eq, getTableColumns, gte, inArray, lte, sql } from 'drizzle-orm'
 
 import { db } from '@/db'
 import { tags as tagsTable } from '@/db/schemas/tags'
@@ -42,7 +33,7 @@ export async function listTransactionsService({
     eq(transactions.ownerId, userId),
     eq(transactions.organizationId, orgId),
     gte(transactions.dueDate, dateFrom),
-    lte(transactions.dueDate, dateTo),
+    lte(transactions.dueDate, dateTo)
   )
 
   if (type !== 'all') {
@@ -109,7 +100,7 @@ export async function listTransactionsService({
       .where(where),
   ])
 
-  const totalItems = total[0]?.value ?? 0
+  const totalItems = Number(total[0]?.value) ?? 0
   const totalPages = Math.ceil(totalItems / perPage)
   const pagesRemaining = Math.max(0, totalPages - page)
 

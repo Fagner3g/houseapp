@@ -12,14 +12,16 @@ export type ListTransactionsParams = {
   tags?: string[];
   tagFilterMode?: ListTransactionsTagFilterMode;
   type?: ListTransactionsType;
-  dateFrom?: string;
-  dateTo?: string;
+  dateFrom?: unknown;
+  dateTo?: unknown;
   /**
-   * @minimum 1
+   * @minimum -9007199254740991
+   * @maximum 9007199254740991
    */
   page?: number;
   /**
-   * @minimum 1
+   * @minimum -9007199254740991
+   * @maximum 9007199254740991
    */
   perPage?: number;
 };
