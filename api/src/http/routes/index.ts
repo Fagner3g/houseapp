@@ -59,4 +59,7 @@ export function createRoutes(app: FastifyInstance) {
   app.register(listTransactionRoute)
   app.register(deleteTransactionsRoute)
   app.register(updateTransactionRoute)
+
+  // Tag
+  app.register(listTagsRoute)
 }

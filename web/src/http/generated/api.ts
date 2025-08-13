@@ -36,6 +36,7 @@ import type {
   GetTransactionById200,
   GetWeekSummary200,
   ListOrganizations200,
+  ListTags200,
   ListTransactions200,
   ListTransactionsParams,
   ListUsersByOrg200,
@@ -2517,3 +2518,148 @@ export const useDeleteTransactions = <TError = unknown, TContext = unknown>(
 
   return useMutation(mutationOptions, queryClient);
 };
+
+/**
+ * List tags for organization
+ */
+export const getListTagsUrl = (slug: string) => {
+  return `/org/${slug}/tags`;
+};
+
+export const listTags = async (
+  slug: string,
+  options?: RequestInit,
+): Promise<ListTags200> => {
+  return http<ListTags200>(getListTagsUrl(slug), {
+    ...options,
+    method: "GET",
+  });
+};
+
+export const getListTagsQueryKey = (slug?: string) => {
+  return [`/org/${slug}/tags`] as const;
+};
+
+export const getListTagsQueryOptions = <
+  TData = Awaited<ReturnType<typeof listTags>>,
+  TError = unknown,
+>(
+  slug: string,
+  options?: {
+    query?: Partial<
+      UseQueryOptions<Awaited<ReturnType<typeof listTags>>, TError, TData>
+    >;
+    request?: SecondParameter<typeof http>;
+  },
+) => {
+  const { query: queryOptions, request: requestOptions } = options ?? {};
+
+  const queryKey = queryOptions?.queryKey ?? getListTagsQueryKey(slug);
+
+  const queryFn: QueryFunction<Awaited<ReturnType<typeof listTags>>> = ({
+    signal,
+  }) => listTags(slug, { signal, ...requestOptions });
+
+  return {
+    queryKey,
+    queryFn,
+    enabled: !!slug,
+    ...queryOptions,
+  } as UseQueryOptions<Awaited<ReturnType<typeof listTags>>, TError, TData> & {
+    queryKey: DataTag<QueryKey, TData, TError>;
+  };
+};
+
+export type ListTagsQueryResult = NonNullable<
+  Awaited<ReturnType<typeof listTags>>
+>;
+export type ListTagsQueryError = unknown;
+
+export function useListTags<
+  TData = Awaited<ReturnType<typeof listTags>>,
+  TError = unknown,
+>(
+  slug: string,
+  options: {
+    query: Partial<
+      UseQueryOptions<Awaited<ReturnType<typeof listTags>>, TError, TData>
+    > &
+      Pick<
+        DefinedInitialDataOptions<
+          Awaited<ReturnType<typeof listTags>>,
+          TError,
+          Awaited<ReturnType<typeof listTags>>
+        >,
+        "initialData"
+      >;
+    request?: SecondParameter<typeof http>;
+  },
+  queryClient?: QueryClient,
+): DefinedUseQueryResult<TData, TError> & {
+  queryKey: DataTag<QueryKey, TData, TError>;
+};
+export function useListTags<
+  TData = Awaited<ReturnType<typeof listTags>>,
+  TError = unknown,
+>(
+  slug: string,
+  options?: {
+    query?: Partial<
+      UseQueryOptions<Awaited<ReturnType<typeof listTags>>, TError, TData>
+    > &
+      Pick<
+        UndefinedInitialDataOptions<
+          Awaited<ReturnType<typeof listTags>>,
+          TError,
+          Awaited<ReturnType<typeof listTags>>
+        >,
+        "initialData"
+      >;
+    request?: SecondParameter<typeof http>;
+  },
+  queryClient?: QueryClient,
+): UseQueryResult<TData, TError> & {
+  queryKey: DataTag<QueryKey, TData, TError>;
+};
+export function useListTags<
+  TData = Awaited<ReturnType<typeof listTags>>,
+  TError = unknown,
+>(
+  slug: string,
+  options?: {
+    query?: Partial<
+      UseQueryOptions<Awaited<ReturnType<typeof listTags>>, TError, TData>
+    >;
+    request?: SecondParameter<typeof http>;
+  },
+  queryClient?: QueryClient,
+): UseQueryResult<TData, TError> & {
+  queryKey: DataTag<QueryKey, TData, TError>;
+};
+
+export function useListTags<
+  TData = Awaited<ReturnType<typeof listTags>>,
+  TError = unknown,
+>(
+  slug: string,
+  options?: {
+    query?: Partial<
+      UseQueryOptions<Awaited<ReturnType<typeof listTags>>, TError, TData>
+    >;
+    request?: SecondParameter<typeof http>;
+  },
+  queryClient?: QueryClient,
+): UseQueryResult<TData, TError> & {
+  queryKey: DataTag<QueryKey, TData, TError>;
+} {
+  const queryOptions = getListTagsQueryOptions(slug, options);
+
+  const query = useQuery(queryOptions, queryClient) as UseQueryResult<
+    TData,
+    TError
+  > & { queryKey: DataTag<QueryKey, TData, TError> };
+
+  query.queryKey = queryOptions.queryKey;
+
+  return query;
+}

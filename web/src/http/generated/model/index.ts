@@ -40,6 +40,8 @@ export * from "./getWeekSummary200Summary";
 export * from "./getWeekSummary200SummaryGoalsPerDay";
 export * from "./listOrganizations200";
 export * from "./listOrganizations200OrganizationsItem";
+export * from "./listTags200";
+export * from "./listTags200TagsItem";
 export * from "./listTransactions200";
 export * from "./listTransactions200TransactionsItem";
 export * from "./listTransactions200TransactionsItemRecurrenceSelector";
