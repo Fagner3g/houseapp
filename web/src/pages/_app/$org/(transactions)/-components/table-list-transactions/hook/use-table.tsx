@@ -35,7 +35,7 @@ import { Label } from '@/components/ui/label'
 import type { ListTransactions200TransactionsItem } from '@/http/generated/model'
 import { useActiveOrganization } from '@/hooks/use-active-organization'
 import { useDeleteTransactions } from '@/http/transactions'
-import { DrawerEdit } from '../drawer-edit'
+import { DeleteRowAction } from '../delete-row'
 
 export const useTable = (data: ListTransactions200TransactionsItem[]) => {
   const [rowSelection, setRowSelection] = useState({})
@@ -46,6 +46,7 @@ export const useTable = (data: ListTransactions200TransactionsItem[]) => {
     pageIndex: 0,
     pageSize: 10,
   })
+  const [editing, setEditing] = useState<ListTransactions200TransactionsItem | null>(null)
   const { slug } = useActiveOrganization()
   const { mutate: deleteTransactions } = useDeleteTransactions(slug)
 
@@ -100,9 +101,15 @@ export const useTable = (data: ListTransactions200TransactionsItem[]) => {
       accessorKey: 'title',
       header: 'Nome',
       enableHiding: false,
-      cell: ({ row }) => {
-        return <DrawerEdit item={row.original} />
-      },
+      cell: ({ row }) => (
+        <Button
+          variant="link"
+          className="text-foreground w-fit px-0 text-left"
+          onClick={() => row.table.options.meta?.editRow?.(row.original)}
+        >
+          {row.original.title}
+        </Button>
+      ),
     },
     {
       accessorKey: 'Status',
@@ -185,25 +192,22 @@ export const useTable = (data: ListTransactions200TransactionsItem[]) => {
             </Button>
           </DropdownMenuTrigger>
           <DropdownMenuContent align="end" className="w-40">
-            <DropdownMenuItem>Editar</DropdownMenuItem>
+            <DropdownMenuItem onClick={() => row.table.options.meta?.editRow?.(row.original)}>
+              Editar
+            </DropdownMenuItem>
             <DropdownMenuItem
               onClick={() => copyLink(row.original.id)}
             >
               Duplicar
             </DropdownMenuItem>
-            <DropdownMenuItem>Favoritar</DropdownMenuItem>
-            <DropdownMenuItem
-              onClick={() => copyLink(row.original.id)}
-            >
+            <DropdownMenuItem onClick={() => toast.success('Favoritado!')}>
+              Favoritar
+            </DropdownMenuItem>
+            <DropdownMenuItem onClick={() => copyLink(row.original.id)}>
               Copiar link
             </DropdownMenuItem>
             <DropdownMenuSeparator />
-            <DropdownMenuItem
-              variant="destructive"
-              onClick={() => row.table.options.meta?.deleteRows?.([row.original.id])}
-            >
-              Excluir
-            </DropdownMenuItem>
+            <DeleteRowAction id={row.original.id} table={row.table} />
           </DropdownMenuContent>
         </DropdownMenu>
       ),
@@ -237,8 +241,11 @@ export const useTable = (data: ListTransactions200TransactionsItem[]) => {
       deleteRows: (ids: string[]) => {
         deleteTransactions(ids)
       },
+      editRow: (item: ListTransactions200TransactionsItem) => {
+        setEditing(item)
+      },
     },
   })
 
-  return { table, columns }
+  return { table, columns, editing, setEditing }
 }

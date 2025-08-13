@@ -1174,6 +1174,39 @@
             }
           }
         }
+      },
+      "patch": {
+        "operationId": "updateTransaction",
+        "tags": [
+          "Transaction"
+        ],
+        "description": "Update a transaction",
+        "parameters": [
+          {
+            "schema": { "type": "string" },
+            "in": "path",
+            "name": "id",
+            "required": true
+          },
+          {
+            "schema": { "type": "string" },
+            "in": "path",
+            "name": "slug",
+            "required": true
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object"
+              }
+            }
+          }
+        },
+        "responses": {
+          "204": { "description": "Default Response" }
+        }
       }
     },
     "/org/{slug}/transactions": {
