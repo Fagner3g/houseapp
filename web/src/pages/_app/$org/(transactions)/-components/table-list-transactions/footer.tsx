@@ -4,8 +4,6 @@ import {
   IconChevronsLeft,
   IconChevronsRight,
 } from '@tabler/icons-react'
-import type { Table } from '@tanstack/react-table'
-
 import { Button } from '@/components/ui/button'
 import {
   Select,
@@ -14,25 +12,34 @@ import {
   SelectTrigger,
   SelectValue,
 } from '@/components/ui/select'
-import type { ListTransactions200TransactionsItem } from '@/http/generated/model'
 
 interface TablePaginationProps {
-  table: Table<ListTransactions200TransactionsItem>
+  page: number
+  perPage: number
+  totalPages: number
+  onPageChange: (page: number) => void
+  onPerPageChange: (perPage: number) => void
 }
 
-export function Footer({ table }: TablePaginationProps) {
+export function Footer({
+  page,
+  perPage,
+  totalPages,
+  onPageChange,
+  onPerPageChange,
+}: TablePaginationProps) {
   return (
     <div className="flex items-center justify-between px-4">
       <div className="flex w-full items-center gap-8 lg:w-fit">
         <div className=" items-center gap-2 lg:flex">
           <Select
-            value={`${table.getState().pagination.pageSize}`}
+            value={`${perPage}`}
             onValueChange={value => {
-              table.setPageSize(Number(value))
+              onPerPageChange(Number(value))
             }}
           >
             <SelectTrigger className="w-20" id="rows-per-page">
-              <SelectValue placeholder={table.getState().pagination.pageSize} />
+              <SelectValue placeholder={perPage} />
             </SelectTrigger>
             <SelectContent side="top">
               {[10, 20, 30, 40, 50].map(pageSize => (
@@ -44,14 +51,14 @@ export function Footer({ table }: TablePaginationProps) {
           </Select>
         </div>
         <div className="flex w-fit items-center justify-center text-sm font-medium">
-          Page {table.getState().pagination.pageIndex + 1} of {table.getPageCount()}
+          Page {page} of {totalPages}
         </div>
         <div className="ml-auto flex items-center gap-2 lg:ml-0">
           <Button
             variant="outline"
             className="hidden h-8 w-8 p-0 lg:flex"
-            onClick={() => table.setPageIndex(0)}
-            disabled={!table.getCanPreviousPage()}
+            onClick={() => onPageChange(1)}
+            disabled={page === 1}
           >
             <span className="sr-only">Go to first page</span>
             <IconChevronsLeft />
@@ -60,8 +67,8 @@ export function Footer({ table }: TablePaginationProps) {
             variant="outline"
             className="size-8"
             size="icon"
-            onClick={() => table.previousPage()}
-            disabled={!table.getCanPreviousPage()}
+            onClick={() => onPageChange(page - 1)}
+            disabled={page === 1}
           >
             <span className="sr-only">Go to previous page</span>
             <IconChevronLeft />
@@ -70,8 +77,8 @@ export function Footer({ table }: TablePaginationProps) {
             variant="outline"
             className="size-8"
             size="icon"
-            onClick={() => table.nextPage()}
-            disabled={!table.getCanNextPage()}
+            onClick={() => onPageChange(page + 1)}
+            disabled={page === totalPages}
           >
             <span className="sr-only">Go to next page</span>
             <IconChevronRight />
@@ -80,8 +87,8 @@ export function Footer({ table }: TablePaginationProps) {
             variant="outline"
             className="hidden size-8 lg:flex"
             size="icon"
-            onClick={() => table.setPageIndex(table.getPageCount() - 1)}
-            disabled={!table.getCanNextPage()}
+            onClick={() => onPageChange(totalPages)}
+            disabled={page === totalPages}
           >
             <span className="sr-only">Go to last page</span>
             <IconChevronsRight />
