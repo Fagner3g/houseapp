@@ -20,6 +20,7 @@ function Transaction() {
   const { tags = [] } = useSearch({ strict: false })
 
   const { data: transactions = [], isPending } = useQuery({
+    enabled: !!slug,
     queryKey: ['transactions', slug, tags.join(',')],
     queryFn: async () => {
       const search = new URLSearchParams()

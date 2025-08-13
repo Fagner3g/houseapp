@@ -9,6 +9,7 @@ import type { GetTransactionById200TransactionType } from "./getTransactionById2
 import type { GetTransactionById200TransactionStatus } from "./getTransactionById200TransactionStatus";
 import type { GetTransactionById200TransactionRecurrenceSelector } from "./getTransactionById200TransactionRecurrenceSelector";
 import type { GetTransactionById200TransactionRecurrenceType } from "./getTransactionById200TransactionRecurrenceType";
+import type { GetTransactionById200TransactionTagsItem } from "./getTransactionById200TransactionTagsItem";
 
 export type GetTransactionById200Transaction = {
   id: string;
@@ -33,4 +34,5 @@ export type GetTransactionById200Transaction = {
    * @maximum 9007199254740991
    */
   recurrenceInterval?: number;
+  tags: GetTransactionById200TransactionTagsItem[];
 };

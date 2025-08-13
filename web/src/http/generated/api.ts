@@ -35,7 +35,9 @@ import type {
   GetTransactionById200,
   GetWeekSummary200,
   ListOrganizations200,
+  ListTags200,
   ListTransactions200,
+  ListTransactionsParams,
   ListUsersByOrg200,
   RenameOrg200,
   RenameOrgBody,
@@ -2143,22 +2145,50 @@ export function useGetTransactionById<
 /**
  * List transactions for authenticated user
  */
-export const getListTransactionsUrl = (slug: string) => {
-  return `/org/${slug}/transactions`;
+export const getListTransactionsUrl = (
+  slug: string,
+  params?: ListTransactionsParams,
+) => {
+  const normalizedParams = new URLSearchParams();
+
+  Object.entries(params || {}).forEach(([key, value]) => {
+    const explodeParameters = ["tags"];
+
+    if (Array.isArray(value) && explodeParameters.includes(key)) {
+      value.forEach((v) =>
+        normalizedParams.append(key, v === null ? "null" : v.toString()),
+      );
+      return;
+    }
+
+    if (value !== undefined) {
+      normalizedParams.append(key, value === null ? "null" : value.toString());
+    }
+  });
+
+  const stringifiedParams = normalizedParams.toString();
+
+  return stringifiedParams.length > 0
+    ? `/org/${slug}/transactions?${stringifiedParams}`
+    : `/org/${slug}/transactions`;
 };
 
 export const listTransactions = async (
   slug: string,
+  params?: ListTransactionsParams,
   options?: RequestInit,
 ): Promise<ListTransactions200> => {
-  return http<ListTransactions200>(getListTransactionsUrl(slug), {
+  return http<ListTransactions200>(getListTransactionsUrl(slug, params), {
     ...options,
     method: "GET",
   });
 };
 
-export const getListTransactionsQueryKey = (slug?: string) => {
-  return [`/org/${slug}/transactions`] as const;
+export const getListTransactionsQueryKey = (
+  slug?: string,
+  params?: ListTransactionsParams,
+) => {
+  return [`/org/${slug}/transactions`, ...(params ? [params] : [])] as const;
 };
 
 export const getListTransactionsQueryOptions = <
@@ -2166,6 +2196,7 @@ export const getListTransactionsQueryOptions = <
   TError = unknown,
 >(
   slug: string,
+  params?: ListTransactionsParams,
   options?: {
     query?: Partial<
       UseQueryOptions<
@@ -2179,11 +2210,13 @@ export const getListTransactionsQueryOptions = <
 ) => {
   const { query: queryOptions, request: requestOptions } = options ?? {};
 
-  const queryKey = queryOptions?.queryKey ?? getListTransactionsQueryKey(slug);
+  const queryKey =
+    queryOptions?.queryKey ?? getListTransactionsQueryKey(slug, params);
 
   const queryFn: QueryFunction<
     Awaited<ReturnType<typeof listTransactions>>
-  > = ({ signal }) => listTransactions(slug, { signal, ...requestOptions });
+  > = ({ signal }) =>
+    listTransactions(slug, params, { signal, ...requestOptions });
 
   return {
     queryKey,
@@ -2207,6 +2240,7 @@ export function useListTransactions<
   TError = unknown,
 >(
   slug: string,
+  params: undefined | ListTransactionsParams,
   options: {
     query: Partial<
       UseQueryOptions<
@@ -2234,6 +2268,7 @@ export function useListTransactions<
   TError = unknown,
 >(
   slug: string,
+  params?: ListTransactionsParams,
   options?: {
     query?: Partial<
       UseQueryOptions<
@@ -2261,6 +2296,7 @@ export function useListTransactions<
   TError = unknown,
 >(
   slug: string,
+  params?: ListTransactionsParams,
   options?: {
     query?: Partial<
       UseQueryOptions<
@@ -2281,6 +2317,7 @@ export function useListTransactions<
   TError = unknown,
 >(
   slug: string,
+  params?: ListTransactionsParams,
   options?: {
     query?: Partial<
       UseQueryOptions<
@@ -2295,7 +2332,152 @@ export function useListTransactions<
 ): UseQueryResult<TData, TError> & {
   queryKey: DataTag<QueryKey, TData, TError>;
 } {
-  const queryOptions = getListTransactionsQueryOptions(slug, options);
+  const queryOptions = getListTransactionsQueryOptions(slug, params, options);
+
+  const query = useQuery(queryOptions, queryClient) as UseQueryResult<
+    TData,
+    TError
+  > & { queryKey: DataTag<QueryKey, TData, TError> };
+
+  query.queryKey = queryOptions.queryKey;
+
+  return query;
+}
+
+/**
+ * List tags for organization
+ */
+export const getListTagsUrl = (slug: string) => {
+  return `/org/${slug}/tags`;
+};
+
+export const listTags = async (
+  slug: string,
+  options?: RequestInit,
+): Promise<ListTags200> => {
+  return http<ListTags200>(getListTagsUrl(slug), {
+    ...options,
+    method: "GET",
+  });
+};
+
+export const getListTagsQueryKey = (slug?: string) => {
+  return [`/org/${slug}/tags`] as const;
+};
+
+export const getListTagsQueryOptions = <
+  TData = Awaited<ReturnType<typeof listTags>>,
+  TError = unknown,
+>(
+  slug: string,
+  options?: {
+    query?: Partial<
+      UseQueryOptions<Awaited<ReturnType<typeof listTags>>, TError, TData>
+    >;
+    request?: SecondParameter<typeof http>;
+  },
+) => {
+  const { query: queryOptions, request: requestOptions } = options ?? {};
+
+  const queryKey = queryOptions?.queryKey ?? getListTagsQueryKey(slug);
+
+  const queryFn: QueryFunction<Awaited<ReturnType<typeof listTags>>> = ({
+    signal,
+  }) => listTags(slug, { signal, ...requestOptions });
+
+  return {
+    queryKey,
+    queryFn,
+    enabled: !!slug,
+    ...queryOptions,
+  } as UseQueryOptions<Awaited<ReturnType<typeof listTags>>, TError, TData> & {
+    queryKey: DataTag<QueryKey, TData, TError>;
+  };
+};
+
+export type ListTagsQueryResult = NonNullable<
+  Awaited<ReturnType<typeof listTags>>
+>;
+export type ListTagsQueryError = unknown;
+
+export function useListTags<
+  TData = Awaited<ReturnType<typeof listTags>>,
+  TError = unknown,
+>(
+  slug: string,
+  options: {
+    query: Partial<
+      UseQueryOptions<Awaited<ReturnType<typeof listTags>>, TError, TData>
+    > &
+      Pick<
+        DefinedInitialDataOptions<
+          Awaited<ReturnType<typeof listTags>>,
+          TError,
+          Awaited<ReturnType<typeof listTags>>
+        >,
+        "initialData"
+      >;
+    request?: SecondParameter<typeof http>;
+  },
+  queryClient?: QueryClient,
+): DefinedUseQueryResult<TData, TError> & {
+  queryKey: DataTag<QueryKey, TData, TError>;
+};
+export function useListTags<
+  TData = Awaited<ReturnType<typeof listTags>>,
+  TError = unknown,
+>(
+  slug: string,
+  options?: {
+    query?: Partial<
+      UseQueryOptions<Awaited<ReturnType<typeof listTags>>, TError, TData>
+    > &
+      Pick<
+        UndefinedInitialDataOptions<
+          Awaited<ReturnType<typeof listTags>>,
+          TError,
+          Awaited<ReturnType<typeof listTags>>
+        >,
+        "initialData"
+      >;
+    request?: SecondParameter<typeof http>;
+  },
+  queryClient?: QueryClient,
+): UseQueryResult<TData, TError> & {
+  queryKey: DataTag<QueryKey, TData, TError>;
+};
+export function useListTags<
+  TData = Awaited<ReturnType<typeof listTags>>,
+  TError = unknown,
+>(
+  slug: string,
+  options?: {
+    query?: Partial<
+      UseQueryOptions<Awaited<ReturnType<typeof listTags>>, TError, TData>
+    >;
+    request?: SecondParameter<typeof http>;
+  },
+  queryClient?: QueryClient,
+): UseQueryResult<TData, TError> & {
+  queryKey: DataTag<QueryKey, TData, TError>;
+};
+
+export function useListTags<
+  TData = Awaited<ReturnType<typeof listTags>>,
+  TError = unknown,
+>(
+  slug: string,
+  options?: {
+    query?: Partial<
+      UseQueryOptions<Awaited<ReturnType<typeof listTags>>, TError, TData>
+    >;
+    request?: SecondParameter<typeof http>;
+  },
+  queryClient?: QueryClient,
+): UseQueryResult<TData, TError> & {
+  queryKey: DataTag<QueryKey, TData, TError>;
+} {
+  const queryOptions = getListTagsQueryOptions(slug, options);
 
   const query = useQuery(queryOptions, queryClient) as UseQueryResult<
     TData,

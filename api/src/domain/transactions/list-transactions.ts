@@ -43,7 +43,7 @@ export async function listTransactionsService({
       payTo: users.name,
       tags: sql<{ name: string; color: string }[]>`
         coalesce(
-          json_agg(distinct jsonb_build_object('name', ${tagsTable.name}, 'color', ${tagsTable.color}))
+          jsonb_agg(distinct jsonb_build_object('name', ${tagsTable.name}, 'color', ${tagsTable.color}))
             filter (where ${tagsTable.id} is not null),
           '[]'::jsonb
         )
