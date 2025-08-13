@@ -5,30 +5,32 @@
  * API for HouseApp
  * OpenAPI spec version: 1.0.0
  */
-import type { CreateTransactionBodyAnyOfType } from "./createTransactionBodyAnyOfType";
-import type { CreateTransactionBodyAnyOfRecurrenceSelector } from "./createTransactionBodyAnyOfRecurrenceSelector";
-import type { CreateTransactionBodyAnyOfRecurrenceType } from "./createTransactionBodyAnyOfRecurrenceType";
+
+import type { CreateTransactionBodyAnyOfRecurrenceSelector } from './createTransactionBodyAnyOfRecurrenceSelector'
+import type { CreateTransactionBodyAnyOfRecurrenceType } from './createTransactionBodyAnyOfRecurrenceType'
+import type { CreateTransactionBodyAnyOfType } from './createTransactionBodyAnyOfType'
 
 export type CreateTransactionBodyAnyOf = {
-  type: CreateTransactionBodyAnyOfType;
+  type: CreateTransactionBodyAnyOfType
   /**
    * @minLength 1
    * @maxLength 50
    */
-  title: string;
+  title: string
   /** @minimum 1 */
-  amount: number;
-  dueDate: unknown;
+  amount: number
+  dueDate: unknown
   /** @pattern ^(?!\.)(?!.*\.\.)([A-Za-z0-9_'+\-\.]*)[A-Za-z0-9_+-]@([A-Za-z0-9][A-Za-z0-9\-]*\.)+[A-Za-z]{2,}$ */
-  payToEmail: string;
-  description?: string;
-  isRecurring: boolean;
-  recurrenceSelector: CreateTransactionBodyAnyOfRecurrenceSelector;
-  recurrenceType: CreateTransactionBodyAnyOfRecurrenceType;
-  recurrenceUntil?: unknown;
+  payToEmail: string
+  description?: string
+  tags?: string[]
+  isRecurring: boolean
+  recurrenceSelector: CreateTransactionBodyAnyOfRecurrenceSelector
+  recurrenceType: CreateTransactionBodyAnyOfRecurrenceType
+  recurrenceUntil?: unknown
   /**
    * @minimum -9007199254740991
    * @maximum 9007199254740991
    */
-  recurrenceInterval?: number;
-};
+  recurrenceInterval?: number
+}

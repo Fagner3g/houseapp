@@ -5,24 +5,25 @@
  * API for HouseApp
  * OpenAPI spec version: 1.0.0
  */
-import type { CreateTransactionBodyAnyOfFiveType } from "./createTransactionBodyAnyOfFiveType";
+import type { CreateTransactionBodyAnyOfFiveType } from './createTransactionBodyAnyOfFiveType'
 
 export type CreateTransactionBodyAnyOfFive = {
-  type: CreateTransactionBodyAnyOfFiveType;
+  type: CreateTransactionBodyAnyOfFiveType
   /**
    * @minLength 1
    * @maxLength 50
    */
-  title: string;
+  title: string
   /** @minimum 1 */
-  amount: number;
-  dueDate: unknown;
+  amount: number
+  dueDate: unknown
   /** @pattern ^(?!\.)(?!.*\.\.)([A-Za-z0-9_'+\-\.]*)[A-Za-z0-9_+-]@([A-Za-z0-9][A-Za-z0-9\-]*\.)+[A-Za-z]{2,}$ */
-  payToEmail: string;
-  description?: string;
-  isRecurring: boolean;
-  recurrenceSelector?: unknown;
-  recurrenceType?: unknown;
-  recurrenceUntil?: unknown;
-  recurrenceInterval?: unknown;
-};
+  payToEmail: string
+  description?: string
+  tags?: string[]
+  isRecurring: boolean
+  recurrenceSelector?: unknown
+  recurrenceType?: unknown
+  recurrenceUntil?: unknown
+  recurrenceInterval?: unknown
+}

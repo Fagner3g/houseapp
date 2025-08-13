@@ -21,6 +21,7 @@ import dayjs from 'dayjs'
 import { AlertOctagon, LucideClockFading, TrendingDown, TrendingUp } from 'lucide-react'
 import { useState } from 'react'
 
+import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
 import { Checkbox } from '@/components/ui/checkbox'
 import {
@@ -145,6 +146,19 @@ export const useTable = (data: ListTransactions200TransactionsItem[]) => {
       header: 'Para',
       cell: ({ row }) => (
         <Label className="text-muted-foreground px-1.5">{row.original.payTo}</Label>
+      ),
+    },
+    {
+      accessorKey: 'tags',
+      header: 'Tags',
+      cell: ({ row }) => (
+        <div className="flex flex-wrap gap-1 px-1.5">
+          {row.original.tags?.map(tag => (
+            <Badge key={tag} variant="secondary">
+              {tag}
+            </Badge>
+          ))}
+        </div>
       ),
     },
     {
