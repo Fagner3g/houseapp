@@ -1033,61 +1033,7 @@
         ],
         "responses": {
           "201": {
-            "description": "Default Response",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "type": "object",
-                  "properties": {
-                    "transaction": {
-                      "type": "object",
-                      "properties": {
-                        "type": {
-                          "default": "expense",
-                          "type": "string",
-                          "enum": [
-                            "expense",
-                            "income"
-                          ]
-                        },
-                        "title": {
-                          "type": "string",
-                          "minLength": 1,
-                          "maxLength": 50
-                        },
-                        "amount": {
-                          "type": "number",
-                          "minimum": 1
-                        },
-                        "dueDate": {
-                          "type": "string",
-                          "format": "date-time"
-                        },
-                        "payTo": {
-                          "type": "string",
-                          "minLength": 1
-                        },
-                        "description": {
-                          "type": "string"
-                        }
-                      },
-                      "required": [
-                        "type",
-                        "title",
-                        "amount",
-                        "dueDate",
-                        "payTo"
-                      ],
-                      "additionalProperties": false
-                    }
-                  },
-                  "required": [
-                    "transaction"
-                  ],
-                  "additionalProperties": false
-                }
-              }
-            }
+            "description": "Default Response"
           }
         }
       }
@@ -1127,7 +1073,96 @@
                   "properties": {
                     "transaction": {
                       "type": "object",
-                      "nullable": true
+                      "properties": {
+                        "id": {
+                          "type": "string"
+                        },
+                        "type": {
+                          "type": "string",
+                          "enum": [
+                            "expense",
+                            "income"
+                          ]
+                        },
+                        "title": {
+                          "type": "string"
+                        },
+                        "ownerId": {
+                          "type": "string"
+                        },
+                        "payTo": {
+                          "type": "string"
+                        },
+                        "amount": {
+                          "type": "number"
+                        },
+                        "dueDate": {
+                          "type": "string",
+                          "format": "date-time"
+                        },
+                        "paidAt": {
+                          "type": "string",
+                          "nullable": true
+                        },
+                        "description": {
+                          "type": "string",
+                          "nullable": true
+                        },
+                        "createdAt": {
+                          "type": "string",
+                          "format": "date-time"
+                        },
+                        "status": {
+                          "type": "string",
+                          "enum": [
+                            "paid",
+                            "overdue",
+                            "scheduled"
+                          ]
+                        },
+                        "isRecurring": {
+                          "type": "boolean"
+                        },
+                        "recurrenceSelector": {
+                          "type": "string",
+                          "enum": [
+                            "date",
+                            "repeat"
+                          ]
+                        },
+                        "recurrenceType": {
+                          "type": "string",
+                          "enum": [
+                            "weekly",
+                            "monthly",
+                            "yearly"
+                          ]
+                        },
+                        "recurrenceUntil": {
+                          "type": "string",
+                          "format": "date-time"
+                        },
+                        "recurrenceInterval": {
+                          "type": "integer",
+                          "minimum": -9007199254740991,
+                          "maximum": 9007199254740991
+                        }
+                      },
+                      "required": [
+                        "id",
+                        "type",
+                        "title",
+                        "ownerId",
+                        "payTo",
+                        "amount",
+                        "dueDate",
+                        "paidAt",
+                        "description",
+                        "createdAt",
+                        "status",
+                        "isRecurring"
+                      ],
+                      "additionalProperties": false
                     }
                   },
                   "required": [
@@ -1175,13 +1210,20 @@
                           "id": {
                             "type": "string"
                           },
+                          "type": {
+                            "type": "string",
+                            "enum": [
+                              "expense",
+                              "income"
+                            ]
+                          },
                           "title": {
                             "type": "string"
                           },
                           "ownerId": {
                             "type": "string"
                           },
-                          "payToId": {
+                          "payTo": {
                             "type": "string"
                           },
                           "amount": {
@@ -1191,6 +1233,10 @@
                             "type": "string",
                             "format": "date-time"
                           },
+                          "paidAt": {
+                            "type": "string",
+                            "nullable": true
+                          },
                           "description": {
                             "type": "string",
                             "nullable": true
@@ -1198,17 +1244,56 @@
                           "createdAt": {
                             "type": "string",
                             "format": "date-time"
+                          },
+                          "status": {
+                            "type": "string",
+                            "enum": [
+                              "paid",
+                              "overdue",
+                              "scheduled"
+                            ]
+                          },
+                          "isRecurring": {
+                            "type": "boolean"
+                          },
+                          "recurrenceSelector": {
+                            "type": "string",
+                            "enum": [
+                              "date",
+                              "repeat"
+                            ]
+                          },
+                          "recurrenceType": {
+                            "type": "string",
+                            "enum": [
+                              "weekly",
+                              "monthly",
+                              "yearly"
+                            ]
+                          },
+                          "recurrenceUntil": {
+                            "type": "string",
+                            "format": "date-time"
+                          },
+                          "recurrenceInterval": {
+                            "type": "integer",
+                            "minimum": -9007199254740991,
+                            "maximum": 9007199254740991
                           }
                         },
                         "required": [
                           "id",
+                          "type",
                           "title",
                           "ownerId",
-                          "payToId",
+                          "payTo",
                           "amount",
                           "dueDate",
+                          "paidAt",
                           "description",
-                          "createdAt"
+                          "createdAt",
+                          "status",
+                          "isRecurring"
                         ],
                         "additionalProperties": false
                       }

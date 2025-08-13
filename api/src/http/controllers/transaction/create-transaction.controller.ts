@@ -1,6 +1,6 @@
 import type { FastifyReply, FastifyRequest } from 'fastify'
 
-import { createTransaction } from '@/domain/transactions/create-transaction'
+import { createTransactionService } from '@/domain/transactions/create-transaction'
 import { userService } from '@/domain/user'
 import type {
   CreateTransactionsSchemaBody,
@@ -37,9 +37,7 @@ export async function createTransactionController(request: Req, reply: FastifyRe
     throw new BadRequestError('User not found')
   }
 
-  await new Promise(resolve => setTimeout(resolve, 10000))
-
-  const { transaction } = await createTransaction({
+  await createTransactionService({
     type,
     title,
     ownerId,
@@ -55,5 +53,5 @@ export async function createTransactionController(request: Req, reply: FastifyRe
     recurrenceUntil,
   })
 
-  return reply.status(201).send({ transaction })
+  return reply.status(201).send(null)
 }

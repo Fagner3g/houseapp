@@ -1,5 +1,7 @@
 import z from 'zod'
 
+import { transactionResponseSchema } from './shared/transaction-response'
+
 export const listTransactionSchema = {
   tags: ['Transaction'],
   description: 'List transactions for authenticated user',
@@ -7,18 +9,7 @@ export const listTransactionSchema = {
   params: z.object({ slug: z.string().nonempty() }),
   response: {
     200: z.object({
-      transactions: z.array(
-        z.object({
-          id: z.string(),
-          title: z.string(),
-          ownerId: z.string(),
-          payToId: z.string(),
-          amount: z.number(),
-          dueDate: z.date(),
-          description: z.string().nullable(),
-          createdAt: z.date(),
-        })
-      ),
+      transactions: z.array(transactionResponseSchema),
     }),
   },
 }

@@ -8,7 +8,7 @@ type CreateTransaction = Omit<CreateTransactionsSchemaBody, 'payToEmail'> & {
   payToId: string
 }
 
-export async function createTransaction({
+export async function createTransactionService({
   type,
   title,
   ownerId,
