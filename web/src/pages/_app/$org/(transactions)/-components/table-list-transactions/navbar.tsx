@@ -17,6 +17,7 @@ import {
 } from '@/components/ui/select'
 import type { ListTransactions200TransactionsItem } from '@/http/generated/model'
 import { ModalNewTransaction } from '../modal-new-transaction'
+import { DeleteSelected } from './delete-selected'
 
 interface Props {
   table: Table<ListTransactions200TransactionsItem>
@@ -62,6 +63,7 @@ export function NavbarTable({ table }: Props) {
               })}
           </DropdownMenuContent>
         </DropdownMenu>
+        <DeleteSelected table={table} />
         <ModalNewTransaction />
       </div>
     </div>

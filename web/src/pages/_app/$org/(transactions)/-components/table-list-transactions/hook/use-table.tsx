@@ -20,6 +20,7 @@ import {
 import dayjs from 'dayjs'
 import { AlertOctagon, LucideClockFading, TrendingDown, TrendingUp } from 'lucide-react'
 import { useState } from 'react'
+import { toast } from 'sonner'
 
 import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
@@ -33,7 +34,9 @@ import {
 } from '@/components/ui/dropdown-menu'
 import { Label } from '@/components/ui/label'
 import type { ListTransactions200TransactionsItem } from '@/http/generated/model'
-import { DrawerEdit } from '../drawer-edit'
+import { useActiveOrganization } from '@/hooks/use-active-organization'
+import { useDeleteTransactions } from '@/http/transactions'
+import { DeleteRowAction } from '../delete-row'
 
 export const useTable = (data: ListTransactions200TransactionsItem[]) => {
   const [rowSelection, setRowSelection] = useState({})
@@ -44,6 +47,15 @@ export const useTable = (data: ListTransactions200TransactionsItem[]) => {
     pageIndex: 0,
     pageSize: 10,
   })
+  const [editing, setEditing] = useState<ListTransactions200TransactionsItem | null>(null)
+  const { slug } = useActiveOrganization()
+  const { mutate: deleteTransactions } = useDeleteTransactions(slug)
+
+  function copyLink(id: string) {
+    const url = `${window.location.origin}/transactions?openId=${id}`
+    navigator.clipboard.writeText(url)
+    toast.success('Link copiado!')
+  }
 
   const columns: ColumnDef<ListTransactions200TransactionsItem>[] = [
     {
@@ -90,9 +102,15 @@ export const useTable = (data: ListTransactions200TransactionsItem[]) => {
       accessorKey: 'title',
       header: 'Nome',
       enableHiding: false,
-      cell: ({ row }) => {
-        return <DrawerEdit item={row.original} />
-      },
+      cell: ({ row }) => (
+        <Button
+          variant="link"
+          className="text-foreground w-fit px-0 text-left"
+          onClick={() => row.table.options.meta?.editRow?.(row.original)}
+        >
+          {row.original.title}
+        </Button>
+      ),
     },
     {
       accessorKey: 'Status',
@@ -175,7 +193,7 @@ export const useTable = (data: ListTransactions200TransactionsItem[]) => {
 
     {
       id: 'actions',
-      cell: () => (
+      cell: ({ row }) => (
         <DropdownMenu>
           <DropdownMenuTrigger asChild>
             <Button
@@ -187,12 +205,23 @@ export const useTable = (data: ListTransactions200TransactionsItem[]) => {
               <span className="sr-only">Open menu</span>
             </Button>
           </DropdownMenuTrigger>
-          <DropdownMenuContent align="end" className="w-32">
-            <DropdownMenuItem>Edit</DropdownMenuItem>
-            <DropdownMenuItem>Make a copy</DropdownMenuItem>
-            <DropdownMenuItem>Favorite</DropdownMenuItem>
+          <DropdownMenuContent align="end" className="w-40">
+            <DropdownMenuItem onClick={() => row.table.options.meta?.editRow?.(row.original)}>
+              Editar
+            </DropdownMenuItem>
+            <DropdownMenuItem
+              onClick={() => copyLink(row.original.id)}
+            >
+              Duplicar
+            </DropdownMenuItem>
+            <DropdownMenuItem onClick={() => toast.success('Favoritado!')}>
+              Favoritar
+            </DropdownMenuItem>
+            <DropdownMenuItem onClick={() => copyLink(row.original.id)}>
+              Copiar link
+            </DropdownMenuItem>
             <DropdownMenuSeparator />
-            <DropdownMenuItem variant="destructive">Delete</DropdownMenuItem>
+            <DeleteRowAction id={row.original.id} table={row.table} />
           </DropdownMenuContent>
         </DropdownMenu>
       ),
@@ -222,7 +251,15 @@ export const useTable = (data: ListTransactions200TransactionsItem[]) => {
     getSortedRowModel: getSortedRowModel(),
     getFacetedRowModel: getFacetedRowModel(),
     getFacetedUniqueValues: getFacetedUniqueValues(),
+    meta: {
+      deleteRows: (ids: string[]) => {
+        deleteTransactions(ids)
+      },
+      editRow: (item: ListTransactions200TransactionsItem) => {
+        setEditing(item)
+      },
+    },
   })
 
-  return { table, columns }
+  return { table, columns, editing, setEditing }
 }

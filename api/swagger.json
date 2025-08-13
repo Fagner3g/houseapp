@@ -1234,6 +1234,163 @@
             }
           }
         }
+      },
+      "patch": {
+        "operationId": "updateTransaction",
+        "tags": [
+          "Transaction"
+        ],
+        "description": "Update a transaction",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "anyOf": [
+                  {
+                    "type": "object",
+                    "properties": {
+                      "type": {
+                        "default": "expense",
+                        "type": "string",
+                        "enum": [
+                          "expense",
+                          "income"
+                        ]
+                      },
+                      "title": {
+                        "type": "string",
+                        "minLength": 1,
+                        "maxLength": 50
+                      },
+                      "amount": {
+                        "type": "number",
+                        "minimum": 1
+                      },
+                      "dueDate": {},
+                      "payToEmail": {
+                        "type": "string",
+                        "format": "email",
+                        "pattern": "^(?!\\.)(?!.*\\.\\.)([A-Za-z0-9_'+\\-\\.]*)[A-Za-z0-9_+-]@([A-Za-z0-9][A-Za-z0-9\\-]*\\.)+[A-Za-z]{2,}$"
+                      },
+                      "description": {
+                        "type": "string"
+                      },
+                      "isRecurring": {
+                        "type": "boolean",
+                        "enum": [
+                          true
+                        ]
+                      },
+                      "recurrenceSelector": {
+                        "type": "string",
+                        "enum": [
+                          "date",
+                          "repeat"
+                        ]
+                      },
+                      "recurrenceType": {
+                        "type": "string",
+                        "enum": [
+                          "weekly",
+                          "monthly",
+                          "yearly"
+                        ]
+                      },
+                      "recurrenceUntil": {},
+                      "recurrenceInterval": {
+                        "type": "integer",
+                        "minimum": -9007199254740991,
+                        "maximum": 9007199254740991
+                      }
+                    },
+                    "required": [
+                      "type",
+                      "title",
+                      "amount",
+                      "dueDate",
+                      "payToEmail",
+                      "isRecurring",
+                      "recurrenceSelector",
+                      "recurrenceType"
+                    ]
+                  },
+                  {
+                    "type": "object",
+                    "properties": {
+                      "type": {
+                        "default": "expense",
+                        "type": "string",
+                        "enum": [
+                          "expense",
+                          "income"
+                        ]
+                      },
+                      "title": {
+                        "type": "string",
+                        "minLength": 1,
+                        "maxLength": 50
+                      },
+                      "amount": {
+                        "type": "number",
+                        "minimum": 1
+                      },
+                      "dueDate": {},
+                      "payToEmail": {
+                        "type": "string",
+                        "format": "email",
+                        "pattern": "^(?!\\.)(?!.*\\.\\.)([A-Za-z0-9_'+\\-\\.]*)[A-Za-z0-9_+-]@([A-Za-z0-9][A-Za-z0-9\\-]*\\.)+[A-Za-z]{2,}$"
+                      },
+                      "description": {
+                        "type": "string"
+                      },
+                      "isRecurring": {
+                        "type": "boolean",
+                        "enum": [
+                          false
+                        ]
+                      },
+                      "recurrenceSelector": {},
+                      "recurrenceType": {},
+                      "recurrenceUntil": {},
+                      "recurrenceInterval": {}
+                    },
+                    "required": [
+                      "type",
+                      "title",
+                      "amount",
+                      "dueDate",
+                      "payToEmail",
+                      "isRecurring"
+                    ]
+                  }
+                ]
+              }
+            }
+          }
+        },
+        "parameters": [
+          {
+            "schema": {
+              "type": "string"
+            },
+            "in": "path",
+            "name": "slug",
+            "required": true
+          },
+          {
+            "schema": {
+              "type": "string"
+            },
+            "in": "path",
+            "name": "id",
+            "required": true
+          }
+        ],
+        "responses": {
+          "204": {
+            "description": "Default Response"
+          }
+        }
       }
     },
     "/org/{slug}/transactions": {
@@ -1410,6 +1567,50 @@
                 }
               }
             }
+          }
+        }
+      },
+      "delete": {
+        "operationId": "deleteTransactions",
+        "tags": [
+          "Transaction"
+        ],
+        "description": "Delete multiple transactions",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "ids": {
+                    "type": "array",
+                    "items": {
+                      "type": "string"
+                    }
+                  }
+                },
+                "required": [
+                  "ids"
+                ]
+              }
+            }
+          },
+          "required": true
+        },
+        "parameters": [
+          {
+            "schema": {
+              "type": "string",
+              "minLength": 1
+            },
+            "in": "path",
+            "name": "slug",
+            "required": true
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Default Response"
           }
         }
       }
