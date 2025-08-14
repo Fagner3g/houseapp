@@ -14,10 +14,16 @@ import {
 } from '@/components/ui/drawer'
 import { Form, FormControl, FormField, FormItem, FormLabel } from '@/components/ui/form'
 import { Input } from '@/components/ui/input'
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from '@/components/ui/select'
 import { useActiveOrganization } from '@/hooks/use-active-organization'
-import { useUpdateTransaction } from '@/http/transactions'
 import type { ListTransactions200TransactionsItem } from '@/http/generated/model'
+import { useUpdateTransaction } from '@/http/transactions'
 import { showToastOnErrorSubmit } from '@/lib/utils'
 
 const editTransactionSchema = z.object({
@@ -43,14 +49,7 @@ export function DrawerEdit({ transaction, open, onOpenChange }: Props) {
 
   const form = useForm<EditTransactionSchema>({
     resolver: zodResolver(editTransactionSchema),
-    defaultValues: {
-      type: 'expense',
-      title: '',
-      amount: 0,
-      dueDate: new Date(),
-      payToEmail: '',
-      description: '',
-    },
+    defaultValues: { type: 'expense' },
   })
 
   useEffect(() => {

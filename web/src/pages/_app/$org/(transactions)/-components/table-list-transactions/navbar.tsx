@@ -11,6 +11,7 @@ import {
 import type { ListTransactions200TransactionsItem } from '@/http/generated/model'
 import { ModalNewTransaction } from '../modal-new-transaction'
 import { DeleteSelected } from './delete-selected'
+import FilterTable from './filter'
 
 interface Props {
   table: Table<ListTransactions200TransactionsItem>
@@ -19,6 +20,8 @@ interface Props {
 export function NavbarTable({ table }: Props) {
   return (
     <div className="flex items-center justify-between px-4 lg:px-6">
+      <FilterTable />
+
       <div className="flex items-center gap-2">
         <DropdownMenu>
           <DropdownMenuTrigger asChild>

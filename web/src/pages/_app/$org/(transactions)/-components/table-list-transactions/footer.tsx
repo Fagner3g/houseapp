@@ -13,20 +13,10 @@ import {
   SelectTrigger,
   SelectValue,
 } from '@/components/ui/select'
+import { useTransaction } from './hook/use-transaction'
 
-interface Props {
-  pagination: {
-    page: number
-    perPage: number
-    totalPages: number
-    pagesRemaining: number
-  }
-  onPageChange: (page: number) => void
-  onPerPageChange: (perPage: number) => void
-}
-
-export function Footer({ pagination, onPageChange, onPerPageChange }: Props) {
-  const { page, perPage, totalPages } = pagination
+export function Footer() {
+  const { page, perPage, totalPages, onPerPageChange, onPageChange } = useTransaction()
   return (
     <div className="flex items-center justify-between px-4">
       <div className="flex w-full items-center gap-8 lg:w-fit">
