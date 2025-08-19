@@ -2,6 +2,7 @@ import { env } from '@/config/env'
 import { db, ping } from '@/db'
 import { logger } from './utils/logger'
 import { buildServer } from './utils/settup'
+import { startCron } from '@/domain/notifications/runner'
 
 async function server() {
   try {
@@ -13,6 +14,8 @@ async function server() {
   }
 
   const server = await buildServer()
+
+  startCron()
 
   try {
     await server.listen({ port: env.PORT, host: env.HOST })

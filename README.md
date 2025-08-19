@@ -67,6 +67,22 @@ pnpm dev
 
 ---
 
+## ⏰ Notificações agendadas
+
+O agendador de notificações executa a cada 5 minutos quando `CRON_ENABLED=true` no arquivo `.env` da API.
+Configure também as variáveis de SMTP para envio de e-mails:
+
+```
+CRON_ENABLED=true
+MAIL_FROM=no-reply@houseapp.local
+SMTP_HOST=localhost
+SMTP_PORT=1025
+SMTP_USER=
+SMTP_PASS=
+```
+
+---
+
 ## 🛠️ Contribuindo
-Contribuições são bem-vindas!  
+Contribuições são bem-vindas!
 Abra uma **issue** ou envie um **pull request** com melhorias ou correções.

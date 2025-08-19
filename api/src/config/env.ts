@@ -11,6 +11,12 @@ const envSchema = z.object({
   METRICS_PREFIX: z.string().default('app_'),
   LOG_FASTIFY: z.preprocess(val => val === 'true', z.boolean()).default(false),
   LOG_SQL: z.preprocess(val => val === 'true', z.boolean()).default(false),
+  CRON_ENABLED: z.preprocess(val => val === 'true', z.boolean()).default(false),
+  MAIL_FROM: z.string().default('no-reply@houseapp.local'),
+  SMTP_HOST: z.string().default('localhost'),
+  SMTP_PORT: z.coerce.number().default(1025),
+  SMTP_USER: z.string().optional(),
+  SMTP_PASS: z.string().optional(),
 })
 
 export const env = envSchema.parse(process.env)
