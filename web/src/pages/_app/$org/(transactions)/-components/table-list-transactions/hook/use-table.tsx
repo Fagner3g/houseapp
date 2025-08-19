@@ -21,6 +21,7 @@ import dayjs from 'dayjs'
 import { AlertOctagon, LucideClockFading, TrendingDown, TrendingUp } from 'lucide-react'
 import { useState } from 'react'
 import { toast } from 'sonner'
+import { useQueryClient } from '@tanstack/react-query'
 
 import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
@@ -33,9 +34,12 @@ import {
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu'
 import { Label } from '@/components/ui/label'
-import type { ListTransactions200TransactionsItem } from '@/http/generated/model'
+import type { ListTransactions200, ListTransactions200TransactionsItem } from '@/http/generated/model'
 import { useActiveOrganization } from '@/hooks/use-active-organization'
-import { useDeleteTransactions } from '@/http/transactions'
+import {
+  useDeleteTransactions,
+  getListTransactionsQueryKey,
+} from '@/http/generated/api'
 import { DeleteRowAction } from '../delete-row'
 
 export const useTable = (data: ListTransactions200TransactionsItem[]) => {
@@ -49,7 +53,40 @@ export const useTable = (data: ListTransactions200TransactionsItem[]) => {
   })
   const [editing, setEditing] = useState<ListTransactions200TransactionsItem | null>(null)
   const { slug } = useActiveOrganization()
-  const { mutate: deleteTransactions } = useDeleteTransactions(slug)
+  const queryClient = useQueryClient()
+  const { mutate: deleteTransactions } = useDeleteTransactions({
+    mutation: {
+      onMutate: async ({ slug, data }) => {
+        await queryClient.cancelQueries({ queryKey: getListTransactionsQueryKey(slug) })
+        const previous = queryClient.getQueryData<ListTransactions200>(
+          getListTransactionsQueryKey(slug),
+        )
+        queryClient.setQueryData<ListTransactions200>(
+          getListTransactionsQueryKey(slug),
+          old => ({
+            ...(old ?? { transactions: [] }),
+            transactions:
+              old?.transactions.filter(t => !data.ids.includes(t.id)) ?? [],
+          }),
+        )
+        return { previous }
+      },
+      onError: (_err, _vars, ctx) => {
+        if (ctx?.previous) {
+          queryClient.setQueryData(getListTransactionsQueryKey(slug), ctx.previous)
+        }
+        toast.error('Erro ao excluir transações')
+      },
+      onSuccess: () => {
+        toast.success('Transações excluídas com sucesso!')
+      },
+      onSettled: (_data, _err, vars) => {
+        queryClient.invalidateQueries({
+          queryKey: getListTransactionsQueryKey(vars.slug),
+        })
+      },
+    },
+  })
 
   function copyLink(id: string) {
     const url = `${window.location.origin}/transactions?openId=${id}`
@@ -263,7 +300,7 @@ export const useTable = (data: ListTransactions200TransactionsItem[]) => {
     getFacetedUniqueValues: getFacetedUniqueValues(),
     meta: {
       deleteRows: (ids: string[]) => {
-        deleteTransactions(ids)
+        deleteTransactions({ slug, data: { ids } })
       },
       editRow: (item: ListTransactions200TransactionsItem) => {
         setEditing(item)
