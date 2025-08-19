@@ -29,6 +29,11 @@ import {
   updateTransactionRoute,
 } from './transaction.routes'
 import { createUserWithInviteRoute, getProfileRoute } from './user.routes'
+import {
+  createNotificationPolicyRoute,
+  deleteNotificationPolicyRoute,
+  listNotificationPoliciesRoute,
+} from './notifications.routes'
 
 export function createRoutes(app: FastifyInstance) {
   // Auth
@@ -70,4 +75,9 @@ export function createRoutes(app: FastifyInstance) {
   app.register(createTagRoute)
   app.register(updateTagRoute)
   app.register(deleteTagRoute)
+
+  // Notifications
+  app.register(listNotificationPoliciesRoute)
+  app.register(createNotificationPolicyRoute)
+  app.register(deleteNotificationPolicyRoute)
 }
