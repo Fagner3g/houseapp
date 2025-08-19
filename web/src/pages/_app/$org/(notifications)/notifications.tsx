@@ -1,7 +1,20 @@
-import { useListPolicies } from '@/http/notifications'
+import { createFileRoute } from '@tanstack/react-router'
+
+import {
+  Table,
+  TableBody,
+  TableCell,
+  TableHead,
+  TableHeader,
+  TableRow,
+} from '@/components/ui/table'
 import { useActiveOrganization } from '@/hooks/use-active-organization'
-import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table'
+import { useListPolicies } from '@/http/notifications'
 import { CreatePolicyDialog } from './-components/create-policy-dialog'
+
+export const Route = createFileRoute('/_app/$org/(notifications)/notifications')({
+  component: NotificationsPage,
+})
 
 export default function NotificationsPage() {
   const { slug } = useActiveOrganization()

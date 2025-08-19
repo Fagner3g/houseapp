@@ -10,7 +10,7 @@ const startOfMonth = dayjs().startOf('month').format('YYYY-MM-DD')
 const endOfMonth = dayjs().endOf('month').format('YYYY-MM-DD')
 
 export const Route = createFileRoute('/_app/$org/(transactions)/transactions')({
-  component: Transaction,
+  component: Transactions,
   validateSearch: z.object({
     tags: z.array(z.string()).optional(),
     type: z.enum(['all', 'income', 'expense']).default('all'),
@@ -21,7 +21,7 @@ export const Route = createFileRoute('/_app/$org/(transactions)/transactions')({
   }),
 })
 
-function Transaction() {
+function Transactions() {
   const { transactions, isPending } = useTransaction()
 
   if (isPending) {
