@@ -1,7 +1,14 @@
-import { useListPolicies, useDeletePolicy } from '@/http/notifications'
-import { useActiveOrganization } from '@/hooks/use-active-organization'
 import { Button } from '@/components/ui/button'
-import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table'
+import {
+  Table,
+  TableBody,
+  TableCell,
+  TableHead,
+  TableHeader,
+  TableRow,
+} from '@/components/ui/table'
+import { useActiveOrganization } from '@/hooks/use-active-organization'
+import { useDeletePolicy, useListPolicies } from '@/http/notifications'
 import { CreatePolicyDialog } from './-components/create-policy-dialog'
 
 export default function NotificationsPage() {

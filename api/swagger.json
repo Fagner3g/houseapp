@@ -1999,6 +1999,272 @@
           }
         }
       }
+    },
+    "/api/notifications/{slug}/policies": {
+      "get": {
+        "operationId": "listNotificationPolicies",
+        "tags": [
+          "Notifications"
+        ],
+        "description": "List notification policies",
+        "parameters": [
+          {
+            "schema": {
+              "type": "string"
+            },
+            "in": "path",
+            "name": "slug",
+            "required": true
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Default Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "policies": {
+                      "type": "array",
+                      "items": {
+                        "type": "object",
+                        "properties": {
+                          "id": {
+                            "type": "number"
+                          },
+                          "scope": {
+                            "type": "string",
+                            "enum": [
+                              "transaction",
+                              "goal"
+                            ]
+                          },
+                          "event": {
+                            "type": "string",
+                            "enum": [
+                              "due_soon",
+                              "overdue"
+                            ]
+                          },
+                          "days_before": {
+                            "type": "integer",
+                            "nullable": true
+                          },
+                          "days_overdue": {
+                            "type": "integer",
+                            "nullable": true
+                          },
+                          "repeat_every_minutes": {
+                            "type": "integer",
+                            "nullable": true
+                          },
+                          "max_occurrences": {
+                            "type": "integer",
+                            "nullable": true
+                          },
+                          "channels": {
+                            "type": "string"
+                          },
+                          "active": {
+                            "type": "boolean"
+                          }
+                        },
+                        "required": [
+                          "id",
+                          "scope",
+                          "event",
+                          "channels",
+                          "active"
+                        ],
+                        "additionalProperties": false
+                      }
+                    }
+                  },
+                  "required": [
+                    "policies"
+                  ],
+                  "additionalProperties": false
+                }
+              }
+            }
+          }
+        }
+      },
+      "post": {
+        "operationId": "createNotificationPolicy",
+        "tags": [
+          "Notifications"
+        ],
+        "description": "Create notification policy",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "scope": {
+                    "type": "string",
+                    "enum": [
+                      "transaction",
+                      "goal"
+                    ]
+                  },
+                  "event": {
+                    "type": "string",
+                    "enum": [
+                      "due_soon",
+                      "overdue"
+                    ]
+                  },
+                  "days_before": {
+                    "type": "integer",
+                    "nullable": true
+                  },
+                  "days_overdue": {
+                    "type": "integer",
+                    "nullable": true
+                  },
+                  "repeat_every_minutes": {
+                    "type": "integer",
+                    "nullable": true
+                  },
+                  "max_occurrences": {
+                    "type": "integer",
+                    "nullable": true
+                  },
+                  "channels": {
+                    "type": "string"
+                  },
+                  "active": {
+                    "type": "boolean"
+                  }
+                },
+                "required": [
+                  "scope",
+                  "event",
+                  "channels"
+                ]
+              }
+            }
+          },
+          "required": true
+        },
+        "parameters": [
+          {
+            "schema": {
+              "type": "string"
+            },
+            "in": "path",
+            "name": "slug",
+            "required": true
+          }
+        ],
+        "responses": {
+          "201": {
+            "description": "Default Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "policy": {
+                      "type": "object",
+                      "properties": {
+                        "id": {
+                          "type": "number"
+                        },
+                        "scope": {
+                          "type": "string",
+                          "enum": [
+                            "transaction",
+                            "goal"
+                          ]
+                        },
+                        "event": {
+                          "type": "string",
+                          "enum": [
+                            "due_soon",
+                            "overdue"
+                          ]
+                        },
+                        "days_before": {
+                          "type": "integer",
+                          "nullable": true
+                        },
+                        "days_overdue": {
+                          "type": "integer",
+                          "nullable": true
+                        },
+                        "repeat_every_minutes": {
+                          "type": "integer",
+                          "nullable": true
+                        },
+                        "max_occurrences": {
+                          "type": "integer",
+                          "nullable": true
+                        },
+                        "channels": {
+                          "type": "string"
+                        },
+                        "active": {
+                          "type": "boolean"
+                        }
+                      },
+                      "required": [
+                        "id",
+                        "scope",
+                        "event",
+                        "channels",
+                        "active"
+                      ],
+                      "additionalProperties": false
+                    }
+                  },
+                  "required": [
+                    "policy"
+                  ],
+                  "additionalProperties": false
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/notifications/{slug}/policies/{id}": {
+      "delete": {
+        "operationId": "deleteNotificationPolicy",
+        "tags": [
+          "Notifications"
+        ],
+        "description": "Delete notification policy",
+        "parameters": [
+          {
+            "schema": {
+              "type": "string"
+            },
+            "in": "path",
+            "name": "slug",
+            "required": true
+          },
+          {
+            "schema": {
+              "type": "integer",
+              "minimum": -9007199254740991,
+              "maximum": 9007199254740991
+            },
+            "in": "path",
+            "name": "id",
+            "required": true
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Default Response"
+          }
+        }
+      }
     }
   },
   "servers": [

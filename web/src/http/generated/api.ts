@@ -25,6 +25,8 @@ import type {
   CompleteGoalBody,
   CreateGoalBody,
   CreateInviteBody,
+  CreateNotificationPolicy201,
+  CreateNotificationPolicyBody,
   CreateOrganization201,
   CreateOrganizationBody,
   CreateTag201,
@@ -37,6 +39,7 @@ import type {
   GetProfile200,
   GetTransactionById200,
   GetWeekSummary200,
+  ListNotificationPolicies200,
   ListOrganizations200,
   ListTags200,
   ListTransactions200,
@@ -2921,6 +2924,357 @@ export const useDeleteTag = <TError = unknown, TContext = unknown>(
   TContext
 > => {
   const mutationOptions = getDeleteTagMutationOptions(options);
+
+  return useMutation(mutationOptions, queryClient);
+};
+
+/**
+ * List notification policies
+ */
+export const getListNotificationPoliciesUrl = (slug: string) => {
+  return `/api/notifications/${slug}/policies`;
+};
+
+export const listNotificationPolicies = async (
+  slug: string,
+  options?: RequestInit,
+): Promise<ListNotificationPolicies200> => {
+  return http<ListNotificationPolicies200>(
+    getListNotificationPoliciesUrl(slug),
+    {
+      ...options,
+      method: "GET",
+    },
+  );
+};
+
+export const getListNotificationPoliciesQueryKey = (slug?: string) => {
+  return [`/api/notifications/${slug}/policies`] as const;
+};
+
+export const getListNotificationPoliciesQueryOptions = <
+  TData = Awaited<ReturnType<typeof listNotificationPolicies>>,
+  TError = unknown,
+>(
+  slug: string,
+  options?: {
+    query?: Partial<
+      UseQueryOptions<
+        Awaited<ReturnType<typeof listNotificationPolicies>>,
+        TError,
+        TData
+      >
+    >;
+    request?: SecondParameter<typeof http>;
+  },
+) => {
+  const { query: queryOptions, request: requestOptions } = options ?? {};
+
+  const queryKey =
+    queryOptions?.queryKey ?? getListNotificationPoliciesQueryKey(slug);
+
+  const queryFn: QueryFunction<
+    Awaited<ReturnType<typeof listNotificationPolicies>>
+  > = ({ signal }) =>
+    listNotificationPolicies(slug, { signal, ...requestOptions });
+
+  return {
+    queryKey,
+    queryFn,
+    enabled: !!slug,
+    ...queryOptions,
+  } as UseQueryOptions<
+    Awaited<ReturnType<typeof listNotificationPolicies>>,
+    TError,
+    TData
+  > & { queryKey: DataTag<QueryKey, TData, TError> };
+};
+
+export type ListNotificationPoliciesQueryResult = NonNullable<
+  Awaited<ReturnType<typeof listNotificationPolicies>>
+>;
+export type ListNotificationPoliciesQueryError = unknown;
+
+export function useListNotificationPolicies<
+  TData = Awaited<ReturnType<typeof listNotificationPolicies>>,
+  TError = unknown,
+>(
+  slug: string,
+  options: {
+    query: Partial<
+      UseQueryOptions<
+        Awaited<ReturnType<typeof listNotificationPolicies>>,
+        TError,
+        TData
+      >
+    > &
+      Pick<
+        DefinedInitialDataOptions<
+          Awaited<ReturnType<typeof listNotificationPolicies>>,
+          TError,
+          Awaited<ReturnType<typeof listNotificationPolicies>>
+        >,
+        "initialData"
+      >;
+    request?: SecondParameter<typeof http>;
+  },
+  queryClient?: QueryClient,
+): DefinedUseQueryResult<TData, TError> & {
+  queryKey: DataTag<QueryKey, TData, TError>;
+};
+export function useListNotificationPolicies<
+  TData = Awaited<ReturnType<typeof listNotificationPolicies>>,
+  TError = unknown,
+>(
+  slug: string,
+  options?: {
+    query?: Partial<
+      UseQueryOptions<
+        Awaited<ReturnType<typeof listNotificationPolicies>>,
+        TError,
+        TData
+      >
+    > &
+      Pick<
+        UndefinedInitialDataOptions<
+          Awaited<ReturnType<typeof listNotificationPolicies>>,
+          TError,
+          Awaited<ReturnType<typeof listNotificationPolicies>>
+        >,
+        "initialData"
+      >;
+    request?: SecondParameter<typeof http>;
+  },
+  queryClient?: QueryClient,
+): UseQueryResult<TData, TError> & {
+  queryKey: DataTag<QueryKey, TData, TError>;
+};
+export function useListNotificationPolicies<
+  TData = Awaited<ReturnType<typeof listNotificationPolicies>>,
+  TError = unknown,
+>(
+  slug: string,
+  options?: {
+    query?: Partial<
+      UseQueryOptions<
+        Awaited<ReturnType<typeof listNotificationPolicies>>,
+        TError,
+        TData
+      >
+    >;
+    request?: SecondParameter<typeof http>;
+  },
+  queryClient?: QueryClient,
+): UseQueryResult<TData, TError> & {
+  queryKey: DataTag<QueryKey, TData, TError>;
+};
+
+export function useListNotificationPolicies<
+  TData = Awaited<ReturnType<typeof listNotificationPolicies>>,
+  TError = unknown,
+>(
+  slug: string,
+  options?: {
+    query?: Partial<
+      UseQueryOptions<
+        Awaited<ReturnType<typeof listNotificationPolicies>>,
+        TError,
+        TData
+      >
+    >;
+    request?: SecondParameter<typeof http>;
+  },
+  queryClient?: QueryClient,
+): UseQueryResult<TData, TError> & {
+  queryKey: DataTag<QueryKey, TData, TError>;
+} {
+  const queryOptions = getListNotificationPoliciesQueryOptions(slug, options);
+
+  const query = useQuery(queryOptions, queryClient) as UseQueryResult<
+    TData,
+    TError
+  > & { queryKey: DataTag<QueryKey, TData, TError> };
+
+  query.queryKey = queryOptions.queryKey;
+
+  return query;
+}
+
+/**
+ * Create notification policy
+ */
+export const getCreateNotificationPolicyUrl = (slug: string) => {
+  return `/api/notifications/${slug}/policies`;
+};
+
+export const createNotificationPolicy = async (
+  slug: string,
+  createNotificationPolicyBody: CreateNotificationPolicyBody,
+  options?: RequestInit,
+): Promise<CreateNotificationPolicy201> => {
+  return http<CreateNotificationPolicy201>(
+    getCreateNotificationPolicyUrl(slug),
+    {
+      ...options,
+      method: "POST",
+      headers: { "Content-Type": "application/json", ...options?.headers },
+      body: JSON.stringify(createNotificationPolicyBody),
+    },
+  );
+};
+
+export const getCreateNotificationPolicyMutationOptions = <
+  TError = unknown,
+  TContext = unknown,
+>(options?: {
+  mutation?: UseMutationOptions<
+    Awaited<ReturnType<typeof createNotificationPolicy>>,
+    TError,
+    { slug: string; data: CreateNotificationPolicyBody },
+    TContext
+  >;
+  request?: SecondParameter<typeof http>;
+}): UseMutationOptions<
+  Awaited<ReturnType<typeof createNotificationPolicy>>,
+  TError,
+  { slug: string; data: CreateNotificationPolicyBody },
+  TContext
+> => {
+  const mutationKey = ["createNotificationPolicy"];
+  const { mutation: mutationOptions, request: requestOptions } = options
+    ? options.mutation &&
+      "mutationKey" in options.mutation &&
+      options.mutation.mutationKey
+      ? options
+      : { ...options, mutation: { ...options.mutation, mutationKey } }
+    : { mutation: { mutationKey }, request: undefined };
+
+  const mutationFn: MutationFunction<
+    Awaited<ReturnType<typeof createNotificationPolicy>>,
+    { slug: string; data: CreateNotificationPolicyBody }
+  > = (props) => {
+    const { slug, data } = props ?? {};
+
+    return createNotificationPolicy(slug, data, requestOptions);
+  };
+
+  return { mutationFn, ...mutationOptions };
+};
+
+export type CreateNotificationPolicyMutationResult = NonNullable<
+  Awaited<ReturnType<typeof createNotificationPolicy>>
+>;
+export type CreateNotificationPolicyMutationBody = CreateNotificationPolicyBody;
+export type CreateNotificationPolicyMutationError = unknown;
+
+export const useCreateNotificationPolicy = <
+  TError = unknown,
+  TContext = unknown,
+>(
+  options?: {
+    mutation?: UseMutationOptions<
+      Awaited<ReturnType<typeof createNotificationPolicy>>,
+      TError,
+      { slug: string; data: CreateNotificationPolicyBody },
+      TContext
+    >;
+    request?: SecondParameter<typeof http>;
+  },
+  queryClient?: QueryClient,
+): UseMutationResult<
+  Awaited<ReturnType<typeof createNotificationPolicy>>,
+  TError,
+  { slug: string; data: CreateNotificationPolicyBody },
+  TContext
+> => {
+  const mutationOptions = getCreateNotificationPolicyMutationOptions(options);
+
+  return useMutation(mutationOptions, queryClient);
+};
+
+/**
+ * Delete notification policy
+ */
+export const getDeleteNotificationPolicyUrl = (slug: string, id: number) => {
+  return `/api/notifications/${slug}/policies/${id}`;
+};
+
+export const deleteNotificationPolicy = async (
+  slug: string,
+  id: number,
+  options?: RequestInit,
+): Promise<null> => {
+  return http<null>(getDeleteNotificationPolicyUrl(slug, id), {
+    ...options,
+    method: "DELETE",
+  });
+};
+
+export const getDeleteNotificationPolicyMutationOptions = <
+  TError = unknown,
+  TContext = unknown,
+>(options?: {
+  mutation?: UseMutationOptions<
+    Awaited<ReturnType<typeof deleteNotificationPolicy>>,
+    TError,
+    { slug: string; id: number },
+    TContext
+  >;
+  request?: SecondParameter<typeof http>;
+}): UseMutationOptions<
+  Awaited<ReturnType<typeof deleteNotificationPolicy>>,
+  TError,
+  { slug: string; id: number },
+  TContext
+> => {
+  const mutationKey = ["deleteNotificationPolicy"];
+  const { mutation: mutationOptions, request: requestOptions } = options
+    ? options.mutation &&
+      "mutationKey" in options.mutation &&
+      options.mutation.mutationKey
+      ? options
+      : { ...options, mutation: { ...options.mutation, mutationKey } }
+    : { mutation: { mutationKey }, request: undefined };
+
+  const mutationFn: MutationFunction<
+    Awaited<ReturnType<typeof deleteNotificationPolicy>>,
+    { slug: string; id: number }
+  > = (props) => {
+    const { slug, id } = props ?? {};
+
+    return deleteNotificationPolicy(slug, id, requestOptions);
+  };
+
+  return { mutationFn, ...mutationOptions };
+};
+
+export type DeleteNotificationPolicyMutationResult = NonNullable<
+  Awaited<ReturnType<typeof deleteNotificationPolicy>>
+>;
+
+export type DeleteNotificationPolicyMutationError = unknown;
+
+export const useDeleteNotificationPolicy = <
+  TError = unknown,
+  TContext = unknown,
+>(
+  options?: {
+    mutation?: UseMutationOptions<
+      Awaited<ReturnType<typeof deleteNotificationPolicy>>,
+      TError,
+      { slug: string; id: number },
+      TContext
+    >;
+    request?: SecondParameter<typeof http>;
+  },
+  queryClient?: QueryClient,
+): UseMutationResult<
+  Awaited<ReturnType<typeof deleteNotificationPolicy>>,
+  TError,
+  { slug: string; id: number },
+  TContext
+> => {
+  const mutationOptions = getDeleteNotificationPolicyMutationOptions(options);
 
   return useMutation(mutationOptions, queryClient);
 };
