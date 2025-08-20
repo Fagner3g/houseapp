@@ -20,7 +20,13 @@ export async function updateTransactionService({
   amount,
   dueDate,
   description,
-  ..._rest
+  isRecurring,
+  recurrenceInterval,
+  recurrenceType,
+  recurrenceUntil,
+  recurrenceStart,
+  installmentsTotal,
+  installmentsPaid,
 }: UpdateTransactionParams) {
   const result = await db
     .update(transactions)
@@ -33,6 +39,13 @@ export async function updateTransactionService({
       amount,
       dueDate,
       description,
+      isRecurring,
+      recurrenceInterval,
+      recurrenceType,
+      recurrenceUntil,
+      recurrenceStart,
+      installmentsTotal,
+      installmentsPaid,
       updatedAt: new Date(),
     })
     .where(eq(transactions.id, id))

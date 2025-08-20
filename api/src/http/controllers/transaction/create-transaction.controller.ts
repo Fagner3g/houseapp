@@ -22,6 +22,9 @@ export async function createTransactionController(request: Req, reply: FastifyRe
     recurrenceType,
     recurrenceInterval,
     recurrenceUntil,
+    recurrenceStart,
+    installmentsTotal,
+    installmentsPaid,
     title,
     payToEmail,
     amount,
@@ -53,6 +56,9 @@ export async function createTransactionController(request: Req, reply: FastifyRe
     recurrenceType,
     recurrenceInterval,
     recurrenceUntil,
+    recurrenceStart,
+    installmentsTotal,
+    installmentsPaid,
   })
 
   return reply.status(201).send(null)

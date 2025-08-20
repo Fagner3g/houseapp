@@ -1192,7 +1192,8 @@
                           "enum": [
                             "weekly",
                             "monthly",
-                            "yearly"
+                            "yearly",
+                            "custom"
                           ]
                         },
                         "recurrenceUntil": {
@@ -1203,6 +1204,17 @@
                           "type": "integer",
                           "minimum": -9007199254740991,
                           "maximum": 9007199254740991
+                        },
+                        "recurrenceStart": {
+                          "type": "string",
+                          "format": "date-time"
+                        },
+                        "installmentsTotal": {
+                          "type": "integer",
+                          "nullable": true
+                        },
+                        "installmentsPaid": {
+                          "type": "integer"
                         },
                         "tags": {
                           "type": "array",
@@ -2012,6 +2024,81 @@
             "description": "Default Response"
           }
         }
+      }
+    },
+    "/org/{slug}/transaction/{id}/pay": {
+      "patch": {
+        "operationId": "payTransaction",
+        "tags": [
+          "Transaction"
+        ],
+        "description": "Mark current installment as paid",
+        "parameters": [
+          {
+            "name": "slug",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "204": {
+            "description": "No Content"
+          }
+        },
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ]
+      }
+    },
+    "/reports/transactions/run": {
+      "post": {
+        "operationId": "runMyTransactionsReport",
+        "tags": [
+          "Reports"
+        ],
+        "description": "Trigger transactions report for authenticated user",
+        "responses": {
+          "202": {
+            "description": "Accepted"
+          }
+        },
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ]
+      }
+    },
+    "/reports/transactions/run-all-owners": {
+      "post": {
+        "operationId": "runAllOwnersTransactionsReport",
+        "tags": [
+          "Reports"
+        ],
+        "description": "Trigger transactions report for all owners",
+        "responses": {
+          "202": {
+            "description": "Accepted"
+          }
+        },
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ]
       }
     }
   },
