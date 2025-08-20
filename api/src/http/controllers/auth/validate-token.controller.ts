@@ -13,6 +13,7 @@ type Req = FastifyRequest<{ Body: ValidateTokenSchemaBody }>
 export async function validateTokenController(request: Req, reply: FastifyReply) {
   const { token } = request.body
 
+  console.log('authenticateUserHook')
   const payload = await VerifyToken(token)
 
   if (!payload.sub) {

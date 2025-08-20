@@ -1,3 +1,4 @@
+import { redirect } from '@tanstack/react-router'
 import { create } from 'zustand'
 import { persist } from 'zustand/middleware'
 
@@ -24,6 +25,7 @@ export const useAuthStore = create<AuthState>()(
       logout: () => {
         removeAuthToken()
         set({ user: null, status: 'idle' })
+        console.log('logout')
       },
     }),
     { name: 'auth' }

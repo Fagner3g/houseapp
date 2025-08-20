@@ -1,6 +1,6 @@
 import type { FastifyInstance } from 'fastify'
 
-import { signInRoute, signUpRoute, validateTokenRoute } from './auth.routes'
+import { logoutRoute, signInRoute, signUpRoute, validateTokenRoute } from './auth.routes'
 import {
   completionGoalRoute,
   createGoalRoute,
@@ -15,12 +15,7 @@ import {
   listUsersByOrgRoute,
   renameOrgRoute,
 } from './organization.routes'
-import {
-  createTagRoute,
-  deleteTagRoute,
-  listTagsRoute,
-  updateTagRoute,
-} from './tag.routes'
+import { createTagRoute, deleteTagRoute, listTagsRoute, updateTagRoute } from './tag.routes'
 import {
   createTransactionRoute,
   deleteTransactionsRoute,
@@ -35,6 +30,7 @@ export function createRoutes(app: FastifyInstance) {
   app.register(signInRoute)
   app.register(signUpRoute)
   app.register(validateTokenRoute)
+  app.register(logoutRoute)
 
   // User
   app.register(getProfileRoute)

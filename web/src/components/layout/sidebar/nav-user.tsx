@@ -7,6 +7,8 @@ import {
 } from '@tabler/icons-react'
 import { useNavigate } from '@tanstack/react-router'
 
+import { useLogout } from '@/api/generated/api'
+import type { GetProfile200User } from '@/api/generated/model'
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar'
 import {
   DropdownMenu,
@@ -23,8 +25,7 @@ import {
   SidebarMenuItem,
   useSidebar,
 } from '@/components/ui/sidebar'
-import type { GetProfile200User } from '@/api/generated/model'
-import { removeAuthToken } from '@/lib/auth'
+import { useAuthStore } from '@/stores/auth'
 
 interface NavUserProps {
   user: GetProfile200User
@@ -33,9 +34,12 @@ interface NavUserProps {
 export function NavUser({ user }: NavUserProps) {
   const { isMobile } = useSidebar()
   const navigate = useNavigate()
+  const logout = useAuthStore(s => s.logout)
+  const { mutateAsync: logoutRequest } = useLogout()
 
-  const handleLogout = () => {
-    removeAuthToken()
+  const handleLogout = async () => {
+    await logoutRequest()
+    logout()
     navigate({ to: '/sign-in' })
   }
 
