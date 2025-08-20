@@ -5,22 +5,8 @@
     {
       "idx": 0,
       "version": "7",
-      "when": 1754999270625,
-      "tag": "0000_far_frog_thor",
-      "breakpoints": true
-    },
-    {
-      "idx": 1,
-      "version": "7",
-      "when": 1755003570178,
-      "tag": "0001_cuddly_mandrill",
-      "breakpoints": true
-    },
-    {
-      "idx": 2,
-      "version": "7",
-      "when": 1755091625742,
-      "tag": "0002_outgoing_vin_gonzales",
+      "when": 1755687736630,
+      "tag": "0000_bitter_iceman",
       "breakpoints": true
     }
   ]

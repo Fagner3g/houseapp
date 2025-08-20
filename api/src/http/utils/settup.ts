@@ -43,7 +43,7 @@ export async function buildServer() {
 
   app.register(fastifyCors, { origin: env.WEB_URL })
 
-  app.register(fastifyJwt, { secret: env.JWT_SECRETT })
+  app.register(fastifyJwt, { secret: env.JWT_SECRET })
 
   app.register(fastifySwagger, {
     openapi: {

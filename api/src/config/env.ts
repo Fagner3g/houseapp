@@ -2,7 +2,7 @@ import z from 'zod'
 
 const envSchema = z.object({
   DATABASE_URL: z.url(),
-  JWT_SECRETT: z.string(),
+  JWT_SECRET: z.string(),
   WEB_URL: z.url(),
   NODE_ENV: z.enum(['development', 'test', 'production']).default('development'),
   LOG_LEVEL: z.string().default('info'),
