@@ -6,7 +6,6 @@ import { invites } from '@/db/schemas/invites'
 import { userOrganizations } from '@/db/schemas/userOrganization'
 import { AuthenticateUser } from '@/http/utils/auth'
 import { SendMail } from '../send-mail'
-import { SendWhats } from '../sendWhats'
 import { getUser } from '../user/get-user'
 
 interface SignInRequest {
@@ -38,7 +37,5 @@ export async function SignIn({ email }: SignInRequest) {
   const url = new URL(`${env.WEB_URL}/validate`)
   url.searchParams.set('token', token)
 
-  await SendMail({ name: user.name, email, ddd: user.ddd, phone: user.phone, url: url.toString() })
-
-  await SendWhats({ name: user.name, ddd: user.ddd, phone: user.phone })
+  await SendMail({ name: user.name, email, phone: user.phone, url: url.toString() })
 }

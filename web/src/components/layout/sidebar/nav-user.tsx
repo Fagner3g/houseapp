@@ -7,7 +7,7 @@ import {
 } from '@tabler/icons-react'
 import { useNavigate } from '@tanstack/react-router'
 
-import { useLogout } from '@/api/generated/api'
+import { useSignOut } from '@/api/generated/api'
 import type { GetProfile200User } from '@/api/generated/model'
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar'
 import {
@@ -35,10 +35,10 @@ export function NavUser({ user }: NavUserProps) {
   const { isMobile } = useSidebar()
   const navigate = useNavigate()
   const logout = useAuthStore(s => s.logout)
-  const { mutateAsync: logoutRequest } = useLogout()
+  const { mutateAsync: signOutRequest } = useSignOut()
 
   const handleLogout = async () => {
-    await logoutRequest()
+    await signOutRequest()
     logout()
     navigate({ to: '/sign-in' })
   }

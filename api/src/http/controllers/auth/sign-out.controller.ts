@@ -2,7 +2,7 @@ import type { FastifyReply, FastifyRequest } from 'fastify'
 
 import { revokeToken } from '@/http/utils/auth'
 
-export async function logoutController(request: FastifyRequest, reply: FastifyReply) {
+export async function signOutController(request: FastifyRequest, reply: FastifyReply) {
   const auth = request.headers.authorization
   const token = auth?.replace('Bearer ', '')
   if (token) {

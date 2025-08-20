@@ -2,8 +2,8 @@ import z from 'zod'
 
 export const logoutSchema = {
   tags: ['Auth'],
-  description: 'Logout revoke token',
-  operationId: 'logout',
+  description: 'Sign out revoke token',
+  operationId: 'signOut',
   headers: z.object({
     authorization: z.string(),
   }),

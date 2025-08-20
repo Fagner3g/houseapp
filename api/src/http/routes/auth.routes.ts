@@ -1,12 +1,12 @@
 import type { FastifyPluginAsyncZod } from 'fastify-type-provider-zod'
 
-import { logoutController } from '../controllers/auth/logout.controller'
-import { sigInUpController } from '../controllers/auth/sigin-up.controller'
 import { signInController } from '../controllers/auth/sign-in.controller'
+import { signOutController } from '../controllers/auth/sign-out.controller'
+import { sigInUpController } from '../controllers/auth/sign-up.controller'
 import { validateTokenController } from '../controllers/auth/validate-token.controller'
 import { authenticateUserHook } from '../hooks/authenticate-user'
-import { logoutSchema } from '../schemas/auth/logout.schema'
 import { signInSchema } from '../schemas/auth/sign-in.schema'
+import { logoutSchema } from '../schemas/auth/sign-out.schema'
 import { sigInUpSchema } from '../schemas/auth/sign-up.schema'
 import { validateTokenSchema } from '../schemas/auth/validate-token.schema'
 
@@ -32,6 +32,6 @@ export const logoutRoute: FastifyPluginAsyncZod = async app => {
   app.post('/logout', {
     onRequest: [authenticateUserHook],
     schema: logoutSchema,
-    handler: logoutController,
+    handler: signOutController,
   })
 }

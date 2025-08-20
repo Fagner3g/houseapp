@@ -5,7 +5,6 @@ import { users } from '@/db/schemas/users'
 import { AuthenticateUser } from '@/http/utils/auth'
 import { createOrganization } from '../organization/create-organization'
 import { SendMail } from '../send-mail'
-import { SendWhats } from '../sendWhats'
 
 interface CreateNewUserRequest {
   name: string
@@ -41,6 +40,4 @@ export async function signUp({ name, email, phone, avatarUrl }: CreateNewUserReq
   url.searchParams.set('token', token)
 
   await SendMail({ name, email, phone, url: url.toString() })
-
-  await SendWhats({ name, phone })
 }
