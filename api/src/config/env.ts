@@ -2,7 +2,7 @@ import z from 'zod'
 
 const envSchema = z.object({
   DATABASE_URL: z.url(),
-  JWT_SECRETT: z.string(),
+  JWT_SECRET: z.string(),
   WEB_URL: z.url(),
   NODE_ENV: z.enum(['development', 'test', 'production']).default('development'),
   LOG_LEVEL: z.string().default('info'),
@@ -11,7 +11,7 @@ const envSchema = z.object({
   METRICS_PREFIX: z.string().default('app_'),
   LOG_FASTIFY: z.preprocess(val => val === 'true', z.boolean()).default(false),
   LOG_SQL: z.preprocess(val => val === 'true', z.boolean()).default(false),
-  CRON_ENABLED: z.preprocess(val => val === 'true', z.boolean()).default(false),
+  CRON_ENABLED: z.preprocess(val => val === 'true', z.boolean()).default(true),
   MAIL_FROM: z.string().default('no-reply@houseapp.local'),
   SMTP_HOST: z.string().default('localhost'),
   SMTP_PORT: z.coerce.number().default(1025),

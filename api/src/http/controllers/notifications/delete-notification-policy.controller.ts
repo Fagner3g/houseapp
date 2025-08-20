@@ -3,7 +3,7 @@ import type { FastifyReply, FastifyRequest } from 'fastify'
 import { deleteNotificationPolicyService } from '@/domain/notifications/delete-notification-policy'
 import type { DeleteNotificationPolicySchemaParams } from '@/http/schemas/notifications/delete-notification-policy.schema'
 
-interface Req extends FastifyRequest<{ Params: DeleteNotificationPolicySchemaParams }> {}
+type Req = FastifyRequest<{ Params: DeleteNotificationPolicySchemaParams }>
 
 export async function deleteNotificationPolicyController(request: Req, reply: FastifyReply) {
   const orgId = request.organization.id

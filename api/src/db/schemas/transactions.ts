@@ -4,7 +4,7 @@ import { boolean, integer, pgTable, text, timestamp } from 'drizzle-orm/pg-core'
 import { organizations } from './organization'
 import { users } from './users'
 
-type TransactionCategory = 'expense' | 'income'
+export type TransactionCategory = 'expense' | 'income'
 
 export const transactions = pgTable('transactions', {
   id: text('id')

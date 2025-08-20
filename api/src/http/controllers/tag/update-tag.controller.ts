@@ -6,11 +6,10 @@ import type {
   UpdateTagSchemaParams,
 } from '@/http/schemas/tag/update-tag.schema'
 
-interface Req
-  extends FastifyRequest<{
-    Params: UpdateTagSchemaParams
-    Body: UpdateTagSchemaBody
-  }> {}
+type Req = FastifyRequest<{
+  Params: UpdateTagSchemaParams
+  Body: UpdateTagSchemaBody
+}>
 
 export async function updateTagController(request: Req, reply: FastifyReply) {
   const orgId = request.organization.id

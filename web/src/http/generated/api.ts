@@ -39,7 +39,7 @@ import type {
   GetProfile200,
   GetTransactionById200,
   GetWeekSummary200,
-  ListNotificationPolicies200Item,
+  ListNotificationPolicies200,
   ListOrganizations200,
   ListTags200,
   ListTransactions200,
@@ -2938,8 +2938,8 @@ export const getListNotificationPoliciesUrl = (slug: string) => {
 export const listNotificationPolicies = async (
   slug: string,
   options?: RequestInit,
-): Promise<ListNotificationPolicies200Item[]> => {
-  return http<ListNotificationPolicies200Item[]>(
+): Promise<ListNotificationPolicies200> => {
+  return http<ListNotificationPolicies200>(
     getListNotificationPoliciesUrl(slug),
     {
       ...options,

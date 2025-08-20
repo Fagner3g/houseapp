@@ -1,6 +1,7 @@
 import assert from 'node:assert'
 import { describe, it } from 'node:test'
 import dayjs from 'dayjs'
+
 import { calculateNextEligibleAt, isWithinQuietHours } from './utils'
 
 describe('isWithinQuietHours', () => {

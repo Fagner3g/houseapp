@@ -2003,11 +2003,15 @@
     "/api/notifications/{slug}/policies": {
       "get": {
         "operationId": "listNotificationPolicies",
-        "tags": ["Notifications"],
+        "tags": [
+          "Notifications"
+        ],
         "description": "List notification policies",
         "parameters": [
           {
-            "schema": { "type": "string" },
+            "schema": {
+              "type": "string"
+            },
             "in": "path",
             "name": "slug",
             "required": true
@@ -2015,26 +2019,72 @@
         ],
         "responses": {
           "200": {
-            "description": "List policies",
+            "description": "Default Response",
             "content": {
               "application/json": {
                 "schema": {
-                  "type": "array",
-                  "items": {
-                    "type": "object",
-                    "properties": {
-                      "id": { "type": "integer" },
-                      "scope": { "type": "string", "enum": ["transaction", "goal"] },
-                      "event": { "type": "string", "enum": ["due_soon", "overdue"] },
-                      "days_before": { "type": "integer", "nullable": true },
-                      "days_overdue": { "type": "integer", "nullable": true },
-                      "repeat_every_minutes": { "type": "integer", "nullable": true },
-                      "max_occurrences": { "type": "integer", "nullable": true },
-                      "channels": { "type": "string" },
-                      "active": { "type": "boolean" }
-                    },
-                    "required": ["id", "scope", "event", "channels", "active"]
-                  }
+                  "type": "object",
+                  "properties": {
+                    "policies": {
+                      "type": "array",
+                      "items": {
+                        "type": "object",
+                        "properties": {
+                          "id": {
+                            "type": "number"
+                          },
+                          "scope": {
+                            "type": "string",
+                            "enum": [
+                              "transaction",
+                              "goal"
+                            ]
+                          },
+                          "event": {
+                            "type": "string",
+                            "enum": [
+                              "due_soon",
+                              "overdue"
+                            ]
+                          },
+                          "days_before": {
+                            "type": "integer",
+                            "nullable": true
+                          },
+                          "days_overdue": {
+                            "type": "integer",
+                            "nullable": true
+                          },
+                          "repeat_every_minutes": {
+                            "type": "integer",
+                            "nullable": true
+                          },
+                          "max_occurrences": {
+                            "type": "integer",
+                            "nullable": true
+                          },
+                          "channels": {
+                            "type": "string"
+                          },
+                          "active": {
+                            "type": "boolean"
+                          }
+                        },
+                        "required": [
+                          "id",
+                          "scope",
+                          "event",
+                          "channels",
+                          "active"
+                        ],
+                        "additionalProperties": false
+                      }
+                    }
+                  },
+                  "required": [
+                    "policies"
+                  ],
+                  "additionalProperties": false
                 }
               }
             }
@@ -2043,56 +2093,138 @@
       },
       "post": {
         "operationId": "createNotificationPolicy",
-        "tags": ["Notifications"],
-        "description": "Create notification policy",
-        "parameters": [
-          {
-            "schema": { "type": "string" },
-            "in": "path",
-            "name": "slug",
-            "required": true
-          }
+        "tags": [
+          "Notifications"
         ],
+        "description": "Create notification policy",
         "requestBody": {
           "content": {
             "application/json": {
               "schema": {
                 "type": "object",
                 "properties": {
-                  "scope": { "type": "string", "enum": ["transaction", "goal"] },
-                  "event": { "type": "string", "enum": ["due_soon", "overdue"] },
-                  "days_before": { "type": "integer", "nullable": true },
-                  "days_overdue": { "type": "integer", "nullable": true },
-                  "repeat_every_minutes": { "type": "integer", "nullable": true },
-                  "max_occurrences": { "type": "integer", "nullable": true },
-                  "channels": { "type": "string" },
-                  "active": { "type": "boolean", "default": true }
+                  "scope": {
+                    "type": "string",
+                    "enum": [
+                      "transaction",
+                      "goal"
+                    ]
+                  },
+                  "event": {
+                    "type": "string",
+                    "enum": [
+                      "due_soon",
+                      "overdue"
+                    ]
+                  },
+                  "days_before": {
+                    "type": "integer",
+                    "nullable": true
+                  },
+                  "days_overdue": {
+                    "type": "integer",
+                    "nullable": true
+                  },
+                  "repeat_every_minutes": {
+                    "type": "integer",
+                    "nullable": true
+                  },
+                  "max_occurrences": {
+                    "type": "integer",
+                    "nullable": true
+                  },
+                  "channels": {
+                    "type": "string"
+                  },
+                  "active": {
+                    "type": "boolean"
+                  }
                 },
-                "required": ["scope", "event", "channels"]
+                "required": [
+                  "scope",
+                  "event",
+                  "channels"
+                ]
               }
             }
           },
           "required": true
         },
+        "parameters": [
+          {
+            "schema": {
+              "type": "string"
+            },
+            "in": "path",
+            "name": "slug",
+            "required": true
+          }
+        ],
         "responses": {
           "201": {
-            "description": "Policy created",
+            "description": "Default Response",
             "content": {
               "application/json": {
                 "schema": {
                   "type": "object",
                   "properties": {
-                    "id": { "type": "integer" },
-                    "scope": { "type": "string", "enum": ["transaction", "goal"] },
-                    "event": { "type": "string", "enum": ["due_soon", "overdue"] },
-                    "days_before": { "type": "integer", "nullable": true },
-                    "days_overdue": { "type": "integer", "nullable": true },
-                    "repeat_every_minutes": { "type": "integer", "nullable": true },
-                    "max_occurrences": { "type": "integer", "nullable": true },
-                    "channels": { "type": "string" },
-                    "active": { "type": "boolean" }
+                    "policy": {
+                      "type": "object",
+                      "properties": {
+                        "id": {
+                          "type": "number"
+                        },
+                        "scope": {
+                          "type": "string",
+                          "enum": [
+                            "transaction",
+                            "goal"
+                          ]
+                        },
+                        "event": {
+                          "type": "string",
+                          "enum": [
+                            "due_soon",
+                            "overdue"
+                          ]
+                        },
+                        "days_before": {
+                          "type": "integer",
+                          "nullable": true
+                        },
+                        "days_overdue": {
+                          "type": "integer",
+                          "nullable": true
+                        },
+                        "repeat_every_minutes": {
+                          "type": "integer",
+                          "nullable": true
+                        },
+                        "max_occurrences": {
+                          "type": "integer",
+                          "nullable": true
+                        },
+                        "channels": {
+                          "type": "string"
+                        },
+                        "active": {
+                          "type": "boolean"
+                        }
+                      },
+                      "required": [
+                        "id",
+                        "scope",
+                        "event",
+                        "channels",
+                        "active"
+                      ],
+                      "additionalProperties": false
+                    }
                   },
-                  "required": ["id", "scope", "event", "channels", "active"]
+                  "required": [
+                    "policy"
+                  ],
+                  "additionalProperties": false
                 }
               }
             }
@@ -2103,24 +2235,34 @@
     "/api/notifications/{slug}/policies/{id}": {
       "delete": {
         "operationId": "deleteNotificationPolicy",
-        "tags": ["Notifications"],
+        "tags": [
+          "Notifications"
+        ],
         "description": "Delete notification policy",
         "parameters": [
           {
-            "schema": { "type": "string" },
+            "schema": {
+              "type": "string"
+            },
             "in": "path",
             "name": "slug",
             "required": true
           },
           {
-            "schema": { "type": "integer" },
+            "schema": {
+              "type": "integer",
+              "minimum": -9007199254740991,
+              "maximum": 9007199254740991
+            },
             "in": "path",
             "name": "id",
             "required": true
           }
         ],
         "responses": {
-          "204": { "description": "Deleted" }
+          "200": {
+            "description": "Default Response"
+          }
         }
       }
     }

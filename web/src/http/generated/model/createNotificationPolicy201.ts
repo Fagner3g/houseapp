@@ -5,21 +5,8 @@
  * API for HouseApp
  * OpenAPI spec version: 1.0.0
  */
-import type { CreateNotificationPolicy201Scope } from "./createNotificationPolicy201Scope";
-import type { CreateNotificationPolicy201Event } from "./createNotificationPolicy201Event";
+import type { CreateNotificationPolicy201Policy } from "./createNotificationPolicy201Policy";
 
 export type CreateNotificationPolicy201 = {
-  id: number;
-  scope: CreateNotificationPolicy201Scope;
-  event: CreateNotificationPolicy201Event;
-  /** @nullable */
-  days_before?: number | null;
-  /** @nullable */
-  days_overdue?: number | null;
-  /** @nullable */
-  repeat_every_minutes?: number | null;
-  /** @nullable */
-  max_occurrences?: number | null;
-  channels: string;
-  active: boolean;
+  policy: CreateNotificationPolicy201Policy;
 };

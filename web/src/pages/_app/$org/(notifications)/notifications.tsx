@@ -1,9 +1,7 @@
-import {
-  useListNotificationPolicies,
-  useDeleteNotificationPolicy,
-  getListNotificationPoliciesQueryKey,
-} from '@/http/generated/api'
-import { useActiveOrganization } from '@/hooks/use-active-organization'
+import { useQueryClient } from '@tanstack/react-query'
+import { createFileRoute } from '@tanstack/react-router'
+import { toast } from 'sonner'
+
 import { Button } from '@/components/ui/button'
 import {
   Table,
@@ -13,8 +11,17 @@ import {
   TableHeader,
   TableRow,
 } from '@/components/ui/table'
+import { useActiveOrganization } from '@/hooks/use-active-organization'
+import {
+  getListNotificationPoliciesQueryKey,
+  useDeleteNotificationPolicy,
+  useListNotificationPolicies,
+} from '@/http/generated/api'
 import { CreatePolicyDialog } from './-components/create-policy-dialog'
-import { useQueryClient } from '@tanstack/react-query'
+
+export const Route = createFileRoute('/_app/$org/(notifications)/notifications')({
+  component: NotificationsPage,
+})
 
 export default function NotificationsPage() {
   const { slug } = useActiveOrganization()
@@ -22,7 +29,11 @@ export default function NotificationsPage() {
   const queryClient = useQueryClient()
   const deletePolicy = useDeleteNotificationPolicy({
     mutation: {
+      onError: () => {
+        toast.error('Erro ao excluir política')
+      },
       onSuccess: (_data, vars) => {
+        toast.success('Política excluida com sucesso!')
         queryClient.invalidateQueries({
           queryKey: getListNotificationPoliciesQueryKey(vars.slug),
         })
@@ -48,7 +59,7 @@ export default function NotificationsPage() {
           </TableRow>
         </TableHeader>
         <TableBody>
-          {data?.map(p => (
+          {data?.policies?.map(p => (
             <TableRow key={p.id}>
               <TableCell>{p.scope}</TableCell>
               <TableCell>{p.event}</TableCell>

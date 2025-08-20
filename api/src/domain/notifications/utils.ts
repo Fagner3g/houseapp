@@ -1,6 +1,6 @@
 import dayjs from 'dayjs'
-import utc from 'dayjs/plugin/utc'
 import timezone from 'dayjs/plugin/timezone'
+import utc from 'dayjs/plugin/utc'
 
 dayjs.extend(utc)
 dayjs.extend(timezone)
@@ -13,7 +13,7 @@ export function isWithinQuietHours(
   now: Date,
   start: string | null,
   end: string | null,
-  tz: string,
+  tz: string
 ): boolean {
   if (!start || !end) return false
 
@@ -37,7 +37,7 @@ export function isWithinQuietHours(
  */
 export function calculateNextEligibleAt(
   lastNotifiedAt: Date | null,
-  repeatEveryMinutes: number | null,
+  repeatEveryMinutes: number | null
 ): Date | null {
   if (repeatEveryMinutes == null) return null
   const base = lastNotifiedAt ? dayjs(lastNotifiedAt) : dayjs()

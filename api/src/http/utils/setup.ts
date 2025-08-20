@@ -41,9 +41,15 @@ export async function buildServer() {
 
   app.addHook('onResponse', reqReplyTime)
 
-  app.register(fastifyCors, { origin: env.WEB_URL })
+  app.register(fastifyCors, {
+    origin: true, // reflete a origem do browser
+    methods: ['GET', 'POST', 'PUT', 'PATCH', 'DELETE', 'OPTIONS'],
+    allowedHeaders: ['Authorization', 'Content-Type'],
+    exposedHeaders: ['Content-Type'],
+    credentials: false,
+  })
 
-  app.register(fastifyJwt, { secret: env.JWT_SECRETT })
+  app.register(fastifyJwt, { secret: env.JWT_SECRET })
 
   app.register(fastifySwagger, {
     openapi: {

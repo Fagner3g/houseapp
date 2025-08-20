@@ -6,11 +6,11 @@
  * OpenAPI spec version: 1.0.0
  */
 
-export type CreateNotificationPolicy201Scope =
-  (typeof CreateNotificationPolicy201Scope)[keyof typeof CreateNotificationPolicy201Scope];
+export type ListNotificationPolicies200PoliciesItemScope =
+  (typeof ListNotificationPolicies200PoliciesItemScope)[keyof typeof ListNotificationPolicies200PoliciesItemScope];
 
 // eslint-disable-next-line @typescript-eslint/no-redeclare
-export const CreateNotificationPolicy201Scope = {
+export const ListNotificationPolicies200PoliciesItemScope = {
   transaction: "transaction",
   goal: "goal",
 } as const;

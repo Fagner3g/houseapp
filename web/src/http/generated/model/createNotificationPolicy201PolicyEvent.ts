@@ -6,11 +6,11 @@
  * OpenAPI spec version: 1.0.0
  */
 
-export type ListNotificationPolicies200ItemEvent =
-  (typeof ListNotificationPolicies200ItemEvent)[keyof typeof ListNotificationPolicies200ItemEvent];
+export type CreateNotificationPolicy201PolicyEvent =
+  (typeof CreateNotificationPolicy201PolicyEvent)[keyof typeof CreateNotificationPolicy201PolicyEvent];
 
 // eslint-disable-next-line @typescript-eslint/no-redeclare
-export const ListNotificationPolicies200ItemEvent = {
+export const CreateNotificationPolicy201PolicyEvent = {
   due_soon: "due_soon",
   overdue: "overdue",
 } as const;

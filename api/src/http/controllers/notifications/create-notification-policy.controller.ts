@@ -6,11 +6,10 @@ import type {
   CreateNotificationPolicySchemaParams,
 } from '@/http/schemas/notifications/create-notification-policy.schema'
 
-interface Req
-  extends FastifyRequest<{
-    Params: CreateNotificationPolicySchemaParams
-    Body: CreateNotificationPolicySchemaBody
-  }> {}
+type Req = FastifyRequest<{
+  Params: CreateNotificationPolicySchemaParams
+  Body: CreateNotificationPolicySchemaBody
+}>
 
 export async function createNotificationPolicyController(request: Req, reply: FastifyReply) {
   const orgId = request.organization.id

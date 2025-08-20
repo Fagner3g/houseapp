@@ -6,11 +6,10 @@ import type {
   CreateTagSchemaParams,
 } from '@/http/schemas/tag/create-tag.schema'
 
-interface Req
-  extends FastifyRequest<{
-    Params: CreateTagSchemaParams
-    Body: CreateTagSchemaBody
-  }> {}
+type Req = FastifyRequest<{
+  Params: CreateTagSchemaParams
+  Body: CreateTagSchemaBody
+}>
 
 export async function createTagController(request: Req, reply: FastifyReply) {
   const orgId = request.organization.id

@@ -5,13 +5,13 @@
  * API for HouseApp
  * OpenAPI spec version: 1.0.0
  */
-import type { ListNotificationPolicies200ItemScope } from "./listNotificationPolicies200ItemScope";
-import type { ListNotificationPolicies200ItemEvent } from "./listNotificationPolicies200ItemEvent";
+import type { ListNotificationPolicies200PoliciesItemScope } from "./listNotificationPolicies200PoliciesItemScope";
+import type { ListNotificationPolicies200PoliciesItemEvent } from "./listNotificationPolicies200PoliciesItemEvent";
 
-export type ListNotificationPolicies200Item = {
+export type ListNotificationPolicies200PoliciesItem = {
   id: number;
-  scope: ListNotificationPolicies200ItemScope;
-  event: ListNotificationPolicies200ItemEvent;
+  scope: ListNotificationPolicies200PoliciesItemScope;
+  event: ListNotificationPolicies200PoliciesItemEvent;
   /** @nullable */
   days_before?: number | null;
   /** @nullable */
