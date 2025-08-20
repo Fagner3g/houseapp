@@ -147,6 +147,15 @@
         }
       }
     },
+    "/logout": {
+      "post": {
+        "responses": {
+          "200": {
+            "description": "Default Response"
+          }
+        }
+      }
+    },
     "/profile": {
       "get": {
         "operationId": "getProfile",

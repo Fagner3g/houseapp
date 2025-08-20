@@ -312,6 +312,81 @@ export const useValidateToken = <TError = unknown, TContext = unknown>(
   return useMutation(mutationOptions, queryClient);
 };
 
+export const getPostLogoutUrl = () => {
+  return `/logout`;
+};
+
+export const postLogout = async (options?: RequestInit): Promise<null> => {
+  return http<null>(getPostLogoutUrl(), {
+    ...options,
+    method: "POST",
+  });
+};
+
+export const getPostLogoutMutationOptions = <
+  TError = unknown,
+  TContext = unknown,
+>(options?: {
+  mutation?: UseMutationOptions<
+    Awaited<ReturnType<typeof postLogout>>,
+    TError,
+    void,
+    TContext
+  >;
+  request?: SecondParameter<typeof http>;
+}): UseMutationOptions<
+  Awaited<ReturnType<typeof postLogout>>,
+  TError,
+  void,
+  TContext
+> => {
+  const mutationKey = ["postLogout"];
+  const { mutation: mutationOptions, request: requestOptions } = options
+    ? options.mutation &&
+      "mutationKey" in options.mutation &&
+      options.mutation.mutationKey
+      ? options
+      : { ...options, mutation: { ...options.mutation, mutationKey } }
+    : { mutation: { mutationKey }, request: undefined };
+
+  const mutationFn: MutationFunction<
+    Awaited<ReturnType<typeof postLogout>>,
+    void
+  > = () => {
+    return postLogout(requestOptions);
+  };
+
+  return { mutationFn, ...mutationOptions };
+};
+
+export type PostLogoutMutationResult = NonNullable<
+  Awaited<ReturnType<typeof postLogout>>
+>;
+
+export type PostLogoutMutationError = unknown;
+
+export const usePostLogout = <TError = unknown, TContext = unknown>(
+  options?: {
+    mutation?: UseMutationOptions<
+      Awaited<ReturnType<typeof postLogout>>,
+      TError,
+      void,
+      TContext
+    >;
+    request?: SecondParameter<typeof http>;
+  },
+  queryClient?: QueryClient,
+): UseMutationResult<
+  Awaited<ReturnType<typeof postLogout>>,
+  TError,
+  void,
+  TContext
+> => {
+  const mutationOptions = getPostLogoutMutationOptions(options);
+
+  return useMutation(mutationOptions, queryClient);
+};
+
 /**
  * Get profile
  */

@@ -23,8 +23,9 @@ import {
   SidebarMenuItem,
   useSidebar,
 } from '@/components/ui/sidebar'
+import { useLogout } from '@/http/generated/api'
 import type { GetProfile200User } from '@/http/generated/model'
-import { removeAuthToken } from '@/lib/auth'
+import { useAuthStore } from '@/stores/auth'
 
 interface NavUserProps {
   user: GetProfile200User
@@ -33,9 +34,12 @@ interface NavUserProps {
 export function NavUser({ user }: NavUserProps) {
   const { isMobile } = useSidebar()
   const navigate = useNavigate()
+  const logout = useAuthStore(s => s.logout)
+  const { mutateAsync: logoutRequest } = useLogout()
 
-  const handleLogout = () => {
-    removeAuthToken()
+  const handleLogout = async () => {
+    await logoutRequest()
+    logout()
     navigate({ to: '/sign-in' })
   }
 
