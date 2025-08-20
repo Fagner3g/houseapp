@@ -2,7 +2,7 @@ import { jwtVerify, SignJWT } from 'jose'
 
 import { env } from '@/config/env'
 
-const secret = new TextEncoder().encode(env.JWT_SECRETT)
+const secret = new TextEncoder().encode(env.JWT_SECRET)
 
 export async function VerifyToken(token: string) {
   const { payload } = await jwtVerify(token, secret)

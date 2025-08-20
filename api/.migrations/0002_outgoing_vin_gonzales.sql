@@ -1,1 +1,0 @@
-ALTER TABLE "tags" ADD COLUMN "color" text NOT NULL;
