@@ -32,7 +32,7 @@ import { DescriptionField } from './description-field'
 import { CalendarField } from './due-date-field'
 import { RecurrenceField } from './is-recurring-filed'
 import { PayToField } from './pay-to-field'
-import { RecurrenceIntervalField } from './recurrence-interval-field'
+import { InstallmentsTotalField } from './installments-total-field'
 import { RecurrenceSelectorField } from './recurrence-selector-field'
 import { RecurrenceTypeField } from './recurrence-type-field'
 import { RecurrenceUntilField } from './recurrence-until-field'
@@ -100,6 +100,7 @@ export function ModalNewTransaction() {
   const isExpense = form.watch('type') === RegisterType.EXPENSE
   const isRecurring = form.watch('isRecurring')
   const mode = form.getValues('recurrenceSelector')
+  const dueDate = form.watch('dueDate')
 
   useEffect(() => {
     if (!isRecurring) return
@@ -108,16 +109,25 @@ export function ModalNewTransaction() {
     queueMicrotask(() => {
       form.setValue('recurrenceType', 'monthly', { shouldValidate: true, shouldTouch: true })
       form.setValue('recurrenceSelector', 'repeat', { shouldValidate: true, shouldTouch: true })
+      form.setValue('recurrenceInterval', 1, { shouldValidate: true, shouldTouch: true })
     })
   }, [isRecurring, form])
 
   useEffect(() => {
-    // inicializa intervalo padrão se vazio
+    if (!isRecurring) return
+
+    queueMicrotask(() => {
+      form.setValue('recurrenceStart', dueDate, { shouldValidate: true, shouldTouch: true })
+    })
+  }, [isRecurring, dueDate, form])
+
+  useEffect(() => {
+    // inicializa valores padrão se vazio
     queueMicrotask(() => {
       if (mode === 'repeat') {
-        form.setValue('recurrenceInterval', 1, { shouldValidate: true, shouldTouch: true })
+        form.setValue('installmentsTotal', 1, { shouldValidate: true, shouldTouch: true })
       } else {
-        form.setValue('recurrenceInterval', undefined, { shouldValidate: true, shouldTouch: true })
+        form.setValue('installmentsTotal', undefined, { shouldValidate: true, shouldTouch: true })
       }
     })
   }, [form, mode])
@@ -168,7 +178,7 @@ export function ModalNewTransaction() {
                 {form.watch('recurrenceSelector') === 'date' ? (
                   <RecurrenceUntilField form={form} />
                 ) : (
-                  <RecurrenceIntervalField form={form} />
+                  <InstallmentsTotalField form={form} />
                 )}
               </div>
             )}

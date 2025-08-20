@@ -5,6 +5,7 @@ import { getTransactionController } from '../controllers/transaction/get-transac
 import { listTransactionsController } from '../controllers/transaction/list-transactions.controller'
 import { deleteTransactionsController } from '../controllers/transaction/delete-transactions.controller'
 import { updateTransactionController } from '../controllers/transaction/update-transaction.controller'
+import { payTransactionController } from '../controllers/transaction/pay-transaction.controller'
 import { authenticateUserHook } from '../hooks/authenticate-user'
 import { verifyOrgAccessHook } from '../hooks/verify-user-belongs-to-org'
 import { createTransactionsSchema } from '../schemas/transaction/create-transaction.schema'
@@ -12,6 +13,7 @@ import { getTransactionSchema } from '../schemas/transaction/get-transactions.sc
 import { listTransactionSchema } from '../schemas/transaction/list-transactions.schema'
 import { deleteTransactionsSchema } from '../schemas/transaction/delete-transactions.schema'
 import { updateTransactionSchema } from '../schemas/transaction/update-transaction.schema'
+import { payTransactionSchema } from '../schemas/transaction/pay-transaction.schema'
 
 export const createTransactionRoute: FastifyPluginAsyncZod = async app => {
   app.post('/org/:slug/transaction', {
@@ -55,5 +57,14 @@ export const updateTransactionRoute: FastifyPluginAsyncZod = async app => {
     preHandler: [verifyOrgAccessHook],
     schema: updateTransactionSchema,
     handler: updateTransactionController,
+  })
+}
+
+export const payTransactionRoute: FastifyPluginAsyncZod = async app => {
+  app.patch('/org/:slug/transaction/:id/pay', {
+    onRequest: [authenticateUserHook],
+    preHandler: [verifyOrgAccessHook],
+    schema: payTransactionSchema,
+    handler: payTransactionController,
   })
 }

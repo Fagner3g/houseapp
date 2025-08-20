@@ -5,6 +5,7 @@ import type {
   ListTransactionSchemaParams,
   ListTransactionSchemaQuery,
 } from '@/http/schemas/transaction/list-transactions.schema'
+import { runAllOwnersNow } from '@/jobs/transactions'
 
 type Req = FastifyRequest<{
   Params: ListTransactionSchemaParams
@@ -35,6 +36,8 @@ export async function listTransactionsController(request: Req, reply: FastifyRep
     page,
     perPage,
   })
+
+  await runAllOwnersNow()
 
   return reply.status(200).send({
     transactions,

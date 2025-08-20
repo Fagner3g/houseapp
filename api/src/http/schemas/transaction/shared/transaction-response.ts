@@ -15,9 +15,12 @@ export const transactionResponseSchema = z.object({
   overdueDays: z.number(),
   isRecurring: z.boolean(),
   recurrenceSelector: z.enum(['date', 'repeat']).optional(),
-  recurrenceType: z.enum(['weekly', 'monthly', 'yearly']).optional(),
+  recurrenceType: z.enum(['weekly', 'monthly', 'yearly', 'custom']).optional(),
   recurrenceUntil: z.coerce.date().optional(),
   recurrenceInterval: z.coerce.number().int().optional(),
+  recurrenceStart: z.coerce.date().optional(),
+  installmentsTotal: z.coerce.number().int().nullable().optional(),
+  installmentsPaid: z.coerce.number().int().optional(),
   tags: z.array(z.object({ name: z.string(), color: z.string() })),
 })
 

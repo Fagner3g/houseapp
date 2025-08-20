@@ -14,4 +14,5 @@ export const GetTransactionById200TransactionRecurrenceType = {
   weekly: "weekly",
   monthly: "monthly",
   yearly: "yearly",
+  custom: "custom",
 } as const;

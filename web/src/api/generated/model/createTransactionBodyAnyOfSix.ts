@@ -27,4 +27,7 @@ export type CreateTransactionBodyAnyOfSix = {
   recurrenceType?: unknown;
   recurrenceUntil?: unknown;
   recurrenceInterval?: unknown;
+  recurrenceStart?: unknown;
+  installmentsTotal?: unknown;
+  installmentsPaid?: unknown;
 };

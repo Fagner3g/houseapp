@@ -26,6 +26,9 @@ export async function createTransactionService({
   recurrenceInterval,
   recurrenceType,
   recurrenceUntil,
+  recurrenceStart,
+  installmentsTotal,
+  installmentsPaid = 0,
 }: CreateTransaction) {
   const result = await db
     .insert(transactions)
@@ -42,6 +45,9 @@ export async function createTransactionService({
       recurrenceInterval,
       recurrenceType,
       recurrenceUntil,
+      recurrenceStart,
+      installmentsTotal,
+      installmentsPaid,
     })
     .returning()
 

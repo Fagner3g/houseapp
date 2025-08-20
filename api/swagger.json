@@ -980,11 +980,23 @@
                         "enum": [
                           "weekly",
                           "monthly",
-                          "yearly"
+                          "yearly",
+                          "custom"
                         ]
                       },
                       "recurrenceUntil": {},
                       "recurrenceInterval": {
+                        "type": "integer",
+                        "minimum": -9007199254740991,
+                        "maximum": 9007199254740991
+                      },
+                      "recurrenceStart": {},
+                      "installmentsTotal": {
+                        "type": "integer",
+                        "minimum": -9007199254740991,
+                        "maximum": 9007199254740991
+                      },
+                      "installmentsPaid": {
                         "type": "integer",
                         "minimum": -9007199254740991,
                         "maximum": 9007199254740991
@@ -1059,7 +1071,10 @@
                       "recurrenceSelector": {},
                       "recurrenceType": {},
                       "recurrenceUntil": {},
-                      "recurrenceInterval": {}
+                      "recurrenceInterval": {},
+                      "recurrenceStart": {},
+                      "installmentsTotal": {},
+                      "installmentsPaid": {}
                     },
                     "required": [
                       "type",
@@ -1192,7 +1207,8 @@
                           "enum": [
                             "weekly",
                             "monthly",
-                            "yearly"
+                            "yearly",
+                            "custom"
                           ]
                         },
                         "recurrenceUntil": {
@@ -1200,6 +1216,19 @@
                           "format": "date-time"
                         },
                         "recurrenceInterval": {
+                          "type": "integer",
+                          "minimum": -9007199254740991,
+                          "maximum": 9007199254740991
+                        },
+                        "recurrenceStart": {
+                          "type": "string",
+                          "format": "date-time"
+                        },
+                        "installmentsTotal": {
+                          "type": "integer",
+                          "nullable": true
+                        },
+                        "installmentsPaid": {
                           "type": "integer",
                           "minimum": -9007199254740991,
                           "maximum": 9007199254740991
@@ -1331,11 +1360,23 @@
                         "enum": [
                           "weekly",
                           "monthly",
-                          "yearly"
+                          "yearly",
+                          "custom"
                         ]
                       },
                       "recurrenceUntil": {},
                       "recurrenceInterval": {
+                        "type": "integer",
+                        "minimum": -9007199254740991,
+                        "maximum": 9007199254740991
+                      },
+                      "recurrenceStart": {},
+                      "installmentsTotal": {
+                        "type": "integer",
+                        "minimum": -9007199254740991,
+                        "maximum": 9007199254740991
+                      },
+                      "installmentsPaid": {
                         "type": "integer",
                         "minimum": -9007199254740991,
                         "maximum": 9007199254740991
@@ -1410,7 +1451,10 @@
                       "recurrenceSelector": {},
                       "recurrenceType": {},
                       "recurrenceUntil": {},
-                      "recurrenceInterval": {}
+                      "recurrenceInterval": {},
+                      "recurrenceStart": {},
+                      "installmentsTotal": {},
+                      "installmentsPaid": {}
                     },
                     "required": [
                       "type",
@@ -1622,7 +1666,8 @@
                             "enum": [
                               "weekly",
                               "monthly",
-                              "yearly"
+                              "yearly",
+                              "custom"
                             ]
                           },
                           "recurrenceUntil": {
@@ -1630,6 +1675,19 @@
                             "format": "date-time"
                           },
                           "recurrenceInterval": {
+                            "type": "integer",
+                            "minimum": -9007199254740991,
+                            "maximum": 9007199254740991
+                          },
+                          "recurrenceStart": {
+                            "type": "string",
+                            "format": "date-time"
+                          },
+                          "installmentsTotal": {
+                            "type": "integer",
+                            "nullable": true
+                          },
+                          "installmentsPaid": {
                             "type": "integer",
                             "minimum": -9007199254740991,
                             "maximum": 9007199254740991
@@ -1744,6 +1802,66 @@
         ],
         "responses": {
           "200": {
+            "description": "Default Response"
+          }
+        }
+      }
+    },
+    "/org/{slug}/transaction/{id}/pay": {
+      "patch": {
+        "operationId": "payTransaction",
+        "tags": [
+          "Transaction"
+        ],
+        "description": "Mark current installment as paid",
+        "parameters": [
+          {
+            "schema": {
+              "type": "string"
+            },
+            "in": "path",
+            "name": "slug",
+            "required": true
+          },
+          {
+            "schema": {
+              "type": "string"
+            },
+            "in": "path",
+            "name": "id",
+            "required": true
+          }
+        ],
+        "responses": {
+          "204": {
+            "description": "Default Response"
+          }
+        }
+      }
+    },
+    "/reports/transactions/run": {
+      "post": {
+        "operationId": "runMyTransactionsReport",
+        "tags": [
+          "Reports"
+        ],
+        "description": "Trigger transactions report for authenticated user",
+        "responses": {
+          "202": {
+            "description": "Default Response"
+          }
+        }
+      }
+    },
+    "/reports/transactions/run-all-owners": {
+      "post": {
+        "operationId": "runAllOwnersTransactionsReport",
+        "tags": [
+          "Reports"
+        ],
+        "description": "Trigger transactions report for all owners",
+        "responses": {
+          "202": {
             "description": "Default Response"
           }
         }

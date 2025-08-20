@@ -17,11 +17,14 @@ const recurring = base.extend({
   recurrenceSelector: z.enum(['date', 'repeat'], {
     error: 'Selecione um tipo de recorrência',
   }),
-  recurrenceType: z.enum(['weekly', 'monthly', 'yearly'], {
+  recurrenceType: z.enum(['weekly', 'monthly', 'yearly', 'custom'], {
     error: 'Selecione uma recorrência',
   }),
   recurrenceUntil: z.coerce.date().optional(),
   recurrenceInterval: z.coerce.number().int().optional(),
+  recurrenceStart: z.coerce.date().optional(),
+  installmentsTotal: z.coerce.number().int().optional(),
+  installmentsPaid: z.coerce.number().int().optional(),
 })
 
 const nonRecurring = base.extend({
@@ -30,6 +33,9 @@ const nonRecurring = base.extend({
   recurrenceType: z.undefined(),
   recurrenceUntil: z.undefined(),
   recurrenceInterval: z.undefined(),
+  recurrenceStart: z.undefined(),
+  installmentsTotal: z.undefined(),
+  installmentsPaid: z.undefined(),
 })
 
 const _schema = z.discriminatedUnion('isRecurring', [recurring, nonRecurring])
@@ -61,6 +67,33 @@ export const newTransactionSchema = _schema.superRefine((v, ctx) => {
         code: 'custom',
         path: ['recurrenceUntil'],
         message: 'A data final deve ser posterior ao vencimento e à data atual',
+      })
+    }
+  }
+
+  const interval = v.recurrenceInterval ?? 1
+  if (interval < 1) {
+    ctx.addIssue({
+      code: 'custom',
+      path: ['recurrenceInterval'],
+      message: 'O intervalo deve ser no mínimo 1',
+    })
+  }
+
+  if (!v.recurrenceUntil && !v.installmentsTotal) {
+    ctx.addIssue({
+      code: 'custom',
+      path: ['recurrenceUntil'],
+      message: 'Informe uma data final ou total de parcelas',
+    })
+  }
+
+  if (v.installmentsTotal != null && v.installmentsPaid != null) {
+    if (v.installmentsPaid > v.installmentsTotal) {
+      ctx.addIssue({
+        code: 'custom',
+        path: ['installmentsPaid'],
+        message: 'Parcelas pagas não podem exceder o total',
       })
     }
   }
