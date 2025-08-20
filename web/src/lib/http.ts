@@ -37,6 +37,7 @@ export async function http<T>(path: string, optinos: RequestInit): Promise<T> {
   if (!response.ok) {
     if (response.status === 401) {
       useAuthStore.getState().logout()
+      return Promise.reject(response)
     }
 
     if (response.status === 400) {

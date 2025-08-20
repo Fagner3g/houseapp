@@ -1,6 +1,6 @@
 import Cookies from 'universal-cookie'
 
-const TOKEN_KEY = 'houseapp:token'
+const TOKEN_KEY = 'houseapp'
 
 export function setAuthToken(token: string, days = 1) {
   const cookies = new Cookies()

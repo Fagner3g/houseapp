@@ -3,9 +3,8 @@ import { useEffect, useState } from 'react'
 import { toast } from 'sonner'
 import z from 'zod'
 
+import { useAcceptInvite, useGetInvite } from '@/api/generated/api'
 import { Button } from '@/components/ui/button'
-import { useAcceptInvite } from '@/api/generated/api'
-import { getInvite } from '@/lib/invite'
 import { getAuthToken } from '@/lib/auth'
 
 export const Route = createFileRoute('/_auth/invite')({
@@ -20,19 +19,6 @@ function InvitePage() {
   const [slug, setSlug] = useState('')
   const authToken = getAuthToken()
   const { mutateAsync: acceptInvite } = useAcceptInvite()
-
-  useEffect(() => {
-    if (!token) return
-    getInvite(token).then(res => {
-      if (res.invite) {
-        setEmail(res.invite.email)
-        setSlug(res.invite.organizationSlug)
-      } else {
-        toast.error('Convite inválido')
-      }
-    })
-  }, [token])
-
   useEffect(() => {
     if (authToken && token && slug) {
       acceptInvite({ slug, token })

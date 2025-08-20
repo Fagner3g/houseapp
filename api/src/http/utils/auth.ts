@@ -14,6 +14,9 @@ export function isTokenRevoked(token: string) {
 }
 
 export async function VerifyToken(token: string) {
+  if (isTokenRevoked(token)) {
+    throw new Error('Token revoked')
+  }
   const { payload } = await jwtVerify(token, secret)
 
   return payload

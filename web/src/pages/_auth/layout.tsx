@@ -1,15 +1,7 @@
-import { createFileRoute, Outlet, redirect } from '@tanstack/react-router'
-
-import { getAuthToken } from '@/lib/auth'
+import { createFileRoute, Outlet } from '@tanstack/react-router'
 
 export const Route = createFileRoute('/_auth')({
   component: RouteComponent,
-  beforeLoad: async () => {
-    const token = getAuthToken()
-    if (token) {
-      throw redirect({ to: '/$org/goals', params: { org: 'my-house' } })
-    }
-  },
 })
 
 function RouteComponent() {
