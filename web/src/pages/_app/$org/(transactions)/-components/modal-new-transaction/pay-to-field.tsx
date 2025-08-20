@@ -14,7 +14,7 @@ import {
 import { FormControl, FormField, FormItem, FormLabel } from '@/components/ui/form'
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover'
 import { Separator } from '@/components/ui/separator'
-import type { ListUsersByOrg200 } from '@/http/generated/model'
+import type { ListUsersByOrg200 } from '@/api/generated/model'
 import { cn } from '@/lib/utils'
 import { ModalNewUser } from '../../../../../../components/modal-new-user'
 import type { NewTransactionSchema } from './schema'

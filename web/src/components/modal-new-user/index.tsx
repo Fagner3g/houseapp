@@ -21,7 +21,7 @@ import {
 import { Form, FormControl, FormField, FormItem, FormLabel } from '@/components/ui/form'
 import { Input } from '@/components/ui/input'
 import { useActiveOrganization } from '@/hooks/use-active-organization'
-import { getListUsersByOrgQueryKey, useCreateUserWithInvite } from '@/http/generated/api'
+import { getListUsersByOrgQueryKey, useCreateUserWithInvite } from '@/api/generated/api'
 import { schemaSignUp } from '@/pages/_auth/sign-up'
 
 export type FormValues = z.infer<typeof schemaSignUp>

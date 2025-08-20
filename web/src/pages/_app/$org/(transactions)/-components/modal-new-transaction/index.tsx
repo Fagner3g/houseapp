@@ -20,12 +20,12 @@ import {
   getListTransactionsQueryKey,
   useCreateTransaction,
   useListUsersByOrg,
-} from '@/http/generated/api'
+} from '@/api/generated/api'
 import type {
   CreateTransactionBody,
   ListTransactions200,
   ListTransactions200TransactionsItem,
-} from '@/http/generated/model'
+} from '@/api/generated/model'
 import { showToastOnErrorSubmit } from '@/lib/utils'
 import { AmountField } from './amount-field'
 import { DescriptionField } from './description-field'

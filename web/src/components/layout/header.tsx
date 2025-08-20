@@ -9,7 +9,7 @@ import { Separator } from '@/components/ui/separator'
 import { SidebarTrigger } from '@/components/ui/sidebar'
 import { useActiveOrganization } from '@/hooks/use-active-organization'
 import { useSidebar } from '@/hooks/use-sidebar'
-import { useGetInvite } from '@/http/generated/api'
+import { useGetInvite } from '@/api/generated/api'
 import { ModeToggle } from '../mode-toggle'
 import { Button } from '../ui/button'
 

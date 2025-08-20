@@ -16,7 +16,7 @@ import {
   useSidebar,
 } from '@/components/ui/sidebar'
 import { useActiveOrganization } from '@/hooks/use-active-organization'
-import { useListOrganizations } from '@/http/generated/api'
+import { useListOrganizations } from '@/api/generated/api'
 
 export function TeamSwitcher() {
   const { isMobile } = useSidebar()

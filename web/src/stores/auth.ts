@@ -2,7 +2,7 @@ import { redirect } from '@tanstack/react-router'
 import { create } from 'zustand'
 import { persist } from 'zustand/middleware'
 
-import type { GetProfile200User } from '@/http/generated/model'
+import type { GetProfile200User } from '@/api/generated/model'
 import { removeAuthToken } from '@/lib/auth'
 
 type Status = 'idle' | 'loading' | 'authed' | 'error'

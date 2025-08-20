@@ -13,7 +13,7 @@ import {
   AlertDialogTrigger,
 } from '@/components/ui/alert-dialog'
 import { DropdownMenuItem } from '@/components/ui/dropdown-menu'
-import type { ListTransactions200TransactionsItem } from '@/http/generated/model'
+import type { ListTransactions200TransactionsItem } from '@/api/generated/model'
 
 interface Props {
   id: string

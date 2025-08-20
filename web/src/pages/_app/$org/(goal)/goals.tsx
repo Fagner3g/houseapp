@@ -5,7 +5,7 @@ import { CreateGoal } from '@/components/create-goal'
 import { EmptyGoals } from '@/components/empty-goals'
 import { Dialog } from '@/components/ui/dialog'
 import { useActiveOrganization } from '@/hooks/use-active-organization'
-import { useGetWeekSummary } from '@/http/generated/api'
+import { useGetWeekSummary } from '@/api/generated/api'
 import { WeeklySummary } from './-components/weekly-summary'
 
 export const Route = createFileRoute('/_app/$org/(goal)/goals')({

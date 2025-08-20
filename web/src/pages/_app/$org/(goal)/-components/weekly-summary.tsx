@@ -6,7 +6,7 @@ import { Button } from '@/components/ui/button'
 import { DialogTrigger } from '@/components/ui/dialog'
 import { Progress, ProgressIndicator } from '@/components/ui/progress-bar'
 import { Separator } from '@/components/ui/separator'
-import type { GetWeekSummary200Summary } from '@/http/generated/api'
+import type { GetWeekSummary200Summary } from '@/api/generated/api'
 import { PendingGoals } from './pending-goals'
 
 dayjs.locale(ptBR)

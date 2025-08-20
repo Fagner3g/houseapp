@@ -3,6 +3,8 @@ import dayjs from 'dayjs'
 import { useEffect } from 'react'
 import { useForm } from 'react-hook-form'
 import { z } from 'zod'
+import { useQueryClient } from '@tanstack/react-query'
+import { toast } from 'sonner'
 
 import { Button } from '@/components/ui/button'
 import {
@@ -22,8 +24,8 @@ import {
   SelectValue,
 } from '@/components/ui/select'
 import { useActiveOrganization } from '@/hooks/use-active-organization'
-import type { ListTransactions200TransactionsItem } from '@/http/generated/model'
-import { useUpdateTransaction } from '@/http/transactions'
+import type { ListTransactions200TransactionsItem, ListTransactions200 } from '@/api/generated/model'
+import { getListTransactionsQueryKey, useUpdateTransaction } from '@/api/generated/api'
 import { showToastOnErrorSubmit } from '@/lib/utils'
 
 const editTransactionSchema = z.object({
@@ -45,7 +47,47 @@ interface Props {
 
 export function DrawerEdit({ transaction, open, onOpenChange }: Props) {
   const { slug } = useActiveOrganization()
-  const { mutate: updateTransaction } = useUpdateTransaction(slug)
+  const queryClient = useQueryClient()
+  const { mutate: updateTransaction } = useUpdateTransaction({
+    mutation: {
+      onMutate: async ({ slug, id, data }) => {
+        await queryClient.cancelQueries({
+          queryKey: getListTransactionsQueryKey(slug),
+        })
+        const previous = queryClient.getQueryData<ListTransactions200>(
+          getListTransactionsQueryKey(slug),
+        )
+        queryClient.setQueryData<ListTransactions200>(
+          getListTransactionsQueryKey(slug),
+          old => ({
+            ...(old ?? { transactions: [] }),
+            transactions:
+              old?.transactions.map(t => (t.id === id ? { ...t, ...data } : t)) ?? [],
+          }),
+        )
+        return { previous, slug }
+      },
+      onError: (_err, _vars, ctx) => {
+        if (ctx?.previous) {
+          queryClient.setQueryData(
+            getListTransactionsQueryKey(ctx.slug),
+            ctx.previous,
+          )
+        }
+        toast.error('Erro ao atualizar transação')
+      },
+      onSuccess: () => {
+        toast.success('Transação atualizada!')
+      },
+      onSettled: (_data, _err, _vars, ctx) => {
+        if (ctx) {
+          queryClient.invalidateQueries({
+            queryKey: getListTransactionsQueryKey(ctx.slug),
+          })
+        }
+      },
+    },
+  })
 
   const form = useForm<EditTransactionSchema>({
     resolver: zodResolver(editTransactionSchema),
@@ -67,7 +109,7 @@ export function DrawerEdit({ transaction, open, onOpenChange }: Props) {
 
   function handleSubmit(data: EditTransactionSchema) {
     if (!transaction) return
-    updateTransaction({ id: transaction.id, data })
+    updateTransaction({ slug, id: transaction.id, data })
     onOpenChange(false)
   }
 

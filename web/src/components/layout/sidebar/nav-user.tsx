@@ -7,6 +7,8 @@ import {
 } from '@tabler/icons-react'
 import { useNavigate } from '@tanstack/react-router'
 
+import { useLogout } from '@/api/generated/api'
+import type { GetProfile200User } from '@/api/generated/model'
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar'
 import {
   DropdownMenu,
@@ -23,8 +25,6 @@ import {
   SidebarMenuItem,
   useSidebar,
 } from '@/components/ui/sidebar'
-import { useLogout } from '@/http/generated/api'
-import type { GetProfile200User } from '@/http/generated/model'
 import { useAuthStore } from '@/stores/auth'
 
 interface NavUserProps {

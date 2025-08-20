@@ -4,8 +4,8 @@ import { toast } from 'sonner'
 import z from 'zod'
 
 import { Button } from '@/components/ui/button'
-import { useAcceptInvite } from '@/http/generated/api'
-import { getInvite } from '@/http/invite'
+import { useAcceptInvite } from '@/api/generated/api'
+import { getInvite } from '@/lib/invite'
 import { getAuthToken } from '@/lib/auth'
 
 export const Route = createFileRoute('/_auth/invite')({

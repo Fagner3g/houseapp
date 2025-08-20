@@ -17,7 +17,7 @@ import {
   TableRow,
 } from '@/components/ui/table'
 import { useActiveOrganization } from '@/hooks/use-active-organization'
-import { useCreateInvite, useListUsersByOrg } from '@/http/generated/api'
+import { useCreateInvite, useListUsersByOrg } from '@/api/generated/api'
 
 const createInviteSchema = z.object({ email: z.email('E-mail inválido') })
 
