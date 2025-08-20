@@ -14,4 +14,5 @@ export const UpdateTransactionBodyAnyOfRecurrenceType = {
   weekly: "weekly",
   monthly: "monthly",
   yearly: "yearly",
+  custom: "custom",
 } as const;

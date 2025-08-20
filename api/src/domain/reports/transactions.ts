@@ -5,12 +5,8 @@ import { db } from '@/db'
 import { transactions } from '@/db/schemas/transactions'
 import { users } from '@/db/schemas/users'
 import { logger } from '@/http/utils/logger'
+import { humanizeInterval, occurrencesBetween, type RecurrenceType } from '../recurrence/utils'
 import { sendWhatsAppMessage } from '../whatsapp'
-import {
-  occurrencesBetween,
-  humanizeInterval,
-  RecurrenceType,
-} from '../recurrence/utils'
 
 interface SimplifiedTransaction {
   client: string
@@ -155,29 +151,37 @@ export function generateReport(rows: Row[], userId: string): { phone: string; me
         status = '⏰ Prestes a vencer'
         dias = Math.ceil((+trx.dueDate - +now) / (1000 * 60 * 60 * 24))
       }
+    } else {
+      status = '✅ Pago'
+      dias = undefined
     }
 
-      const line = { name: trx.name, valueNum, valueStr, dueDateStr, status, dias } as const
-      ;(line as any).recurrenceLabel = (() => {
-        if (!trx.isRecurring) return undefined
-        const type = trx.recurrenceType ?? 'monthly'
-        const interval = Math.max(1, trx.recurrenceInterval ?? 1)
-        const start = trx.recurrenceStart ?? trx.dueDate
-        const totalPlanned =
-          trx.installmentsTotal ??
-          (trx.recurrenceUntil
-            ? occurrencesBetween(start, trx.recurrenceUntil, type, interval)
-            : null)
-        const paid = trx.installmentsPaid ?? 0
-        const expectedSoFar = occurrencesBetween(start, now, type, interval)
-        const overdueUnpaid = Math.max(0, expectedSoFar - paid)
-        const remaining = totalPlanned != null ? Math.max(0, totalPlanned - paid) : null
-        const intervalStr = humanizeInterval(type, interval)
-        let label = `🔁 Recorrente (a cada ${intervalStr}) — parcelas: pagas ${paid}`
-        if (totalPlanned != null) label += ` / faltam ${remaining} de ${totalPlanned}`
+    const line = { name: trx.name, valueNum, valueStr, dueDateStr, status, dias } as const
+    ;(line as any).recurrenceLabel = (() => {
+      if (!trx.isRecurring) return undefined
+      const type = trx.recurrenceType ?? 'monthly'
+      const interval = Math.max(1, trx.recurrenceInterval ?? 1)
+      const start = trx.recurrenceStart ?? trx.dueDate
+      const totalPlanned =
+        trx.installmentsTotal ??
+        (trx.recurrenceUntil
+          ? occurrencesBetween(start, trx.recurrenceUntil, type, interval)
+          : null)
+      const paid = trx.installmentsPaid ?? 0
+      const expectedSoFar = occurrencesBetween(start, now, type, interval)
+      const overdueUnpaid = Math.max(0, expectedSoFar - paid)
+      const remaining = totalPlanned != null ? Math.max(0, totalPlanned - paid) : null
+      const intervalStr = humanizeInterval(type, interval)
+      const indent = '      '
+      let label = `${indent}• \`Recorrente:\` a cada ${intervalStr}\n`
+      label += `${indent}• \`Parcelas pagas:\` ${paid}\n`
+      if (totalPlanned != null) {
+        label += `${indent}• \`Faltam pagar:\` ${remaining} de ${totalPlanned}`
         if (overdueUnpaid > 0) label += ` (em atraso ${overdueUnpaid})`
-        return label
-      })()
+        label += `\n`
+      }
+      return label
+    })()
 
     if (trx.type === 'expense') {
       bucket.pagar.push(line)
@@ -202,12 +206,27 @@ export function generateReport(rows: Row[], userId: string): { phone: string; me
       message += '━━━━━━━━━━━━━━━━━━━━\n'
       message += '🟢 *Contas a Receber*\n\n'
       for (const item of receber) {
-        message += `📄 *${item.name}*\n`
-        message += `      • *Valor:* ${item.valueStr}\n`
-        message += `      • *Vencimento:* ${item.dueDateStr}\n`
-        if (item.status) message += `      • ${item.status} (${item.dias} dia(s))\n`
+        let icon = '📄'
+        if (item.status) {
+          if (item.status.startsWith('❌')) icon = '❌'
+          else if (item.status.startsWith('⏰')) icon = '⏰'
+          else if (item.status.startsWith('✅')) icon = '✅'
+          else if (item.status.startsWith('📅')) icon = '📅'
+        }
+        message += `${icon} *${item.name}*\n`
+        message += `      • \`Valor:\` *${item.valueStr}*\n`
+        message += `      • \`Vencimento:\` ${item.dueDateStr}\n`
+        if (item.status) {
+          const statusText = item.status
+            .replace('❌ ', '')
+            .replace('⏰ ', '')
+            .replace('✅ ', '')
+            .replace('📅 ', '')
+          const diasText = typeof item.dias === 'number' ? ` (${item.dias} dia(s))` : ''
+          message += `      • \`Status:\` ${statusText}${diasText}\n`
+        }
         const rec = (item as any).recurrenceLabel as string | undefined
-        if (rec) message += `      • ${rec}\n`
+        if (rec) message += rec
         message += '\n'
       }
       message += `💸 *Total a receber:* ${fmtBRL.format(total.receber)}\n\n`
@@ -217,12 +236,27 @@ export function generateReport(rows: Row[], userId: string): { phone: string; me
       message += '━━━━━━━━━━━━━━━━━━━━\n'
       message += '🔴 *Contas a Pagar*\n\n'
       for (const item of pagar) {
-        message += `📄 *${item.name}*\n`
-        message += `      • *Valor:* ${item.valueStr}\n`
-        message += `      • *Vencimento:* ${item.dueDateStr}\n`
-        if (item.status) message += `      • ${item.status} (${item.dias} dia(s))\n`
+        let icon = '📄'
+        if (item.status) {
+          if (item.status.startsWith('❌')) icon = '❌'
+          else if (item.status.startsWith('⏰')) icon = '⏰'
+          else if (item.status.startsWith('✅')) icon = '✅'
+          else if (item.status.startsWith('📅')) icon = '📅'
+        }
+        message += `${icon} *${item.name}*\n`
+        message += `      • \`Valor:\` *${item.valueStr}*\n`
+        message += `      • \`Vencimento:\` ${item.dueDateStr}\n`
+        if (item.status) {
+          const statusText = item.status
+            .replace('❌ ', '')
+            .replace('⏰ ', '')
+            .replace('✅ ', '')
+            .replace('📅 ', '')
+          const diasText = typeof item.dias === 'number' ? ` (${item.dias} dia(s))` : ''
+          message += `      • \`Status:\` ${statusText}${diasText}\n`
+        }
         const rec = (item as any).recurrenceLabel as string | undefined
-        if (rec) message += `      • ${rec}\n`
+        if (rec) message += rec
         message += '\n'
       }
       message += `✅ *Total a pagar:* ${fmtBRL.format(total.pagar)}\n\n`

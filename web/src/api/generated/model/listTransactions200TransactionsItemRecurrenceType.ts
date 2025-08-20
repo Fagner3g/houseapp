@@ -14,4 +14,5 @@ export const ListTransactions200TransactionsItemRecurrenceType = {
   weekly: "weekly",
   monthly: "monthly",
   yearly: "yearly",
+  custom: "custom",
 } as const;
