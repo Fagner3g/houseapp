@@ -23,7 +23,7 @@ import {
   SidebarMenuItem,
   useSidebar,
 } from '@/components/ui/sidebar'
-import type { GetProfile200User } from '@/http/generated/model'
+import type { GetProfile200User } from '@/api/generated/model'
 import { removeAuthToken } from '@/lib/auth'
 
 interface NavUserProps {

@@ -1,4 +1,3 @@
-import { useQuery } from '@tanstack/react-query'
 import { XIcon } from 'lucide-react'
 import { useState } from 'react'
 import type { UseFormReturn } from 'react-hook-form'
@@ -8,14 +7,9 @@ import { Button } from '@/components/ui/button'
 import { FormControl, FormField, FormItem, FormLabel } from '@/components/ui/form'
 import { Input } from '@/components/ui/input'
 import { useActiveOrganization } from '@/hooks/use-active-organization'
-import { http } from '@/http/client'
+import { useListTags } from '@/api/generated/api'
+import type { ListTags200TagsItem } from '@/api/generated/model'
 import type { NewTransactionSchema } from './schema'
-
-interface Tag {
-  id: string
-  name: string
-  color: string
-}
 
 export interface TagFieldProps {
   form: UseFormReturn<NewTransactionSchema>
@@ -23,15 +17,8 @@ export interface TagFieldProps {
 
 export function TagField({ form }: TagFieldProps) {
   const { slug } = useActiveOrganization()
-  const { data: availableTags = [] } = useQuery({
-    queryKey: ['tags', slug],
-    queryFn: async () => {
-      const data = await http<{ tags: Tag[] }>(`/org/${slug}/tags`, {
-        method: 'GET',
-      })
-      return data.tags ?? []
-    },
-  })
+  const { data } = useListTags(slug)
+  const availableTags = (data?.tags ?? []) as ListTags200TagsItem[]
 
   const [newName, setNewName] = useState('')
   const [newColor, setNewColor] = useState('#000000')

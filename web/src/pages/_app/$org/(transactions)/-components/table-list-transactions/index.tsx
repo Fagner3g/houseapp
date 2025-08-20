@@ -1,4 +1,4 @@
-import type { ListTransactions200 } from '@/http/generated/model'
+import type { ListTransactions200 } from '@/api/generated/model'
 import { DrawerEdit } from './drawer-edit'
 import { Footer } from './footer'
 import { useTable } from './hook/use-table'

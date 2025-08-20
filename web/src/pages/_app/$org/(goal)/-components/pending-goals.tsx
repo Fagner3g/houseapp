@@ -8,7 +8,7 @@ import {
   getGetWeekSummaryQueryKey,
   useCompleteGoal,
   useGetPendingGoals,
-} from '@/http/generated/api'
+} from '@/api/generated/api'
 
 export function PendingGoals() {
   const { slug } = useActiveOrganization()

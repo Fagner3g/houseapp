@@ -1,7 +1,7 @@
 import { useNavigate } from '@tanstack/react-router'
 import { useEffect } from 'react'
 
-import { useGetProfile } from '@/http/generated/api'
+import { useGetProfile } from '@/api/generated/api'
 import { getAuthToken } from '@/lib/auth'
 import { useAuthStore } from '@/stores/auth'
 

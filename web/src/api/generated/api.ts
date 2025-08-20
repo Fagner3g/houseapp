@@ -53,7 +53,7 @@ import type {
   ValidateTokenBody,
 } from "./model";
 
-import { http } from "../client";
+import { http } from "../../lib/http";
 
 type SecondParameter<T extends (...args: never) => unknown> = Parameters<T>[1];
 

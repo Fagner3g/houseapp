@@ -6,7 +6,7 @@ import { z } from 'zod'
 
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
-import { useSignUp } from '@/http/generated/api'
+import { useSignUp } from '@/api/generated/api'
 
 export const Route = createFileRoute('/_auth/sign-up')({
   component: Index,

@@ -10,7 +10,7 @@ import {
   getGetPendingGoalsQueryKey,
   getGetWeekSummaryQueryKey,
   useCreateGoal,
-} from '@/http/generated/api'
+} from '@/api/generated/api'
 import { Button } from './ui/button'
 import { DialogClose, DialogContent, DialogDescription, DialogTitle } from './ui/dialog'
 import { Input } from './ui/input'

@@ -17,6 +17,7 @@ import {
   useReactTable,
   type VisibilityState,
 } from '@tanstack/react-table'
+import { useQueryClient } from '@tanstack/react-query'
 import dayjs from 'dayjs'
 import { AlertOctagon, LucideClockFading, TrendingDown, TrendingUp } from 'lucide-react'
 import { useState } from 'react'
@@ -33,14 +34,22 @@ import {
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu'
 import { Label } from '@/components/ui/label'
-import type { ListTransactions200TransactionsItem } from '@/http/generated/model'
+import {
+  getListTransactionsQueryKey,
+  useDeleteTransactions,
+} from '@/api/generated/api'
+import type {
+  ListTransactions200,
+  ListTransactions200TransactionsItem,
+} from '@/api/generated/model'
 import { useActiveOrganization } from '@/hooks/use-active-organization'
-import { useDeleteTransactions } from '@/http/transactions'
 import { DeleteRowAction } from '../delete-row'
 
 export const useTable = (data: ListTransactions200TransactionsItem[]) => {
   const [rowSelection, setRowSelection] = useState({})
-  const [columnVisibility, setColumnVisibility] = useState<VisibilityState>({ Pagamento: false })
+  const [columnVisibility, setColumnVisibility] = useState<VisibilityState>({
+    Pagamento: false,
+  })
   const [columnFilters, setColumnFilters] = useState<ColumnFiltersState>([])
   const [sorting, setSorting] = useState<SortingState>([])
   const [pagination, setPagination] = useState({
@@ -49,7 +58,47 @@ export const useTable = (data: ListTransactions200TransactionsItem[]) => {
   })
   const [editing, setEditing] = useState<ListTransactions200TransactionsItem | null>(null)
   const { slug } = useActiveOrganization()
-  const { mutate: deleteTransactions } = useDeleteTransactions(slug)
+  const queryClient = useQueryClient()
+  const { mutate: deleteTransactions } = useDeleteTransactions({
+    mutation: {
+      onMutate: async ({ slug, data }) => {
+        await queryClient.cancelQueries({
+          queryKey: getListTransactionsQueryKey(slug),
+        })
+        const previous = queryClient.getQueryData<ListTransactions200>(
+          getListTransactionsQueryKey(slug),
+        )
+        queryClient.setQueryData<ListTransactions200>(
+          getListTransactionsQueryKey(slug),
+          old => ({
+            ...(old ?? { transactions: [] }),
+            transactions:
+              old?.transactions.filter(t => !data.ids.includes(t.id)) ?? [],
+          }),
+        )
+        return { previous, slug }
+      },
+      onError: (_err, _vars, ctx) => {
+        if (ctx?.previous) {
+          queryClient.setQueryData(
+            getListTransactionsQueryKey(ctx.slug),
+            ctx.previous,
+          )
+        }
+        toast.error('Erro ao excluir transações')
+      },
+      onSuccess: () => {
+        toast.success('Transações excluídas com sucesso!')
+      },
+      onSettled: (_data, _err, _vars, ctx) => {
+        if (ctx) {
+          queryClient.invalidateQueries({
+            queryKey: getListTransactionsQueryKey(ctx.slug),
+          })
+        }
+      },
+    },
+  })
 
   function copyLink(id: string) {
     const url = `${window.location.origin}/transactions?openId=${id}`
@@ -93,8 +142,12 @@ export const useTable = (data: ListTransactions200TransactionsItem[]) => {
       ),
       cell: ({ row }) => (
         <div>
-          {row.original.type === 'expense' && <TrendingUp className="text-green-500" />}
-          {row.original.type === 'income' && <TrendingDown className="text-red-600" />}
+          {row.original.type === 'expense' && (
+            <TrendingUp className="text-green-500" />
+          )}
+          {row.original.type === 'income' && (
+            <TrendingDown className="text-red-600" />
+          )}
         </div>
       ),
     },
@@ -120,34 +173,27 @@ export const useTable = (data: ListTransactions200TransactionsItem[]) => {
           {row.original.status === 'paid' && (
             <IconCircleCheckFilled className="fill-green-500 dark:fill-green-400" />
           )}
-          {row.original.status === 'overdue' && (
-            <>
-              <AlertOctagon className="text-red-600" />
-              <Label className="text-red-600 text-xs">
-                Vencida
-                {row.original.overdueDays > 0 && ` há ${row.original.overdueDays} dias`}
-              </Label>
-            </>
+          {row.original.status === 'open' && (
+            <AlertOctagon className="text-red-400" />
           )}
-          {row.original.status === 'scheduled' && (
-            <IconCalendarClock className="text-orange-500" />
-          )}
-          {row.original.status === undefined && (
-            <LucideClockFading className="animate-spin text-gray-500" />
+          {row.original.status === 'pending' && (
+            <LucideClockFading className="text-yellow-500" />
           )}
         </div>
       ),
     },
     {
-      accessorKey: 'Preço',
+      accessorKey: 'amount',
       header: 'Valor',
       cell: ({ row }) => (
-        <div>
-          <Label className="text-muted-foreground px-1.5">{row.original.amount.toFixed(2)}</Label>
-        </div>
+        <Label className="text-muted-foreground px-1.5">
+          {Number(row.original.amount).toLocaleString('pt-BR', {
+            style: 'currency',
+            currency: 'BRL',
+          })}
+        </Label>
       ),
     },
-
     {
       accessorKey: 'Vencimento',
       header: 'Vencimento',
@@ -164,7 +210,9 @@ export const useTable = (data: ListTransactions200TransactionsItem[]) => {
       cell: ({ row }) => {
         return (
           <Label className="text-muted-foreground px-1.5">
-            {row.original.paidAt ? dayjs(row.original.paidAt).format('DD/MM/YYYY') : ''}
+            {row.original.paidAt
+              ? dayjs(row.original.paidAt).format('DD/MM/YYYY')
+              : ''}
           </Label>
         )
       },
@@ -173,7 +221,9 @@ export const useTable = (data: ListTransactions200TransactionsItem[]) => {
       accessorKey: 'Para',
       header: 'Para',
       cell: ({ row }) => (
-        <Label className="text-muted-foreground px-1.5">{row.original.payTo}</Label>
+        <Label className="text-muted-foreground px-1.5">
+          {row.original.payTo}
+        </Label>
       ),
     },
     {
@@ -182,7 +232,11 @@ export const useTable = (data: ListTransactions200TransactionsItem[]) => {
       cell: ({ row }) => (
         <div className="flex flex-wrap gap-1 px-1.5">
           {row.original.tags?.map(tag => (
-            <Badge key={tag.name} style={{ backgroundColor: tag.color }} className="text-white">
+            <Badge
+              key={tag.name}
+              style={{ backgroundColor: tag.color }}
+              className="text-white"
+            >
               #{tag.name}
             </Badge>
           ))}
@@ -200,7 +254,6 @@ export const useTable = (data: ListTransactions200TransactionsItem[]) => {
         )
       },
     },
-
     {
       id: 'actions',
       cell: ({ row }) => (
@@ -216,12 +269,12 @@ export const useTable = (data: ListTransactions200TransactionsItem[]) => {
             </Button>
           </DropdownMenuTrigger>
           <DropdownMenuContent align="end" className="w-40">
-            <DropdownMenuItem onClick={() => row.table.options.meta?.editRow?.(row.original)}>
+            <DropdownMenuItem
+              onClick={() => row.table.options.meta?.editRow?.(row.original)}
+            >
               Editar
             </DropdownMenuItem>
-            <DropdownMenuItem
-              onClick={() => copyLink(row.original.id)}
-            >
+            <DropdownMenuItem onClick={() => copyLink(row.original.id)}>
               Duplicar
             </DropdownMenuItem>
             <DropdownMenuItem onClick={() => toast.success('Favoritado!')}>
@@ -263,7 +316,7 @@ export const useTable = (data: ListTransactions200TransactionsItem[]) => {
     getFacetedUniqueValues: getFacetedUniqueValues(),
     meta: {
       deleteRows: (ids: string[]) => {
-        deleteTransactions(ids)
+        deleteTransactions({ slug, data: { ids } })
       },
       editRow: (item: ListTransactions200TransactionsItem) => {
         setEditing(item)

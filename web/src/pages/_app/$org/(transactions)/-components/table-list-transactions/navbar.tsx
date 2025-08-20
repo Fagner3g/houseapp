@@ -8,7 +8,7 @@ import {
   DropdownMenuContent,
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu'
-import type { ListTransactions200TransactionsItem } from '@/http/generated/model'
+import type { ListTransactions200TransactionsItem } from '@/api/generated/model'
 import { ModalNewTransaction } from '../modal-new-transaction'
 import { DeleteSelected } from './delete-selected'
 import FilterTable from './filter'

@@ -9,7 +9,7 @@ import {
   TableHeader,
   TableRow,
 } from '@/components/ui/table'
-import type { ListTransactions200TransactionsItem } from '@/http/generated/model'
+import type { ListTransactions200TransactionsItem } from '@/api/generated/model'
 import { TabRowView } from './row'
 
 interface TableProps {

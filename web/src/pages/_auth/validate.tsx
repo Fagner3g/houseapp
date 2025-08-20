@@ -4,7 +4,7 @@ import { useEffect, useState } from 'react'
 import z from 'zod'
 
 import { Button } from '@/components/ui/button'
-import { useValidateToken } from '@/http/generated/api'
+import { useValidateToken } from '@/api/generated/api'
 import { setAuthToken } from '@/lib/auth'
 
 export const Route = createFileRoute('/_auth/validate')({

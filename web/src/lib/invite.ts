@@ -1,4 +1,4 @@
-import { http } from './client'
+import { http } from './http'
 
 export interface InviteResponse {
   invite: {

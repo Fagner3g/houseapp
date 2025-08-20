@@ -5,11 +5,11 @@ export default defineConfig({
     input: '../api/swagger.json',
     output: {
       mode: 'split',
-      target: './src/http/generated/api.ts',
+      target: './src/api/generated/api.ts',
       httpClient: 'fetch',
       client: 'react-query',
       clean: true,
-      schemas: './src/http/generated/model',
+      schemas: './src/api/generated/model',
       prettier: true,
 
       override: {
@@ -17,7 +17,7 @@ export default defineConfig({
           includeHttpResponseReturnType: false,
         },
         mutator: {
-          path: './src/http/client.ts',
+          path: './src/lib/http.ts',
           name: 'http',
         },
       },

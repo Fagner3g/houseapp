@@ -13,7 +13,7 @@ import {
   AlertDialogTitle,
   AlertDialogTrigger,
 } from '@/components/ui/alert-dialog'
-import type { ListTransactions200TransactionsItem } from '@/http/generated/model'
+import type { ListTransactions200TransactionsItem } from '@/api/generated/model'
 
 interface Props {
   table: Table<ListTransactions200TransactionsItem>
