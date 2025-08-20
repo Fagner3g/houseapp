@@ -1,0 +1,26 @@
+import { isNotNull } from 'drizzle-orm'
+
+import { db } from '@/db'
+import { transactions } from '@/db/schemas/transactions'
+import { logger } from '@/http/utils/logger'
+
+/**
+ * Busca todos os ownerIds distintos que tenham pelo menos 1 transação
+ */
+export async function getDistinctOwnerIds(): Promise<string[]> {
+  try {
+    // SELECT DISTINCT owner_id FROM transactions WHERE owner_id IS NOT NULL;
+    const rows = await db
+      .select({ ownerId: transactions.ownerId })
+      .from(transactions)
+      .where(isNotNull(transactions.ownerId))
+      .groupBy(transactions.ownerId) // drizzle usa groupBy p/ DISTINCT
+
+    const ids = rows.map(r => r.ownerId).filter((v): v is string => !!v)
+    logger.info({ count: ids.length }, '[reports] owners distintos encontrados')
+    return ids
+  } catch (err) {
+    logger.error({ err }, '[reports] erro ao obter owners distintos')
+    return []
+  }
+}

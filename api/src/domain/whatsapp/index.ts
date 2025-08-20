@@ -8,17 +8,14 @@ type SendWhatsRequest = {
 export async function sendWhatsAppMessage({
   phone,
   message,
-}: SendWhatsRequest): Promise<{ status: 'sent' | 'error'; error?: string }> {
+}: SendWhatsRequest): Promise<{ status: 'sent' | 'error'; phone?: string; error?: string }> {
   const BASE_URL = process.env.EVOLUTION_BASE_URL
   const INSTANCE = process.env.EVOLUTION_INSTANCE
   const API_KEY = process.env.EVOLUTION_API_KEY
   const url = `${BASE_URL}/message/sendText/${INSTANCE}`
 
   try {
-    phone = phone.replace(/\D/g, '') // remove caracteres não numéricos
-    if (!phone.startsWith('55')) {
-      phone = `55${phone}` // adiciona o prefixo 55 se não tiver normalizedPhone
-    }
+    phone = normalizePhone(phone)
 
     const response = await fetch(url, {
       method: 'POST',
@@ -31,10 +28,10 @@ export async function sendWhatsAppMessage({
 
     if (!response.ok) {
       const errorText = await response.text()
-      return { status: 'error', error: errorText }
+      return { status: 'error', error: errorText, phone }
     }
 
-    return { status: 'sent' }
+    return { status: 'sent', phone }
   } catch (err) {
     logger.error(err)
     if (err instanceof Error) {
@@ -42,4 +39,10 @@ export async function sendWhatsAppMessage({
     }
     return { status: 'error', error: 'Unknown error' }
   }
+}
+
+export function normalizePhone(raw: string | null | undefined): string {
+  const onlyDigits = String(raw ?? '').replace(/\D/g, '')
+  if (!onlyDigits) return ''
+  return onlyDigits.startsWith('55') ? onlyDigits : `55${onlyDigits}`
 }

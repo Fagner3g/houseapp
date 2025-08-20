@@ -22,6 +22,10 @@ export async function createTransactionService({
   dueDate,
   description,
   tags = [],
+  isRecurring,
+  recurrenceInterval,
+  recurrenceType,
+  recurrenceUntil,
 }: CreateTransaction) {
   const result = await db
     .insert(transactions)
@@ -34,6 +38,10 @@ export async function createTransactionService({
       amount,
       dueDate,
       description,
+      isRecurring,
+      recurrenceInterval,
+      recurrenceType,
+      recurrenceUntil,
     })
     .returning()
 

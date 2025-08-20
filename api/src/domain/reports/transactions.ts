@@ -4,7 +4,44 @@ import { alias } from 'drizzle-orm/pg-core'
 import { db } from '@/db'
 import { transactions } from '@/db/schemas/transactions'
 import { users } from '@/db/schemas/users'
+import { logger } from '@/http/utils/logger'
 import { sendWhatsAppMessage } from '../whatsapp'
+
+function addPeriod(
+  date: Date,
+  type: 'monthly' | 'weekly' | 'yearly' | 'custom',
+  interval: number
+): Date {
+  const d = new Date(date)
+  if (type === 'weekly') {
+    d.setDate(d.getDate() + 7 * interval)
+  } else if (type === 'monthly') {
+    const m = d.getMonth() + interval
+    d.setMonth(m)
+  } else if (type === 'yearly') {
+    d.setFullYear(d.getFullYear() + interval)
+  } else {
+    // custom: assume days
+    d.setDate(d.getDate() + interval)
+  }
+  return d
+}
+
+function countRemainingOccurrences(
+  currentDue: Date,
+  until: Date,
+  type: 'monthly' | 'weekly' | 'yearly' | 'custom',
+  interval: number
+): number {
+  let count = 0
+  // start from next occurrence (remaining AFTER the current one)
+  let next = addPeriod(currentDue, type, interval)
+  while (next <= until) {
+    count++
+    next = addPeriod(next, type, interval)
+  }
+  return count
+}
 
 interface SimplifiedTransaction {
   client: string
@@ -16,6 +53,10 @@ interface SimplifiedTransaction {
   type: 'income' | 'expense'
   ownerId: string
   otherId: string
+  isRecurring?: boolean
+  recurrenceType?: 'monthly' | 'weekly' | 'yearly' | 'custom'
+  recurrenceUntil?: Date | null
+  recurrenceInterval?: number | null
 }
 
 type Row = {
@@ -31,6 +72,10 @@ type Row = {
   ownerPhone: string | null
   payToName: string | null
   payToPhone: string | null
+  isRecurring: boolean
+  recurrenceType: 'monthly' | 'weekly' | 'yearly' | 'custom' | null
+  recurrenceUntil: Date | null
+  recurrenceInterval: number | null
 }
 
 export function generateReport(rows: Row[], userId: string): { phone: string; message: string }[] {
@@ -66,6 +111,12 @@ export function generateReport(rows: Row[], userId: string): { phone: string; me
         type,
         ownerId: row.ownerId,
         otherId,
+        isRecurring: (row as any).isRecurring ?? false,
+        recurrenceType: (row as any).recurrenceType ?? undefined,
+        recurrenceUntil: (row as any).recurrenceUntil
+          ? new Date((row as any).recurrenceUntil)
+          : null,
+        recurrenceInterval: (row as any).recurrenceInterval ?? null,
       }
     })
     .filter(t => t.dueDate <= endOfMonth || (!t.paidAt && t.dueDate < now))
@@ -82,6 +133,7 @@ export function generateReport(rows: Row[], userId: string): { phone: string; me
       dueDateStr: string
       status?: string
       dias?: number
+      recurrenceLabel?: string
     }>
     receber: Array<{
       name: string
@@ -90,6 +142,7 @@ export function generateReport(rows: Row[], userId: string): { phone: string; me
       dueDateStr: string
       status?: string
       dias?: number
+      recurrenceLabel?: string
     }>
     total: { pagar: number; receber: number }
   }
@@ -120,15 +173,45 @@ export function generateReport(rows: Row[], userId: string): { phone: string; me
 
     if (!trx.paidAt) {
       if (trx.dueDate < now) {
-        status = '⚠️ Vencida'
+        status = '❌ Vencida'
         dias = Math.floor((+now - +trx.dueDate) / (1000 * 60 * 60 * 24))
       } else if (trx.dueDate <= fiveDaysFromNow) {
-        status = '📅 Prestes a vencer'
+        status = '⏰ Prestes a vencer'
         dias = Math.ceil((+trx.dueDate - +now) / (1000 * 60 * 60 * 24))
       }
     }
 
-    const line = { name: trx.name, valueNum, valueStr, dueDateStr, status, dias }
+    const line = { name: trx.name, valueNum, valueStr, dueDateStr, status, dias } as const
+    ;(line as any).recurrenceLabel = (() => {
+      if (!trx.isRecurring) return undefined
+      const type = (trx.recurrenceType ?? 'monthly') as 'monthly' | 'weekly' | 'yearly' | 'custom'
+      const interval = Math.max(1, trx.recurrenceInterval ?? 1)
+      const until = trx.recurrenceUntil ?? null
+
+      // Humaniza unidade/intervalo: "a cada X meses", "a cada Y anos", etc.
+      let unit = 'mês'
+      let qty = interval
+      if (type === 'weekly') {
+        unit = 'semana'
+      } else if (type === 'yearly') {
+        unit = 'ano'
+      } else if (type === 'custom') {
+        unit = 'dia'
+      } else if (type === 'monthly') {
+        // Se for mensal com intervalo múltiplo de 12, trate como anos
+        if (interval % 12 === 0) {
+          unit = 'ano'
+          qty = interval / 12
+        } else {
+          unit = 'mês'
+        }
+      }
+      const intervalStr = `${qty} ${unit}${qty > 1 ? 's' : ''}`
+
+      if (!until) return `🔁 Recorrente (a cada ${intervalStr}, sem data final)`
+      const remaining = countRemainingOccurrences(trx.dueDate, until, type, interval)
+      return `🔁 Recorrente (a cada ${intervalStr}, faltam ${remaining} parcela(s))`
+    })()
 
     if (trx.type === 'expense') {
       bucket.pagar.push(line)
@@ -153,10 +236,12 @@ export function generateReport(rows: Row[], userId: string): { phone: string; me
       message += '━━━━━━━━━━━━━━━━━━━━\n'
       message += '🟢 *Contas a Receber*\n\n'
       for (const item of receber) {
-        message += `🧾 *${item.name}*\n`
-        message += `  • *Valor:* ${item.valueStr}\n`
-        message += `  • *Vencimento:* ${item.dueDateStr}\n`
-        if (item.status) message += `  • ${item.status} (${item.dias} dia(s))\n`
+        message += `📄 *${item.name}*\n`
+        message += `      • *Valor:* ${item.valueStr}\n`
+        message += `      • *Vencimento:* ${item.dueDateStr}\n`
+        if (item.status) message += `      • ${item.status} (${item.dias} dia(s))\n`
+        const rec = (item as any).recurrenceLabel as string | undefined
+        if (rec) message += `      • ${rec}\n`
         message += '\n'
       }
       message += `💸 *Total a receber:* ${fmtBRL.format(total.receber)}\n\n`
@@ -166,10 +251,12 @@ export function generateReport(rows: Row[], userId: string): { phone: string; me
       message += '━━━━━━━━━━━━━━━━━━━━\n'
       message += '🔴 *Contas a Pagar*\n\n'
       for (const item of pagar) {
-        message += `🧾 *${item.name}*\n`
-        message += `  • *Valor:* ${item.valueStr}\n`
-        message += `  • *Vencimento:* ${item.dueDateStr}\n`
-        if (item.status) message += `  • ${item.status} (${item.dias} dia(s))\n`
+        message += `📄 *${item.name}*\n`
+        message += `      • *Valor:* ${item.valueStr}\n`
+        message += `      • *Vencimento:* ${item.dueDateStr}\n`
+        if (item.status) message += `      • ${item.status} (${item.dias} dia(s))\n`
+        const rec = (item as any).recurrenceLabel as string | undefined
+        if (rec) message += `      • ${rec}\n`
         message += '\n'
       }
       message += `✅ *Total a pagar:* ${fmtBRL.format(total.pagar)}\n\n`
@@ -206,6 +293,10 @@ export async function fetchTransactions(): Promise<Row[]> {
       ownerPhone: owner.phone,
       payToName: payTo.name,
       payToPhone: payTo.phone,
+      isRecurring: transactions.isRecurring,
+      recurrenceType: transactions.recurrenceType,
+      recurrenceUntil: transactions.recurrenceUntil,
+      recurrenceInterval: transactions.recurrenceInterval,
     })
     .from(transactions)
     .leftJoin(owner, eq(transactions.ownerId, owner.id))
@@ -221,9 +312,9 @@ export async function runReports(userId: string): Promise<void> {
   for (const { phone, message } of reports) {
     const result = await sendWhatsAppMessage({ phone, message })
     if (result.status === 'sent') {
-      console.log(`Mensagem enviada para ${phone}`)
+      logger.info(`Mensagem enviada para ${result.phone}`)
     } else {
-      console.error(`Erro ao enviar mensagem para ${phone}: ${result.error}`)
+      logger.error(`Erro ao enviar mensagem para ${phone}: ${result.error}`)
     }
   }
 }

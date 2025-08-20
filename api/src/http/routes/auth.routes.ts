@@ -1,8 +1,8 @@
 import type { FastifyPluginAsyncZod } from 'fastify-type-provider-zod'
 
+import { sigInUpController } from '../controllers/auth/sigin-up.controller'
 import { signInController } from '../controllers/auth/sign-in.controller'
 import { signOutController } from '../controllers/auth/sign-out.controller'
-import { sigInUpController } from '../controllers/auth/sign-up.controller'
 import { validateTokenController } from '../controllers/auth/validate-token.controller'
 import { authenticateUserHook } from '../hooks/authenticate-user'
 import { signInSchema } from '../schemas/auth/sign-in.schema'

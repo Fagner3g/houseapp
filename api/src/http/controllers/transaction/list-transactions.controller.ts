@@ -1,6 +1,5 @@
 import type { FastifyReply, FastifyRequest } from 'fastify'
 
-import { runReports } from '@/domain/reports/transactions'
 import { listTransactionsService } from '@/domain/transactions/list-transactions'
 import type {
   ListTransactionSchemaParams,
@@ -36,9 +35,6 @@ export async function listTransactionsController(request: Req, reply: FastifyRep
     page,
     perPage,
   })
-
-  const report = await runReports(userId)
-  console.log(report)
 
   return reply.status(200).send({
     transactions,

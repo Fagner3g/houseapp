@@ -6,7 +6,6 @@ import { logger } from '../utils/logger'
 
 export async function authenticateUserHook(request: FastifyRequest) {
   try {
-    console.log('authenticateUserHook')
     await request.jwtVerify()
     const auth = request.headers.authorization
     const token = auth?.replace('Bearer ', '')
