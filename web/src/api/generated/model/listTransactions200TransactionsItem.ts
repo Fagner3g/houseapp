@@ -5,43 +5,20 @@
  * API for HouseApp
  * OpenAPI spec version: 1.0.0
  */
-import type { ListTransactions200TransactionsItemType } from "./listTransactions200TransactionsItemType";
-import type { ListTransactions200TransactionsItemStatus } from "./listTransactions200TransactionsItemStatus";
-import type { ListTransactions200TransactionsItemRecurrenceSelector } from "./listTransactions200TransactionsItemRecurrenceSelector";
-import type { ListTransactions200TransactionsItemRecurrenceType } from "./listTransactions200TransactionsItemRecurrenceType";
-import type { ListTransactions200TransactionsItemTagsItem } from "./listTransactions200TransactionsItemTagsItem";
+import type { ListTransactions200TransactionsItemStatus } from './listTransactions200TransactionsItemStatus'
+import type { ListTransactions200TransactionsItemTagsItem } from './listTransactions200TransactionsItemTagsItem'
+import type { ListTransactions200TransactionsItemType } from './listTransactions200TransactionsItemType'
 
 export type ListTransactions200TransactionsItem = {
-  id: string;
-  type: ListTransactions200TransactionsItemType;
-  title: string;
-  ownerId: string;
-  payTo: string;
-  amount: number;
-  dueDate: string;
+  id: string
+  type: ListTransactions200TransactionsItemType
+  title: string
+  payTo: string
+  amount: number
+  dueDate: string
   /** @nullable */
-  paidAt: string | null;
-  /** @nullable */
-  description: string | null;
-  createdAt: string;
-  status: ListTransactions200TransactionsItemStatus;
-  overdueDays: number;
-  isRecurring: boolean;
-  recurrenceSelector?: ListTransactions200TransactionsItemRecurrenceSelector;
-  recurrenceType?: ListTransactions200TransactionsItemRecurrenceType;
-  recurrenceUntil?: string;
-  /**
-   * @minimum -9007199254740991
-   * @maximum 9007199254740991
-   */
-  recurrenceInterval?: number;
-  recurrenceStart?: string;
-  /** @nullable */
-  installmentsTotal?: number | null;
-  /**
-   * @minimum -9007199254740991
-   * @maximum 9007199254740991
-   */
-  installmentsPaid?: number;
-  tags: ListTransactions200TransactionsItemTagsItem[];
-};
+  paidAt: string | null
+  status: ListTransactions200TransactionsItemStatus
+  overdueDays: number
+  tags: ListTransactions200TransactionsItemTagsItem[]
+}

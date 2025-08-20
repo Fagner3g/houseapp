@@ -9,7 +9,6 @@ import { invites } from './schemas/invites'
 import { organizations } from './schemas/organization'
 import { transactionOccurrences } from './schemas/transactionOccurrences'
 import { transactionSeries } from './schemas/transactionSeries'
-import { transactions } from './schemas/transactions'
 import { transactionTags } from './schemas/transactionTags'
 import { userOrganizations } from './schemas/userOrganization'
 import { users } from './schemas/users'
@@ -21,7 +20,6 @@ const schema = {
   userOrganizations,
   goals,
   goalCompletions,
-  transactions,
   transactionTags,
   transactionSeries,
   transactionOccurrences,

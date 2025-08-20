@@ -152,7 +152,7 @@ export const useTable = (data: ListTransactions200TransactionsItem[]) => {
           {row.original.status === 'paid' && (
             <IconCircleCheckFilled className="fill-green-500 dark:fill-green-400" />
           )}
-          {row.original.status === 'overdue' && (
+          {row.original.status === 'pending' && row.original.overdueDays > 0 && (
             <div className="flex items-center gap-1">
               <AlertOctagon className="text-red-400" />
               {row.original.overdueDays > 0 && (
@@ -161,7 +161,10 @@ export const useTable = (data: ListTransactions200TransactionsItem[]) => {
               {row.original.overdueDays === 0 && <span className="text-red-400 text-xs">Hoje</span>}
             </div>
           )}
-          {row.original.status === 'scheduled' && <LucideClockFading className="text-yellow-500" />}
+          {row.original.status === 'pending' && row.original.overdueDays === 0 && (
+            <LucideClockFading className="text-yellow-500" />
+          )}
+          {row.original.status === 'canceled' && <AlertOctagon className="text-zinc-400" />}
         </div>
       ),
     },
@@ -217,17 +220,6 @@ export const useTable = (data: ListTransactions200TransactionsItem[]) => {
           ))}
         </div>
       ),
-    },
-    {
-      accessorKey: 'Recorrente',
-      header: 'Recorrente',
-      cell: ({ row }) => {
-        return (
-          <Label className="text-muted-foreground px-1.5">
-            {row.original.isRecurring ? 'Sim' : 'Não'}
-          </Label>
-        )
-      },
     },
     {
       id: 'actions',

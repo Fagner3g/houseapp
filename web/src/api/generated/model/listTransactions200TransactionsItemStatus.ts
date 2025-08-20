@@ -7,11 +7,11 @@
  */
 
 export type ListTransactions200TransactionsItemStatus =
-  (typeof ListTransactions200TransactionsItemStatus)[keyof typeof ListTransactions200TransactionsItemStatus];
+  (typeof ListTransactions200TransactionsItemStatus)[keyof typeof ListTransactions200TransactionsItemStatus]
 
 // eslint-disable-next-line @typescript-eslint/no-redeclare
 export const ListTransactions200TransactionsItemStatus = {
-  paid: "paid",
-  overdue: "overdue",
-  scheduled: "scheduled",
-} as const;
+  pending: 'pending',
+  paid: 'paid',
+  canceled: 'canceled',
+} as const
