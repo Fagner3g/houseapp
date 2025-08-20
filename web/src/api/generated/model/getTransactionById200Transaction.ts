@@ -35,5 +35,9 @@ export type GetTransactionById200Transaction = {
    * @maximum 9007199254740991
    */
   recurrenceInterval?: number;
+  recurrenceStart?: string;
+  /** @nullable */
+  installmentsTotal?: number | null;
+  installmentsPaid?: number;
   tags: GetTransactionById200TransactionTagsItem[];
 };

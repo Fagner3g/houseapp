@@ -4,18 +4,18 @@ import { FormControl, FormField, FormItem, FormLabel } from '@/components/ui/for
 import { Input } from '@/components/ui/input'
 import type { NewTransactionSchema } from './schema'
 
-export interface RecurrenceIntervalFieldProps {
+export interface InstallmentsTotalFieldProps {
   form: UseFormReturn<NewTransactionSchema>
 }
 
-export function RecurrenceIntervalField({ form }: RecurrenceIntervalFieldProps) {
+export function InstallmentsTotalField({ form }: InstallmentsTotalFieldProps) {
   return (
     <FormField
       control={form.control}
-      name="recurrenceInterval"
+      name="installmentsTotal"
       render={({ field }) => (
         <FormItem className="justify-center">
-          <FormLabel>Nº Repetições</FormLabel>
+          <FormLabel>Nº Parcelas</FormLabel>
           <FormControl>
             <Input
               type="number"

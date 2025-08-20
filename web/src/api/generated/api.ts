@@ -3002,3 +3002,254 @@ export const useDeleteTag = <TError = unknown, TContext = unknown>(
 
   return useMutation(mutationOptions, queryClient);
 };
+
+/**
+ * Mark current installment as paid
+ */
+export const getPayTransactionUrl = (slug: string, id: string) => {
+  return `/org/${slug}/transaction/${id}/pay`;
+};
+
+export const payTransaction = async (
+  slug: string,
+  id: string,
+  options?: RequestInit,
+): Promise<null> => {
+  return http<null>(getPayTransactionUrl(slug, id), {
+    ...options,
+    method: "PATCH",
+  });
+};
+
+export const getPayTransactionMutationOptions = <
+  TError = unknown,
+  TContext = unknown,
+>(options?: {
+  mutation?: UseMutationOptions<
+    Awaited<ReturnType<typeof payTransaction>>,
+    TError,
+    { slug: string; id: string },
+    TContext
+  >;
+  request?: SecondParameter<typeof http>;
+}): UseMutationOptions<
+  Awaited<ReturnType<typeof payTransaction>>,
+  TError,
+  { slug: string; id: string },
+  TContext
+> => {
+  const mutationKey = ["payTransaction"];
+  const { mutation: mutationOptions, request: requestOptions } = options
+    ? options.mutation &&
+      "mutationKey" in options.mutation &&
+      options.mutation.mutationKey
+      ? options
+      : { ...options, mutation: { ...options.mutation, mutationKey } }
+    : { mutation: { mutationKey }, request: undefined };
+
+  const mutationFn: MutationFunction<
+    Awaited<ReturnType<typeof payTransaction>>,
+    { slug: string; id: string }
+  > = (props) => {
+    const { slug, id } = props ?? {};
+
+    return payTransaction(slug, id, requestOptions);
+  };
+
+  return { mutationFn, ...mutationOptions };
+};
+
+export type PayTransactionMutationResult = NonNullable<
+  Awaited<ReturnType<typeof payTransaction>>
+>;
+
+export type PayTransactionMutationError = unknown;
+
+export const usePayTransaction = <TError = unknown, TContext = unknown>(
+  options?: {
+    mutation?: UseMutationOptions<
+      Awaited<ReturnType<typeof payTransaction>>,
+      TError,
+      { slug: string; id: string },
+      TContext
+    >;
+    request?: SecondParameter<typeof http>;
+  },
+  queryClient?: QueryClient,
+): UseMutationResult<
+  Awaited<ReturnType<typeof payTransaction>>,
+  TError,
+  { slug: string; id: string },
+  TContext
+> => {
+  const mutationOptions = getPayTransactionMutationOptions(options);
+
+  return useMutation(mutationOptions, queryClient);
+};
+
+/**
+ * Trigger transactions report for authenticated user
+ */
+export const getRunMyTransactionsReportUrl = () => {
+  return `/reports/transactions/run`;
+};
+
+export const runMyTransactionsReport = async (
+  options?: RequestInit,
+): Promise<null> => {
+  return http<null>(getRunMyTransactionsReportUrl(), {
+    ...options,
+    method: "POST",
+  });
+};
+
+export const getRunMyTransactionsReportMutationOptions = <
+  TError = unknown,
+  TContext = unknown,
+>(options?: {
+  mutation?: UseMutationOptions<
+    Awaited<ReturnType<typeof runMyTransactionsReport>>,
+    TError,
+    void,
+    TContext
+  >;
+  request?: SecondParameter<typeof http>;
+}): UseMutationOptions<
+  Awaited<ReturnType<typeof runMyTransactionsReport>>,
+  TError,
+  void,
+  TContext
+> => {
+  const mutationKey = ["runMyTransactionsReport"];
+  const { mutation: mutationOptions, request: requestOptions } = options
+    ? options.mutation &&
+      "mutationKey" in options.mutation &&
+      options.mutation.mutationKey
+      ? options
+      : { ...options, mutation: { ...options.mutation, mutationKey } }
+    : { mutation: { mutationKey }, request: undefined };
+
+  const mutationFn: MutationFunction<
+    Awaited<ReturnType<typeof runMyTransactionsReport>>,
+    void
+  > = () => {
+    return runMyTransactionsReport(requestOptions);
+  };
+
+  return { mutationFn, ...mutationOptions };
+};
+
+export type RunMyTransactionsReportMutationResult = NonNullable<
+  Awaited<ReturnType<typeof runMyTransactionsReport>>
+>;
+
+export type RunMyTransactionsReportMutationError = unknown;
+
+export const useRunMyTransactionsReport = <
+  TError = unknown,
+  TContext = unknown,
+>(
+  options?: {
+    mutation?: UseMutationOptions<
+      Awaited<ReturnType<typeof runMyTransactionsReport>>,
+      TError,
+      void,
+      TContext
+    >;
+    request?: SecondParameter<typeof http>;
+  },
+  queryClient?: QueryClient,
+): UseMutationResult<
+  Awaited<ReturnType<typeof runMyTransactionsReport>>,
+  TError,
+  void,
+  TContext
+> => {
+  const mutationOptions = getRunMyTransactionsReportMutationOptions(options);
+
+  return useMutation(mutationOptions, queryClient);
+};
+
+/**
+ * Trigger transactions report for all owners
+ */
+export const getRunAllOwnersTransactionsReportUrl = () => {
+  return `/reports/transactions/run-all-owners`;
+};
+
+export const runAllOwnersTransactionsReport = async (
+  options?: RequestInit,
+): Promise<null> => {
+  return http<null>(getRunAllOwnersTransactionsReportUrl(), {
+    ...options,
+    method: "POST",
+  });
+};
+
+export const getRunAllOwnersTransactionsReportMutationOptions = <
+  TError = unknown,
+  TContext = unknown,
+>(options?: {
+  mutation?: UseMutationOptions<
+    Awaited<ReturnType<typeof runAllOwnersTransactionsReport>>,
+    TError,
+    void,
+    TContext
+  >;
+  request?: SecondParameter<typeof http>;
+}): UseMutationOptions<
+  Awaited<ReturnType<typeof runAllOwnersTransactionsReport>>,
+  TError,
+  void,
+  TContext
+> => {
+  const mutationKey = ["runAllOwnersTransactionsReport"];
+  const { mutation: mutationOptions, request: requestOptions } = options
+    ? options.mutation &&
+      "mutationKey" in options.mutation &&
+      options.mutation.mutationKey
+      ? options
+      : { ...options, mutation: { ...options.mutation, mutationKey } }
+    : { mutation: { mutationKey }, request: undefined };
+
+  const mutationFn: MutationFunction<
+    Awaited<ReturnType<typeof runAllOwnersTransactionsReport>>,
+    void
+  > = () => {
+    return runAllOwnersTransactionsReport(requestOptions);
+  };
+
+  return { mutationFn, ...mutationOptions };
+};
+
+export type RunAllOwnersTransactionsReportMutationResult = NonNullable<
+  Awaited<ReturnType<typeof runAllOwnersTransactionsReport>>
+>;
+
+export type RunAllOwnersTransactionsReportMutationError = unknown;
+
+export const useRunAllOwnersTransactionsReport = <
+  TError = unknown,
+  TContext = unknown,
+>(
+  options?: {
+    mutation?: UseMutationOptions<
+      Awaited<ReturnType<typeof runAllOwnersTransactionsReport>>,
+      TError,
+      void,
+      TContext
+    >;
+    request?: SecondParameter<typeof http>;
+  },
+  queryClient?: QueryClient,
+): UseMutationResult<
+  Awaited<ReturnType<typeof runAllOwnersTransactionsReport>>,
+  TError,
+  void,
+  TContext
+> => {
+  const mutationOptions =
+    getRunAllOwnersTransactionsReportMutationOptions(options);
+
+  return useMutation(mutationOptions, queryClient);
+};
