@@ -1,7 +1,8 @@
 import { toast } from 'sonner'
 
 import { env } from '@/env'
-import { getAuthToken, removeAuthToken } from '@/lib/auth'
+import { getAuthToken } from '@/lib/auth'
+import { useAuthStore } from '@/stores/auth'
 
 async function getHeaders(headers?: HeadersInit): Promise<HeadersInit> {
   const token = getAuthToken()
@@ -35,7 +36,7 @@ export async function http<T>(path: string, optinos: RequestInit): Promise<T> {
 
   if (!response.ok) {
     if (response.status === 401) {
-      removeAuthToken()
+      useAuthStore.getState().logout()
     }
 
     if (response.status === 400) {
