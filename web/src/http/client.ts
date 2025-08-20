@@ -1,7 +1,7 @@
 import { toast } from 'sonner'
 
-import { env } from '@/env'
 import { getAuthToken, removeAuthToken } from '@/lib/auth'
+import { env } from '@/lib/env'
 
 async function getHeaders(headers?: HeadersInit): Promise<HeadersInit> {
   const token = getAuthToken()
