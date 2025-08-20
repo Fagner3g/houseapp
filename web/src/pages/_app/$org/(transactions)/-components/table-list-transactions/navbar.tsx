@@ -1,6 +1,7 @@
 import { IconLayoutColumns } from '@tabler/icons-react'
 import type { Table } from '@tanstack/react-table'
 
+import type { ListTransactions200TransactionsItem } from '@/api/generated/model'
 import { Button } from '@/components/ui/button'
 import {
   DropdownMenu,
@@ -8,19 +9,18 @@ import {
   DropdownMenuContent,
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu'
-import type { ListTransactions200TransactionsItem } from '@/api/generated/model'
 import { ModalNewTransaction } from '../modal-new-transaction'
 import { DeleteSelected } from './delete-selected'
-import FilterTable from './filter'
+import FilterTable, { type FilterTableProps } from './filter'
 
-interface Props {
+interface Props extends FilterTableProps {
   table: Table<ListTransactions200TransactionsItem>
 }
 
-export function NavbarTable({ table }: Props) {
+export function NavbarTable({ table, ...props }: Props) {
   return (
     <div className="flex items-center justify-between px-4 lg:px-6">
-      <FilterTable />
+      <FilterTable {...props} />
 
       <div className="flex items-center gap-2">
         <DropdownMenu>

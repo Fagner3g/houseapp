@@ -13,10 +13,16 @@ import {
   SelectTrigger,
   SelectValue,
 } from '@/components/ui/select'
-import { useTransaction } from './hook/use-transaction'
 
-export function Footer() {
-  const { page, perPage, totalPages, onPerPageChange, onPageChange } = useTransaction()
+export interface FooterProps {
+  page: number
+  perPage: number
+  totalPages: number
+  onPerPageChange: (perPage: number) => void
+  onPageChange: (page: number) => void
+}
+
+export function Footer({ page, perPage, totalPages, onPerPageChange, onPageChange }: FooterProps) {
   return (
     <div className="flex items-center justify-between px-4">
       <div className="flex w-full items-center gap-8 lg:w-fit">

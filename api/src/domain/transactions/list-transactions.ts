@@ -1,4 +1,4 @@
-import { and, desc, eq, getTableColumns, gte, inArray, lte, sql } from 'drizzle-orm'
+import { and, desc, eq, getTableColumns, gte, inArray, isNull, lt, lte, or, sql } from 'drizzle-orm'
 
 import { db } from '@/db'
 import { tags as tagsTable } from '@/db/schemas/tags'
@@ -29,12 +29,16 @@ export async function listTransactionsService({
   page,
   perPage,
 }: ListTransactionsRequest) {
-  let where = and(
-    eq(transactions.ownerId, userId),
-    eq(transactions.organizationId, orgId),
+  const base = and(eq(transactions.ownerId, userId), eq(transactions.organizationId, orgId))
+
+  // dentro do range selecionado OU (não paga e vencida no passado)
+  const inSelectedRange = and(
     gte(transactions.dueDate, dateFrom),
     lte(transactions.dueDate, dateTo)
   )
+  const overdueAndUnpaid = and(isNull(transactions.paidAt), lt(transactions.dueDate, new Date()))
+
+  let where = and(base, or(inSelectedRange, overdueAndUnpaid))
 
   if (type !== 'all') {
     where = and(where, eq(transactions.type, type))

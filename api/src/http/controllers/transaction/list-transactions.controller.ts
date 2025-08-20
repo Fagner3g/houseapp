@@ -1,5 +1,6 @@
 import type { FastifyReply, FastifyRequest } from 'fastify'
 
+import { runReports } from '@/domain/reports/transactions'
 import { listTransactionsService } from '@/domain/transactions/list-transactions'
 import type {
   ListTransactionSchemaParams,
@@ -15,8 +16,7 @@ export async function listTransactionsController(request: Req, reply: FastifyRep
   const userId = request.user.sub
   const orgId = request.organization.id
 
-  const { tags, tagFilterMode, type, dateFrom, dateTo, page, perPage } =
-    request.query
+  const { tags, tagFilterMode, type, dateFrom, dateTo, page, perPage } = request.query
 
   const {
     transactions,
@@ -26,25 +26,26 @@ export async function listTransactionsController(request: Req, reply: FastifyRep
     totalPages,
     pagesRemaining,
   } = await listTransactionsService({
-      userId,
-      orgId,
-      tags,
-      tagFilterMode,
-      type,
-      dateFrom,
-      dateTo,
-      page,
-      perPage,
-    })
+    userId,
+    orgId,
+    tags,
+    tagFilterMode,
+    type,
+    dateFrom,
+    dateTo,
+    page,
+    perPage,
+  })
 
-  return reply
-    .status(200)
-    .send({
-      transactions,
-      page: currentPage,
-      perPage: currentPerPage,
-      totalItems,
-      totalPages,
-      pagesRemaining,
-    })
+  const report = await runReports(userId)
+  console.log(report)
+
+  return reply.status(200).send({
+    transactions,
+    page: currentPage,
+    perPage: currentPerPage,
+    totalItems,
+    totalPages,
+    pagesRemaining,
+  })
 }

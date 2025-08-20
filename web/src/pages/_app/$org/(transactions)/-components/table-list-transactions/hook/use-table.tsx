@@ -1,9 +1,5 @@
-import {
-  IconCalendarClock,
-  IconCashRegister,
-  IconCircleCheckFilled,
-  IconDotsVertical,
-} from '@tabler/icons-react'
+import { IconCashRegister, IconCircleCheckFilled, IconDotsVertical } from '@tabler/icons-react'
+import { useQueryClient } from '@tanstack/react-query'
 import {
   type ColumnDef,
   type ColumnFiltersState,
@@ -17,12 +13,16 @@ import {
   useReactTable,
   type VisibilityState,
 } from '@tanstack/react-table'
-import { useQueryClient } from '@tanstack/react-query'
 import dayjs from 'dayjs'
 import { AlertOctagon, LucideClockFading, TrendingDown, TrendingUp } from 'lucide-react'
 import { useState } from 'react'
 import { toast } from 'sonner'
 
+import { getListTransactionsQueryKey, useDeleteTransactions } from '@/api/generated/api'
+import type {
+  ListTransactions200,
+  ListTransactions200TransactionsItem,
+} from '@/api/generated/model'
 import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
 import { Checkbox } from '@/components/ui/checkbox'
@@ -34,16 +34,9 @@ import {
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu'
 import { Label } from '@/components/ui/label'
-import {
-  getListTransactionsQueryKey,
-  useDeleteTransactions,
-} from '@/api/generated/api'
-import type {
-  ListTransactions200,
-  ListTransactions200TransactionsItem,
-} from '@/api/generated/model'
 import { useActiveOrganization } from '@/hooks/use-active-organization'
 import { DeleteRowAction } from '../delete-row'
+import { DrawerEdit } from '../drawer-edit'
 
 export const useTable = (data: ListTransactions200TransactionsItem[]) => {
   const [rowSelection, setRowSelection] = useState({})
@@ -66,24 +59,20 @@ export const useTable = (data: ListTransactions200TransactionsItem[]) => {
           queryKey: getListTransactionsQueryKey(slug),
         })
         const previous = queryClient.getQueryData<ListTransactions200>(
-          getListTransactionsQueryKey(slug),
+          getListTransactionsQueryKey(slug)
         )
-        queryClient.setQueryData<ListTransactions200>(
-          getListTransactionsQueryKey(slug),
-          old => ({
-            ...(old ?? { transactions: [] }),
-            transactions:
-              old?.transactions.filter(t => !data.ids.includes(t.id)) ?? [],
-          }),
-        )
+        queryClient.setQueryData<ListTransactions200>(getListTransactionsQueryKey(slug), old => {
+          if (!old) return old
+          return {
+            ...old,
+            transactions: old.transactions.filter(t => !data.ids.includes(t.id)),
+          }
+        })
         return { previous, slug }
       },
       onError: (_err, _vars, ctx) => {
         if (ctx?.previous) {
-          queryClient.setQueryData(
-            getListTransactionsQueryKey(ctx.slug),
-            ctx.previous,
-          )
+          queryClient.setQueryData(getListTransactionsQueryKey(ctx.slug), ctx.previous)
         }
         toast.error('Erro ao excluir transações')
       },
@@ -142,12 +131,8 @@ export const useTable = (data: ListTransactions200TransactionsItem[]) => {
       ),
       cell: ({ row }) => (
         <div>
-          {row.original.type === 'expense' && (
-            <TrendingUp className="text-green-500" />
-          )}
-          {row.original.type === 'income' && (
-            <TrendingDown className="text-red-600" />
-          )}
+          {row.original.type === 'expense' && <TrendingDown className="text-red-600" />}
+          {row.original.type === 'income' && <TrendingUp className="text-green-500" />}
         </div>
       ),
     },
@@ -155,15 +140,9 @@ export const useTable = (data: ListTransactions200TransactionsItem[]) => {
       accessorKey: 'title',
       header: 'Nome',
       enableHiding: false,
-      cell: ({ row }) => (
-        <Button
-          variant="link"
-          className="text-foreground w-fit px-0 text-left"
-          onClick={() => row.table.options.meta?.editRow?.(row.original)}
-        >
-          {row.original.title}
-        </Button>
-      ),
+      cell: ({ row }) => {
+        return <DrawerEdit item={row.original} />
+      },
     },
     {
       accessorKey: 'Status',
@@ -173,12 +152,16 @@ export const useTable = (data: ListTransactions200TransactionsItem[]) => {
           {row.original.status === 'paid' && (
             <IconCircleCheckFilled className="fill-green-500 dark:fill-green-400" />
           )}
-          {row.original.status === 'open' && (
-            <AlertOctagon className="text-red-400" />
+          {row.original.status === 'overdue' && (
+            <div className="flex items-center gap-1">
+              <AlertOctagon className="text-red-400" />
+              {row.original.overdueDays > 0 && (
+                <span className="text-red-400">{row.original.overdueDays} dias</span>
+              )}
+              {row.original.overdueDays === 0 && <span className="text-red-400 text-xs">Hoje</span>}
+            </div>
           )}
-          {row.original.status === 'pending' && (
-            <LucideClockFading className="text-yellow-500" />
-          )}
+          {row.original.status === 'scheduled' && <LucideClockFading className="text-yellow-500" />}
         </div>
       ),
     },
@@ -210,9 +193,7 @@ export const useTable = (data: ListTransactions200TransactionsItem[]) => {
       cell: ({ row }) => {
         return (
           <Label className="text-muted-foreground px-1.5">
-            {row.original.paidAt
-              ? dayjs(row.original.paidAt).format('DD/MM/YYYY')
-              : ''}
+            {row.original.paidAt ? dayjs(row.original.paidAt).format('DD/MM/YYYY') : ''}
           </Label>
         )
       },
@@ -221,9 +202,7 @@ export const useTable = (data: ListTransactions200TransactionsItem[]) => {
       accessorKey: 'Para',
       header: 'Para',
       cell: ({ row }) => (
-        <Label className="text-muted-foreground px-1.5">
-          {row.original.payTo}
-        </Label>
+        <Label className="text-muted-foreground px-1.5">{row.original.payTo}</Label>
       ),
     },
     {
@@ -232,11 +211,7 @@ export const useTable = (data: ListTransactions200TransactionsItem[]) => {
       cell: ({ row }) => (
         <div className="flex flex-wrap gap-1 px-1.5">
           {row.original.tags?.map(tag => (
-            <Badge
-              key={tag.name}
-              style={{ backgroundColor: tag.color }}
-              className="text-white"
-            >
+            <Badge key={tag.name} style={{ backgroundColor: tag.color }} className="text-white">
               #{tag.name}
             </Badge>
           ))}
@@ -256,7 +231,7 @@ export const useTable = (data: ListTransactions200TransactionsItem[]) => {
     },
     {
       id: 'actions',
-      cell: ({ row }) => (
+      cell: ({ row, table }) => (
         <DropdownMenu>
           <DropdownMenuTrigger asChild>
             <Button
@@ -269,14 +244,8 @@ export const useTable = (data: ListTransactions200TransactionsItem[]) => {
             </Button>
           </DropdownMenuTrigger>
           <DropdownMenuContent align="end" className="w-40">
-            <DropdownMenuItem
-              onClick={() => row.table.options.meta?.editRow?.(row.original)}
-            >
-              Editar
-            </DropdownMenuItem>
-            <DropdownMenuItem onClick={() => copyLink(row.original.id)}>
-              Duplicar
-            </DropdownMenuItem>
+            <DropdownMenuItem onClick={() => table.options}>Editar</DropdownMenuItem>
+            <DropdownMenuItem onClick={() => copyLink(row.original.id)}>Duplicar</DropdownMenuItem>
             <DropdownMenuItem onClick={() => toast.success('Favoritado!')}>
               Favoritar
             </DropdownMenuItem>
@@ -284,7 +253,7 @@ export const useTable = (data: ListTransactions200TransactionsItem[]) => {
               Copiar link
             </DropdownMenuItem>
             <DropdownMenuSeparator />
-            <DeleteRowAction id={row.original.id} table={row.table} />
+            <DeleteRowAction id={row.original.id} table={table} />
           </DropdownMenuContent>
         </DropdownMenu>
       ),

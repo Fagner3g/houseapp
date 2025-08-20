@@ -11,11 +11,15 @@ import {
   SelectTrigger,
   SelectValue,
 } from '@/components/ui/select'
-import { useTransaction } from './hook/use-transaction'
 
-export default function FilterTable() {
+export interface FilterTableProps {
+  type: 'all' | 'income' | 'expense' | undefined
+  dateFrom: string | undefined
+  dateTo: string | undefined
+}
+
+export default function FilterTable({ type, dateFrom, dateTo }: FilterTableProps) {
   const navigate = useNavigate()
-  const { type, dateFrom, dateTo } = useTransaction()
 
   return (
     <div className="flex flex-col gap-4">

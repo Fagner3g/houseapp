@@ -22,7 +22,7 @@ export const Route = createFileRoute('/_app/$org/(transactions)/transactions')({
 })
 
 function Transaction() {
-  const { transactions, isPending } = useTransaction()
+  const { transactions, isPending, ...props } = useTransaction()
 
   if (isPending) {
     return (
@@ -35,7 +35,7 @@ function Transaction() {
 
   return (
     <div className="mt-4 flex flex-col gap-4">
-      <TableLIstTransactions transactions={transactions} />
+      <TableLIstTransactions transactions={transactions} {...props} />
     </div>
   )
 }
