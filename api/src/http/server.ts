@@ -1,7 +1,7 @@
 import { env } from '@/config/env'
 import { db, ping } from '@/db'
 import { logger } from './utils/logger'
-import { buildServer } from './utils/settup'
+import { buildServer } from './utils/setup'
 
 async function server() {
   try {

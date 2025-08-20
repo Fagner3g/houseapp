@@ -312,35 +312,38 @@ export const useValidateToken = <TError = unknown, TContext = unknown>(
   return useMutation(mutationOptions, queryClient);
 };
 
-export const getPostLogoutUrl = () => {
+/**
+ * Logout revoke token
+ */
+export const getLogoutUrl = () => {
   return `/logout`;
 };
 
-export const postLogout = async (options?: RequestInit): Promise<null> => {
-  return http<null>(getPostLogoutUrl(), {
+export const logout = async (options?: RequestInit): Promise<null> => {
+  return http<null>(getLogoutUrl(), {
     ...options,
     method: "POST",
   });
 };
 
-export const getPostLogoutMutationOptions = <
+export const getLogoutMutationOptions = <
   TError = unknown,
   TContext = unknown,
 >(options?: {
   mutation?: UseMutationOptions<
-    Awaited<ReturnType<typeof postLogout>>,
+    Awaited<ReturnType<typeof logout>>,
     TError,
     void,
     TContext
   >;
   request?: SecondParameter<typeof http>;
 }): UseMutationOptions<
-  Awaited<ReturnType<typeof postLogout>>,
+  Awaited<ReturnType<typeof logout>>,
   TError,
   void,
   TContext
 > => {
-  const mutationKey = ["postLogout"];
+  const mutationKey = ["logout"];
   const { mutation: mutationOptions, request: requestOptions } = options
     ? options.mutation &&
       "mutationKey" in options.mutation &&
@@ -350,25 +353,25 @@ export const getPostLogoutMutationOptions = <
     : { mutation: { mutationKey }, request: undefined };
 
   const mutationFn: MutationFunction<
-    Awaited<ReturnType<typeof postLogout>>,
+    Awaited<ReturnType<typeof logout>>,
     void
   > = () => {
-    return postLogout(requestOptions);
+    return logout(requestOptions);
   };
 
   return { mutationFn, ...mutationOptions };
 };
 
-export type PostLogoutMutationResult = NonNullable<
-  Awaited<ReturnType<typeof postLogout>>
+export type LogoutMutationResult = NonNullable<
+  Awaited<ReturnType<typeof logout>>
 >;
 
-export type PostLogoutMutationError = unknown;
+export type LogoutMutationError = unknown;
 
-export const usePostLogout = <TError = unknown, TContext = unknown>(
+export const useLogout = <TError = unknown, TContext = unknown>(
   options?: {
     mutation?: UseMutationOptions<
-      Awaited<ReturnType<typeof postLogout>>,
+      Awaited<ReturnType<typeof logout>>,
       TError,
       void,
       TContext
@@ -377,12 +380,12 @@ export const usePostLogout = <TError = unknown, TContext = unknown>(
   },
   queryClient?: QueryClient,
 ): UseMutationResult<
-  Awaited<ReturnType<typeof postLogout>>,
+  Awaited<ReturnType<typeof logout>>,
   TError,
   void,
   TContext
 > => {
-  const mutationOptions = getPostLogoutMutationOptions(options);
+  const mutationOptions = getLogoutMutationOptions(options);
 
   return useMutation(mutationOptions, queryClient);
 };

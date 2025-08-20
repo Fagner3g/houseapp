@@ -149,6 +149,11 @@
     },
     "/logout": {
       "post": {
+        "operationId": "logout",
+        "tags": [
+          "Auth"
+        ],
+        "description": "Logout revoke token",
         "responses": {
           "200": {
             "description": "Default Response"

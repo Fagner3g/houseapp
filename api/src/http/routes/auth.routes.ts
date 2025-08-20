@@ -5,6 +5,7 @@ import { sigInUpController } from '../controllers/auth/sigin-up.controller'
 import { signInController } from '../controllers/auth/sign-in.controller'
 import { validateTokenController } from '../controllers/auth/validate-token.controller'
 import { authenticateUserHook } from '../hooks/authenticate-user'
+import { logoutSchema } from '../schemas/auth/logout.schema'
 import { signInSchema } from '../schemas/auth/sign-in.schema'
 import { sigInUpSchema } from '../schemas/auth/sign-up.schema'
 import { validateTokenSchema } from '../schemas/auth/validate-token.schema'
@@ -28,5 +29,9 @@ export const validateTokenRoute: FastifyPluginAsyncZod = async app => {
 }
 
 export const logoutRoute: FastifyPluginAsyncZod = async app => {
-  app.post('/logout', { onRequest: [authenticateUserHook], handler: logoutController })
+  app.post('/logout', {
+    onRequest: [authenticateUserHook],
+    schema: logoutSchema,
+    handler: logoutController,
+  })
 }

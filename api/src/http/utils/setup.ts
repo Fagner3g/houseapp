@@ -41,7 +41,20 @@ export async function buildServer() {
 
   app.addHook('onResponse', reqReplyTime)
 
-  app.register(fastifyCors, { origin: env.WEB_URL })
+  app.register(fastifyCors, {
+    origin: (origin, cb) => {
+      // Permite chamadas de ferramentas (origin null), da WEB_URL e do localhost em dev
+      const allowed = [env.WEB_URL, 'http://localhost:5173', 'http://localhost:3333'].filter(
+        Boolean
+      )
+      if (!origin || allowed.includes(origin)) return cb(null, true)
+      return cb(new Error('Not allowed by CORS'), false)
+    },
+    methods: ['GET', 'POST', 'PUT', 'PATCH', 'DELETE', 'OPTIONS'],
+    allowedHeaders: ['Authorization', 'Content-Type'],
+    exposedHeaders: ['Content-Type'],
+    credentials: false, // mude para true se usar cookies/same-site
+  })
 
   app.register(fastifyJwt, { secret: env.JWT_SECRET })
 
