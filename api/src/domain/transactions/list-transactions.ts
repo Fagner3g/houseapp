@@ -1,8 +1,9 @@
-import { and, desc, eq, getTableColumns, gte, inArray, isNull, lt, lte, or, sql } from 'drizzle-orm'
+import { and, desc, eq, getTableColumns, gte, inArray, lt, lte, or, sql } from 'drizzle-orm'
 
 import { db } from '@/db'
 import { tags as tagsTable } from '@/db/schemas/tags'
-import { transactions } from '@/db/schemas/transactions'
+import { transactionOccurrences } from '@/db/schemas/transactionOccurrences'
+import { transactionSeries } from '@/db/schemas/transactionSeries'
 import { transactionTags } from '@/db/schemas/transactionTags'
 import { users } from '@/db/schemas/users'
 
@@ -29,19 +30,25 @@ export async function listTransactionsService({
   page,
   perPage,
 }: ListTransactionsRequest) {
-  const base = and(eq(transactions.ownerId, userId), eq(transactions.organizationId, orgId))
-
-  // dentro do range selecionado OU (não paga e vencida no passado)
-  const inSelectedRange = and(
-    gte(transactions.dueDate, dateFrom),
-    lte(transactions.dueDate, dateTo)
+  const base = and(
+    eq(transactionSeries.ownerId, userId),
+    eq(transactionSeries.organizationId, orgId),
+    eq(transactionSeries.active, true)
   )
-  const overdueAndUnpaid = and(isNull(transactions.paidAt), lt(transactions.dueDate, new Date()))
+
+  const inSelectedRange = and(
+    gte(transactionOccurrences.dueDate, dateFrom),
+    lte(transactionOccurrences.dueDate, dateTo)
+  )
+  const overdueAndUnpaid = and(
+    eq(transactionOccurrences.status, 'pending'),
+    lt(transactionOccurrences.dueDate, new Date())
+  )
 
   let where = and(base, or(inSelectedRange, overdueAndUnpaid))
 
   if (type !== 'all') {
-    where = and(where, eq(transactions.type, type))
+    where = and(where, eq(transactionSeries.type, type))
   }
 
   if (tags.length > 0) {
@@ -54,7 +61,7 @@ export async function listTransactionsService({
         .groupBy(transactionTags.transactionId)
         .having(sql`count(distinct ${tagsTable.name}) = ${tags.length}`)
 
-      where = and(where, inArray(transactions.id, sub))
+      where = and(where, inArray(transactionSeries.id, sub))
     } else {
       where = and(where, inArray(tagsTable.name, tags))
     }
@@ -63,7 +70,9 @@ export async function listTransactionsService({
   const [result, total] = await Promise.all([
     db
       .select({
-        ...getTableColumns(transactions),
+        ...getTableColumns(transactionOccurrences),
+        title: transactionSeries.title,
+        type: transactionSeries.type,
         payTo: users.name,
         tags: sql<{ name: string; color: string }[]>`
           coalesce(
@@ -72,34 +81,36 @@ export async function listTransactionsService({
             '[]'::jsonb
           )
         `,
-        status: sql /*sql*/`
-        CASE
-          WHEN ${transactions.paidAt} IS NOT NULL THEN 'paid'
-          WHEN ${transactions.paidAt} IS NULL AND ${transactions.dueDate}::date > CURRENT_DATE THEN 'scheduled'
-          ELSE 'overdue'
-        END`,
+        status: transactionOccurrences.status,
         overdueDays: sql<number>`
           CASE
-            WHEN ${transactions.paidAt} IS NOT NULL OR ${transactions.dueDate}::date >= CURRENT_DATE THEN 0
-            ELSE GREATEST(0, (CURRENT_DATE - ${transactions.dueDate}::date))
+            WHEN ${transactionOccurrences.status} = 'pending' AND ${transactionOccurrences.dueDate}::date < CURRENT_DATE THEN GREATEST(0, (CURRENT_DATE - ${transactionOccurrences.dueDate}::date))
+            ELSE 0
           END
         `,
       })
-      .from(transactions)
-      .innerJoin(users, eq(transactions.payToId, users.id))
-      .leftJoin(transactionTags, eq(transactionTags.transactionId, transactions.id))
+      .from(transactionOccurrences)
+      .innerJoin(transactionSeries, eq(transactionOccurrences.seriesId, transactionSeries.id))
+      .innerJoin(users, eq(transactionSeries.payToId, users.id))
+      .leftJoin(transactionTags, eq(transactionTags.transactionId, transactionSeries.id))
       .leftJoin(tagsTable, eq(transactionTags.tagId, tagsTable.id))
       .where(where)
-      .groupBy(transactions.id, users.name)
-      .orderBy(desc(transactions.dueDate))
+      .groupBy(
+        transactionOccurrences.id,
+        transactionSeries.title,
+        transactionSeries.type,
+        users.name
+      )
+      .orderBy(desc(transactionOccurrences.dueDate))
       .limit(perPage)
       .offset((page - 1) * perPage),
     db
       .select({
-        value: sql<number>`count(distinct ${transactions.id})`,
+        value: sql<number>`count(distinct ${transactionOccurrences.id})`,
       })
-      .from(transactions)
-      .leftJoin(transactionTags, eq(transactionTags.transactionId, transactions.id))
+      .from(transactionOccurrences)
+      .innerJoin(transactionSeries, eq(transactionOccurrences.seriesId, transactionSeries.id))
+      .leftJoin(transactionTags, eq(transactionTags.transactionId, transactionSeries.id))
       .leftJoin(tagsTable, eq(transactionTags.tagId, tagsTable.id))
       .where(where),
   ])

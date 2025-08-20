@@ -1,7 +1,10 @@
+import { and, eq, gte } from 'drizzle-orm'
+
 import { db } from '@/db'
-import { transactions } from '@/db/schemas/transactions'
+import { transactionOccurrences } from '@/db/schemas/transactionOccurrences'
+import { transactionSeries } from '@/db/schemas/transactionSeries'
 import type { UpdateTransactionSchemaBody } from '@/http/schemas/transaction/update-transaction.schema'
-import { eq } from 'drizzle-orm'
+import { materializeOccurrences } from './materialize-occurrences'
 
 interface UpdateTransactionParams extends Omit<UpdateTransactionSchemaBody, 'payToEmail'> {
   id: string
@@ -19,17 +22,16 @@ export async function updateTransactionService({
   title,
   amount,
   dueDate,
-  description,
   isRecurring,
   recurrenceInterval,
   recurrenceType,
   recurrenceUntil,
   recurrenceStart,
   installmentsTotal,
-  installmentsPaid,
 }: UpdateTransactionParams) {
-  const result = await db
-    .update(transactions)
+  const startDate = recurrenceStart ?? dueDate
+  const [series] = await db
+    .update(transactionSeries)
     .set({
       type,
       title,
@@ -37,19 +39,30 @@ export async function updateTransactionService({
       payToId,
       organizationId,
       amount,
-      dueDate,
-      description,
-      isRecurring,
-      recurrenceInterval,
-      recurrenceType,
+      startDate,
+      recurrenceType: recurrenceType ?? 'monthly',
+      recurrenceInterval: recurrenceInterval ?? 1,
       recurrenceUntil,
-      recurrenceStart,
-      installmentsTotal,
-      installmentsPaid,
+      installmentsTotal: installmentsTotal ?? (isRecurring ? null : 1),
       updatedAt: new Date(),
     })
-    .where(eq(transactions.id, id))
+    .where(eq(transactionSeries.id, id))
     .returning()
 
-  return { transaction: result[0] }
+  if (!series) return { series: undefined }
+
+  await db
+    .update(transactionOccurrences)
+    .set({ status: 'canceled' })
+    .where(
+      and(
+        eq(transactionOccurrences.seriesId, id),
+        eq(transactionOccurrences.status, 'pending'),
+        gte(transactionOccurrences.dueDate, new Date())
+      )
+    )
+
+  await materializeOccurrences(id)
+
+  return { series }
 }

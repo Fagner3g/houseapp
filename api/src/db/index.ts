@@ -7,6 +7,8 @@ import { goalCompletions } from './schemas/goalCompletions'
 import { goals } from './schemas/goals'
 import { invites } from './schemas/invites'
 import { organizations } from './schemas/organization'
+import { transactionOccurrences } from './schemas/transactionOccurrences'
+import { transactionSeries } from './schemas/transactionSeries'
 import { transactions } from './schemas/transactions'
 import { transactionTags } from './schemas/transactionTags'
 import { userOrganizations } from './schemas/userOrganization'
@@ -21,6 +23,8 @@ const schema = {
   goalCompletions,
   transactions,
   transactionTags,
+  transactionSeries,
+  transactionOccurrences,
 }
 
 type Database = PostgresJsDatabase<typeof schema>
