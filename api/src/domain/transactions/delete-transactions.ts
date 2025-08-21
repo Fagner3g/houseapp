@@ -28,8 +28,7 @@ export async function deleteTransactionsService({
     )
 
   await db
-    .update(transactionOccurrences)
-    .set({ status: 'canceled' })
+    .delete(transactionOccurrences)
     .where(
       and(inArray(transactionOccurrences.id, ids), inArray(transactionOccurrences.seriesId, sub))
     )
