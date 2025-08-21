@@ -20,9 +20,10 @@ import { PaySelected } from './pay-selected'
 interface Props extends FilterTableProps {
   table: Table<ListTransactions200TransactionsItem>
   onCreate: () => void
+  view: 'table' | 'calendar'
 }
 
-export function NavbarTable({ table, onCreate, ...props }: Props) {
+export function NavbarTable({ table, onCreate, view, ...props }: Props) {
   const navigate = useNavigate()
 
   const defaultFrom = dayjs().startOf('month').format('YYYY-MM-DD')
@@ -83,31 +84,33 @@ export function NavbarTable({ table, onCreate, ...props }: Props) {
       </TabsList>
 
       <div className="flex items-center gap-2">
-        <DropdownMenu>
-          <DropdownMenuTrigger asChild>
-            <Button variant="outline" size="sm">
-              <IconLayoutColumns />
-            </Button>
-          </DropdownMenuTrigger>
+        {view === 'table' && (
+          <DropdownMenu>
+            <DropdownMenuTrigger asChild>
+              <Button variant="outline" size="sm">
+                <IconLayoutColumns />
+              </Button>
+            </DropdownMenuTrigger>
 
-          <DropdownMenuContent align="end" className="w-56">
-            {table
-              .getAllColumns()
-              .filter(column => typeof column.accessorFn !== 'undefined' && column.getCanHide())
-              .map(column => {
-                return (
-                  <DropdownMenuCheckboxItem
-                    key={column.id}
-                    className="capitalize"
-                    checked={column.getIsVisible()}
-                    onCheckedChange={value => column.toggleVisibility(!!value)}
-                  >
-                    {column.id}
-                  </DropdownMenuCheckboxItem>
-                )
-              })}
-          </DropdownMenuContent>
-        </DropdownMenu>
+            <DropdownMenuContent align="end" className="w-56">
+              {table
+                .getAllColumns()
+                .filter(column => typeof column.accessorFn !== 'undefined' && column.getCanHide())
+                .map(column => {
+                  return (
+                    <DropdownMenuCheckboxItem
+                      key={column.id}
+                      className="capitalize"
+                      checked={column.getIsVisible()}
+                      onCheckedChange={value => column.toggleVisibility(!!value)}
+                    >
+                      {column.id}
+                    </DropdownMenuCheckboxItem>
+                  )
+                })}
+            </DropdownMenuContent>
+          </DropdownMenu>
+        )}
         <PaySelected table={table} />
         <DeleteSelected table={table} />
         <Button variant="outline" size="sm" onClick={onCreate}>

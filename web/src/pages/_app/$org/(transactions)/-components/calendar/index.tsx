@@ -1,4 +1,4 @@
-import { useMemo } from 'react'
+import { useMemo, useCallback } from 'react'
 import dayjs from 'dayjs'
 import 'dayjs/locale/pt-br'
 dayjs.locale('pt-br')
@@ -31,18 +31,21 @@ export function CalendarTransactions({ transactions, dateFrom, dateTo }: Props) 
 
   const initialDate = useMemo(() => dayjs(dateFrom).toDate(), [dateFrom])
 
-  const handleDateChange = (date: Date) => {
-    const from = dayjs(date).startOf('month').format('YYYY-MM-DD')
-    const to = dayjs(date).endOf('month').format('YYYY-MM-DD')
+  const handleDateChange = useCallback(
+    (date: Date) => {
+      const from = dayjs(date).startOf('month').format('YYYY-MM-DD')
+      const to = dayjs(date).endOf('month').format('YYYY-MM-DD')
 
-    if (from === dateFrom && to === dateTo) return
+      if (from === dateFrom && to === dateTo) return
 
-    navigate({
-      to: '.',
-      search: prev => ({ ...prev, dateFrom: from, dateTo: to, page: 1 }),
-      replace: true,
-    })
-  }
+      navigate({
+        to: '.',
+        search: prev => ({ ...prev, dateFrom: from, dateTo: to, page: 1 }),
+        replace: true,
+      })
+    },
+    [dateFrom, dateTo, navigate],
+  )
 
   return (
     <EventCalendar

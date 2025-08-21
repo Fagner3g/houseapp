@@ -42,6 +42,7 @@ export function TableLIstTransactions({ transactions, dateFrom, dateTo, ...props
     >
       <NavbarTable
         table={table}
+        view={view}
         onCreate={() => {
           setDraft(null)
           setOpenNew(true)
