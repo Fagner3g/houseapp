@@ -1,5 +1,8 @@
-import { IconLayoutColumns, IconPlus } from '@tabler/icons-react'
+import { IconLayoutColumns, IconPlus, IconX } from '@tabler/icons-react'
+import { useNavigate } from '@tanstack/react-router'
 import type { Table } from '@tanstack/react-table'
+import dayjs from 'dayjs'
+import 'dayjs/locale/pt-br'
 
 import type { ListTransactions200TransactionsItem } from '@/api/generated/model'
 import { Button } from '@/components/ui/button'
@@ -19,9 +22,59 @@ interface Props extends FilterTableProps {
 }
 
 export function NavbarTable({ table, onCreate, ...props }: Props) {
+  const navigate = useNavigate()
+
+  const defaultFrom = dayjs().startOf('month').format('YYYY-MM-DD')
+  const defaultTo = dayjs().endOf('month').format('YYYY-MM-DD')
+  const hasFilters =
+    props.type !== 'all' || props.dateFrom !== defaultFrom || props.dateTo !== defaultTo
+
+  const from = dayjs(props.dateFrom)
+  const to = dayjs(props.dateTo)
+  const isMonthRange =
+    from.isValid() &&
+    to.isValid() &&
+    from.isSame(to, 'month') &&
+    from.date() === 1 &&
+    to.date() === to.daysInMonth()
+  const rangeLabel = isMonthRange
+    ? from.locale('pt-br').format('MMMM [de] YYYY')
+    : from.isValid() && to.isValid()
+      ? `${from.locale('pt-br').format('DD/MM/YYYY')} - ${to.locale('pt-br').format('DD/MM/YYYY')}`
+      : ''
+
   return (
-    <div className="flex items-center justify-between px-4 lg:px-6">
-      <FilterTable {...props} />
+    <div className="flex items-center justify-between gap-2 px-4 lg:px-6">
+      <div className="flex min-w-0 items-center gap-2">
+        <FilterTable {...props} />
+        {hasFilters && (
+          <Button
+            variant="ghost"
+            size="icon"
+            aria-label="Clear filters"
+            onClick={() => {
+              navigate({
+                to: '.',
+                search: prev => ({
+                  ...prev,
+                  type: 'all',
+                  dateFrom: defaultFrom,
+                  dateTo: defaultTo,
+                  page: 1,
+                }),
+                replace: true,
+              })
+            }}
+          >
+            <IconX size={16} />
+          </Button>
+        )}
+        {rangeLabel && (
+          <span className="hidden truncate text-sm text-muted-foreground capitalize sm:inline">
+            {rangeLabel}
+          </span>
+        )}
+      </div>
 
       <div className="flex items-center gap-2">
         <DropdownMenu>

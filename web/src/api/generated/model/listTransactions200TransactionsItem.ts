@@ -20,9 +20,9 @@ export type ListTransactions200TransactionsItem = {
   paidAt: string | null;
   status: ListTransactions200TransactionsItemStatus;
   overdueDays: number;
-  /** @nullable */
-  installmentsTotal?: number | null;
-  /** @nullable */
-  installmentsPaid?: number | null;
   tags: ListTransactions200TransactionsItemTagsItem[];
+  /** @nullable */
+  installmentsTotal: number | null;
+  /** @nullable */
+  installmentsPaid: number | null;
 };

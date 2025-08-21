@@ -21,4 +21,8 @@ export type GetTransactionById200Transaction = {
   status: GetTransactionById200TransactionStatus;
   overdueDays: number;
   tags: GetTransactionById200TransactionTagsItem[];
+  /** @nullable */
+  installmentsTotal: number | null;
+  /** @nullable */
+  installmentsPaid: number | null;
 };

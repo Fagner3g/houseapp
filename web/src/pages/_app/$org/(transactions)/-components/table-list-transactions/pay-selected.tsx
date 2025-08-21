@@ -1,6 +1,7 @@
 import type { Table } from '@tanstack/react-table'
 import { useState } from 'react'
 
+import { IconCheck, IconX } from '@tabler/icons-react'
 import type { ListTransactions200TransactionsItem } from '@/api/generated/model'
 import {
   AlertDialog,
@@ -38,8 +39,24 @@ export function PaySelected({ table }: Props) {
   return (
     <AlertDialog open={open} onOpenChange={setOpen}>
       <AlertDialogTrigger asChild>
-        <Button size="sm">
-          {allPaid ? `Cancelar pagamento (${selected})` : `Pagar selecionadas (${selected})`}
+        <Button
+          size="sm"
+          className="gap-1 px-2 sm:px-3"
+          aria-label={
+            allPaid
+              ? `Cancelar pagamento de ${selected} transação(ões)`
+              : `Pagar ${selected} transação(ões)`
+          }
+        >
+          {allPaid ? <IconX size={16} /> : <IconCheck size={16} />}
+          <span className="sm:hidden" aria-hidden>
+            {selected}
+          </span>
+          <span className="hidden sm:inline">
+            {allPaid
+              ? `Cancelar pagamento (${selected})`
+              : `Pagar selecionadas (${selected})`}
+          </span>
         </Button>
       </AlertDialogTrigger>
       <AlertDialogContent>

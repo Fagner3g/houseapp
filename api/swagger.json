@@ -1181,14 +1181,6 @@
                         "overdueDays": {
                           "type": "number"
                         },
-                        "installmentsTotal": {
-                          "type": "integer",
-                          "nullable": true
-                        },
-                        "installmentsPaid": {
-                          "type": "integer",
-                          "nullable": true
-                        },
                         "tags": {
                           "type": "array",
                           "items": {
@@ -1207,6 +1199,14 @@
                             ],
                             "additionalProperties": false
                           }
+                        },
+                        "installmentsTotal": {
+                          "type": "integer",
+                          "nullable": true
+                        },
+                        "installmentsPaid": {
+                          "type": "integer",
+                          "nullable": true
                         }
                       },
                       "required": [
@@ -1219,7 +1219,9 @@
                         "paidAt",
                         "status",
                         "overdueDays",
-                        "tags"
+                        "tags",
+                        "installmentsTotal",
+                        "installmentsPaid"
                       ],
                       "additionalProperties": false
                     }
@@ -1592,14 +1594,6 @@
                           "overdueDays": {
                             "type": "number"
                           },
-                          "installmentsTotal": {
-                            "type": "integer",
-                            "nullable": true
-                          },
-                          "installmentsPaid": {
-                            "type": "integer",
-                            "nullable": true
-                          },
                           "tags": {
                             "type": "array",
                             "items": {
@@ -1618,6 +1612,14 @@
                               ],
                               "additionalProperties": false
                             }
+                          },
+                          "installmentsTotal": {
+                            "type": "integer",
+                            "nullable": true
+                          },
+                          "installmentsPaid": {
+                            "type": "integer",
+                            "nullable": true
                           }
                         },
                         "required": [
@@ -1630,7 +1632,9 @@
                           "paidAt",
                           "status",
                           "overdueDays",
-                          "tags"
+                          "tags",
+                          "installmentsTotal",
+                          "installmentsPaid"
                         ],
                         "additionalProperties": false
                       }
