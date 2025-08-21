@@ -19,12 +19,14 @@ import { useActiveOrganization } from '@/hooks/use-active-organization'
 import { useListOrganizations } from '@/api/generated/api'
 import { useState } from 'react'
 import { ModalEditOrganization } from '@/components/modal-edit-organization'
+import { ModalNewOrganization } from '@/components/modal-new-organization'
 
 export function TeamSwitcher() {
   const { isMobile } = useSidebar()
   const { data } = useListOrganizations()
   const { slug, setOrganization } = useActiveOrganization()
   const [openEdit, setOpenEdit] = useState(false)
+  const [openCreate, setOpenCreate] = useState(false)
   const teams = (data?.organizations ?? []).map(org => ({
     id: org.slug,
     name: org.name,
@@ -79,7 +81,7 @@ export function TeamSwitcher() {
                 </DropdownMenuItem>
               ))}
               <DropdownMenuSeparator />
-              <DropdownMenuItem className="gap-2 p-2">
+              <DropdownMenuItem className="gap-2 p-2" onClick={() => setOpenCreate(true)}>
                 <div className="flex size-6 items-center justify-center rounded-md border bg-transparent">
                   <Plus className="size-4" />
                 </div>
@@ -101,6 +103,7 @@ export function TeamSwitcher() {
         orgSlug={activeTeam.id}
         currentName={activeTeam.name}
       />
+      <ModalNewOrganization open={openCreate} onOpenChange={setOpenCreate} />
     </>
   )
 }
