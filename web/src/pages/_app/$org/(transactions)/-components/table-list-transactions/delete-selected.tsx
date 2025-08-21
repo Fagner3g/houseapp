@@ -1,7 +1,7 @@
-import { useState } from 'react'
 import type { Table } from '@tanstack/react-table'
+import { useState } from 'react'
 
-import { Button } from '@/components/ui/button'
+import type { ListTransactions200TransactionsItem } from '@/api/generated/model'
 import {
   AlertDialog,
   AlertDialogAction,
@@ -13,7 +13,7 @@ import {
   AlertDialogTitle,
   AlertDialogTrigger,
 } from '@/components/ui/alert-dialog'
-import type { ListTransactions200TransactionsItem } from '@/api/generated/model'
+import { Button } from '@/components/ui/button'
 
 interface Props {
   table: Table<ListTransactions200TransactionsItem>
@@ -25,7 +25,7 @@ export function DeleteSelected({ table }: Props) {
 
   const handleDelete = () => {
     const ids = table.getSelectedRowModel().rows.map(row => row.original.id)
-    table.options.meta?.deleteRows?.(ids)
+    table.options.meta?.deleteRows(ids)
     table.resetRowSelection()
     setOpen(false)
   }
@@ -43,7 +43,8 @@ export function DeleteSelected({ table }: Props) {
         <AlertDialogHeader>
           <AlertDialogTitle>Excluir transações</AlertDialogTitle>
           <AlertDialogDescription>
-            Tem certeza que deseja excluir {selected} transação(ões)? Esta ação não pode ser desfeita.
+            Tem certeza que deseja excluir {selected} transação(ões)? Esta ação não pode ser
+            desfeita.
           </AlertDialogDescription>
         </AlertDialogHeader>
         <AlertDialogFooter>
@@ -54,4 +55,3 @@ export function DeleteSelected({ table }: Props) {
     </AlertDialog>
   )
 }
-

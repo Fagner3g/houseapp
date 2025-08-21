@@ -1,15 +1,15 @@
 import { zodResolver } from '@hookform/resolvers/zod'
+import { useQueryClient } from '@tanstack/react-query'
 import { useEffect } from 'react'
 import { useForm } from 'react-hook-form'
-import { useQueryClient } from '@tanstack/react-query'
 import { toast } from 'sonner'
 
-import type { ListTransactions200TransactionsItem } from '@/api/generated/model'
 import {
   getListTransactionsQueryKey,
   useListUsersByOrg,
   useUpdateTransaction,
 } from '@/api/generated/api'
+import type { ListTransactions200TransactionsItem } from '@/api/generated/model'
 import { Button } from '@/components/ui/button'
 import {
   Drawer,
@@ -26,14 +26,14 @@ import { AmountField } from '../modal-new-transaction/amount-field'
 import { DescriptionField } from '../modal-new-transaction/description-field'
 import { CalendarField } from '../modal-new-transaction/due-date-field'
 import { PayToField } from '../modal-new-transaction/pay-to-field'
+import {
+  type NewTransactionSchema,
+  newTransactionSchema,
+  RegisterType,
+} from '../modal-new-transaction/schema'
 import { TagField } from '../modal-new-transaction/tag-field'
 import { TitleField } from '../modal-new-transaction/title-filed'
 import { TypeField } from '../modal-new-transaction/type-field'
-import {
-  newTransactionSchema,
-  type NewTransactionSchema,
-  RegisterType,
-} from '../modal-new-transaction/schema'
 
 interface Props {
   transaction: ListTransactions200TransactionsItem | null
@@ -44,7 +44,7 @@ interface Props {
 export function DrawerEdit({ transaction, open, onOpenChange }: Props) {
   const { slug } = useActiveOrganization()
   const queryClient = useQueryClient()
-  const { data: users } = useListUsersByOrg(slug)
+  const { data } = useListUsersByOrg(slug)
   const isMobile = useIsMobile()
 
   const form = useForm<NewTransactionSchema>({
@@ -53,8 +53,9 @@ export function DrawerEdit({ transaction, open, onOpenChange }: Props) {
   })
 
   useEffect(() => {
-    if (!transaction) return
-    const payToEmail = users?.find(u => u.name === transaction.payTo)?.email ?? ''
+    if (!transaction || !data?.users) return
+
+    const payToEmail = data?.users?.find(u => u.name === transaction.payTo)?.email ?? ''
 
     form.reset({
       type: transaction.type as RegisterType,
@@ -65,7 +66,7 @@ export function DrawerEdit({ transaction, open, onOpenChange }: Props) {
       tags: transaction.tags,
       isRecurring: false,
     })
-  }, [transaction, form, users])
+  }, [transaction, form, data])
 
   const { mutate: updateTransaction } = useUpdateTransaction({
     mutation: {
@@ -86,11 +87,7 @@ export function DrawerEdit({ transaction, open, onOpenChange }: Props) {
   }
 
   return (
-    <Drawer
-      open={open}
-      onOpenChange={onOpenChange}
-      direction={isMobile ? 'bottom' : 'right'}
-    >
+    <Drawer open={open} onOpenChange={onOpenChange} direction={isMobile ? 'bottom' : 'right'}>
       <DrawerContent>
         <DrawerHeader>
           <DrawerTitle>Editar transação</DrawerTitle>
@@ -104,7 +101,7 @@ export function DrawerEdit({ transaction, open, onOpenChange }: Props) {
                 <AmountField form={form} />
                 <CalendarField form={form} />
               </div>
-              <PayToField form={form} data={users} />
+              <PayToField form={form} data={data} />
               <TagField form={form} />
               <DescriptionField form={form} />
               <Button type="submit">Salvar</Button>

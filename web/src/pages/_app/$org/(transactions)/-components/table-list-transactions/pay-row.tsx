@@ -25,7 +25,7 @@ export function PayRowAction({ id, status, table }: Props) {
   const [open, setOpen] = useState(false)
 
   async function handlePay() {
-    await table.options.meta?.payRows?.([id])
+    await table.options.meta?.payRows([id])
     setOpen(false)
   }
 

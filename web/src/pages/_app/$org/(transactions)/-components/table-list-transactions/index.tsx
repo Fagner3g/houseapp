@@ -1,4 +1,7 @@
-import type { ListTransactions200, ListTransactions200TransactionsItem } from '@/api/generated/model'
+import type {
+  ListTransactions200,
+  ListTransactions200TransactionsItem,
+} from '@/api/generated/model'
 import { useState } from 'react'
 import { DrawerEdit } from './drawer-edit'
 import type { FilterTableProps } from './filter'

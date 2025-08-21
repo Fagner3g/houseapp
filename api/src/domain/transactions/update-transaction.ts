@@ -87,9 +87,7 @@ export async function updateTransactionService({
       }
     }
 
-    await db
-      .delete(transactionTags)
-      .where(eq(transactionTags.transactionId, series.id))
+    await db.delete(transactionTags).where(eq(transactionTags.transactionId, series.id))
 
     const rows = names.map(name => ({
       transactionId: series.id,

@@ -44,7 +44,7 @@ import { PayRowAction } from '../pay-row'
 
 export const useTable = (
   data: ListTransactions200TransactionsItem[],
-  onDuplicate?: (item: ListTransactions200TransactionsItem) => void,
+  onDuplicate?: (item: ListTransactions200TransactionsItem) => void
 ) => {
   const [rowSelection, setRowSelection] = useState({})
   const [columnVisibility, setColumnVisibility] = useState<VisibilityState>({
