@@ -1,4 +1,4 @@
-import { useMemo, useCallback } from 'react'
+import { useMemo, useCallback, useState } from 'react'
 import dayjs from 'dayjs'
 import 'dayjs/locale/pt-br'
 dayjs.locale('pt-br')
@@ -7,6 +7,7 @@ import { useNavigate } from '@tanstack/react-router'
 import type { ListTransactions200TransactionsItem } from '@/api/generated/model'
 import { EventCalendar } from '@/components/event-calendar'
 import type { CalendarEvent } from '@/components/event-calendar'
+import { TransactionDrawer } from './transaction-drawer'
 
 interface Props {
   transactions: ListTransactions200TransactionsItem[]
@@ -16,6 +17,7 @@ interface Props {
 
 export function CalendarTransactions({ transactions, dateFrom, dateTo }: Props) {
   const navigate = useNavigate()
+  const [selected, setSelected] = useState<ListTransactions200TransactionsItem | null>(null)
   const events = useMemo<CalendarEvent[]>(
     () =>
       transactions.map(t => ({
@@ -47,13 +49,31 @@ export function CalendarTransactions({ transactions, dateFrom, dateTo }: Props) 
     [dateFrom, dateTo, navigate],
   )
 
+  const handleEventClick = useCallback(
+    (event: CalendarEvent) => {
+      const tx = transactions.find(t => t.id === event.id) ?? null
+      setSelected(tx)
+    },
+    [transactions],
+  )
+
   return (
-    <EventCalendar
-      events={events}
-      onDateChange={handleDateChange}
-      initialDate={initialDate}
-      editable={false}
-    />
+    <>
+      <EventCalendar
+        events={events}
+        onDateChange={handleDateChange}
+        initialDate={initialDate}
+        editable={false}
+        onEventClick={handleEventClick}
+      />
+      <TransactionDrawer
+        transaction={selected}
+        open={!!selected}
+        onOpenChange={open => {
+          if (!open) setSelected(null)
+        }}
+      />
+    </>
   )
 }
 

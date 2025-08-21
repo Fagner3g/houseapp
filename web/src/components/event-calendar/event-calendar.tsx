@@ -56,6 +56,7 @@ export interface EventCalendarProps {
   onDateChange?: (date: Date) => void
   initialDate?: Date
   editable?: boolean
+  onEventClick?: (event: CalendarEvent) => void
 }
 
 export function EventCalendar({
@@ -68,6 +69,7 @@ export function EventCalendar({
   onDateChange,
   initialDate,
   editable = true,
+  onEventClick,
 }: EventCalendarProps) {
   const [currentDate, setCurrentDate] = useState(initialDate ?? new Date())
   const [view, setView] = useState<CalendarView>(initialView)
@@ -151,10 +153,12 @@ export function EventCalendar({
   }
 
   const handleEventSelect = (event: CalendarEvent) => {
-    if (!editable) return
-    console.log("Event selected:", event) // Debug log
-    setSelectedEvent(event)
-    setIsEventDialogOpen(true)
+    if (editable) {
+      console.log("Event selected:", event) // Debug log
+      setSelectedEvent(event)
+      setIsEventDialogOpen(true)
+    }
+    onEventClick?.(event)
   }
 
   const handleEventCreate = (startTime: Date) => {
