@@ -34,6 +34,7 @@ import {
 import { TagField } from '../modal-new-transaction/tag-field'
 import { TitleField } from '../modal-new-transaction/title-filed'
 import { TypeField } from '../modal-new-transaction/type-field'
+import { TransactionSummary } from './transaction-summary'
 
 interface Props {
   transaction: ListTransactions200TransactionsItem | null
@@ -107,6 +108,7 @@ export function DrawerEdit({ transaction, open, onOpenChange }: Props) {
               <Button type="submit">Salvar</Button>
             </form>
           </Form>
+          <TransactionSummary transaction={transaction} />
         </div>
         <DrawerFooter>
           <DrawerClose asChild>
