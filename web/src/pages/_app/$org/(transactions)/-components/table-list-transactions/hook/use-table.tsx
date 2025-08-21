@@ -18,7 +18,11 @@ import { AlertOctagon, LucideClockFading, TrendingDown, TrendingUp } from 'lucid
 import { useState } from 'react'
 import { toast } from 'sonner'
 
-import { getListTransactionsQueryKey, useDeleteTransactions } from '@/api/generated/api'
+import {
+  getListTransactionsQueryKey,
+  useDeleteTransactions,
+  usePayTransaction,
+} from '@/api/generated/api'
 import type {
   ListTransactions200,
   ListTransactions200TransactionsItem,
@@ -37,6 +41,7 @@ import { Label } from '@/components/ui/label'
 import { useActiveOrganization } from '@/hooks/use-active-organization'
 import { DeleteRowAction } from '../delete-row'
 import { DrawerEdit } from '../drawer-edit'
+import { PayRowAction } from '../pay-row'
 
 export const useTable = (data: ListTransactions200TransactionsItem[]) => {
   const [rowSelection, setRowSelection] = useState({})
@@ -88,6 +93,8 @@ export const useTable = (data: ListTransactions200TransactionsItem[]) => {
       },
     },
   })
+
+  const { mutateAsync: payTransaction } = usePayTransaction()
 
   function copyLink(id: string) {
     const url = `${window.location.origin}/transactions?openId=${id}`
@@ -244,6 +251,7 @@ export const useTable = (data: ListTransactions200TransactionsItem[]) => {
             <DropdownMenuItem onClick={() => copyLink(row.original.id)}>
               Copiar link
             </DropdownMenuItem>
+            <PayRowAction id={row.original.id} table={table} />
             <DropdownMenuSeparator />
             <DeleteRowAction id={row.original.id} table={table} />
           </DropdownMenuContent>
@@ -281,6 +289,20 @@ export const useTable = (data: ListTransactions200TransactionsItem[]) => {
       },
       editRow: (item: ListTransactions200TransactionsItem) => {
         setEditing(item)
+      },
+      payRows: async (ids: string[]) => {
+        try {
+          await Promise.all(ids.map(id => payTransaction({ slug, id })))
+          toast.success(
+            ids.length > 1 ? 'Transações pagas com sucesso!' : 'Transação paga com sucesso!'
+          )
+        } catch {
+          toast.error('Erro ao pagar transações')
+        } finally {
+          queryClient.invalidateQueries({
+            queryKey: getListTransactionsQueryKey(slug),
+          })
+        }
       },
     },
   })

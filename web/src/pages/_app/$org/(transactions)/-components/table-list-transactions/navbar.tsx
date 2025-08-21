@@ -12,6 +12,7 @@ import {
 import { ModalNewTransaction } from '../modal-new-transaction'
 import { DeleteSelected } from './delete-selected'
 import FilterTable, { type FilterTableProps } from './filter'
+import { PaySelected } from './pay-selected'
 
 interface Props extends FilterTableProps {
   table: Table<ListTransactions200TransactionsItem>
@@ -48,6 +49,7 @@ export function NavbarTable({ table, ...props }: Props) {
               })}
           </DropdownMenuContent>
         </DropdownMenu>
+        <PaySelected table={table} />
         <DeleteSelected table={table} />
         <ModalNewTransaction />
       </div>
