@@ -92,7 +92,7 @@ export function DrawerEdit({ transaction, open, onOpenChange }: Props) {
         <DrawerHeader>
           <DrawerTitle>Editar transação</DrawerTitle>
         </DrawerHeader>
-        <div className="flex flex-col gap-4 p-4 overflow-y-auto">
+        <div className="flex flex-col gap-4 p-4 overflow-y-auto overflow-x-hidden">
           <Form {...form}>
             <form onSubmit={form.handleSubmit(handleSubmit)} className="flex flex-col gap-4">
               <TypeField form={form} />

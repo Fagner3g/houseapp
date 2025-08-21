@@ -15,11 +15,11 @@ interface Props extends FooterProps, FilterTableProps {
   transactions: ListTransactions200['transactions']
 }
 
-export function TableLIstTransactions({ transactions, ...props }: Props) {
+export function TableLIstTransactions({ transactions, dateFrom, dateTo, ...props }: Props) {
   const [draft, setDraft] = useState<ListTransactions200TransactionsItem | null>(null)
   const [openNew, setOpenNew] = useState(false)
 
-  const { table, editing, setEditing } = useTable(transactions, item => {
+  const { table, editing, setEditing } = useTable(transactions, props.perPage, item => {
     setDraft(item)
     setOpenNew(true)
   })
@@ -32,7 +32,9 @@ export function TableLIstTransactions({ transactions, ...props }: Props) {
           setDraft(null)
           setOpenNew(true)
         }}
-        {...props}
+        type={props.type}
+        dateFrom={dateFrom}
+        dateTo={dateTo}
       />
       <TableView table={table} />
       <Footer {...props} />
