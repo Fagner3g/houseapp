@@ -17,6 +17,7 @@ import {
 } from '@/components/ui/sidebar'
 import { useActiveOrganization } from '@/hooks/use-active-organization'
 import { useListOrganizations } from '@/api/generated/api'
+import { ModalNewOrganization } from '@/components/modal-new-organization'
 
 export function TeamSwitcher() {
   const { isMobile } = useSidebar()
@@ -75,12 +76,14 @@ export function TeamSwitcher() {
               </DropdownMenuItem>
             ))}
             <DropdownMenuSeparator />
-            <DropdownMenuItem className="gap-2 p-2">
-              <div className="flex size-6 items-center justify-center rounded-md border bg-transparent">
-                <Plus className="size-4" />
-              </div>
-              <div className="text-muted-foreground font-medium">Add team</div>
-            </DropdownMenuItem>
+            <ModalNewOrganization>
+              <DropdownMenuItem className="gap-2 p-2">
+                <div className="flex size-6 items-center justify-center rounded-md border bg-transparent">
+                  <Plus className="size-4" />
+                </div>
+                <div className="text-muted-foreground font-medium">Add team</div>
+              </DropdownMenuItem>
+            </ModalNewOrganization>
           </DropdownMenuContent>
         </DropdownMenu>
       </SidebarMenuItem>
