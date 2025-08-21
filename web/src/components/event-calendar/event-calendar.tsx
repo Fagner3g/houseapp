@@ -1,6 +1,6 @@
 "use client"
 
-import { useEffect, useMemo, useState } from "react"
+import { useEffect, useLayoutEffect, useMemo, useState } from "react"
 import { RiCalendarCheckLine } from "@remixicon/react"
 import {
   addDays,
@@ -74,13 +74,14 @@ export function EventCalendar({
   const [isEventDialogOpen, setIsEventDialogOpen] = useState(false)
   const [selectedEvent, setSelectedEvent] = useState<CalendarEvent | null>(null)
 
-  useEffect(() => {
+  useLayoutEffect(() => {
     if (initialDate) setCurrentDate(initialDate)
   }, [initialDate])
 
   useEffect(() => {
     onDateChange?.(currentDate)
-  }, [currentDate, onDateChange])
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [currentDate])
 
   // Add keyboard shortcuts for view switching
   useEffect(() => {
