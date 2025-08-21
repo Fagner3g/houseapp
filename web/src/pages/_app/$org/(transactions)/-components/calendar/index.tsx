@@ -1,7 +1,8 @@
 import { useMemo } from 'react'
 
 import type { ListTransactions200TransactionsItem } from '@/api/generated/model'
-import { EventCalendar, type CalendarEvent } from '@/components/event-calendar'
+import { EventCalendar } from '@/components/event-calendar'
+import type { CalendarEvent } from '@/components/event-calendar'
 
 interface Props {
   transactions: ListTransactions200TransactionsItem[]

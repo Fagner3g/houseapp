@@ -23,8 +23,8 @@ import {
   isMultiDayEvent,
   useCurrentTimeIndicator,
   WeekCellsHeight,
-  type CalendarEvent,
 } from "@/components/event-calendar"
+import type { CalendarEvent } from "@/components/event-calendar"
 import {
   EndHour,
   StartHour,

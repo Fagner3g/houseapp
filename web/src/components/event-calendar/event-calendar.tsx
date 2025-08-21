@@ -26,8 +26,6 @@ import {
   AgendaDaysToShow,
   AgendaView,
   CalendarDndProvider,
-  CalendarEvent,
-  CalendarView,
   DayView,
   EventDialog,
   EventGap,
@@ -36,6 +34,7 @@ import {
   WeekCellsHeight,
   WeekView,
 } from "@/components/event-calendar"
+import type { CalendarEvent, CalendarView } from "@/components/event-calendar"
 import { cn } from "@/lib/utils"
 import { Button } from "@/components/ui/button"
 import {
