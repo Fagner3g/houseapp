@@ -21,4 +21,8 @@ export type ListTransactions200TransactionsItem = {
   status: ListTransactions200TransactionsItemStatus;
   overdueDays: number;
   tags: ListTransactions200TransactionsItemTagsItem[];
+  /** @nullable */
+  installmentsTotal: number | null;
+  /** @nullable */
+  installmentsPaid: number | null;
 };

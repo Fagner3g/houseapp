@@ -1199,6 +1199,14 @@
                             ],
                             "additionalProperties": false
                           }
+                        },
+                        "installmentsTotal": {
+                          "type": "integer",
+                          "nullable": true
+                        },
+                        "installmentsPaid": {
+                          "type": "integer",
+                          "nullable": true
                         }
                       },
                       "required": [
@@ -1211,7 +1219,9 @@
                         "paidAt",
                         "status",
                         "overdueDays",
-                        "tags"
+                        "tags",
+                        "installmentsTotal",
+                        "installmentsPaid"
                       ],
                       "additionalProperties": false
                     }
@@ -1602,6 +1612,14 @@
                               ],
                               "additionalProperties": false
                             }
+                          },
+                          "installmentsTotal": {
+                            "type": "integer",
+                            "nullable": true
+                          },
+                          "installmentsPaid": {
+                            "type": "integer",
+                            "nullable": true
                           }
                         },
                         "required": [
@@ -1614,7 +1632,9 @@
                           "paidAt",
                           "status",
                           "overdueDays",
-                          "tags"
+                          "tags",
+                          "installmentsTotal",
+                          "installmentsPaid"
                         ],
                         "additionalProperties": false
                       }

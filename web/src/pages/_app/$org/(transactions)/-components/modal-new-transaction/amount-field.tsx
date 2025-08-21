@@ -1,7 +1,7 @@
 import type { UseFormReturn } from 'react-hook-form'
 
 import { FormControl, FormField, FormItem, FormLabel } from '@/components/ui/form'
-import { Input } from '@/components/ui/input'
+import { CurrencyInput } from '@/components/ui/currency-input'
 import type { NewTransactionSchema } from './schema'
 
 export interface AmountFieldProps {
@@ -17,10 +17,12 @@ export function AmountField({ form }: AmountFieldProps) {
         <FormItem className="flex-1">
           <FormLabel>Preço (R$)</FormLabel>
           <FormControl>
-            <Input
-              {...field}
-              onChange={e => field.onChange(Number(e.target.value))}
-              value={field.value || 0}
+            <CurrencyInput
+              name={field.name}
+              ref={field.ref}
+              onBlur={field.onBlur}
+              value={field.value ?? 0}
+              onValueChange={field.onChange}
               placeholder="R$ 0,00"
             />
           </FormControl>

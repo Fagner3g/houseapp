@@ -50,6 +50,8 @@ export const useTable = (
   const [rowSelection, setRowSelection] = useState({})
   const [columnVisibility, setColumnVisibility] = useState<VisibilityState>({
     Pagamento: false,
+    Parcelas: false,
+    Pagas: false,
   })
   const [columnFilters, setColumnFilters] = useState<ColumnFiltersState>([])
   const [sorting, setSorting] = useState<SortingState>([])
@@ -220,6 +222,26 @@ export const useTable = (
           </Label>
         )
       },
+    },
+    {
+      accessorKey: 'Parcelas',
+      header: 'Parcelas',
+      enableHiding: true,
+      cell: ({ row }) => (
+        <Label className="text-muted-foreground px-1.5">
+          {row.original.installmentsTotal ?? ''}
+        </Label>
+      ),
+    },
+    {
+      accessorKey: 'Pagas',
+      header: 'Pagas',
+      enableHiding: true,
+      cell: ({ row }) => (
+        <Label className="text-muted-foreground px-1.5">
+          {row.original.installmentsPaid ?? ''}
+        </Label>
+      ),
     },
     {
       accessorKey: 'Para',
