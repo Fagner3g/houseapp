@@ -1,20 +1,9 @@
-import { createRouter, RouterProvider } from '@tanstack/react-router'
+import { RouterProvider } from '@tanstack/react-router'
 import { Toaster } from 'sonner'
 
-import { QueryProvider } from './providers/query-provider.tsx'
-import { ThemeProvider } from './providers/theme-provider.tsx'
-// Import the generated route tree
-import { routeTree } from './routeTree.gen.ts'
-
-// Create a new router instance
-const router = createRouter({ routeTree })
-
-// Register the router instance for type safety
-declare module '@tanstack/react-router' {
-  interface Register {
-    router: typeof router
-  }
-}
+import { QueryProvider } from './providers/query-provider'
+import { ThemeProvider } from './providers/theme-provider'
+import { router } from './routes/index'
 
 export function App() {
   return (
