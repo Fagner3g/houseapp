@@ -73,6 +73,7 @@ export async function listTransactionsService({
         ...getTableColumns(transactionOccurrences),
         title: transactionSeries.title,
         type: transactionSeries.type,
+        installmentsTotal: transactionSeries.installmentsTotal,
         payTo: users.name,
         tags: sql<{ name: string; color: string }[]>`
           coalesce(
@@ -115,12 +116,37 @@ export async function listTransactionsService({
       .where(where),
   ])
 
+  const seriesIds = Array.from(new Set(result.map(r => r.seriesId)))
+  const paidMap: Record<string, number> = {}
+  if (seriesIds.length > 0) {
+    const paidRows = await db
+      .select({
+        seriesId: transactionOccurrences.seriesId,
+        paid: sql<number>`count(*)`,
+      })
+      .from(transactionOccurrences)
+      .where(
+        and(
+          inArray(transactionOccurrences.seriesId, seriesIds),
+          eq(transactionOccurrences.status, 'paid')
+        )
+      )
+      .groupBy(transactionOccurrences.seriesId)
+
+    for (const r of paidRows) paidMap[r.seriesId] = Number(r.paid)
+  }
+
+  const transactions = result.map(row => ({
+    ...row,
+    installmentsPaid: paidMap[row.seriesId] ?? 0,
+  }))
+
   const totalItems = Number(total[0]?.value) ?? 0
   const totalPages = Math.ceil(totalItems / perPage)
   const pagesRemaining = Math.max(0, totalPages - page)
 
   return {
-    transactions: result,
+    transactions,
     page,
     perPage,
     totalItems,
