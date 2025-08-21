@@ -10,7 +10,10 @@ const base = z.object({
   title: z.string('O título é obrigatório').nonempty(),
   amount: z.number('Valor da transação é obrigatório').min(1),
   dueDate: z.date({ error: 'A data de vencimento é obrigatória' }),
-  payToEmail: z.string('Defina o pra quem vai o registro').nonempty(),
+  payToEmail: z
+    .string()
+    .min(1, { message: 'Defina o pra quem vai o registro' })
+    .email('Informe um e-mail válido'),
   tags: z.array(z.object({ name: z.string(), color: z.string() })).optional(),
   description: z.string().optional(),
 })
@@ -43,7 +46,11 @@ const _schema = z.discriminatedUnion('isRecurring', [recurring, nonRecurring])
 
 export const newTransactionSchema = _schema.superRefine((v, ctx) => {
   if (!v.isRecurring) return
-  if (v.recurrenceInterval == null || Number.isNaN(v.recurrenceInterval) || v.recurrenceInterval < 1) {
+  if (
+    v.recurrenceInterval == null ||
+    Number.isNaN(v.recurrenceInterval) ||
+    v.recurrenceInterval < 1
+  ) {
     ctx.addIssue({
       code: 'custom',
       path: ['recurrenceInterval'],

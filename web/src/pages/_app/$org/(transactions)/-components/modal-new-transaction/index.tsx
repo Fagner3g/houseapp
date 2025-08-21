@@ -1,21 +1,9 @@
 import { zodResolver } from '@hookform/resolvers/zod'
-import { IconPlus } from '@tabler/icons-react'
 import { useQueryClient } from '@tanstack/react-query'
-import { useEffect, useState } from 'react'
+import { useEffect } from 'react'
 import { useForm } from 'react-hook-form'
 import { toast } from 'sonner'
 
-import { Button } from '@/components/ui/button'
-import {
-  Dialog,
-  DialogContent,
-  DialogDescription,
-  DialogHeader,
-  DialogTitle,
-  DialogTrigger,
-} from '@/components/ui/dialog'
-import { Form } from '@/components/ui/form'
-import { useActiveOrganization } from '@/hooks/use-active-organization'
 import {
   getListTransactionsQueryKey,
   useCreateTransaction,
@@ -26,13 +14,26 @@ import type {
   ListTransactions200,
   ListTransactions200TransactionsItem,
 } from '@/api/generated/model'
+import { Button } from '@/components/ui/button'
+import {
+  Drawer,
+  DrawerClose,
+  DrawerContent,
+  DrawerDescription,
+  DrawerFooter,
+  DrawerHeader,
+  DrawerTitle,
+} from '@/components/ui/drawer'
+import { Form } from '@/components/ui/form'
+import { useActiveOrganization } from '@/hooks/use-active-organization'
+import { useIsMobile } from '@/hooks/use-mobile'
 import { showToastOnErrorSubmit } from '@/lib/utils'
 import { AmountField } from './amount-field'
 import { DescriptionField } from './description-field'
 import { CalendarField } from './due-date-field'
+import { InstallmentsTotalField } from './installments-total-field'
 import { RecurrenceField } from './is-recurring-filed'
 import { PayToField } from './pay-to-field'
-import { InstallmentsTotalField } from './installments-total-field'
 import { RecurrenceSelectorField } from './recurrence-selector-field'
 import { RecurrenceTypeField } from './recurrence-type-field'
 import { RecurrenceUntilField } from './recurrence-until-field'
@@ -41,11 +42,17 @@ import { TagField } from './tag-field'
 import { TitleField } from './title-filed'
 import { TypeField } from './type-field'
 
-export function ModalNewTransaction() {
-  const [open, setOpen] = useState(false)
+interface Props {
+  open: boolean
+  onOpenChange: (open: boolean) => void
+  transaction?: ListTransactions200TransactionsItem | null
+}
+
+export function DrawerNewTransaction({ open, onOpenChange, transaction }: Props) {
   const { slug } = useActiveOrganization()
   const queryClient = useQueryClient()
   const { data: userData } = useListUsersByOrg(slug)
+  const isMobile = useIsMobile()
 
   const form = useForm<NewTransactionSchema>({
     resolver: zodResolver(newTransactionSchema),
@@ -132,64 +139,83 @@ export function ModalNewTransaction() {
     })
   }, [form, mode])
 
+  useEffect(() => {
+    if (!open) return
+
+    if (transaction) {
+      const payToEmail = userData?.users.find(user => user.name === transaction.payTo)?.email
+
+      form.reset({
+        type: transaction.type,
+        title: transaction.title,
+        amount: transaction.amount,
+        dueDate: new Date(transaction.dueDate),
+        payToEmail,
+        tags: transaction.tags,
+        description: undefined,
+        isRecurring: false,
+      })
+    } else {
+      form.reset({ type: RegisterType.EXPENSE, isRecurring: false })
+    }
+  }, [open, transaction, userData, form])
+
   async function handleSubmit(data: NewTransactionSchema) {
     createTransaction({ slug, data })
-    setOpen(false)
-    // form.reset()
+    onOpenChange(false)
   }
 
   return (
-    <Dialog open={open} onOpenChange={setOpen}>
-      <DialogTrigger asChild>
-        <Button variant="outline" size="sm">
-          <IconPlus />
-          <span className="hidden lg:inline">Adicionar transação</span>
-        </Button>
-      </DialogTrigger>
-
-      <DialogContent>
-        <DialogHeader>
-          <DialogTitle>Criar nova {isExpense ? 'Receita' : 'Despesa'}</DialogTitle>
-          <DialogDescription>
+    <Drawer open={open} onOpenChange={onOpenChange} direction={isMobile ? 'bottom' : 'right'}>
+      <DrawerContent>
+        <DrawerHeader>
+          <DrawerTitle>Criar nova {isExpense ? 'Receita' : 'Despesa'}</DrawerTitle>
+          <DrawerDescription>
             Crie um nova {isExpense ? 'receita' : 'despesa'} e defina os detalhes.
-          </DialogDescription>
-        </DialogHeader>
-
-        <Form {...form}>
-          <form
-            onSubmit={form.handleSubmit(handleSubmit, () => showToastOnErrorSubmit({ form }))}
-            className="flex flex-col gap-4"
-          >
-            <TypeField form={form} />
-            <TitleField form={form} />
-            <div className="flex gap-5">
-              <AmountField form={form} />
-              <CalendarField form={form} />
-            </div>
-            <div className="flex gap-5">
-              <PayToField form={form} data={userData} />
-              <RecurrenceField form={form} />
-            </div>
-
-            {form.watch('isRecurring') && (
-              <div className="flex gap-3">
-                <RecurrenceTypeField form={form} />
-                <RecurrenceSelectorField form={form} />
-                {form.watch('recurrenceSelector') === 'date' ? (
-                  <RecurrenceUntilField form={form} />
-                ) : (
-                  <InstallmentsTotalField form={form} />
-                )}
+          </DrawerDescription>
+        </DrawerHeader>
+        <div className="flex flex-col gap-4 p-4 overflow-y-auto">
+          <Form {...form}>
+            <form
+              onSubmit={form.handleSubmit(handleSubmit, () => showToastOnErrorSubmit({ form }))}
+              className="flex flex-col gap-4"
+            >
+              <TypeField form={form} />
+              <TitleField form={form} />
+              <div className="flex flex-col gap-5 sm:flex-row">
+                <AmountField form={form} />
+                <CalendarField form={form} />
               </div>
-            )}
+              <div className="flex flex-col gap-5 sm:flex-row">
+                <PayToField form={form} data={userData} />
+                <RecurrenceField form={form} />
+              </div>
 
-            <TagField form={form} />
+              {form.watch('isRecurring') && (
+                <div className="flex flex-col gap-3 sm:flex-row">
+                  <RecurrenceTypeField form={form} />
+                  <RecurrenceSelectorField form={form} />
+                  {form.watch('recurrenceSelector') === 'date' ? (
+                    <RecurrenceUntilField form={form} />
+                  ) : (
+                    <InstallmentsTotalField form={form} />
+                  )}
+                </div>
+              )}
 
-            <DescriptionField form={form} />
-            <Button type="submit">Cadastrar</Button>
-          </form>
-        </Form>
-      </DialogContent>
-    </Dialog>
+              <TagField form={form} />
+
+              <DescriptionField form={form} />
+              <Button type="submit">Cadastrar</Button>
+            </form>
+          </Form>
+        </div>
+        <DrawerFooter>
+          <DrawerClose asChild>
+            <Button variant="outline">Cancelar</Button>
+          </DrawerClose>
+        </DrawerFooter>
+      </DrawerContent>
+    </Drawer>
   )
 }

@@ -26,7 +26,7 @@ export function PaySelected({ table }: Props) {
 
   async function handlePay() {
     const ids = rows.map(row => row.original.id)
-    await table.options.meta?.payRows?.(ids)
+    await table.options.meta?.payRows(ids)
     table.resetRowSelection()
     setOpen(false)
   }

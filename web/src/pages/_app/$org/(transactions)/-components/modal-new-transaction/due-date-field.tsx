@@ -30,7 +30,7 @@ export function CalendarField({ form }: CalendarFieldProps) {
                   variant="outline"
                   aria-invalid={!!form.formState.errors.dueDate}
                   className={cn(
-                    'w-48 justify-between font-normal',
+                    'w-full justify-between font-normal sm:w-48',
                     !field.value && 'text-muted-foreground'
                   )}
                 >
