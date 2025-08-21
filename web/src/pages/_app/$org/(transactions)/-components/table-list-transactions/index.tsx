@@ -3,13 +3,17 @@ import type {
   ListTransactions200TransactionsItem,
 } from '@/api/generated/model'
 import { useState } from 'react'
+
+import { Tabs, TabsContent } from '@/components/ui/tabs'
+
+import { CalendarTransactions } from '../calendar'
+import { DrawerNewTransaction } from '../modal-new-transaction'
 import { DrawerEdit } from './drawer-edit'
 import type { FilterTableProps } from './filter'
 import { Footer, type FooterProps } from './footer'
 import { useTable } from './hook/use-table'
 import { NavbarTable } from './navbar'
 import { TableView } from './table'
-import { DrawerNewTransaction } from '../modal-new-transaction'
 
 interface Props extends FooterProps, FilterTableProps {
   transactions: ListTransactions200['transactions']
@@ -25,7 +29,7 @@ export function TableLIstTransactions({ transactions, dateFrom, dateTo, ...props
   })
 
   return (
-    <div className="flex flex-col gap-4">
+    <Tabs defaultValue="table" className="flex flex-col gap-4">
       <NavbarTable
         table={table}
         onCreate={() => {
@@ -36,8 +40,13 @@ export function TableLIstTransactions({ transactions, dateFrom, dateTo, ...props
         dateFrom={dateFrom}
         dateTo={dateTo}
       />
-      <TableView table={table} />
-      <Footer {...props} />
+      <TabsContent value="table" className="flex flex-col gap-4">
+        <TableView table={table} />
+        <Footer {...props} />
+      </TabsContent>
+      <TabsContent value="calendar">
+        <CalendarTransactions transactions={transactions} />
+      </TabsContent>
       <DrawerNewTransaction
         open={openNew}
         onOpenChange={open => {
@@ -53,6 +62,6 @@ export function TableLIstTransactions({ transactions, dateFrom, dateTo, ...props
           if (!open) setEditing(null)
         }}
       />
-    </div>
+    </Tabs>
   )
 }

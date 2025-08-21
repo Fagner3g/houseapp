@@ -12,6 +12,7 @@ import {
   DropdownMenuContent,
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu'
+import { TabsList, TabsTrigger } from '@/components/ui/tabs'
 import { DeleteSelected } from './delete-selected'
 import FilterTable, { type FilterTableProps } from './filter'
 import { PaySelected } from './pay-selected'
@@ -75,6 +76,11 @@ export function NavbarTable({ table, onCreate, ...props }: Props) {
           </span>
         )}
       </div>
+
+      <TabsList>
+        <TabsTrigger value="table">Tabela</TabsTrigger>
+        <TabsTrigger value="calendar">Calendário</TabsTrigger>
+      </TabsList>
 
       <div className="flex items-center gap-2">
         <DropdownMenu>
