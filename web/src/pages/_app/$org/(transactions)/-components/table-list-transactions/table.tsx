@@ -1,6 +1,7 @@
 import { SortableContext, verticalListSortingStrategy } from '@dnd-kit/sortable'
 import { flexRender, type Table as ReactTable } from '@tanstack/react-table'
 
+import type { ListTransactions200TransactionsItem } from '@/api/generated/model'
 import {
   Table,
   TableBody,
@@ -9,7 +10,6 @@ import {
   TableHeader,
   TableRow,
 } from '@/components/ui/table'
-import type { ListTransactions200TransactionsItem } from '@/api/generated/model'
 import { TabRowView } from './row'
 
 interface TableProps {

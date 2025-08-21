@@ -46,7 +46,7 @@ export function Footer({ page, perPage, totalPages, onPerPageChange, onPageChang
           </Select>
         </div>
         <div className="flex w-fit items-center justify-center text-sm font-medium">
-          Page {page} of {totalPages}
+          {page} de {totalPages}
         </div>
         <div className="ml-auto flex items-center gap-2 lg:ml-0">
           <Button
