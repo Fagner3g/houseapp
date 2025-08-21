@@ -20,11 +20,12 @@ interface Props {
 }
 
 export function PaySelected({ table }: Props) {
-  const selected = table.getSelectedRowModel().rows.length
+  const rows = table.getSelectedRowModel().rows
+  const selected = rows.length
   const [open, setOpen] = useState(false)
 
   async function handlePay() {
-    const ids = table.getSelectedRowModel().rows.map(row => row.original.id)
+    const ids = rows.map(row => row.original.id)
     await table.options.meta?.payRows?.(ids)
     table.resetRowSelection()
     setOpen(false)
@@ -32,21 +33,29 @@ export function PaySelected({ table }: Props) {
 
   if (selected === 0) return null
 
+  const allPaid = rows.every(row => row.original.status === 'paid')
+
   return (
     <AlertDialog open={open} onOpenChange={setOpen}>
       <AlertDialogTrigger asChild>
-        <Button size="sm">Pagar selecionadas ({selected})</Button>
+        <Button size="sm">
+          {allPaid ? `Cancelar pagamento (${selected})` : `Pagar selecionadas (${selected})`}
+        </Button>
       </AlertDialogTrigger>
       <AlertDialogContent>
         <AlertDialogHeader>
-          <AlertDialogTitle>Pagar transações</AlertDialogTitle>
+          <AlertDialogTitle>{allPaid ? 'Cancelar pagamento' : 'Pagar transações'}</AlertDialogTitle>
           <AlertDialogDescription>
-            Tem certeza que deseja marcar {selected} transação(ões) como pagas?
+            {allPaid
+              ? `Tem certeza que deseja cancelar o pagamento de ${selected} transação(ões)?`
+              : `Tem certeza que deseja marcar ${selected} transação(ões) como pagas?`}
           </AlertDialogDescription>
         </AlertDialogHeader>
         <AlertDialogFooter>
           <AlertDialogCancel>Cancelar</AlertDialogCancel>
-          <AlertDialogAction onClick={handlePay}>Pagar</AlertDialogAction>
+          <AlertDialogAction onClick={handlePay}>
+            {allPaid ? 'Cancelar pagamento' : 'Pagar'}
+          </AlertDialogAction>
         </AlertDialogFooter>
       </AlertDialogContent>
     </AlertDialog>

@@ -15,9 +15,19 @@ export async function payTransactionService({ id, valuePaid }: PayTransactionPar
     .where(eq(transactionOccurrences.id, id))
   if (!existing) return { occurrence: undefined }
 
+  const isPaid = existing.status === 'paid'
+
   const [updated] = await db
     .update(transactionOccurrences)
-    .set({ status: 'paid', paidAt: new Date(), valuePaid: valuePaid ?? existing.amount })
+    .set(
+      isPaid
+        ? { status: 'pending', paidAt: null, valuePaid: null }
+        : {
+            status: 'paid',
+            paidAt: new Date(),
+            valuePaid: valuePaid ?? existing.amount,
+          }
+    )
     .where(eq(transactionOccurrences.id, id))
     .returning()
 

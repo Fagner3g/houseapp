@@ -17,10 +17,11 @@ import { DropdownMenuItem } from '@/components/ui/dropdown-menu'
 
 interface Props {
   id: string
+  status: ListTransactions200TransactionsItem['status']
   table: Table<ListTransactions200TransactionsItem>
 }
 
-export function PayRowAction({ id, table }: Props) {
+export function PayRowAction({ id, status, table }: Props) {
   const [open, setOpen] = useState(false)
 
   async function handlePay() {
@@ -28,21 +29,27 @@ export function PayRowAction({ id, table }: Props) {
     setOpen(false)
   }
 
+  const isPaid = status === 'paid'
+
   return (
     <AlertDialog open={open} onOpenChange={setOpen}>
       <AlertDialogTrigger asChild>
-        <DropdownMenuItem>Pagar</DropdownMenuItem>
+        <DropdownMenuItem>{isPaid ? 'Cancelar pagamento' : 'Pagar'}</DropdownMenuItem>
       </AlertDialogTrigger>
       <AlertDialogContent>
         <AlertDialogHeader>
-          <AlertDialogTitle>Pagar transação</AlertDialogTitle>
+          <AlertDialogTitle>{isPaid ? 'Cancelar pagamento' : 'Pagar transação'}</AlertDialogTitle>
           <AlertDialogDescription>
-            Tem certeza que deseja marcar esta transação como paga?
+            {isPaid
+              ? 'Tem certeza que deseja cancelar o pagamento desta transação?'
+              : 'Tem certeza que deseja marcar esta transação como paga?'}
           </AlertDialogDescription>
         </AlertDialogHeader>
         <AlertDialogFooter>
           <AlertDialogCancel>Cancelar</AlertDialogCancel>
-          <AlertDialogAction onClick={handlePay}>Pagar</AlertDialogAction>
+          <AlertDialogAction onClick={handlePay}>
+            {isPaid ? 'Cancelar pagamento' : 'Pagar'}
+          </AlertDialogAction>
         </AlertDialogFooter>
       </AlertDialogContent>
     </AlertDialog>

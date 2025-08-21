@@ -251,7 +251,7 @@ export const useTable = (data: ListTransactions200TransactionsItem[]) => {
             <DropdownMenuItem onClick={() => copyLink(row.original.id)}>
               Copiar link
             </DropdownMenuItem>
-            <PayRowAction id={row.original.id} table={table} />
+            <PayRowAction id={row.original.id} status={row.original.status} table={table} />
             <DropdownMenuSeparator />
             <DeleteRowAction id={row.original.id} table={table} />
           </DropdownMenuContent>
@@ -291,13 +291,22 @@ export const useTable = (data: ListTransactions200TransactionsItem[]) => {
         setEditing(item)
       },
       payRows: async (ids: string[]) => {
+        const items = data.filter(t => ids.includes(t.id))
+        const allPaid = items.every(t => t.status === 'paid')
+
         try {
           await Promise.all(ids.map(id => payTransaction({ slug, id })))
           toast.success(
-            ids.length > 1 ? 'Transações pagas com sucesso!' : 'Transação paga com sucesso!'
+            ids.length > 1
+              ? allPaid
+                ? 'Pagamentos cancelados com sucesso!'
+                : 'Transações pagas com sucesso!'
+              : allPaid
+                ? 'Pagamento cancelado com sucesso!'
+                : 'Transação paga com sucesso!'
           )
         } catch {
-          toast.error('Erro ao pagar transações')
+          toast.error(allPaid ? 'Erro ao cancelar pagamento' : 'Erro ao pagar transações')
         } finally {
           queryClient.invalidateQueries({
             queryKey: getListTransactionsQueryKey(slug),
