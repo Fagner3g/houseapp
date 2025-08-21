@@ -4,6 +4,16 @@ import { useEffect } from 'react'
 import { useForm } from 'react-hook-form'
 import { toast } from 'sonner'
 
+import {
+  getListTransactionsQueryKey,
+  useCreateTransaction,
+  useListUsersByOrg,
+} from '@/api/generated/api'
+import type {
+  CreateTransactionBody,
+  ListTransactions200,
+  ListTransactions200TransactionsItem,
+} from '@/api/generated/model'
 import { Button } from '@/components/ui/button'
 import {
   Drawer,
@@ -17,23 +27,13 @@ import {
 import { Form } from '@/components/ui/form'
 import { useActiveOrganization } from '@/hooks/use-active-organization'
 import { useIsMobile } from '@/hooks/use-mobile'
-import {
-  getListTransactionsQueryKey,
-  useCreateTransaction,
-  useListUsersByOrg,
-} from '@/api/generated/api'
-import type {
-  CreateTransactionBody,
-  ListTransactions200,
-  ListTransactions200TransactionsItem,
-} from '@/api/generated/model'
 import { showToastOnErrorSubmit } from '@/lib/utils'
 import { AmountField } from './amount-field'
 import { DescriptionField } from './description-field'
 import { CalendarField } from './due-date-field'
+import { InstallmentsTotalField } from './installments-total-field'
 import { RecurrenceField } from './is-recurring-filed'
 import { PayToField } from './pay-to-field'
-import { InstallmentsTotalField } from './installments-total-field'
 import { RecurrenceSelectorField } from './recurrence-selector-field'
 import { RecurrenceTypeField } from './recurrence-type-field'
 import { RecurrenceUntilField } from './recurrence-until-field'
@@ -143,12 +143,14 @@ export function DrawerNewTransaction({ open, onOpenChange, transaction }: Props)
     if (!open) return
 
     if (transaction) {
+      const payToEmail = userData?.users.find(user => user.name === transaction.payTo)?.email
+
       form.reset({
         type: transaction.type,
         title: transaction.title,
         amount: transaction.amount,
         dueDate: new Date(transaction.dueDate),
-        payToEmail: transaction.payTo,
+        payToEmail,
         tags: transaction.tags,
         description: undefined,
         isRecurring: false,
@@ -156,7 +158,7 @@ export function DrawerNewTransaction({ open, onOpenChange, transaction }: Props)
     } else {
       form.reset({ type: RegisterType.EXPENSE, isRecurring: false })
     }
-  }, [open, transaction, form])
+  }, [open, transaction, userData, form])
 
   async function handleSubmit(data: NewTransactionSchema) {
     createTransaction({ slug, data })
@@ -165,7 +167,6 @@ export function DrawerNewTransaction({ open, onOpenChange, transaction }: Props)
 
   return (
     <Drawer open={open} onOpenChange={onOpenChange} direction={isMobile ? 'bottom' : 'right'}>
-
       <DrawerContent>
         <DrawerHeader>
           <DrawerTitle>Criar nova {isExpense ? 'Receita' : 'Despesa'}</DrawerTitle>
