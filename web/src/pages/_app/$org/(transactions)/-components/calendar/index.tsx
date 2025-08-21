@@ -27,6 +27,8 @@ export function CalendarTransactions({ transactions, dateFrom, dateTo }: Props) 
         end: new Date(t.dueDate),
         allDay: true,
         color: t.type === 'income' ? 'emerald' : 'rose',
+        status: t.status,
+        overdueDays: t.overdueDays,
       })),
     [transactions],
   )
