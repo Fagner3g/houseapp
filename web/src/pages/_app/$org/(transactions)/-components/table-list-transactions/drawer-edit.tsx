@@ -22,7 +22,6 @@ import {
 import { Form } from '@/components/ui/form'
 import { useActiveOrganization } from '@/hooks/use-active-organization'
 import { useIsMobile } from '@/hooks/use-mobile'
-import { cn } from '@/lib/utils'
 import { AmountField } from '../modal-new-transaction/amount-field'
 import { DescriptionField } from '../modal-new-transaction/description-field'
 import { CalendarField } from '../modal-new-transaction/due-date-field'
@@ -87,10 +86,12 @@ export function DrawerEdit({ transaction, open, onOpenChange }: Props) {
   }
 
   return (
-    <Drawer open={open} onOpenChange={onOpenChange} direction="right">
-      <DrawerContent
-        className={cn(isMobile && 'data-[vaul-drawer-direction=right]:w-full')}
-      >
+    <Drawer
+      open={open}
+      onOpenChange={onOpenChange}
+      direction={isMobile ? 'bottom' : 'right'}
+    >
+      <DrawerContent>
         <DrawerHeader>
           <DrawerTitle>Editar transação</DrawerTitle>
         </DrawerHeader>
@@ -99,7 +100,7 @@ export function DrawerEdit({ transaction, open, onOpenChange }: Props) {
             <form onSubmit={form.handleSubmit(handleSubmit)} className="flex flex-col gap-4">
               <TypeField form={form} />
               <TitleField form={form} />
-              <div className="flex gap-5">
+              <div className="flex flex-col gap-5 sm:flex-row">
                 <AmountField form={form} />
                 <CalendarField form={form} />
               </div>
