@@ -9,7 +9,7 @@ import {
   DropdownMenuContent,
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu'
-import { ModalNewTransaction } from '../modal-new-transaction'
+import { DrawerNewTransaction } from '../modal-new-transaction'
 import { DeleteSelected } from './delete-selected'
 import FilterTable, { type FilterTableProps } from './filter'
 import { PaySelected } from './pay-selected'
@@ -51,7 +51,7 @@ export function NavbarTable({ table, ...props }: Props) {
         </DropdownMenu>
         <PaySelected table={table} />
         <DeleteSelected table={table} />
-        <ModalNewTransaction />
+        <DrawerNewTransaction />
       </div>
     </div>
   )
