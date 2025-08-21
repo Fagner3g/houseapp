@@ -25,6 +25,7 @@ interface Props extends FilterTableProps {
 
 export function NavbarTable({ table, onCreate, view, ...props }: Props) {
   const navigate = useNavigate()
+  const selected = table.getSelectedRowModel().rows.length
 
   const defaultFrom = dayjs().startOf('month').format('YYYY-MM-DD')
   const defaultTo = dayjs().endOf('month').format('YYYY-MM-DD')
@@ -46,78 +47,90 @@ export function NavbarTable({ table, onCreate, view, ...props }: Props) {
       : ''
 
   return (
-    <div className="flex items-center justify-between gap-2 px-4 lg:px-6">
-      <div className="flex min-w-0 items-center gap-2">
-        <FilterTable {...props} />
-        {hasFilters && (
-          <Button
-            variant="ghost"
-            size="icon"
-            aria-label="Clear filters"
-            onClick={() => {
-              navigate({
-                to: '.',
-                search: prev => ({
-                  ...prev,
-                  type: 'all',
-                  dateFrom: defaultFrom,
-                  dateTo: defaultTo,
-                  page: 1,
-                }),
-                replace: true,
-              })
-            }}
-          >
-            <IconX size={16} />
+    <div className="flex flex-col gap-2 px-4 lg:px-6">
+      <div className="flex items-center justify-between gap-2">
+        <div className="flex min-w-0 items-center gap-2">
+          <FilterTable {...props} />
+          {hasFilters && (
+            <Button
+              variant="ghost"
+              size="icon"
+              aria-label="Clear filters"
+              onClick={() => {
+                navigate({
+                  to: '.',
+                  search: prev => ({
+                    ...prev,
+                    type: 'all',
+                    dateFrom: defaultFrom,
+                    dateTo: defaultTo,
+                    page: 1,
+                  }),
+                  replace: true,
+                })
+              }}
+            >
+              <IconX size={16} />
+            </Button>
+          )}
+          {rangeLabel && (
+            <span className="hidden truncate text-sm text-muted-foreground capitalize sm:inline">
+              {rangeLabel}
+            </span>
+          )}
+        </div>
+
+        <TabsList>
+          <TabsTrigger value="table">Tabela</TabsTrigger>
+          <TabsTrigger value="calendar">Calendário</TabsTrigger>
+        </TabsList>
+
+        <div className="flex items-center gap-2">
+          {view === 'table' && (
+            <DropdownMenu>
+              <DropdownMenuTrigger asChild>
+                <Button variant="outline" size="sm">
+                  <IconLayoutColumns />
+                </Button>
+              </DropdownMenuTrigger>
+
+              <DropdownMenuContent align="end" className="w-56">
+                {table
+                  .getAllColumns()
+                  .filter(column => typeof column.accessorFn !== 'undefined' && column.getCanHide())
+                  .map(column => {
+                    return (
+                      <DropdownMenuCheckboxItem
+                        key={column.id}
+                        className="capitalize"
+                        checked={column.getIsVisible()}
+                        onCheckedChange={value => column.toggleVisibility(!!value)}
+                      >
+                        {column.id}
+                      </DropdownMenuCheckboxItem>
+                    )
+                  })}
+              </DropdownMenuContent>
+            </DropdownMenu>
+          )}
+          {selected <= 1 && (
+            <>
+              <PaySelected table={table} />
+              <DeleteSelected table={table} />
+            </>
+          )}
+          <Button variant="outline" size="sm" onClick={onCreate}>
+            <IconPlus />
+            <span className="hidden lg:inline">Adicionar transação</span>
           </Button>
-        )}
-        {rangeLabel && (
-          <span className="hidden truncate text-sm text-muted-foreground capitalize sm:inline">
-            {rangeLabel}
-          </span>
-        )}
+        </div>
       </div>
-
-      <TabsList>
-        <TabsTrigger value="table">Tabela</TabsTrigger>
-        <TabsTrigger value="calendar">Calendário</TabsTrigger>
-      </TabsList>
-
-      <div className="flex items-center gap-2">
-        {view === 'table' && (
-          <DropdownMenu>
-            <DropdownMenuTrigger asChild>
-              <Button variant="outline" size="sm">
-                <IconLayoutColumns />
-              </Button>
-            </DropdownMenuTrigger>
-
-            <DropdownMenuContent align="end" className="w-56">
-              {table
-                .getAllColumns()
-                .filter(column => typeof column.accessorFn !== 'undefined' && column.getCanHide())
-                .map(column => {
-                  return (
-                    <DropdownMenuCheckboxItem
-                      key={column.id}
-                      className="capitalize"
-                      checked={column.getIsVisible()}
-                      onCheckedChange={value => column.toggleVisibility(!!value)}
-                    >
-                      {column.id}
-                    </DropdownMenuCheckboxItem>
-                  )
-                })}
-            </DropdownMenuContent>
-          </DropdownMenu>
-        )}
-        <PaySelected table={table} />
-        <DeleteSelected table={table} />
-        <Button variant="outline" size="sm" onClick={onCreate}>
-          <IconPlus />
-          <span className="hidden lg:inline">Adicionar transação</span>
-        </Button>
-      </div>
+      {selected > 1 && (
+        <div className="flex flex-wrap items-center justify-end gap-2">
+          <PaySelected table={table} />
+          <DeleteSelected table={table} />
+        </div>
+      )}
     </div>
   )
 }
