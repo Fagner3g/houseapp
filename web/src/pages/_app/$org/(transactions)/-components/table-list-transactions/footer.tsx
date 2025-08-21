@@ -24,7 +24,7 @@ export interface FooterProps {
 
 export function Footer({ page, perPage, totalPages, onPerPageChange, onPageChange }: FooterProps) {
   return (
-    <div className="flex items-center justify-between px-4">
+    <div className="flex items-center justify-between px-4 lg:px-6">
       <div className="flex w-full items-center gap-8 lg:w-fit">
         <div className=" items-center gap-2 lg:flex">
           <Select

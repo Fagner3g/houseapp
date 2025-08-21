@@ -19,7 +19,7 @@ export function TableLIstTransactions({ transactions, ...props }: Props) {
   const [draft, setDraft] = useState<ListTransactions200TransactionsItem | null>(null)
   const [openNew, setOpenNew] = useState(false)
 
-  const { table, editing, setEditing } = useTable(transactions, item => {
+  const { table, editing, setEditing } = useTable(transactions, props.perPage, item => {
     setDraft(item)
     setOpenNew(true)
   })

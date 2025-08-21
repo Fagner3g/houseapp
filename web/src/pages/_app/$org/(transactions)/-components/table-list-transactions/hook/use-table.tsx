@@ -15,7 +15,7 @@ import {
 } from '@tanstack/react-table'
 import dayjs from 'dayjs'
 import { AlertOctagon, LucideClockFading, TrendingDown, TrendingUp } from 'lucide-react'
-import { useState } from 'react'
+import { useEffect, useState } from 'react'
 import { toast } from 'sonner'
 
 import {
@@ -44,6 +44,7 @@ import { PayRowAction } from '../pay-row'
 
 export const useTable = (
   data: ListTransactions200TransactionsItem[],
+  perPage: number,
   onDuplicate?: (item: ListTransactions200TransactionsItem) => void
 ) => {
   const [rowSelection, setRowSelection] = useState({})
@@ -54,7 +55,7 @@ export const useTable = (
   const [sorting, setSorting] = useState<SortingState>([])
   const [pagination, setPagination] = useState({
     pageIndex: 0,
-    pageSize: 10,
+    pageSize: perPage,
   })
   const [editing, setEditing] = useState<ListTransactions200TransactionsItem | null>(null)
   const { slug } = useActiveOrganization()
@@ -97,6 +98,10 @@ export const useTable = (
   })
 
   const { mutateAsync: payTransaction } = usePayTransaction()
+
+  useEffect(() => {
+    setPagination({ pageIndex: 0, pageSize: perPage })
+  }, [perPage, data])
 
   function copyLink(id: string) {
     const url = `${window.location.origin}/transactions?openId=${id}`
