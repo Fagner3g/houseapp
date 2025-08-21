@@ -5,6 +5,7 @@ import type {
 import { useState } from 'react'
 
 import { Tabs, TabsContent } from '@/components/ui/tabs'
+import { useNavigate, useSearch } from '@tanstack/react-router'
 
 import { CalendarTransactions } from '../calendar'
 import { DrawerNewTransaction } from '../modal-new-transaction'
@@ -23,13 +24,22 @@ export function TableLIstTransactions({ transactions, dateFrom, dateTo, ...props
   const [draft, setDraft] = useState<ListTransactions200TransactionsItem | null>(null)
   const [openNew, setOpenNew] = useState(false)
 
+  const navigate = useNavigate()
+  const { view = 'table' } = useSearch({ strict: false })
+
   const { table, editing, setEditing } = useTable(transactions, props.perPage, item => {
     setDraft(item)
     setOpenNew(true)
   })
 
   return (
-    <Tabs defaultValue="table" className="flex flex-col gap-4">
+    <Tabs
+      value={view}
+      onValueChange={value =>
+        navigate({ to: '.', search: prev => ({ ...prev, view: value }), replace: true })
+      }
+      className="flex flex-col gap-4"
+    >
       <NavbarTable
         table={table}
         onCreate={() => {
@@ -48,7 +58,11 @@ export function TableLIstTransactions({ transactions, dateFrom, dateTo, ...props
         value="calendar"
         className="relative flex flex-col gap-4 overflow-auto px-4 lg:px-6"
       >
-        <CalendarTransactions transactions={transactions} dateFrom={dateFrom} />
+        <CalendarTransactions
+          transactions={transactions}
+          dateFrom={dateFrom}
+          dateTo={dateTo}
+        />
       </TabsContent>
       <DrawerNewTransaction
         open={openNew}
