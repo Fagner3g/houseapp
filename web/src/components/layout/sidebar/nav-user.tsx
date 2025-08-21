@@ -3,6 +3,7 @@ import {
   IconDotsVertical,
   IconLogout,
   IconNotification,
+  IconSettings,
   IconUserCircle,
 } from '@tabler/icons-react'
 import { useNavigate } from '@tanstack/react-router'
@@ -10,6 +11,7 @@ import { useNavigate } from '@tanstack/react-router'
 import { useSignOut } from '@/api/generated/api'
 import type { GetProfile200User } from '@/api/generated/model'
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar'
+import { ModalEditOrganization } from '@/components/modal-edit-organization'
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -95,6 +97,12 @@ export function NavUser({ user }: NavUserProps) {
                 <IconNotification />
                 Notifications
               </DropdownMenuItem>
+              <ModalEditOrganization>
+                <DropdownMenuItem>
+                  <IconSettings />
+                  Settings
+                </DropdownMenuItem>
+              </ModalEditOrganization>
             </DropdownMenuGroup>
             <DropdownMenuSeparator />
             <DropdownMenuItem onClick={handleLogout}>

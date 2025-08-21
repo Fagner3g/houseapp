@@ -10,5 +10,6 @@ export type ListOrganizations200OrganizationsItem = {
   id: string;
   name: string;
   slug: string;
+  description?: string;
   createdAt: string;
 };

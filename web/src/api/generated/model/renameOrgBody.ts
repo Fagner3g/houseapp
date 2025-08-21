@@ -9,4 +9,5 @@
 export type RenameOrgBody = {
   /** @minLength 1 */
   name: string;
+  description?: string;
 };

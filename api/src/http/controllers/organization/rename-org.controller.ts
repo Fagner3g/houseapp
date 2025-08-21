@@ -7,9 +7,13 @@ import type { RenameOrgBody } from '@/http/schemas/organization/rename-org.schem
 type Req = FastifyRequest<{ Body: RenameOrgBody }>
 
 export async function renameOrgController(request: Req, reply: FastifyReply) {
-  const { name } = request.body
+  const { name, description } = request.body
   const orgId = request.organization.id
 
-  const { organization } = await organizationService.renameOrg({ name, orgId })
+  const { organization } = await organizationService.renameOrg({
+    name,
+    description,
+    orgId,
+  })
   return reply.status(StatusCodes.OK).send({ organization })
 }

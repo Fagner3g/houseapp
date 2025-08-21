@@ -8,6 +8,7 @@ export const organizations = pgTable('organizations', {
     .primaryKey()
     .$defaultFn(() => createId()),
   name: text('name').notNull(),
+  description: text('description'),
   slug: text('slug').notNull().unique(),
   ownerId: text('owner_id')
     .notNull()

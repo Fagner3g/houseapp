@@ -11,10 +11,15 @@ type Req = FastifyRequest<{
 }>
 
 export async function createOrganizationController(request: Req, reply: FastifyReply) {
-  const { name } = request.body
+  const { name, description } = request.body
   const userId = request.user.sub
 
-  const { organization } = await createOrganization({ name, isFirstOrg: false, ownerId: userId })
+  const { organization } = await createOrganization({
+    name,
+    description,
+    isFirstOrg: false,
+    ownerId: userId,
+  })
 
   await db.insert(userOrganizations).values({
     userId,
@@ -23,5 +28,5 @@ export async function createOrganizationController(request: Req, reply: FastifyR
 
   return reply
     .status(StatusCodes.CREATED)
-    .send({ slug: organization.slug, name: organization.name })
+    .send({ slug: organization.slug, name: organization.name, description: organization.description })
 }

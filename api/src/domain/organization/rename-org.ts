@@ -6,12 +6,13 @@ import { organizations } from '@/db/schemas/organization'
 interface RenameOrg {
   orgId: string
   name: string
+  description?: string
 }
 
-export async function renameOrg({ orgId, name }: RenameOrg) {
+export async function renameOrg({ orgId, name, description }: RenameOrg) {
   const [organization] = await db
     .update(organizations)
-    .set({ name, updatedAt: new Date() })
+    .set({ name, description, updatedAt: new Date() })
     .where(eq(organizations.id, orgId))
     .returning()
 

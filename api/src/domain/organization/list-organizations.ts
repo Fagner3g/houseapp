@@ -14,6 +14,7 @@ export async function listOrganizations({ userId }: ListOrganizations) {
       id: organizations.id,
       name: organizations.name,
       slug: organizations.slug,
+      description: organizations.description,
       createdAt: organizations.createdAt,
     })
     .from(organizations)

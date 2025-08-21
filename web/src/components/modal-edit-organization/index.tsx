@@ -1,7 +1,7 @@
 import { zodResolver } from '@hookform/resolvers/zod'
 import { DialogClose } from '@radix-ui/react-dialog'
 import { useQueryClient } from '@tanstack/react-query'
-import { useState, type ReactNode } from 'react'
+import { useEffect, useState, type ReactNode } from 'react'
 import { useForm } from 'react-hook-form'
 import { toast } from 'sonner'
 import { z } from 'zod'
@@ -20,32 +20,48 @@ import { Form, FormControl, FormField, FormItem, FormLabel } from '@/components/
 import { Input } from '@/components/ui/input'
 import { Textarea } from '@/components/ui/textarea'
 import { useActiveOrganization } from '@/hooks/use-active-organization'
-import { getListOrganizationsQueryKey, useCreateOrganization } from '@/api/generated/api'
+import {
+  getListOrganizationsQueryKey,
+  useListOrganizations,
+  useRenameOrg,
+} from '@/api/generated/api'
 
 const schema = z.object({
   name: z.string().min(1, 'Nome é obrigatório'),
   description: z.string().optional(),
 })
 
+interface ModalEditOrganizationProps {
+  children: ReactNode
+}
+
 type FormValues = z.infer<typeof schema>
 
-export function ModalNewOrganization({ children }: { children: ReactNode }) {
+export function ModalEditOrganization({ children }: ModalEditOrganizationProps) {
   const queryClient = useQueryClient()
-  const { setOrganization } = useActiveOrganization()
+  const { slug } = useActiveOrganization()
+  const { data } = useListOrganizations()
+  const org = data?.organizations.find(o => o.slug === slug)
   const [isOpen, setIsOpen] = useState(false)
-  const form = useForm<FormValues>({ resolver: zodResolver(schema) })
-  const { mutateAsync: createOrganization, isPending } = useCreateOrganization()
+  const form = useForm<FormValues>({
+    resolver: zodResolver(schema),
+    defaultValues: { name: org?.name ?? '', description: org?.description ?? '' },
+  })
+  const { mutateAsync: renameOrg, isPending } = useRenameOrg()
 
-  async function handleSubmit(data: FormValues) {
+  useEffect(() => {
+    form.reset({ name: org?.name ?? '', description: org?.description ?? '' })
+  }, [org, form])
+
+  async function handleSubmit(values: FormValues) {
+    if (!slug) return
     try {
-      const res = await createOrganization({ data })
-      toast.success('Organização criada!')
+      await renameOrg({ slug, data: values })
+      toast.success('Organização atualizada!')
       await queryClient.invalidateQueries({ queryKey: getListOrganizationsQueryKey() })
-      setOrganization(res.slug)
-      form.reset()
       setIsOpen(false)
     } catch {
-      toast.error('Erro ao criar organização')
+      toast.error('Erro ao atualizar organização')
     }
   }
 
@@ -54,10 +70,8 @@ export function ModalNewOrganization({ children }: { children: ReactNode }) {
       <DialogTrigger asChild>{children}</DialogTrigger>
       <DialogContent>
         <DialogHeader>
-          <DialogTitle>Criar organização</DialogTitle>
-          <DialogDescription>
-            Preencha o nome e a descrição da organização.
-          </DialogDescription>
+          <DialogTitle>Editar organização</DialogTitle>
+          <DialogDescription>Atualize os dados da organização.</DialogDescription>
         </DialogHeader>
         <Form {...form}>
           <form onSubmit={form.handleSubmit(handleSubmit)} className="flex flex-col gap-4">
@@ -99,4 +113,3 @@ export function ModalNewOrganization({ children }: { children: ReactNode }) {
     </Dialog>
   )
 }
-

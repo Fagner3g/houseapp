@@ -9,4 +9,5 @@
 export type CreateOrganization201 = {
   slug: string;
   name: string;
+  description?: string;
 };

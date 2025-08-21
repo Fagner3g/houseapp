@@ -6,11 +6,17 @@ import { organizations } from '@/db/schemas/organization'
 
 interface CreateOrganization {
   name: string
+  description?: string
   isFirstOrg: boolean
   ownerId: string
 }
 
-export async function createOrganization({ name, isFirstOrg, ownerId }: CreateOrganization) {
+export async function createOrganization({
+  name,
+  description,
+  isFirstOrg,
+  ownerId,
+}: CreateOrganization) {
   let attempt = 0
   const base = slugify(name, { lower: true, remove: /[*+~.()'"!:@]/g })
 
@@ -23,6 +29,7 @@ export async function createOrganization({ name, isFirstOrg, ownerId }: CreateOr
         .values({
           ownerId,
           name: isFirstOrg ? 'My House' : `${name.split(' ')[0]} House`,
+          description,
           slug,
         })
         .returning()
