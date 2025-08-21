@@ -281,9 +281,6 @@
                 "properties": {
                   "name": {
                     "type": "string"
-                  },
-                  "description": {
-                    "type": "string"
                   }
                 },
                 "required": [
@@ -306,9 +303,6 @@
                       "type": "string"
                     },
                     "name": {
-                      "type": "string"
-                    },
-                    "description": {
                       "type": "string"
                     }
                   },
@@ -340,9 +334,6 @@
                   "name": {
                     "type": "string",
                     "minLength": 1
-                  },
-                  "description": {
-                    "type": "string"
                   }
                 },
                 "required": [
@@ -382,9 +373,6 @@
                           "type": "string"
                         },
                         "slug": {
-                          "type": "string"
-                        },
-                        "description": {
                           "type": "string"
                         },
                         "createdAt": {
@@ -467,9 +455,6 @@
                             "type": "string"
                           },
                           "slug": {
-                            "type": "string"
-                          },
-                          "description": {
                             "type": "string"
                           },
                           "createdAt": {

@@ -11,7 +11,6 @@ export const listOrganizationsSchema = {
           id: z.string(),
           name: z.string(),
           slug: z.string(),
-          description: z.string().nullish(),
           createdAt: z.date(),
         })
       ),

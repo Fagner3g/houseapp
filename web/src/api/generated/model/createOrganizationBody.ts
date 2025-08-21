@@ -8,5 +8,4 @@
 
 export type CreateOrganizationBody = {
   name: string;
-  description?: string;
 };

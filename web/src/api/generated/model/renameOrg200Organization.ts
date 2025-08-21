@@ -10,7 +10,6 @@ export type RenameOrg200Organization = {
   id: string;
   name: string;
   slug: string;
-  description?: string;
   createdAt: string;
   updatedAt: string;
 };
