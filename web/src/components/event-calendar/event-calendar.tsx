@@ -75,6 +75,10 @@ export function EventCalendar({
   const [selectedEvent, setSelectedEvent] = useState<CalendarEvent | null>(null)
 
   useEffect(() => {
+    if (initialDate) setCurrentDate(initialDate)
+  }, [initialDate])
+
+  useEffect(() => {
     onDateChange?.(currentDate)
   }, [currentDate, onDateChange])
 

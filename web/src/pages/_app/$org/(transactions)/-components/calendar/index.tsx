@@ -41,14 +41,12 @@ export function CalendarTransactions({ transactions, dateFrom }: Props) {
   }
 
   return (
-    <div className="mx-auto max-w-3xl">
-      <EventCalendar
-        events={events}
-        onDateChange={handleDateChange}
-        initialDate={initialDate}
-        editable={false}
-      />
-    </div>
+    <EventCalendar
+      events={events}
+      onDateChange={handleDateChange}
+      initialDate={initialDate}
+      editable={false}
+    />
   )
 }
 

@@ -44,7 +44,10 @@ export function TableLIstTransactions({ transactions, dateFrom, dateTo, ...props
         <TableView table={table} />
         <Footer {...props} />
       </TabsContent>
-      <TabsContent value="calendar">
+      <TabsContent
+        value="calendar"
+        className="relative flex flex-col gap-4 overflow-auto px-4 lg:px-6"
+      >
         <CalendarTransactions transactions={transactions} dateFrom={dateFrom} />
       </TabsContent>
       <DrawerNewTransaction
