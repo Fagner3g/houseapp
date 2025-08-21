@@ -2,6 +2,8 @@ import type {
   ListTransactions200,
   ListTransactions200TransactionsItem,
 } from '@/api/generated/model'
+import dayjs from 'dayjs'
+import 'dayjs/locale/pt-br'
 import { useState } from 'react'
 import { DrawerEdit } from './drawer-edit'
 import type { FilterTableProps } from './filter'
@@ -15,7 +17,7 @@ interface Props extends FooterProps, FilterTableProps {
   transactions: ListTransactions200['transactions']
 }
 
-export function TableLIstTransactions({ transactions, ...props }: Props) {
+export function TableLIstTransactions({ transactions, dateFrom, dateTo, ...props }: Props) {
   const [draft, setDraft] = useState<ListTransactions200TransactionsItem | null>(null)
   const [openNew, setOpenNew] = useState(false)
 
@@ -23,6 +25,20 @@ export function TableLIstTransactions({ transactions, ...props }: Props) {
     setDraft(item)
     setOpenNew(true)
   })
+
+  const from = dayjs(dateFrom)
+  const to = dayjs(dateTo)
+  const isMonthRange =
+    from.isValid() &&
+    to.isValid() &&
+    from.isSame(to, 'month') &&
+    from.date() === 1 &&
+    to.date() === to.daysInMonth()
+  const rangeLabel = isMonthRange
+    ? from.locale('pt-br').format('MMMM [de] YYYY')
+    : from.isValid() && to.isValid()
+      ? `${from.locale('pt-br').format('DD/MM/YYYY')} - ${to.locale('pt-br').format('DD/MM/YYYY')}`
+      : ''
 
   return (
     <div className="flex flex-col gap-4">
@@ -32,8 +48,17 @@ export function TableLIstTransactions({ transactions, ...props }: Props) {
           setDraft(null)
           setOpenNew(true)
         }}
-        {...props}
+        type={props.type}
+        dateFrom={dateFrom}
+        dateTo={dateTo}
       />
+      {rangeLabel && (
+        <div className="px-4 lg:px-6">
+          <span className="text-sm text-muted-foreground capitalize">
+            {rangeLabel}
+          </span>
+        </div>
+      )}
       <TableView table={table} />
       <Footer {...props} />
       <DrawerNewTransaction
