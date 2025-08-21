@@ -38,14 +38,7 @@ export function CalendarField({ form }: CalendarFieldProps) {
                   <ChevronDownIcon />
                 </Button>
               </PopoverTrigger>
-              <PopoverContent
-                className="w-auto overflow-hidden p-0"
-                align="start"
-                onInteractOutside={e => {
-                  const target = e.target as HTMLElement
-                  if (target.closest('select')) e.preventDefault()
-                }}
-              >
+              <PopoverContent className="z-[90] w-auto overflow-hidden p-0 pointer-events-auto">
                 <Calendar
                   mode="single"
                   selected={field.value}

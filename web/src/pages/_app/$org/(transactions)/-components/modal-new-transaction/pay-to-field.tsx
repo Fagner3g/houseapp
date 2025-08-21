@@ -2,6 +2,7 @@ import { Check, ChevronsUpDown } from 'lucide-react'
 import * as React from 'react'
 import type { UseFormReturn } from 'react-hook-form'
 
+import type { ListUsersByOrg200 } from '@/api/generated/model'
 import { Button } from '@/components/ui/button'
 import {
   Command,
@@ -14,7 +15,6 @@ import {
 import { FormControl, FormField, FormItem, FormLabel } from '@/components/ui/form'
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover'
 import { Separator } from '@/components/ui/separator'
-import type { ListUsersByOrg200 } from '@/api/generated/model'
 import { cn } from '@/lib/utils'
 import { ModalNewUser } from '../../../../../../components/modal-new-user'
 import type { NewTransactionSchema } from './schema'
@@ -51,7 +51,7 @@ export function PayToField({ form, data }: PayToFieldProps) {
                   <ChevronsUpDown className="opacity-50" />
                 </Button>
               </PopoverTrigger>
-              <PopoverContent className="w-[200px] p-0">
+              <PopoverContent className="z-[90] w-[200px] p-0 verflow-hidden pointer-events-auto">
                 <Command>
                   <CommandInput placeholder="Pesquise o usuário..." className="h-9" />
                   <CommandList>
