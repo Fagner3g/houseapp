@@ -41,7 +41,7 @@ export function PaySelected({ table }: Props) {
       <AlertDialogTrigger asChild>
         <Button
           size="sm"
-          className="gap-1 px-2 sm:px-3"
+          className="gap-1 px-2 sm:px-3 bg-green-600 text-white hover:bg-green-700 dark:bg-green-600 dark:hover:bg-green-700"
           aria-label={
             allPaid
               ? `Cancelar pagamento de ${selected} transação(ões)`
