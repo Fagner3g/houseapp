@@ -5,20 +5,20 @@
  * API for HouseApp
  * OpenAPI spec version: 1.0.0
  */
-import type { GetTransactionById200TransactionStatus } from './getTransactionById200TransactionStatus'
-import type { GetTransactionById200TransactionTagsItem } from './getTransactionById200TransactionTagsItem'
-import type { GetTransactionById200TransactionType } from './getTransactionById200TransactionType'
+import type { GetTransactionById200TransactionType } from "./getTransactionById200TransactionType";
+import type { GetTransactionById200TransactionStatus } from "./getTransactionById200TransactionStatus";
+import type { GetTransactionById200TransactionTagsItem } from "./getTransactionById200TransactionTagsItem";
 
 export type GetTransactionById200Transaction = {
-  id: string
-  type: GetTransactionById200TransactionType
-  title: string
-  payTo: string
-  amount: number
-  dueDate: string
+  id: string;
+  type: GetTransactionById200TransactionType;
+  title: string;
+  payTo: string;
+  amount: number;
+  dueDate: string;
   /** @nullable */
-  paidAt: string | null
-  status: GetTransactionById200TransactionStatus
-  overdueDays: number
-  tags: GetTransactionById200TransactionTagsItem[]
-}
+  paidAt: string | null;
+  status: GetTransactionById200TransactionStatus;
+  overdueDays: number;
+  tags: GetTransactionById200TransactionTagsItem[];
+};

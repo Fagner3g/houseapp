@@ -1,4 +1,4 @@
-import { and, eq, gte, lt, lte, or } from 'drizzle-orm'
+import { and, eq, gte, inArray, lt, lte, or, sql } from 'drizzle-orm'
 import { alias } from 'drizzle-orm/pg-core'
 
 import { db } from '@/db'
@@ -21,6 +21,14 @@ export interface Row {
   ownerPhone: string | null
   payToName: string | null
   payToPhone: string | null
+  // recurrence (from series)
+  seriesId?: string | null
+  recurrenceType?: 'monthly' | 'weekly' | 'yearly' | null
+  recurrenceInterval?: number | null
+  installmentsTotal?: number | null
+  // computed per series
+  installmentsPaid?: number
+  overdueUnpaid?: number
 }
 
 export async function runReports(ownerId: string) {
@@ -30,9 +38,10 @@ export async function runReports(ownerId: string) {
   const startOfMonth = new Date(now.getFullYear(), now.getMonth(), 1)
   const endOfMonth = new Date(now.getFullYear(), now.getMonth() + 1, 0, 23, 59, 59, 999)
 
-  const rows = await db
+  const rowsRaw = await db
     .select({
       id: transactionOccurrences.id,
+      seriesId: transactionOccurrences.seriesId,
       title: transactionSeries.title,
       amount: transactionOccurrences.amount,
       dueDate: transactionOccurrences.dueDate,
@@ -44,6 +53,9 @@ export async function runReports(ownerId: string) {
       ownerPhone: ownerUser.phone,
       payToName: payToUser.name,
       payToPhone: payToUser.phone,
+      recurrenceType: transactionSeries.recurrenceType,
+      recurrenceInterval: transactionSeries.recurrenceInterval,
+      installmentsTotal: transactionSeries.installmentsTotal,
     })
     .from(transactionOccurrences)
     .innerJoin(transactionSeries, eq(transactionOccurrences.seriesId, transactionSeries.id))
@@ -62,11 +74,56 @@ export async function runReports(ownerId: string) {
       )
     )
 
+  const seriesIds = Array.from(new Set(rowsRaw.map(r => r.seriesId).filter(Boolean))) as string[]
+  const aggregates: Record<string, { paid: number; overdueUnpaid: number }> = {}
+  if (seriesIds.length) {
+    const paidBySeries = await db
+      .select({ seriesId: transactionOccurrences.seriesId, paid: sql<number>`count(*)` })
+      .from(transactionOccurrences)
+      .where(
+        and(
+          inArray(transactionOccurrences.seriesId, seriesIds),
+          eq(transactionOccurrences.status, 'paid')
+        )
+      )
+      .groupBy(transactionOccurrences.seriesId)
+
+    const overdueBySeries = await db
+      .select({ seriesId: transactionOccurrences.seriesId, overdueUnpaid: sql<number>`count(*)` })
+      .from(transactionOccurrences)
+      .where(
+        and(
+          inArray(transactionOccurrences.seriesId, seriesIds),
+          eq(transactionOccurrences.status, 'pending'),
+          lt(transactionOccurrences.dueDate, now)
+        )
+      )
+      .groupBy(transactionOccurrences.seriesId)
+
+    for (const id of seriesIds) aggregates[id] = { paid: 0, overdueUnpaid: 0 }
+    for (const r of paidBySeries)
+      aggregates[r.seriesId] = {
+        ...(aggregates[r.seriesId] || { paid: 0, overdueUnpaid: 0 }),
+        paid: Number(r.paid),
+      }
+    for (const r of overdueBySeries)
+      aggregates[r.seriesId] = {
+        ...(aggregates[r.seriesId] || { paid: 0, overdueUnpaid: 0 }),
+        overdueUnpaid: Number(r.overdueUnpaid),
+      }
+  }
+
+  const rows: Row[] = rowsRaw.map(r => ({
+    ...r,
+    installmentsPaid: r.seriesId ? (aggregates[r.seriesId]?.paid ?? 0) : 0,
+    overdueUnpaid: r.seriesId ? (aggregates[r.seriesId]?.overdueUnpaid ?? 0) : 0,
+  }))
+
   const messages = generateReport(rows, ownerId)
   for (const { phone, message } of messages) {
     if (!phone) continue
     try {
-      await sendWhatsAppMessage(phone, message)
+      await sendWhatsAppMessage({ phone, message })
     } catch (err) {
       logger.error({ err, phone }, 'failed to send report')
     }
@@ -84,6 +141,8 @@ export function generateReport(rows: Row[], userId: string): { phone: string; me
     valueStr: string
     dueDateStr: string
     status: string
+    icon: string
+    recurrenceBlock?: string
   }
 
   type Bucket = {
@@ -122,16 +181,53 @@ export function generateReport(rows: Row[], userId: string): { phone: string; me
     const dueDate = new Date(row.dueDate)
     const dueDateStr = dueDate.toLocaleDateString('pt-BR')
 
-    let status = '📄 Pendente'
+    // status + icon
+    let status = 'Pendente'
+    let icon = '📄'
+    const daysDiff = Math.ceil((+dueDate - +now) / (1000 * 60 * 60 * 24))
     if (row.paidAt) {
-      status = `✅ Pago`
+      status = 'Pago'
+      icon = '✅'
     } else if (dueDate < now) {
-      status = '❌ Vencida'
-    } else if (dueDate <= fiveDaysFromNow) {
-      status = '⏰ Prestes a vencer'
+      const atraso = Math.floor((+now - +dueDate) / (1000 * 60 * 60 * 24))
+      status = `Vencida (${atraso} dia(s))`
+      icon = '❌'
+    } else if (daysDiff <= 5) {
+      status = `Prestes a vencer (${daysDiff} dia(s))`
+      icon = '⏰'
     }
 
-    const line: Line = { name: row.title, valueNum, valueStr, dueDateStr, status }
+    // recurrence details
+    let recurrenceBlock: string | undefined
+    if (row.recurrenceType && row.recurrenceInterval) {
+      const indent = '      '
+      const every =
+        row.recurrenceType === 'monthly'
+          ? `${row.recurrenceInterval} mês`
+          : row.recurrenceType === 'weekly'
+            ? `${row.recurrenceInterval} semana`
+            : `${row.recurrenceInterval} ano`
+      const paidCount = row.installmentsPaid ?? 0
+      const total = row.installmentsTotal ?? null
+      const remaining = total != null ? Math.max(0, total - paidCount) : null
+      recurrenceBlock = `${indent}• \`Recorrente:\` a cada ${every}\n`
+      recurrenceBlock += `${indent}• \`Parcelas pagas:\` ${paidCount}\n`
+      if (total != null) {
+        recurrenceBlock += `${indent}• \`Faltam pagar:\` ${remaining} de ${total}`
+        if ((row.overdueUnpaid ?? 0) > 0) recurrenceBlock += ` (em atraso ${row.overdueUnpaid})`
+        recurrenceBlock += `\n`
+      }
+    }
+
+    const line: Line = {
+      name: row.title,
+      valueNum,
+      valueStr,
+      dueDateStr,
+      status,
+      icon,
+      recurrenceBlock,
+    }
     if (type === 'expense') {
       bucket.pagar.push(line)
       if (!row.paidAt) bucket.total.pagar += valueNum
@@ -145,24 +241,28 @@ export function generateReport(rows: Row[], userId: string): { phone: string; me
   for (const { client, phone, pagar, receber, total } of grouped.values()) {
     let message = `📩 *Relatório para ${client}*\n\n`
     if (receber.length > 0) {
-      message += '🟢 *A Receber*\n\n'
+      message += '🟢 *Contas a Receber*\n\n'
       for (const item of receber) {
-        message += `📄 *${item.name}*\n`
-        message += `      • *Valor:* ${item.valueStr}\n`
-        message += `      • *Vencimento:* ${item.dueDateStr}\n`
-        message += `      • ${item.status}\n\n`
+        message += `${item.icon} *${item.name}*\n`
+        message += `      • \`Valor:\` ${item.valueStr}\n`
+        message += `      • \`Vencimento:\` ${item.dueDateStr}\n`
+        message += `      • \`Status:\` ${item.status}\n`
+        if (item.recurrenceBlock) message += item.recurrenceBlock
+        message += `\n`
       }
-      message += `💸 *Subtotal a receber:* ${fmtBRL.format(total.receber)}\n\n`
+      message += `🪙 *Total a receber:* ${fmtBRL.format(total.receber)}\n\n`
     }
     if (pagar.length > 0) {
-      message += '🔴 *A Pagar*\n\n'
+      message += '🔴 *Contas a Pagar*\n\n'
       for (const item of pagar) {
-        message += `📄 *${item.name}*\n`
-        message += `      • *Valor:* ${item.valueStr}\n`
-        message += `      • *Vencimento:* ${item.dueDateStr}\n`
-        message += `      • ${item.status}\n\n`
+        message += `${item.icon} *${item.name}*\n`
+        message += `      • \`Valor:\` ${item.valueStr}\n`
+        message += `      • \`Vencimento:\` ${item.dueDateStr}\n`
+        message += `      • \`Status:\` ${item.status}\n`
+        if (item.recurrenceBlock) message += item.recurrenceBlock
+        message += `\n`
       }
-      message += `✅ *Subtotal a pagar:* ${fmtBRL.format(total.pagar)}\n\n`
+      message += `🪙 *Total a pagar:* ${fmtBRL.format(total.pagar)}\n\n`
     }
     const saldo = total.receber - total.pagar
     message += '━━━━━━━━━━━━━━━━━━━━\n'

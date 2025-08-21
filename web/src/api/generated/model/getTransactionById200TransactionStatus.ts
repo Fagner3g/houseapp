@@ -7,11 +7,11 @@
  */
 
 export type GetTransactionById200TransactionStatus =
-  (typeof GetTransactionById200TransactionStatus)[keyof typeof GetTransactionById200TransactionStatus]
+  (typeof GetTransactionById200TransactionStatus)[keyof typeof GetTransactionById200TransactionStatus];
 
 // eslint-disable-next-line @typescript-eslint/no-redeclare
 export const GetTransactionById200TransactionStatus = {
-  pending: 'pending',
-  paid: 'paid',
-  canceled: 'canceled',
-} as const
+  pending: "pending",
+  paid: "paid",
+  canceled: "canceled",
+} as const;

@@ -5,20 +5,20 @@
  * API for HouseApp
  * OpenAPI spec version: 1.0.0
  */
-import type { ListTransactions200TransactionsItemStatus } from './listTransactions200TransactionsItemStatus'
-import type { ListTransactions200TransactionsItemTagsItem } from './listTransactions200TransactionsItemTagsItem'
-import type { ListTransactions200TransactionsItemType } from './listTransactions200TransactionsItemType'
+import type { ListTransactions200TransactionsItemType } from "./listTransactions200TransactionsItemType";
+import type { ListTransactions200TransactionsItemStatus } from "./listTransactions200TransactionsItemStatus";
+import type { ListTransactions200TransactionsItemTagsItem } from "./listTransactions200TransactionsItemTagsItem";
 
 export type ListTransactions200TransactionsItem = {
-  id: string
-  type: ListTransactions200TransactionsItemType
-  title: string
-  payTo: string
-  amount: number
-  dueDate: string
+  id: string;
+  type: ListTransactions200TransactionsItemType;
+  title: string;
+  payTo: string;
+  amount: number;
+  dueDate: string;
   /** @nullable */
-  paidAt: string | null
-  status: ListTransactions200TransactionsItemStatus
-  overdueDays: number
-  tags: ListTransactions200TransactionsItemTagsItem[]
-}
+  paidAt: string | null;
+  status: ListTransactions200TransactionsItemStatus;
+  overdueDays: number;
+  tags: ListTransactions200TransactionsItemTagsItem[];
+};

@@ -1156,9 +1156,6 @@
                         "title": {
                           "type": "string"
                         },
-                        "ownerId": {
-                          "type": "string"
-                        },
                         "payTo": {
                           "type": "string"
                         },
@@ -1173,65 +1170,16 @@
                           "type": "string",
                           "nullable": true
                         },
-                        "description": {
-                          "type": "string",
-                          "nullable": true
-                        },
-                        "createdAt": {
-                          "type": "string",
-                          "format": "date-time"
-                        },
                         "status": {
                           "type": "string",
                           "enum": [
+                            "pending",
                             "paid",
-                            "overdue",
-                            "scheduled"
+                            "canceled"
                           ]
                         },
                         "overdueDays": {
                           "type": "number"
-                        },
-                        "isRecurring": {
-                          "type": "boolean"
-                        },
-                        "recurrenceSelector": {
-                          "type": "string",
-                          "enum": [
-                            "date",
-                            "repeat"
-                          ]
-                        },
-                        "recurrenceType": {
-                          "type": "string",
-                          "enum": [
-                            "weekly",
-                            "monthly",
-                            "yearly",
-                            "custom"
-                          ]
-                        },
-                        "recurrenceUntil": {
-                          "type": "string",
-                          "format": "date-time"
-                        },
-                        "recurrenceInterval": {
-                          "type": "integer",
-                          "minimum": -9007199254740991,
-                          "maximum": 9007199254740991
-                        },
-                        "recurrenceStart": {
-                          "type": "string",
-                          "format": "date-time"
-                        },
-                        "installmentsTotal": {
-                          "type": "integer",
-                          "nullable": true
-                        },
-                        "installmentsPaid": {
-                          "type": "integer",
-                          "minimum": -9007199254740991,
-                          "maximum": 9007199254740991
                         },
                         "tags": {
                           "type": "array",
@@ -1257,16 +1205,12 @@
                         "id",
                         "type",
                         "title",
-                        "ownerId",
                         "payTo",
                         "amount",
                         "dueDate",
                         "paidAt",
-                        "description",
-                        "createdAt",
                         "status",
                         "overdueDays",
-                        "isRecurring",
                         "tags"
                       ],
                       "additionalProperties": false
@@ -1615,9 +1559,6 @@
                           "title": {
                             "type": "string"
                           },
-                          "ownerId": {
-                            "type": "string"
-                          },
                           "payTo": {
                             "type": "string"
                           },
@@ -1632,65 +1573,16 @@
                             "type": "string",
                             "nullable": true
                           },
-                          "description": {
-                            "type": "string",
-                            "nullable": true
-                          },
-                          "createdAt": {
-                            "type": "string",
-                            "format": "date-time"
-                          },
                           "status": {
                             "type": "string",
                             "enum": [
+                              "pending",
                               "paid",
-                              "overdue",
-                              "scheduled"
+                              "canceled"
                             ]
                           },
                           "overdueDays": {
                             "type": "number"
-                          },
-                          "isRecurring": {
-                            "type": "boolean"
-                          },
-                          "recurrenceSelector": {
-                            "type": "string",
-                            "enum": [
-                              "date",
-                              "repeat"
-                            ]
-                          },
-                          "recurrenceType": {
-                            "type": "string",
-                            "enum": [
-                              "weekly",
-                              "monthly",
-                              "yearly",
-                              "custom"
-                            ]
-                          },
-                          "recurrenceUntil": {
-                            "type": "string",
-                            "format": "date-time"
-                          },
-                          "recurrenceInterval": {
-                            "type": "integer",
-                            "minimum": -9007199254740991,
-                            "maximum": 9007199254740991
-                          },
-                          "recurrenceStart": {
-                            "type": "string",
-                            "format": "date-time"
-                          },
-                          "installmentsTotal": {
-                            "type": "integer",
-                            "nullable": true
-                          },
-                          "installmentsPaid": {
-                            "type": "integer",
-                            "minimum": -9007199254740991,
-                            "maximum": 9007199254740991
                           },
                           "tags": {
                             "type": "array",
@@ -1716,16 +1608,12 @@
                           "id",
                           "type",
                           "title",
-                          "ownerId",
                           "payTo",
                           "amount",
                           "dueDate",
                           "paidAt",
-                          "description",
-                          "createdAt",
                           "status",
                           "overdueDays",
-                          "isRecurring",
                           "tags"
                         ],
                         "additionalProperties": false
