@@ -113,19 +113,13 @@ export function NavbarTable({ table, onCreate, view, ...props }: Props) {
               </DropdownMenuContent>
             </DropdownMenu>
           )}
-          {selected <= 1 && (
-            <>
-              <PaySelected table={table} />
-              <DeleteSelected table={table} />
-            </>
-          )}
           <Button variant="outline" size="sm" onClick={onCreate}>
             <IconPlus />
             <span className="hidden lg:inline">Adicionar transação</span>
           </Button>
         </div>
       </div>
-      {selected > 1 && (
+      {selected > 0 && (
         <div className="flex flex-wrap items-center justify-end gap-2">
           <PaySelected table={table} />
           <DeleteSelected table={table} />
