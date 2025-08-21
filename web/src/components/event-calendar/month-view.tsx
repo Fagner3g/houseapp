@@ -13,6 +13,7 @@ import {
   startOfMonth,
   startOfWeek,
 } from "date-fns"
+import { ptBR } from "date-fns/locale"
 
 import {
   DraggableEvent,
@@ -59,7 +60,7 @@ export function MonthView({
   const weekdays = useMemo(() => {
     return Array.from({ length: 7 }).map((_, i) => {
       const date = addDays(startOfWeek(new Date()), i)
-      return format(date, "EEE")
+      return format(date, "EEE", { locale: ptBR })
     })
   }, [])
 
@@ -148,7 +149,7 @@ export function MonthView({
                     }}
                   >
                     <div className="group-data-today:bg-primary group-data-today:text-primary-foreground mt-1 inline-flex size-6 items-center justify-center rounded-full text-sm">
-                      {format(day, "d")}
+                      {format(day, "d", { locale: ptBR })}
                     </div>
                     <div
                       ref={isReferenceCell ? contentRef : null}

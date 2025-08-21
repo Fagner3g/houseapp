@@ -1,4 +1,8 @@
 import { useMemo } from 'react'
+import dayjs from 'dayjs'
+import 'dayjs/locale/pt-br'
+dayjs.locale('pt-br')
+import { useNavigate } from '@tanstack/react-router'
 
 import type { ListTransactions200TransactionsItem } from '@/api/generated/model'
 import { EventCalendar } from '@/components/event-calendar'
@@ -6,9 +10,11 @@ import type { CalendarEvent } from '@/components/event-calendar'
 
 interface Props {
   transactions: ListTransactions200TransactionsItem[]
+  dateFrom: string
 }
 
-export function CalendarTransactions({ transactions }: Props) {
+export function CalendarTransactions({ transactions, dateFrom }: Props) {
+  const navigate = useNavigate()
   const events = useMemo<CalendarEvent[]>(
     () =>
       transactions.map(t => ({
@@ -22,6 +28,27 @@ export function CalendarTransactions({ transactions }: Props) {
     [transactions],
   )
 
-  return <EventCalendar events={events} />
+  const initialDate = useMemo(() => new Date(dateFrom), [dateFrom])
+
+  const handleDateChange = (date: Date) => {
+    const from = dayjs(date).startOf('month').format('YYYY-MM-DD')
+    const to = dayjs(date).endOf('month').format('YYYY-MM-DD')
+    navigate({
+      to: '.',
+      search: prev => ({ ...prev, dateFrom: from, dateTo: to, page: 1 }),
+      replace: true,
+    })
+  }
+
+  return (
+    <div className="mx-auto max-w-3xl">
+      <EventCalendar
+        events={events}
+        onDateChange={handleDateChange}
+        initialDate={initialDate}
+        editable={false}
+      />
+    </div>
+  )
 }
 

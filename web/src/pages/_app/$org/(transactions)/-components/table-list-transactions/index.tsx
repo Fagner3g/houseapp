@@ -45,7 +45,7 @@ export function TableLIstTransactions({ transactions, dateFrom, dateTo, ...props
         <Footer {...props} />
       </TabsContent>
       <TabsContent value="calendar">
-        <CalendarTransactions transactions={transactions} />
+        <CalendarTransactions transactions={transactions} dateFrom={dateFrom} />
       </TabsContent>
       <DrawerNewTransaction
         open={openNew}

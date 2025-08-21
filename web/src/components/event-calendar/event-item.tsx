@@ -4,6 +4,7 @@ import { useMemo } from "react"
 import type { DraggableAttributes } from "@dnd-kit/core"
 import type { SyntheticListenerMap } from "@dnd-kit/core/dist/hooks/utilities"
 import { differenceInMinutes, format, getMinutes, isPast } from "date-fns"
+import { ptBR } from "date-fns/locale"
 
 import {
   getBorderRadiusClasses,
@@ -17,7 +18,11 @@ import { cn } from "@/lib/utils"
 // 'a' - am/pm
 // ':mm' - minutes with leading zero (only if the token 'mm' is present)
 const formatTimeWithOptionalMinutes = (date: Date) => {
-  return format(date, getMinutes(date) === 0 ? "ha" : "h:mma").toLowerCase()
+  return format(
+    date,
+    getMinutes(date) === 0 ? "H'h'" : "H'h'mm",
+    { locale: ptBR }
+  )
 }
 
 interface EventWrapperProps {
