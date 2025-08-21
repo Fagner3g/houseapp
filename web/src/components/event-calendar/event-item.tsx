@@ -1,7 +1,11 @@
 "use client"
 
 import { useMemo } from "react"
-import { toast } from "sonner"
+import {
+  Tooltip,
+  TooltipContent,
+  TooltipTrigger,
+} from "@/components/ui/tooltip"
 import type { DraggableAttributes } from "@dnd-kit/core"
 import type { SyntheticListenerMap } from "@dnd-kit/core/dist/hooks/utilities"
 import { differenceInMinutes, format, getMinutes, isPast } from "date-fns"
@@ -114,10 +118,12 @@ export function EventItem({
 
   const overdueBadge =
     event.status !== "paid" && event.overdueDays && event.overdueDays > 0 ? (
-      <span
-        onMouseEnter={() => toast(`${event.overdueDays} dias em atraso`)}
-        className="ml-1 size-2 rounded-full bg-destructive"
-      />
+      <Tooltip>
+        <TooltipTrigger asChild>
+          <span className="ml-1 size-2 rounded-full bg-destructive" />
+        </TooltipTrigger>
+        <TooltipContent>{`${event.overdueDays} dias em atraso`}</TooltipContent>
+      </Tooltip>
     ) : null
 
   // Use the provided currentTime (for dragging) or the event's actual time
@@ -152,7 +158,7 @@ export function EventItem({
   }
 
   if (view === "month") {
-    return (
+    const content = (
       <EventWrapper
         event={event}
         isFirstDay={isFirstDay}
@@ -183,10 +189,19 @@ export function EventItem({
         )}
       </EventWrapper>
     )
+
+    return event.description ? (
+      <Tooltip>
+        <TooltipTrigger asChild>{content}</TooltipTrigger>
+        <TooltipContent>{event.description}</TooltipContent>
+      </Tooltip>
+    ) : (
+      content
+    )
   }
 
   if (view === "week" || view === "day") {
-    return (
+    const content = (
       <EventWrapper
         event={event}
         isFirstDay={isFirstDay}
@@ -231,10 +246,19 @@ export function EventItem({
         )}
       </EventWrapper>
     )
+
+    return event.description ? (
+      <Tooltip>
+        <TooltipTrigger asChild>{content}</TooltipTrigger>
+        <TooltipContent>{event.description}</TooltipContent>
+      </Tooltip>
+    ) : (
+      content
+    )
   }
 
   // Agenda view - kept separate since it's significantly different
-  return (
+  const agendaContent = (
     <button
       className={cn(
         "focus-visible:border-ring focus-visible:ring-ring/50 flex w-full flex-col gap-1 rounded p-2 text-left transition outline-none focus-visible:ring-[3px] data-paid:line-through data-past-event:opacity-90",
@@ -273,5 +297,14 @@ export function EventItem({
         <div className="my-1 text-xs opacity-90">{event.description}</div>
       )}
     </button>
+  )
+
+  return event.description ? (
+    <Tooltip>
+      <TooltipTrigger asChild>{agendaContent}</TooltipTrigger>
+      <TooltipContent>{event.description}</TooltipContent>
+    </Tooltip>
+  ) : (
+    agendaContent
   )
 }
