@@ -7,41 +7,18 @@
  */
 import type { GetTransactionById200TransactionType } from "./getTransactionById200TransactionType";
 import type { GetTransactionById200TransactionStatus } from "./getTransactionById200TransactionStatus";
-import type { GetTransactionById200TransactionRecurrenceSelector } from "./getTransactionById200TransactionRecurrenceSelector";
-import type { GetTransactionById200TransactionRecurrenceType } from "./getTransactionById200TransactionRecurrenceType";
 import type { GetTransactionById200TransactionTagsItem } from "./getTransactionById200TransactionTagsItem";
 
 export type GetTransactionById200Transaction = {
   id: string;
   type: GetTransactionById200TransactionType;
   title: string;
-  ownerId: string;
   payTo: string;
   amount: number;
   dueDate: string;
   /** @nullable */
   paidAt: string | null;
-  /** @nullable */
-  description: string | null;
-  createdAt: string;
   status: GetTransactionById200TransactionStatus;
   overdueDays: number;
-  isRecurring: boolean;
-  recurrenceSelector?: GetTransactionById200TransactionRecurrenceSelector;
-  recurrenceType?: GetTransactionById200TransactionRecurrenceType;
-  recurrenceUntil?: string;
-  /**
-   * @minimum -9007199254740991
-   * @maximum 9007199254740991
-   */
-  recurrenceInterval?: number;
-  recurrenceStart?: string;
-  /** @nullable */
-  installmentsTotal?: number | null;
-  /**
-   * @minimum -9007199254740991
-   * @maximum 9007199254740991
-   */
-  installmentsPaid?: number;
   tags: GetTransactionById200TransactionTagsItem[];
 };

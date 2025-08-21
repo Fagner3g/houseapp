@@ -9,7 +9,7 @@ interface Params {
 
 export async function payTransactionController(
   request: FastifyRequest<{ Params: Params }>,
-  reply: FastifyReply,
+  reply: FastifyReply
 ) {
   const { id } = request.params
   await payTransactionService({ id })

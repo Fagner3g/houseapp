@@ -11,7 +11,7 @@ export type ListTransactions200TransactionsItemStatus =
 
 // eslint-disable-next-line @typescript-eslint/no-redeclare
 export const ListTransactions200TransactionsItemStatus = {
+  pending: "pending",
   paid: "paid",
-  overdue: "overdue",
-  scheduled: "scheduled",
+  canceled: "canceled",
 } as const;

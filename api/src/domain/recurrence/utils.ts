@@ -12,7 +12,6 @@ export function addPeriod(d: Date, type: RecurrenceType, interval: number): Date
     case 'yearly':
       date.setFullYear(date.getFullYear() + interval)
       break
-    case 'custom':
     default:
       date.setDate(date.getDate() + interval)
       break
@@ -20,7 +19,12 @@ export function addPeriod(d: Date, type: RecurrenceType, interval: number): Date
   return date
 }
 
-export function occurrencesBetween(start: Date, end: Date, type: RecurrenceType, interval: number): number {
+export function occurrencesBetween(
+  start: Date,
+  end: Date,
+  type: RecurrenceType,
+  interval: number
+): number {
   if (end < start) return 0
   let count = 1
   let next = addPeriod(start, type, interval)
@@ -44,7 +48,6 @@ export function humanizeInterval(type: RecurrenceType, interval: number): string
     case 'custom':
       unit = 'dia'
       break
-    case 'monthly':
     default:
       if (interval % 12 === 0) {
         unit = 'ano'

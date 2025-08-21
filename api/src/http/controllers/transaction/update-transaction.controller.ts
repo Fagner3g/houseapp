@@ -23,13 +23,11 @@ export async function updateTransactionController(request: Req, reply: FastifyRe
     dueDate,
     description,
     isRecurring,
-    recurrenceSelector,
     recurrenceType,
     recurrenceInterval,
     recurrenceUntil,
     recurrenceStart,
     installmentsTotal,
-    installmentsPaid,
   } = request.body
   const { id } = request.params
 
@@ -51,13 +49,11 @@ export async function updateTransactionController(request: Req, reply: FastifyRe
     dueDate: new Date(dueDate),
     description,
     isRecurring,
-    recurrenceSelector,
     recurrenceType,
     recurrenceInterval,
     recurrenceUntil,
     recurrenceStart,
     installmentsTotal,
-    installmentsPaid,
   })
 
   return reply.status(204).send(null)

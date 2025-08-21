@@ -1,7 +1,8 @@
 import { and, eq, inArray } from 'drizzle-orm'
 
 import { db } from '@/db'
-import { transactions } from '@/db/schemas/transactions'
+import { transactionOccurrences } from '@/db/schemas/transactionOccurrences'
+import { transactionSeries } from '@/db/schemas/transactionSeries'
 
 interface DeleteTransactionsRequest {
   ids: string[]
@@ -16,13 +17,20 @@ export async function deleteTransactionsService({
 }: DeleteTransactionsRequest) {
   if (ids.length === 0) return
 
-  await db
-    .delete(transactions)
+  const sub = db
+    .select({ id: transactionSeries.id })
+    .from(transactionSeries)
     .where(
       and(
-        inArray(transactions.id, ids),
-        eq(transactions.ownerId, ownerId),
-        eq(transactions.organizationId, organizationId),
-      ),
+        eq(transactionSeries.ownerId, ownerId),
+        eq(transactionSeries.organizationId, organizationId)
+      )
+    )
+
+  await db
+    .update(transactionOccurrences)
+    .set({ status: 'canceled' })
+    .where(
+      and(inArray(transactionOccurrences.id, ids), inArray(transactionOccurrences.seriesId, sub))
     )
 }

@@ -18,7 +18,11 @@ import { AlertOctagon, LucideClockFading, TrendingDown, TrendingUp } from 'lucid
 import { useState } from 'react'
 import { toast } from 'sonner'
 
-import { getListTransactionsQueryKey, useDeleteTransactions } from '@/api/generated/api'
+import {
+  getListTransactionsQueryKey,
+  useDeleteTransactions,
+  usePayTransaction,
+} from '@/api/generated/api'
 import type {
   ListTransactions200,
   ListTransactions200TransactionsItem,
@@ -37,6 +41,7 @@ import { Label } from '@/components/ui/label'
 import { useActiveOrganization } from '@/hooks/use-active-organization'
 import { DeleteRowAction } from '../delete-row'
 import { DrawerEdit } from '../drawer-edit'
+import { PayRowAction } from '../pay-row'
 
 export const useTable = (data: ListTransactions200TransactionsItem[]) => {
   const [rowSelection, setRowSelection] = useState({})
@@ -88,6 +93,8 @@ export const useTable = (data: ListTransactions200TransactionsItem[]) => {
       },
     },
   })
+
+  const { mutateAsync: payTransaction } = usePayTransaction()
 
   function copyLink(id: string) {
     const url = `${window.location.origin}/transactions?openId=${id}`
@@ -152,7 +159,7 @@ export const useTable = (data: ListTransactions200TransactionsItem[]) => {
           {row.original.status === 'paid' && (
             <IconCircleCheckFilled className="fill-green-500 dark:fill-green-400" />
           )}
-          {row.original.status === 'overdue' && (
+          {row.original.status === 'pending' && row.original.overdueDays > 0 && (
             <div className="flex items-center gap-1">
               <AlertOctagon className="text-red-400" />
               {row.original.overdueDays > 0 && (
@@ -161,7 +168,10 @@ export const useTable = (data: ListTransactions200TransactionsItem[]) => {
               {row.original.overdueDays === 0 && <span className="text-red-400 text-xs">Hoje</span>}
             </div>
           )}
-          {row.original.status === 'scheduled' && <LucideClockFading className="text-yellow-500" />}
+          {row.original.status === 'pending' && row.original.overdueDays === 0 && (
+            <LucideClockFading className="text-yellow-500" />
+          )}
+          {row.original.status === 'canceled' && <AlertOctagon className="text-zinc-400" />}
         </div>
       ),
     },
@@ -219,17 +229,6 @@ export const useTable = (data: ListTransactions200TransactionsItem[]) => {
       ),
     },
     {
-      accessorKey: 'Recorrente',
-      header: 'Recorrente',
-      cell: ({ row }) => {
-        return (
-          <Label className="text-muted-foreground px-1.5">
-            {row.original.isRecurring ? 'Sim' : 'Não'}
-          </Label>
-        )
-      },
-    },
-    {
       id: 'actions',
       cell: ({ row, table }) => (
         <DropdownMenu>
@@ -252,6 +251,7 @@ export const useTable = (data: ListTransactions200TransactionsItem[]) => {
             <DropdownMenuItem onClick={() => copyLink(row.original.id)}>
               Copiar link
             </DropdownMenuItem>
+            <PayRowAction id={row.original.id} status={row.original.status} table={table} />
             <DropdownMenuSeparator />
             <DeleteRowAction id={row.original.id} table={table} />
           </DropdownMenuContent>
@@ -289,6 +289,29 @@ export const useTable = (data: ListTransactions200TransactionsItem[]) => {
       },
       editRow: (item: ListTransactions200TransactionsItem) => {
         setEditing(item)
+      },
+      payRows: async (ids: string[]) => {
+        const items = data.filter(t => ids.includes(t.id))
+        const allPaid = items.every(t => t.status === 'paid')
+
+        try {
+          await Promise.all(ids.map(id => payTransaction({ slug, id })))
+          toast.success(
+            ids.length > 1
+              ? allPaid
+                ? 'Pagamentos cancelados com sucesso!'
+                : 'Transações pagas com sucesso!'
+              : allPaid
+                ? 'Pagamento cancelado com sucesso!'
+                : 'Transação paga com sucesso!'
+          )
+        } catch {
+          toast.error(allPaid ? 'Erro ao cancelar pagamento' : 'Erro ao pagar transações')
+        } finally {
+          queryClient.invalidateQueries({
+            queryKey: getListTransactionsQueryKey(slug),
+          })
+        }
       },
     },
   })

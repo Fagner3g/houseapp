@@ -15,16 +15,16 @@ import {
   listUsersByOrgRoute,
   renameOrgRoute,
 } from './organization.routes'
+import { reportsRoutes } from './reports.routes'
 import { createTagRoute, deleteTagRoute, listTagsRoute, updateTagRoute } from './tag.routes'
 import {
   createTransactionRoute,
   deleteTransactionsRoute,
   getTransactionRoute,
   listTransactionRoute,
-  updateTransactionRoute,
   payTransactionRoute,
+  updateTransactionRoute,
 } from './transaction.routes'
-import { reportsRoutes } from './reports.routes'
 import { createUserWithInviteRoute, getProfileRoute } from './user.routes'
 
 export function createRoutes(app: FastifyInstance) {

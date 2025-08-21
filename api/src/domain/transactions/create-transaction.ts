@@ -2,9 +2,10 @@ import { and, eq, inArray } from 'drizzle-orm'
 
 import { db } from '@/db'
 import { tags as tagsTable } from '@/db/schemas/tags'
-import { transactions } from '@/db/schemas/transactions'
+import { transactionSeries } from '@/db/schemas/transactionSeries'
 import { transactionTags } from '@/db/schemas/transactionTags'
 import type { CreateTransactionsSchemaBody } from '@/http/schemas/transaction/create-transaction.schema'
+import { materializeOccurrences } from './materialize-occurrences'
 
 type CreateTransaction = Omit<CreateTransactionsSchemaBody, 'payToEmail'> & {
   ownerId: string
@@ -20,7 +21,6 @@ export async function createTransactionService({
   organizationId,
   amount,
   dueDate,
-  description,
   tags = [],
   isRecurring,
   recurrenceInterval,
@@ -28,10 +28,10 @@ export async function createTransactionService({
   recurrenceUntil,
   recurrenceStart,
   installmentsTotal,
-  installmentsPaid = 0,
 }: CreateTransaction) {
-  const result = await db
-    .insert(transactions)
+  const startDate = recurrenceStart ?? dueDate
+  const seriesResult = await db
+    .insert(transactionSeries)
     .values({
       type,
       title,
@@ -39,19 +39,15 @@ export async function createTransactionService({
       payToId,
       organizationId,
       amount,
-      dueDate,
-      description,
-      isRecurring,
-      recurrenceInterval,
-      recurrenceType,
+      startDate,
+      recurrenceType: recurrenceType ?? 'monthly',
+      recurrenceInterval: recurrenceInterval ?? 1,
       recurrenceUntil,
-      recurrenceStart,
-      installmentsTotal,
-      installmentsPaid,
+      installmentsTotal: installmentsTotal ?? (isRecurring ? null : 1),
     })
     .returning()
 
-  const transaction = result[0]
+  const series = seriesResult[0]
 
   if (tags.length > 0) {
     const names = tags.map(t => t.name)
@@ -80,7 +76,7 @@ export async function createTransactionService({
     }
 
     const rows = names.map(name => ({
-      transactionId: transaction.id,
+      transactionId: series.id,
       tagId: existingMap.get(name)!,
     }))
     if (rows.length > 0) {
@@ -88,5 +84,7 @@ export async function createTransactionService({
     }
   }
 
-  return { transaction }
+  await materializeOccurrences(series.id)
+
+  return { series }
 }

@@ -1,8 +1,9 @@
-import { and, eq, gte, isNotNull, isNull, lt, lte, or } from 'drizzle-orm'
+import { and, eq, gte, isNotNull, lt, lte, or } from 'drizzle-orm'
 import { type ScheduledTask, schedule } from 'node-cron'
 
 import { db } from '@/db'
-import { transactions } from '@/db/schemas/transactions'
+import { transactionOccurrences } from '@/db/schemas/transactionOccurrences'
+import { transactionSeries } from '@/db/schemas/transactionSeries'
 import { users } from '@/db/schemas/users'
 import { normalizePhone, sendWhatsAppMessage } from '@/domain/whatsapp'
 import { logger } from '@/http/utils/logger'
@@ -10,12 +11,12 @@ import { logger } from '@/http/utils/logger'
 // ====================== helpers ======================
 async function getDistinctOwnerIds(): Promise<string[]> {
   try {
-    // SELECT DISTINCT owner_id FROM transactions WHERE owner_id IS NOT NULL
+    // SELECT DISTINCT owner_id FROM transaction_series WHERE owner_id IS NOT NULL
     const rows = await db
-      .select({ ownerId: transactions.ownerId })
-      .from(transactions)
-      .where(isNotNull(transactions.ownerId))
-      .groupBy(transactions.ownerId)
+      .select({ ownerId: transactionSeries.ownerId })
+      .from(transactionSeries)
+      .where(isNotNull(transactionSeries.ownerId))
+      .groupBy(transactionSeries.ownerId)
 
     return rows.map(r => r.ownerId!).filter(Boolean)
   } catch (err) {
@@ -180,21 +181,28 @@ async function runOwnerDigestForAllOwners() {
       // Transações do owner (mês atual) OU (vencidas e não pagas)
       const rows = await db
         .select({
-          title: transactions.title,
-          amount: transactions.amount,
-          dueDate: transactions.dueDate,
-          paidAt: transactions.paidAt,
-          type: transactions.type,
+          title: transactionSeries.title,
+          amount: transactionOccurrences.amount,
+          dueDate: transactionOccurrences.dueDate,
+          paidAt: transactionOccurrences.paidAt,
+          type: transactionSeries.type,
           payToName: users.name,
         })
-        .from(transactions)
-        .leftJoin(users, eq(users.id, transactions.payToId))
+        .from(transactionOccurrences)
+        .innerJoin(transactionSeries, eq(transactionOccurrences.seriesId, transactionSeries.id))
+        .leftJoin(users, eq(users.id, transactionSeries.payToId))
         .where(
           and(
-            eq(transactions.ownerId, ownerId),
+            eq(transactionSeries.ownerId, ownerId),
             or(
-              and(gte(transactions.dueDate, startOfMonth), lte(transactions.dueDate, endOfMonth)),
-              and(isNull(transactions.paidAt), lt(transactions.dueDate, now))
+              and(
+                gte(transactionOccurrences.dueDate, startOfMonth),
+                lte(transactionOccurrences.dueDate, endOfMonth)
+              ),
+              and(
+                eq(transactionOccurrences.status, 'pending'),
+                lt(transactionOccurrences.dueDate, now)
+              )
             )
           )
         )

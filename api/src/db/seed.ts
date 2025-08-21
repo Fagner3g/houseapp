@@ -6,7 +6,6 @@ import { client, db } from '.'
 import { goalCompletions } from './schemas/goalCompletions'
 import { goals } from './schemas/goals'
 import { organizations } from './schemas/organization'
-import { transactions } from './schemas/transactions'
 import { userOrganizations } from './schemas/userOrganization'
 import { users } from './schemas/users'
 
@@ -15,7 +14,6 @@ async function seed() {
     TRUNCATE TABLE
       "goal_completions",
       "goals",
-      "transactions",
       "invites",
       "user_organizations",
       "organizations",
@@ -59,52 +57,6 @@ async function seed() {
     { userId: user.id, organizationId: org.id },
     { userId: otherUser.id, organizationId: org.id },
     { userId: thirdUser.id, organizationId: otherOrg.id },
-  ])
-
-  await db.insert(transactions).values([
-    {
-      title: 'Aluguel',
-      ownerId: user.id,
-      payToId: otherUser.id,
-      organizationId: org.id,
-      amount: 1000,
-      dueDate: dayjs().add(5, 'day').toDate(),
-      description: 'Mensalidade do apartamento',
-      type: 'expense',
-    },
-    {
-      title: 'Internet',
-      ownerId: user.id,
-      payToId: thirdUser.id,
-      organizationId: org.id,
-      amount: 200,
-      dueDate: dayjs().add(3, 'day').toDate(),
-      description: 'Plano mensal',
-      type: 'expense',
-    },
-    {
-      title: 'Gás',
-      ownerId: user.id,
-      payToId: thirdUser.id,
-      organizationId: org.id,
-      amount: 200,
-      dueDate: dayjs().add(3, 'day').toDate(),
-      description: 'Plano mensal',
-      type: 'income',
-    },
-    {
-      title: 'Aluguel',
-      ownerId: user.id,
-      payToId: thirdUser.id,
-      organizationId: org.id,
-      amount: 1000,
-      dueDate: dayjs().add(5, 'day').toDate(),
-      description: 'Mensalidade do apartamento',
-      type: 'expense',
-      isRecurring: true,
-      recurrenceType: 'monthly',
-      recurrenceInterval: 1,
-    },
   ])
 
   const result = await db
