@@ -1,200 +1,116 @@
-import { IconTrendingUp } from '@tabler/icons-react'
-import { Area, AreaChart, CartesianGrid, XAxis } from 'recharts'
+import { zodResolver } from '@hookform/resolvers/zod'
+import { useEffect } from 'react'
+import { useForm } from 'react-hook-form'
+import { useQueryClient } from '@tanstack/react-query'
+import { toast } from 'sonner'
 
 import type { ListTransactions200TransactionsItem } from '@/api/generated/model'
-import { Button } from '@/components/ui/button'
 import {
-  type ChartConfig,
-  ChartContainer,
-  ChartTooltip,
-  ChartTooltipContent,
-} from '@/components/ui/chart'
+  getListTransactionsQueryKey,
+  useListUsersByOrg,
+  useUpdateTransaction,
+} from '@/api/generated/api'
+import { Button } from '@/components/ui/button'
 import {
   Drawer,
   DrawerClose,
   DrawerContent,
-  DrawerDescription,
   DrawerFooter,
   DrawerHeader,
   DrawerTitle,
-  DrawerTrigger,
 } from '@/components/ui/drawer'
-import { Input } from '@/components/ui/input'
-import { Label } from '@/components/ui/label'
+import { Form } from '@/components/ui/form'
+import { useActiveOrganization } from '@/hooks/use-active-organization'
+import { AmountField } from '../modal-new-transaction/amount-field'
+import { DescriptionField } from '../modal-new-transaction/description-field'
+import { CalendarField } from '../modal-new-transaction/due-date-field'
+import { PayToField } from '../modal-new-transaction/pay-to-field'
+import { TagField } from '../modal-new-transaction/tag-field'
+import { TitleField } from '../modal-new-transaction/title-filed'
+import { TypeField } from '../modal-new-transaction/type-field'
 import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from '@/components/ui/select'
-import { Separator } from '@/components/ui/separator'
-import { useIsMobile } from '@/hooks/use-mobile'
+  newTransactionSchema,
+  type NewTransactionSchema,
+  RegisterType,
+} from '../modal-new-transaction/schema'
 
 interface Props {
-  item: ListTransactions200TransactionsItem
+  transaction: ListTransactions200TransactionsItem | null
+  open: boolean
+  onOpenChange: (open: boolean) => void
 }
 
-export function DrawerEdit({ item }: Props) {
-  const isMobile = useIsMobile()
+export function DrawerEdit({ transaction, open, onOpenChange }: Props) {
+  const { slug } = useActiveOrganization()
+  const queryClient = useQueryClient()
+  const { data: users } = useListUsersByOrg(slug)
 
-  if (!item) return null
+  const form = useForm<NewTransactionSchema>({
+    resolver: zodResolver(newTransactionSchema),
+    defaultValues: { type: RegisterType.EXPENSE, isRecurring: false },
+  })
+
+  useEffect(() => {
+    if (!transaction) return
+    const payToEmail = users?.find(u => u.name === transaction.payTo)?.email ?? ''
+
+    form.reset({
+      type: transaction.type as RegisterType,
+      title: transaction.title,
+      amount: transaction.amount,
+      dueDate: new Date(transaction.dueDate),
+      payToEmail,
+      tags: transaction.tags,
+      isRecurring: false,
+    })
+  }, [transaction, form, users])
+
+  const { mutate: updateTransaction } = useUpdateTransaction({
+    mutation: {
+      onSuccess: () => {
+        toast.success('Transação atualizada com sucesso!')
+        queryClient.invalidateQueries({
+          queryKey: getListTransactionsQueryKey(slug),
+        })
+        onOpenChange(false)
+      },
+      onError: () => toast.error('Erro ao atualizar transação'),
+    },
+  })
+
+  function handleSubmit(data: NewTransactionSchema) {
+    if (!transaction) return
+    updateTransaction({ slug, id: transaction.id, data })
+  }
 
   return (
-    <Drawer direction={isMobile ? 'bottom' : 'right'}>
-      <DrawerTrigger asChild>
-        <Button variant="link" className="text-foreground w-fit px-0 text-left">
-          {item.title}
-        </Button>
-      </DrawerTrigger>
+    <Drawer open={open} onOpenChange={onOpenChange}>
       <DrawerContent>
-        <DrawerHeader className="gap-1">
-          <DrawerTitle>{item.title}</DrawerTitle>
-          <DrawerDescription>Showing total visitors for the last 6 months</DrawerDescription>
+        <DrawerHeader>
+          <DrawerTitle>Editar transação</DrawerTitle>
         </DrawerHeader>
-        <div className="flex flex-col gap-4 overflow-y-auto px-4 text-sm">
-          {!isMobile && (
-            <>
-              <ChartContainer config={chartConfig}>
-                <AreaChart
-                  accessibilityLayer
-                  data={chartData}
-                  margin={{
-                    left: 0,
-                    right: 10,
-                  }}
-                >
-                  <CartesianGrid vertical={false} />
-                  <XAxis
-                    dataKey="month"
-                    tickLine={false}
-                    axisLine={false}
-                    tickMargin={8}
-                    tickFormatter={value => value.slice(0, 3)}
-                    hide
-                  />
-                  <ChartTooltip cursor={false} content={<ChartTooltipContent indicator="dot" />} />
-                  <Area
-                    dataKey="mobile"
-                    type="natural"
-                    fill="var(--color-mobile)"
-                    fillOpacity={0.6}
-                    stroke="var(--color-mobile)"
-                    stackId="a"
-                  />
-                  <Area
-                    dataKey="desktop"
-                    type="natural"
-                    fill="var(--color-desktop)"
-                    fillOpacity={0.4}
-                    stroke="var(--color-desktop)"
-                    stackId="a"
-                  />
-                </AreaChart>
-              </ChartContainer>
-              <Separator />
-              <div className="grid gap-2">
-                <div className="flex gap-2 leading-none font-medium">
-                  Trending up by 5.2% this month <IconTrendingUp className="size-4" />
-                </div>
-                <div className="text-muted-foreground">
-                  Showing total visitors for the last 6 months. This is just some random text to
-                  test the layout. It spans multiple lines and should wrap around.
-                </div>
+        <div className="flex flex-col gap-4 p-4 overflow-y-auto">
+          <Form {...form}>
+            <form onSubmit={form.handleSubmit(handleSubmit)} className="flex flex-col gap-4">
+              <TypeField form={form} />
+              <TitleField form={form} />
+              <div className="flex gap-5">
+                <AmountField form={form} />
+                <CalendarField form={form} />
               </div>
-              <Separator />
-            </>
-          )}
-          <form className="flex flex-col gap-4">
-            <div className="flex flex-col gap-3">
-              <Label htmlFor="header">Header</Label>
-              <Input id="header" defaultValue={item.title} />
-            </div>
-            <div className="grid grid-cols-2 gap-4">
-              <div className="flex flex-col gap-3">
-                <Label htmlFor="type">Type</Label>
-                <Select defaultValue={item.type}>
-                  <SelectTrigger id="type" className="w-full">
-                    <SelectValue placeholder="Select a type" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="Table of Contents">Table of Contents</SelectItem>
-                    <SelectItem value="Executive Summary">Executive Summary</SelectItem>
-                    <SelectItem value="Technical Approach">Technical Approach</SelectItem>
-                    <SelectItem value="Design">Design</SelectItem>
-                    <SelectItem value="Capabilities">Capabilities</SelectItem>
-                    <SelectItem value="Focus Documents">Focus Documents</SelectItem>
-                    <SelectItem value="Narrative">Narrative</SelectItem>
-                    <SelectItem value="Cover Page">Cover Page</SelectItem>
-                  </SelectContent>
-                </Select>
-              </div>
-              <div className="flex flex-col gap-3">
-                <Label htmlFor="status">Status</Label>
-                <Select defaultValue={item.status}>
-                  <SelectTrigger id="status" className="w-full">
-                    <SelectValue placeholder="Select a status" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="Done">Done</SelectItem>
-                    <SelectItem value="In Progress">In Progress</SelectItem>
-                    <SelectItem value="Not Started">Not Started</SelectItem>
-                  </SelectContent>
-                </Select>
-              </div>
-            </div>
-            <div className="grid grid-cols-2 gap-4">
-              <div className="flex flex-col gap-3">
-                <Label htmlFor="target">Target</Label>
-                <Input id="target" defaultValue={item.dueDate} />
-              </div>
-              <div className="flex flex-col gap-3">
-                <Label htmlFor="limit">Limit</Label>
-                <Input id="limit" defaultValue={item.status} />
-              </div>
-            </div>
-            <div className="flex flex-col gap-3">
-              <Label htmlFor="reviewer">Reviewer</Label>
-              <Select defaultValue={item.status}>
-                <SelectTrigger id="reviewer" className="w-full">
-                  <SelectValue placeholder="Select a reviewer" />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="Eddie Lake">Eddie Lake</SelectItem>
-                  <SelectItem value="Jamik Tashpulatov">Jamik Tashpulatov</SelectItem>
-                  <SelectItem value="Emily Whalen">Emily Whalen</SelectItem>
-                </SelectContent>
-              </Select>
-            </div>
-          </form>
+              <PayToField form={form} data={users} />
+              <TagField form={form} />
+              <DescriptionField form={form} />
+              <Button type="submit">Salvar</Button>
+            </form>
+          </Form>
         </div>
         <DrawerFooter>
-          <Button>Submit</Button>
           <DrawerClose asChild>
-            <Button variant="outline">Done</Button>
+            <Button variant="outline">Cancelar</Button>
           </DrawerClose>
         </DrawerFooter>
       </DrawerContent>
     </Drawer>
   )
 }
-
-const chartData = [
-  { month: 'January', desktop: 186, mobile: 80 },
-  { month: 'February', desktop: 305, mobile: 200 },
-  { month: 'March', desktop: 237, mobile: 120 },
-  { month: 'April', desktop: 73, mobile: 190 },
-  { month: 'May', desktop: 209, mobile: 130 },
-  { month: 'June', desktop: 214, mobile: 140 },
-]
-
-const chartConfig = {
-  desktop: {
-    label: 'Desktop',
-    color: 'var(--primary)',
-  },
-  mobile: {
-    label: 'Mobile',
-    color: 'var(--primary)',
-  },
-} satisfies ChartConfig

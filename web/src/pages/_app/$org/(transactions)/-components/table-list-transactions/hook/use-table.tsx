@@ -40,7 +40,6 @@ import {
 import { Label } from '@/components/ui/label'
 import { useActiveOrganization } from '@/hooks/use-active-organization'
 import { DeleteRowAction } from '../delete-row'
-import { DrawerEdit } from '../drawer-edit'
 import { PayRowAction } from '../pay-row'
 
 export const useTable = (data: ListTransactions200TransactionsItem[]) => {
@@ -147,9 +146,15 @@ export const useTable = (data: ListTransactions200TransactionsItem[]) => {
       accessorKey: 'title',
       header: 'Nome',
       enableHiding: false,
-      cell: ({ row }) => {
-        return <DrawerEdit item={row.original} />
-      },
+      cell: ({ row, table }) => (
+        <Button
+          variant="link"
+          className="text-foreground w-fit px-0 text-left"
+          onClick={() => table.options.meta?.editRow(row.original)}
+        >
+          {row.original.title}
+        </Button>
+      ),
     },
     {
       accessorKey: 'Status',
@@ -243,7 +248,9 @@ export const useTable = (data: ListTransactions200TransactionsItem[]) => {
             </Button>
           </DropdownMenuTrigger>
           <DropdownMenuContent align="end" className="w-40">
-            <DropdownMenuItem onClick={() => table.options}>Editar</DropdownMenuItem>
+            <DropdownMenuItem onClick={() => table.options.meta?.editRow(row.original)}>
+              Editar
+            </DropdownMenuItem>
             <DropdownMenuItem onClick={() => copyLink(row.original.id)}>Duplicar</DropdownMenuItem>
             <DropdownMenuItem onClick={() => toast.success('Favoritado!')}>
               Favoritar
