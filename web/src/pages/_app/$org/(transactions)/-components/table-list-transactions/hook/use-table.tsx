@@ -42,7 +42,10 @@ import { useActiveOrganization } from '@/hooks/use-active-organization'
 import { DeleteRowAction } from '../delete-row'
 import { PayRowAction } from '../pay-row'
 
-export const useTable = (data: ListTransactions200TransactionsItem[]) => {
+export const useTable = (
+  data: ListTransactions200TransactionsItem[],
+  onDuplicate?: (item: ListTransactions200TransactionsItem) => void,
+) => {
   const [rowSelection, setRowSelection] = useState({})
   const [columnVisibility, setColumnVisibility] = useState<VisibilityState>({
     Pagamento: false,
@@ -251,7 +254,9 @@ export const useTable = (data: ListTransactions200TransactionsItem[]) => {
             <DropdownMenuItem onClick={() => table.options.meta?.editRow(row.original)}>
               Editar
             </DropdownMenuItem>
-            <DropdownMenuItem onClick={() => copyLink(row.original.id)}>Duplicar</DropdownMenuItem>
+            <DropdownMenuItem onClick={() => table.options.meta?.duplicateRow(row.original)}>
+              Duplicar
+            </DropdownMenuItem>
             <DropdownMenuItem onClick={() => toast.success('Favoritado!')}>
               Favoritar
             </DropdownMenuItem>
@@ -296,6 +301,9 @@ export const useTable = (data: ListTransactions200TransactionsItem[]) => {
       },
       editRow: (item: ListTransactions200TransactionsItem) => {
         setEditing(item)
+      },
+      duplicateRow: (item: ListTransactions200TransactionsItem) => {
+        onDuplicate?.(item)
       },
       payRows: async (ids: string[]) => {
         const items = data.filter(t => ids.includes(t.id))

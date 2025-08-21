@@ -1,4 +1,4 @@
-import { IconLayoutColumns } from '@tabler/icons-react'
+import { IconLayoutColumns, IconPlus } from '@tabler/icons-react'
 import type { Table } from '@tanstack/react-table'
 
 import type { ListTransactions200TransactionsItem } from '@/api/generated/model'
@@ -9,16 +9,16 @@ import {
   DropdownMenuContent,
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu'
-import { DrawerNewTransaction } from '../modal-new-transaction'
 import { DeleteSelected } from './delete-selected'
 import FilterTable, { type FilterTableProps } from './filter'
 import { PaySelected } from './pay-selected'
 
 interface Props extends FilterTableProps {
   table: Table<ListTransactions200TransactionsItem>
+  onCreate: () => void
 }
 
-export function NavbarTable({ table, ...props }: Props) {
+export function NavbarTable({ table, onCreate, ...props }: Props) {
   return (
     <div className="flex items-center justify-between px-4 lg:px-6">
       <FilterTable {...props} />
@@ -51,7 +51,10 @@ export function NavbarTable({ table, ...props }: Props) {
         </DropdownMenu>
         <PaySelected table={table} />
         <DeleteSelected table={table} />
-        <DrawerNewTransaction />
+        <Button variant="outline" size="sm" onClick={onCreate}>
+          <IconPlus />
+          <span className="hidden lg:inline">Adicionar transação</span>
+        </Button>
       </div>
     </div>
   )

@@ -1,7 +1,6 @@
 import { zodResolver } from '@hookform/resolvers/zod'
-import { IconPlus } from '@tabler/icons-react'
 import { useQueryClient } from '@tanstack/react-query'
-import { useEffect, useState } from 'react'
+import { useEffect } from 'react'
 import { useForm } from 'react-hook-form'
 import { toast } from 'sonner'
 
@@ -14,7 +13,6 @@ import {
   DrawerFooter,
   DrawerHeader,
   DrawerTitle,
-  DrawerTrigger,
 } from '@/components/ui/drawer'
 import { Form } from '@/components/ui/form'
 import { useActiveOrganization } from '@/hooks/use-active-organization'
@@ -44,8 +42,13 @@ import { TagField } from './tag-field'
 import { TitleField } from './title-filed'
 import { TypeField } from './type-field'
 
-export function DrawerNewTransaction() {
-  const [open, setOpen] = useState(false)
+interface Props {
+  open: boolean
+  onOpenChange: (open: boolean) => void
+  transaction?: ListTransactions200TransactionsItem | null
+}
+
+export function DrawerNewTransaction({ open, onOpenChange, transaction }: Props) {
   const { slug } = useActiveOrganization()
   const queryClient = useQueryClient()
   const { data: userData } = useListUsersByOrg(slug)
@@ -136,20 +139,32 @@ export function DrawerNewTransaction() {
     })
   }, [form, mode])
 
+  useEffect(() => {
+    if (!open) return
+
+    if (transaction) {
+      form.reset({
+        type: transaction.type,
+        title: transaction.title,
+        amount: transaction.amount,
+        dueDate: new Date(transaction.dueDate),
+        payToEmail: transaction.payTo,
+        tags: transaction.tags,
+        description: undefined,
+        isRecurring: false,
+      })
+    } else {
+      form.reset({ type: RegisterType.EXPENSE, isRecurring: false })
+    }
+  }, [open, transaction, form])
+
   async function handleSubmit(data: NewTransactionSchema) {
     createTransaction({ slug, data })
-    setOpen(false)
-    // form.reset()
+    onOpenChange(false)
   }
 
   return (
-    <Drawer open={open} onOpenChange={setOpen} direction={isMobile ? 'bottom' : 'right'}>
-      <DrawerTrigger asChild>
-        <Button variant="outline" size="sm">
-          <IconPlus />
-          <span className="hidden lg:inline">Adicionar transação</span>
-        </Button>
-      </DrawerTrigger>
+    <Drawer open={open} onOpenChange={onOpenChange} direction={isMobile ? 'bottom' : 'right'}>
 
       <DrawerContent>
         <DrawerHeader>
