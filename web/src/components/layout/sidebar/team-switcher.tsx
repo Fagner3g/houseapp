@@ -1,5 +1,9 @@
 import { ChevronsUpDown, GalleryVerticalEnd, Plus, Settings2 } from 'lucide-react'
+import { useState } from 'react'
 
+import { useListOrganizations } from '@/api/generated/api'
+import { ModalEditOrganization } from '@/components/modal-edit-organization'
+import { ModalNewOrganization } from '@/components/modal-new-organization'
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -16,10 +20,7 @@ import {
   useSidebar,
 } from '@/components/ui/sidebar'
 import { useActiveOrganization } from '@/hooks/use-active-organization'
-import { useListOrganizations } from '@/api/generated/api'
-import { useState } from 'react'
-import { ModalEditOrganization } from '@/components/modal-edit-organization'
-import { ModalNewOrganization } from '@/components/modal-new-organization'
+import { cn } from '@/lib/utils'
 
 export function TeamSwitcher() {
   const { isMobile } = useSidebar()
@@ -71,7 +72,10 @@ export function TeamSwitcher() {
                 <DropdownMenuItem
                   key={team.id}
                   onClick={() => setOrganization(team.id)}
-                  className="gap-2 p-2"
+                  className={cn(
+                    'gap-2 p-2',
+                    team.id === activeTeam.id && 'bg-sidebar-accent text-sidebar-accent-foreground'
+                  )}
                 >
                   <div className="flex size-6 items-center justify-center rounded-md border">
                     <team.logo />
@@ -85,7 +89,7 @@ export function TeamSwitcher() {
                 <div className="flex size-6 items-center justify-center rounded-md border bg-transparent">
                   <Plus className="size-4" />
                 </div>
-                <div className="text-muted-foreground font-medium">Add team</div>
+                <div className="text-muted-foreground font-medium">Adicionar</div>
               </DropdownMenuItem>
               <DropdownMenuItem className="gap-2 p-2" onClick={() => setOpenEdit(true)}>
                 <div className="flex size-6 items-center justify-center rounded-md border bg-transparent">
