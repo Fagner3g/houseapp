@@ -100,6 +100,7 @@ export async function listTransactionsService({
         transactionOccurrences.id,
         transactionSeries.title,
         transactionSeries.type,
+        transactionSeries.installmentsTotal,
         users.name
       )
       .orderBy(desc(transactionOccurrences.dueDate))
