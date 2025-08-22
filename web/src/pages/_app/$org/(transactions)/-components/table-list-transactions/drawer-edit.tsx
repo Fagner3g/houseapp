@@ -132,13 +132,22 @@ export function DrawerEdit({ transaction, open, onOpenChange }: Props) {
       if (!pendingData) return
       sendUpdate(pendingData, false)
       setConfirmOpen(false)
+      setPendingData(null)
     }
 
     function handleUpdateSeries() {
       if (!pendingData) return
       sendUpdate(pendingData, true)
       setConfirmOpen(false)
+      setPendingData(null)
     }
+
+    useEffect(() => {
+      if (!open) {
+        setConfirmOpen(false)
+        setPendingData(null)
+      }
+    }, [open])
 
   const isRecurring =
     transaction != null &&
@@ -186,8 +195,12 @@ export function DrawerEdit({ transaction, open, onOpenChange }: Props) {
               </AlertDialogDescription>
             </AlertDialogHeader>
             <AlertDialogFooter>
-              <AlertDialogCancel onClick={handleUpdateCurrent}>Apenas esta</AlertDialogCancel>
-              <AlertDialogAction onClick={handleUpdateSeries}>Toda a série</AlertDialogAction>
+              <AlertDialogCancel type="button" onClick={handleUpdateCurrent}>
+                Apenas esta
+              </AlertDialogCancel>
+              <AlertDialogAction type="button" onClick={handleUpdateSeries}>
+                Toda a série
+              </AlertDialogAction>
             </AlertDialogFooter>
           </AlertDialogContent>
         </AlertDialog>
