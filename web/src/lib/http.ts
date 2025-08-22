@@ -1,5 +1,3 @@
-import { toast } from 'sonner'
-
 import { getAuthToken } from '@/lib/auth'
 import { env } from '@/lib/env'
 import { useAuthStore } from '@/stores/auth'
@@ -38,21 +36,6 @@ export async function http<T>(path: string, optinos: RequestInit): Promise<T> {
     if (response.status === 401) {
       useAuthStore.getState().logout()
       return Promise.reject(response)
-    }
-
-    if (response.status === 400) {
-      const data = await response.json()
-      toast.error(data.message)
-    }
-
-    if (response.status === 403) {
-      const data = await response.json()
-      toast.error(data.message)
-    }
-
-    if (response.status === 500) {
-      const data = await response.json()
-      toast.error(data.message)
     }
   }
 

@@ -16,6 +16,7 @@ import { env } from '@/config/env'
 import { version } from '../../../package.json'
 import { createRoutes } from '../routes'
 import { errorHandler } from './error/handlers'
+import { centsToDecimalString } from './format'
 import { reqReplyTime } from './metrics'
 
 export async function buildServer() {
@@ -34,6 +35,19 @@ export async function buildServer() {
         }
       : {}
   ).withTypeProvider<ZodTypeProvider>()
+
+  // add reply serializer (BigInt -> string). For monetary fields (amount), serialize as decimal with 2 casas.
+  app.setReplySerializer(payload => {
+    return JSON.stringify(payload, (k, v) => {
+      if (typeof v === 'bigint') {
+        // Converte especificamente o campo `amount` (centavos) para string decimal fixa (ex.: "12.34")
+        if (k === 'amount') return centsToDecimalString(v)
+        // Demais BigInts seguem como string
+        return v.toString()
+      }
+      return v
+    })
+  })
 
   // Add schema validator and serializer
   app.setValidatorCompiler(validatorCompiler)

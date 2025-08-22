@@ -8,12 +8,9 @@ export enum RegisterType {
 const base = z.object({
   type: z.enum(['expense', 'income']).default('expense').nonoptional('O tipo é obrigatório'),
   title: z.string('O título é obrigatório').nonempty(),
-  amount: z.number('Valor da transação é obrigatório').min(1),
+  amount: z.string('Valor da transação é obrigatório'),
   dueDate: z.date({ error: 'A data de vencimento é obrigatória' }),
-  payToEmail: z
-    .string()
-    .min(1, { message: 'Defina o pra quem vai o registro' })
-    .email('Informe um e-mail válido'),
+  payToEmail: z.email('Informe um e-mail válido'),
   tags: z.array(z.object({ name: z.string(), color: z.string() })).optional(),
   description: z.string().optional(),
 })

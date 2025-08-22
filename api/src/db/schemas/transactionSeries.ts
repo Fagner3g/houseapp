@@ -1,5 +1,5 @@
 import { createId } from '@paralleldrive/cuid2'
-import { boolean, integer, pgTable, text, timestamp } from 'drizzle-orm/pg-core'
+import { bigint, boolean, integer, pgTable, text, timestamp } from 'drizzle-orm/pg-core'
 
 import { organizations } from './organization'
 import { users } from './users'
@@ -9,7 +9,7 @@ export const transactionSeries = pgTable('transactions_series', {
     .primaryKey()
     .$defaultFn(() => createId()),
   title: text('title').notNull(),
-  amount: integer('amount').notNull(),
+  amount: bigint('amount', { mode: 'bigint' }).notNull(),
   type: text('type').$type<'income' | 'expense'>().notNull(),
   startDate: timestamp('start_date', { withTimezone: true }).notNull(),
   recurrenceType: text('recurrence_type').$type<'monthly' | 'weekly' | 'yearly'>().notNull(),

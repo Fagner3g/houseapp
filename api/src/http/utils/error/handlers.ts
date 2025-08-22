@@ -15,7 +15,8 @@ type FastifyErrorHandler = FastifyInstance['errorHandler']
 export const errorHandler: FastifyErrorHandler = (error, _request, reply) => {
   if (error.code === 'FST_ERR_VALIDATION' && error.validation) {
     return reply.status(StatusCodes.BAD_REQUEST).send({
-      message: 'Validation error',
+      code: 'VALIDATION_ERROR',
+      message: 'Erro de validação',
       errors: error.validation.map(({ instancePath, message }) => ({
         [instancePath.replace(/^\//, '')]: message,
       })),

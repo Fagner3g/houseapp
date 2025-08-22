@@ -7,6 +7,7 @@ import type {
   CreateTransactionsSchemaParams,
 } from '@/http/schemas/transaction/create-transaction.schema'
 import { BadRequestError } from '@/http/utils/error'
+import { logger } from '@/http/utils/logger'
 
 type Req = FastifyRequest<{
   Params: CreateTransactionsSchemaParams
@@ -41,25 +42,30 @@ export async function createTransactionController(request: Req, reply: FastifyRe
     throw new BadRequestError('User not found')
   }
 
-  await createTransactionService({
-    type,
-    title,
-    ownerId,
-    payToId: user.id,
-    organizationId,
-    amount,
-    dueDate: new Date(dueDate),
-    description,
-    tags,
-    isRecurring,
-    recurrenceSelector,
-    recurrenceType,
-    recurrenceInterval,
-    recurrenceUntil,
-    recurrenceStart,
-    installmentsTotal,
-    installmentsPaid,
-  })
+  try {
+    await createTransactionService({
+      type,
+      title,
+      ownerId,
+      payToId: user.id,
+      organizationId,
+      amount,
+      dueDate: new Date(dueDate),
+      description,
+      tags,
+      isRecurring,
+      recurrenceSelector,
+      recurrenceType,
+      recurrenceInterval,
+      recurrenceUntil,
+      recurrenceStart,
+      installmentsTotal,
+      installmentsPaid,
+    })
+  } catch (error) {
+    logger.error(error)
+    throw new BadRequestError('Error creating transaction')
+  }
 
   return reply.status(201).send(null)
 }

@@ -5,9 +5,21 @@
  * API for HouseApp
  * OpenAPI spec version: 1.0.0
  */
-import type { UpdateTransactionBodyAnyOf } from "./updateTransactionBodyAnyOf";
-import type { UpdateTransactionBodyAnyOfSix } from "./updateTransactionBodyAnyOfSix";
+import type { UpdateTransactionBodyType } from "./updateTransactionBodyType";
+import type { UpdateTransactionBodyTagsItem } from "./updateTransactionBodyTagsItem";
 
-export type UpdateTransactionBody =
-  | UpdateTransactionBodyAnyOf
-  | UpdateTransactionBodyAnyOfSix;
+export type UpdateTransactionBody = {
+  type: UpdateTransactionBodyType;
+  /**
+   * @minLength 1
+   * @maxLength 50
+   */
+  title: string;
+  /** @pattern ^-?\d+(\.\d{1,2})?$ */
+  amount: string;
+  serieId: string;
+  updateSeries?: boolean;
+  dueDate: unknown;
+  description?: string;
+  tags?: UpdateTransactionBodyTagsItem[];
+};

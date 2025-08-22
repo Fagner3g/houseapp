@@ -71,6 +71,7 @@ export async function listTransactionsService({
     db
       .select({
         ...getTableColumns(transactionOccurrences),
+        serieId: transactionSeries.id,
         title: transactionSeries.title,
         type: transactionSeries.type,
         installmentsTotal: transactionSeries.installmentsTotal,
@@ -98,6 +99,7 @@ export async function listTransactionsService({
       .where(where)
       .groupBy(
         transactionOccurrences.id,
+        transactionSeries.id,
         transactionSeries.title,
         transactionSeries.type,
         transactionSeries.installmentsTotal,

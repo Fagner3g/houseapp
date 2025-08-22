@@ -1,4 +1,4 @@
-import { and, eq, inArray } from 'drizzle-orm'
+import { and, eq, inArray, sql } from 'drizzle-orm'
 
 import { db } from '@/db'
 import { transactionOccurrences } from '@/db/schemas/transactionOccurrences'
@@ -17,19 +17,23 @@ export async function deleteTransactionsService({
 }: DeleteTransactionsRequest) {
   if (ids.length === 0) return
 
-  const sub = db
-    .select({ id: transactionSeries.id })
-    .from(transactionSeries)
-    .where(
-      and(
-        eq(transactionSeries.ownerId, ownerId),
-        eq(transactionSeries.organizationId, organizationId)
-      )
-    )
+  // TODO: create rotine to delete transactions 6 months
 
-  await db
-    .delete(transactionOccurrences)
-    .where(
-      and(inArray(transactionOccurrences.id, ids), inArray(transactionOccurrences.seriesId, sub))
-    )
+  await db.transaction(async trx => {
+    await trx
+      .update(transactionSeries)
+      .set({ active: false, updatedAt: sql`now()` })
+      .where(
+        and(
+          inArray(transactionSeries.id, ids),
+          eq(transactionSeries.ownerId, ownerId),
+          eq(transactionSeries.organizationId, organizationId)
+        )
+      )
+
+    await trx
+      .update(transactionOccurrences)
+      .set({ status: 'canceled', updatedAt: sql`now()` })
+      .where(inArray(transactionOccurrences.seriesId, ids))
+  })
 }

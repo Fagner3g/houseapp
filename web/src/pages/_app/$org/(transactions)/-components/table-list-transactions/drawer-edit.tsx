@@ -22,6 +22,7 @@ import {
 import { Form } from '@/components/ui/form'
 import { useActiveOrganization } from '@/hooks/use-active-organization'
 import { useIsMobile } from '@/hooks/use-mobile'
+import { showToastOnErrorSubmit } from '@/lib/utils'
 import { AmountField } from '../modal-new-transaction/amount-field'
 import { DescriptionField } from '../modal-new-transaction/description-field'
 import { CalendarField } from '../modal-new-transaction/due-date-field'
@@ -84,7 +85,11 @@ export function DrawerEdit({ transaction, open, onOpenChange }: Props) {
 
   function handleSubmit(data: NewTransactionSchema) {
     if (!transaction) return
-    updateTransaction({ slug, id: transaction.id, data })
+    updateTransaction({
+      slug,
+      id: transaction.id,
+      data: { ...data, amount: data.amount, serieId: transaction.serieId },
+    })
   }
 
   return (
@@ -95,7 +100,10 @@ export function DrawerEdit({ transaction, open, onOpenChange }: Props) {
         </DrawerHeader>
         <div className="flex flex-col gap-4 p-4 overflow-y-auto overflow-x-hidden">
           <Form {...form}>
-            <form onSubmit={form.handleSubmit(handleSubmit)} className="flex flex-col gap-4">
+            <form
+              onSubmit={form.handleSubmit(handleSubmit, () => showToastOnErrorSubmit({ form }))}
+              className="flex flex-col gap-4"
+            >
               <TypeField form={form} />
               <TitleField form={form} />
               <div className="flex flex-col gap-5 sm:flex-row">

@@ -930,8 +930,8 @@
                         "maxLength": 50
                       },
                       "amount": {
-                        "type": "number",
-                        "minimum": 1
+                        "type": "string",
+                        "pattern": "^-?\\d+(\\.\\d{1,2})?$"
                       },
                       "dueDate": {},
                       "payToEmail": {
@@ -980,8 +980,7 @@
                         "enum": [
                           "weekly",
                           "monthly",
-                          "yearly",
-                          "custom"
+                          "yearly"
                         ]
                       },
                       "recurrenceUntil": {},
@@ -1030,8 +1029,8 @@
                         "maxLength": 50
                       },
                       "amount": {
-                        "type": "number",
-                        "minimum": 1
+                        "type": "string",
+                        "pattern": "^-?\\d+(\\.\\d{1,2})?$"
                       },
                       "dueDate": {},
                       "payToEmail": {
@@ -1146,6 +1145,9 @@
                         "id": {
                           "type": "string"
                         },
+                        "serieId": {
+                          "type": "string"
+                        },
                         "type": {
                           "type": "string",
                           "enum": [
@@ -1160,7 +1162,7 @@
                           "type": "string"
                         },
                         "amount": {
-                          "type": "number"
+                          "type": "string"
                         },
                         "dueDate": {
                           "type": "string",
@@ -1211,6 +1213,7 @@
                       },
                       "required": [
                         "id",
+                        "serieId",
                         "type",
                         "title",
                         "payTo",
@@ -1246,183 +1249,67 @@
           "content": {
             "application/json": {
               "schema": {
-                "anyOf": [
-                  {
-                    "type": "object",
-                    "properties": {
-                      "type": {
-                        "default": "expense",
-                        "type": "string",
-                        "enum": [
-                          "expense",
-                          "income"
-                        ]
-                      },
-                      "title": {
-                        "type": "string",
-                        "minLength": 1,
-                        "maxLength": 50
-                      },
-                      "amount": {
-                        "type": "number",
-                        "minimum": 1
-                      },
-                      "dueDate": {},
-                      "payToEmail": {
-                        "type": "string",
-                        "format": "email",
-                        "pattern": "^(?!\\.)(?!.*\\.\\.)([A-Za-z0-9_'+\\-\\.]*)[A-Za-z0-9_+-]@([A-Za-z0-9][A-Za-z0-9\\-]*\\.)+[A-Za-z]{2,}$"
-                      },
-                      "description": {
-                        "type": "string"
-                      },
-                      "tags": {
-                        "type": "array",
-                        "items": {
-                          "type": "object",
-                          "properties": {
-                            "name": {
-                              "type": "string",
-                              "minLength": 1
-                            },
-                            "color": {
-                              "type": "string",
-                              "minLength": 1
-                            }
-                          },
-                          "required": [
-                            "name",
-                            "color"
-                          ]
-                        }
-                      },
-                      "isRecurring": {
-                        "type": "boolean",
-                        "enum": [
-                          true
-                        ]
-                      },
-                      "recurrenceSelector": {
-                        "type": "string",
-                        "enum": [
-                          "date",
-                          "repeat"
-                        ]
-                      },
-                      "recurrenceType": {
-                        "type": "string",
-                        "enum": [
-                          "weekly",
-                          "monthly",
-                          "yearly",
-                          "custom"
-                        ]
-                      },
-                      "recurrenceUntil": {},
-                      "recurrenceInterval": {
-                        "type": "integer",
-                        "minimum": -9007199254740991,
-                        "maximum": 9007199254740991
-                      },
-                      "recurrenceStart": {},
-                      "installmentsTotal": {
-                        "type": "integer",
-                        "minimum": -9007199254740991,
-                        "maximum": 9007199254740991
-                      },
-                      "installmentsPaid": {
-                        "type": "integer",
-                        "minimum": -9007199254740991,
-                        "maximum": 9007199254740991
-                      }
-                    },
-                    "required": [
-                      "type",
-                      "title",
-                      "amount",
-                      "dueDate",
-                      "payToEmail",
-                      "isRecurring",
-                      "recurrenceSelector",
-                      "recurrenceType"
+                "type": "object",
+                "properties": {
+                  "type": {
+                    "default": "expense",
+                    "type": "string",
+                    "enum": [
+                      "expense",
+                      "income"
                     ]
                   },
-                  {
-                    "type": "object",
-                    "properties": {
-                      "type": {
-                        "default": "expense",
-                        "type": "string",
-                        "enum": [
-                          "expense",
-                          "income"
-                        ]
-                      },
-                      "title": {
-                        "type": "string",
-                        "minLength": 1,
-                        "maxLength": 50
-                      },
-                      "amount": {
-                        "type": "number",
-                        "minimum": 1
-                      },
-                      "dueDate": {},
-                      "payToEmail": {
-                        "type": "string",
-                        "format": "email",
-                        "pattern": "^(?!\\.)(?!.*\\.\\.)([A-Za-z0-9_'+\\-\\.]*)[A-Za-z0-9_+-]@([A-Za-z0-9][A-Za-z0-9\\-]*\\.)+[A-Za-z]{2,}$"
-                      },
-                      "description": {
-                        "type": "string"
-                      },
-                      "tags": {
-                        "type": "array",
-                        "items": {
-                          "type": "object",
-                          "properties": {
-                            "name": {
-                              "type": "string",
-                              "minLength": 1
-                            },
-                            "color": {
-                              "type": "string",
-                              "minLength": 1
-                            }
-                          },
-                          "required": [
-                            "name",
-                            "color"
-                          ]
+                  "title": {
+                    "type": "string",
+                    "minLength": 1,
+                    "maxLength": 50
+                  },
+                  "amount": {
+                    "type": "string",
+                    "pattern": "^-?\\d+(\\.\\d{1,2})?$"
+                  },
+                  "serieId": {
+                    "type": "string"
+                  },
+                  "updateSeries": {
+                    "type": "boolean"
+                  },
+                  "dueDate": {},
+                  "description": {
+                    "type": "string"
+                  },
+                  "tags": {
+                    "type": "array",
+                    "items": {
+                      "type": "object",
+                      "properties": {
+                        "name": {
+                          "type": "string",
+                          "minLength": 1
+                        },
+                        "color": {
+                          "type": "string",
+                          "minLength": 1
                         }
                       },
-                      "isRecurring": {
-                        "type": "boolean",
-                        "enum": [
-                          false
-                        ]
-                      },
-                      "recurrenceSelector": {},
-                      "recurrenceType": {},
-                      "recurrenceUntil": {},
-                      "recurrenceInterval": {},
-                      "recurrenceStart": {},
-                      "installmentsTotal": {},
-                      "installmentsPaid": {}
-                    },
-                    "required": [
-                      "type",
-                      "title",
-                      "amount",
-                      "dueDate",
-                      "payToEmail",
-                      "isRecurring"
-                    ]
+                      "required": [
+                        "name",
+                        "color"
+                      ]
+                    }
                   }
+                },
+                "required": [
+                  "type",
+                  "title",
+                  "amount",
+                  "serieId",
+                  "dueDate"
                 ]
               }
             }
-          }
+          },
+          "required": true
         },
         "parameters": [
           {
@@ -1559,6 +1446,9 @@
                           "id": {
                             "type": "string"
                           },
+                          "serieId": {
+                            "type": "string"
+                          },
                           "type": {
                             "type": "string",
                             "enum": [
@@ -1573,7 +1463,7 @@
                             "type": "string"
                           },
                           "amount": {
-                            "type": "number"
+                            "type": "string"
                           },
                           "dueDate": {
                             "type": "string",
@@ -1624,6 +1514,7 @@
                         },
                         "required": [
                           "id",
+                          "serieId",
                           "type",
                           "title",
                           "payTo",

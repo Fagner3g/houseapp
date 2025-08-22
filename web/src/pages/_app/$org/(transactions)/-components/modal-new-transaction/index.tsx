@@ -161,7 +161,7 @@ export function DrawerNewTransaction({ open, onOpenChange, transaction }: Props)
   }, [open, transaction, userData, form])
 
   async function handleSubmit(data: NewTransactionSchema) {
-    createTransaction({ slug, data })
+    createTransaction({ slug, data: { ...data, amount: data.amount } })
     onOpenChange(false)
   }
 

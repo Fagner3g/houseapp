@@ -11,10 +11,11 @@ import type { GetTransactionById200TransactionTagsItem } from "./getTransactionB
 
 export type GetTransactionById200Transaction = {
   id: string;
+  serieId: string;
   type: GetTransactionById200TransactionType;
   title: string;
   payTo: string;
-  amount: number;
+  amount: string;
   dueDate: string;
   /** @nullable */
   paidAt: string | null;

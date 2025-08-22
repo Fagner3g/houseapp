@@ -11,10 +11,11 @@ import type { ListTransactions200TransactionsItemTagsItem } from "./listTransact
 
 export type ListTransactions200TransactionsItem = {
   id: string;
+  serieId: string;
   type: ListTransactions200TransactionsItemType;
   title: string;
   payTo: string;
-  amount: number;
+  amount: string;
   dueDate: string;
   /** @nullable */
   paidAt: string | null;

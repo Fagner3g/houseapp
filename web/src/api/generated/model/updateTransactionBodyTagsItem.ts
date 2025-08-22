@@ -6,7 +6,7 @@
  * OpenAPI spec version: 1.0.0
  */
 
-export type UpdateTransactionBodyAnyOfTagsItem = {
+export type UpdateTransactionBodyTagsItem = {
   /** @minLength 1 */
   name: string;
   /** @minLength 1 */

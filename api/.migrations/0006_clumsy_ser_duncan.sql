@@ -1,0 +1,1 @@
+ALTER TABLE "transactions_occurrences" RENAME COLUMN "notes" TO "description";

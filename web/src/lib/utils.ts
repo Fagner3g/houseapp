@@ -13,9 +13,9 @@ interface FormProps<T extends FieldValues> {
 
 export const showToastOnErrorSubmit = <T extends FieldValues>({ form }: FormProps<T>) => {
   const errors = form.formState.errors
+  console.log('VALIDATE_ERROS', errors)
   const firstKey = Object.keys(errors)[0] as Path<T> | undefined
   if (!firstKey) return
-
   const message = form.getFieldState(firstKey).error?.message
   if (message) {
     toast.error(String(message), { id: firstKey as string })

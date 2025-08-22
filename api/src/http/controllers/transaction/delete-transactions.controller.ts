@@ -5,6 +5,8 @@ import type {
   DeleteTransactionsSchemaBody,
   DeleteTransactionsSchemaParams,
 } from '@/http/schemas/transaction/delete-transactions.schema'
+import { BadRequestError } from '@/http/utils/error'
+import { logger } from '@/http/utils/logger'
 
 type Req = FastifyRequest<{
   Params: DeleteTransactionsSchemaParams
@@ -16,7 +18,12 @@ export async function deleteTransactionsController(request: Req, reply: FastifyR
   const organizationId = request.organization.id
   const { ids } = request.body
 
-  await deleteTransactionsService({ ids, ownerId, organizationId })
+  try {
+    await deleteTransactionsService({ ids, ownerId, organizationId })
 
-  return reply.status(200).send()
+    return reply.status(200).send()
+  } catch (error) {
+    logger.error({ error }, 'Erro ao deletar transações')
+    throw new BadRequestError('Erro ao deletar transações')
+  }
 }

@@ -15,8 +15,8 @@ export type CreateTransactionBodyAnyOfSix = {
    * @maxLength 50
    */
   title: string;
-  /** @minimum 1 */
-  amount: number;
+  /** @pattern ^-?\d+(\.\d{1,2})?$ */
+  amount: string;
   dueDate: unknown;
   /** @pattern ^(?!\.)(?!.*\.\.)([A-Za-z0-9_'+\-\.]*)[A-Za-z0-9_+-]@([A-Za-z0-9][A-Za-z0-9\-]*\.)+[A-Za-z]{2,}$ */
   payToEmail: string;

@@ -1,7 +1,7 @@
+import { IconTrash } from '@tabler/icons-react'
 import type { Table } from '@tanstack/react-table'
 import { useState } from 'react'
 
-import { IconTrash } from '@tabler/icons-react'
 import type { ListTransactions200TransactionsItem } from '@/api/generated/model'
 import {
   AlertDialog,
@@ -25,7 +25,7 @@ export function DeleteSelected({ table }: Props) {
   const [open, setOpen] = useState(false)
 
   const handleDelete = () => {
-    const ids = table.getSelectedRowModel().rows.map(row => row.original.id)
+    const ids = table.getSelectedRowModel().rows.map(row => row.original.serieId)
     table.options.meta?.deleteRows(ids)
     table.resetRowSelection()
     setOpen(false)

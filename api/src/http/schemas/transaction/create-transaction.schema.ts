@@ -1,9 +1,18 @@
 import z from 'zod'
 
+import { toCentsStrict } from '@/http/utils/format'
+
 const base = z.object({
   type: z.enum(['expense', 'income']).default('expense').nonoptional('O tipo é obrigatório'),
   title: z.string('O título é obrigatório').min(1).max(50),
-  amount: z.coerce.number('Valor da transação é obrigatório').min(1),
+  amount: z
+    .string('Valor da transação é obrigatório')
+    .regex(
+      /^-?\d+(\.\d{1,2})?$/,
+      'Use ponto como separador decimal e no máximo 2 casas (ex.: 1234.56)'
+    )
+    .transform(val => toCentsStrict(val))
+    .refine(v => v >= 1n, 'Valor mínimo é 0,01'),
   dueDate: z.coerce.date({ error: 'A data de vencimento é obrigatória' }),
   payToEmail: z.email('Defina o pra quem vai o registro'),
   description: z.string().optional(),
@@ -17,7 +26,7 @@ const recurring = base.extend({
   recurrenceSelector: z.enum(['date', 'repeat'], {
     error: 'Selecione um tipo de recorrência',
   }),
-  recurrenceType: z.enum(['weekly', 'monthly', 'yearly', 'custom'], {
+  recurrenceType: z.enum(['weekly', 'monthly', 'yearly'], {
     error: 'Selecione uma recorrência',
   }),
   recurrenceUntil: z.coerce.date().optional(),

@@ -2,10 +2,11 @@ import z from 'zod'
 
 export const transactionResponseSchema = z.object({
   id: z.string(),
+  serieId: z.string(),
   type: z.enum(['expense', 'income']),
   title: z.string(),
   payTo: z.string(),
-  amount: z.number(),
+  amount: z.string(),
   dueDate: z.date(),
   paidAt: z.date().nullable(),
   status: z.enum(['pending', 'paid', 'canceled']),
