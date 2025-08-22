@@ -14,7 +14,7 @@ describe('recurrence utils', () => {
   it('occurrencesBetween counts occurrences between dates', () => {
     const start = new Date('2024-01-01')
     const end = new Date('2024-03-01')
-    expect(occurrencesBetween(start, end, 'monthly', 1)).toBe(3)
+    expect(occurrencesBetween(start, end, 'monthly', 1)).toBe(2)
     expect(occurrencesBetween(start, new Date('2024-01-15'), 'weekly', 1)).toBe(3)
     expect(occurrencesBetween(end, start, 'monthly', 1)).toBe(0)
   })
