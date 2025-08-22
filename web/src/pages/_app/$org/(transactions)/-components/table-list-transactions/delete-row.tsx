@@ -16,17 +16,20 @@ import {
 import { DropdownMenuItem } from '@/components/ui/dropdown-menu'
 
 interface Props {
-  id: string
+  transaction: ListTransactions200TransactionsItem
   table: Table<ListTransactions200TransactionsItem>
 }
 
-export function DeleteRowAction({ id, table }: Props) {
+export function DeleteRowAction({ transaction, table }: Props) {
   const [open, setOpen] = useState(false)
 
   function handleDelete() {
-    table.options.meta?.deleteRows([id])
+    table.options.meta?.deleteRows([transaction.id])
     setOpen(false)
   }
+
+  const isRecurring =
+    transaction.installmentsTotal == null || transaction.installmentsTotal > 1
 
   return (
     <AlertDialog open={open} onOpenChange={setOpen}>
@@ -37,7 +40,9 @@ export function DeleteRowAction({ id, table }: Props) {
         <AlertDialogHeader>
           <AlertDialogTitle>Excluir transação</AlertDialogTitle>
           <AlertDialogDescription>
-            Tem certeza que deseja excluir esta transação? Esta ação não pode ser desfeita.
+            {isRecurring
+              ? 'Esta transação faz parte de uma recorrência e todas as suas ocorrências serão excluídas. Deseja continuar?'
+              : 'Tem certeza que deseja excluir esta transação? Esta ação não pode ser desfeita.'}
           </AlertDialogDescription>
         </AlertDialogHeader>
         <AlertDialogFooter>

@@ -1000,6 +1000,10 @@
                         "type": "integer",
                         "minimum": -9007199254740991,
                         "maximum": 9007199254740991
+                      },
+                      "applyToSeries": {
+                        "type": "boolean",
+                        "default": true
                       }
                     },
                     "required": [
@@ -1074,7 +1078,11 @@
                       "recurrenceInterval": {},
                       "recurrenceStart": {},
                       "installmentsTotal": {},
-                      "installmentsPaid": {}
+                      "installmentsPaid": {},
+                      "applyToSeries": {
+                        "type": "boolean",
+                        "default": true
+                      }
                     },
                     "required": [
                       "type",

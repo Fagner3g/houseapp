@@ -27,7 +27,8 @@ export type UpdateTransactionBodyAnyOfSix = {
   recurrenceType?: unknown;
   recurrenceUntil?: unknown;
   recurrenceInterval?: unknown;
-  recurrenceStart?: unknown;
-  installmentsTotal?: unknown;
-  installmentsPaid?: unknown;
-};
+    recurrenceStart?: unknown;
+    installmentsTotal?: unknown;
+    installmentsPaid?: unknown;
+    applyToSeries?: boolean;
+  };

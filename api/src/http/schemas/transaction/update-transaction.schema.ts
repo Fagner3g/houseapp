@@ -7,7 +7,9 @@ export const updateTransactionSchema = {
   description: 'Update a transaction',
   operationId: 'updateTransaction',
   params: z.object({ slug: z.string(), id: z.string() }),
-  body: newTransactionSchema,
+  body: newTransactionSchema.extend({
+    applyToSeries: z.boolean().default(true),
+  }),
   response: {
     204: z.null(),
   },

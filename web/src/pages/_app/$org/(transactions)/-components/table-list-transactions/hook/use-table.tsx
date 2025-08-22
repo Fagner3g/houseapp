@@ -292,12 +292,12 @@ export const useTable = (
             </DropdownMenuItem>
             <PayRowAction id={row.original.id} status={row.original.status} table={table} />
             <DropdownMenuSeparator />
-            <DeleteRowAction id={row.original.id} table={table} />
-          </DropdownMenuContent>
-        </DropdownMenu>
-      ),
-    },
-  ]
+              <DeleteRowAction transaction={row.original} table={table} />
+            </DropdownMenuContent>
+          </DropdownMenu>
+        ),
+      },
+    ]
 
   const table = useReactTable({
     data,

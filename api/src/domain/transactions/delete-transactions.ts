@@ -17,19 +17,22 @@ export async function deleteTransactionsService({
 }: DeleteTransactionsRequest) {
   if (ids.length === 0) return
 
-  const sub = db
-    .select({ id: transactionSeries.id })
-    .from(transactionSeries)
+  const occurrences = await db
+    .select({ seriesId: transactionOccurrences.seriesId })
+    .from(transactionOccurrences)
+    .where(inArray(transactionOccurrences.id, ids))
+
+  const seriesIds = [...new Set(occurrences.map(o => o.seriesId))]
+
+  if (seriesIds.length === 0) return
+
+  await db
+    .delete(transactionSeries)
     .where(
       and(
+        inArray(transactionSeries.id, seriesIds),
         eq(transactionSeries.ownerId, ownerId),
         eq(transactionSeries.organizationId, organizationId)
       )
-    )
-
-  await db
-    .delete(transactionOccurrences)
-    .where(
-      and(inArray(transactionOccurrences.id, ids), inArray(transactionOccurrences.seriesId, sub))
     )
 }

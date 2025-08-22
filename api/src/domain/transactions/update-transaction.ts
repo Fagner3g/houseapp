@@ -7,12 +7,14 @@ import { tags as tagsTable } from '@/db/schemas/tags'
 import { transactionTags } from '@/db/schemas/transactionTags'
 import type { UpdateTransactionSchemaBody } from '@/http/schemas/transaction/update-transaction.schema'
 import { materializeOccurrences } from './materialize-occurrences'
+import { createTransactionService } from './create-transaction'
 
 interface UpdateTransactionParams extends Omit<UpdateTransactionSchemaBody, 'payToEmail'> {
   id: string
   ownerId: string
   organizationId: string
   payToId: string
+  applyToSeries: boolean
 }
 
 export async function updateTransactionService({
@@ -24,6 +26,7 @@ export async function updateTransactionService({
   title,
   amount,
   dueDate,
+  description,
   isRecurring,
   recurrenceInterval,
   recurrenceType,
@@ -31,6 +34,7 @@ export async function updateTransactionService({
   recurrenceStart,
   installmentsTotal,
   tags,
+  applyToSeries,
 }: UpdateTransactionParams) {
   const [occurrence] = await db
     .select()
@@ -38,6 +42,35 @@ export async function updateTransactionService({
     .where(eq(transactionOccurrences.id, occurrenceId))
 
   if (!occurrence) return { series: undefined }
+
+  if (!applyToSeries) {
+    await db
+      .update(transactionOccurrences)
+      .set({ status: 'canceled' })
+      .where(eq(transactionOccurrences.id, occurrenceId))
+
+    const result = await createTransactionService({
+      type,
+      title,
+      ownerId,
+      payToId,
+      organizationId,
+      amount,
+      dueDate,
+      description,
+      tags,
+      isRecurring: false,
+    })
+
+    return { series: result.series }
+  }
+
+  const [currentSeries] = await db
+    .select()
+    .from(transactionSeries)
+    .where(eq(transactionSeries.id, occurrence.seriesId))
+
+  if (!currentSeries) return { series: undefined }
 
   const startDate = recurrenceStart ?? dueDate
   const [series] = await db
@@ -50,10 +83,11 @@ export async function updateTransactionService({
       organizationId,
       amount,
       startDate,
-      recurrenceType: recurrenceType ?? 'monthly',
-      recurrenceInterval: recurrenceInterval ?? 1,
-      recurrenceUntil,
-      installmentsTotal: installmentsTotal ?? (isRecurring ? null : 1),
+      recurrenceType: recurrenceType ?? currentSeries.recurrenceType,
+      recurrenceInterval: recurrenceInterval ?? currentSeries.recurrenceInterval,
+      recurrenceUntil: recurrenceUntil ?? currentSeries.recurrenceUntil,
+      installmentsTotal:
+        installmentsTotal ?? currentSeries.installmentsTotal ?? (isRecurring ? null : 1),
       updatedAt: new Date(),
     })
     .where(eq(transactionSeries.id, occurrence.seriesId))

@@ -29,6 +29,7 @@ export async function updateTransactionController(request: Req, reply: FastifyRe
     recurrenceUntil,
     recurrenceStart,
     installmentsTotal,
+    applyToSeries,
   } = request.body
   const { id } = request.params
 
@@ -56,6 +57,7 @@ export async function updateTransactionController(request: Req, reply: FastifyRe
     recurrenceUntil,
     recurrenceStart,
     installmentsTotal,
+    applyToSeries,
   })
 
   return reply.status(204).send(null)

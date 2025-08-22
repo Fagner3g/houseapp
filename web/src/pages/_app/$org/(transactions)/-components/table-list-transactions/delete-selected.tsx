@@ -21,15 +21,20 @@ interface Props {
 }
 
 export function DeleteSelected({ table }: Props) {
-  const selected = table.getSelectedRowModel().rows.length
+  const rows = table.getSelectedRowModel().rows
+  const selected = rows.length
   const [open, setOpen] = useState(false)
 
   const handleDelete = () => {
-    const ids = table.getSelectedRowModel().rows.map(row => row.original.id)
+    const ids = rows.map(row => row.original.id)
     table.options.meta?.deleteRows(ids)
     table.resetRowSelection()
     setOpen(false)
   }
+
+  const hasRecurring = rows.some(
+    row => row.original.installmentsTotal == null || row.original.installmentsTotal > 1,
+  )
 
   if (selected === 0) return null
 
@@ -51,12 +56,14 @@ export function DeleteSelected({ table }: Props) {
       </AlertDialogTrigger>
       <AlertDialogContent>
         <AlertDialogHeader>
-          <AlertDialogTitle>Excluir transações</AlertDialogTitle>
-          <AlertDialogDescription>
-            Tem certeza que deseja excluir {selected} transação(ões)? Esta ação não pode ser
-            desfeita.
-          </AlertDialogDescription>
-        </AlertDialogHeader>
+            <AlertDialogTitle>Excluir transações</AlertDialogTitle>
+            <AlertDialogDescription>
+              Tem certeza que deseja excluir {selected} transação(ões)? Esta ação não pode ser
+              desfeita.
+              {hasRecurring &&
+                ' Transações recorrentes terão todas as suas ocorrências removidas.'}
+            </AlertDialogDescription>
+          </AlertDialogHeader>
         <AlertDialogFooter>
           <AlertDialogCancel>Cancelar</AlertDialogCancel>
           <AlertDialogAction onClick={handleDelete}>Excluir</AlertDialogAction>

@@ -69,12 +69,12 @@ export function DrawerEdit({ transaction, open, onOpenChange }: Props) {
     })
   }, [transaction, form, data])
 
-  const { mutate: updateTransaction } = useUpdateTransaction({
-    mutation: {
-      onSuccess: () => {
-        toast.success('Transação atualizada com sucesso!')
-        queryClient.invalidateQueries({
-          queryKey: getListTransactionsQueryKey(slug),
+    const { mutate: updateTransaction } = useUpdateTransaction({
+      mutation: {
+        onSuccess: () => {
+          toast.success('Transação atualizada com sucesso!')
+          queryClient.invalidateQueries({
+            queryKey: getListTransactionsQueryKey(slug),
         })
         onOpenChange(false)
       },
@@ -82,10 +82,30 @@ export function DrawerEdit({ transaction, open, onOpenChange }: Props) {
     },
   })
 
-  function handleSubmit(data: NewTransactionSchema) {
-    if (!transaction) return
-    updateTransaction({ slug, id: transaction.id, data })
-  }
+    function handleSubmit(data: NewTransactionSchema) {
+      if (!transaction) return
+
+      const isRecurring =
+        transaction.installmentsTotal == null || transaction.installmentsTotal > 1
+
+      let applyToSeries = true
+      if (isRecurring) {
+        applyToSeries = window.confirm(
+          'Esta transação é recorrente. Clique em OK para atualizar todas as ocorrências ou em Cancelar para atualizar apenas esta.',
+        )
+      }
+
+      updateTransaction({
+        slug,
+        id: transaction.id,
+        data: {
+          ...data,
+          isRecurring,
+          installmentsTotal: transaction.installmentsTotal ?? undefined,
+          applyToSeries,
+        } as any,
+      })
+    }
 
   return (
     <Drawer open={open} onOpenChange={onOpenChange} direction={isMobile ? 'bottom' : 'right'}>
