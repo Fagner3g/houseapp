@@ -197,11 +197,15 @@ export function DrawerEdit({ transaction, open, onOpenChange }: Props) {
               </AlertDialogDescription>
             </AlertDialogHeader>
             <AlertDialogFooter>
-              <AlertDialogCancel type="button" onClick={handleUpdateCurrent}>
-                Apenas esta
+              <AlertDialogCancel asChild>
+                <Button type="button" variant="outline" onClick={handleUpdateCurrent}>
+                  Apenas esta
+                </Button>
               </AlertDialogCancel>
-              <AlertDialogAction type="button" onClick={handleUpdateSeries}>
-                Toda a série
+              <AlertDialogAction asChild>
+                <Button type="button" onClick={handleUpdateSeries}>
+                  Toda a série
+                </Button>
               </AlertDialogAction>
             </AlertDialogFooter>
           </AlertDialogContent>
