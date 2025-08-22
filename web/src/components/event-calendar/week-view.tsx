@@ -1,4 +1,3 @@
-import React, { useMemo } from "react"
 import {
   addHours,
   areIntervalsOverlapping,
@@ -14,9 +13,12 @@ import {
   isToday,
   startOfDay,
   startOfWeek,
-} from "date-fns"
-import { ptBR } from "date-fns/locale"
+} from 'date-fns'
+import { ptBR } from 'date-fns/locale'
+import type React from 'react'
+import { useMemo } from 'react'
 
+import type { CalendarEvent } from '@/components/event-calendar'
 import {
   DraggableEvent,
   DroppableCell,
@@ -24,13 +26,9 @@ import {
   isMultiDayEvent,
   useCurrentTimeIndicator,
   WeekCellsHeight,
-} from "@/components/event-calendar"
-import type { CalendarEvent } from "@/components/event-calendar"
-import {
-  EndHour,
-  StartHour,
-} from "@/components/event-calendar/constants"
-import { cn } from "@/lib/utils"
+} from '@/components/event-calendar'
+import { EndHour, StartHour } from '@/components/event-calendar/constants'
+import { cn } from '@/lib/utils'
 
 interface WeekViewProps {
   currentDate: Date
@@ -48,22 +46,14 @@ interface PositionedEvent {
   zIndex: number
 }
 
-export function WeekView({
-  currentDate,
-  events,
-  onEventSelect,
-  onEventCreate,
-}: WeekViewProps) {
+export function WeekView({ currentDate, events, onEventSelect, onEventCreate }: WeekViewProps) {
   const days = useMemo(() => {
     const weekStart = startOfWeek(currentDate, { weekStartsOn: 0 })
     const weekEnd = endOfWeek(currentDate, { weekStartsOn: 0 })
     return eachDayOfInterval({ start: weekStart, end: weekEnd })
   }, [currentDate])
 
-  const weekStart = useMemo(
-    () => startOfWeek(currentDate, { weekStartsOn: 0 }),
-    [currentDate]
-  )
+  const weekStart = useMemo(() => startOfWeek(currentDate, { weekStartsOn: 0 }), [currentDate])
 
   const hours = useMemo(() => {
     const dayStart = startOfDay(currentDate)
@@ -76,15 +66,15 @@ export function WeekView({
   // Get all-day events and multi-day events for the week
   const allDayEvents = useMemo(() => {
     return events
-      .filter((event) => {
+      .filter(event => {
         // Include explicitly marked all-day events or multi-day events
         return event.allDay || isMultiDayEvent(event)
       })
-      .filter((event) => {
+      .filter(event => {
         const eventStart = new Date(event.start)
         const eventEnd = new Date(event.end)
         return days.some(
-          (day) =>
+          day =>
             isSameDay(day, eventStart) ||
             isSameDay(day, eventEnd) ||
             (day > eventStart && day < eventEnd)
@@ -94,9 +84,9 @@ export function WeekView({
 
   // Process events for each day to calculate positions
   const processedDayEvents = useMemo(() => {
-    const result = days.map((day) => {
+    const result = days.map(day => {
       // Get events for this day that are not all-day events or multi-day events
-      const dayEvents = events.filter((event) => {
+      const dayEvents = events.filter(event => {
         // Skip all-day events and multi-day events
         if (event.allDay || isMultiDayEvent(event)) return false
 
@@ -135,19 +125,16 @@ export function WeekView({
       // Track columns for overlapping events
       const columns: { event: CalendarEvent; end: Date }[][] = []
 
-      sortedEvents.forEach((event) => {
+      sortedEvents.forEach(event => {
         const eventStart = new Date(event.start)
         const eventEnd = new Date(event.end)
 
         // Adjust start and end times if they're outside this day
         const adjustedStart = isSameDay(day, eventStart) ? eventStart : dayStart
-        const adjustedEnd = isSameDay(day, eventEnd)
-          ? eventEnd
-          : addHours(dayStart, 24)
+        const adjustedEnd = isSameDay(day, eventEnd) ? eventEnd : addHours(dayStart, 24)
 
         // Calculate top position and height
-        const startHour =
-          getHours(adjustedStart) + getMinutes(adjustedStart) / 60
+        const startHour = getHours(adjustedStart) + getMinutes(adjustedStart) / 60
         const endHour = getHours(adjustedEnd) + getMinutes(adjustedEnd) / 60
 
         // Adjust the top calculation to account for the new start time
@@ -164,7 +151,7 @@ export function WeekView({
             columns[columnIndex] = col
             placed = true
           } else {
-            const overlaps = col.some((c) =>
+            const overlaps = col.some(c =>
               areIntervalsOverlapping(
                 { start: adjustedStart, end: adjustedEnd },
                 {
@@ -212,27 +199,24 @@ export function WeekView({
   }
 
   const showAllDaySection = allDayEvents.length > 0
-  const { currentTimePosition, currentTimeVisible } = useCurrentTimeIndicator(
-    currentDate,
-    "week"
-  )
+  const { currentTimePosition, currentTimeVisible } = useCurrentTimeIndicator(currentDate, 'week')
 
   return (
     <div data-slot="week-view" className="flex h-full flex-col">
       <div className="bg-background/80 border-border/70 sticky top-0 z-30 grid grid-cols-8 border-b backdrop-blur-md">
         <div className="text-muted-foreground/70 py-2 text-center text-sm">
-          <span className="max-[479px]:sr-only">{format(new Date(), "O", { locale: ptBR })}</span>
+          <span className="max-[479px]:sr-only">{format(new Date(), 'O', { locale: ptBR })}</span>
         </div>
-        {days.map((day) => (
+        {days.map(day => (
           <div
             key={day.toString()}
             className="data-today:text-foreground text-muted-foreground/70 py-2 text-center text-sm data-today:font-medium"
             data-today={isToday(day) || undefined}
           >
             <span className="sm:hidden" aria-hidden="true">
-              {format(day, "E", { locale: ptBR }).charAt(0)} {format(day, "d", { locale: ptBR })}
+              {format(day, 'E', { locale: ptBR }).charAt(0)} {format(day, 'd', { locale: ptBR })}
             </span>
-            <span className="max-sm:hidden">{format(day, "EEE dd", { locale: ptBR })}</span>
+            <span className="max-sm:hidden">{format(day, 'EEE dd', { locale: ptBR })}</span>
           </div>
         ))}
       </div>
@@ -246,7 +230,7 @@ export function WeekView({
               </span>
             </div>
             {days.map((day, dayIndex) => {
-              const dayAllDayEvents = allDayEvents.filter((event) => {
+              const dayAllDayEvents = allDayEvents.filter(event => {
                 const eventStart = new Date(event.start)
                 const eventEnd = new Date(event.end)
                 return (
@@ -262,21 +246,20 @@ export function WeekView({
                   className="border-border/70 relative border-r p-1 last:border-r-0"
                   data-today={isToday(day) || undefined}
                 >
-                  {dayAllDayEvents.map((event) => {
+                  {dayAllDayEvents.map(event => {
                     const eventStart = new Date(event.start)
                     const eventEnd = new Date(event.end)
                     const isFirstDay = isSameDay(day, eventStart)
                     const isLastDay = isSameDay(day, eventEnd)
 
                     // Check if this is the first day in the current week view
-                    const isFirstVisibleDay =
-                      dayIndex === 0 && isBefore(eventStart, weekStart)
+                    const isFirstVisibleDay = dayIndex === 0 && isBefore(eventStart, weekStart)
                     const shouldShowTitle = isFirstDay || isFirstVisibleDay
 
                     return (
                       <EventItem
                         key={`spanning-${event.id}`}
-                        onClick={(e) => handleEventClick(event, e)}
+                        onClick={e => handleEventClick(event, e)}
                         event={event}
                         view="month"
                         isFirstDay={isFirstDay}
@@ -284,10 +267,7 @@ export function WeekView({
                       >
                         {/* Show title if it's the first day of the event or the first visible day in the week */}
                         <div
-                          className={cn(
-                            "truncate",
-                            !shouldShowTitle && "invisible"
-                          )}
+                          className={cn('truncate', !shouldShowTitle && 'invisible')}
                           aria-hidden={!shouldShowTitle}
                         >
                           {event.title}
@@ -325,7 +305,7 @@ export function WeekView({
             data-today={isToday(day) || undefined}
           >
             {/* Positioned events */}
-            {(processedDayEvents[dayIndex] ?? []).map((positionedEvent) => (
+            {(processedDayEvents[dayIndex] ?? []).map(positionedEvent => (
               <div
                 key={positionedEvent.event.id}
                 className="absolute z-10 px-0.5"
@@ -336,13 +316,12 @@ export function WeekView({
                   width: `${positionedEvent.width * 100}%`,
                   zIndex: positionedEvent.zIndex,
                 }}
-                onClick={(e) => e.stopPropagation()}
               >
                 <div className="size-full">
                   <DraggableEvent
                     event={positionedEvent.event}
                     view="week"
-                    onClick={(e) => handleEventClick(positionedEvent.event, e)}
+                    onClick={e => handleEventClick(positionedEvent.event, e)}
                     showTime
                     height={positionedEvent.height}
                   />
@@ -362,7 +341,7 @@ export function WeekView({
                 </div>
               </div>
             )}
-            {hours.map((hour) => {
+            {hours.map(hour => {
               const hourValue = getHours(hour)
               return (
                 <div
@@ -370,7 +349,7 @@ export function WeekView({
                   className="border-border/70 relative min-h-[var(--week-cells-height)] border-b last:border-b-0"
                 >
                   {/* Quarter-hour intervals */}
-                  {[0, 1, 2, 3].map((quarter) => {
+                  {[0, 1, 2, 3].map(quarter => {
                     const quarterHourTime = hourValue + quarter * 0.25
                     return (
                       <DroppableCell
@@ -379,14 +358,11 @@ export function WeekView({
                         date={day}
                         time={quarterHourTime}
                         className={cn(
-                          "absolute h-[calc(var(--week-cells-height)/4)] w-full",
-                          quarter === 0 && "top-0",
-                          quarter === 1 &&
-                            "top-[calc(var(--week-cells-height)/4)]",
-                          quarter === 2 &&
-                            "top-[calc(var(--week-cells-height)/4*2)]",
-                          quarter === 3 &&
-                            "top-[calc(var(--week-cells-height)/4*3)]"
+                          'absolute h-[calc(var(--week-cells-height)/4)] w-full',
+                          quarter === 0 && 'top-0',
+                          quarter === 1 && 'top-[calc(var(--week-cells-height)/4)]',
+                          quarter === 2 && 'top-[calc(var(--week-cells-height)/4*2)]',
+                          quarter === 3 && 'top-[calc(var(--week-cells-height)/4*3)]'
                         )}
                         onClick={() => {
                           const startTime = new Date(day)
