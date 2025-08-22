@@ -1,6 +1,6 @@
 import { zodResolver } from '@hookform/resolvers/zod'
 import { useQueryClient } from '@tanstack/react-query'
-import { useEffect } from 'react'
+import { useEffect, useState } from 'react'
 import { useForm } from 'react-hook-form'
 import { toast } from 'sonner'
 
@@ -20,6 +20,16 @@ import {
   DrawerTitle,
 } from '@/components/ui/drawer'
 import { Form } from '@/components/ui/form'
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from '@/components/ui/alert-dialog'
 import { useActiveOrganization } from '@/hooks/use-active-organization'
 import { useIsMobile } from '@/hooks/use-mobile'
 import { AmountField } from '../modal-new-transaction/amount-field'
@@ -47,6 +57,8 @@ export function DrawerEdit({ transaction, open, onOpenChange }: Props) {
   const queryClient = useQueryClient()
   const { data } = useListUsersByOrg(slug)
   const isMobile = useIsMobile()
+  const [confirmOpen, setConfirmOpen] = useState(false)
+  const [pendingData, setPendingData] = useState<NewTransactionSchema | null>(null)
 
   const form = useForm<NewTransactionSchema>({
     resolver: zodResolver(newTransactionSchema),
@@ -69,12 +81,12 @@ export function DrawerEdit({ transaction, open, onOpenChange }: Props) {
     })
   }, [transaction, form, data])
 
-    const { mutate: updateTransaction } = useUpdateTransaction({
-      mutation: {
-        onSuccess: () => {
-          toast.success('Transação atualizada com sucesso!')
-          queryClient.invalidateQueries({
-            queryKey: getListTransactionsQueryKey(slug),
+  const { mutate: updateTransaction } = useUpdateTransaction({
+    mutation: {
+      onSuccess: () => {
+        toast.success('Transação atualizada com sucesso!')
+        queryClient.invalidateQueries({
+          queryKey: getListTransactionsQueryKey(slug),
         })
         onOpenChange(false)
       },
@@ -82,18 +94,11 @@ export function DrawerEdit({ transaction, open, onOpenChange }: Props) {
     },
   })
 
-    function handleSubmit(data: NewTransactionSchema) {
+    function sendUpdate(data: NewTransactionSchema, applyToSeries: boolean) {
       if (!transaction) return
 
       const isRecurring =
         transaction.installmentsTotal == null || transaction.installmentsTotal > 1
-
-      let applyToSeries = true
-      if (isRecurring) {
-        applyToSeries = window.confirm(
-          'Esta transação é recorrente. Clique em OK para atualizar todas as ocorrências ou em Cancelar para atualizar apenas esta.',
-        )
-      }
 
       updateTransaction({
         slug,
@@ -103,39 +108,90 @@ export function DrawerEdit({ transaction, open, onOpenChange }: Props) {
           isRecurring,
           installmentsTotal: transaction.installmentsTotal ?? undefined,
           applyToSeries,
+        // biome-ignore lint/suspicious/noExplicitAny: API uses generated types
         } as any,
       })
     }
 
+    function handleSubmit(data: NewTransactionSchema) {
+      if (!transaction) return
+
+      const isRecurring =
+        transaction.installmentsTotal == null || transaction.installmentsTotal > 1
+
+      if (isRecurring) {
+        setPendingData(data)
+        setConfirmOpen(true)
+        return
+      }
+
+      sendUpdate(data, true)
+    }
+
+    function handleUpdateCurrent() {
+      if (!pendingData) return
+      sendUpdate(pendingData, false)
+      setConfirmOpen(false)
+    }
+
+    function handleUpdateSeries() {
+      if (!pendingData) return
+      sendUpdate(pendingData, true)
+      setConfirmOpen(false)
+    }
+
+  const isRecurring =
+    transaction != null &&
+    (transaction.installmentsTotal == null || transaction.installmentsTotal > 1)
+
   return (
-    <Drawer open={open} onOpenChange={onOpenChange} direction={isMobile ? 'bottom' : 'right'}>
-      <DrawerContent>
-        <DrawerHeader>
-          <DrawerTitle>Editar transação</DrawerTitle>
-        </DrawerHeader>
-        <div className="flex flex-col gap-4 p-4 overflow-y-auto overflow-x-hidden">
-          <Form {...form}>
-            <form onSubmit={form.handleSubmit(handleSubmit)} className="flex flex-col gap-4">
-              <TypeField form={form} />
-              <TitleField form={form} />
-              <div className="flex flex-col gap-5 sm:flex-row">
-                <AmountField form={form} />
-                <CalendarField form={form} />
-              </div>
-              <PayToField form={form} data={data} />
-              <TagField form={form} />
-              <DescriptionField form={form} />
-              <Button type="submit">Salvar</Button>
-            </form>
-          </Form>
-          <TransactionSummary transaction={transaction} />
-        </div>
-        <DrawerFooter>
-          <DrawerClose asChild>
-            <Button variant="outline">Cancelar</Button>
-          </DrawerClose>
-        </DrawerFooter>
-      </DrawerContent>
-    </Drawer>
+    <>
+      <Drawer open={open} onOpenChange={onOpenChange} direction={isMobile ? 'bottom' : 'right'}>
+        <DrawerContent>
+          <DrawerHeader>
+            <DrawerTitle>Editar transação</DrawerTitle>
+          </DrawerHeader>
+          <div className="flex flex-col gap-4 p-4 overflow-y-auto overflow-x-hidden">
+            <Form {...form}>
+              <form onSubmit={form.handleSubmit(handleSubmit)} className="flex flex-col gap-4">
+                <TypeField form={form} />
+                <TitleField form={form} />
+                <div className="flex flex-col gap-5 sm:flex-row">
+                  <AmountField form={form} />
+                  <CalendarField form={form} />
+                </div>
+                <PayToField form={form} data={data} />
+                <TagField form={form} />
+                <DescriptionField form={form} />
+                <Button type="submit">Salvar</Button>
+              </form>
+            </Form>
+            <TransactionSummary transaction={transaction} />
+          </div>
+          <DrawerFooter>
+            <DrawerClose asChild>
+              <Button variant="outline">Cancelar</Button>
+            </DrawerClose>
+          </DrawerFooter>
+        </DrawerContent>
+      </Drawer>
+
+      {isRecurring && (
+        <AlertDialog open={confirmOpen} onOpenChange={setConfirmOpen}>
+          <AlertDialogContent>
+            <AlertDialogHeader>
+              <AlertDialogTitle>Atualizar transação recorrente</AlertDialogTitle>
+              <AlertDialogDescription>
+                Deseja atualizar apenas esta ocorrência ou toda a série?
+              </AlertDialogDescription>
+            </AlertDialogHeader>
+            <AlertDialogFooter>
+              <AlertDialogCancel onClick={handleUpdateCurrent}>Apenas esta</AlertDialogCancel>
+              <AlertDialogAction onClick={handleUpdateSeries}>Toda a série</AlertDialogAction>
+            </AlertDialogFooter>
+          </AlertDialogContent>
+        </AlertDialog>
+      )}
+    </>
   )
 }
