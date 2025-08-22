@@ -13,6 +13,6 @@
     "lint-staged": "^15.2.0"
   },
   "lint-staged": {
-    "**/*.{js,ts,tsx,jsx,json,md}": "biome lint --fix"
+    "**/*.{js,ts,tsx,jsx,json,md}": "biome check --write"
   }
 }
