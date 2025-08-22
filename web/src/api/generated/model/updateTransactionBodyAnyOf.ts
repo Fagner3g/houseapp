@@ -25,8 +25,8 @@ export type UpdateTransactionBodyAnyOf = {
   description?: string;
   tags?: UpdateTransactionBodyAnyOfTagsItem[];
   isRecurring: boolean;
-  recurrenceSelector: UpdateTransactionBodyAnyOfRecurrenceSelector;
-  recurrenceType: UpdateTransactionBodyAnyOfRecurrenceType;
+  recurrenceSelector?: UpdateTransactionBodyAnyOfRecurrenceSelector;
+  recurrenceType?: UpdateTransactionBodyAnyOfRecurrenceType;
   recurrenceUntil?: unknown;
   /**
    * @minimum -9007199254740991

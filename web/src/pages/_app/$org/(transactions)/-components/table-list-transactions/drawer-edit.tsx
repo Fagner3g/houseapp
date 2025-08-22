@@ -97,7 +97,7 @@ export function DrawerEdit({ transaction, open, onOpenChange }: Props) {
     function sendUpdate(data: NewTransactionSchema, applyToSeries: boolean) {
       if (!transaction) return
 
-      const isRecurring =
+      const isSeries =
         transaction.installmentsTotal == null || transaction.installmentsTotal > 1
 
       updateTransaction({
@@ -105,10 +105,12 @@ export function DrawerEdit({ transaction, open, onOpenChange }: Props) {
         id: transaction.id,
         data: {
           ...data,
-          isRecurring,
-          installmentsTotal: transaction.installmentsTotal ?? undefined,
+          isRecurring: applyToSeries && isSeries,
+          installmentsTotal: applyToSeries
+            ? transaction.installmentsTotal ?? undefined
+            : undefined,
           applyToSeries,
-        // biome-ignore lint/suspicious/noExplicitAny: API uses generated types
+          // biome-ignore lint/suspicious/noExplicitAny: API uses generated types
         } as any,
       })
     }

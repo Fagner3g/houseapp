@@ -1012,9 +1012,7 @@
                       "amount",
                       "dueDate",
                       "payToEmail",
-                      "isRecurring",
-                      "recurrenceSelector",
-                      "recurrenceType"
+                      "isRecurring"
                     ]
                   },
                   {
