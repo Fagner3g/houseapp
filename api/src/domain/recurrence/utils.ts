@@ -57,5 +57,9 @@ export function humanizeInterval(type: RecurrenceType, interval: number): string
       }
       break
   }
-  return `${qty} ${unit}${qty > 1 ? 's' : ''}`
+  if (qty > 1) {
+    if (unit === 'mês') return `${qty} meses`
+    return `${qty} ${unit}s`
+  }
+  return `${qty} ${unit}`
 }
