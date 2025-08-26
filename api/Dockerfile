@@ -24,4 +24,4 @@ ENV NODE_ENV=production
 # RUN rm -rf node_modules && yarn install --production
 
 EXPOSE 3333
-CMD ["node", "dist/http/server.js"]
+CMD ["node", "dist/server.js"]
