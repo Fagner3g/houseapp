@@ -9,6 +9,7 @@ const envSchema = z.object({
   NODE_ENV: z.enum(['development', 'test', 'production']).default('development'),
   PORT: z.coerce.number().default(3333),
   HOST: z.string().default('0.0.0.0'),
+  // Metrics
   METRICS_PREFIX: z.string().default('app_'),
   // Logging
   LOG_LEVEL: z.string().default('info'),
