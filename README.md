@@ -53,17 +53,42 @@ O **HouseApp** é uma aplicação web para gestão pessoal e organizacional que 
 
 ```bash
 # Clone o repositório
-git clone https://github.com/seu-usuario/houseapp.git
+git clone https://github.com/Fagner3g/houseapp.git
 
 # Acesse a pasta
 cd houseapp
 
+# Configure as variáveis de ambiente
+./scripts/setup-env.sh
+
 # Instale as dependências
-pnpm install
+cd api && yarn install
+cd ../web && npm install
 
 # Rode o projeto (dev)
-pnpm dev
+# Terminal 1 - API
+cd api && yarn dev
+
+# Terminal 2 - Web
+cd web && npm run dev
 ```
+
+## 🔧 Configuração de Ambiente
+
+### Desenvolvimento Local
+Execute o script de configuração:
+```bash
+./scripts/setup-env.sh
+```
+
+Edite os arquivos `.env` nas pastas `api/` e `web/` com seus valores reais.
+
+### Produção
+Os arquivos de ambiente devem estar em `/opt/env/houseapp/` na VPS:
+- `api.env` - Variáveis da API
+- `web.env` - Variáveis do Web
+
+Veja `deploy/env/README.md` para mais detalhes.
 
 ---
 
