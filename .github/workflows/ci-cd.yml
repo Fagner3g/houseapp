@@ -8,6 +8,14 @@ on:
       - 'web/**'
       - 'deploy/stacks/**'
 
+permissions:
+  contents: read
+  packages: write
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
 jobs:
   build-and-push:
     runs-on: ubuntu-latest
@@ -28,12 +36,23 @@ jobs:
 
       - name: Build and push image
         run: |
+          set -e
           IMAGE=ghcr.io/${{ github.repository }}-${{ matrix.app }}
           SHA=${GITHUB_SHA::7}
           BRANCH=${GITHUB_REF_NAME}
+          echo "Building $IMAGE with tags $SHA and $BRANCH"
           docker build -f ${{ matrix.app }}/Dockerfile -t $IMAGE:$SHA -t $IMAGE:$BRANCH ${{ matrix.app }}
           docker push $IMAGE:$SHA
           docker push $IMAGE:$BRANCH
+          echo "image=$IMAGE" >> $GITHUB_OUTPUT
+          echo "sha=$SHA" >> $GITHUB_OUTPUT
+          echo "branch=$BRANCH" >> $GITHUB_OUTPUT
+
+      - name: Build summary
+        run: |
+          echo "### Build & Push (${{ matrix.app }})" >> $GITHUB_STEP_SUMMARY
+          echo "- Image: ghcr.io/${{ github.repository }}-${{ matrix.app }}" >> $GITHUB_STEP_SUMMARY
+          echo "- Tags: ${GITHUB_SHA::7}, ${GITHUB_REF_NAME}" >> $GITHUB_STEP_SUMMARY
 
   deploy:
     needs: build-and-push
@@ -42,7 +61,26 @@ jobs:
     steps:
       - uses: actions/checkout@v4
 
+      - name: Check deploy secrets
+        id: check
+        env:
+          HAS_HOST: ${{ secrets.VPS_HOST }}
+          HAS_USER: ${{ secrets.VPS_USER }}
+          HAS_KEY: ${{ secrets.VPS_SSH_KEY }}
+        run: |
+          missing=0
+          if [ -z "$HAS_HOST" ]; then echo "::warning title=Missing secret::VPS_HOST not set"; missing=1; fi
+          if [ -z "$HAS_USER" ]; then echo "::warning title=Missing secret::VPS_USER not set"; missing=1; fi
+          if [ -z "$HAS_KEY" ]; then echo "::warning title=Missing secret::VPS_SSH_KEY not set"; missing=1; fi
+          if [ $missing -eq 1 ]; then
+            echo "skip=true" >> $GITHUB_OUTPUT
+            echo "### Deploy skipped\nMissing secrets: VPS_HOST, VPS_USER and/or VPS_SSH_KEY" >> $GITHUB_STEP_SUMMARY
+          else
+            echo "skip=false" >> $GITHUB_OUTPUT
+          fi
+
       - name: Deploy over SSH to Swarm
+        if: steps.check.outputs.skip == 'false'
         uses: appleboy/ssh-action@v1.0.3
         with:
           host: ${{ secrets.VPS_HOST }}
@@ -53,5 +91,12 @@ jobs:
             SHA=${GITHUB_SHA::7}
             export TAG=$SHA
             docker login ghcr.io -u ${{ github.actor }} -p ${{ secrets.GITHUB_TOKEN }}
-            # Ajuste paths se manter o stack no repo da VPS
+            echo "Deploying houseapp with TAG=$TAG"
             docker stack deploy -c /opt/stacks/houseapp.yml houseapp --with-registry-auth
+
+      - name: Deploy summary
+        run: |
+          echo "### Deploy" >> $GITHUB_STEP_SUMMARY
+          echo "- Branch: ${GITHUB_REF_NAME}" >> $GITHUB_STEP_SUMMARY
+          echo "- TAG: ${GITHUB_SHA::7}" >> $GITHUB_STEP_SUMMARY
+          echo "- Target: Swarm stack houseapp (SSH)" >> $GITHUB_STEP_SUMMARY
