@@ -9,14 +9,27 @@ services:
     image: ghcr.io/fagner3g/houseapp-api:${TAG:-develop}
     env_file:
       - /opt/env/houseapp/api.env
+    healthcheck:
+      test: ["CMD-SHELL", "wget -qO- http://localhost:3333/health || curl -sf http://localhost:3333/health || exit 1"]
+      interval: 15s
+      timeout: 5s
+      retries: 5
+      start_period: 20s
     deploy:
-      replicas: 1
+      replicas: 2
       update_config:
         order: start-first
         parallelism: 1
         delay: 10s
       restart_policy:
         condition: on-failure
+      resources:
+        limits:
+          cpus: "0.50"
+          memory: 512M
+        reservations:
+          cpus: "0.10"
+          memory: 128M
       labels:
         - traefik.enable=true
         - traefik.http.routers.houseapp-api.rule=Host(`api.jarvis.dev.br`)
@@ -30,12 +43,27 @@ services:
     image: ghcr.io/fagner3g/houseapp-web:${TAG:-develop}
     env_file:
       - /opt/env/houseapp/web.env
+    healthcheck:
+      test: ["CMD-SHELL", "wget -qO- http://localhost:80 || curl -sf http://localhost:80 || exit 1"]
+      interval: 15s
+      timeout: 5s
+      retries: 5
+      start_period: 20s
     deploy:
-      replicas: 1
+      replicas: 2
       update_config:
         order: start-first
         parallelism: 1
         delay: 10s
+      restart_policy:
+        condition: on-failure
+      resources:
+        limits:
+          cpus: "0.50"
+          memory: 384M
+        reservations:
+          cpus: "0.10"
+          memory: 96M
       labels:
         - traefik.enable=true
         - traefik.http.routers.houseapp-web.rule=Host(`app.jarvis.dev.br`)
