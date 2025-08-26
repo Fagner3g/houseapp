@@ -1,6 +1,7 @@
 node_modules
 package-lock.json
-yarn.lock
+# Mantenha yarn.lock versionado para builds reprodutíveis
+# Removido o ignore do yarn.lock global
 
 # Env files (manter apenas exemplos)
 .env
