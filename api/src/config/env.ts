@@ -1,7 +1,6 @@
 import z from 'zod'
 
 const envSchema = z.object({
-  // Database
   DATABASE_URL: z.url(),
   JWT_SECRET: z.string(),
   WEB_URL: z.url(),
