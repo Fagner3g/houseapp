@@ -151,65 +151,28 @@ jobs:
             EOF
             
             sudo mv /tmp/houseapp.yml /opt/stacks/houseapp.yml
-            # Copiar arquivos de ambiente se não existirem
+            # Garantir arquivos de ambiente: usa /opt/env/houseapp, senão copia de /opt/templates/houseapp
+            missing_env=0
             if [ ! -f /opt/env/houseapp/api.env ]; then
-              echo "::warning title=Missing env file::/opt/env/houseapp/api.env not found - creating from example"
-              # Criar arquivo de exemplo da API
-              cat > /tmp/api.env << 'EOF'
-# Backend (API) - exemplo de variáveis
-# IMPORTANTE: Edite este arquivo com seus valores reais!
-
-# Obrigatórias (validadas pelo Zod)
-DATABASE_URL=postgresql://USER:PASS@HOST:5432/DBNAME
-JWT_SECRET=changeme-super-secret-key-here
-WEB_URL=https://app.jarvis.dev.br
-
-# Opcionais / padrões (validadas pelo Zod)
-NODE_ENV=production
-LOG_LEVEL=info
-PORT=3333
-HOST=0.0.0.0
-METRICS_PREFIX=app_
-LOG_FASTIFY=false
-LOG_SQL=false
-
-# WhatsApp Integration (opcional - validadas pelo Zod)
-EVOLUTION_BASE_URL=https://evo.jarvis.dev.br
-EVOLUTION_INSTANCE=JARVIS
-EVOLUTION_API_KEY=your_evolution_api_key_here
-EOF
-              sudo mv /tmp/api.env /opt/env/houseapp/api.env
-              echo "Created /opt/env/houseapp/api.env - PLEASE EDIT WITH REAL VALUES"
+              if [ -f /opt/templates/houseapp/api.env ]; then
+                sudo cp /opt/templates/houseapp/api.env /opt/env/houseapp/api.env
+                echo "Copied template to /opt/env/houseapp/api.env"
+              else
+                echo "::warning title=Missing env template::/opt/templates/houseapp/api.env not found"
+                missing_env=1
+              fi
             fi
-
             if [ ! -f /opt/env/houseapp/web.env ]; then
-              echo "::warning title=Missing env file::/opt/env/houseapp/web.env not found - creating from example"
-              # Criar arquivo de exemplo do Web
-              cat > /tmp/web.env << 'EOF'
-# Frontend (Web) - exemplo de variáveis
-# IMPORTANTE: Edite este arquivo com seus valores reais!
-
-# Obrigatória (validada pelo Zod)
-VITE_API_HOST=https://api.jarvis.dev.br
-
-# Opcionais (validadas pelo Zod)
-VITE_OPENAPI_URL=https://api.jarvis.dev.br/swagger.json
-KUBB_LOG_LEVEL=info
-EOF
-              sudo mv /tmp/web.env /opt/env/houseapp/web.env
-              echo "Created /opt/env/houseapp/web.env - PLEASE EDIT WITH REAL VALUES"
+              if [ -f /opt/templates/houseapp/web.env ]; then
+                sudo cp /opt/templates/houseapp/web.env /opt/env/houseapp/web.env
+                echo "Copied template to /opt/env/houseapp/web.env"
+              else
+                echo "::warning title=Missing env template::/opt/templates/houseapp/web.env not found"
+                missing_env=1
+              fi
             fi
-
-            # Verificar se os arquivos ainda têm valores de exemplo
-            if grep -q "changeme-super-secret" /opt/env/houseapp/api.env || grep -q "USER:PASS" /opt/env/houseapp/api.env; then
-              echo "::warning title=Example values detected::/opt/env/houseapp/api.env still has example values"
-              echo "Deploy skipped - environment files have example values"
-              exit 1
-            fi
-
-            if grep -q "your_evolution_api_key_here" /opt/env/houseapp/api.env; then
-              echo "::warning title=Example values detected::/opt/env/houseapp/api.env still has example values"
-              echo "Deploy skipped - environment files have example values"
+            if [ $missing_env -eq 1 ]; then
+              echo "Deploy skipped - missing env templates in /opt/templates/houseapp"
               exit 1
             fi
 
