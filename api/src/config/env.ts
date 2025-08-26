@@ -20,4 +20,18 @@ const envSchema = z.object({
   EVOLUTION_API_KEY: z.string().optional(),
 })
 
-export const env = envSchema.parse(process.env)
+const parsed = envSchema.safeParse(process.env)
+
+if (!parsed.success) {
+  const issues = parsed.error.issues
+    .map((i) => `- ${i.path.join('.') || '(root)'}: ${i.message}`)
+    .join('\n')
+
+  // Loga de forma explícita no console para facilitar diagnóstico em VPS
+  // Mantém formato compacto e fácil de ler em logs
+  console.error('\n[ENV] Falha na validação das variáveis de ambiente:\n' + issues + '\n')
+
+  throw new Error('Invalid environment variables')
+}
+
+export const env = parsed.data
