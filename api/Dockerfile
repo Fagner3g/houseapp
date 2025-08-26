@@ -33,7 +33,9 @@ COPY --from=build /app/dist ./dist
 COPY --from=deps /app/node_modules ./node_modules
 COPY package.json ./package.json
 
-# Copia o script de inicialização
+# Copia o Yarn e script de inicialização
+COPY --from=deps /usr/local/bin/yarn /usr/local/bin/yarn
+COPY --from=deps /usr/local/bin/corepack /usr/local/bin/corepack
 COPY start.sh ./start.sh
 RUN chmod +x ./start.sh
 
