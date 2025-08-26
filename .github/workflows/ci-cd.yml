@@ -155,6 +155,16 @@ jobs:
             echo "skip=false" >> $GITHUB_OUTPUT
           fi
 
+      - name: Copy files to VPS
+        if: steps.check.outputs.skip == 'false'
+        run: |
+          # Copy stack file
+          scp -i ~/.ssh/id_rsa -o StrictHostKeyChecking=no deploy/stacks/houseapp.yml ${{ secrets.VPS_USER }}@${{ secrets.VPS_HOST }}:/tmp/stack.yml
+          
+          # Copy env files
+          scp -i ~/.ssh/id_rsa -o StrictHostKeyChecking=no deploy/env/api.env.example ${{ secrets.VPS_USER }}@${{ secrets.VPS_HOST }}:/tmp/api.env
+          scp -i ~/.ssh/id_rsa -o StrictHostKeyChecking=no deploy/env/web.env.example ${{ secrets.VPS_USER }}@${{ secrets.VPS_HOST }}:/tmp/web.env
+
       - name: Deploy over SSH to Swarm
         if: steps.check.outputs.skip == 'false'
         id: deploy
@@ -164,14 +174,6 @@ jobs:
           host: ${{ secrets.VPS_HOST }}
           username: ${{ secrets.VPS_USER }}
           key: ${{ secrets.VPS_SSH_KEY }}
-          source: |
-            deploy/stacks/houseapp.yml
-            deploy/env/api.env.example
-            deploy/env/web.env.example
-          target: |
-            /opt/stacks/houseapp/stack.yml
-            /opt/stacks/houseapp/api.env
-            /opt/stacks/houseapp/web.env
           script: |
             set -e
             SHA=${GITHUB_SHA::7}
@@ -180,6 +182,11 @@ jobs:
 
             # Create directory structure
             sudo mkdir -p /opt/stacks/houseapp
+
+            # Move files from /tmp to final location
+            sudo mv /tmp/stack.yml /opt/stacks/houseapp/stack.yml
+            sudo mv /tmp/api.env /opt/stacks/houseapp/api.env
+            sudo mv /tmp/web.env /opt/stacks/houseapp/web.env
 
             # Validate that env files don't contain example values
             if grep -q "sua_jwt_secret_aqui" /opt/stacks/houseapp/api.env || grep -q "sua_senha_do_banco" /opt/stacks/houseapp/api.env; then
