@@ -164,8 +164,14 @@ jobs:
           host: ${{ secrets.VPS_HOST }}
           username: ${{ secrets.VPS_USER }}
           key: ${{ secrets.VPS_SSH_KEY }}
-          source: "deploy/stacks/houseapp.yml"
-          target: "/opt/stacks/houseapp/stack.yml"
+          source: |
+            deploy/stacks/houseapp.yml
+            deploy/env/api.env.example
+            deploy/env/web.env.example
+          target: |
+            /opt/stacks/houseapp/stack.yml
+            /opt/stacks/houseapp/api.env
+            /opt/stacks/houseapp/web.env
           script: |
             set -e
             SHA=${GITHUB_SHA::7}
@@ -175,44 +181,14 @@ jobs:
             # Create directory structure
             sudo mkdir -p /opt/stacks/houseapp
 
-            # Check if template files exist and copy them
-            if [ -f "/opt/templates/houseapp/api.env" ]; then
-              echo "Copying api.env from templates..."
-              sudo cp /opt/templates/houseapp/api.env /opt/stacks/houseapp/api.env
-            else
-              echo "ERROR: Template file /opt/templates/houseapp/api.env not found!"
-              echo "Please create the template file with real values:"
-              echo "sudo mkdir -p /opt/templates/houseapp"
-              echo "sudo nano /opt/templates/houseapp/api.env"
-              exit 1
-            fi
-
-            if [ -f "/opt/templates/houseapp/web.env" ]; then
-              echo "Copying web.env from templates..."
-              sudo cp /opt/templates/houseapp/web.env /opt/stacks/houseapp/web.env
-            else
-              echo "ERROR: Template file /opt/templates/houseapp/web.env not found!"
-              echo "Please create the template file with real values:"
-              echo "sudo mkdir -p /opt/templates/houseapp"
-              echo "sudo nano /opt/templates/houseapp/web.env"
-              exit 1
-            fi
-
             # Validate that env files don't contain example values
-            if grep -q "sua_jwt_secret_aqui" /opt/stacks/houseapp/api.env || grep -q "sua_senha_do_banco" /opt/stacks/houseapp/api.env || grep -q "seu-dominio.com" /opt/stacks/houseapp/api.env; then
+            if grep -q "sua_jwt_secret_aqui" /opt/stacks/houseapp/api.env || grep -q "sua_senha_do_banco" /opt/stacks/houseapp/api.env; then
               echo "ERROR: api.env contains example values. Please configure with real values."
               echo "Required changes:"
               echo "- JWT_SECRET: configure sua chave secreta"
               echo "- DB_PASSWORD: configure sua senha do banco"
-              echo "- WEB_URL: configure seu domínio real"
-              echo "- DB_HOST: configure seu host do banco"
-              exit 1
-            fi
-
-            if grep -q "seu-dominio.com" /opt/stacks/houseapp/web.env; then
-              echo "ERROR: web.env contains example values. Please configure with real values."
-              echo "Required changes:"
-              echo "- VITE_API_HOST: configure seu domínio da API"
+              echo ""
+              echo "Edit the file: sudo nano /opt/stacks/houseapp/api.env"
               exit 1
             fi
 
