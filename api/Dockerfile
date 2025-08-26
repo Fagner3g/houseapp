@@ -9,14 +9,14 @@ WORKDIR /app
 RUN corepack enable && corepack prepare yarn@stable --activate
 
 # Copia manifests para melhor cache
-COPY api/package.json ./package.json
-COPY api/yarn.lock ./yarn.lock
+COPY package.json ./package.json
+COPY yarn.lock ./yarn.lock
 
 # Instala dependências (dev incluídas para compilar TS)
 RUN yarn install --frozen-lockfile
 
 # Copia código e compila
-COPY api/ ./
+COPY . ./
 RUN yarn build
 
 ENV NODE_ENV=production

@@ -1,9 +1,9 @@
 FROM node:20-slim AS build
 WORKDIR /app
 # Usa npm por padrao
-COPY web/package.json ./package.json
+COPY package.json ./package.json
 RUN npm install --omit=dev=false
-COPY web/ ./
+COPY . ./
 RUN npm run build
 
 FROM nginx:1.27-alpine AS runtime
