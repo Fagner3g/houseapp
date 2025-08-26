@@ -18,12 +18,12 @@ deploy/env/
 ## 🚀 Produção (VPS)
 
 ### API (`api.env`)
-- **Localização na VPS:** `/opt/env/houseapp/api.env`
+- **Localização na VPS:** `/opt/stacks/houseapp/api.env`
 - **Banco:** PostgreSQL na VPS (`postgres:5432`)
 - **URLs:** Domínios de produção (`api.jarvis.dev.br`, `app.jarvis.dev.br`)
 
 ### Web (`web.env`)
-- **Localização na VPS:** `/opt/env/houseapp/web.env`
+- **Localização na VPS:** `/opt/stacks/houseapp/web.env`
 - **API Host:** `https://api.jarvis.dev.br`
 
 ## 💻 Desenvolvimento Local
@@ -34,6 +34,27 @@ deploy/env/
 
 ### Web (`web.env.local`)
 - **API Host:** `http://localhost:3333`
+
+## 🗄️ Configuração do Banco de Dados
+
+### Variáveis Individuais (Recomendado)
+```bash
+# Database Connection
+DB_HOST=postgres          # Host do PostgreSQL
+DB_PORT=5432             # Porta do PostgreSQL
+DB_USER=postgres         # Usuário do banco
+DB_PASSWORD=sua_senha    # Senha do banco
+DB_NAME=houseapp         # Nome do banco
+DB_SSL=false             # SSL (true/false)
+```
+
+### URL Completa (Legacy)
+```bash
+# Legacy Database URL (opcional - para compatibilidade)
+DATABASE_URL=postgresql://postgres:senha@host:5432/houseapp
+```
+
+**Nota:** O sistema prioriza as variáveis individuais. Se `DATABASE_URL` estiver definida, ela será usada para compatibilidade.
 
 ## 🔧 Como Usar
 
@@ -48,10 +69,12 @@ cp deploy/env/web.env.local web/.env
 
 ### Para Produção (VPS):
 ```bash
-# Copiar templates para a VPS
-sudo mkdir -p /opt/templates/houseapp
-sudo cp deploy/env/api.env /opt/templates/houseapp/api.env
-sudo cp deploy/env/web.env /opt/templates/houseapp/web.env
+# Criar estrutura na VPS
+sudo mkdir -p /opt/stacks/houseapp
+
+# Copiar arquivos de ambiente
+sudo cp deploy/env/api.env /opt/stacks/houseapp/api.env
+sudo cp deploy/env/web.env /opt/stacks/houseapp/web.env
 ```
 
 ## 🔐 Variáveis Sensíveis
@@ -63,8 +86,8 @@ sudo cp deploy/env/web.env /opt/templates/houseapp/web.env
 
 ## 📋 Checklist de Deploy
 
-- [ ] Criar `/opt/templates/houseapp/` na VPS
-- [ ] Copiar `api.env` e `web.env` para templates
-- [ ] Configurar valores reais nos templates
+- [ ] Criar `/opt/stacks/houseapp/` na VPS
+- [ ] Copiar `api.env` e `web.env` para a pasta
+- [ ] Configurar valores reais nos arquivos
 - [ ] Verificar se PostgreSQL está na rede `network_swarm_public`
 - [ ] Fazer deploy da stack

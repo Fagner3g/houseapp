@@ -2,7 +2,7 @@ import { sql } from 'drizzle-orm'
 import { drizzle, type PostgresJsDatabase } from 'drizzle-orm/postgres-js'
 import postgres from 'postgres'
 
-import { env } from '@/config/env'
+import { env, getDatabaseUrl } from '@/config/env'
 import { goalCompletions } from './schemas/goalCompletions'
 import { goals } from './schemas/goals'
 import { invites } from './schemas/invites'
@@ -27,7 +27,7 @@ const schema = {
 
 type Database = PostgresJsDatabase<typeof schema>
 
-export const client = postgres(env.DATABASE_URL, {})
+export const client = postgres(getDatabaseUrl(), {})
 export const db = drizzle(client, {
   schema,
   logger: env.LOG_SQL

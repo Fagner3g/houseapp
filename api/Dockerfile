@@ -36,8 +36,8 @@ COPY src/config/env.ts ./src/config/env.ts
 COPY .migrations ./.migrations
 
 # Copy startup script
-COPY start.sh ./start.sh
-RUN chmod +x ./start.sh
+COPY start.js ./start.js
+RUN chmod +x ./start.js
 
 EXPOSE 3333
-CMD ["./start.sh"]
+CMD ["node", "start.js"]

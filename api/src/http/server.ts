@@ -1,10 +1,10 @@
-import { env } from '@/config/env'
+import { env, getDatabaseUrl } from '@/config/env'
 import { db, ping } from '@/db'
 import { registerJobs } from '@/jobs'
 import { logger } from './utils/logger'
 import { buildServer } from './utils/setup'
 
-async function server() {
+export async function server() {
   try {
     await ping(db)
     logger.info('database connected')
@@ -12,7 +12,7 @@ async function server() {
     // Register crons
     registerJobs()
   } catch (e) {
-    logger.error(e, 'ping failed on server: %s', env.DATABASE_URL)
+    logger.error(e, 'ping failed on server: %s', getDatabaseUrl())
     process.exit(1)
   }
 
@@ -25,5 +25,3 @@ async function server() {
     process.exit(1)
   }
 }
-
-server()
