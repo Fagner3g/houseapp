@@ -5,7 +5,7 @@ echo "Starting API initialization..."
 
 # Aguarda o banco estar disponível
 echo "Waiting for database to be ready..."
-until yarn db:migrate; do
+until npm run db:migrate; do
   echo "Database not ready, retrying in 5 seconds..."
   sleep 5
 done
