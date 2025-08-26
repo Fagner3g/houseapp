@@ -11,6 +11,10 @@ const envSchema = z.object({
   METRICS_PREFIX: z.string().default('app_'),
   LOG_FASTIFY: z.preprocess(val => val === 'true', z.boolean()).default(false),
   LOG_SQL: z.preprocess(val => val === 'true', z.boolean()).default(false),
+  // WhatsApp Integration (opcional)
+  EVOLUTION_BASE_URL: z.string().url().optional(),
+  EVOLUTION_INSTANCE: z.string().optional(),
+  EVOLUTION_API_KEY: z.string().optional(),
 })
 
 export const env = envSchema.parse(process.env)
