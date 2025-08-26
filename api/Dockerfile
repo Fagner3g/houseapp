@@ -10,10 +10,9 @@ RUN corepack enable && corepack prepare yarn@stable --activate
 
 # Copia manifests para melhor cache
 COPY package.json ./package.json
-COPY yarn.lock ./yarn.lock
 
 # Instala dependências (dev incluídas para compilar TS)
-RUN yarn install --frozen-lockfile
+RUN yarn install
 
 # Copia código e compila
 COPY . ./
@@ -22,7 +21,7 @@ RUN yarn build
 ENV NODE_ENV=production
 
 # Opcional: manter deps completas; caso queira somente produção, descomente a linha abaixo
-# RUN rm -rf node_modules && yarn install --production --frozen-lockfile
+# RUN rm -rf node_modules && yarn install --production
 
 EXPOSE 3333
 CMD ["node", "src/http/server.js"]
