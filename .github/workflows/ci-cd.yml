@@ -38,7 +38,8 @@ jobs:
       - name: Build and push image
         run: |
           set -e
-          IMAGE=ghcr.io/${{ github.repository }}-${{ matrix.app }}
+          REPO_LC=${GITHUB_REPOSITORY,,}
+          IMAGE=ghcr.io/${REPO_LC}-${{ matrix.app }}
           SHA=${GITHUB_SHA::7}
           BRANCH=${GITHUB_REF_NAME}
           echo "Building $IMAGE with tags $SHA and $BRANCH"
@@ -52,7 +53,7 @@ jobs:
       - name: Build summary
         run: |
           echo "### Build & Push (${{ matrix.app }})" >> $GITHUB_STEP_SUMMARY
-          echo "- Image: ghcr.io/${{ github.repository }}-${{ matrix.app }}" >> $GITHUB_STEP_SUMMARY
+          echo "- Image: ghcr.io/${GITHUB_REPOSITORY,,}-${{ matrix.app }}" >> $GITHUB_STEP_SUMMARY
           echo "- Tags: ${GITHUB_SHA::7}, ${GITHUB_REF_NAME}" >> $GITHUB_STEP_SUMMARY
 
   deploy:
