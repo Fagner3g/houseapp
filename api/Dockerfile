@@ -32,6 +32,7 @@ COPY package.json ./package.json
 
 # Copy Drizzle configuration and migrations
 COPY drizzle.config.ts ./
+COPY src/config/env.ts ./src/config/env.ts
 COPY .migrations ./drizzle
 
 # Copy startup script
