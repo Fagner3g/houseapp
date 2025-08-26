@@ -17,6 +17,12 @@ FROM deps AS build
 COPY . ./
 RUN yarn build
 
+# Estágio para rodar migrações
+FROM deps AS migrate
+COPY . ./
+# Roda migrações (vai falhar se não conseguir conectar no banco, mas isso é esperado no build)
+RUN yarn db:migrate || echo "Migrations will be run at runtime"
+
 FROM node:20-alpine AS runtime
 
 WORKDIR /app
@@ -27,5 +33,9 @@ COPY --from=build /app/dist ./dist
 COPY --from=deps /app/node_modules ./node_modules
 COPY package.json ./package.json
 
+# Copia o script de inicialização
+COPY start.sh ./start.sh
+RUN chmod +x ./start.sh
+
 EXPOSE 3333
-CMD ["node", "dist/server.js"]
+CMD ["./start.sh"]
