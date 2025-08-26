@@ -33,6 +33,10 @@ COPY --from=build /app/dist ./dist
 COPY --from=deps /app/node_modules ./node_modules
 COPY package.json ./package.json
 
+# Copia configuração do Drizzle e migrações
+COPY drizzle.config.ts ./
+COPY .migrations ./drizzle
+
 # Copia o script de inicialização
 COPY start.sh ./start.sh
 RUN chmod +x ./start.sh
