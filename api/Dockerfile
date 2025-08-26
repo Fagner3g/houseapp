@@ -1,4 +1,4 @@
-FROM node:20-slim AS deps
+FROM node:20-alpine AS deps
 
 WORKDIR /app
 
@@ -14,7 +14,7 @@ FROM deps AS build
 COPY . ./
 RUN yarn build
 
-FROM node:20-slim AS runtime
+FROM node:20-alpine AS runtime
 
 WORKDIR /app
 ENV NODE_ENV=production

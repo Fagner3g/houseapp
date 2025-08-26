@@ -1,4 +1,4 @@
-FROM node:20-slim AS build
+FROM node:20-alpine AS build
 WORKDIR /app
 # Usa npm por padrao
 COPY package.json ./package.json
