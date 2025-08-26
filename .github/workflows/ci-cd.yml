@@ -92,6 +92,65 @@ jobs:
             set -e
             SHA=${GITHUB_SHA::7}
             export TAG=$SHA
+            
+            # Criar diretórios se não existirem
+            sudo mkdir -p /opt/stacks
+            sudo mkdir -p /opt/env/houseapp
+            
+            # Copiar arquivo de stack
+            cat > /tmp/houseapp.yml << 'EOF'
+            version: '3.8'
+            
+            networks:
+              network_swarm_public:
+                external: true
+            
+            services:
+              api:
+                image: ghcr.io/fagner3g/houseapp-api:${TAG:-develop}
+                env_file:
+                  - /opt/env/houseapp/api.env
+                deploy:
+                  replicas: 2
+                  update_config:
+                    order: start-first
+                    parallelism: 1
+                    delay: 10s
+                  restart_policy:
+                    condition: on-failure
+                  labels:
+                    - traefik.enable=true
+                    - traefik.http.routers.houseapp-api.rule=Host(`api.jarvis.dev.br`)
+                    - traefik.http.routers.houseapp-api.entrypoints=websecure
+                    - traefik.http.routers.houseapp-api.tls.certresolver=letsencryptresolver
+                    - traefik.http.services.houseapp-api.loadbalancer.server.port=3333
+                networks:
+                  - network_swarm_public
+            
+              web:
+                image: ghcr.io/fagner3g/houseapp-web:${TAG:-develop}
+                env_file:
+                  - /opt/env/houseapp/web.env
+                deploy:
+                  replicas: 2
+                  update_config:
+                    order: start-first
+                    parallelism: 1
+                    delay: 10s
+                  labels:
+                    - traefik.enable=true
+                    - traefik.http.routers.houseapp-web.rule=Host(`app.jarvis.dev.br`)
+                    - traefik.http.routers.houseapp-web.entrypoints=websecure
+                    - traefik.http.routers.houseapp-web.tls=true
+                    - traefik.http.routers.houseapp-web.tls.certresolver=letsencryptresolver
+                    - traefik.http.services.houseapp-web.loadbalancer.server.port=80
+                networks:
+                  - network_swarm_public
+            EOF
+            
+            sudo mv /tmp/houseapp.yml /opt/stacks/houseapp.yml
+            
+            # Login no GHCR e deploy
             docker login ghcr.io -u ${{ github.actor }} -p ${{ secrets.GITHUB_TOKEN }}
             echo "Deploying houseapp with TAG=$TAG"
             docker stack deploy -c /opt/stacks/houseapp.yml houseapp --with-registry-auth
