@@ -84,6 +84,7 @@ jobs:
       - name: Deploy over SSH to Swarm
         if: steps.check.outputs.skip == 'false'
         id: deploy
+        continue-on-error: true
         uses: appleboy/ssh-action@v1.0.3
         with:
           host: ${{ secrets.VPS_HOST }}
@@ -164,9 +165,8 @@ jobs:
             fi
             
             if [ $missing_env -eq 1 ]; then
-              echo "skip_deploy=true" >> $GITHUB_OUTPUT
-              printf "### Deploy skipped\nMissing environment files on VPS:\n- /opt/env/houseapp/api.env\n- /opt/env/houseapp/web.env\n\nPlease create these files with proper values before deploying.\n" >> "$GITHUB_STEP_SUMMARY"
-              exit 0
+              echo "Deploy skipped - missing environment files"
+              exit 1
             fi
             
             # Login no GHCR e deploy
@@ -175,6 +175,12 @@ jobs:
             docker stack deploy -c /opt/stacks/houseapp.yml houseapp --with-registry-auth
 
       - name: Deploy summary
+        if: steps.deploy.outcome == 'success'
         run: |
           printf "### Deploy\n- Branch: %s\n- TAG: %s\n- Target: Swarm stack houseapp (SSH)\n" \
             "${GITHUB_REF_NAME}" "${GITHUB_SHA::7}" >> "$GITHUB_STEP_SUMMARY"
+
+      - name: Deploy failed - missing env files
+        if: steps.deploy.outcome == 'failure'
+        run: |
+          printf "### Deploy Failed\nMissing environment files on VPS:\n- /opt/env/houseapp/api.env\n- /opt/env/houseapp/web.env\n\nPlease create these files with proper values before deploying.\n" >> "$GITHUB_STEP_SUMMARY"
