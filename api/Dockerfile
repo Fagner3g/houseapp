@@ -2,42 +2,39 @@ FROM node:20-alpine AS deps
 
 WORKDIR /app
 
-# Instala dependências do sistema necessárias para build
+# Install system dependencies required for build
 RUN apk add --no-cache python3 make g++
 
-# Usa Yarn 1 (Classic) para evitar restrições de workspaces no build
-RUN corepack enable && corepack prepare yarn@1.22.22 --activate
-
-# Copia manifests primeiro (cache)
-COPY package.json yarn.lock ./
-# Instala dependências
-RUN yarn install --frozen-lockfile
+# Copy package manifest first (for better caching)
+COPY package.json ./
+# Install dependencies with npm
+RUN npm install
 
 FROM deps AS build
 COPY . ./
-RUN yarn build
+RUN npm run build
 
-# Estágio para rodar migrações
+# Stage for running migrations
 FROM deps AS migrate
 COPY . ./
-# Roda migrações (vai falhar se não conseguir conectar no banco, mas isso é esperado no build)
-RUN yarn db:migrate || echo "Migrations will be run at runtime"
+# Run migrations (will fail if can't connect to database, which is expected during build)
+RUN npm run db:migrate || echo "Migrations will be run at runtime"
 
 FROM node:20-alpine AS runtime
 
 WORKDIR /app
 ENV NODE_ENV=production
 
-# Copia apenas o necessário para runtime
+# Copy only necessary files for runtime
 COPY --from=build /app/dist ./dist
 COPY --from=deps /app/node_modules ./node_modules
 COPY package.json ./package.json
 
-# Copia configuração do Drizzle e migrações
+# Copy Drizzle configuration and migrations
 COPY drizzle.config.ts ./
 COPY .migrations ./drizzle
 
-# Copia o script de inicialização
+# Copy startup script
 COPY start.sh ./start.sh
 RUN chmod +x ./start.sh
 

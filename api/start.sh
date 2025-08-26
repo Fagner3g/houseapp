@@ -1,9 +1,9 @@
 #!/bin/sh
 
-# Script de inicialização da API
+# API startup script
 echo "Starting API initialization..."
 
-# Aguarda o banco estar disponível
+# Wait for database to be ready
 echo "Waiting for database to be ready..."
 until npm run db:migrate; do
   echo "Database not ready, retrying in 5 seconds..."
@@ -12,6 +12,6 @@ done
 
 echo "Database migrations completed successfully!"
 
-# Inicia a aplicação
+# Start the application
 echo "Starting API server..."
 exec node dist/server.js
