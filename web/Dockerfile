@@ -1,4 +1,4 @@
-FROM arm64v8/node:20-alpine AS build
+FROM node:20-alpine AS build
 WORKDIR /app
 
 # Instala dependências do sistema necessárias para build
@@ -10,7 +10,7 @@ RUN npm install
 COPY . ./
 RUN npm run build
 
-FROM arm64v8/nginx:1.27-alpine AS runtime
+FROM nginx:1.27-alpine AS runtime
 COPY --from=build /app/dist /usr/share/nginx/html
 EXPOSE 80
 CMD ["nginx", "-g", "daemon off;"]

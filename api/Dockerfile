@@ -1,4 +1,4 @@
-FROM arm64v8/node:20-alpine AS deps
+FROM node:20-alpine AS deps
 
 WORKDIR /app
 
@@ -17,7 +17,7 @@ FROM deps AS build
 COPY . ./
 RUN yarn build
 
-FROM arm64v8/node:20-alpine AS runtime
+FROM node:20-alpine AS runtime
 
 WORKDIR /app
 ENV NODE_ENV=production
