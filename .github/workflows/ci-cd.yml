@@ -172,55 +172,33 @@ jobs:
             VERSION="${{ steps.version.outputs.version }}"
             export TAG=$VERSION
 
+            # Create directory structure
             sudo mkdir -p /opt/stacks/houseapp
 
-            # Copy env files from repository
-            cat > /opt/stacks/houseapp/api.env << 'EOF'
-            # Backend (API) - EXEMPLO
-            # Copie este arquivo para api.env e configure com seus valores reais
+            # Check if template files exist and copy them
+            if [ -f "/opt/templates/houseapp/api.env" ]; then
+              echo "Copying api.env from templates..."
+              sudo cp /opt/templates/houseapp/api.env /opt/stacks/houseapp/api.env
+            else
+              echo "ERROR: Template file /opt/templates/houseapp/api.env not found!"
+              echo "Please create the template file with real values:"
+              echo "sudo mkdir -p /opt/templates/houseapp"
+              echo "sudo nano /opt/templates/houseapp/api.env"
+              exit 1
+            fi
 
-            # Server
-            PORT=3333
-            HOST=0.0.0.0
-            NODE_ENV=production
+            if [ -f "/opt/templates/houseapp/web.env" ]; then
+              echo "Copying web.env from templates..."
+              sudo cp /opt/templates/houseapp/web.env /opt/stacks/houseapp/web.env
+            else
+              echo "ERROR: Template file /opt/templates/houseapp/web.env not found!"
+              echo "Please create the template file with real values:"
+              echo "sudo mkdir -p /opt/templates/houseapp"
+              echo "sudo nano /opt/templates/houseapp/web.env"
+              exit 1
+            fi
 
-            # Web site
-            WEB_URL=https://app.seu-dominio.com
-
-            # JWT (OBRIGATÓRIO - configure sua chave secreta)
-            JWT_SECRET=sua_jwt_secret_aqui
-
-            # Database Connection (OBRIGATÓRIO - configure suas credenciais)
-            DB_HOST=postgres
-            DB_PORT=5432
-            DB_USER=postgres
-            DB_PASSWORD=sua_senha_do_banco
-            DB_NAME=houseapp
-            DB_SSL=false
-
-            # Loggers
-            LOG_LEVEL=info
-            LOG_FASTIFY=false
-            LOG_SQL=false
-            METRICS_PREFIX=app_
-            EOF
-
-            cat > /opt/stacks/houseapp/web.env << 'EOF'
-            # Frontend (Web) - EXEMPLO
-            # Copie este arquivo para web.env e configure com seus valores reais
-
-            # API Host (OBRIGATÓRIO - configure o domínio da sua API)
-            VITE_API_HOST=https://api.seu-dominio.com
-
-            # Environment
-            NODE_ENV=production
-
-            # OpenAPI (opcional)
-            VITE_OPENAPI_URL=https://api.seu-dominio.com/swagger.json
-            KUBB_LOG_LEVEL=info
-            EOF
-
-            # Check if env files contain example values
+            # Validate that env files don't contain example values
             if grep -q "sua_jwt_secret_aqui" /opt/stacks/houseapp/api.env || grep -q "sua_senha_do_banco" /opt/stacks/houseapp/api.env || grep -q "seu-dominio.com" /opt/stacks/houseapp/api.env; then
               echo "ERROR: api.env contains example values. Please configure with real values."
               echo "Required changes:"
@@ -238,9 +216,17 @@ jobs:
               exit 1
             fi
 
+            echo "✅ Environment files validated successfully!"
+            echo "📁 Stack files location: /opt/stacks/houseapp/"
+            echo "📄 Files: stack.yml, api.env, web.env"
+
+            # Login to GHCR and deploy
             docker login ghcr.io -u ${{ github.actor }} -p ${{ secrets.GITHUB_TOKEN }}
-            echo "Deploying houseapp with TAG=$TAG (version: $VERSION)"
+            echo "🚀 Deploying houseapp with TAG=$TAG (version: $VERSION)"
             docker stack deploy -c /opt/stacks/houseapp/stack.yml houseapp --with-registry-auth
+            
+            echo "✅ Stack deployed successfully!"
+            echo "📊 Check status: docker stack ps houseapp"
 
       - name: Deploy summary
         if: steps.deploy.outcome == 'success'
