@@ -7,6 +7,7 @@ import {
   getPendingGoalsRoute,
   getWeekSummaryRoute,
 } from './goals.routes'
+import { healthRoute } from './health.routes'
 import { acceptInviteRoute, createInviteRoute, getInvitesRoute } from './invite.routes'
 import {
   createOrgRoute,
@@ -28,6 +29,9 @@ import {
 import { createUserWithInviteRoute, getProfileRoute } from './user.routes'
 
 export function createRoutes(app: FastifyInstance) {
+  // Health
+  app.register(healthRoute)
+
   // Auth
   app.register(signInRoute)
   app.register(signUpRoute)

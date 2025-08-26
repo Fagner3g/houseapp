@@ -8,6 +8,11 @@ on:
       - 'web/**'
       - 'deploy/stacks/**'
   workflow_dispatch:
+    inputs:
+      version:
+        description: 'Version to deploy (e.g., 1.0.1)'
+        required: false
+        default: ''
   release:
     types: [published]
 
@@ -44,6 +49,11 @@ jobs:
           if [ "${{ github.event_name }}" = "release" ]; then
             # Use release tag for releases
             VERSION="${{ github.event.release.tag_name }}"
+            echo "version=$VERSION" >> $GITHUB_OUTPUT
+            echo "is_release=true" >> $GITHUB_OUTPUT
+          elif [ "${{ github.event_name }}" = "workflow_dispatch" ] && [ -n "${{ github.event.inputs.version }}" ]; then
+            # Use manual version from workflow_dispatch
+            VERSION="${{ github.event.inputs.version }}"
             echo "version=$VERSION" >> $GITHUB_OUTPUT
             echo "is_release=true" >> $GITHUB_OUTPUT
           else
@@ -103,6 +113,9 @@ jobs:
           if [ "${{ github.event_name }}" = "release" ]; then
             VERSION="${{ github.event.release.tag_name }}"
             echo "version=$VERSION" >> $GITHUB_OUTPUT
+          elif [ "${{ github.event_name }}" = "workflow_dispatch" ] && [ -n "${{ github.event.inputs.version }}" ]; then
+            VERSION="${{ github.event.inputs.version }}"
+            echo "version=$VERSION" >> $GITHUB_OUTPUT
           else
             BRANCH="${{ github.ref_name }}"
             SHA="${GITHUB_SHA::7}"
@@ -144,91 +157,31 @@ jobs:
           host: ${{ secrets.VPS_HOST }}
           username: ${{ secrets.VPS_USER }}
           key: ${{ secrets.VPS_SSH_KEY }}
+          source: "deploy/stacks/houseapp.yml"
+          target: "/tmp/houseapp.yml"
           script: |
             set -e
             SHA=${GITHUB_SHA::7}
             VERSION="${{ steps.version.outputs.version }}"
             export TAG=$VERSION
 
-            sudo mkdir -p /opt/stacks
-            sudo mkdir -p /opt/env/houseapp
+            sudo mkdir -p /opt/stacks/houseapp
 
-            # Write stack file
-            cat > /tmp/houseapp.yml << 'EOF'
-            version: '3.8'
-            networks:
-              network_swarm_public:
-                external: true
-            services:
-              api:
-                image: ghcr.io/fagner3g/houseapp-api:${TAG:-develop}
-                env_file:
-                  - /opt/env/houseapp/api.env
-                deploy:
-                  replicas: 2
-                  update_config:
-                    order: start-first
-                    parallelism: 1
-                    delay: 10s
-                  restart_policy:
-                    condition: on-failure
-                  labels:
-                    - traefik.enable=true
-                    - traefik.http.routers.houseapp-api.rule=Host(`api.jarvis.dev.br`)
-                    - traefik.http.routers.houseapp-api.entrypoints=websecure
-                    - traefik.http.routers.houseapp-api.tls.certresolver=letsencryptresolver
-                    - traefik.http.services.houseapp-api.loadbalancer.server.port=3333
-                networks:
-                  - network_swarm_public
-              web:
-                image: ghcr.io/fagner3g/houseapp-web:${TAG:-develop}
-                env_file:
-                  - /opt/env/houseapp/web.env
-                deploy:
-                  replicas: 2
-                  update_config:
-                    order: start-first
-                    parallelism: 1
-                    delay: 10s
-                  labels:
-                    - traefik.enable=true
-                    - traefik.http.routers.houseapp-web.rule=Host(`app.jarvis.dev.br`)
-                    - traefik.http.routers.houseapp-web.entrypoints=websecure
-                    - traefik.http.routers.houseapp-web.tls=true
-                    - traefik.http.routers.houseapp-web.tls.certresolver=letsencryptresolver
-                    - traefik.http.services.houseapp-web.loadbalancer.server.port=80
-                networks:
-                  - network_swarm_public
-            EOF
+            # Move the copied stack file to the correct location
+            sudo mv /tmp/houseapp.yml /opt/stacks/houseapp/stack.yml
 
-            sudo mv /tmp/houseapp.yml /opt/stacks/houseapp.yml
-
-            # Ensure env files exist (copy from templates if present)
-            missing_env=0
-            if [ ! -f /opt/env/houseapp/api.env ]; then
-              if [ -f /opt/templates/houseapp/api.env ]; then
-                sudo cp /opt/templates/houseapp/api.env /opt/env/houseapp/api.env
-              else
-                echo "::warning title=Missing env template::/opt/templates/houseapp/api.env not found"
-                missing_env=1
-              fi
-            fi
-            if [ ! -f /opt/env/houseapp/web.env ]; then
-              if [ -f /opt/templates/houseapp/web.env ]; then
-                sudo cp /opt/templates/houseapp/web.env /opt/env/houseapp/web.env
-              else
-                echo "::warning title=Missing env template::/opt/templates/houseapp/web.env not found"
-                missing_env=1
-              fi
-            fi
-            if [ $missing_env -eq 1 ]; then
-              echo "Deploy skipped - missing env templates in /opt/templates/houseapp"
+            # Ensure env files exist in /opt/stacks/houseapp/
+            if [ ! -f /opt/stacks/houseapp/api.env ] || [ ! -f /opt/stacks/houseapp/web.env ]; then
+              echo "Missing env files in /opt/stacks/houseapp/"
+              echo "Required files:"
+              echo "- /opt/stacks/houseapp/api.env"
+              echo "- /opt/stacks/houseapp/web.env"
               exit 1
             fi
 
             docker login ghcr.io -u ${{ github.actor }} -p ${{ secrets.GITHUB_TOKEN }}
             echo "Deploying houseapp with TAG=$TAG (version: $VERSION)"
-            docker stack deploy -c /opt/stacks/houseapp.yml houseapp --with-registry-auth
+            docker stack deploy -c /opt/stacks/houseapp/stack.yml houseapp --with-registry-auth
 
       - name: Deploy summary
         if: steps.deploy.outcome == 'success'
@@ -239,4 +192,4 @@ jobs:
       - name: Deploy failed - missing env files
         if: steps.deploy.outcome == 'failure'
         run: |
-          printf "### Deploy Failed\nMissing environment templates on VPS:\n- /opt/templates/houseapp/api.env\n- /opt/templates/houseapp/web.env\n\nThese will be copied to /opt/env/houseapp/ during deployment.\n" >> "$GITHUB_STEP_SUMMARY"
+          printf "### Deploy Failed\nMissing environment files on VPS:\n- /opt/stacks/houseapp/api.env\n- /opt/stacks/houseapp/web.env\n\nCreate these files manually on the VPS before deploying.\n" >> "$GITHUB_STEP_SUMMARY"

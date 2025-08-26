@@ -8,9 +8,9 @@ services:
   api:
     image: ghcr.io/fagner3g/houseapp-api:${TAG:-develop}
     env_file:
-      - /opt/env/houseapp/api.env
+      - /opt/stacks/houseapp/api.env
     healthcheck:
-      test: ["CMD-SHELL", "wget -qO- http://localhost:3333/health || curl -sf http://localhost:3333/health || exit 1"]
+      test: ["CMD-SHELL", "wget -qO- http://api:3333/health || curl -sf http://api:3333/health || exit 1"]
       interval: 15s
       timeout: 5s
       retries: 5
@@ -42,9 +42,9 @@ services:
   web:
     image: ghcr.io/fagner3g/houseapp-web:${TAG:-develop}
     env_file:
-      - /opt/env/houseapp/web.env
+      - /opt/stacks/houseapp/web.env
     healthcheck:
-      test: ["CMD-SHELL", "wget -qO- http://localhost:80 || curl -sf http://localhost:80 || exit 1"]
+      test: ["CMD-SHELL", "wget -qO- http://web:80/health || curl -sf http://web:80/health || exit 1"]
       interval: 15s
       timeout: 5s
       retries: 5
