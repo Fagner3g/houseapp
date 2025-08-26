@@ -12,7 +12,7 @@ async function server() {
     // Register crons
     registerJobs()
   } catch (e) {
-    logger.error(e, 'ping failed')
+    logger.error(e, 'ping failed on server: %s', env.DATABASE_URL)
     process.exit(1)
   }
 
