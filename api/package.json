@@ -2,9 +2,8 @@
   "name": "houseapp",
   "version": "1.0.0",
   "main": "index.js",
-  "packageManager": "yarn@4.9.4",
   "scripts": {
-    "dev": "tsx watch --env-file .env src/http/server.ts",
+    "dev": "tsx watch --env-file ../deploy/env/api.env src/http/server.ts",
     "seed": "tsx --env-file .env src/db/seed.ts",
     "db:generate": "drizzle-kit generate",
     "db:migrate": "drizzle-kit migrate",

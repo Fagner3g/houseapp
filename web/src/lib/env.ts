@@ -17,7 +17,7 @@ const result = envSchema.safeParse({
 
 if (!result.success) {
   const issues = result.error.issues
-    .map((i) => `- ${i.path.join('.') || '(root)'}: ${i.message}`)
+    .map(i => `- ${i.path.join('.') || '(root)'}: ${i.message}`)
     .join('\n')
 
   // Loga no console do navegador/SSR para facilitar diagnóstico
