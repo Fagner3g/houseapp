@@ -16,7 +16,15 @@ const result = envSchema.safeParse({
 })
 
 if (!result.success) {
-  console.error('🚨 Variáveis de ambiente inválidas:', z.treeifyError(result.error))
+  const issues = result.error.issues
+    .map((i) => `- ${i.path.join('.') || '(root)'}: ${i.message}`)
+    .join('\n')
+
+  // Loga no console do navegador/SSR para facilitar diagnóstico
+  // Vite/produção: esse log aparecerá no console do runtime
+  // Formato compacto e legível
+  // eslint-disable-next-line no-console
+  console.error(`\n[ENV] Falha na validação das variáveis de ambiente (web):\n${issues}\n`)
   throw new Error('Falha na validação das env vars')
 }
 
