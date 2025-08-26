@@ -6,7 +6,7 @@ networks:
 
 services:
   api:
-    image: ghcr.io/Fagner3g/houseapp-api:${TAG:-latest}
+    image: ghcr.io/fagner3g/houseapp-api:${TAG:-develop}
     env_file:
       - /opt/env/houseapp/api.env
     deploy:
@@ -22,13 +22,12 @@ services:
         - traefik.http.routers.houseapp-api.rule=Host(`api.jarvis.dev.br`)
         - traefik.http.routers.houseapp-api.entrypoints=websecure
         - traefik.http.routers.houseapp-api.tls.certresolver=letsencryptresolver
-        - traefik.http.routers.houseapp-api.service=houseapp_api
         - traefik.http.services.houseapp-api.loadbalancer.server.port=3333
     networks:
       - network_swarm_public
 
   web:
-    image: ghcr.io/Fagner3g/houseapp-web:${TAG:-latest}
+    image: ghcr.io/fagner3g/houseapp-web:${TAG:-develop}
     env_file:
       - /opt/env/houseapp/web.env
     deploy:
@@ -42,7 +41,6 @@ services:
         - traefik.http.routers.houseapp-web.rule=Host(`app.jarvis.dev.br`)
         - traefik.http.routers.houseapp-web.entrypoints=websecure
         - traefik.http.routers.houseapp-web.tls.certresolver=letsencryptresolver
-        - traefik.http.routers.houseapp-web.service=houseapp_web
         - traefik.http.services.houseapp-web.loadbalancer.server.port=80
     networks:
       - network_swarm_public
