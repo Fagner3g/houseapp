@@ -26,12 +26,18 @@ concurrency:
 
 jobs:
   build-and-push:
-    runs-on: ubuntu-latest
+    runs-on: [self-hosted, linux, ARM64]
     strategy:
       matrix:
         app: [api, web]
     steps:
       - uses: actions/checkout@v4
+
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v3
+        with:
+          driver-opts: |
+            image=moby/buildkit:latest
 
       - name: Login GHCR
         uses: docker/login-action@v3
@@ -39,9 +45,6 @@ jobs:
           registry: ghcr.io
           username: ${{ github.actor }}
           password: ${{ secrets.GITHUB_TOKEN }}
-
-      - uses: docker/setup-qemu-action@v3
-      - uses: docker/setup-buildx-action@v3
 
       - name: Generate semantic version
         id: version
@@ -73,7 +76,7 @@ jobs:
           fi
           echo "Generated version: $VERSION"
 
-      - name: Build and push image (linux/arm64)
+      - name: Build and push image (native ARM64)
         run: |
           set -e
           REPO_LC=${GITHUB_REPOSITORY,,}
@@ -82,17 +85,21 @@ jobs:
           SHA=${GITHUB_SHA::7}
           BRANCH=${GITHUB_REF_NAME}
           
-          echo "Building $IMAGE for linux/arm64"
+          echo "Building $IMAGE for native ARM64"
           echo "Tags: $VERSION, $SHA, $BRANCH"
           
-          docker buildx build \
-            --platform linux/arm64 \
+          docker build \
             -f ${{ matrix.app }}/Dockerfile \
+            --cache-from type=gha \
+            --cache-to type=gha,mode=max \
             -t $IMAGE:$VERSION \
             -t $IMAGE:$SHA \
             -t $IMAGE:$BRANCH \
-            --push \
             ${{ matrix.app }}
+          
+          docker push $IMAGE:$VERSION
+          docker push $IMAGE:$SHA
+          docker push $IMAGE:$BRANCH
 
       - name: Build summary
         run: |
