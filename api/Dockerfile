@@ -28,9 +28,6 @@ FROM node:20-alpine AS runtime
 WORKDIR /app
 ENV NODE_ENV=production
 
-# Instala Yarn no runtime
-RUN corepack enable && corepack prepare yarn@1.22.22 --activate
-
 # Copia apenas o necessário para runtime
 COPY --from=build /app/dist ./dist
 COPY --from=deps /app/node_modules ./node_modules
