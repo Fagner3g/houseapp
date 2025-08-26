@@ -151,28 +151,67 @@ jobs:
             EOF
             
             sudo mv /tmp/houseapp.yml /opt/stacks/houseapp.yml
-            
-            # Verificar se os arquivos de ambiente existem
-            missing_env=0
+            # Copiar arquivos de ambiente se não existirem
             if [ ! -f /opt/env/houseapp/api.env ]; then
-              echo "::warning title=Missing env file::/opt/env/houseapp/api.env not found"
-              missing_env=1
+              echo "::warning title=Missing env file::/opt/env/houseapp/api.env not found - creating from example"
+              # Criar arquivo de exemplo da API
+              cat > /tmp/api.env << 'EOF'
+# Backend (API) - exemplo de variáveis
+# IMPORTANTE: Edite este arquivo com seus valores reais!
+
+# Obrigatórias (validadas pelo Zod)
+DATABASE_URL=postgresql://USER:PASS@HOST:5432/DBNAME
+JWT_SECRET=changeme-super-secret-key-here
+WEB_URL=https://app.jarvis.dev.br
+
+# Opcionais / padrões (validadas pelo Zod)
+NODE_ENV=production
+LOG_LEVEL=info
+PORT=3333
+HOST=0.0.0.0
+METRICS_PREFIX=app_
+LOG_FASTIFY=false
+LOG_SQL=false
+
+# WhatsApp Integration (opcional - validadas pelo Zod)
+EVOLUTION_BASE_URL=https://evo.jarvis.dev.br
+EVOLUTION_INSTANCE=JARVIS
+EVOLUTION_API_KEY=your_evolution_api_key_here
+EOF
+              sudo mv /tmp/api.env /opt/env/houseapp/api.env
+              echo "Created /opt/env/houseapp/api.env - PLEASE EDIT WITH REAL VALUES"
             fi
-            
+
             if [ ! -f /opt/env/houseapp/web.env ]; then
-              echo "::warning title=Missing env file::/opt/env/houseapp/web.env not found"
-              missing_env=1
+              echo "::warning title=Missing env file::/opt/env/houseapp/web.env not found - creating from example"
+              # Criar arquivo de exemplo do Web
+              cat > /tmp/web.env << 'EOF'
+# Frontend (Web) - exemplo de variáveis
+# IMPORTANTE: Edite este arquivo com seus valores reais!
+
+# Obrigatória (validada pelo Zod)
+VITE_API_HOST=https://api.jarvis.dev.br
+
+# Opcionais (validadas pelo Zod)
+VITE_OPENAPI_URL=https://api.jarvis.dev.br/swagger.json
+KUBB_LOG_LEVEL=info
+EOF
+              sudo mv /tmp/web.env /opt/env/houseapp/web.env
+              echo "Created /opt/env/houseapp/web.env - PLEASE EDIT WITH REAL VALUES"
             fi
-            
-            if [ $missing_env -eq 1 ]; then
-              echo "Deploy skipped - missing environment files"
+
+            # Verificar se os arquivos ainda têm valores de exemplo
+            if grep -q "changeme-super-secret" /opt/env/houseapp/api.env || grep -q "USER:PASS" /opt/env/houseapp/api.env; then
+              echo "::warning title=Example values detected::/opt/env/houseapp/api.env still has example values"
+              echo "Deploy skipped - environment files have example values"
               exit 1
             fi
-            
-            # Login no GHCR e deploy
-            docker login ghcr.io -u ${{ github.actor }} -p ${{ secrets.GITHUB_TOKEN }}
-            echo "Deploying houseapp with TAG=$TAG"
-            docker stack deploy -c /opt/stacks/houseapp.yml houseapp --with-registry-auth
+
+            if grep -q "your_evolution_api_key_here" /opt/env/houseapp/api.env; then
+              echo "::warning title=Example values detected::/opt/env/houseapp/api.env still has example values"
+              echo "Deploy skipped - environment files have example values"
+              exit 1
+            fi
 
       - name: Deploy summary
         if: steps.deploy.outcome == 'success'
@@ -183,4 +222,10 @@ jobs:
       - name: Deploy failed - missing env files
         if: steps.deploy.outcome == 'failure'
         run: |
-          printf "### Deploy Failed\nMissing environment files on VPS:\n- /opt/env/houseapp/api.env\n- /opt/env/houseapp/web.env\n\nPlease create these files with proper values before deploying.\n" >> "$GITHUB_STEP_SUMMARY"
+          printf "### Deploy Failed\nMissing environment files on VPS:\n- /opt/env/houseapp/api.env\n- /opt/env/houseapp/web.env\n\nEnvironment files created with example values.
+
+Please edit these files on your VPS:
+- /opt/env/houseapp/api.env
+- /opt/env/houseapp/web.env
+
+Replace example values with your real configuration.\n" >> "$GITHUB_STEP_SUMMARY"
