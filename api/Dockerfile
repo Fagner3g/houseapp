@@ -5,14 +5,13 @@ WORKDIR /app
 # Instala dependências do sistema necessárias para build
 RUN apk add --no-cache python3 make g++
 
-# Habilita Yarn (Berry) e configura node-modules linker globalmente
-RUN corepack enable && corepack prepare yarn@stable --activate \
-  && yarn config set -H nodeLinker node-modules
+# Usa Yarn 1 (Classic) para evitar restrições de workspaces no build
+RUN corepack enable && corepack prepare yarn@1.22.22 --activate
 
 # Copia manifests primeiro (cache)
 COPY package.json yarn.lock ./
-# Instala dependências (usa config global do yarn)
-RUN yarn install --immutable || yarn install
+# Instala dependências
+RUN yarn install --frozen-lockfile
 
 FROM deps AS build
 COPY . ./
