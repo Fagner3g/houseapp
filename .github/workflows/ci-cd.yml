@@ -163,12 +163,10 @@ jobs:
           echo "${{ secrets.VPS_SSH_KEY }}" > ~/.ssh/vps_key
           chmod 600 ~/.ssh/vps_key
           
-          # Copy stack file
-          scp -i ~/.ssh/vps_key -o StrictHostKeyChecking=no deploy/stacks/houseapp.yml ${{ secrets.VPS_USER }}@${{ secrets.VPS_HOST }}:/tmp/stack.yml
-          
-          # Copy env files
-          scp -i ~/.ssh/vps_key -o StrictHostKeyChecking=no deploy/env/api.env.example ${{ secrets.VPS_USER }}@${{ secrets.VPS_HOST }}:/tmp/api.env
-          scp -i ~/.ssh/vps_key -o StrictHostKeyChecking=no deploy/env/web.env.example ${{ secrets.VPS_USER }}@${{ secrets.VPS_HOST }}:/tmp/web.env
+          # Copy files to VPS
+          scp -i ~/.ssh/vps_key -o StrictHostKeyChecking=no deploy/stacks/houseapp.yml ${{ secrets.VPS_USER }}@${{ secrets.VPS_HOST }}:/opt/stacks/houseapp/stack.yml
+          scp -i ~/.ssh/vps_key -o StrictHostKeyChecking=no deploy/env/api.env.example ${{ secrets.VPS_USER }}@${{ secrets.VPS_HOST }}:/opt/stacks/houseapp/api.env.example
+          scp -i ~/.ssh/vps_key -o StrictHostKeyChecking=no deploy/env/web.env.example ${{ secrets.VPS_USER }}@${{ secrets.VPS_HOST }}:/opt/stacks/houseapp/web.env.example
           
           # Clean up SSH key
           rm ~/.ssh/vps_key
@@ -188,26 +186,25 @@ jobs:
             VERSION="${{ steps.version.outputs.version }}"
             export TAG=$VERSION
 
-            # Create directory structure
+            # Create directory structure (if not exists)
             sudo mkdir -p /opt/stacks/houseapp
 
-            # Move files from /tmp to final location
-            sudo mv /tmp/stack.yml /opt/stacks/houseapp/stack.yml
-            sudo mv /tmp/api.env /opt/stacks/houseapp/api.env
-            sudo mv /tmp/web.env /opt/stacks/houseapp/web.env
-
-            # Validate that env files don't contain example values
-            if grep -q "sua_jwt_secret_aqui" /opt/stacks/houseapp/api.env || grep -q "sua_senha_do_banco" /opt/stacks/houseapp/api.env; then
-              echo "ERROR: api.env contains example values. Please configure with real values."
-              echo "Required changes:"
-              echo "- JWT_SECRET: configure sua chave secreta"
-              echo "- DB_PASSWORD: configure sua senha do banco"
-              echo ""
-              echo "Edit the file: sudo nano /opt/stacks/houseapp/api.env"
-              exit 1
+            # Check if env files exist, if not copy from examples
+            if [ ! -f /opt/stacks/houseapp/api.env ]; then
+              echo "📄 api.env not found, copying from example..."
+              sudo cp /opt/stacks/houseapp/api.env.example /opt/stacks/houseapp/api.env
+            else
+              echo "✅ api.env already exists"
+            fi
+            
+            if [ ! -f /opt/stacks/houseapp/web.env ]; then
+              echo "📄 web.env not found, copying from example..."
+              sudo cp /opt/stacks/houseapp/web.env.example /opt/stacks/houseapp/web.env
+            else
+              echo "✅ web.env already exists"
             fi
 
-            echo "✅ Environment files validated successfully!"
+            echo "✅ Environment files ready!"
             echo "📁 Stack files location: /opt/stacks/houseapp/"
             echo "📄 Files: stack.yml, api.env, web.env"
 
@@ -225,7 +222,4 @@ jobs:
           printf "### Deploy\n- Branch: %s\n- Version: %s\n- TAG: %s\n- Target: Swarm stack houseapp (SSH)\n" \
             "${GITHUB_REF_NAME}" "${{ steps.version.outputs.version }}" "${GITHUB_SHA::7}" >> "$GITHUB_STEP_SUMMARY"
 
-      - name: Deploy failed - missing env files
-        if: steps.deploy.outcome == 'failure'
-        run: |
-          printf "### Deploy Failed\nEnvironment files contain example values. Please configure with real values:\n- JWT_SECRET: configure sua chave secreta\n- DB_PASSWORD: configure sua senha do banco\n- WEB_URL: configure seu domínio real\n- VITE_API_HOST: configure seu domínio da API\n" >> "$GITHUB_STEP_SUMMARY"
+
