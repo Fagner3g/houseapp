@@ -151,7 +151,7 @@ jobs:
             EOF
             
             sudo mv /tmp/houseapp.yml /opt/stacks/houseapp.yml
-            # Garantir arquivos de ambiente: usa /opt/env/houseapp, senão copia de /opt/templates/houseapp
+            # Verificar se os arquivos de ambiente existem
             missing_env=0
             if [ ! -f /opt/env/houseapp/api.env ]; then
               if [ -f /opt/templates/houseapp/api.env ]; then
@@ -173,6 +173,8 @@ jobs:
             fi
             if [ $missing_env -eq 1 ]; then
               echo "Deploy skipped - missing env templates in /opt/templates/houseapp"
+              exit 1
+            fi
               exit 1
             fi
 
