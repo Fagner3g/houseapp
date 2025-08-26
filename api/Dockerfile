@@ -1,29 +1,31 @@
-FROM node:20-slim
-
-# Dependências do sistema mínimas
-RUN apt-get update && apt-get install -y --no-install-recommends openssl && rm -rf /var/lib/apt/lists/*
+FROM node:20-slim AS deps
 
 WORKDIR /app
 
-# Habilita Yarn via Corepack
+# Habilita Yarn (Berry) e usa node-modules linker dentro do container
 RUN corepack enable && corepack prepare yarn@stable --activate \
   && yarn config set nodeLinker node-modules
 
-# Copia manifests para melhor cache
-COPY package.json ./package.json
-COPY yarn.lock ./yarn.lock
-
-# Instala dependências (dev incluídas para compilar TS)
+# Instala somente a árvore de dependências (com dev) para compilar
+COPY package.json yarn.lock ./
 RUN yarn install
 
-# Copia código e compila
+FROM deps AS build
 COPY . ./
 RUN yarn build
 
+FROM node:20-slim AS runtime
+
+# Dependências mínimas de sistema
+RUN apt-get update && apt-get install -y --no-install-recommends openssl && rm -rf /var/lib/apt/lists/*
+
+WORKDIR /app
 ENV NODE_ENV=production
 
-# Opcional: manter deps completas; caso queira somente produção, descomente a linha abaixo
-# RUN rm -rf node_modules && yarn install --production
+# Copia apenas o necessário para runtime
+COPY --from=build /app/dist ./dist
+COPY --from=deps /app/node_modules ./node_modules
+COPY package.json ./package.json
 
 EXPOSE 3333
 CMD ["node", "dist/server.js"]
