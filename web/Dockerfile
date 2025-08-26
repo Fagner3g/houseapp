@@ -2,7 +2,7 @@ FROM node:20-slim AS build
 WORKDIR /app
 # Usa npm por padrao
 COPY package.json ./package.json
-RUN npm install --omit=dev=false
+RUN npm install
 COPY . ./
 RUN npm run build
 
