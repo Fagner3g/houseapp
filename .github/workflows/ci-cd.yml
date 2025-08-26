@@ -158,12 +158,19 @@ jobs:
       - name: Copy files to VPS
         if: steps.check.outputs.skip == 'false'
         run: |
+          # Create SSH key file
+          echo "${{ secrets.VPS_SSH_KEY }}" > ~/.ssh/vps_key
+          chmod 600 ~/.ssh/vps_key
+          
           # Copy stack file
-          scp -i ~/.ssh/id_rsa -o StrictHostKeyChecking=no deploy/stacks/houseapp.yml ${{ secrets.VPS_USER }}@${{ secrets.VPS_HOST }}:/tmp/stack.yml
+          scp -i ~/.ssh/vps_key -o StrictHostKeyChecking=no deploy/stacks/houseapp.yml ${{ secrets.VPS_USER }}@${{ secrets.VPS_HOST }}:/tmp/stack.yml
           
           # Copy env files
-          scp -i ~/.ssh/id_rsa -o StrictHostKeyChecking=no deploy/env/api.env.example ${{ secrets.VPS_USER }}@${{ secrets.VPS_HOST }}:/tmp/api.env
-          scp -i ~/.ssh/id_rsa -o StrictHostKeyChecking=no deploy/env/web.env.example ${{ secrets.VPS_USER }}@${{ secrets.VPS_HOST }}:/tmp/web.env
+          scp -i ~/.ssh/vps_key -o StrictHostKeyChecking=no deploy/env/api.env.example ${{ secrets.VPS_USER }}@${{ secrets.VPS_HOST }}:/tmp/api.env
+          scp -i ~/.ssh/vps_key -o StrictHostKeyChecking=no deploy/env/web.env.example ${{ secrets.VPS_USER }}@${{ secrets.VPS_HOST }}:/tmp/web.env
+          
+          # Clean up SSH key
+          rm ~/.ssh/vps_key
 
       - name: Deploy over SSH to Swarm
         if: steps.check.outputs.skip == 'false'
