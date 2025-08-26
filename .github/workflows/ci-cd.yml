@@ -163,10 +163,8 @@ jobs:
           echo "${{ secrets.VPS_SSH_KEY }}" > ~/.ssh/vps_key
           chmod 600 ~/.ssh/vps_key
           
-          # Copy files to VPS (temporary location)
+          # Copy stack file to VPS
           scp -i ~/.ssh/vps_key -o StrictHostKeyChecking=no deploy/stacks/houseapp.yml ${{ secrets.VPS_USER }}@${{ secrets.VPS_HOST }}:/tmp/stack.yml
-          scp -i ~/.ssh/vps_key -o StrictHostKeyChecking=no deploy/env/api.env.example ${{ secrets.VPS_USER }}@${{ secrets.VPS_HOST }}:/tmp/api.env.example
-          scp -i ~/.ssh/vps_key -o StrictHostKeyChecking=no deploy/env/web.env.example ${{ secrets.VPS_USER }}@${{ secrets.VPS_HOST }}:/tmp/web.env.example
           
           # Clean up SSH key
           rm ~/.ssh/vps_key
@@ -189,14 +187,14 @@ jobs:
             # Create directory structure (if not exists)
             sudo mkdir -p /opt/stacks/houseapp
 
-            # Move files from /tmp to final location
+            # Move stack file from /tmp to final location
             sudo mv /tmp/stack.yml /opt/stacks/houseapp/stack.yml
-            sudo mv /tmp/api.env.example /opt/stacks/houseapp/api.env.example
-            sudo mv /tmp/web.env.example /opt/stacks/houseapp/web.env.example
 
             # Check if env files exist, if not copy from examples
             if [ ! -f /opt/stacks/houseapp/api.env ]; then
               echo "📄 api.env not found, copying from example..."
+              # Copy api.env.example from repository to VPS
+              curl -s https://raw.githubusercontent.com/${{ github.repository }}/${{ github.ref_name }}/deploy/env/api.env.example | sudo tee /opt/stacks/houseapp/api.env.example > /dev/null
               sudo cp /opt/stacks/houseapp/api.env.example /opt/stacks/houseapp/api.env
             else
               echo "✅ api.env already exists"
@@ -204,6 +202,8 @@ jobs:
             
             if [ ! -f /opt/stacks/houseapp/web.env ]; then
               echo "📄 web.env not found, copying from example..."
+              # Copy web.env.example from repository to VPS
+              curl -s https://raw.githubusercontent.com/${{ github.repository }}/${{ github.ref_name }}/deploy/env/web.env.example | sudo tee /opt/stacks/houseapp/web.env.example > /dev/null
               sudo cp /opt/stacks/houseapp/web.env.example /opt/stacks/houseapp/web.env
             else
               echo "✅ web.env already exists"
