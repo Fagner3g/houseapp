@@ -28,14 +28,15 @@ FROM node:20-alpine AS runtime
 WORKDIR /app
 ENV NODE_ENV=production
 
+# Instala Yarn no runtime
+RUN corepack enable && corepack prepare yarn@1.22.22 --activate
+
 # Copia apenas o necessário para runtime
 COPY --from=build /app/dist ./dist
 COPY --from=deps /app/node_modules ./node_modules
 COPY package.json ./package.json
 
-# Copia o Yarn e script de inicialização
-COPY --from=deps /usr/local/bin/yarn /usr/local/bin/yarn
-COPY --from=deps /usr/local/bin/corepack /usr/local/bin/corepack
+# Copia o script de inicialização
 COPY start.sh ./start.sh
 RUN chmod +x ./start.sh
 
