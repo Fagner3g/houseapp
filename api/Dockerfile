@@ -1,4 +1,4 @@
-FROM --platform=$BUILDPLATFORM node:20-slim AS deps
+FROM node:20-slim AS deps
 
 WORKDIR /app
 
@@ -14,10 +14,7 @@ FROM deps AS build
 COPY . ./
 RUN yarn build
 
-FROM --platform=$TARGETPLATFORM node:20-slim AS runtime
-
-# Dependências mínimas de sistema
-RUN apt-get update && apt-get install -y --no-install-recommends openssl && rm -rf /var/lib/apt/lists/*
+FROM node:20-slim AS runtime
 
 WORKDIR /app
 ENV NODE_ENV=production
