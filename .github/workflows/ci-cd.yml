@@ -52,9 +52,8 @@ jobs:
 
       - name: Build summary
         run: |
-          echo "### Build & Push (${{ matrix.app }})" >> $GITHUB_STEP_SUMMARY
-          echo "- Image: ghcr.io/${GITHUB_REPOSITORY,,}-${{ matrix.app }}" >> $GITHUB_STEP_SUMMARY
-          echo "- Tags: ${GITHUB_SHA::7}, ${GITHUB_REF_NAME}" >> $GITHUB_STEP_SUMMARY
+          printf "### Build & Push (%s)\n- Image: ghcr.io/%s-%s\n- Tags: %s, %s\n" \
+            "${{ matrix.app }}" "${GITHUB_REPOSITORY,,}" "${{ matrix.app }}" "${GITHUB_SHA::7}" "${GITHUB_REF_NAME}" >> "$GITHUB_STEP_SUMMARY"
 
   deploy:
     needs: build-and-push
@@ -76,7 +75,7 @@ jobs:
           if [ -z "$HAS_KEY" ]; then echo "::warning title=Missing secret::VPS_SSH_KEY not set"; missing=1; fi
           if [ $missing -eq 1 ]; then
             echo "skip=true" >> $GITHUB_OUTPUT
-            echo "### Deploy skipped\nMissing secrets: VPS_HOST, VPS_USER and/or VPS_SSH_KEY" >> $GITHUB_STEP_SUMMARY
+            printf "### Deploy skipped\nMissing secrets: VPS_HOST, VPS_USER and/or VPS_SSH_KEY\n" >> "$GITHUB_STEP_SUMMARY"
           else
             echo "skip=false" >> $GITHUB_OUTPUT
           fi
@@ -98,7 +97,5 @@ jobs:
 
       - name: Deploy summary
         run: |
-          echo "### Deploy" >> $GITHUB_STEP_SUMMARY
-          echo "- Branch: ${GITHUB_REF_NAME}" >> $GITHUB_STEP_SUMMARY
-          echo "- TAG: ${GITHUB_SHA::7}" >> $GITHUB_STEP_SUMMARY
-          echo "- Target: Swarm stack houseapp (SSH)" >> $GITHUB_STEP_SUMMARY
+          printf "### Deploy\n- Branch: %s\n- TAG: %s\n- Target: Swarm stack houseapp (SSH)\n" \
+            "${GITHUB_REF_NAME}" "${GITHUB_SHA::7}" >> "$GITHUB_STEP_SUMMARY"
