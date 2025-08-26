@@ -18,10 +18,9 @@ concurrency:
   cancel-in-progress: true
 
 jobs:
-  # Preferir runner ARM64 self-hosted se habilitado via repo variable USE_ARM_RUNNER
-  build-and-push-arm:
-    if: vars.USE_ARM_RUNNER == 'true'
-    runs-on: [self-hosted, linux, ARM64]
+  # Build nativo ARM64 usando runner hospedado pelo GitHub
+  build-and-push:
+    runs-on: ubuntu-latest
     strategy:
       matrix:
         app: [api, web]
@@ -35,26 +34,26 @@ jobs:
           username: ${{ github.actor }}
           password: ${{ secrets.GITHUB_TOKEN }}
 
-      - name: Build and push (native ARM64)
+      - name: Build and push image (linux/arm64)
         run: |
           set -e
           REPO_LC=${GITHUB_REPOSITORY,,}
           IMAGE=ghcr.io/${REPO_LC}-${{ matrix.app }}
           SHA=${GITHUB_SHA::7}
           BRANCH=${GITHUB_REF_NAME}
-          echo "Building $IMAGE natively on ARM64 with tags $SHA and $BRANCH"
-          docker build -f ${{ matrix.app }}/Dockerfile -t $IMAGE:$SHA -t $IMAGE:$BRANCH ${{ matrix.app }}
-          docker push $IMAGE:$SHA
-          docker push $IMAGE:$BRANCH
+          echo "Building $IMAGE for linux/arm64 with tags $SHA and $BRANCH"
+          docker buildx build \
+            --platform linux/arm64 \
+            -f ${{ matrix.app }}/Dockerfile \
+            -t $IMAGE:$SHA \
+            -t $IMAGE:$BRANCH \
+            --push \
+            ${{ matrix.app }}
 
-      - name: Build summary (ARM64)
+      - name: Build summary
         run: |
-          printf "### Build & Push (%s ARM64 native)\n- Image: ghcr.io/%s-%s\n- Tags: %s, %s\n" \
+          printf "### Build & Push (%s)\n- Image: ghcr.io/%s-%s\n- Tags: %s, %s\n" \
             "${{ matrix.app }}" "${GITHUB_REPOSITORY,,}" "${{ matrix.app }}" "${GITHUB_SHA::7}" "${GITHUB_REF_NAME}" >> "$GITHUB_STEP_SUMMARY"
-
-  build-and-push:
-    if: vars.USE_ARM_RUNNER != 'true'
-    runs-on: ubuntu-latest
     strategy:
       matrix:
         app: [api, web]
@@ -89,11 +88,11 @@ jobs:
 
       - name: Build summary
         run: |
-          printf "### Build & Push (%s emulated)\n- Image: ghcr.io/%s-%s\n- Tags: %s, %s\n" \
+          printf "### Build & Push (%s)\n- Image: ghcr.io/%s-%s\n- Tags: %s, %s\n" \
             "${{ matrix.app }}" "${GITHUB_REPOSITORY,,}" "${{ matrix.app }}" "${GITHUB_SHA::7}" "${GITHUB_REF_NAME}" >> "$GITHUB_STEP_SUMMARY"
 
   deploy:
-    needs: [build-and-push, build-and-push-arm]
+    needs: build-and-push
     if: github.ref == 'refs/heads/main' || github.ref == 'refs/heads/develop'
     runs-on: ubuntu-latest
     environment: ${{ github.ref == 'refs/heads/main' && 'production' || 'staging' }}
