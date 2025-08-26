@@ -1,5 +1,9 @@
 FROM node:20-alpine AS build
 WORKDIR /app
+
+# Instala dependências do sistema necessárias para build
+RUN apk add --no-cache python3 make g++
+
 # Usa npm por padrao
 COPY package.json ./package.json
 RUN npm install
