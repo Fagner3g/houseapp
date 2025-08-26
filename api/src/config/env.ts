@@ -15,7 +15,7 @@ const envSchema = z.object({
   LOG_LEVEL: z.string().default('info'),
   LOG_FASTIFY: z.preprocess(val => val === 'true', z.boolean()).default(false),
   LOG_SQL: z.preprocess(val => val === 'true', z.boolean()).default(false),
-  // WhatsApp Integration
+  // WhatsApp
   EVOLUTION_BASE_URL: z.string().url().optional(),
   EVOLUTION_INSTANCE: z.string().optional(),
   EVOLUTION_API_KEY: z.string().optional(),
