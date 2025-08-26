@@ -9,6 +9,7 @@ const envSchema = z.object({
   PORT: z.coerce.number().default(3333),
   HOST: z.string().default('0.0.0.0'),
   METRICS_PREFIX: z.string().default('app_'),
+  // Logging (opcional)
   LOG_FASTIFY: z.preprocess(val => val === 'true', z.boolean()).default(false),
   LOG_SQL: z.preprocess(val => val === 'true', z.boolean()).default(false),
   // WhatsApp Integration (opcional)
