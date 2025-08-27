@@ -1,4 +1,5 @@
 import pino from 'pino'
+
 import { env } from '../config/env'
 
 // Tipos para os níveis de log
@@ -16,28 +17,28 @@ interface ILogger {
 
 /**
  * Classe Logger que abstrai o Pino e controla logs baseado no ambiente
- * 
+ *
  * Características:
  * - Desenvolvimento: logs coloridos e detalhados com pino-pretty
  * - Produção: logs JSON estruturados para sistemas de monitoramento
  * - Controle automático de níveis baseado no ambiente
  * - Métodos específicos para diferentes contextos (database, http, auth, etc.)
  * - Redação automática de dados sensíveis
- * 
+ *
  * Uso:
  * ```typescript
  * import { logger } from '../lib/logger'
- * 
+ *
  * // Logs básicos
  * logger.info('Mensagem informativa')
  * logger.error('Erro ocorreu')
- * 
+ *
  * // Logs específicos por contexto
  * logger.database('Conexão estabelecida')
  * logger.http('Requisição recebida')
  * logger.auth('Usuário autenticado')
  * logger.migration('Migração executada')
- * 
+ *
  * // Logs condicionais
  * logger.debug('Só aparece em desenvolvimento')
  * logger.performance('Operação', 150) // Só em dev
