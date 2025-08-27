@@ -190,12 +190,10 @@ jobs:
             # Move stack file from /tmp to final location
             sudo mv /tmp/stack.yml /opt/stacks/houseapp/stack.yml
 
-            # Check if all required files exist
-            missing_files=()
+            # Stack.yml is always updated (copied from repository)
+            echo "📄 Updating stack.yml..."
             
-            if [ ! -f /opt/stacks/houseapp/stack.yml ]; then
-              missing_files+=("stack.yml")
-            fi
+            # Check if env files exist, if not copy from examples
             
             if [ ! -f /opt/stacks/houseapp/api.env ]; then
               echo "📄 api.env not found, copying from example..."
@@ -215,10 +213,9 @@ jobs:
               echo "✅ web.env already exists"
             fi
 
-            # Final check - if any files are still missing, exit
-            if [ ! -f /opt/stacks/houseapp/stack.yml ] || [ ! -f /opt/stacks/houseapp/api.env ] || [ ! -f /opt/stacks/houseapp/web.env ]; then
-              echo "❌ Missing required files:"
-              [ ! -f /opt/stacks/houseapp/stack.yml ] && echo "  - stack.yml"
+            # Final check - if env files are still missing, exit
+            if [ ! -f /opt/stacks/houseapp/api.env ] || [ ! -f /opt/stacks/houseapp/web.env ]; then
+              echo "❌ Missing required env files:"
               [ ! -f /opt/stacks/houseapp/api.env ] && echo "  - api.env"
               [ ! -f /opt/stacks/houseapp/web.env ] && echo "  - web.env"
               echo "📁 Stack files location: /opt/stacks/houseapp/"
@@ -246,4 +243,4 @@ jobs:
       - name: Deploy failed - missing files
         if: steps.deploy.outcome == 'failure'
         run: |
-          printf "### Deploy Failed\nMissing required files in /opt/stacks/houseapp/:\n- stack.yml\n- api.env\n- web.env\n\nPlease ensure all files exist before deploying.\n" >> "$GITHUB_STEP_SUMMARY"
+          printf "### Deploy Failed\nMissing required env files in /opt/stacks/houseapp/:\n- api.env\n- web.env\n\nPlease ensure env files exist before deploying.\n" >> "$GITHUB_STEP_SUMMARY"
