@@ -1,28 +1,11 @@
 import { sql } from 'drizzle-orm'
 import postgres from 'postgres'
 
-import { env } from '@/config/env'
-import { logger } from '@/http/utils/logger'
-
-// Função para extrair informações da DATABASE_URL
-function parseDatabaseUrl(databaseUrl: string) {
-  const url = new URL(databaseUrl)
-  const dbName = url.pathname.slice(1) // Remove a barra inicial
-  const host = url.hostname
-  const port = url.port || '5432'
-  const username = url.username
-  const password = url.password
-
-  // URL sem o nome do banco para conectar ao postgres
-  const baseUrl = `postgresql://${username}:${password}@${host}:${port}/postgres`
-
-  return { dbName, baseUrl, host, port, username, password }
-}
+import { env } from '../config/env'
+import { logger } from '../http/utils/logger'
 
 // Função para obter informações do banco das variáveis de ambiente
 function getDatabaseInfo() {
-  const { env } = require('@/config/env')
-
   const dbName = env.DB_NAME
   const host = env.DB_HOST
   const port = env.DB_PORT
@@ -45,7 +28,7 @@ async function databaseExists(dbName: string, baseUrl: string): Promise<boolean>
     `
     return result.length > 0
   } catch (error) {
-    logger.error('Erro ao verificar se banco existe:', error)
+    logger.error('Erro ao verificar se banco existe')
     return false
   } finally {
     await client.end()
@@ -58,10 +41,10 @@ async function createDatabase(dbName: string, baseUrl: string): Promise<void> {
 
   try {
     logger.info(`Criando banco de dados: ${dbName}`)
-    await client`CREATE DATABASE ${sql.raw(dbName)}`
+    await client`CREATE DATABASE ${dbName}`
     logger.info(`Banco de dados ${dbName} criado com sucesso!`)
   } catch (error) {
-    logger.error(`Erro ao criar banco de dados ${dbName}:`, error)
+    logger.error(`Erro ao criar banco de dados ${dbName}`)
     throw error
   } finally {
     await client.end()
@@ -86,7 +69,7 @@ export async function setupDatabase(): Promise<void> {
 
     logger.info('Setup do banco de dados concluído com sucesso!')
   } catch (error) {
-    logger.error('Erro no setup do banco de dados:', error)
+    logger.error('Erro no setup do banco de dados')
     throw error
   }
 }
@@ -100,27 +83,13 @@ export async function runMigrations(): Promise<void> {
     const { migrate } = await import('drizzle-orm/postgres-js/migrator')
     const { db } = await import('./index')
 
-    // Logger customizado para migrações
-    const migrationLogger = {
-      log: (message: string) => {
-        logger.info(`📋 Migração: ${message}`)
-      },
-      error: (message: string) => {
-        logger.error(`❌ Erro na migração: ${message}`)
-      },
-      warn: (message: string) => {
-        logger.warn(`⚠️ Aviso na migração: ${message}`)
-      },
-    }
-
     await migrate(db, {
       migrationsFolder: '.migrations',
-      logger: migrationLogger,
     })
 
     logger.info('✅ Migrações executadas com sucesso!')
   } catch (error) {
-    logger.error('❌ Erro ao executar migrações:', error)
+    logger.error('❌ Erro ao executar migrações')
     throw error
   }
 }
