@@ -1,10 +1,10 @@
 import postgres from 'postgres'
 
 import { env } from '../config/env'
-import { logger } from '../http/utils/logger'
+import { logger } from '../lib/logger'
 
 // Função para obter informações do banco das variáveis de ambiente
-function getDatabaseString() {
+export function getDatabaseString() {
   const dbName = env.DB_NAME
   const host = env.DB_HOST
   const port = env.DB_PORT
@@ -12,25 +12,23 @@ function getDatabaseString() {
   const password = env.DB_PASSWORD
 
   // URL sem o nome do banco para conectar ao postgres
-  const baseUrl = `postgresql://${username}:${password}@${host}:${port}/postgres`
+  const baseUrl = `postgresql://${username}:${password}@${host}:${port}/${dbName}`
 
   return { dbName, baseUrl, host, port, username, password }
 }
 
 // Função para testar conexão com PostgreSQL
 async function testPostgresConnection(baseUrl: string): Promise<boolean> {
-  const client = postgres(baseUrl, { max: 1, timeout: 10 })
+  const client = postgres(baseUrl, { max: 1, idle_timeout: 10 })
 
   try {
-    logger.info('🔍 Testando conexão com PostgreSQL...')
+    logger.database('Testando conexão com PostgreSQL...')
+    logger.debug(`URL: ${baseUrl}`)
     await client`SELECT 1`
-    logger.info('✅ Conexão com PostgreSQL estabelecida com sucesso!')
+    logger.database('Conexão com PostgreSQL estabelecida com sucesso!')
     return true
   } catch (error) {
-    logger.error('❌ Falha na conexão com PostgreSQL')
-    logger.error(`Host: ${env.DB_HOST}:${env.DB_PORT}`)
-    logger.error(`Usuário: ${env.DB_USER}`)
-    logger.error(`Erro: ${error instanceof Error ? error.message : 'Erro desconhecido'}`)
+    logger.error(`Erro na conexão: ${error instanceof Error ? error.message : 'Erro desconhecido'}`)
     return false
   } finally {
     await client.end()
@@ -58,9 +56,9 @@ async function createDatabase(dbName: string, baseUrl: string): Promise<void> {
   const client = postgres(baseUrl, { max: 1 })
 
   try {
-    logger.info(`Criando banco de dados: ${dbName}`)
+    logger.database(`Criando banco de dados: ${dbName}`)
     await client`CREATE DATABASE ${dbName}`
-    logger.info(`Banco de dados ${dbName} criado com sucesso!`)
+    logger.database(`Banco de dados ${dbName} criado com sucesso!`)
   } catch (error) {
     logger.error(`Erro ao criar banco de dados ${dbName}`)
     throw error
@@ -80,18 +78,18 @@ export async function setupDatabase(): Promise<void> {
       throw new Error('Não foi possível conectar ao PostgreSQL')
     }
 
-    logger.info(`Verificando banco de dados: ${dbName}`)
+    logger.database(`Verificando banco de dados: ${dbName}`)
 
     const exists = await databaseExists(dbName, baseUrl)
 
     if (exists) {
-      logger.info(`Banco de dados ${dbName} já existe, prosseguindo...`)
+      logger.database(`Banco de dados ${dbName} já existe, prosseguindo...`)
     } else {
-      logger.info(`Banco de dados ${dbName} não existe, criando...`)
+      logger.database(`Banco de dados ${dbName} não existe, criando...`)
       await createDatabase(dbName, baseUrl)
     }
 
-    logger.info('Setup do banco de dados concluído com sucesso!')
+    logger.database('Setup do banco de dados concluído com sucesso!')
   } catch (error) {
     logger.error('Erro no setup do banco de dados')
     throw error
@@ -101,7 +99,7 @@ export async function setupDatabase(): Promise<void> {
 // Função para executar migrações com logs
 export async function runMigrations(): Promise<void> {
   try {
-    logger.info('Iniciando execução das migrações...')
+    logger.migration('Iniciando execução das migrações...')
 
     // Importar e executar as migrações do Drizzle
     const { migrate } = await import('drizzle-orm/postgres-js/migrator')
@@ -111,9 +109,9 @@ export async function runMigrations(): Promise<void> {
       migrationsFolder: '.migrations',
     })
 
-    logger.info('✅ Migrações executadas com sucesso!')
+    logger.migration('Migrações executadas com sucesso!')
   } catch (error) {
-    logger.error('❌ Erro ao executar migrações')
+    logger.error('Erro ao executar migrações')
     throw error
   }
 }

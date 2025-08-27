@@ -1,27 +1,36 @@
-import { env, getDatabaseUrl } from '@/config/env'
-import { db, ping } from '@/db'
+import { env } from '@/config/env'
+import { runMigrations, setupDatabase } from '@/db/setup'
 import { registerJobs } from '@/jobs'
-import { logger } from './utils/logger'
+import { logger } from '../lib/logger'
 import { buildServer } from './utils/setup'
 
 export async function server() {
   try {
-    await ping(db)
-    logger.info('database connected')
+    logger.startup('Iniciando API HouseApp...')
+
+    await setupDatabase()
+
+    // Executar migrações
+    logger.migration('Executando migrações...')
+    await runMigrations()
 
     // Register crons
-    registerJobs()
+    // registerJobs()
+
+    logger.http('Iniciando servidor...')
+    const server = await buildServer()
+
+    try {
+      await server.listen({ port: env.PORT, host: env.HOST })
+      logger.http(`Servidor rodando em http://${env.HOST}:${env.PORT}`)
+    } catch (err) {
+      logger.error(`Erro ao iniciar servidor: ${err instanceof Error ? err.message : 'Erro desconhecido'}`)
+      process.exit(1)
+    }
   } catch (e) {
-    logger.error(e, 'ping failed on server: %s', getDatabaseUrl())
-    process.exit(1)
-  }
-
-  const server = await buildServer()
-
-  try {
-    await server.listen({ port: env.PORT, host: env.HOST })
-  } catch (err) {
-    server.log.error(err)
+    logger.error(`Erro durante inicialização: ${e instanceof Error ? e.message : 'Erro desconhecido'}`)
     process.exit(1)
   }
 }
+
+server()
