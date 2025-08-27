@@ -13,14 +13,25 @@ interface ILogger {
   warn(message: string, ...args: any[]): void
   error(message: string, ...args: any[]): void
   fatal(message: string, ...args: any[]): void
+  database(message: string, ...args: any[]): void
+  http(message: string, ...args: any[]): void
+  auth(message: string, ...args: any[]): void
+  migration(message: string, ...args: any[]): void
+  startup(message: string, ...args: any[]): void
+  performance(operation: string, duration: number): void
+  sql(query: string, params?: any[]): void
+  fastify(message: string, ...args: any[]): void
+  getPinoLogger(): pino.Logger
+  isDev(): boolean
+  isProd(): boolean
 }
 
 /**
  * Classe Logger que abstrai o Pino e controla logs baseado no ambiente
  *
  * Características:
- * - Desenvolvimento: logs coloridos e detalhados com pino-pretty
- * - Produção: logs JSON estruturados para sistemas de monitoramento
+ * - Desenvolvimento: logs coloridos com pino-pretty
+ * - Produção: logs simples com pino-pretty (sem cores)
  * - Controle automático de níveis baseado no ambiente
  * - Métodos específicos para diferentes contextos (database, http, auth, etc.)
  * - Redação automática de dados sensíveis
@@ -57,16 +68,14 @@ class Logger implements ILogger {
     // Configurar Pino baseado no ambiente
     this.pinoLogger = pino({
       level: env.LOG_LEVEL ?? (this.isProduction ? 'info' : 'debug'),
-      transport: this.isDevelopment
-        ? {
-            target: 'pino-pretty',
-            options: {
-              colorize: true,
-              translateTime: 'HH:MM:ss Z',
-              ignore: 'pid,hostname',
-            },
-          }
-        : undefined,
+      transport: {
+        target: 'pino-pretty',
+        options: {
+          colorize: this.isDevelopment,
+          translateTime: 'HH:MM:ss Z',
+          ignore: 'pid,hostname',
+        },
+      },
       serializers: {
         err: (err: Error) => {
           return {
@@ -111,28 +120,23 @@ class Logger implements ILogger {
 
   // Métodos específicos para diferentes contextos
   database(message: string, ...args: any[]): void {
-    const prefix = this.isProduction ? 'DATABASE' : '🗄️'
-    this.info(`${prefix} ${message}`, ...args)
+    this.info(`🗄️ ${message}`, ...args)
   }
 
   http(message: string, ...args: any[]): void {
-    const prefix = this.isProduction ? 'HTTP' : '🌐'
-    this.info(`${prefix} ${message}`, ...args)
+    this.info(`🌐 ${message}`, ...args)
   }
 
   auth(message: string, ...args: any[]): void {
-    const prefix = this.isProduction ? 'AUTH' : '🔐'
-    this.info(`${prefix} ${message}`, ...args)
+    this.info(`🔐 ${message}`, ...args)
   }
 
   migration(message: string, ...args: any[]): void {
-    const prefix = this.isProduction ? 'MIGRATION' : '🔄'
-    this.info(`${prefix} ${message}`, ...args)
+    this.info(`🔄 ${message}`, ...args)
   }
 
   startup(message: string, ...args: any[]): void {
-    const prefix = this.isProduction ? 'STARTUP' : '🚀'
-    this.info(`${prefix} ${message}`, ...args)
+    this.info(`🚀 ${message}`, ...args)
   }
 
   // Método para log de performance (só em desenvolvimento)
