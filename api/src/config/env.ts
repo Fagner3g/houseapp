@@ -7,7 +7,6 @@ const envSchema = z.object({
   DB_USER: z.string().default('postgres'),
   DB_PASSWORD: z.string(),
   DB_NAME: z.string().default('houseapp'),
-  DB_SSL: z.preprocess(val => val === 'true', z.boolean()).default(false),
 
   // Legacy DATABASE_URL (optional - for backward compatibility)
   DATABASE_URL: z.url().optional(),
@@ -30,28 +29,4 @@ const envSchema = z.object({
   EVOLUTION_API_KEY: z.string().optional(),
 })
 
-const parsed = envSchema.safeParse(process.env)
-
-if (!parsed.success) {
-  const issues = parsed.error.issues
-    .map(i => `- ${i.path.join('.') || '(root)'}: ${i.message}`)
-    .join('\n')
-
-  // Loga de forma explícita no console para facilitar diagnóstico em VPS
-  // Mantém formato compacto e fácil de ler em logs
-  console.error('\n[ENV] Falha na validação das variáveis de ambiente:\n' + issues + '\n')
-
-  throw new Error('Invalid environment variables')
-}
-
-export const env = parsed.data
-
-// Generate DATABASE_URL from individual variables if not provided
-export function getDatabaseUrl(): string {
-  if (env.DATABASE_URL) {
-    return env.DATABASE_URL
-  }
-
-  const sslParam = env.DB_SSL ? '?sslmode=require' : ''
-  return `postgresql://${env.DB_USER}:${env.DB_PASSWORD}@${env.DB_HOST}:${env.DB_PORT}/${env.DB_NAME}${sslParam}`
-}
+export const env = envSchema.parse(process.env)

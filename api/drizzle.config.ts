@@ -1,12 +1,14 @@
 import { defineConfig } from 'drizzle-kit'
 
-import { env } from './src/config/env'
+import { getDatabaseString } from './src/db/setup'
+
+const { baseUrl } = getDatabaseString()
 
 export default defineConfig({
   schema: './src/db/schemas',
   out: './.migrations',
   dialect: 'postgresql',
   dbCredentials: {
-    url: env.DATABASE_URL,
+    url: baseUrl,
   },
 })

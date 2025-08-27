@@ -15,6 +15,15 @@
     "schemas": {}
   },
   "paths": {
+    "/health": {
+      "get": {
+        "responses": {
+          "200": {
+            "description": "Default Response"
+          }
+        }
+      }
+    },
     "/sign-in": {
       "post": {
         "operationId": "signIn",

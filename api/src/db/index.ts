@@ -1,8 +1,7 @@
-import { sql } from 'drizzle-orm'
-import { drizzle, type PostgresJsDatabase } from 'drizzle-orm/postgres-js'
+import { drizzle } from 'drizzle-orm/postgres-js'
 import postgres from 'postgres'
 
-import { env, getDatabaseUrl } from '@/config/env'
+import { env } from '@/config/env'
 import { goalCompletions } from './schemas/goalCompletions'
 import { goals } from './schemas/goals'
 import { invites } from './schemas/invites'
@@ -12,6 +11,7 @@ import { transactionSeries } from './schemas/transactionSeries'
 import { transactionTags } from './schemas/transactionTags'
 import { userOrganizations } from './schemas/userOrganization'
 import { users } from './schemas/users'
+import { getDatabaseString } from './setup'
 
 const schema = {
   invites,
@@ -25,9 +25,9 @@ const schema = {
   transactionOccurrences,
 }
 
-type Database = PostgresJsDatabase<typeof schema>
+const { baseUrl } = getDatabaseString()
+export const client = postgres(baseUrl, {})
 
-export const client = postgres(getDatabaseUrl(), {})
 export const db = drizzle(client, {
   schema,
   logger: env.LOG_SQL
@@ -42,7 +42,3 @@ export const db = drizzle(client, {
       }
     : false,
 })
-
-export async function ping(db: Database) {
-  return db.execute(sql`SELECT 1`)
-}

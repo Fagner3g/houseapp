@@ -17,6 +17,7 @@ import { version } from '../../../package.json'
 import { createRoutes } from '../routes'
 import { errorHandler } from './error/handlers'
 import { centsToDecimalString } from './format'
+import { logger } from './logger'
 import { reqReplyTime } from './metrics'
 
 export async function buildServer() {
@@ -124,7 +125,7 @@ export async function buildServer() {
       const spec = JSON.stringify(app.swagger(), null, 2)
 
       writeFile(specFile, spec, () => {
-        console.log(`Swagger spec generated! ${specFile}`)
+        logger.info(`Swagger spec generated!`)
       })
     })
   }

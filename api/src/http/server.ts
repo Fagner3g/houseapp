@@ -11,7 +11,7 @@ export async function server() {
     await setupDatabase()
 
     // Executar migrações
-    logger.migration('Executando migrações...')
+    logger.database('Executando migrações...')
     await runMigrations()
 
     // Register crons
@@ -24,11 +24,15 @@ export async function server() {
       await server.listen({ port: env.PORT, host: env.HOST })
       logger.http(`Servidor rodando em http://${env.HOST}:${env.PORT}`)
     } catch (err) {
-      logger.error(`Erro ao iniciar servidor: ${err instanceof Error ? err.message : 'Erro desconhecido'}`)
+      logger.error(
+        `Erro ao iniciar servidor: ${err instanceof Error ? err.message : 'Erro desconhecido'}`
+      )
       process.exit(1)
     }
   } catch (e) {
-    logger.error(`Erro durante inicialização: ${e instanceof Error ? e.message : 'Erro desconhecido'}`)
+    logger.error(
+      `Erro durante inicialização: ${e instanceof Error ? e.message : 'Erro desconhecido'}`
+    )
     process.exit(1)
   }
 }

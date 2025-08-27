@@ -1,3 +1,6 @@
+import fs from 'node:fs'
+import path from 'node:path'
+import { sql } from 'drizzle-orm'
 import postgres from 'postgres'
 
 import { env } from '../config/env'
@@ -96,20 +99,151 @@ export async function setupDatabase(): Promise<void> {
   }
 }
 
+// Função para ler e mostrar descrições das migrações pendentes
+export async function showPendingMigrations(): Promise<void> {
+  try {
+    const journalPath = path.join(process.cwd(), '.migrations', 'meta', '_journal.json')
+
+    if (!fs.existsSync(journalPath)) {
+      logger.migration('Nenhum arquivo de journal encontrado')
+      return
+    }
+
+    const journalContent = fs.readFileSync(journalPath, 'utf-8')
+    const journal = JSON.parse(journalContent)
+
+    // Consultar quantas migrações já foram aplicadas (ordem é sequencial)
+    const { db } = await import('./index')
+    let appliedCount = 0
+    try {
+      const rows: any[] = await db.execute(sql`SELECT count(*)::int AS c FROM drizzle.__drizzle_migrations`)
+      const first = rows?.[0]
+      appliedCount = typeof first?.c === 'number' ? first.c : parseInt(first?.c ?? '0', 10)
+    } catch {
+      // Tabela não existe => nenhuma aplicada
+      appliedCount = 0
+    }
+
+    logger.migration('=== Migrações Pendentes ===')
+
+    const pending = journal.entries.slice(appliedCount)
+    if (pending.length === 0) {
+      logger.migration('✅ Nenhuma migração pendente encontrada!')
+      logger.migration('=== Fim das Migrações ===')
+      return
+    }
+
+    for (const entry of pending) {
+      const migrationFile = path.join(process.cwd(), '.migrations', `${entry.tag}.sql`)
+      if (fs.existsSync(migrationFile)) {
+        const sqlContent = fs.readFileSync(migrationFile, 'utf-8')
+        const description = sqlContent.split('\n')[0] || 'Sem descrição'
+        logger.migration(`📋 ${entry.tag} (PENDENTE)`)
+        logger.migration(`   Descrição: ${description}`)
+        logger.migration(`   Data: ${new Date(entry.when).toLocaleString('pt-BR')}`)
+        logger.migration('')
+      } else {
+        logger.migration(`📋 ${entry.tag} (PENDENTE) - arquivo não encontrado`)
+      }
+    }
+
+    logger.migration('=== Fim das Migrações ===')
+  } catch (error) {
+    logger.error('Erro ao ler descrições das migrações:', error)
+  }
+}
+
+// Função para verificar se há migrações pendentes
+async function hasPendingMigrations(): Promise<boolean> {
+  try {
+    const journalPath = path.join(process.cwd(), '.migrations', 'meta', '_journal.json')
+    if (!fs.existsSync(journalPath)) {
+      return false
+    }
+
+    const journalContent = fs.readFileSync(journalPath, 'utf-8')
+    const journal = JSON.parse(journalContent)
+
+    const totalMigrations = Array.isArray(journal.entries) ? journal.entries.length : 0
+    if (totalMigrations === 0) return false
+
+    const { db } = await import('./index')
+    let appliedCount = 0
+    try {
+      const rows: any[] = await db.execute(sql`SELECT count(*)::int AS c FROM drizzle.__drizzle_migrations`)
+      const first = rows?.[0]
+      appliedCount = typeof first?.c === 'number' ? first.c : parseInt(first?.c ?? '0', 10)
+    } catch {
+      appliedCount = 0
+    }
+
+    return appliedCount < totalMigrations
+  } catch (error) {
+    logger.error('Erro ao verificar migrações pendentes:', error)
+    return false
+  }
+}
+
 // Função para executar migrações com logs
 export async function runMigrations(): Promise<void> {
   try {
-    logger.migration('Iniciando execução das migrações...')
+    logger.migration('Verificando migrações pendentes...')
 
-    // Importar e executar as migrações do Drizzle
-    const { migrate } = await import('drizzle-orm/postgres-js/migrator')
-    const { db } = await import('./index')
+    // Verificar se há migrações pendentes
+    const hasPending = await hasPendingMigrations()
 
-    await migrate(db, {
-      migrationsFolder: '.migrations',
-    })
+    if (!hasPending) {
+      logger.migration('✅ Nenhuma migração pendente encontrada!')
+      return
+    }
 
-    logger.migration('Migrações executadas com sucesso!')
+    // Mostrar descrições das migrações pendentes
+    await showPendingMigrations()
+
+    logger.migration('Executando migrações pendentes...')
+
+    // Executar migrações via drizzle-kit (usando script do package.json)
+    const { execSync } = await import('node:child_process')
+
+    // Detectar caminho do drizzle.config.ts
+    const candidateConfigs = [
+      path.join(process.cwd(), 'drizzle.config.ts'),
+      path.join(process.cwd(), 'api', 'drizzle.config.ts'),
+    ]
+    const foundConfig = candidateConfigs.find((p) => fs.existsSync(p))
+
+    if (!foundConfig) {
+      throw new Error('drizzle.config.ts não encontrado. Verifique a localização do arquivo.')
+    }
+
+    const configDir = path.dirname(foundConfig)
+    const configFlag = `--config ${foundConfig}`
+
+    const { baseUrl } = getDatabaseString()
+
+    try {
+      logger.migration(`Executando migrações com drizzle-kit (config: ${foundConfig})...`)
+      execSync(`yarn db:migrate ${configFlag}`, {
+        stdio: 'inherit',
+        cwd: configDir,
+        env: { ...process.env, DATABASE_URL: baseUrl },
+      })
+      logger.migration('✅ Migrações executadas com sucesso!')
+    } catch (migrationError) {
+      logger.error('Erro durante execução das migrações:', migrationError)
+      throw migrationError
+    }
+
+    // Verificar novamente se as migrações foram aplicadas
+    logger.migration('Verificando se as migrações foram aplicadas...')
+    const stillPending = await hasPendingMigrations()
+
+    if (stillPending) {
+      logger.error('❌ As migrações não foram aplicadas corretamente!')
+      throw new Error('Falha ao aplicar migrações')
+    } else {
+      logger.migration('✅ Todas as migrações foram aplicadas com sucesso!')
+    }
   } catch (error) {
     logger.error('Erro ao executar migrações')
     throw error

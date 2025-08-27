@@ -120,7 +120,7 @@ class Logger implements ILogger {
 
   // Métodos específicos para diferentes contextos
   database(message: string, ...args: any[]): void {
-    this.info(`🗄️ ${message}`, ...args)
+    this.info(`🗄️  ${message}`, ...args)
   }
 
   http(message: string, ...args: any[]): void {

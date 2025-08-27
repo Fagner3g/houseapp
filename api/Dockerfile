@@ -35,9 +35,9 @@ COPY drizzle.config.ts ./
 COPY src/config/env.ts ./src/config/env.ts
 COPY .migrations ./.migrations
 
-# Copy startup script and source files
-COPY start.ts ./start.ts
-COPY src ./src
+# Copy startup script
+COPY start.js ./start.js
+RUN chmod +x ./start.js
 
 EXPOSE 3333
-CMD ["npx", "tsx", "start.ts"]
+CMD ["node", "start.js"]
