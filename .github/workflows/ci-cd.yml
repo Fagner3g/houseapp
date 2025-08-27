@@ -190,7 +190,13 @@ jobs:
             # Move stack file from /tmp to final location
             sudo mv /tmp/stack.yml /opt/stacks/houseapp/stack.yml
 
-            # Check if env files exist, if not copy from examples
+            # Check if all required files exist
+            missing_files=()
+            
+            if [ ! -f /opt/stacks/houseapp/stack.yml ]; then
+              missing_files+=("stack.yml")
+            fi
+            
             if [ ! -f /opt/stacks/houseapp/api.env ]; then
               echo "📄 api.env not found, copying from example..."
               # Copy api.env.example from repository to VPS
@@ -209,7 +215,17 @@ jobs:
               echo "✅ web.env already exists"
             fi
 
-            echo "✅ Environment files ready!"
+            # Final check - if any files are still missing, exit
+            if [ ! -f /opt/stacks/houseapp/stack.yml ] || [ ! -f /opt/stacks/houseapp/api.env ] || [ ! -f /opt/stacks/houseapp/web.env ]; then
+              echo "❌ Missing required files:"
+              [ ! -f /opt/stacks/houseapp/stack.yml ] && echo "  - stack.yml"
+              [ ! -f /opt/stacks/houseapp/api.env ] && echo "  - api.env"
+              [ ! -f /opt/stacks/houseapp/web.env ] && echo "  - web.env"
+              echo "📁 Stack files location: /opt/stacks/houseapp/"
+              exit 1
+            fi
+
+            echo "✅ All required files found!"
             echo "📁 Stack files location: /opt/stacks/houseapp/"
             echo "📄 Files: stack.yml, api.env, web.env"
 
@@ -227,4 +243,7 @@ jobs:
           printf "### Deploy\n- Branch: %s\n- Version: %s\n- TAG: %s\n- Target: Swarm stack houseapp (SSH)\n" \
             "${GITHUB_REF_NAME}" "${{ steps.version.outputs.version }}" "${GITHUB_SHA::7}" >> "$GITHUB_STEP_SUMMARY"
 
-
+      - name: Deploy failed - missing files
+        if: steps.deploy.outcome == 'failure'
+        run: |
+          printf "### Deploy Failed\nMissing required files in /opt/stacks/houseapp/:\n- stack.yml\n- api.env\n- web.env\n\nPlease ensure all files exist before deploying.\n" >> "$GITHUB_STEP_SUMMARY"
