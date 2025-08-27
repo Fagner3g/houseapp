@@ -57,14 +57,16 @@ class Logger implements ILogger {
     // Configurar Pino baseado no ambiente
     this.pinoLogger = pino({
       level: env.LOG_LEVEL ?? (this.isProduction ? 'info' : 'debug'),
-      transport: this.isDevelopment ? {
-        target: 'pino-pretty',
-        options: {
-          colorize: true,
-          translateTime: 'HH:MM:ss Z',
-          ignore: 'pid,hostname',
-        },
-      } : undefined,
+      transport: this.isDevelopment
+        ? {
+            target: 'pino-pretty',
+            options: {
+              colorize: true,
+              translateTime: 'HH:MM:ss Z',
+              ignore: 'pid,hostname',
+            },
+          }
+        : undefined,
       serializers: {
         err: (err: Error) => {
           return {
@@ -109,23 +111,28 @@ class Logger implements ILogger {
 
   // Métodos específicos para diferentes contextos
   database(message: string, ...args: any[]): void {
-    this.info(`🗄️ ${message}`, ...args)
+    const prefix = this.isProduction ? 'DATABASE' : '🗄️'
+    this.info(`${prefix} ${message}`, ...args)
   }
 
   http(message: string, ...args: any[]): void {
-    this.info(`🌐 ${message}`, ...args)
+    const prefix = this.isProduction ? 'HTTP' : '🌐'
+    this.info(`${prefix} ${message}`, ...args)
   }
 
   auth(message: string, ...args: any[]): void {
-    this.info(`🔐 ${message}`, ...args)
+    const prefix = this.isProduction ? 'AUTH' : '🔐'
+    this.info(`${prefix} ${message}`, ...args)
   }
 
   migration(message: string, ...args: any[]): void {
-    this.info(`🔄 ${message}`, ...args)
+    const prefix = this.isProduction ? 'MIGRATION' : '🔄'
+    this.info(`${prefix} ${message}`, ...args)
   }
 
   startup(message: string, ...args: any[]): void {
-    this.info(`🚀 ${message}`, ...args)
+    const prefix = this.isProduction ? 'STARTUP' : '🚀'
+    this.info(`${prefix} ${message}`, ...args)
   }
 
   // Método para log de performance (só em desenvolvimento)
