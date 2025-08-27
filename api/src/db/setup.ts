@@ -1,11 +1,10 @@
-import { sql } from 'drizzle-orm'
 import postgres from 'postgres'
 
 import { env } from '../config/env'
 import { logger } from '../http/utils/logger'
 
 // Função para obter informações do banco das variáveis de ambiente
-function getDatabaseInfo() {
+function getDatabaseString() {
   const dbName = env.DB_NAME
   const host = env.DB_HOST
   const port = env.DB_PORT
@@ -18,6 +17,26 @@ function getDatabaseInfo() {
   return { dbName, baseUrl, host, port, username, password }
 }
 
+// Função para testar conexão com PostgreSQL
+async function testPostgresConnection(baseUrl: string): Promise<boolean> {
+  const client = postgres(baseUrl, { max: 1, timeout: 10 })
+
+  try {
+    logger.info('🔍 Testando conexão com PostgreSQL...')
+    await client`SELECT 1`
+    logger.info('✅ Conexão com PostgreSQL estabelecida com sucesso!')
+    return true
+  } catch (error) {
+    logger.error('❌ Falha na conexão com PostgreSQL')
+    logger.error(`Host: ${env.DB_HOST}:${env.DB_PORT}`)
+    logger.error(`Usuário: ${env.DB_USER}`)
+    logger.error(`Erro: ${error instanceof Error ? error.message : 'Erro desconhecido'}`)
+    return false
+  } finally {
+    await client.end()
+  }
+}
+
 // Função para verificar se o banco existe
 async function databaseExists(dbName: string, baseUrl: string): Promise<boolean> {
   const client = postgres(baseUrl, { max: 1 })
@@ -27,8 +46,7 @@ async function databaseExists(dbName: string, baseUrl: string): Promise<boolean>
       SELECT 1 FROM pg_database WHERE datname = ${dbName}
     `
     return result.length > 0
-  } catch (error) {
-    logger.error('Erro ao verificar se banco existe')
+  } catch {
     return false
   } finally {
     await client.end()
@@ -54,7 +72,13 @@ async function createDatabase(dbName: string, baseUrl: string): Promise<void> {
 // Função principal para setup do banco
 export async function setupDatabase(): Promise<void> {
   try {
-    const { dbName, baseUrl } = getDatabaseInfo()
+    const { dbName, baseUrl } = getDatabaseString()
+
+    // Primeiro, testar conexão com PostgreSQL
+    const isConnected = await testPostgresConnection(baseUrl)
+    if (!isConnected) {
+      throw new Error('Não foi possível conectar ao PostgreSQL')
+    }
 
     logger.info(`Verificando banco de dados: ${dbName}`)
 
