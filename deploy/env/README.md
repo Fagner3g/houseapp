@@ -19,20 +19,24 @@ deploy/env/
 
 ### API (`api.env`)
 - **Localização na VPS:** `/opt/stacks/houseapp/api.env`
+- **Localização no projeto:** `api/.env`
 - **Banco:** PostgreSQL na VPS (`postgres:5432`)
-- **URLs:** Domínios de produção (`api.jarvis.dev.br`, `app.jarvis.dev.br`)
+- **URLs:** Domínios de produção (`api.seu-dominio.com`, `seu-dominio.com`)
 
 ### Web (`web.env`)
 - **Localização na VPS:** `/opt/stacks/houseapp/web.env`
-- **API Host:** `https://api.jarvis.dev.br`
+- **Localização no projeto:** `web/.env`
+- **API Host:** `https://api.seu-dominio.com`
 
 ## 💻 Desenvolvimento Local
 
 ### API (`api.env.local`)
+- **Localização no projeto:** `api/.env`
 - **Banco:** PostgreSQL local (`localhost:5432`)
 - **URLs:** Localhost (`localhost:3333`, `localhost:5173`)
 
 ### Web (`web.env.local`)
+- **Localização no projeto:** `web/.env`
 - **API Host:** `http://localhost:3333`
 
 ## 🗄️ Configuração do Banco de Dados
@@ -89,5 +93,5 @@ sudo cp deploy/env/web.env /opt/stacks/houseapp/web.env
 - [ ] Criar `/opt/stacks/houseapp/` na VPS
 - [ ] Copiar `api.env` e `web.env` para a pasta
 - [ ] Configurar valores reais nos arquivos
-- [ ] Verificar se PostgreSQL está na rede `network_swarm_public`
+- [ ] Verificar se PostgreSQL está na rede `traefik-public`
 - [ ] Fazer deploy da stack
