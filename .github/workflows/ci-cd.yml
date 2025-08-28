@@ -182,7 +182,11 @@ jobs:
             set -e
             SHA=${GITHUB_SHA::7}
             VERSION="${{ steps.version.outputs.version }}"
-            export TAG=$VERSION
+            if [ "${GITHUB_REF_NAME}" = "develop" ]; then
+              export TAG=develop
+            else
+              export TAG="$VERSION"
+            fi
 
             # Create directory structure (if not exists)
             sudo mkdir -p /opt/stacks/houseapp
