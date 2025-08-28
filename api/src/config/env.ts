@@ -1,5 +1,7 @@
 import z from 'zod'
 
+import { toBool } from '@/lib/helpers'
+
 const envSchema = z.object({
   // Database Connection
   DB_HOST: z.string().default('localhost'),
@@ -21,8 +23,9 @@ const envSchema = z.object({
   METRICS_PREFIX: z.string().default('app_'),
   // Logging
   LOG_LEVEL: z.string().default('info'),
-  LOG_FASTIFY: z.preprocess(val => val === 'true', z.boolean()).default(false),
-  LOG_SQL: z.preprocess(val => val === 'true', z.boolean()).default(false),
+  LOG_STACK: z.preprocess(toBool, z.boolean()).default(false),
+  LOG_FASTIFY: z.preprocess(toBool, z.boolean()).default(false),
+  LOG_SQL: z.preprocess(toBool, z.boolean()).default(false),
   // WhatsApp
   EVOLUTION_BASE_URL: z.url().optional(),
   EVOLUTION_INSTANCE: z.string().optional(),

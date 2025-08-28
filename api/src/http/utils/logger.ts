@@ -2,7 +2,7 @@ import pino from 'pino'
 
 import { env } from '../../config/env'
 
-const showStack = String(process.env.LOG_STACK ?? '').toLowerCase() === 'true'
+const showStack = env.LOG_STACK
 
 export const logger = pino({
   level: env.LOG_LEVEL ?? (process.env.NODE_ENV === 'production' ? 'info' : 'debug'),
