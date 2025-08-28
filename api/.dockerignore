@@ -1,0 +1,18 @@
+# Keep build context lean; do not ignore yarn.lock or .migrations
+node_modules
+dist
+
+# VCS/IDE
+.git
+.github
+.vscode
+.husky
+
+# Env & logs
+.env
+npm-debug.log*
+yarn-error.log*
+
+# Tests (not needed to build)
+**/*.test.ts
+**/*.spec.ts
