@@ -169,7 +169,8 @@ jobs:
           # Clean up SSH key
           rm ~/.ssh/vps_key
 
-      - name: Env files validation summary (SSH)
+      - name: Env files validation (SSH) + Summary
+        id: remote-validate
         if: steps.check.outputs.skip == 'false'
         run: |
           set -e
@@ -187,6 +188,7 @@ jobs:
             grep -E "^$KEY=" "$FILE" | tail -n1 | cut -d= -f2- | sed -e 's/^"//' -e 's/"$//' -e "s/^'//" -e "s/'$//"; }
 
           echo "### Env Files Validation"
+          VALID=true
           if [ -f "$API_ENV" ]; then
             JWT_SECRET=$(extract "$API_ENV" JWT_SECRET)
             WEB_URL=$(extract "$API_ENV" WEB_URL)
@@ -200,11 +202,13 @@ jobs:
             if [ "$NODE_ENV" = "production" ] || [ "$NODE_ENV" = "staging" ] || [ "$NODE_ENV" = "development" ]; then echo "  - ✅ NODE_ENV=$NODE_ENV"; else echo "  - ❌ NODE_ENV invalid ($NODE_ENV)"; FAILS=$((FAILS+1)); fi
             if [ $FAILS -gt 0 ]; then
               echo "  - ℹ️  Review /opt/stacks/houseapp/api.env (copied from example?)"
+              VALID=false
             else
               echo "  - ✅ api.env looks good"
             fi
           else
             echo "- api.env: not found (will be created from example on first deploy)"
+            VALID=false
           fi
 
           if [ -f "$WEB_ENV" ]; then
@@ -212,15 +216,22 @@ jobs:
             echo "  - ℹ️  Ensure URLs and keys are correct for production"
           else
             echo "- web.env: not found (will be created from example on first deploy)"
+            VALID=false
           fi
+          echo "VALID=$VALID"
           EOF
           )
 
           printf "%s\n" "$REPORT" >> "$GITHUB_STEP_SUMMARY"
+          if echo "$REPORT" | grep -q '^VALID=true$'; then
+            echo "valid=true" >> "$GITHUB_OUTPUT"
+          else
+            echo "valid=false" >> "$GITHUB_OUTPUT"
+          fi
           rm ~/.ssh/vps_key
 
       - name: Deploy over SSH to Swarm
-        if: steps.check.outputs.skip == 'false'
+        if: steps.check.outputs.skip == 'false' && steps.remote-validate.outputs.valid == 'true'
         id: deploy
         continue-on-error: true
         uses: appleboy/ssh-action@v1.0.3
@@ -244,41 +255,7 @@ jobs:
             # Move stack file from /tmp to final location
             sudo mv /tmp/stack.yml /opt/stacks/houseapp/stack.yml
 
-            # Stack.yml is always updated (copied from repository)
             echo "📄 Updating stack.yml..."
-            
-            # Check if env files exist, if not copy from examples
-            
-            if [ ! -f /opt/stacks/houseapp/api.env ]; then
-              echo "📄 api.env not found, copying from example..."
-              # Copy api.env.example from repository to VPS
-              curl -s https://raw.githubusercontent.com/${{ github.repository }}/${{ github.ref_name }}/deploy/env/api.env.example | sudo tee /opt/stacks/houseapp/api.env.example > /dev/null
-              sudo cp /opt/stacks/houseapp/api.env.example /opt/stacks/houseapp/api.env
-            else
-              echo "✅ api.env already exists"
-            fi
-            
-            if [ ! -f /opt/stacks/houseapp/web.env ]; then
-              echo "📄 web.env not found, copying from example..."
-              # Copy web.env.example from repository to VPS
-              curl -s https://raw.githubusercontent.com/${{ github.repository }}/${{ github.ref_name }}/deploy/env/web.env.example | sudo tee /opt/stacks/houseapp/web.env.example > /dev/null
-              sudo cp /opt/stacks/houseapp/web.env.example /opt/stacks/houseapp/web.env
-            else
-              echo "✅ web.env already exists"
-            fi
-
-            # Final check - if env files are still missing, exit
-            if [ ! -f /opt/stacks/houseapp/api.env ] || [ ! -f /opt/stacks/houseapp/web.env ]; then
-              echo "❌ Missing required env files:"
-              [ ! -f /opt/stacks/houseapp/api.env ] && echo "  - api.env"
-              [ ! -f /opt/stacks/houseapp/web.env ] && echo "  - web.env"
-              echo "📁 Stack files location: /opt/stacks/houseapp/"
-              exit 1
-            fi
-
-            echo "✅ All required files found!"
-            echo "📁 Stack files location: /opt/stacks/houseapp/"
-            echo "📄 Files: stack.yml, api.env, web.env"
 
             # Login to GHCR and deploy
             docker login ghcr.io -u ${{ github.actor }} -p ${{ secrets.GITHUB_TOKEN }}
@@ -295,7 +272,7 @@ jobs:
           printf "### Deploy\n- Branch: %s\n- Version: %s\n- TAG: %s\n- Target: Swarm stack houseapp (SSH)\n" \
             "${GITHUB_REF_NAME}" "${{ steps.version.outputs.version }}" "${GITHUB_SHA::7}" >> "$GITHUB_STEP_SUMMARY"
 
-      - name: Deploy failed - missing files
-        if: steps.deploy.outcome == 'failure'
+      - name: Deploy skipped - env invalid
+        if: steps.check.outputs.skip == 'false' && steps.remote-validate.outputs.valid != 'true'
         run: |
-          printf "### Deploy Failed\nMissing required env files in /opt/stacks/houseapp/:\n- api.env\n- web.env\n\nPlease ensure env files exist before deploying.\n" >> "$GITHUB_STEP_SUMMARY"
+          printf "### Deploy Skipped\nEnv validation failed on VPS. Please review /opt/stacks/houseapp/*.env.\n" >> "$GITHUB_STEP_SUMMARY"
