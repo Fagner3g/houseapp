@@ -178,10 +178,10 @@ jobs:
           echo "${{ secrets.VPS_SSH_KEY }}" > ~/.ssh/vps_key
           chmod 600 ~/.ssh/vps_key
 
-          REPORT=$(ssh -i ~/.ssh/vps_key -o StrictHostKeyChecking=no ${{ secrets.VPS_USER }}@${{ secrets.VPS_HOST }} 'bash -s' <<EOF
+          REPORT=$(ssh -i ~/.ssh/vps_key -o StrictHostKeyChecking=no ${{ secrets.VPS_USER }}@${{ secrets.VPS_HOST }} "bash -s -- '${{ github.repository }}' '${GITHUB_REF_NAME}'" << 'EOSSH'
           set -e
-          REPO="${{ github.repository }}"
-          BRANCH="${GITHUB_REF_NAME}"
+          REPO="$1"
+          BRANCH="$2"
           STACK_DIR="/opt/stacks/houseapp"
           API_ENV="${STACK_DIR}/api.env"
           WEB_ENV="${STACK_DIR}/web.env"
@@ -237,7 +237,7 @@ jobs:
             VALID=false
           fi
           echo "VALID=$VALID"
-          EOF
+          EOSSH
           )
 
           printf "%s\n" "$REPORT" >> "$GITHUB_STEP_SUMMARY"
