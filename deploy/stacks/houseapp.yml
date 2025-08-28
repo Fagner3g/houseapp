@@ -10,19 +10,24 @@ services:
     env_file:
       - /opt/stacks/houseapp/api.env
     healthcheck:
-      test: ["CMD-SHELL", "wget -qO- http://api:3333/health || curl -sf http://api:3333/health || exit 1"]
+      # Healthcheck roda dentro do próprio container; use localhost para evitar balanceamento
+      test: ["CMD-SHELL", "curl -sf http://localhost:3333/health || wget -qO- http://localhost:3333/health || exit 1"]
       interval: 15s
-      timeout: 5s
-      retries: 5
-      start_period: 20s
+      timeout: 10s
+      retries: 10
+      start_period: 60s
     deploy:
       replicas: 2
       update_config:
         order: start-first
         parallelism: 1
         delay: 10s
+        failure_action: rollback
       restart_policy:
         condition: on-failure
+        delay: 10s
+        max_attempts: 5
+        window: 60s
       resources:
         limits:
           cpus: "0.50"
@@ -44,11 +49,12 @@ services:
     env_file:
       - /opt/stacks/houseapp/web.env
     healthcheck:
-      test: ["CMD-SHELL", "wget -qO- http://web:80/health || curl -sf http://web:80/health || exit 1"]
+      # Healthcheck roda dentro do próprio container; use localhost
+      test: ["CMD-SHELL", "curl -sf http://localhost/health || wget -qO- http://localhost/health || exit 1"]
       interval: 15s
       timeout: 5s
       retries: 5
-      start_period: 20s
+      start_period: 30s
     deploy:
       replicas: 2
       update_config:
@@ -57,6 +63,9 @@ services:
         delay: 10s
       restart_policy:
         condition: on-failure
+        delay: 10s
+        max_attempts: 5
+        window: 60s
       resources:
         limits:
           cpus: "0.50"
