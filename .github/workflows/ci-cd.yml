@@ -198,9 +198,12 @@ jobs:
           curl -fsSL "https://raw.githubusercontent.com/${REPO}/${BRANCH}/deploy/env/api.env.example" | sudo tee "${STACK_DIR}/api.env.example" >/dev/null || true
           curl -fsSL "https://raw.githubusercontent.com/${REPO}/${BRANCH}/deploy/env/web.env.example" | sudo tee "${STACK_DIR}/web.env.example" >/dev/null || true
 
-          extract() { FILE="$1"; KEY="$2"; \
-            [ -f "$FILE" ] || { echo ""; return; }; \
-            grep -E "^$KEY=" "$FILE" | tail -n1 | cut -d= -f2- | sed -e 's/^"//' -e 's/"$//' -e "s/^'//" -e "s/'$//"; }
+          extract() {
+            FILE="$1"
+            KEY="$2"
+            if [ ! -f "$FILE" ]; then echo ""; return; fi
+            grep -E "^$KEY=" "$FILE" | tail -n1 | cut -d= -f2- | sed -e 's/^"//' -e 's/"$//' -e "s/^'//" -e "s/'$//"
+          }
 
           echo "### Env Files Validation"
           VALID=true
