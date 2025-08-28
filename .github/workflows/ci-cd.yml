@@ -178,10 +178,25 @@ jobs:
           echo "${{ secrets.VPS_SSH_KEY }}" > ~/.ssh/vps_key
           chmod 600 ~/.ssh/vps_key
 
-          REPORT=$(ssh -i ~/.ssh/vps_key -o StrictHostKeyChecking=no ${{ secrets.VPS_USER }}@${{ secrets.VPS_HOST }} 'bash -s' <<'EOF'
+          REPORT=$(ssh -i ~/.ssh/vps_key -o StrictHostKeyChecking=no ${{ secrets.VPS_USER }}@${{ secrets.VPS_HOST }} 'bash -s' <<EOF
           set -e
-          API_ENV="/opt/stacks/houseapp/api.env"
-          WEB_ENV="/opt/stacks/houseapp/web.env"
+          REPO="${{ github.repository }}"
+          BRANCH="${GITHUB_REF_NAME}"
+          STACK_DIR="/opt/stacks/houseapp"
+          API_ENV="${STACK_DIR}/api.env"
+          WEB_ENV="${STACK_DIR}/web.env"
+          TMP_STACK="/tmp/stack.yml"
+
+          # Ensure stack directory exists and move provided stack.yml
+          sudo mkdir -p "${STACK_DIR}"
+          if [ -f "${TMP_STACK}" ]; then
+            sudo mv "${TMP_STACK}" "${STACK_DIR}/stack.yml"
+            echo "📄 stack.yml updated in ${STACK_DIR}"
+          fi
+
+          # Always refresh example envs from repository to guide configuration
+          curl -fsSL "https://raw.githubusercontent.com/${REPO}/${BRANCH}/deploy/env/api.env.example" | sudo tee "${STACK_DIR}/api.env.example" >/dev/null || true
+          curl -fsSL "https://raw.githubusercontent.com/${REPO}/${BRANCH}/deploy/env/web.env.example" | sudo tee "${STACK_DIR}/web.env.example" >/dev/null || true
 
           extract() { FILE="$1"; KEY="$2"; \
             [ -f "$FILE" ] || { echo ""; return; }; \
@@ -207,7 +222,7 @@ jobs:
               echo "  - ✅ api.env looks good"
             fi
           else
-            echo "- api.env: not found (will be created from example on first deploy)"
+            echo "- api.env: not found. Example available at ${STACK_DIR}/api.env.example"
             VALID=false
           fi
 
@@ -215,7 +230,7 @@ jobs:
             echo "- web.env: found"
             echo "  - ℹ️  Ensure URLs and keys are correct for production"
           else
-            echo "- web.env: not found (will be created from example on first deploy)"
+            echo "- web.env: not found. Example available at ${STACK_DIR}/web.env.example"
             VALID=false
           fi
           echo "VALID=$VALID"
