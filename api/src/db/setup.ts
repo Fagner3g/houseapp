@@ -116,7 +116,9 @@ export async function showPendingMigrations(): Promise<void> {
     const { db } = await import('./index')
     let appliedCount = 0
     try {
-      const rows: any[] = await db.execute(sql`SELECT count(*)::int AS c FROM drizzle.__drizzle_migrations`)
+      const rows: Array<{ c: number }> = await db.execute(
+        sql`SELECT count(*)::int AS c FROM drizzle.__drizzle_migrations`
+      )
       const first = rows?.[0]
       appliedCount = typeof first?.c === 'number' ? first.c : parseInt(first?.c ?? '0', 10)
     } catch {
@@ -170,7 +172,9 @@ async function hasPendingMigrations(): Promise<boolean> {
     const { db } = await import('./index')
     let appliedCount = 0
     try {
-      const rows: any[] = await db.execute(sql`SELECT count(*)::int AS c FROM drizzle.__drizzle_migrations`)
+      const rows: Array<{ c: number }> = await db.execute(
+        sql`SELECT count(*)::int AS c FROM drizzle.__drizzle_migrations`
+      )
       const first = rows?.[0]
       appliedCount = typeof first?.c === 'number' ? first.c : parseInt(first?.c ?? '0', 10)
     } catch {
@@ -187,6 +191,24 @@ async function hasPendingMigrations(): Promise<boolean> {
 // Função para executar migrações com logs
 export async function runMigrations(): Promise<void> {
   try {
+    // Garantir que a pasta de migrações exista antes de seguir
+    const migrationsDir = path.join(process.cwd(), '.migrations')
+    const journalPath = path.join(migrationsDir, 'meta', '_journal.json')
+
+    if (!fs.existsSync(journalPath)) {
+      if (env.NODE_ENV === 'production') {
+        const msg =
+          'Pasta .migrations não encontrada no runtime (meta/_journal.json ausente). Inclua-a na imagem/CI.'
+        logger.error(msg)
+        throw new Error(msg)
+      } else {
+        logger.migration(
+          'Nenhuma migração encontrada (.migrations ausente). Pulando migrações em ambiente não-produção.'
+        )
+        return
+      }
+    }
+
     logger.migration('Verificando migrações pendentes...')
 
     // Verificar se há migrações pendentes
@@ -210,7 +232,7 @@ export async function runMigrations(): Promise<void> {
       path.join(process.cwd(), 'drizzle.config.ts'),
       path.join(process.cwd(), 'api', 'drizzle.config.ts'),
     ]
-    const foundConfig = candidateConfigs.find((p) => fs.existsSync(p))
+    const foundConfig = candidateConfigs.find(p => fs.existsSync(p))
 
     if (!foundConfig) {
       throw new Error('drizzle.config.ts não encontrado. Verifique a localização do arquivo.')

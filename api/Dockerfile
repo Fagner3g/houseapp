@@ -5,39 +5,39 @@ WORKDIR /app
 # Install system dependencies required for build
 RUN apk add --no-cache python3 make g++
 
-# Copy package manifest first (for better caching)
-COPY package.json ./
-# Install dependencies with npm
-RUN npm install
+# Copy package manifests first (better caching)
+COPY package.json yarn.lock ./
+# Use Yarn to respect yarn.lock
+RUN corepack enable && yarn install --frozen-lockfile
 
 FROM deps AS build
 COPY . ./
-RUN npm run build
+RUN yarn build
 
 # Stage for running migrations
-FROM deps AS migrate
-COPY . ./
-# Run migrations (will fail if can't connect to database, which is expected during build)
-RUN npm run db:migrate || echo "Migrations will be run at runtime"
+
 
 FROM node:20-alpine AS runtime
 
 WORKDIR /app
 ENV NODE_ENV=production
+RUN corepack enable
 
 # Copy only necessary files for runtime
 COPY --from=build /app/dist ./dist
 COPY --from=deps /app/node_modules ./node_modules
 COPY package.json ./package.json
 
-# Copy Drizzle configuration and migrations
+## Drizzle configuration support at runtime
+# drizzle.config.ts imports from src/db/setup and src/config/env (which imports logger)
 COPY drizzle.config.ts ./
 COPY src/config/env.ts ./src/config/env.ts
+COPY src/db/setup.ts ./src/db/setup.ts
+COPY src/lib/logger.ts ./src/lib/logger.ts
+# Note: .migrations directory is not copied because it may not exist in the repo.
+# If you use SQL migrations, ensure the folder is present in the build context
+# or mount it at runtime.
 COPY .migrations ./.migrations
 
-# Copy startup script
-COPY start.js ./start.js
-RUN chmod +x ./start.js
-
 EXPOSE 3333
-CMD ["node", "start.js"]
+CMD ["node", "dist/server.js"]
