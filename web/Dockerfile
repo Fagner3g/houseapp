@@ -1,14 +1,14 @@
 FROM node:20-alpine AS build
 WORKDIR /app
 
-# Instala dependências do sistema necessárias para build
-RUN apk add --no-cache python3 make g++
+# Dependências do sistema necessárias para build (e esbuild em alpine)
+RUN apk add --no-cache python3 make g++ libc6-compat
 
-# Usa npm por padrao
-COPY package.json ./package.json
-RUN npm install
+# Use Yarn para respeitar yarn.lock e evitar mismatch do esbuild
+COPY package.json yarn.lock ./
+RUN corepack enable && yarn install --frozen-lockfile
 COPY . ./
-RUN npm run build
+RUN yarn build
 
 FROM nginx:1.27-alpine AS runtime
 COPY --from=build /app/dist /usr/share/nginx/html
