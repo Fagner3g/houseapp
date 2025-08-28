@@ -169,6 +169,56 @@ jobs:
           # Clean up SSH key
           rm ~/.ssh/vps_key
 
+      - name: Env files validation summary (SSH)
+        if: steps.check.outputs.skip == 'false'
+        run: |
+          set -e
+          mkdir -p ~/.ssh
+          echo "${{ secrets.VPS_SSH_KEY }}" > ~/.ssh/vps_key
+          chmod 600 ~/.ssh/vps_key
+
+          REPORT=$(ssh -i ~/.ssh/vps_key -o StrictHostKeyChecking=no ${{ secrets.VPS_USER }}@${{ secrets.VPS_HOST }} 'bash -s' <<'EOF'
+          set -e
+          API_ENV="/opt/stacks/houseapp/api.env"
+          WEB_ENV="/opt/stacks/houseapp/web.env"
+
+          extract() { FILE="$1"; KEY="$2"; \
+            [ -f "$FILE" ] || { echo ""; return; }; \
+            grep -E "^$KEY=" "$FILE" | tail -n1 | cut -d= -f2- | sed -e 's/^"//' -e 's/"$//' -e "s/^'//" -e "s/'$//"; }
+
+          echo "### Env Files Validation"
+          if [ -f "$API_ENV" ]; then
+            JWT_SECRET=$(extract "$API_ENV" JWT_SECRET)
+            WEB_URL=$(extract "$API_ENV" WEB_URL)
+            DB_PASSWORD=$(extract "$API_ENV" DB_PASSWORD)
+            NODE_ENV=$(extract "$API_ENV" NODE_ENV)
+            FAILS=0
+            echo "- api.env: found"
+            if [ -z "$JWT_SECRET" ] || [ "$JWT_SECRET" = "sua_jwt_secret_aqui" ]; then echo "  - ❌ JWT_SECRET missing/default"; FAILS=$((FAILS+1)); else echo "  - ✅ JWT_SECRET present"; fi
+            if echo "$WEB_URL" | grep -Eq '^https?://'; then echo "  - ✅ WEB_URL ok ($WEB_URL)"; else echo "  - ❌ WEB_URL invalid/missing"; FAILS=$((FAILS+1)); fi
+            if [ -n "$DB_PASSWORD" ]; then echo "  - ✅ DB_PASSWORD present"; else echo "  - ❌ DB_PASSWORD missing"; FAILS=$((FAILS+1)); fi
+            if [ "$NODE_ENV" = "production" ] || [ "$NODE_ENV" = "staging" ] || [ "$NODE_ENV" = "development" ]; then echo "  - ✅ NODE_ENV=$NODE_ENV"; else echo "  - ❌ NODE_ENV invalid ($NODE_ENV)"; FAILS=$((FAILS+1)); fi
+            if [ $FAILS -gt 0 ]; then
+              echo "  - ℹ️  Review /opt/stacks/houseapp/api.env (copied from example?)"
+            else
+              echo "  - ✅ api.env looks good"
+            fi
+          else
+            echo "- api.env: not found (will be created from example on first deploy)"
+          fi
+
+          if [ -f "$WEB_ENV" ]; then
+            echo "- web.env: found"
+            echo "  - ℹ️  Ensure URLs and keys are correct for production"
+          else
+            echo "- web.env: not found (will be created from example on first deploy)"
+          fi
+          EOF
+          )
+
+          printf "%s\n" "$REPORT" >> "$GITHUB_STEP_SUMMARY"
+          rm ~/.ssh/vps_key
+
       - name: Deploy over SSH to Swarm
         if: steps.check.outputs.skip == 'false'
         id: deploy
