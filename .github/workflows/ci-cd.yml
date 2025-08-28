@@ -233,7 +233,8 @@ jobs:
             # Login to GHCR and deploy
             docker login ghcr.io -u ${{ github.actor }} -p ${{ secrets.GITHUB_TOKEN }}
             echo "🚀 Deploying houseapp with TAG=$TAG (version: $VERSION)"
-            docker stack deploy -c /opt/stacks/houseapp/stack.yml houseapp --with-registry-auth
+            docker stack deploy --with-registry-auth --resolve-image changed \
+              -c /opt/stacks/houseapp/stack.yml houseapp
             
             echo "✅ Stack deployed successfully!"
             echo "📊 Check status: docker stack ps houseapp"
