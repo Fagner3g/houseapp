@@ -63,12 +63,11 @@ jobs:
             # Generate semantic version for branches
             BRANCH="${{ github.ref_name }}"
             SHA="${GITHUB_SHA::7}"
-            DATE=$(date +%Y%m%d)
             
             if [ "$BRANCH" = "main" ]; then
-              VERSION="1.0.0-$DATE-$SHA"
+              VERSION="1.0.0"
             else
-              VERSION="0.1.0-$DATE-$SHA"
+              VERSION="1.0.0-$SHA-develop"
             fi
             
             echo "version=$VERSION" >> $GITHUB_OUTPUT
@@ -93,18 +92,14 @@ jobs:
             --cache-from type=gha \
             --cache-to type=gha,mode=max \
             -t $IMAGE:$VERSION \
-            -t $IMAGE:$SHA \
-            -t $IMAGE:$BRANCH \
             ${{ matrix.app }}
           
           docker push $IMAGE:$VERSION
-          docker push $IMAGE:$SHA
-          docker push $IMAGE:$BRANCH
 
       - name: Build summary
         run: |
-          printf "### Build & Push (%s)\n- Image: ghcr.io/%s-%s\n- Tags: %s, %s, %s\n" \
-            "${{ matrix.app }}" "${GITHUB_REPOSITORY,,}" "${{ matrix.app }}" "${{ steps.version.outputs.version }}" "${GITHUB_SHA::7}" "${GITHUB_REF_NAME}" >> "$GITHUB_STEP_SUMMARY"
+          printf "### Build & Push (%s)\n- Image: ghcr.io/%s-%s\n- Tag: %s\n" \
+            "${{ matrix.app }}" "${GITHUB_REPOSITORY,,}" "${{ matrix.app }}" "${{ steps.version.outputs.version }}" >> "$GITHUB_STEP_SUMMARY"
 
   deploy:
     needs: build-and-push
@@ -126,12 +121,11 @@ jobs:
           else
             BRANCH="${{ github.ref_name }}"
             SHA="${GITHUB_SHA::7}"
-            DATE=$(date +%Y%m%d)
             
             if [ "$BRANCH" = "main" ]; then
-              VERSION="1.0.0-$DATE-$SHA"
+              VERSION="1.0.0"
             else
-              VERSION="0.1.0-$DATE-$SHA"
+              VERSION="1.0.0-$SHA-develop"
             fi
             
             echo "version=$VERSION" >> $GITHUB_OUTPUT
@@ -261,11 +255,7 @@ jobs:
             set -e
             SHA=${GITHUB_SHA::7}
             VERSION="${{ steps.version.outputs.version }}"
-            if [ "${GITHUB_REF_NAME}" = "develop" ]; then
-              export TAG=develop
-            else
-              export TAG="$VERSION"
-            fi
+            export TAG="$VERSION"
 
             # Create directory structure (if not exists)
             sudo mkdir -p /opt/stacks/houseapp
