@@ -60,14 +60,15 @@ jobs:
             echo "version=$VERSION" >> $GITHUB_OUTPUT
             echo "is_release=true" >> $GITHUB_OUTPUT
           else
-            # Generate semantic version for branches
+            # Read version from api/package.json
+            BASE_VERSION=$(node -p "require('./api/package.json').version")
             BRANCH="${{ github.ref_name }}"
             SHA="${GITHUB_SHA::7}"
             
             if [ "$BRANCH" = "main" ]; then
-              VERSION="1.0.0"
+              VERSION="$BASE_VERSION"
             else
-              VERSION="1.0.0-$SHA-develop"
+              VERSION="$BASE_VERSION-$SHA-develop"
             fi
             
             echo "version=$VERSION" >> $GITHUB_OUTPUT
@@ -119,13 +120,15 @@ jobs:
             VERSION="${{ github.event.inputs.version }}"
             echo "version=$VERSION" >> $GITHUB_OUTPUT
           else
+            # Read version from api/package.json
+            BASE_VERSION=$(node -p "require('./api/package.json').version")
             BRANCH="${{ github.ref_name }}"
             SHA="${GITHUB_SHA::7}"
             
             if [ "$BRANCH" = "main" ]; then
-              VERSION="1.0.0"
+              VERSION="$BASE_VERSION"
             else
-              VERSION="1.0.0-$SHA-develop"
+              VERSION="$BASE_VERSION-$SHA-develop"
             fi
             
             echo "version=$VERSION" >> $GITHUB_OUTPUT
