@@ -60,8 +60,8 @@ jobs:
             echo "version=$VERSION" >> $GITHUB_OUTPUT
             echo "is_release=true" >> $GITHUB_OUTPUT
           else
-            # Read version from api/package.json
-            BASE_VERSION=$(node -p "require('./api/package.json').version")
+            # Read version from api/package.json using grep/sed
+            BASE_VERSION=$(grep '"version"' api/package.json | sed 's/.*"version": "\([^"]*\)".*/\1/')
             BRANCH="${{ github.ref_name }}"
             SHA="${GITHUB_SHA::7}"
             
@@ -120,8 +120,8 @@ jobs:
             VERSION="${{ github.event.inputs.version }}"
             echo "version=$VERSION" >> $GITHUB_OUTPUT
           else
-            # Read version from api/package.json
-            BASE_VERSION=$(node -p "require('./api/package.json').version")
+            # Read version from api/package.json using grep/sed
+            BASE_VERSION=$(grep '"version"' api/package.json | sed 's/.*"version": "\([^"]*\)".*/\1/')
             BRANCH="${{ github.ref_name }}"
             SHA="${GITHUB_SHA::7}"
             
