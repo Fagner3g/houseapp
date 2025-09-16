@@ -258,7 +258,13 @@ jobs:
             set -e
             SHA=${GITHUB_SHA::7}
             VERSION="${{ steps.version.outputs.version }}"
-            export TAG="$VERSION"
+            
+            # Use the same versioning logic as build step
+            if [ "${{ github.ref_name }}" = "main" ]; then
+              export TAG="$VERSION"
+            else
+              export TAG="$VERSION"
+            fi
 
             # Create directory structure (if not exists)
             sudo mkdir -p /opt/stacks/houseapp
