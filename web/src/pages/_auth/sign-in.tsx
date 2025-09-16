@@ -1,9 +1,9 @@
 import { createFileRoute, useNavigate } from '@tanstack/react-router'
 import { useState } from 'react'
 
+import { useSignIn } from '@/api/generated/api'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
-import { useSignIn } from '@/api/generated/api'
 
 enum Status {
   Pending = 'pending',
@@ -69,6 +69,7 @@ function Index() {
           Cadastrar
         </Button>
       </div>
+      <h4>v1.0.0</h4>
     </div>
   )
 }
