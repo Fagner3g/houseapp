@@ -256,11 +256,11 @@ jobs:
         if: steps.deploy.outcome == 'success'
         run: |
           printf "### ✅ Deploy Successful\n" >> "$GITHUB_STEP_SUMMARY"
-          printf "- **Branch:** %s\n" "${{ github.ref_name }}" >> "$GITHUB_STEP_SUMMARY"
-          printf "- **Version:** %s\n" "${{ steps.version.outputs.version }}" >> "$GITHUB_STEP_SUMMARY"
-          printf "- **TAG:** %s\n" "${{ steps.version.outputs.version }}" >> "$GITHUB_STEP_SUMMARY"
-          printf "- **Target:** Swarm stack houseapp\n" >> "$GITHUB_STEP_SUMMARY"
-          printf "- **Services:** houseapp_api, houseapp_web\n" >> "$GITHUB_STEP_SUMMARY"
+          printf "**Branch:** %s\n" "${{ github.ref_name }}" >> "$GITHUB_STEP_SUMMARY"
+          printf "**Version:** %s\n" "${{ steps.version.outputs.version }}" >> "$GITHUB_STEP_SUMMARY"
+          printf "**TAG:** %s\n" "${{ steps.version.outputs.version }}" >> "$GITHUB_STEP_SUMMARY"
+          printf "**Target:** Swarm stack houseapp\n" >> "$GITHUB_STEP_SUMMARY"
+          printf "**Services:** houseapp_api, houseapp_web\n" >> "$GITHUB_STEP_SUMMARY"
 
       - name: Deploy skipped - validation failed
         if: steps.check.outputs.skip == 'false' && steps.validate.outputs.valid != 'true'
