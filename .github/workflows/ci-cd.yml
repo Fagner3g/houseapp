@@ -279,27 +279,27 @@ jobs:
           sudo cp /tmp/stack.yml /opt/stacks/houseapp/stack.yml
           echo "✅ Stack file copied successfully"
 
-            echo "📄 Updating stack.yml..."
+          echo "📄 Updating stack.yml..."
 
-            # Login to GHCR and deploy
-            echo "🔐 Logging into GHCR..."
-            docker login ghcr.io -u ${{ github.actor }} -p ${{ secrets.GITHUB_TOKEN }}
+          # Login to GHCR and deploy
+          echo "🔐 Logging into GHCR..."
+          docker login ghcr.io -u ${{ github.actor }} -p ${{ secrets.GITHUB_TOKEN }}
             
-            # Verify images exist
-            echo "🔍 Verifying images exist..."
-            docker pull ghcr.io/fagner3g/houseapp-api:$TAG || echo "❌ Failed to pull houseapp-api:$TAG"
-            docker pull ghcr.io/fagner3g/houseapp-web:$TAG || echo "❌ Failed to pull houseapp-web:$TAG"
+          # Verify images exist
+          echo "🔍 Verifying images exist..."
+          docker pull ghcr.io/fagner3g/houseapp-api:$TAG || echo "❌ Failed to pull houseapp-api:$TAG"
+          docker pull ghcr.io/fagner3g/houseapp-web:$TAG || echo "❌ Failed to pull houseapp-web:$TAG"
             
-            echo "🚀 Deploying houseapp with TAG=$TAG (version: $VERSION)"
-            docker stack deploy --with-registry-auth --resolve-image changed --prune \
-              -c /opt/stacks/houseapp/stack.yml houseapp
+          echo "🚀 Deploying houseapp with TAG=$TAG (version: $VERSION)"
+          docker stack deploy --with-registry-auth --resolve-image changed --prune \
+            -c /opt/stacks/houseapp/stack.yml houseapp
             
-            # Force services to recycle tasks even if spec unchanged
-            docker service update --force houseapp_api || true
-            docker service update --force houseapp_web || true
+          # Force services to recycle tasks even if spec unchanged
+          docker service update --force houseapp_api || true
+          docker service update --force houseapp_web || true
             
-            echo "✅ Stack deployed successfully!"
-            echo "📊 Check status: docker stack ps houseapp"
+          echo "✅ Stack deployed successfully!"
+          echo "📊 Check status: docker stack ps houseapp"
 
       - name: Deploy summary
         if: steps.deploy.outcome == 'success'
