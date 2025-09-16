@@ -10,8 +10,8 @@ services:
     env_file:
       - /opt/stacks/houseapp/api.env
     healthcheck:
-      # Healthcheck roda dentro do próprio container; use localhost para evitar balanceamento
-      test: ["CMD-SHELL", "curl -sf http://localhost:3333/health || wget -qO- http://localhost:3333/health || exit 1"]
+      # Healthcheck roda dentro do próprio container; use 127.0.0.1 para evitar problemas de DNS
+      test: ["CMD-SHELL", "curl -sf http://127.0.0.1:3333/health || wget -qO- http://127.0.0.1:3333/health || exit 1"]
       interval: 15s
       timeout: 10s
       retries: 10
@@ -49,8 +49,8 @@ services:
     env_file:
       - /opt/stacks/houseapp/web.env
     healthcheck:
-      # Healthcheck roda dentro do próprio container; use localhost
-      test: ["CMD-SHELL", "curl -sf http://localhost/health || wget -qO- http://localhost/health || exit 1"]
+      # Healthcheck roda dentro do próprio container; use 127.0.0.1 para evitar problemas de DNS
+      test: ["CMD-SHELL", "curl -sf http://127.0.0.1/health || wget -qO- http://127.0.0.1/health || exit 1"]
       interval: 15s
       timeout: 5s
       retries: 5

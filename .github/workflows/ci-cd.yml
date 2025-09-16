@@ -269,7 +269,14 @@ jobs:
             echo "📄 Updating stack.yml..."
 
             # Login to GHCR and deploy
+            echo "🔐 Logging into GHCR..."
             docker login ghcr.io -u ${{ github.actor }} -p ${{ secrets.GITHUB_TOKEN }}
+            
+            # Verify images exist
+            echo "🔍 Verifying images exist..."
+            docker pull ghcr.io/fagner3g/houseapp-api:$TAG || echo "❌ Failed to pull houseapp-api:$TAG"
+            docker pull ghcr.io/fagner3g/houseapp-web:$TAG || echo "❌ Failed to pull houseapp-web:$TAG"
+            
             echo "🚀 Deploying houseapp with TAG=$TAG (version: $VERSION)"
             docker stack deploy --with-registry-auth --resolve-image changed --prune \
               -c /opt/stacks/houseapp/stack.yml houseapp
