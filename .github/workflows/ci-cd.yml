@@ -205,6 +205,7 @@ jobs:
       - name: Deploy to VPS
         if: steps.check.outputs.skip == 'false' && steps.validate.outputs.valid == 'true'
         id: deploy
+        environment: staging
         uses: appleboy/ssh-action@v1.0.3
         with:
           host: ${{ secrets.VPS_HOST }}
