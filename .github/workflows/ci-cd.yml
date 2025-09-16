@@ -50,15 +50,11 @@ jobs:
         id: version
         run: |
           if [ "${{ github.event_name }}" = "release" ]; then
-            # Use release tag for releases
             VERSION="${{ github.event.release.tag_name }}"
             echo "version=$VERSION" >> $GITHUB_OUTPUT
-            echo "is_release=true" >> $GITHUB_OUTPUT
           elif [ "${{ github.event_name }}" = "workflow_dispatch" ] && [ -n "${{ github.event.inputs.version }}" ]; then
-            # Use manual version from workflow_dispatch
             VERSION="${{ github.event.inputs.version }}"
             echo "version=$VERSION" >> $GITHUB_OUTPUT
-            echo "is_release=true" >> $GITHUB_OUTPUT
           else
             # Read version from api/package.json using grep/sed
             BASE_VERSION=$(grep '"version"' api/package.json | sed 's/.*"version": "\([^"]*\)".*/\1/')
@@ -72,41 +68,30 @@ jobs:
             fi
             
             echo "version=$VERSION" >> $GITHUB_OUTPUT
-            echo "is_release=false" >> $GITHUB_OUTPUT
           fi
-          echo "Generated version: $VERSION"
 
-      - name: Build and push image (native ARM64)
-        run: |
-          set -e
-          REPO_LC=${GITHUB_REPOSITORY,,}
-          IMAGE=ghcr.io/${REPO_LC}-${{ matrix.app }}
-          VERSION="${{ steps.version.outputs.version }}"
-          SHA=${GITHUB_SHA::7}
-          BRANCH=${GITHUB_REF_NAME}
-          
-          echo "Building $IMAGE for native ARM64"
-          echo "Tags: $VERSION, $SHA, $BRANCH"
-          
-          docker build \
-            -f ${{ matrix.app }}/Dockerfile \
-            --cache-from type=gha \
-            --cache-to type=gha,mode=max \
-            -t $IMAGE:$VERSION \
-            ${{ matrix.app }}
-          
-          docker push $IMAGE:$VERSION
+      - name: Build and push Docker image
+        uses: docker/build-push-action@v5
+        with:
+          context: ./${{ matrix.app }}
+          push: true
+          tags: |
+            ghcr.io/${{ github.repository_owner }}/houseapp-${{ matrix.app }}:${{ steps.version.outputs.version }}
+          cache-from: type=gha
+          cache-to: type=gha,mode=max
+          platforms: linux/arm64
 
       - name: Build summary
         run: |
-          printf "### Build & Push (%s)\n- Image: ghcr.io/%s-%s\n- Tag: %s\n" \
-            "${{ matrix.app }}" "${GITHUB_REPOSITORY,,}" "${{ matrix.app }}" "${{ steps.version.outputs.version }}" >> "$GITHUB_STEP_SUMMARY"
+          echo "### Build Summary" >> $GITHUB_STEP_SUMMARY
+          echo "- **App:** ${{ matrix.app }}" >> $GITHUB_STEP_SUMMARY
+          echo "- **Version:** ${{ steps.version.outputs.version }}" >> $GITHUB_STEP_SUMMARY
+          echo "- **Image:** ghcr.io/${{ github.repository_owner }}/houseapp-${{ matrix.app }}:${{ steps.version.outputs.version }}" >> $GITHUB_STEP_SUMMARY
 
   deploy:
     needs: build-and-push
-    if: github.ref == 'refs/heads/main' || github.ref == 'refs/heads/develop'
-    runs-on: ubuntu-latest
-    environment: ${{ github.ref == 'refs/heads/main' && 'production' || 'staging' }}
+    runs-on: [self-hosted, linux, ARM64]
+    if: github.event_name != 'pull_request'
     steps:
       - uses: actions/checkout@v4
 
@@ -136,15 +121,11 @@ jobs:
 
       - name: Check deploy secrets
         id: check
-        env:
-          HAS_HOST: ${{ secrets.VPS_HOST }}
-          HAS_USER: ${{ secrets.VPS_USER }}
-          HAS_KEY: ${{ secrets.VPS_SSH_KEY }}
         run: |
           missing=0
-          [ -z "$HAS_HOST" ] && echo "::warning title=Missing secret::VPS_HOST not set" && missing=1
-          [ -z "$HAS_USER" ] && echo "::warning title=Missing secret::VPS_USER not set" && missing=1
-          [ -z "$HAS_KEY" ] && echo "::warning title=Missing secret::VPS_SSH_KEY not set" && missing=1
+          [ -z "${{ secrets.VPS_HOST }}" ] && echo "::warning title=Missing secret::VPS_HOST not set" && missing=1
+          [ -z "${{ secrets.VPS_USER }}" ] && echo "::warning title=Missing secret::VPS_USER not set" && missing=1
+          [ -z "${{ secrets.VPS_SSH_KEY }}" ] && echo "::warning title=Missing secret::VPS_SSH_KEY not set" && missing=1
           if [ $missing -eq 1 ]; then
             echo "skip=true" >> $GITHUB_OUTPUT
             printf "### Deploy skipped\nMissing secrets: VPS_HOST, VPS_USER and/or VPS_SSH_KEY\n" >> "$GITHUB_STEP_SUMMARY"
@@ -152,150 +133,78 @@ jobs:
             echo "skip=false" >> $GITHUB_OUTPUT
           fi
 
-
-      - name: Env files validation (SSH) + Summary
-        id: remote-validate
+      - name: Validate environment files
         if: steps.check.outputs.skip == 'false'
+        id: validate
         run: |
           set -e
           mkdir -p ~/.ssh
           echo "${{ secrets.VPS_SSH_KEY }}" > ~/.ssh/vps_key
           chmod 600 ~/.ssh/vps_key
 
-          REPORT=$(ssh -i ~/.ssh/vps_key -o StrictHostKeyChecking=no ${{ secrets.VPS_USER }}@${{ secrets.VPS_HOST }} "bash -s -- '${{ github.repository }}' '${GITHUB_REF_NAME}'" << 'EOSSH'
-          set -e
-          REPO="$1"
-          BRANCH="$2"
-          STACK_DIR="/opt/stacks/houseapp"
-          API_ENV="${STACK_DIR}/api.env"
-          WEB_ENV="${STACK_DIR}/web.env"
-          TMP_STACK="/tmp/stack.yml"
-
-          # Ensure stack directory exists and move provided stack.yml
-          sudo mkdir -p "${STACK_DIR}"
-          if [ -f "${TMP_STACK}" ]; then
-            sudo mv "${TMP_STACK}" "${STACK_DIR}/stack.yml"
-            echo "📄 stack.yml updated in ${STACK_DIR}"
-          fi
-
-          # Always refresh example envs from repository to guide configuration
-          curl -fsSL "https://raw.githubusercontent.com/${REPO}/${BRANCH}/deploy/env/api.env.example" | sudo tee "${STACK_DIR}/api.env.example" >/dev/null || true
-          curl -fsSL "https://raw.githubusercontent.com/${REPO}/${BRANCH}/deploy/env/web.env.example" | sudo tee "${STACK_DIR}/web.env.example" >/dev/null || true
-
-          extract() {
-            FILE="$1"
-            KEY="$2"
-            if [ ! -f "$FILE" ]; then echo ""; return; fi
-            grep -E "^$KEY=" "$FILE" | tail -n1 | cut -d= -f2- | sed -e 's/^"//' -e 's/"$//' -e "s/^'//" -e "s/'$//"
-          }
-
-          echo "### Env Files Validation"
-          VALID=true
-          if [ -f "$API_ENV" ]; then
-            JWT_SECRET=$(extract "$API_ENV" JWT_SECRET)
-            WEB_URL=$(extract "$API_ENV" WEB_URL)
-            DB_PASSWORD=$(extract "$API_ENV" DB_PASSWORD)
-            NODE_ENV=$(extract "$API_ENV" NODE_ENV)
-            FAILS=0
-            echo "- api.env: found"
-            if [ -z "$JWT_SECRET" ] || [ "$JWT_SECRET" = "sua_jwt_secret_aqui" ]; then echo "  - ❌ JWT_SECRET missing/default"; FAILS=$((FAILS+1)); else echo "  - ✅ JWT_SECRET present"; fi
-            if echo "$WEB_URL" | grep -Eq '^https?://'; then echo "  - ✅ WEB_URL ok ($WEB_URL)"; else echo "  - ❌ WEB_URL invalid/missing"; FAILS=$((FAILS+1)); fi
-            if [ -n "$DB_PASSWORD" ]; then echo "  - ✅ DB_PASSWORD present"; else echo "  - ❌ DB_PASSWORD missing"; FAILS=$((FAILS+1)); fi
-            if [ "$NODE_ENV" = "production" ] || [ "$NODE_ENV" = "staging" ] || [ "$NODE_ENV" = "development" ]; then echo "  - ✅ NODE_ENV=$NODE_ENV"; else echo "  - ❌ NODE_ENV invalid ($NODE_ENV)"; FAILS=$((FAILS+1)); fi
-            if [ $FAILS -gt 0 ]; then
-              echo "  - ℹ️  Review /opt/stacks/houseapp/api.env (copied from example?)"
-              VALID=false
+          # Validate environment files on VPS
+          VALIDATION_RESULT=$(ssh -i ~/.ssh/vps_key -o StrictHostKeyChecking=no ${{ secrets.VPS_USER }}@${{ secrets.VPS_HOST }} "bash -s" << 'EOF'
+            set -e
+            STACK_DIR="/opt/stacks/houseapp"
+            API_ENV="${STACK_DIR}/api.env"
+            WEB_ENV="${STACK_DIR}/web.env"
+            
+            VALID=true
+            
+            # Check API env file
+            if [ -f "$API_ENV" ]; then
+              JWT_SECRET=$(grep -E "^JWT_SECRET=" "$API_ENV" | tail -n1 | cut -d= -f2- | sed -e 's/^"//' -e 's/"$//' -e "s/^'//" -e "s/'$//")
+              WEB_URL=$(grep -E "^WEB_URL=" "$API_ENV" | tail -n1 | cut -d= -f2- | sed -e 's/^"//' -e 's/"$//' -e "s/^'//" -e "s/'$//")
+              DB_PASSWORD=$(grep -E "^DB_PASSWORD=" "$API_ENV" | tail -n1 | cut -d= -f2- | sed -e 's/^"//' -e 's/"$//' -e "s/^'//" -e "s/'$//")
+              NODE_ENV=$(grep -E "^NODE_ENV=" "$API_ENV" | tail -n1 | cut -d= -f2- | sed -e 's/^"//' -e 's/"$//' -e "s/^'//" -e "s/'$//")
+              
+              if [ -z "$JWT_SECRET" ] || [ "$JWT_SECRET" = "sua_jwt_secret_aqui" ]; then
+                echo "❌ JWT_SECRET missing/default"
+                VALID=false
+              fi
+              
+              if ! echo "$WEB_URL" | grep -Eq '^https?://'; then
+                echo "❌ WEB_URL invalid/missing"
+                VALID=false
+              fi
+              
+              if [ -z "$DB_PASSWORD" ]; then
+                echo "❌ DB_PASSWORD missing"
+                VALID=false
+              fi
+              
+              if [ "$NODE_ENV" != "production" ] && [ "$NODE_ENV" != "staging" ] && [ "$NODE_ENV" != "development" ]; then
+                echo "❌ NODE_ENV invalid ($NODE_ENV)"
+                VALID=false
+              fi
             else
-              echo "  - ✅ api.env looks good"
+              echo "❌ api.env not found"
+              VALID=false
             fi
-          else
-            echo "- api.env: not found. Example available at ${STACK_DIR}/api.env.example"
-            VALID=false
-          fi
-
-          if [ -f "$WEB_ENV" ]; then
-            echo "- web.env: found"
-            echo "  - ℹ️  Ensure URLs and keys are correct for production"
-          else
-            echo "- web.env: not found. Example available at ${STACK_DIR}/web.env.example"
-            VALID=false
-          fi
-          echo "VALID=$VALID"
-          EOSSH
+            
+            # Check WEB env file
+            if [ ! -f "$WEB_ENV" ]; then
+              echo "❌ web.env not found"
+              VALID=false
+            fi
+            
+            echo "VALID=$VALID"
+          EOF
           )
-
-          printf "%s\n" "$REPORT" >> "$GITHUB_STEP_SUMMARY"
-          if echo "$REPORT" | grep -q '^VALID=true$'; then
+          
+          echo "$VALIDATION_RESULT" >> "$GITHUB_STEP_SUMMARY"
+          
+          if echo "$VALIDATION_RESULT" | grep -q '^VALID=true$'; then
             echo "valid=true" >> "$GITHUB_OUTPUT"
           else
             echo "valid=false" >> "$GITHUB_OUTPUT"
           fi
+          
           rm ~/.ssh/vps_key
 
-      - name: Deploy over SSH to Swarm
-        if: steps.check.outputs.skip == 'false' && steps.remote-validate.outputs.valid == 'true'
+      - name: Deploy to VPS
+        if: steps.check.outputs.skip == 'false' && steps.validate.outputs.valid == 'true'
         id: deploy
-        continue-on-error: true
-        uses: appleboy/ssh-action@v1.0.3
-        with:
-          host: ${{ secrets.VPS_HOST }}
-          username: ${{ secrets.VPS_USER }}
-          key: ${{ secrets.VPS_SSH_KEY }}
-        script: |
-          set -e
-          SHA=${GITHUB_SHA::7}
-          VERSION="${{ steps.version.outputs.version }}"
-
-          # Use the same versioning logic as build step
-          if [ "${{ github.ref_name }}" = "main" ]; then
-            export TAG="$VERSION"
-          else
-            export TAG="$VERSION"
-          fi
-
-          # Create directory structure (if not exists)
-          sudo mkdir -p /opt/stacks/houseapp
-
-          # Download and copy stack file to final location
-          echo "📄 Downloading stack.yml from repository..."
-          curl -fsSL "https://raw.githubusercontent.com/${{ github.repository }}/${{ github.ref_name }}/deploy/stacks/houseapp.yml" | sudo tee /opt/stacks/houseapp/stack.yml >/dev/null
-          echo "✅ Stack file downloaded and copied successfully"
-
-          echo "📄 Updating stack.yml..."
-
-          # Login to GHCR and deploy
-          echo "🔐 Logging into GHCR..."
-          docker login ghcr.io -u ${{ github.actor }} -p ${{ secrets.GITHUB_TOKEN }}
-            
-          # Verify images exist
-          echo "🔍 Verifying images exist..."
-          docker pull ghcr.io/fagner3g/houseapp-api:$TAG || echo "❌ Failed to pull houseapp-api:$TAG"
-          docker pull ghcr.io/fagner3g/houseapp-web:$TAG || echo "❌ Failed to pull houseapp-web:$TAG"
-            
-          echo "🚀 Deploying houseapp with TAG=$TAG (version: $VERSION)"
-          docker stack deploy --with-registry-auth --resolve-image changed --prune \
-            -c /opt/stacks/houseapp/stack.yml houseapp
-            
-          # Force services to recycle tasks even if spec unchanged
-          docker service update --force houseapp_api || true
-          docker service update --force houseapp_web || true
-            
-          echo "✅ Stack deployed successfully!"
-          echo "📊 Check status: docker stack ps houseapp"
-
-      - name: Deploy summary
-        if: steps.deploy.outcome == 'success'
-        run: |
-          printf "### Deploy\n- Branch: %s\n- Version: %s\n- TAG: %s\n- Target: Swarm stack houseapp (SSH)\n" \
-            "${GITHUB_REF_NAME}" "${{ steps.version.outputs.version }}" "${GITHUB_SHA::7}" >> "$GITHUB_STEP_SUMMARY"
-
-      - name: Deploy skipped - env invalid
-        if: steps.check.outputs.skip == 'false' && steps.remote-validate.outputs.valid != 'true'
-        run: |
-          printf "### Deploy Skipped\nEnv validation failed on VPS. Please review /opt/stacks/houseapp/*.env.\n" >> "$GITHUB_STEP_SUMMARY"
-
-      - name: Scale down services on invalid env (SSH)
-        if: steps.check.outputs.skip == 'false' && steps.remote-validate.outputs.valid != 'true'
         uses: appleboy/ssh-action@v1.0.3
         with:
           host: ${{ secrets.VPS_HOST }}
@@ -303,6 +212,72 @@ jobs:
           key: ${{ secrets.VPS_SSH_KEY }}
           script: |
             set -e
-            echo "Scaling down houseapp services to prevent flapping..."
+            
+            # Set version and tag
+            VERSION="${{ steps.version.outputs.version }}"
+            TAG="$VERSION"
+            
+            echo "🚀 Starting deployment with TAG=$TAG (version: $VERSION)"
+            
+            # Create directory structure
+            sudo mkdir -p /opt/stacks/houseapp
+            
+            # Download stack file from repository
+            echo "📄 Downloading stack.yml from repository..."
+            curl -fsSL "https://raw.githubusercontent.com/${{ github.repository }}/${{ github.ref_name }}/deploy/stacks/houseapp.yml" | sudo tee /opt/stacks/houseapp/stack.yml >/dev/null
+            echo "✅ Stack file downloaded successfully"
+            
+            # Login to GHCR
+            echo "🔐 Logging into GHCR..."
+            docker login ghcr.io -u ${{ github.actor }} -p ${{ secrets.GITHUB_TOKEN }}
+            
+            # Verify images exist and pull them
+            echo "🔍 Verifying and pulling images..."
+            docker pull ghcr.io/${{ github.repository_owner }}/houseapp-api:$TAG
+            docker pull ghcr.io/${{ github.repository_owner }}/houseapp-web:$TAG
+            echo "✅ Images verified and pulled successfully"
+            
+            # Deploy stack
+            echo "🚀 Deploying houseapp stack..."
+            docker stack deploy --with-registry-auth --resolve-image changed --prune \
+              -c /opt/stacks/houseapp/stack.yml houseapp
+            
+            # Force services to update
+            echo "🔄 Forcing service updates..."
+            docker service update --force houseapp_api || true
+            docker service update --force houseapp_web || true
+            
+            echo "✅ Deployment completed successfully!"
+            echo "📊 Stack status:"
+            docker stack ps houseapp --no-trunc | head -5
+
+      - name: Deploy summary
+        if: steps.deploy.outcome == 'success'
+        run: |
+          printf "### ✅ Deploy Successful\n" >> "$GITHUB_STEP_SUMMARY"
+          printf "- **Branch:** %s\n" "${{ github.ref_name }}" >> "$GITHUB_STEP_SUMMARY"
+          printf "- **Version:** %s\n" "${{ steps.version.outputs.version }}" >> "$GITHUB_STEP_SUMMARY"
+          printf "- **TAG:** %s\n" "${{ steps.version.outputs.version }}" >> "$GITHUB_STEP_SUMMARY"
+          printf "- **Target:** Swarm stack houseapp\n" >> "$GITHUB_STEP_SUMMARY"
+          printf "- **Services:** houseapp_api, houseapp_web\n" >> "$GITHUB_STEP_SUMMARY"
+
+      - name: Deploy skipped - validation failed
+        if: steps.check.outputs.skip == 'false' && steps.validate.outputs.valid != 'true'
+        run: |
+          printf "### ❌ Deploy Skipped\n" >> "$GITHUB_STEP_SUMMARY"
+          printf "Environment validation failed on VPS. Please review:\n" >> "$GITHUB_STEP_SUMMARY"
+          printf "- /opt/stacks/houseapp/api.env\n" >> "$GITHUB_STEP_SUMMARY"
+          printf "- /opt/stacks/houseapp/web.env\n" >> "$GITHUB_STEP_SUMMARY"
+
+      - name: Scale down services on validation failure
+        if: steps.check.outputs.skip == 'false' && steps.validate.outputs.valid != 'true'
+        uses: appleboy/ssh-action@v1.0.3
+        with:
+          host: ${{ secrets.VPS_HOST }}
+          username: ${{ secrets.VPS_USER }}
+          key: ${{ secrets.VPS_SSH_KEY }}
+          script: |
+            echo "⚠️ Scaling down services due to validation failure..."
             docker service scale houseapp_api=0 || true
             docker service scale houseapp_web=0 || true
+            echo "✅ Services scaled down"
