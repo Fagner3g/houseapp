@@ -76,7 +76,7 @@ jobs:
           context: ./${{ matrix.app }}
           push: true
           tags: |
-            ghcr.io/${{ github.repository_owner }}/houseapp-${{ matrix.app }}:${{ steps.version.outputs.version }}
+            ghcr.io/${{ github.repository_owner | downcase }}/houseapp-${{ matrix.app }}:${{ steps.version.outputs.version }}
           cache-from: type=gha
           cache-to: type=gha,mode=max
           platforms: linux/arm64
@@ -86,7 +86,7 @@ jobs:
           echo "### Build Summary" >> $GITHUB_STEP_SUMMARY
           echo "- **App:** ${{ matrix.app }}" >> $GITHUB_STEP_SUMMARY
           echo "- **Version:** ${{ steps.version.outputs.version }}" >> $GITHUB_STEP_SUMMARY
-          echo "- **Image:** ghcr.io/${{ github.repository_owner }}/houseapp-${{ matrix.app }}:${{ steps.version.outputs.version }}" >> $GITHUB_STEP_SUMMARY
+          echo "- **Image:** ghcr.io/${{ github.repository_owner | downcase }}/houseapp-${{ matrix.app }}:${{ steps.version.outputs.version }}" >> $GITHUB_STEP_SUMMARY
 
   deploy:
     needs: build-and-push
@@ -233,8 +233,8 @@ jobs:
             
             # Verify images exist and pull them
             echo "🔍 Verifying and pulling images..."
-            docker pull ghcr.io/${{ github.repository_owner }}/houseapp-api:$TAG
-            docker pull ghcr.io/${{ github.repository_owner }}/houseapp-web:$TAG
+            docker pull ghcr.io/${{ github.repository_owner | downcase }}/houseapp-api:$TAG
+            docker pull ghcr.io/${{ github.repository_owner | downcase }}/houseapp-web:$TAG
             echo "✅ Images verified and pulled successfully"
             
             # Deploy stack
