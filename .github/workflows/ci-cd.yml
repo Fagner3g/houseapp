@@ -161,7 +161,12 @@ jobs:
           chmod 600 ~/.ssh/vps_key
           
           # Copy stack file to VPS
+          echo "📄 Copying stack.yml to VPS..."
           scp -i ~/.ssh/vps_key -o StrictHostKeyChecking=no deploy/stacks/houseapp.yml ${{ secrets.VPS_USER }}@${{ secrets.VPS_HOST }}:/tmp/stack.yml
+          
+          # Verify file was copied
+          echo "✅ Verifying file was copied..."
+          ssh -i ~/.ssh/vps_key -o StrictHostKeyChecking=no ${{ secrets.VPS_USER }}@${{ secrets.VPS_HOST }} "ls -la /tmp/stack.yml"
           
           # Clean up SSH key
           rm ~/.ssh/vps_key
