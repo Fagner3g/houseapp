@@ -259,25 +259,25 @@ jobs:
           host: ${{ secrets.VPS_HOST }}
           username: ${{ secrets.VPS_USER }}
           key: ${{ secrets.VPS_SSH_KEY }}
-          script: |
-            set -e
-            SHA=${GITHUB_SHA::7}
-            VERSION="${{ steps.version.outputs.version }}"
-            
-            # Use the same versioning logic as build step
-            if [ "${{ github.ref_name }}" = "main" ]; then
-              export TAG="$VERSION"
-            else
-              export TAG="$VERSION"
-            fi
+        script: |
+          set -e
+          SHA=${GITHUB_SHA::7}
+          VERSION="${{ steps.version.outputs.version }}"
 
-            # Create directory structure (if not exists)
-            sudo mkdir -p /opt/stacks/houseapp
+          # Use the same versioning logic as build step
+          if [ "${{ github.ref_name }}" = "main" ]; then
+            export TAG="$VERSION"
+          else
+            export TAG="$VERSION"
+          fi
 
-            # Move stack file from /tmp to final location
-            echo "🔍 Checking if /tmp/stack.yml exists..."
-            ls -la /tmp/stack.yml || echo "❌ /tmp/stack.yml not found!"
-            sudo mv /tmp/stack.yml /opt/stacks/houseapp/stack.yml
+          # Create directory structure (if not exists)
+          sudo mkdir -p /opt/stacks/houseapp
+
+          # Copy stack file directly to final location
+          echo "📄 Copying stack.yml to final location..."
+          sudo cp /tmp/stack.yml /opt/stacks/houseapp/stack.yml
+          echo "✅ Stack file copied successfully"
 
             echo "📄 Updating stack.yml..."
 
