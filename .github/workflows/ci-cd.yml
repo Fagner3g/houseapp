@@ -30,8 +30,21 @@ jobs:
     strategy:
       matrix:
         app: [api, web]
+      max-parallel: 2
     steps:
       - uses: actions/checkout@v4
+
+      - name: Detect changes
+        id: changes
+        uses: dorny/paths-filter@v3
+        with:
+          filters: |
+            api:
+              - 'api/**'
+            web:
+              - 'web/**'
+            deploy:
+              - 'deploy/**'
 
       - name: Set up Docker Buildx
         uses: docker/setup-buildx-action@v3
@@ -71,17 +84,19 @@ jobs:
           fi
 
       - name: Build and push Docker image
+        if: ${{ (matrix.app == 'api' && steps.changes.outputs.api == 'true') || (matrix.app == 'web' && steps.changes.outputs.web == 'true') || steps.changes.outputs.deploy == 'true' || github.event_name == 'release' || github.event_name == 'workflow_dispatch' }}
         uses: docker/build-push-action@v5
         with:
           context: ./${{ matrix.app }}
           push: true
           tags: |
             ghcr.io/fagner3g/houseapp-${{ matrix.app }}:${{ steps.version.outputs.version }}
-          cache-from: type=gha
-          cache-to: type=gha,mode=max
+          cache-from: type=registry,ref=ghcr.io/fagner3g/houseapp-${{ matrix.app }}:buildcache
+          cache-to: type=registry,ref=ghcr.io/fagner3g/houseapp-${{ matrix.app }}:buildcache,mode=max
           platforms: linux/arm64
 
       - name: Build summary
+        if: ${{ (matrix.app == 'api' && steps.changes.outputs.api == 'true') || (matrix.app == 'web' && steps.changes.outputs.web == 'true') || steps.changes.outputs.deploy == 'true' || github.event_name == 'release' || github.event_name == 'workflow_dispatch' }}
         run: |
           echo "### Build Summary" >> $GITHUB_STEP_SUMMARY
           echo "- **App:** ${{ matrix.app }}" >> $GITHUB_STEP_SUMMARY
@@ -95,6 +110,18 @@ jobs:
     environment: staging
     steps:
       - uses: actions/checkout@v4
+
+      - name: Detect changes
+        id: changes
+        uses: dorny/paths-filter@v3
+        with:
+          filters: |
+            api:
+              - 'api/**'
+            web:
+              - 'web/**'
+            deploy:
+              - 'deploy/**'
 
       - name: Generate semantic version
         id: version
@@ -196,15 +223,15 @@ jobs:
           echo "$VALIDATION_RESULT" >> "$GITHUB_STEP_SUMMARY"
           
           if echo "$VALIDATION_RESULT" | grep -q '^VALID=true$'; then
-            echo "valid=true" >> "$GITHUB_OUTPUT"
+            echo "valid=true" >> $GITHUB_OUTPUT
           else
-            echo "valid=false" >> "$GITHUB_OUTPUT"
+            echo "valid=false" >> $GITHUB_OUTPUT
           fi
           
           rm ~/.ssh/vps_key
 
       - name: Deploy to VPS
-        if: steps.check.outputs.skip == 'false' && steps.validate.outputs.valid == 'true'
+        if: steps.check.outputs.skip == 'false' && steps.validate.outputs.valid == 'true' && (steps.changes.outputs.api == 'true' || steps.changes.outputs.web == 'true' || steps.changes.outputs.deploy == 'true' || github.event_name == 'release' || github.event_name == 'workflow_dispatch')
         id: deploy
         uses: appleboy/ssh-action@v1.0.3
         with:
@@ -242,11 +269,6 @@ jobs:
             echo "🚀 Deploying houseapp stack..."
             docker stack deploy --with-registry-auth --resolve-image changed --prune \
               -c /opt/stacks/houseapp/stack.yml houseapp
-            
-            # Force services to update
-            echo "🔄 Forcing service updates..."
-            docker service update --force houseapp_api || true
-            docker service update --force houseapp_web || true
             
             echo "✅ Deployment completed successfully!"
             echo "📊 Stack status:"
