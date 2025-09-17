@@ -8,7 +8,7 @@ services:
   api:
     image: ghcr.io/fagner3g/houseapp-api:${TAG:-develop}
     env_file:
-      - /opt/stacks/houseapp-homolog/api.env
+      - /opt/stacks/houseapp/homolog/api.env
     healthcheck:
       test: ["CMD-SHELL", "curl -sf http://127.0.0.1:3333/health || wget -qO- http://127.0.0.1:3333/health || exit 1"]
       interval: 15s
@@ -46,7 +46,7 @@ services:
   web:
     image: ghcr.io/fagner3g/houseapp-web:${TAG:-develop}
     env_file:
-      - /opt/stacks/houseapp-homolog/web.env
+      - /opt/stacks/houseapp/homolog/web.env
     healthcheck:
       test: ["CMD-SHELL", "curl -sf http://127.0.0.1/health || wget -qO- http://127.0.0.1/health || exit 1"]
       interval: 15s
