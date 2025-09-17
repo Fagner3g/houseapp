@@ -69,7 +69,7 @@ function Index() {
           Cadastrar
         </Button>
       </div>
-      <h4>v1.0.10 - Banco Auto-Criado</h4>
+      <h4>v1.0.11 - SQL Corrigido</h4>
     </div>
   )
 }

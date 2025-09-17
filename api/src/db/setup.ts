@@ -62,7 +62,7 @@ async function createDatabase(dbName: string, postgresUrl: string): Promise<void
 
   try {
     logger.database(`Criando banco de dados: ${dbName}`)
-    await client`CREATE DATABASE ${dbName}`
+    await client.unsafe(`CREATE DATABASE "${dbName}"`)
     logger.database(`Banco de dados ${dbName} criado com sucesso!`)
   } catch (error) {
     logger.error(`Erro ao criar banco de dados ${dbName}`)
