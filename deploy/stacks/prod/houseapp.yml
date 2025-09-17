@@ -81,3 +81,4 @@ services:
         - traefik.http.services.houseapp-web.loadbalancer.server.port=80
     networks:
       - network_swarm_public
+

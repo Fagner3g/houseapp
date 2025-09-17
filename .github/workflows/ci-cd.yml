@@ -217,35 +217,40 @@ jobs:
             # Set version and tag
             VERSION="${{ steps.version.outputs.version }}"
             TAG="$VERSION"
-            
-            echo "🚀 Starting deployment with TAG=$TAG (version: $VERSION)"
-            
-            # Create directory structure
-            sudo mkdir -p /opt/stacks/houseapp
-            
-            # Download stack file from repository and replace TAG variable
-            echo "📄 Downloading stack.yml from repository..."
-            curl -fsSL "https://raw.githubusercontent.com/${{ github.repository }}/${{ github.ref_name }}/deploy/stacks/houseapp.yml" | sed "s/\${TAG:-develop}/$TAG/g" | sudo tee /opt/stacks/houseapp/stack.yml >/dev/null
-            echo "✅ Stack file downloaded and TAG replaced with $TAG"
-            
+            BRANCH="${{ github.ref_name }}"
+
+            # Select environment settings and paths
+            if [ "$BRANCH" = "main" ]; then
+              STACK_NAME="houseapp"
+              STACK_DIR="/opt/stacks/houseapp/prod"
+              REMOTE_YML="deploy/stacks/prod/houseapp.yml"
+            else
+              STACK_NAME="houseapp-homolog"
+              STACK_DIR="/opt/stacks/houseapp/homolog"
+              REMOTE_YML="deploy/stacks/homolog/houseapp.yml"
+            fi
+
+            # Ensure stack directory and cleanup root ymls
+            sudo mkdir -p "$STACK_DIR"
+            sudo find /opt/stacks -maxdepth 1 -type f -name '*.yml' -delete || true
+
+            # Download stack file for the selected environment and replace TAG
+            curl -fsSL "https://raw.githubusercontent.com/${{ github.repository }}/${{ github.ref_name }}/$REMOTE_YML" \
+              | sed "s/\${TAG:-develop}/$TAG/g" \
+              | sudo tee "$STACK_DIR/stack.yml" >/dev/null
+
             # Login to GHCR
-            echo "🔐 Logging into GHCR..."
             docker login ghcr.io -u ${{ github.actor }} -p ${{ secrets.GITHUB_TOKEN }}
-            
-            # Verify images exist and pull them
-            echo "🔍 Verifying and pulling images..."
+
+            # Pull images
             docker pull ghcr.io/fagner3g/houseapp-api:$TAG
             docker pull ghcr.io/fagner3g/houseapp-web:$TAG
-            echo "✅ Images verified and pulled successfully"
-            
+
             # Deploy stack
-            echo "🚀 Deploying houseapp stack..."
-            docker stack deploy --with-registry-auth --resolve-image changed --prune \
-              -c /opt/stacks/houseapp/stack.yml houseapp
-            
-            echo "✅ Deployment completed successfully!"
-            echo "📊 Stack status:"
-            docker stack ps houseapp --no-trunc | head -5
+            docker stack deploy --with-registry-auth --resolve-image changed --prune -c "$STACK_DIR/stack.yml" "$STACK_NAME"
+
+            # Show status
+            docker stack ps "$STACK_NAME" --no-trunc | head -5
 
       - name: Deploy summary
         if: steps.deploy.outcome == 'success'

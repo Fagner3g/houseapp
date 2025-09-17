@@ -56,7 +56,7 @@ function Index() {
   return (
     <div className="justify-center items-center text-center flex flex-col">
       <div className="flex flex-col gap-3 w-sm">
-        <h1>Fazer login</h1>
+        <h1>Fazer login • pipeline test</h1>
         <Input placeholder="Email ou telefone" onChange={e => setEmail(e.target.value)} />
         <Button
           disabled={!email || status === Status.Pending}
