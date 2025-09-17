@@ -8,7 +8,7 @@ services:
   api:
     image: ghcr.io/fagner3g/houseapp-api:${TAG:-develop}
     env_file:
-      - /opt/stacks/houseapp/api.env
+      - /opt/stacks/houseapp/prod/api.env
     healthcheck:
       # Healthcheck roda dentro do próprio container; use 127.0.0.1 para evitar problemas de DNS
       test: ["CMD-SHELL", "curl -sf http://127.0.0.1:3333/health || wget -qO- http://127.0.0.1:3333/health || exit 1"]
@@ -47,7 +47,7 @@ services:
   web:
     image: ghcr.io/fagner3g/houseapp-web:${TAG:-develop}
     env_file:
-      - /opt/stacks/houseapp/web.env
+      - /opt/stacks/houseapp/prod/web.env
     healthcheck:
       # Healthcheck roda dentro do próprio container; use 127.0.0.1 para evitar problemas de DNS
       test: ["CMD-SHELL", "curl -sf http://127.0.0.1/health || wget -qO- http://127.0.0.1/health || exit 1"]
