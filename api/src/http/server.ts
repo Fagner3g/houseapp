@@ -6,23 +6,17 @@ import { buildServer } from './utils/setup'
 
 export async function server() {
   try {
-    logger.info('Iniciando API HouseApp...')
-
     await setupDatabase()
 
-    // Executar migrações
-    logger.info('Executando migrações...')
     await runMigrations()
 
-    // Register crons
-    // registerJobs()
+    registerJobs()
 
-    logger.info('Iniciando servidor...')
     const server = await buildServer()
 
     try {
       await server.listen({ port: env.PORT, host: env.HOST })
-      logger.info(`Servidor rodando em http://${env.HOST}:${env.PORT}`)
+      logger.info(`Servidor rodando`)
     } catch (err) {
       logger.error(
         `Erro ao iniciar servidor: ${err instanceof Error ? err.message : 'Erro desconhecido'}`

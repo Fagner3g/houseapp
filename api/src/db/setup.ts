@@ -27,10 +27,9 @@ async function testPostgresConnection(postgresUrl: string): Promise<boolean> {
   const client = postgres(postgresUrl, { max: 1, idle_timeout: 10 })
 
   try {
-    logger.info('Testando conexão com PostgreSQL...')
     logger.debug(`URL: ${postgresUrl}`)
     await client`SELECT 1`
-    logger.info('Conexão com PostgreSQL estabelecida com sucesso!')
+    logger.info('Conexão com PostgreSQL estabelecida com sucesso! ✅')
     return true
   } catch (error) {
     logger.error(`Erro na conexão: ${error instanceof Error ? error.message : 'Erro desconhecido'}`)
@@ -83,8 +82,6 @@ export async function setupDatabase(): Promise<void> {
       throw new Error('Não foi possível conectar ao PostgreSQL')
     }
 
-    logger.info(`Verificando banco de dados: ${dbName}`)
-
     const exists = await databaseExists(dbName, postgresUrl)
 
     if (exists) {
@@ -93,8 +90,6 @@ export async function setupDatabase(): Promise<void> {
       logger.info(`Banco de dados ${dbName} não existe, criando...`)
       await createDatabase(dbName, postgresUrl)
     }
-
-    logger.info('Setup do banco de dados concluído com sucesso!')
   } catch (error) {
     logger.error('Erro no setup do banco de dados')
     throw error
@@ -132,7 +127,7 @@ export async function showPendingMigrations(): Promise<void> {
 
     const pending = journal.entries.slice(appliedCount)
     if (pending.length === 0) {
-      logger.info('✅ Nenhuma migração pendente encontrada!')
+      logger.info('Nenhuma migração pendente encontrada!')
       logger.info('=== Fim das Migrações ===')
       return
     }
@@ -211,13 +206,11 @@ export async function runMigrations(): Promise<void> {
       }
     }
 
-    logger.info('Verificando migrações pendentes...')
-
     // Verificar se há migrações pendentes
     const hasPending = await hasPendingMigrations()
 
     if (!hasPending) {
-      logger.info('✅ Nenhuma migração pendente encontrada!')
+      logger.info('Nenhuma migração pendente encontrada!')
       return
     }
 

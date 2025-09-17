@@ -69,7 +69,6 @@ function Index() {
           Cadastrar
         </Button>
       </div>
-      <h4>v1.0.13 - Frontend API Corrigido</h4>
     </div>
   )
 }
