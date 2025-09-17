@@ -14,19 +14,21 @@ export function getDatabaseString() {
   const username = env.DB_USER
   const password = env.DB_PASSWORD
 
-  // URL sem o nome do banco para conectar ao postgres
+  // URL sem o nome do banco para conectar ao postgres (para criar banco)
+  const postgresUrl = `postgresql://${username}:${password}@${host}:${port}/postgres`
+  // URL com o nome do banco para usar após criação
   const baseUrl = `postgresql://${username}:${password}@${host}:${port}/${dbName}`
 
-  return { dbName, baseUrl, host, port, username, password }
+  return { dbName, baseUrl, postgresUrl, host, port, username, password }
 }
 
 // Função para testar conexão com PostgreSQL
-async function testPostgresConnection(baseUrl: string): Promise<boolean> {
-  const client = postgres(baseUrl, { max: 1, idle_timeout: 10 })
+async function testPostgresConnection(postgresUrl: string): Promise<boolean> {
+  const client = postgres(postgresUrl, { max: 1, idle_timeout: 10 })
 
   try {
     logger.database('Testando conexão com PostgreSQL...')
-    logger.debug(`URL: ${baseUrl}`)
+    logger.debug(`URL: ${postgresUrl}`)
     await client`SELECT 1`
     logger.database('Conexão com PostgreSQL estabelecida com sucesso!')
     return true
@@ -39,8 +41,8 @@ async function testPostgresConnection(baseUrl: string): Promise<boolean> {
 }
 
 // Função para verificar se o banco existe
-async function databaseExists(dbName: string, baseUrl: string): Promise<boolean> {
-  const client = postgres(baseUrl, { max: 1 })
+async function databaseExists(dbName: string, postgresUrl: string): Promise<boolean> {
+  const client = postgres(postgresUrl, { max: 1 })
 
   try {
     const result = await client`
@@ -55,8 +57,8 @@ async function databaseExists(dbName: string, baseUrl: string): Promise<boolean>
 }
 
 // Função para criar o banco de dados
-async function createDatabase(dbName: string, baseUrl: string): Promise<void> {
-  const client = postgres(baseUrl, { max: 1 })
+async function createDatabase(dbName: string, postgresUrl: string): Promise<void> {
+  const client = postgres(postgresUrl, { max: 1 })
 
   try {
     logger.database(`Criando banco de dados: ${dbName}`)
@@ -73,23 +75,23 @@ async function createDatabase(dbName: string, baseUrl: string): Promise<void> {
 // Função principal para setup do banco
 export async function setupDatabase(): Promise<void> {
   try {
-    const { dbName, baseUrl } = getDatabaseString()
+    const { dbName, baseUrl, postgresUrl } = getDatabaseString()
 
     // Primeiro, testar conexão com PostgreSQL
-    const isConnected = await testPostgresConnection(baseUrl)
+    const isConnected = await testPostgresConnection(postgresUrl)
     if (!isConnected) {
       throw new Error('Não foi possível conectar ao PostgreSQL')
     }
 
     logger.database(`Verificando banco de dados: ${dbName}`)
 
-    const exists = await databaseExists(dbName, baseUrl)
+    const exists = await databaseExists(dbName, postgresUrl)
 
     if (exists) {
       logger.database(`Banco de dados ${dbName} já existe, prosseguindo...`)
     } else {
       logger.database(`Banco de dados ${dbName} não existe, criando...`)
-      await createDatabase(dbName, baseUrl)
+      await createDatabase(dbName, postgresUrl)
     }
 
     logger.database('Setup do banco de dados concluído com sucesso!')
