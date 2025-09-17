@@ -37,7 +37,7 @@ services:
           memory: 128M
       labels:
         - traefik.enable=true
-        - traefik.http.routers.houseapp-api.rule=Host(`api.jarvis.dev.br`)
+        - traefik.http.routers.houseapp-api.rule=Host(`${API_HOST}`)
         - traefik.http.routers.houseapp-api.entrypoints=websecure
         - traefik.http.routers.houseapp-api.tls.certresolver=letsencryptresolver
         - traefik.http.services.houseapp-api.loadbalancer.server.port=3333
@@ -75,7 +75,7 @@ services:
           memory: 96M
       labels:
         - traefik.enable=true
-        - traefik.http.routers.houseapp-web.rule=Host(`app.jarvis.dev.br`)
+        - traefik.http.routers.houseapp-web.rule=Host(`${WEB_HOST}`)
         - traefik.http.routers.houseapp-web.entrypoints=websecure
         - traefik.http.routers.houseapp-web.tls.certresolver=letsencryptresolver
         - traefik.http.services.houseapp-web.loadbalancer.server.port=80

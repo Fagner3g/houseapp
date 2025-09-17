@@ -79,7 +79,7 @@ jobs:
           cache-to: type=registry,ref=ghcr.io/fagner3g/houseapp-${{ matrix.app }}:buildcache,mode=max
           platforms: linux/arm64
           build-args: |
-            VITE_API_HOST=${{ matrix.app == 'web' && 'https://api.jarvis.dev.br' || '' }}
+            VITE_API_HOST=${{ matrix.app == 'web' && (github.ref_name == 'main' && 'https://api.jarvis.dev.br' || 'https://api.homolog.jarvis.dev.br') || '' }}
 
       - name: Build summary
         run: |
@@ -217,40 +217,47 @@ jobs:
             # Set version and tag
             VERSION="${{ steps.version.outputs.version }}"
             TAG="$VERSION"
-            
-            echo "🚀 Starting deployment with TAG=$TAG (version: $VERSION)"
-            
-            # Create directory structure
+            BRANCH="${{ github.ref_name }}"
+
+            # Branch-based hosts
+            if [ "$BRANCH" = "main" ]; then
+              API_HOST="api.jarvis.dev.br"
+              WEB_HOST="app.jarvis.dev.br"
+            else
+              API_HOST="api.homolog.jarvis.dev.br"
+              WEB_HOST="app.homolog.jarvis.dev.br"
+            fi
+
+            # Ensure target directory
             sudo mkdir -p /opt/stacks/houseapp
-            
-            # Download stack file from repository and replace TAG variable
-            echo "📄 Downloading stack.yml from repository..."
-            curl -fsSL "https://raw.githubusercontent.com/${{ github.repository }}/${{ github.ref_name }}/deploy/stacks/houseapp.yml" | sed "s/\${TAG:-develop}/$TAG/g" | sudo tee /opt/stacks/houseapp/stack.yml >/dev/null
-            echo "✅ Stack file downloaded and TAG replaced with $TAG"
-            
+
+            # Write web.env with branch-specific API host (avoid heredoc indentation issues)
+            printf "VITE_API_HOST=https://%s\nNODE_ENV=production\n" "$API_HOST" | sudo tee /opt/stacks/houseapp/web.env >/dev/null
+
+            # Download stack file from repository and replace variables
+            curl -fsSL "https://raw.githubusercontent.com/${{ github.repository }}/${{ github.ref_name }}/deploy/stacks/houseapp.yml" \
+              | sed "s/\${TAG:-develop}/$TAG/g" \
+              | sed "s/\${API_HOST}/$API_HOST/g" \
+              | sed "s/\${WEB_HOST}/$WEB_HOST/g" \
+              | sudo tee /opt/stacks/houseapp/stack.yml >/dev/null
+
             # Login to GHCR
-            echo "🔐 Logging into GHCR..."
             docker login ghcr.io -u ${{ github.actor }} -p ${{ secrets.GITHUB_TOKEN }}
-            
-            # Verify images exist and pull them
-            echo "🔍 Verifying and pulling images..."
+
+            # Pull images
             docker pull ghcr.io/fagner3g/houseapp-api:$TAG
             docker pull ghcr.io/fagner3g/houseapp-web:$TAG
-            echo "✅ Images verified and pulled successfully"
-            
+
             # Deploy stack
-            echo "🚀 Deploying houseapp stack..."
-            docker stack deploy --with-registry-auth --resolve-image changed --prune \
-              -c /opt/stacks/houseapp/stack.yml houseapp
-            
-            echo "✅ Deployment completed successfully!"
-            echo "📊 Stack status:"
+            docker stack deploy --with-registry-auth --resolve-image changed --prune -c /opt/stacks/houseapp/stack.yml houseapp
+
+            # Show status
             docker stack ps houseapp --no-trunc | head -5
 
       - name: Deploy summary
         if: steps.deploy.outcome == 'success'
         run: |
-          printf "### ✅ Deploy Successful\n" >> "$GITHUB_STEP_SUMMARY"
+          printf "### Deploy Successful\n" >> "$GITHUB_STEP_SUMMARY"
           printf "**Branch:** %s\n" "${{ github.ref_name }}" >> "$GITHUB_STEP_SUMMARY"
           printf "**Version:** %s\n" "${{ steps.version.outputs.version }}" >> "$GITHUB_STEP_SUMMARY"
           printf "**TAG:** %s\n" "${{ steps.version.outputs.version }}" >> "$GITHUB_STEP_SUMMARY"
@@ -260,7 +267,7 @@ jobs:
       - name: Deploy skipped - validation failed
         if: steps.check.outputs.skip == 'false' && steps.validate.outputs.valid != 'true'
         run: |
-          printf "### ❌ Deploy Skipped\n" >> "$GITHUB_STEP_SUMMARY"
+          printf "### Deploy Skipped\n" >> "$GITHUB_STEP_SUMMARY"
           printf "Environment validation failed on VPS. Please review:\n" >> "$GITHUB_STEP_SUMMARY"
           printf "- /opt/stacks/houseapp/api.env\n" >> "$GITHUB_STEP_SUMMARY"
           printf "- /opt/stacks/houseapp/web.env\n" >> "$GITHUB_STEP_SUMMARY"
@@ -273,7 +280,7 @@ jobs:
           username: ${{ secrets.VPS_USER }}
           key: ${{ secrets.VPS_SSH_KEY }}
           script: |
-            echo "⚠️ Scaling down services due to validation failure..."
+            echo "Scaling down services due to validation failure..."
             docker service scale houseapp_api=0 || true
             docker service scale houseapp_web=0 || true
-            echo "✅ Services scaled down"
+            echo "Services scaled down"
