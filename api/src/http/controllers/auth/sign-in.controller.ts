@@ -17,7 +17,6 @@ export async function signInController(request: Req, reply: FastifyReply) {
     await SignIn({ email })
   } catch (e) {
     logger.error(e)
-    return reply.status(200).send(null)
   }
 
   return reply.status(200).send(null)
