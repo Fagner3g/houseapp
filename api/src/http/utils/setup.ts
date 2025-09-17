@@ -125,7 +125,7 @@ export async function buildServer() {
       const spec = JSON.stringify(app.swagger(), null, 2)
 
       writeFile(specFile, spec, () => {
-        logger.info(`Swagger spec generated!`)
+        logger.info('Swagger spec generated!')
       })
     })
   }

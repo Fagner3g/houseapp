@@ -27,10 +27,10 @@ async function testPostgresConnection(postgresUrl: string): Promise<boolean> {
   const client = postgres(postgresUrl, { max: 1, idle_timeout: 10 })
 
   try {
-    logger.database('Testando conexão com PostgreSQL...')
+    logger.info('Testando conexão com PostgreSQL...')
     logger.debug(`URL: ${postgresUrl}`)
     await client`SELECT 1`
-    logger.database('Conexão com PostgreSQL estabelecida com sucesso!')
+    logger.info('Conexão com PostgreSQL estabelecida com sucesso!')
     return true
   } catch (error) {
     logger.error(`Erro na conexão: ${error instanceof Error ? error.message : 'Erro desconhecido'}`)
@@ -61,9 +61,9 @@ async function createDatabase(dbName: string, postgresUrl: string): Promise<void
   const client = postgres(postgresUrl, { max: 1 })
 
   try {
-    logger.database(`Criando banco de dados: ${dbName}`)
+    logger.info(`Criando banco de dados: ${dbName}`)
     await client.unsafe(`CREATE DATABASE "${dbName}"`)
-    logger.database(`Banco de dados ${dbName} criado com sucesso!`)
+    logger.info(`Banco de dados ${dbName} criado com sucesso!`)
   } catch (error) {
     logger.error(`Erro ao criar banco de dados ${dbName}`)
     throw error
@@ -83,18 +83,18 @@ export async function setupDatabase(): Promise<void> {
       throw new Error('Não foi possível conectar ao PostgreSQL')
     }
 
-    logger.database(`Verificando banco de dados: ${dbName}`)
+    logger.info(`Verificando banco de dados: ${dbName}`)
 
     const exists = await databaseExists(dbName, postgresUrl)
 
     if (exists) {
-      logger.database(`Banco de dados ${dbName} já existe, prosseguindo...`)
+      logger.info(`Banco de dados ${dbName} já existe, prosseguindo...`)
     } else {
-      logger.database(`Banco de dados ${dbName} não existe, criando...`)
+      logger.info(`Banco de dados ${dbName} não existe, criando...`)
       await createDatabase(dbName, postgresUrl)
     }
 
-    logger.database('Setup do banco de dados concluído com sucesso!')
+    logger.info('Setup do banco de dados concluído com sucesso!')
   } catch (error) {
     logger.error('Erro no setup do banco de dados')
     throw error
@@ -107,7 +107,7 @@ export async function showPendingMigrations(): Promise<void> {
     const journalPath = path.join(process.cwd(), '.migrations', 'meta', '_journal.json')
 
     if (!fs.existsSync(journalPath)) {
-      logger.migration('Nenhum arquivo de journal encontrado')
+      logger.info('Nenhum arquivo de journal encontrado')
       return
     }
 
@@ -128,12 +128,12 @@ export async function showPendingMigrations(): Promise<void> {
       appliedCount = 0
     }
 
-    logger.migration('=== Migrações Pendentes ===')
+    logger.info('=== Migrações Pendentes ===')
 
     const pending = journal.entries.slice(appliedCount)
     if (pending.length === 0) {
-      logger.migration('✅ Nenhuma migração pendente encontrada!')
-      logger.migration('=== Fim das Migrações ===')
+      logger.info('✅ Nenhuma migração pendente encontrada!')
+      logger.info('=== Fim das Migrações ===')
       return
     }
 
@@ -142,16 +142,16 @@ export async function showPendingMigrations(): Promise<void> {
       if (fs.existsSync(migrationFile)) {
         const sqlContent = fs.readFileSync(migrationFile, 'utf-8')
         const description = sqlContent.split('\n')[0] || 'Sem descrição'
-        logger.migration(`📋 ${entry.tag} (PENDENTE)`)
-        logger.migration(`   Descrição: ${description}`)
-        logger.migration(`   Data: ${new Date(entry.when).toLocaleString('pt-BR')}`)
-        logger.migration('')
+        logger.info(`📋 ${entry.tag} (PENDENTE)`)
+        logger.info(`   Descrição: ${description}`)
+        logger.info(`   Data: ${new Date(entry.when).toLocaleString('pt-BR')}`)
+        logger.info('')
       } else {
-        logger.migration(`📋 ${entry.tag} (PENDENTE) - arquivo não encontrado`)
+        logger.info(`📋 ${entry.tag} (PENDENTE) - arquivo não encontrado`)
       }
     }
 
-    logger.migration('=== Fim das Migrações ===')
+    logger.info('=== Fim das Migrações ===')
   } catch (error) {
     logger.error('Erro ao ler descrições das migrações:', error)
   }
@@ -204,27 +204,27 @@ export async function runMigrations(): Promise<void> {
         logger.error(msg)
         throw new Error(msg)
       } else {
-        logger.migration(
+        logger.info(
           'Nenhuma migração encontrada (.migrations ausente). Pulando migrações em ambiente não-produção.'
         )
         return
       }
     }
 
-    logger.migration('Verificando migrações pendentes...')
+    logger.info('Verificando migrações pendentes...')
 
     // Verificar se há migrações pendentes
     const hasPending = await hasPendingMigrations()
 
     if (!hasPending) {
-      logger.migration('✅ Nenhuma migração pendente encontrada!')
+      logger.info('✅ Nenhuma migração pendente encontrada!')
       return
     }
 
     // Mostrar descrições das migrações pendentes
     await showPendingMigrations()
 
-    logger.migration('Executando migrações pendentes...')
+    logger.info('Executando migrações pendentes...')
 
     // Executar migrações via drizzle-kit (usando script do package.json)
     const { execSync } = await import('node:child_process')
@@ -246,27 +246,27 @@ export async function runMigrations(): Promise<void> {
     const { baseUrl } = getDatabaseString()
 
     try {
-      logger.migration(`Executando migrações com drizzle-kit (config: ${foundConfig})...`)
+      logger.info(`Executando migrações com drizzle-kit (config: ${foundConfig})...`)
       execSync(`yarn db:migrate ${configFlag}`, {
         stdio: 'inherit',
         cwd: configDir,
         env: { ...process.env, DATABASE_URL: baseUrl },
       })
-      logger.migration('✅ Migrações executadas com sucesso!')
+      logger.info('✅ Migrações executadas com sucesso!')
     } catch (migrationError) {
       logger.error('Erro durante execução das migrações:', migrationError)
       throw migrationError
     }
 
     // Verificar novamente se as migrações foram aplicadas
-    logger.migration('Verificando se as migrações foram aplicadas...')
+    logger.info('Verificando se as migrações foram aplicadas...')
     const stillPending = await hasPendingMigrations()
 
     if (stillPending) {
       logger.error('❌ As migrações não foram aplicadas corretamente!')
       throw new Error('Falha ao aplicar migrações')
     } else {
-      logger.migration('✅ Todas as migrações foram aplicadas com sucesso!')
+      logger.info('✅ Todas as migrações foram aplicadas com sucesso!')
     }
   } catch (error) {
     logger.error('Erro ao executar migrações')
