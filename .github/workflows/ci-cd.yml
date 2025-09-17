@@ -34,18 +34,6 @@ jobs:
     steps:
       - uses: actions/checkout@v4
 
-      - name: Detect changes
-        id: changes
-        uses: dorny/paths-filter@v3
-        with:
-          filters: |
-            api:
-              - 'api/**'
-            web:
-              - 'web/**'
-            deploy:
-              - 'deploy/**'
-
       - name: Set up Docker Buildx
         uses: docker/setup-buildx-action@v3
 
@@ -81,18 +69,17 @@ jobs:
           fi
 
       - name: Build and push Docker image
-        if: ${{ (matrix.app == 'api' && steps.changes.outputs.api == 'true') || (matrix.app == 'web' && steps.changes.outputs.web == 'true') || steps.changes.outputs.deploy == 'true' || github.event_name == 'release' || github.event_name == 'workflow_dispatch' }}
         uses: docker/build-push-action@v5
         with:
           context: ./${{ matrix.app }}
           push: true
           tags: |
             ghcr.io/fagner3g/houseapp-${{ matrix.app }}:${{ steps.version.outputs.version }}
-          # No cache for faster builds
+          cache-from: type=gha
+          cache-to: type=gha,mode=max
           platforms: linux/arm64
 
       - name: Build summary
-        if: ${{ (matrix.app == 'api' && steps.changes.outputs.api == 'true') || (matrix.app == 'web' && steps.changes.outputs.web == 'true') || steps.changes.outputs.deploy == 'true' || github.event_name == 'release' || github.event_name == 'workflow_dispatch' }}
         run: |
           echo "### Build Summary" >> $GITHUB_STEP_SUMMARY
           echo "- **App:** ${{ matrix.app }}" >> $GITHUB_STEP_SUMMARY
@@ -227,7 +214,7 @@ jobs:
           rm ~/.ssh/vps_key
 
       - name: Deploy to VPS
-        if: steps.check.outputs.skip == 'false' && steps.validate.outputs.valid == 'true' && (steps.changes.outputs.api == 'true' || steps.changes.outputs.web == 'true' || steps.changes.outputs.deploy == 'true' || github.event_name == 'release' || github.event_name == 'workflow_dispatch')
+        if: steps.check.outputs.skip == 'false' && steps.validate.outputs.valid == 'true'
         id: deploy
         uses: appleboy/ssh-action@v1.0.3
         with:
