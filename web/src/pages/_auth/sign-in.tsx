@@ -69,7 +69,7 @@ function Index() {
           Cadastrar
         </Button>
       </div>
-      <h4>v1.0.8 - CI/CD Otimizado Final</h4>
+      <h4>v1.0.9 - CI/CD Performance Final</h4>
     </div>
   )
 }
