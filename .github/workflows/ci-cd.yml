@@ -265,10 +265,12 @@ jobs:
       - name: Deploy skipped - validation failed
         if: steps.check.outputs.skip == 'false' && steps.validate.outputs.valid != 'true'
         run: |
-          printf "### ❌ Deploy Skipped\n" >> "$GITHUB_STEP_SUMMARY"
-          printf "Environment validation failed on VPS. Please review:\n" >> "$GITHUB_STEP_SUMMARY"
-          printf "- /opt/stacks/houseapp/api.env\n" >> "$GITHUB_STEP_SUMMARY"
-          printf "- /opt/stacks/houseapp/web.env\n" >> "$GITHUB_STEP_SUMMARY"
+          echo "### Deploy Skipped" >> "$GITHUB_STEP_SUMMARY"
+          echo "Environment validation failed on VPS. Please review:" >> "$GITHUB_STEP_SUMMARY"
+          echo "- /opt/stacks/houseapp/prod/api.env" >> "$GITHUB_STEP_SUMMARY"
+          echo "- /opt/stacks/houseapp/prod/web.env" >> "$GITHUB_STEP_SUMMARY"
+          echo "- /opt/stacks/houseapp/homolog/api.env" >> "$GITHUB_STEP_SUMMARY"
+          echo "- /opt/stacks/houseapp/homolog/web.env" >> "$GITHUB_STEP_SUMMARY"
 
       - name: Scale down services on validation failure
         if: steps.check.outputs.skip == 'false' && steps.validate.outputs.valid != 'true'
