@@ -10,8 +10,8 @@ export async function sendInviteMail({ email, url }: SendInviteMailRequest) {
     host: 'smtp.ethereal.email',
     port: 587,
     auth: {
-      user: 'peggie2@ethereal.email',
-      pass: 'ZvYx7uz7Wc4VcvnJC2',
+      user: 'myrl.parker62@ethereal.email',
+      pass: 'N1fWmhRSm18X3TXmUs',
     },
   })
 
