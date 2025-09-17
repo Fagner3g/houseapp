@@ -13,7 +13,7 @@ import {
 } from 'fastify-type-provider-zod'
 
 import { env } from '@/config/env'
-import { version } from '../../../../package.json'
+import { version } from '../../../package.json'
 import { createRoutes } from '../routes'
 import { errorHandler } from './error/handlers'
 import { centsToDecimalString } from './format'
