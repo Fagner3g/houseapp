@@ -36,31 +36,15 @@ jobs:
 
       - name: Detect changes
         id: changes
-        run: |
-          if [ "${{ github.event_name }}" = "release" ] || [ "${{ github.event_name }}" = "workflow_dispatch" ]; then
-            echo "api=true" >> $GITHUB_OUTPUT
-            echo "web=true" >> $GITHUB_OUTPUT
-            echo "deploy=true" >> $GITHUB_OUTPUT
-          else
-            # Check for changes in specific paths
-            if git diff --quiet HEAD~1 HEAD -- api/; then
-              echo "api=false" >> $GITHUB_OUTPUT
-            else
-              echo "api=true" >> $GITHUB_OUTPUT
-            fi
-            
-            if git diff --quiet HEAD~1 HEAD -- web/; then
-              echo "web=false" >> $GITHUB_OUTPUT
-            else
-              echo "web=true" >> $GITHUB_OUTPUT
-            fi
-            
-            if git diff --quiet HEAD~1 HEAD -- deploy/; then
-              echo "deploy=false" >> $GITHUB_OUTPUT
-            else
-              echo "deploy=true" >> $GITHUB_OUTPUT
-            fi
-          fi
+        uses: dorny/paths-filter@v3
+        with:
+          filters: |
+            api:
+              - 'api/**'
+            web:
+              - 'web/**'
+            deploy:
+              - 'deploy/**'
 
       - name: Set up Docker Buildx
         uses: docker/setup-buildx-action@v3
@@ -104,8 +88,7 @@ jobs:
           push: true
           tags: |
             ghcr.io/fagner3g/houseapp-${{ matrix.app }}:${{ steps.version.outputs.version }}
-          cache-from: type=gha
-          cache-to: type=gha,mode=max
+          # No cache for faster builds
           platforms: linux/arm64
 
       - name: Build summary
@@ -126,31 +109,15 @@ jobs:
 
       - name: Detect changes
         id: changes
-        run: |
-          if [ "${{ github.event_name }}" = "release" ] || [ "${{ github.event_name }}" = "workflow_dispatch" ]; then
-            echo "api=true" >> $GITHUB_OUTPUT
-            echo "web=true" >> $GITHUB_OUTPUT
-            echo "deploy=true" >> $GITHUB_OUTPUT
-          else
-            # Check for changes in specific paths
-            if git diff --quiet HEAD~1 HEAD -- api/; then
-              echo "api=false" >> $GITHUB_OUTPUT
-            else
-              echo "api=true" >> $GITHUB_OUTPUT
-            fi
-            
-            if git diff --quiet HEAD~1 HEAD -- web/; then
-              echo "web=false" >> $GITHUB_OUTPUT
-            else
-              echo "web=true" >> $GITHUB_OUTPUT
-            fi
-            
-            if git diff --quiet HEAD~1 HEAD -- deploy/; then
-              echo "deploy=false" >> $GITHUB_OUTPUT
-            else
-              echo "deploy=true" >> $GITHUB_OUTPUT
-            fi
-          fi
+        uses: dorny/paths-filter@v3
+        with:
+          filters: |
+            api:
+              - 'api/**'
+            web:
+              - 'web/**'
+            deploy:
+              - 'deploy/**'
 
       - name: Generate semantic version
         id: version
