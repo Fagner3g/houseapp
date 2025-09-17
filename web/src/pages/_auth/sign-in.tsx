@@ -69,7 +69,7 @@ function Index() {
           Cadastrar
         </Button>
       </div>
-      <h4>v1.0.2 - Teste Deploy Final</h4>
+      <h4>v1.0.3 - Deploy Forçado - Cache Limpo</h4>
     </div>
   )
 }

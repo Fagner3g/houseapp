@@ -91,8 +91,8 @@ jobs:
           push: true
           tags: |
             ghcr.io/fagner3g/houseapp-${{ matrix.app }}:${{ steps.version.outputs.version }}
-          cache-from: type=registry,ref=ghcr.io/fagner3g/houseapp-${{ matrix.app }}:buildcache
-          cache-to: type=registry,ref=ghcr.io/fagner3g/houseapp-${{ matrix.app }}:buildcache,mode=max
+          cache-from: type=gha
+          cache-to: type=gha,mode=max
           platforms: linux/arm64
 
       - name: Build summary
