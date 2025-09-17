@@ -249,10 +249,10 @@ jobs:
             # Create directory structure
             sudo mkdir -p /opt/stacks/houseapp
             
-            # Download stack file from repository
+            # Download stack file from repository and replace TAG variable
             echo "📄 Downloading stack.yml from repository..."
-            curl -fsSL "https://raw.githubusercontent.com/${{ github.repository }}/${{ github.ref_name }}/deploy/stacks/houseapp.yml" | sudo tee /opt/stacks/houseapp/stack.yml >/dev/null
-            echo "✅ Stack file downloaded successfully"
+            curl -fsSL "https://raw.githubusercontent.com/${{ github.repository }}/${{ github.ref_name }}/deploy/stacks/houseapp.yml" | sed "s/\${TAG:-develop}/$TAG/g" | sudo tee /opt/stacks/houseapp/stack.yml >/dev/null
+            echo "✅ Stack file downloaded and TAG replaced with $TAG"
             
             # Login to GHCR
             echo "🔐 Logging into GHCR..."
