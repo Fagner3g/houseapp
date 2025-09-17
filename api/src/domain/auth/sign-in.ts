@@ -16,7 +16,7 @@ export async function SignIn({ email }: SignInRequest) {
   const user = await getUser({ email })
 
   if (!user) {
-    throw new Error('Usuário não encontrado')
+    throw new Error(`email ${email} not found`)
   }
 
   const pendingInvites = await db
