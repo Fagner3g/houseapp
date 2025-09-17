@@ -239,6 +239,10 @@ jobs:
               | sed "s/\${TAG:-develop}/$TAG/g" \
               | sudo tee "$STACK_DIR/stack.yml" >/dev/null
 
+            # List directory to confirm files written
+            echo "Listing $STACK_DIR contents:" 
+            sudo ls -la "$STACK_DIR"
+
             # Login to GHCR
             docker login ghcr.io -u ${{ github.actor }} -p ${{ secrets.GITHUB_TOKEN }}
 
