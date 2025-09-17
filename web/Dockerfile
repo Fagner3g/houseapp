@@ -8,6 +8,11 @@ RUN apk add --no-cache python3 make g++ libc6-compat
 COPY package.json yarn.lock ./
 RUN corepack enable && yarn install --frozen-lockfile
 COPY . ./
+
+# Variáveis de ambiente necessárias para o build do Vite
+ARG VITE_API_HOST
+ENV VITE_API_HOST=$VITE_API_HOST
+
 RUN yarn build
 
 FROM nginx:1.27-alpine AS runtime
