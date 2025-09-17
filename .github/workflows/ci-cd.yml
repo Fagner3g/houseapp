@@ -144,9 +144,15 @@ jobs:
           chmod 600 ~/.ssh/vps_key
 
           # Validate environment files on VPS
-          VALIDATION_RESULT=$(ssh -i ~/.ssh/vps_key -o StrictHostKeyChecking=no ${{ secrets.VPS_USER }}@${{ secrets.VPS_HOST }} "bash -s" << 'EOF'
+          VALIDATION_RESULT=$(ssh -i ~/.ssh/vps_key -o StrictHostKeyChecking=no ${{ secrets.VPS_USER }}@${{ secrets.VPS_HOST }} "bash -s -- '${{ github.ref_name }}'" << 'EOF'
             set -e
-            STACK_DIR="/opt/stacks/houseapp"
+            BRANCH="$1"
+            STACK_ROOT="/opt/stacks/houseapp"
+            if [ "$BRANCH" = "main" ]; then
+              STACK_DIR="${STACK_ROOT}/prod"
+            else
+              STACK_DIR="${STACK_ROOT}/homolog"
+            fi
             API_ENV="${STACK_DIR}/api.env"
             WEB_ENV="${STACK_DIR}/web.env"
             
