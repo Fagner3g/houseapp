@@ -28,25 +28,26 @@ export interface TagFieldProps {
   form: UseFormReturn<NewTransactionSchema>
 }
 
+const randomColor = () => {
+  const palette = [
+    '#ef4444',
+    '#f59e0b',
+    '#22c55e',
+    '#3b82f6',
+    '#06b6d4',
+    '#a855f7',
+    '#14b8a6',
+    '#f97316',
+  ]
+  return palette[Math.floor(Math.random() * palette.length)]
+}
+
 export function TagField({ form }: TagFieldProps) {
   const { slug } = useActiveOrganization()
   const queryClient = useQueryClient()
   const colorInputId = useId()
   const { data } = useListTags(slug)
   const availableTags = (data?.tags ?? []) as ListTags200TagsItem[]
-  const randomColor = () => {
-    const palette = [
-      '#ef4444',
-      '#f59e0b',
-      '#22c55e',
-      '#3b82f6',
-      '#06b6d4',
-      '#a855f7',
-      '#14b8a6',
-      '#f97316',
-    ]
-    return palette[Math.floor(Math.random() * palette.length)]
-  }
   const [createdNames, setCreatedNames] = useState<string[]>([])
   const [configuring, setConfiguring] = useState<{
     id?: string
@@ -54,9 +55,7 @@ export function TagField({ form }: TagFieldProps) {
     name: string
     color: string
   } | null>(null)
-
   const selected = form.watch('tags') ?? []
-
   const defaultOptions: Option[] = useMemo(
     () =>
       availableTags.map(tag => ({
@@ -162,9 +161,6 @@ export function TagField({ form }: TagFieldProps) {
                       name: opt.value,
                       color: opt.color ?? '#000000',
                     })
-                  }}
-                  onInputChange={v => {
-                    // setShowCreatePalette(!!v) // This line was removed
                   }}
                   onChange={opts => {
                     const next = opts.map(opt => {

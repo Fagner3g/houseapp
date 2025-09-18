@@ -1,11 +1,13 @@
 import type { FastifyPluginAsyncZod } from 'fastify-type-provider-zod'
 
-import { createUserWithInviteController } from '../controllers/user/create-user-with-invite.controller'
-import { getProfileController } from '../controllers/user/get-profile.controller'
+import {
+  createUserWithInviteController,
+  getProfileController,
+  updateUserController,
+} from '../controllers/user'
 import { authenticateUserHook } from '../hooks/authenticate-user'
 import { verifyOrgAccessHook } from '../hooks/verify-user-belongs-to-org'
-import { createUserWithInviteSchema } from '../schemas/user/create-user-with-invite.schema'
-import { getProfileSchema } from '../schemas/user/get-profile.schema'
+import { createUserWithInviteSchema, getProfileSchema, updateUserSchema } from '../schemas/user'
 
 export const getProfileRoute: FastifyPluginAsyncZod = async app => {
   app.get('/profile', {
@@ -21,5 +23,14 @@ export const createUserWithInviteRoute: FastifyPluginAsyncZod = async app => {
     preHandler: [verifyOrgAccessHook],
     schema: createUserWithInviteSchema,
     handler: createUserWithInviteController,
+  })
+}
+
+export const updateUserRoute: FastifyPluginAsyncZod = async app => {
+  app.patch('/org/:slug/users', {
+    onRequest: [authenticateUserHook],
+    preHandler: [verifyOrgAccessHook],
+    schema: updateUserSchema,
+    handler: updateUserController,
   })
 }

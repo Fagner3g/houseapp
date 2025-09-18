@@ -1,10 +1,11 @@
-import { zodResolver } from '@hookform/resolvers/zod'
+import { useQueryClient } from '@tanstack/react-query'
 import { createFileRoute } from '@tanstack/react-router'
-import { Loader2 } from 'lucide-react'
-import { useForm } from 'react-hook-form'
+import { Loader2, Pencil, Trash2 } from 'lucide-react'
+import { useMemo, useState } from 'react'
 import { toast } from 'sonner'
-import z from 'zod'
 
+import { getListUsersByOrgQueryKey, useListUsersByOrg, useUpdateUser } from '@/api/generated/api'
+import { ModalEditUser } from '@/components/modal-edit-user'
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
@@ -17,42 +18,64 @@ import {
   TableRow,
 } from '@/components/ui/table'
 import { useActiveOrganization } from '@/hooks/use-active-organization'
-import { useCreateInvite, useListUsersByOrg } from '@/api/generated/api'
-
-const createInviteSchema = z.object({ email: z.email('E-mail inválido') })
-
-type CreateInviteSchema = z.infer<typeof createInviteSchema>
 
 export const Route = createFileRoute('/_app/$org/(user)/users')({
   component: Users,
 })
 
 function Users() {
+  const queryClient = useQueryClient()
   const { slug } = useActiveOrganization()
   const { data, isLoading } = useListUsersByOrg(slug)
-  const { mutateAsync: createInvite } = useCreateInvite()
 
-  const {
-    register,
-    handleSubmit,
-    formState: { errors },
-    reset,
-  } = useForm<CreateInviteSchema>({
-    resolver: zodResolver(createInviteSchema),
+  const [isEditOpen, setIsEditOpen] = useState(false)
+  const [editingUser, setEditingUser] = useState<{
+    name: string
+    email: string
+    phone?: string | null
+  } | null>(null)
+  const [search, setSearch] = useState('')
+  const { mutate: updateUser, isPending: isUpdating } = useUpdateUser({
+    mutation: {
+      onMutate: async ({ slug: orgSlug, data }) => {
+        await queryClient.cancelQueries({ queryKey: getListUsersByOrgQueryKey(orgSlug) })
+        const previous = queryClient.getQueryData(getListUsersByOrgQueryKey(orgSlug))
+        queryClient.setQueryData(getListUsersByOrgQueryKey(orgSlug), (old: any) => {
+          if (!old?.users) return old
+          return {
+            ...old,
+            users: old.users.map((u: any) =>
+              u.email === data.email
+                ? { ...u, name: data.name ?? u.name, phone: data.phone ?? u.phone }
+                : u
+            ),
+          }
+        })
+        return { previous }
+      },
+      onError: (_err, { slug: orgSlug }, ctx) => {
+        if (ctx?.previous) {
+          queryClient.setQueryData(getListUsersByOrgQueryKey(orgSlug), ctx.previous)
+        }
+        toast.error('Falha ao atualizar usuário')
+      },
+      onSuccess: (_data, { slug: orgSlug }) => {
+        queryClient.invalidateQueries({ queryKey: getListUsersByOrgQueryKey(orgSlug) })
+        toast.success('Usuário atualizado')
+      },
+    },
   })
 
-  async function handleInvite({ email }: CreateInviteSchema) {
-    try {
-      await createInvite({ data: { email }, slug })
-      toast.success('Convite enviado!')
-      reset()
-    } catch (error) {
-      if (error instanceof Error) {
-        toast.error(error.message)
-        return
-      }
-    }
-  }
+  const filteredUsers = useMemo(() => {
+    const q = search.trim().toLowerCase()
+    if (!q) return data?.users ?? []
+    return (data?.users ?? []).filter(u => {
+      const name = u.name?.toLowerCase() ?? ''
+      const email = u.email?.toLowerCase() ?? ''
+      const phone = (u.phone ?? '').toLowerCase()
+      return name.includes(q) || email.includes(q) || phone.includes(q)
+    })
+  }, [data?.users, search])
 
   if (isLoading) {
     return (
@@ -64,22 +87,23 @@ function Users() {
 
   return (
     <div className="p-4 space-y-4">
-      <form onSubmit={handleSubmit(handleInvite)} className="flex gap-2">
-        <div className="flex flex-col gap-2 w-lg">
-          <Input placeholder="E-mail" {...register('email')} />
-          {errors.email && <p className="text-sm text-red-400">{errors.email.message}</p>}
-        </div>
-        <Button type="submit">Convidar</Button>
-      </form>
+      <div className="flex gap-2">
+        <Input
+          placeholder="Pesquisar por nome, e-mail ou telefone"
+          value={search}
+          onChange={e => setSearch(e.target.value)}
+        />
+      </div>
       <Table>
         <TableHeader>
           <TableRow>
             <TableHead>Usuário</TableHead>
             <TableHead>Email</TableHead>
+            <TableHead className="w-[160px] text-right">Ações</TableHead>
           </TableRow>
         </TableHeader>
         <TableBody>
-          {data?.users.map(user => (
+          {filteredUsers.map(user => (
             <TableRow key={user.name}>
               <TableCell className="flex items-center gap-2">
                 <Avatar className="h-8 w-8">
@@ -90,10 +114,54 @@ function Users() {
                 {user.isOwner && <span className="text-sm text-zinc-400"> (Admin)</span>}
               </TableCell>
               <TableCell>{user.email}</TableCell>
+              <TableCell className="text-right">
+                <div className="flex justify-end gap-2">
+                  <Button
+                    size="sm"
+                    variant="outline"
+                    onClick={() => {
+                      setEditingUser({ name: user.name, email: user.email, phone: user.phone })
+                      setIsEditOpen(true)
+                    }}
+                  >
+                    <Pencil className="mr-1 h-4 w-4" /> Editar
+                  </Button>
+                  <Button
+                    size="sm"
+                    variant="destructive"
+                    onClick={() => {
+                      toast.warning('Remoção de usuário ainda não disponível no backend')
+                    }}
+                  >
+                    <Trash2 className="mr-1 h-4 w-4" /> Excluir
+                  </Button>
+                </div>
+              </TableCell>
             </TableRow>
           ))}
         </TableBody>
       </Table>
+
+      <ModalEditUser
+        open={isEditOpen}
+        onOpenChange={setIsEditOpen}
+        user={editingUser}
+        isSubmitting={isUpdating}
+        onSubmit={values => {
+          setEditingUser(values)
+          if (values && slug) {
+            updateUser({
+              slug,
+              data: {
+                email: values.email,
+                name: values.name,
+                phone: values.phone ?? undefined,
+              },
+            })
+            setIsEditOpen(false)
+          }
+        }}
+      />
     </div>
   )
 }

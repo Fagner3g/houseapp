@@ -35,6 +35,7 @@ import type {
   GetInvite200,
   GetPendingGoals200,
   GetProfile200,
+  ListUsersByOrg200UsersItem,
   GetTransactionById200,
   GetWeekSummary200,
   ListOrganizations200,
@@ -1293,6 +1294,92 @@ export function useListUsersByOrg<
 
   return query;
 }
+
+/**
+ * Update user
+ */
+export const getUpdateUserUrl = (slug: string) => {
+  return `/org/${slug}/users`;
+};
+
+export const updateUser = async (
+  slug: string,
+  body: { email: string; name?: string; phone?: string },
+  options?: RequestInit,
+): Promise<ListUsersByOrg200UsersItem> => {
+  return http<ListUsersByOrg200UsersItem>(getUpdateUserUrl(slug), {
+    ...options,
+    method: "PATCH",
+    headers: { "Content-Type": "application/json", ...options?.headers },
+    body: JSON.stringify(body),
+  });
+};
+
+export const getUpdateUserMutationOptions = <
+  TError = unknown,
+  TContext = unknown,
+>(options?: {
+  mutation?: UseMutationOptions<
+    Awaited<ReturnType<typeof updateUser>>,
+    TError,
+    { slug: string; data: { email: string; name?: string; phone?: string } },
+    TContext
+  >;
+  request?: SecondParameter<typeof http>;
+}): UseMutationOptions<
+  Awaited<ReturnType<typeof updateUser>>,
+  TError,
+  { slug: string; data: { email: string; name?: string; phone?: string } },
+  TContext
+> => {
+  const mutationKey = ["updateUser"];
+  const { mutation: mutationOptions, request: requestOptions } = options
+    ? options.mutation &&
+      "mutationKey" in options.mutation &&
+      options.mutation.mutationKey
+      ? options
+      : { ...options, mutation: { ...options.mutation, mutationKey } }
+    : { mutation: { mutationKey }, request: undefined };
+
+  const mutationFn: MutationFunction<
+    Awaited<ReturnType<typeof updateUser>>,
+    { slug: string; data: { email: string; name?: string; phone?: string } }
+  > = (props) => {
+    const { slug, data } = props ?? {};
+
+    return updateUser(slug, data, requestOptions);
+  };
+
+  return { mutationFn, ...mutationOptions };
+};
+
+export type UpdateUserMutationResult = NonNullable<
+  Awaited<ReturnType<typeof updateUser>>
+>;
+export type UpdateUserMutationBody = { email: string; name?: string; phone?: string };
+export type UpdateUserMutationError = unknown;
+
+export const useUpdateUser = <TError = unknown, TContext = unknown>(
+  options?: {
+    mutation?: UseMutationOptions<
+      Awaited<ReturnType<typeof updateUser>>,
+      TError,
+      { slug: string; data: { email: string; name?: string; phone?: string } },
+      TContext
+    >;
+    request?: SecondParameter<typeof http>;
+  },
+  queryClient?: QueryClient,
+): UseMutationResult<
+  Awaited<ReturnType<typeof updateUser>>,
+  TError,
+  { slug: string; data: { email: string; name?: string; phone?: string } },
+  TContext
+> => {
+  const mutationOptions = getUpdateUserMutationOptions(options);
+
+  return useMutation(mutationOptions, queryClient);
+};
 
 /**
  * Accept organization invite
