@@ -26,7 +26,7 @@ import {
   payTransactionRoute,
   updateTransactionRoute,
 } from './transaction.routes'
-import { createUserWithInviteRoute, getProfileRoute } from './user.routes'
+import { createUserWithInviteRoute, getProfileRoute, updateUserRoute } from './user.routes'
 
 export function createRoutes(app: FastifyInstance) {
   // Health
@@ -41,6 +41,7 @@ export function createRoutes(app: FastifyInstance) {
   // User
   app.register(getProfileRoute)
   app.register(createUserWithInviteRoute)
+  app.register(updateUserRoute)
 
   // Organization
   app.register(createOrgRoute)
