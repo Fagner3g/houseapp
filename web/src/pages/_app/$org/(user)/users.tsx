@@ -6,6 +6,7 @@ import { toast } from 'sonner'
 
 import { getListUsersByOrgQueryKey, useListUsersByOrg, useUpdateUser } from '@/api/generated/api'
 import { ModalEditUser } from '@/components/modal-edit-user'
+import { ModalNewUser } from '@/components/modal-new-user'
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
@@ -87,12 +88,13 @@ function Users() {
 
   return (
     <div className="p-4 space-y-4">
-      <div className="flex gap-2">
+      <div className="flex gap-2 items-center">
         <Input
           placeholder="Pesquisar por nome, e-mail ou telefone"
           value={search}
           onChange={e => setSearch(e.target.value)}
         />
+        <ModalNewUser />
       </div>
       <Table>
         <TableHeader>
