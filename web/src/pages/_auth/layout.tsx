@@ -1,6 +1,7 @@
 import { createFileRoute, Outlet } from '@tanstack/react-router'
 
-import { version } from '../../../../package.json'
+// build-time version via env (injected by CI or fallback)
+const version = import.meta.env.VITE_APP_VERSION ?? 'dev'
 export const Route = createFileRoute('/_auth')({
   component: RouteComponent,
 })
