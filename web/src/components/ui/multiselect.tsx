@@ -13,6 +13,8 @@ export interface Option {
   /** fixed option that can't be removed. */
   fixed?: boolean
   /** Group the options by providing key. */
+  /** Optional hex color used to render a small colored dot. */
+  color?: string
   [key: string]: string | boolean | undefined
 }
 interface GroupOption {
@@ -45,6 +47,12 @@ interface MultipleSelectorProps {
    **/
   onSearchSync?: (value: string) => Option[]
   onChange?: (options: Option[]) => void
+  /** Click on selected badge (for edit, etc.) */
+  onBadgeClick?: (option: Option) => void
+  /** Notify input value changes (useful to detect creatable state) */
+  onInputChange?: (value: string) => void
+  /** Open option config (three-dots) for an item in dropdown */
+  onOptionConfigClick?: (option: Option) => void
   /** Limit the maximum number of selected options. */
   maxSelected?: number
   /** When the number of selected options exceeds the limit, the onMaxSelected will be called. */
@@ -159,6 +167,9 @@ CommandEmpty.displayName = 'CommandEmpty'
 const MultipleSelector = ({
   value,
   onChange,
+  onBadgeClick,
+  onInputChange,
+  onOptionConfigClick,
   placeholder,
   defaultOptions: arrayDefaultOptions = [],
   options: arrayOptions,
@@ -194,17 +205,25 @@ const MultipleSelector = ({
   const [inputValue, setInputValue] = React.useState('')
   const debouncedSearchTerm = useDebounce(inputValue, delay || 500)
 
-  const handleClickOutside = (event: MouseEvent | TouchEvent) => {
+  const handleClickOutside = React.useCallback((event: MouseEvent | TouchEvent) => {
+    const target = event.target as Node | null
+    // Ignore clicks inside any shadcn dropdown-menu portal/content
+    if (target && target instanceof Element) {
+      const inDropdownMenu = target.closest('[data-slot^="dropdown-menu"]')
+      if (inDropdownMenu) {
+        return
+      }
+    }
     if (
       dropdownRef.current &&
-      !dropdownRef.current.contains(event.target as Node) &&
+      !dropdownRef.current.contains(target as Node) &&
       inputRef.current &&
-      !inputRef.current.contains(event.target as Node)
+      !inputRef.current.contains(target as Node)
     ) {
       setOpen(false)
       inputRef.current.blur()
     }
-  }
+  }, [])
 
   const handleUnselect = React.useCallback(
     (option: Option) => {
@@ -250,7 +269,7 @@ const MultipleSelector = ({
       document.removeEventListener('mousedown', handleClickOutside)
       document.removeEventListener('touchend', handleClickOutside)
     }
-  }, [open])
+  }, [open, handleClickOutside])
 
   useEffect(() => {
     if (value) {
@@ -267,7 +286,7 @@ const MultipleSelector = ({
     if (JSON.stringify(newOption) !== JSON.stringify(options)) {
       setOptions(newOption)
     }
-  }, [arrayDefaultOptions, arrayOptions, groupBy, onSearch, options])
+  }, [arrayOptions, groupBy, onSearch, options])
 
   useEffect(() => {
     /** sync search */
@@ -290,8 +309,7 @@ const MultipleSelector = ({
     }
 
     void exec()
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [debouncedSearchTerm, groupBy, open, triggerSearchOnFocus])
+  }, [debouncedSearchTerm, groupBy, open, triggerSearchOnFocus, onSearchSync])
 
   useEffect(() => {
     /** async search */
@@ -316,10 +334,9 @@ const MultipleSelector = ({
     }
 
     void exec()
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [debouncedSearchTerm, groupBy, open, triggerSearchOnFocus])
+  }, [debouncedSearchTerm, groupBy, open, triggerSearchOnFocus, onSearch])
 
-  const CreatableItem = () => {
+  const renderCreatableItem = () => {
     if (!creatable) return undefined
     if (
       isOptionsExist(options, [{ value: inputValue, label: inputValue }]) ||
@@ -345,6 +362,8 @@ const MultipleSelector = ({
           const newOptions = [...selected, { value, label: value }]
           setSelected(newOptions)
           onChange?.(newOptions)
+          setOpen(false)
+          inputRef.current?.blur()
         }}
       >
         {`Create "${inputValue}"`}
@@ -413,7 +432,7 @@ const MultipleSelector = ({
       } // When onSearch is provided, we don&lsquo;t want to filter the options. You can still override it.
       filter={commandFilter()}
     >
-      <div
+      <button
         className={cn(
           'border-input focus-within:border-ring focus-within:ring-ring/50 has-aria-invalid:ring-destructive/20 dark:has-aria-invalid:ring-destructive/40 has-aria-invalid:border-destructive relative min-h-[38px] rounded-md border text-sm transition-[color,box-shadow] outline-none focus-within:ring-[3px] has-disabled:pointer-events-none has-disabled:cursor-not-allowed has-disabled:opacity-50',
           {
@@ -423,6 +442,7 @@ const MultipleSelector = ({
           !hideClearAllButton && 'pe-9',
           className
         )}
+        type="button"
         onClick={() => {
           if (disabled) return
           inputRef?.current?.focus()
@@ -431,7 +451,7 @@ const MultipleSelector = ({
         <div className="flex flex-wrap gap-1">
           {selected.map(option => {
             return (
-              <div
+              <button
                 key={option.value}
                 className={cn(
                   'animate-fadeIn bg-background text-secondary-foreground hover:bg-background relative inline-flex h-7 cursor-default items-center rounded-md border ps-2 pe-7 pl-2 text-xs font-medium transition-all disabled:pointer-events-none disabled:cursor-not-allowed disabled:opacity-50 data-fixed:pe-2',
@@ -439,10 +459,37 @@ const MultipleSelector = ({
                 )}
                 data-fixed={option.fixed}
                 data-disabled={disabled || undefined}
+                type="button"
+                onMouseDown={e => {
+                  // Evita focar o input/abrir dropdown quando clicamos na tag
+                  e.preventDefault()
+                  e.stopPropagation()
+                }}
+                onClick={e => {
+                  e.stopPropagation()
+                  onBadgeClick?.(option)
+                }}
+                onKeyDown={e => {
+                  // Evita que teclas de atalho no chip abram o dropdown do input
+                  e.stopPropagation()
+                  if ((e.key === 'Enter' || e.key === ' ') && onBadgeClick) {
+                    e.preventDefault()
+                    onBadgeClick(option)
+                  }
+                }}
               >
+                {/* colored dot before label if provided */}
+                {option.color ? (
+                  <span
+                    aria-hidden="true"
+                    className="mr-1 inline-block size-2 rounded-full border"
+                    style={{ backgroundColor: option.color }}
+                  />
+                ) : null}
                 {option.label}
                 <button
                   className="text-muted-foreground/80 hover:text-foreground focus-visible:border-ring focus-visible:ring-ring/50 absolute -inset-y-px -end-px flex size-7 items-center justify-center rounded-e-md border border-transparent p-0 outline-hidden transition-[color,box-shadow] outline-none focus-visible:ring-[3px]"
+                  type="button"
                   onKeyDown={e => {
                     if (e.key === 'Enter') {
                       handleUnselect(option)
@@ -452,12 +499,15 @@ const MultipleSelector = ({
                     e.preventDefault()
                     e.stopPropagation()
                   }}
-                  onClick={() => handleUnselect(option)}
+                  onClick={e => {
+                    e.stopPropagation()
+                    handleUnselect(option)
+                  }}
                   aria-label="Remove"
                 >
                   <XIcon size={14} aria-hidden="true" />
                 </button>
-              </div>
+              </button>
             )
           })}
           {/* Avoid having the "Search" Icon */}
@@ -469,6 +519,7 @@ const MultipleSelector = ({
             onValueChange={value => {
               setInputValue(value)
               inputProps?.onValueChange?.(value)
+              onInputChange?.(value)
             }}
             onBlur={event => {
               if (!onScrollbar) {
@@ -513,11 +564,11 @@ const MultipleSelector = ({
             <XIcon size={16} aria-hidden="true" />
           </button>
         </div>
-      </div>
+      </button>
       <div className="relative">
         <div
           className={cn(
-            'border-input absolute top-2 z-10 w-full overflow-hidden rounded-md border',
+            'border-input absolute top-2 z-30 w-full overflow-hidden rounded-md border',
             'data-[state=open]:animate-in data-[state=closed]:animate-out data-[state=closed]:fade-out-0 data-[state=open]:fade-in-0 data-[state=closed]:zoom-out-95 data-[state=open]:zoom-in-95',
             !open && 'hidden'
           )}
@@ -541,7 +592,7 @@ const MultipleSelector = ({
               ) : (
                 <>
                   {EmptyItem()}
-                  {CreatableItem()}
+                  {renderCreatableItem()}
                   {!selectFirstItem && <CommandItem value="-" className="hidden" />}
                   {Object.entries(selectables).map(([key, dropdowns]) => (
                     <CommandGroup key={key} heading={key} className="h-full overflow-auto">
@@ -565,6 +616,8 @@ const MultipleSelector = ({
                                 const newOptions = [...selected, option]
                                 setSelected(newOptions)
                                 onChange?.(newOptions)
+                                setOpen(false)
+                                inputRef.current?.blur()
                               }}
                               className={cn(
                                 'cursor-pointer',
@@ -572,7 +625,31 @@ const MultipleSelector = ({
                                   'pointer-events-none cursor-not-allowed opacity-50'
                               )}
                             >
+                              {option.color ? (
+                                <span
+                                  aria-hidden="true"
+                                  className="mr-2 inline-block size-2 rounded-full border"
+                                  style={{ backgroundColor: option.color }}
+                                />
+                              ) : null}
                               {option.label}
+                              {onOptionConfigClick && (
+                                <button
+                                  type="button"
+                                  className="ml-auto inline-flex size-6 items-center justify-center rounded hover:bg-muted"
+                                  onMouseDown={e => {
+                                    e.preventDefault()
+                                    e.stopPropagation()
+                                  }}
+                                  onClick={e => {
+                                    e.stopPropagation()
+                                    onOptionConfigClick(option)
+                                  }}
+                                  aria-label="Configurar"
+                                >
+                                  ···
+                                </button>
+                              )}
                             </CommandItem>
                           )
                         })}

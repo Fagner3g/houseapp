@@ -1,5 +1,6 @@
 import { createFileRoute, Outlet } from '@tanstack/react-router'
 
+import { version } from '../../../../package.json'
 export const Route = createFileRoute('/_auth')({
   component: RouteComponent,
 })
@@ -11,7 +12,9 @@ function RouteComponent() {
         <Outlet />
       </div>
       <footer className="py-4 bg-black w-full text-center justify-center">
-        <p>@ Copy Right 2025</p>
+        <p className="text-gray-500">
+          @ Copy Right 2025 <span className="text-sm text-gray-400"> - v{version}</span>
+        </p>
       </footer>
     </div>
   )

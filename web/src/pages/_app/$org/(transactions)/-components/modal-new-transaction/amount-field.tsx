@@ -15,13 +15,13 @@ export function AmountField({ form }: AmountFieldProps) {
       name="amount"
       render={({ field }) => (
         <FormItem className="flex-1">
-          <FormLabel>Preço (R$)</FormLabel>
+          <FormLabel>Valor (R$)</FormLabel>
           <FormControl>
             <CurrencyInput
               name={field.name}
               ref={field.ref}
               onBlur={field.onBlur}
-              value={Number(field.value) ?? 0}
+              value={field.value ? (Number(field.value) ?? 0) : 0}
               onValueChange={e => {
                 field.onChange(e)
                 field.onChange(String(e))
