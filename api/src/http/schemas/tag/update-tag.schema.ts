@@ -7,7 +7,11 @@ export const updateTagSchema = {
   operationId: 'updateTag',
   params: z.object({ slug: z.string().nonempty(), id: z.string().nonempty() }),
   body: z.object({
-    name: z.string().min(1).max(50).transform(val => val.toLowerCase().trim()),
+    name: z
+      .string()
+      .min(1)
+      .max(50)
+      .transform(val => val.toLowerCase().trim()),
     color: z.string().nonempty(),
   }),
   response: {

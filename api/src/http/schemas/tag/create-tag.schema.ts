@@ -7,7 +7,11 @@ export const createTagSchema = {
   operationId: 'createTag',
   params: z.object({ slug: z.string().nonempty() }),
   body: z.object({
-    name: z.string().min(1).max(50).transform(val => val.toLowerCase().trim()),
+    name: z
+      .string()
+      .min(1)
+      .max(50)
+      .transform(val => val.toLowerCase().trim()),
     color: z.string().nonempty(),
   }),
   response: {

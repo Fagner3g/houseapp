@@ -17,7 +17,16 @@ const base = z.object({
   payToEmail: z.email('Defina o pra quem vai o registro'),
   description: z.string().optional(),
   tags: z
-    .array(z.object({ name: z.string().trim().min(1).transform(val => val.toLowerCase().trim()), color: z.string().trim().min(1) }))
+    .array(
+      z.object({
+        name: z
+          .string()
+          .trim()
+          .min(1)
+          .transform(val => val.toLowerCase().trim()),
+        color: z.string().trim().min(1),
+      })
+    )
     .optional(),
 })
 
