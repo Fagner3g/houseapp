@@ -21,7 +21,7 @@ export async function listTransactionsController(request: Req, reply: FastifyRep
 
   const { tags, tagFilterMode, type, dateFrom, dateTo, page, perPage } = request.query
 
-  //runAllOwnersNow()
+  runAllOwnersNow()
   //runOwnerDigestNow()
   try {
     const payload = await listTransactionsService({
