@@ -11,13 +11,8 @@ import {
   useUpdateTag,
 } from '@/api/generated/api'
 import type { ListTags200TagsItem } from '@/api/generated/model'
-import {
-  Dialog,
-  DialogContent,
-  DialogHeader,
-  DialogTitle,
-} from '@/components/ui/dialog'
 import { Button } from '@/components/ui/button'
+import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog'
 import { FormControl, FormField, FormItem, FormLabel } from '@/components/ui/form'
 import { Input } from '@/components/ui/input'
 import MultipleSelector, { type Option } from '@/components/ui/multiselect'
@@ -192,9 +187,7 @@ export function TagField({ form }: TagFieldProps) {
                         <div className="flex items-center gap-2">
                           <Input
                             value={configuring.name}
-                            onChange={e =>
-                              setConfiguring({ ...configuring, name: e.target.value })
-                            }
+                            onChange={e => setConfiguring({ ...configuring, name: e.target.value })}
                             placeholder="Nome da tag"
                           />
                           <input
