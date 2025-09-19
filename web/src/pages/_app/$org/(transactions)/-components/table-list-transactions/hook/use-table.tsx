@@ -38,7 +38,9 @@ import {
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu'
 import { Label } from '@/components/ui/label'
+import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip'
 import { useActiveOrganization } from '@/hooks/use-active-organization'
+import { useAuthStore } from '@/stores/auth'
 import { DeleteRowAction } from '../delete-row'
 import { PayRowAction } from '../pay-row'
 
@@ -62,6 +64,7 @@ export const useTable = (
   const [editing, setEditing] = useState<ListTransactions200TransactionsItem | null>(null)
   const { slug } = useActiveOrganization()
   const queryClient = useQueryClient()
+  const currentUser = useAuthStore(s => s.user)
   const { mutate: deleteTransactions } = useDeleteTransactions({
     mutation: {
       onMutate: async ({ slug, data }) => {
@@ -103,13 +106,7 @@ export const useTable = (
 
   useEffect(() => {
     setPagination({ pageIndex: 0, pageSize: perPage })
-  }, [perPage, data])
-
-  function copyLink(id: string) {
-    const url = `${window.location.origin}/transactions?openId=${id}`
-    navigator.clipboard.writeText(url)
-    toast.success('Link copiado!')
-  }
+  }, [perPage])
 
   const columns: ColumnDef<ListTransactions200TransactionsItem>[] = [
     {
@@ -159,7 +156,7 @@ export const useTable = (
       cell: ({ row, table }) => (
         <Button
           variant="link"
-          className="text-foreground w-fit px-0 text-left"
+          className="w-fit px-0 text-left text-foreground"
           onClick={() => table.options.meta?.editRow(row.original)}
         >
           {row.original.title}
@@ -169,26 +166,74 @@ export const useTable = (
     {
       accessorKey: 'Status',
       header: 'Status',
-      cell: ({ row }) => (
-        <div className="px-1.5 flex items-center gap-2">
-          {row.original.status === 'paid' && (
-            <IconCircleCheckFilled className="fill-green-500 dark:fill-green-400" />
-          )}
-          {row.original.status === 'pending' && row.original.overdueDays > 0 && (
-            <div className="flex items-center gap-1">
-              <AlertOctagon className="text-red-400" />
-              {row.original.overdueDays > 0 && (
-                <span className="text-red-400">{row.original.overdueDays} dias</span>
-              )}
-              {row.original.overdueDays === 0 && <span className="text-red-400 text-xs">Hoje</span>}
-            </div>
-          )}
-          {row.original.status === 'pending' && row.original.overdueDays === 0 && (
-            <LucideClockFading className="text-yellow-500" />
-          )}
-          {row.original.status === 'canceled' && <AlertOctagon className="text-zinc-400" />}
-        </div>
-      ),
+      cell: ({ row }) => {
+        const today = new Date()
+        const dueDate = new Date(row.original.dueDate)
+        const daysUntilDue = Math.ceil(
+          (dueDate.getTime() - today.getTime()) / (1000 * 60 * 60 * 24)
+        )
+
+        return (
+          <div className="px-1.5 flex items-center gap-2">
+            {row.original.status === 'paid' && (
+              <TooltipProvider>
+                <Tooltip>
+                  <TooltipTrigger asChild>
+                    <IconCircleCheckFilled className="fill-green-500 dark:fill-green-400 cursor-help" />
+                  </TooltipTrigger>
+                  <TooltipContent>
+                    <p>Transação paga</p>
+                  </TooltipContent>
+                </Tooltip>
+              </TooltipProvider>
+            )}
+            {row.original.status === 'pending' && row.original.overdueDays > 0 && (
+              <TooltipProvider>
+                <Tooltip>
+                  <TooltipTrigger asChild>
+                    <AlertOctagon className="text-red-400 cursor-help" />
+                  </TooltipTrigger>
+                  <TooltipContent>
+                    <p>Em atraso há {row.original.overdueDays} dias</p>
+                  </TooltipContent>
+                </Tooltip>
+              </TooltipProvider>
+            )}
+            {row.original.status === 'pending' && row.original.overdueDays === 0 && (
+              <TooltipProvider>
+                <Tooltip>
+                  <TooltipTrigger asChild>
+                    <LucideClockFading className="text-yellow-500 cursor-help" />
+                  </TooltipTrigger>
+                  <TooltipContent>
+                    <p>
+                      {daysUntilDue === 0
+                        ? 'Vence hoje'
+                        : daysUntilDue === 1
+                          ? 'Vence amanhã'
+                          : daysUntilDue > 0
+                            ? `Vence em ${daysUntilDue} dias`
+                            : 'Vencida'}
+                    </p>
+                  </TooltipContent>
+                </Tooltip>
+              </TooltipProvider>
+            )}
+            {row.original.status === 'canceled' && (
+              <TooltipProvider>
+                <Tooltip>
+                  <TooltipTrigger asChild>
+                    <AlertOctagon className="text-zinc-400 cursor-help" />
+                  </TooltipTrigger>
+                  <TooltipContent>
+                    <p>Transação cancelada</p>
+                  </TooltipContent>
+                </Tooltip>
+              </TooltipProvider>
+            )}
+          </div>
+        )
+      },
     },
     {
       accessorKey: 'amount',
@@ -251,6 +296,43 @@ export const useTable = (
       ),
     },
     {
+      accessorKey: 'Responsável',
+      header: 'Responsável',
+      cell: ({ row }) => {
+        const isOwner = row.original.ownerId === row.original.payToId
+        const isCurrentUserOwner = currentUser?.id === row.original.ownerId
+
+        return (
+          <div className="px-1.5 flex items-center gap-2">
+            <Label className="text-muted-foreground">{row.original.ownerName}</Label>
+            {isOwner && (
+              <span className="text-xs bg-blue-100 text-blue-800 dark:bg-blue-900 dark:text-blue-300 px-1.5 py-0.5 rounded">
+                Owner
+              </span>
+            )}
+            {!isCurrentUserOwner && (
+              <TooltipProvider>
+                <Tooltip>
+                  <TooltipTrigger asChild>
+                    <button
+                      type="button"
+                      className="text-lg cursor-help hover:opacity-70 transition-opacity"
+                      aria-label={`Criado por: ${row.original.ownerName}`}
+                    >
+                      👤
+                    </button>
+                  </TooltipTrigger>
+                  <TooltipContent>
+                    <p>Criado por: {row.original.ownerName}</p>
+                  </TooltipContent>
+                </Tooltip>
+              </TooltipProvider>
+            )}
+          </div>
+        )
+      },
+    },
+    {
       accessorKey: 'tags',
       header: 'Tags',
       cell: ({ row }) => (
@@ -279,20 +361,18 @@ export const useTable = (
           </DropdownMenuTrigger>
           <DropdownMenuContent align="end" className="w-40">
             <DropdownMenuItem onClick={() => table.options.meta?.editRow(row.original)}>
-              Editar
+              {currentUser?.id === row.original.ownerId ? 'Editar' : 'Visualizar'}
             </DropdownMenuItem>
             <DropdownMenuItem onClick={() => table.options.meta?.duplicateRow(row.original)}>
               Duplicar
             </DropdownMenuItem>
-            <DropdownMenuItem onClick={() => toast.success('Favoritado!')}>
-              Favoritar
-            </DropdownMenuItem>
-            <DropdownMenuItem onClick={() => copyLink(row.original.id)}>
-              Copiar link
-            </DropdownMenuItem>
-            <PayRowAction id={row.original.id} status={row.original.status} table={table} />
-            <DropdownMenuSeparator />
-            <DeleteRowAction id={row.original.id} table={table} />
+            {currentUser?.id === row.original.ownerId && (
+              <>
+                <PayRowAction id={row.original.id} status={row.original.status} table={table} />
+                <DropdownMenuSeparator />
+                <DeleteRowAction id={row.original.id} table={table} />
+              </>
+            )}
           </DropdownMenuContent>
         </DropdownMenu>
       ),
@@ -327,6 +407,7 @@ export const useTable = (
         deleteTransactions({ slug, data: { ids } })
       },
       editRow: (item: ListTransactions200TransactionsItem) => {
+        // Allow viewing for all users, editing only for owners
         setEditing(item)
       },
       duplicateRow: (item: ListTransactions200TransactionsItem) => {

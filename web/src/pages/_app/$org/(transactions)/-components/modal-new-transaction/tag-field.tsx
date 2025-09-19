@@ -21,6 +21,7 @@ import type { NewTransactionSchema } from './schema'
 
 export interface TagFieldProps {
   form: UseFormReturn<NewTransactionSchema>
+  disabled?: boolean
 }
 
 const randomColor = () => {
@@ -37,7 +38,7 @@ const randomColor = () => {
   return palette[Math.floor(Math.random() * palette.length)]
 }
 
-export function TagField({ form }: TagFieldProps) {
+export function TagField({ form, disabled }: TagFieldProps) {
   const { slug } = useActiveOrganization()
   const queryClient = useQueryClient()
   const colorInputId = useId()
@@ -139,6 +140,7 @@ export function TagField({ form }: TagFieldProps) {
                   placeholder="Selecione ou digite para criar"
                   creatable
                   hidePlaceholderWhenSelected
+                  disabled={disabled}
                   value={selected.map(t => ({ value: t.name, label: t.name, color: t.color }))}
                   onBadgeClick={opt => {
                     const backend = availableTags.find(t => t.name === opt.value)

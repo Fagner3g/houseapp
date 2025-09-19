@@ -19,6 +19,8 @@ export const Route = createFileRoute('/_app/$org/(transactions)/transactions')({
     page: z.coerce.number().int().default(1),
     perPage: z.coerce.number().int().default(10),
     view: z.enum(['table', 'calendar']).default('table'),
+    responsibleUserId: z.string().optional(),
+    onlyMarked: z.coerce.boolean().optional(),
   }),
 })
 

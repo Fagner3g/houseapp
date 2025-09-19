@@ -4,14 +4,25 @@ import dayjs from 'dayjs'
 import { useListTransactions } from '@/api/generated/api'
 import type { ListTransactionsParams } from '@/api/generated/model'
 import { useActiveOrganization } from '@/hooks/use-active-organization'
+import { useAuthStore } from '@/stores/auth'
 
 const startOfMonth = dayjs().startOf('month').format('YYYY-MM-DD')
 const endOfMonth = dayjs().endOf('month').format('YYYY-MM-DD')
 
 export const useTransaction = () => {
   const { slug } = useActiveOrganization()
-  const { tags = [], type, dateFrom, dateTo, page, perPage } = useSearch({ strict: false })
+  const {
+    tags = [],
+    type,
+    dateFrom,
+    dateTo,
+    page,
+    perPage,
+    responsibleUserId,
+    onlyMarked,
+  } = useSearch({ strict: false })
   const navigate = useNavigate()
+  const currentUser = useAuthStore(s => s.user)
 
   const params: ListTransactionsParams = {
     tags,
@@ -20,6 +31,9 @@ export const useTransaction = () => {
     dateTo: dateTo ?? endOfMonth,
     page,
     perPage,
+    // Only filter by responsible user if explicitly requested and not 'me'
+    responsibleUserId: responsibleUserId === 'me' ? currentUser?.id : responsibleUserId,
+    onlyMarked,
   }
 
   const { data, isPending } = useListTransactions(slug, params, {

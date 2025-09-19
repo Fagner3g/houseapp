@@ -15,6 +15,9 @@ export type ListTransactions200TransactionsItem = {
   type: ListTransactions200TransactionsItemType;
   title: string;
   payTo: string;
+  ownerId: string;
+  payToId: string;
+  ownerName: string;
   amount: string;
   dueDate: string;
   /** @nullable */

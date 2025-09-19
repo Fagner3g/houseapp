@@ -16,6 +16,8 @@ export const listTransactionSchema = {
     dateTo: z.coerce.date().default(dayjs().endOf('month').toDate()),
     page: z.coerce.number().int().default(1),
     perPage: z.coerce.number().int().default(10),
+    responsibleUserId: z.string().optional(),
+    onlyMarked: z.coerce.boolean().optional(),
   }),
   response: {
     200: z.object({

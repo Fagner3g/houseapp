@@ -22,9 +22,10 @@ import type { NewTransactionSchema } from './schema'
 export interface PayToFieldProps {
   form: UseFormReturn<NewTransactionSchema>
   data: ListUsersByOrg200 | undefined
+  disabled?: boolean
 }
 
-export function PayToField({ form, data }: PayToFieldProps) {
+export function PayToField({ form, data, disabled }: PayToFieldProps) {
   const [open, setOpen] = React.useState(false)
 
   return (
@@ -44,6 +45,7 @@ export function PayToField({ form, data }: PayToFieldProps) {
                   aria-expanded={open}
                   className={cn('flex justify-between', !field.value && 'text-muted-foreground')}
                   aria-invalid={!!form.formState.errors.payToEmail}
+                  disabled={disabled}
                 >
                   {field.value
                     ? data?.users.find(user => user.email === field.value)?.name

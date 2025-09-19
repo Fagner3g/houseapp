@@ -11,9 +11,10 @@ import type { NewTransactionSchema } from './schema'
 
 interface CalendarFieldProps {
   form: UseFormReturn<NewTransactionSchema>
+  disabled?: boolean
 }
 
-export function CalendarField({ form }: CalendarFieldProps) {
+export function CalendarField({ form, disabled }: CalendarFieldProps) {
   const [open, setOpen] = useState(false)
 
   return (
@@ -33,6 +34,7 @@ export function CalendarField({ form }: CalendarFieldProps) {
                     'w-full justify-between font-normal sm:w-48',
                     !field.value && 'text-muted-foreground'
                   )}
+                  disabled={disabled}
                 >
                   {field.value ? field.value.toLocaleDateString() : 'Selecione a data'}
                   <ChevronDownIcon />

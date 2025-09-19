@@ -6,9 +6,10 @@ import type { NewTransactionSchema } from './schema'
 
 export interface AmountFieldProps {
   form: UseFormReturn<NewTransactionSchema>
+  disabled?: boolean
 }
 
-export function AmountField({ form }: AmountFieldProps) {
+export function AmountField({ form, disabled }: AmountFieldProps) {
   return (
     <FormField
       control={form.control}
@@ -27,6 +28,7 @@ export function AmountField({ form }: AmountFieldProps) {
                 field.onChange(String(e))
               }}
               placeholder="R$ 0,00"
+              disabled={disabled}
             />
           </FormControl>
         </FormItem>

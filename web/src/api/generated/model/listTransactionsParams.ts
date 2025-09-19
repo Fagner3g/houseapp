@@ -24,4 +24,6 @@ export type ListTransactionsParams = {
    * @maximum 9007199254740991
    */
   perPage?: number;
+  responsibleUserId?: string;
+  onlyMarked?: boolean;
 };

@@ -1253,6 +1253,15 @@
                         "payTo": {
                           "type": "string"
                         },
+                        "ownerId": {
+                          "type": "string"
+                        },
+                        "payToId": {
+                          "type": "string"
+                        },
+                        "ownerName": {
+                          "type": "string"
+                        },
                         "amount": {
                           "type": "string"
                         },
@@ -1313,6 +1322,9 @@
                         "type",
                         "title",
                         "payTo",
+                        "ownerId",
+                        "payToId",
+                        "ownerName",
                         "amount",
                         "dueDate",
                         "paidAt",
@@ -1519,6 +1531,22 @@
           },
           {
             "schema": {
+              "type": "string"
+            },
+            "in": "query",
+            "name": "responsibleUserId",
+            "required": false
+          },
+          {
+            "schema": {
+              "type": "boolean"
+            },
+            "in": "query",
+            "name": "onlyMarked",
+            "required": false
+          },
+          {
+            "schema": {
               "type": "string",
               "minLength": 1
             },
@@ -1557,6 +1585,15 @@
                             "type": "string"
                           },
                           "payTo": {
+                            "type": "string"
+                          },
+                          "ownerId": {
+                            "type": "string"
+                          },
+                          "payToId": {
+                            "type": "string"
+                          },
+                          "ownerName": {
                             "type": "string"
                           },
                           "amount": {
@@ -1619,6 +1656,9 @@
                           "type",
                           "title",
                           "payTo",
+                          "ownerId",
+                          "payToId",
+                          "ownerName",
                           "amount",
                           "dueDate",
                           "paidAt",

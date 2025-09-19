@@ -15,6 +15,9 @@ export type GetTransactionById200Transaction = {
   type: GetTransactionById200TransactionType;
   title: string;
   payTo: string;
+  ownerId: string;
+  payToId: string;
+  ownerName: string;
   amount: string;
   dueDate: string;
   /** @nullable */

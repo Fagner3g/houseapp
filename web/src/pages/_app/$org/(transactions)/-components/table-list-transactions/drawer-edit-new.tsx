@@ -23,8 +23,8 @@ import {
 import { Form } from '@/components/ui/form'
 import { useActiveOrganization } from '@/hooks/use-active-organization'
 import { useIsMobile } from '@/hooks/use-mobile'
-import { useAuthStore } from '@/stores/auth'
 import { showToastOnErrorSubmit } from '@/lib/utils'
+import { useAuthStore } from '@/stores/auth'
 import { AmountField } from '../modal-new-transaction/amount-field'
 import { DescriptionField } from '../modal-new-transaction/description-field'
 import { CalendarField } from '../modal-new-transaction/due-date-field'
@@ -52,7 +52,7 @@ export function DrawerEdit({ transaction, open, onOpenChange }: Props) {
   const isMobile = useIsMobile()
   const currentUser = useAuthStore(s => s.user)
   const [hasChanges, setHasChanges] = useState(false)
-  
+
   // Check if current user is the owner of the transaction
   const isOwner = currentUser?.id === transaction?.ownerId
   const isReadOnly = !isOwner
