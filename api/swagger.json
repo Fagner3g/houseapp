@@ -1301,6 +1301,10 @@
                         "installmentsPaid": {
                           "type": "integer",
                           "nullable": true
+                        },
+                        "description": {
+                          "type": "string",
+                          "nullable": true
                         }
                       },
                       "required": [
@@ -1316,7 +1320,8 @@
                         "overdueDays",
                         "tags",
                         "installmentsTotal",
-                        "installmentsPaid"
+                        "installmentsPaid",
+                        "description"
                       ],
                       "additionalProperties": false
                     }
@@ -1602,6 +1607,10 @@
                           "installmentsPaid": {
                             "type": "integer",
                             "nullable": true
+                          },
+                          "description": {
+                            "type": "string",
+                            "nullable": true
                           }
                         },
                         "required": [
@@ -1617,7 +1626,8 @@
                           "overdueDays",
                           "tags",
                           "installmentsTotal",
-                          "installmentsPaid"
+                          "installmentsPaid",
+                          "description"
                         ],
                         "additionalProperties": false
                       }

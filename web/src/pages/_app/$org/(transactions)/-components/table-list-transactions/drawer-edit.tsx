@@ -66,6 +66,7 @@ export function DrawerEdit({ transaction, open, onOpenChange }: Props) {
       dueDate: new Date(transaction.dueDate),
       payToEmail,
       tags: transaction.tags,
+      description: transaction.description || '',
       isRecurring: false,
     })
   }, [transaction, form, data])

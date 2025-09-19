@@ -4,7 +4,12 @@ import { Loader2, Pencil, Trash2 } from 'lucide-react'
 import { useMemo, useState } from 'react'
 import { toast } from 'sonner'
 
-import { getListUsersByOrgQueryKey, useListUsersByOrg, useUpdateUser } from '@/api/generated/api'
+import {
+  getListUsersByOrgQueryKey,
+  useListUsersByOrg,
+  usePatchOrgSlugUsers,
+} from '@/api/generated/api'
+import type { ListUsersByOrg200, PatchOrgSlugUsersBody } from '@/api/generated/model'
 import { ModalEditUser } from '@/components/modal-edit-user'
 import { ModalNewUser } from '@/components/modal-new-user'
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar'
@@ -36,22 +41,27 @@ function Users() {
     phone?: string | null
   } | null>(null)
   const [search, setSearch] = useState('')
-  const { mutate: updateUser, isPending: isUpdating } = useUpdateUser({
+  const { mutate: updateUser, isPending: isUpdating } = usePatchOrgSlugUsers({
     mutation: {
       onMutate: async ({ slug: orgSlug, data }) => {
         await queryClient.cancelQueries({ queryKey: getListUsersByOrgQueryKey(orgSlug) })
-        const previous = queryClient.getQueryData(getListUsersByOrgQueryKey(orgSlug))
-        queryClient.setQueryData(getListUsersByOrgQueryKey(orgSlug), (old: any) => {
-          if (!old?.users) return old
-          return {
-            ...old,
-            users: old.users.map((u: any) =>
-              u.email === data.email
-                ? { ...u, name: data.name ?? u.name, phone: data.phone ?? u.phone }
-                : u
-            ),
+        const previous = queryClient.getQueryData<ListUsersByOrg200>(
+          getListUsersByOrgQueryKey(orgSlug)
+        )
+        queryClient.setQueryData(
+          getListUsersByOrgQueryKey(orgSlug),
+          (old: ListUsersByOrg200 | undefined) => {
+            if (!old?.users) return old as unknown as ListUsersByOrg200
+            return {
+              ...old,
+              users: old.users.map(u =>
+                u.email === data.email
+                  ? { ...u, name: data.name ?? u.name, phone: data.phone ?? u.phone }
+                  : u
+              ),
+            } as ListUsersByOrg200
           }
-        })
+        )
         return { previous }
       },
       onError: (_err, { slug: orgSlug }, ctx) => {
@@ -158,7 +168,7 @@ function Users() {
                 email: values.email,
                 name: values.name,
                 phone: values.phone ?? undefined,
-              },
+              } as PatchOrgSlugUsersBody,
             })
             setIsEditOpen(false)
           }

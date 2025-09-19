@@ -3,7 +3,7 @@
  * Do not edit manually.
  * HouseApp API
  * API for HouseApp
- * OpenAPI spec version: 1.0.0
+ * OpenAPI spec version: 1.0.1
  */
 import type { ListTransactions200TransactionsItemType } from "./listTransactions200TransactionsItemType";
 import type { ListTransactions200TransactionsItemStatus } from "./listTransactions200TransactionsItemStatus";
@@ -26,4 +26,6 @@ export type ListTransactions200TransactionsItem = {
   installmentsTotal: number | null;
   /** @nullable */
   installmentsPaid: number | null;
+  /** @nullable */
+  description: string | null;
 };

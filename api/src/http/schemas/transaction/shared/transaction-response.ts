@@ -14,6 +14,7 @@ export const transactionResponseSchema = z.object({
   tags: z.array(z.object({ name: z.string(), color: z.string() })),
   installmentsTotal: z.number().int().nullable(),
   installmentsPaid: z.number().int().nullable(),
+  description: z.string().nullable(),
 })
 
 export type TransactionResponse = z.infer<typeof transactionResponseSchema>

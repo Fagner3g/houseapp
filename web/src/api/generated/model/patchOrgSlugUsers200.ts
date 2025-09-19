@@ -6,10 +6,10 @@
  * OpenAPI spec version: 1.0.1
  */
 
-export type RenameOrg200Organization = {
-  id: string;
+export type PatchOrgSlugUsers200 = {
   name: string;
-  slug: string;
-  createdAt: string;
-  updatedAt: string;
+  email: string;
+  phone: string;
+  avatarUrl: string;
+  isOwner: string;
 };

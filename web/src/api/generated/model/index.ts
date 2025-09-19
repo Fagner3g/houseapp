@@ -3,7 +3,7 @@
  * Do not edit manually.
  * HouseApp API
  * API for HouseApp
- * OpenAPI spec version: 1.0.0
+ * OpenAPI spec version: 1.0.1
  */
 
 export * from "./completeGoalBody";
@@ -53,6 +53,8 @@ export * from "./listTransactionsTagFilterMode";
 export * from "./listTransactionsType";
 export * from "./listUsersByOrg200";
 export * from "./listUsersByOrg200UsersItem";
+export * from "./patchOrgSlugUsers200";
+export * from "./patchOrgSlugUsersBody";
 export * from "./renameOrg200";
 export * from "./renameOrg200Organization";
 export * from "./renameOrgBody";
