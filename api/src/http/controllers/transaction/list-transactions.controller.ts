@@ -7,6 +7,8 @@ import type {
 } from '@/http/schemas/transaction/list-transactions.schema'
 import { BadRequestError } from '@/http/utils/error'
 import { logger } from '@/http/utils/logger'
+import { runAllOwnersNow } from '@/jobs/transactions'
+import { runOwnerDigestNow } from '@/jobs/transactions-to-owner'
 
 type Req = FastifyRequest<{
   Params: ListTransactionSchemaParams
@@ -19,6 +21,8 @@ export async function listTransactionsController(request: Req, reply: FastifyRep
 
   const { tags, tagFilterMode, type, dateFrom, dateTo, page, perPage } = request.query
 
+  //runAllOwnersNow()
+  //runOwnerDigestNow()
   try {
     const payload = await listTransactionsService({
       userId,

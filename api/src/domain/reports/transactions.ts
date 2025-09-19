@@ -115,6 +115,8 @@ export async function runReports(ownerId: string) {
 
   const rows: Row[] = rowsRaw.map(r => ({
     ...r,
+    // amount comes from DB as bigint -> coerce to number (cents)
+    amount: Number(r.amount),
     installmentsPaid: r.seriesId ? (aggregates[r.seriesId]?.paid ?? 0) : 0,
     overdueUnpaid: r.seriesId ? (aggregates[r.seriesId]?.overdueUnpaid ?? 0) : 0,
   }))
@@ -161,7 +163,8 @@ export function generateReport(rows: Row[], userId: string): { phone: string; me
     const isOwner = row.ownerId === userId
     const client = isOwner ? (row.payToName ?? 'Cliente') : (row.ownerName ?? 'Cliente')
     const phone = isOwner ? (row.payToPhone ?? '') : (row.ownerPhone ?? '')
-    const type = isOwner ? (row.type === 'income' ? 'expense' : 'income') : row.type
+    // keep original type; do not invert (owner is always the series owner in this query)
+    const type = row.type
     const otherId = isOwner ? row.payToId : row.ownerId
 
     if (!grouped.has(otherId)) {
@@ -176,7 +179,7 @@ export function generateReport(rows: Row[], userId: string): { phone: string; me
     }
     const bucket = grouped.get(otherId)!
 
-    const valueNum = row.amount / 100
+    const valueNum = Number(row.amount) / 100
     const valueStr = fmtBRL.format(valueNum)
     const dueDate = new Date(row.dueDate)
     const dueDateStr = dueDate.toLocaleDateString('pt-BR')

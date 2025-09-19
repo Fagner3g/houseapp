@@ -86,7 +86,7 @@ export function TagField({ form }: TagFieldProps) {
             if (!old) return old
             return {
               ...old,
-              tags: (old.tags || []).map(t => (t.id === id ? { ...t, ...(data as any) } : t)),
+              tags: (old.tags || []).map(t => (t.id === id ? { ...t, ...data } : t)),
             }
           }
         )
@@ -164,16 +164,17 @@ export function TagField({ form }: TagFieldProps) {
                   }}
                   onChange={opts => {
                     const next = opts.map(opt => {
-                      const existing = availableTags.find(t => t.name === opt.value)
-                      const previous = selected.find(s => s.name === opt.value)
+                      const normalizedName = opt.value.toLowerCase().trim()
+                      const existing = availableTags.find(t => t.name === normalizedName)
+                      const previous = selected.find(s => s.name === normalizedName)
                       const color = existing?.color ?? previous?.color ?? randomColor()
 
-                      if (!existing && !createdNames.includes(opt.value)) {
-                        createTagMutation.mutate({ slug, data: { name: opt.value, color } })
-                        setCreatedNames(prev => [...prev, opt.value])
+                      if (!existing && !createdNames.includes(normalizedName)) {
+                        createTagMutation.mutate({ slug, data: { name: normalizedName, color } })
+                        setCreatedNames(prev => [...prev, normalizedName])
                       }
 
-                      return { name: opt.value, color }
+                      return { name: normalizedName, color }
                     })
                     form.setValue('tags', next)
                   }}
@@ -269,19 +270,20 @@ export function TagField({ form }: TagFieldProps) {
                           <DropdownMenuItem
                             onClick={() => {
                               if (!configuring?.id) return
+                              const normalizedName = configuring.name.toLowerCase().trim()
                               // otimista: atualiza seleção pelo nome original
                               form.setValue(
                                 'tags',
                                 (selected ?? []).map(t =>
                                   t.name === configuring.originalName
-                                    ? { name: configuring.name, color: configuring.color }
+                                    ? { name: normalizedName, color: configuring.color }
                                     : t
                                 )
                               )
                               updateTagMutation.mutate({
                                 slug,
                                 id: configuring.id,
-                                data: { name: configuring.name, color: configuring.color },
+                                data: { name: normalizedName, color: configuring.color },
                               })
                               setConfiguring(null)
                             }}

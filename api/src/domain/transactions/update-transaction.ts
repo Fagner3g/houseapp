@@ -63,9 +63,7 @@ export async function updateTransactionService({
     // Processar tags se fornecidas
     if (tags) {
       // Remove todas as tags existentes da transação
-      await trx
-        .delete(transactionTags)
-        .where(eq(transactionTags.transactionId, serieId))
+      await trx.delete(transactionTags).where(eq(transactionTags.transactionId, serieId))
 
       // Adiciona as novas tags se houver
       if (tags.length > 0) {
