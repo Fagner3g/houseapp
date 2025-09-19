@@ -1,12 +1,13 @@
 import { zodResolver } from '@hookform/resolvers/zod'
 import { useQueryClient } from '@tanstack/react-query'
-import { useEffect } from 'react'
+import { useEffect, useState } from 'react'
 import { useForm } from 'react-hook-form'
 import { toast } from 'sonner'
 
 import {
   getListTransactionsQueryKey,
   useListUsersByOrg,
+  usePayTransaction,
   useUpdateTransaction,
 } from '@/api/generated/api'
 import type { ListTransactions200TransactionsItem } from '@/api/generated/model'
@@ -48,6 +49,7 @@ export function DrawerEdit({ transaction, open, onOpenChange }: Props) {
   const queryClient = useQueryClient()
   const { data } = useListUsersByOrg(slug)
   const isMobile = useIsMobile()
+  const [hasChanges, setHasChanges] = useState(false)
 
   const form = useForm<NewTransactionSchema>({
     resolver: zodResolver(newTransactionSchema),
@@ -69,7 +71,16 @@ export function DrawerEdit({ transaction, open, onOpenChange }: Props) {
       description: transaction.description || '',
       isRecurring: false,
     })
+    setHasChanges(false)
   }, [transaction, form, data])
+
+  // Monitor form changes
+  useEffect(() => {
+    const subscription = form.watch(() => {
+      setHasChanges(true)
+    })
+    return () => subscription.unsubscribe()
+  }, [form])
 
   const { mutate: updateTransaction } = useUpdateTransaction({
     mutation: {
@@ -84,6 +95,23 @@ export function DrawerEdit({ transaction, open, onOpenChange }: Props) {
     },
   })
 
+  const { mutate: payTransaction, isPending: isPaying } = usePayTransaction({
+    mutation: {
+      onSuccess: () => {
+        const isPaid = transaction?.status === 'paid'
+        toast.success(isPaid ? 'Pagamento cancelado com sucesso!' : 'Transação paga com sucesso!')
+        queryClient.invalidateQueries({
+          queryKey: getListTransactionsQueryKey(slug),
+        })
+        onOpenChange(false)
+      },
+      onError: () => {
+        const isPaid = transaction?.status === 'paid'
+        toast.error(isPaid ? 'Erro ao cancelar pagamento' : 'Erro ao pagar transação')
+      },
+    },
+  })
+
   function handleSubmit(data: NewTransactionSchema) {
     if (!transaction) return
     updateTransaction({
@@ -91,6 +119,18 @@ export function DrawerEdit({ transaction, open, onOpenChange }: Props) {
       id: transaction.id,
       data: { ...data, amount: data.amount, serieId: transaction.serieId },
     })
+  }
+
+  function handleMainAction() {
+    if (!transaction) return
+
+    if (hasChanges) {
+      // Save changes
+      form.handleSubmit(handleSubmit)()
+    } else {
+      // Toggle payment status
+      payTransaction({ slug, id: transaction.id })
+    }
   }
 
   return (
@@ -114,15 +154,31 @@ export function DrawerEdit({ transaction, open, onOpenChange }: Props) {
               <PayToField form={form} data={data} />
               <TagField form={form} />
               <DescriptionField form={form} />
-              <Button type="submit">Salvar</Button>
             </form>
           </Form>
           <TransactionSummary transaction={transaction} />
         </div>
-        <DrawerFooter>
+        <DrawerFooter className="flex gap-2">
           <DrawerClose asChild>
             <Button variant="outline">Cancelar</Button>
           </DrawerClose>
+          {transaction && (
+            <Button
+              onClick={handleMainAction}
+              disabled={isPaying}
+              variant={
+                hasChanges ? 'default' : transaction.status === 'paid' ? 'outline' : 'default'
+              }
+            >
+              {isPaying
+                ? 'Processando...'
+                : hasChanges
+                  ? 'Salvar Edição'
+                  : transaction.status === 'paid'
+                    ? 'Cancelar Pagamento'
+                    : 'Marcar como Pago'}
+            </Button>
+          )}
         </DrawerFooter>
       </DrawerContent>
     </Drawer>

@@ -111,6 +111,7 @@ function Users() {
           <TableRow>
             <TableHead>Usuário</TableHead>
             <TableHead>Email</TableHead>
+            <TableHead>Telefone</TableHead>
             <TableHead className="w-[160px] text-right">Ações</TableHead>
           </TableRow>
         </TableHeader>
@@ -126,6 +127,7 @@ function Users() {
                 {user.isOwner && <span className="text-sm text-zinc-400"> (Admin)</span>}
               </TableCell>
               <TableCell>{user.email}</TableCell>
+              <TableCell>{user.phone || '-'}</TableCell>
               <TableCell className="text-right">
                 <div className="flex justify-end gap-2">
                   <Button
