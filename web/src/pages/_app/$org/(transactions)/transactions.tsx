@@ -1,8 +1,8 @@
 import { createFileRoute } from '@tanstack/react-router'
 import dayjs from 'dayjs'
-import { Loader2 } from 'lucide-react'
 import z from 'zod'
 
+import { LoadingErrorState } from '@/components/loading-error-state'
 import { TableLIstTransactions } from './-components/table-list-transactions'
 import { useTransaction } from './-components/table-list-transactions/hook/use-transaction'
 
@@ -25,20 +25,19 @@ export const Route = createFileRoute('/_app/$org/(transactions)/transactions')({
 })
 
 function Transaction() {
-  const { transactions, isPending, ...props } = useTransaction()
-
-  if (isPending) {
-    return (
-      <div className="flex flex-col h-screen items-center justify-center">
-        <p className="text-zinc-500">Aguarde um momento...</p>
-        <Loader2 className="text-zinc-500 animate-spin size-10" />
-      </div>
-    )
-  }
+  const { transactions, isPending, error, refetch, ...props } = useTransaction()
 
   return (
-    <div className="mt-4 flex flex-col gap-4">
-      <TableLIstTransactions transactions={transactions} {...props} />
-    </div>
+    <LoadingErrorState
+      isLoading={isPending}
+      error={error}
+      onRetry={refetch}
+      title="Erro ao carregar transações"
+      description="Não foi possível carregar as transações. Verifique sua conexão e tente novamente."
+    >
+      <div className="mt-4 flex flex-col gap-4">
+        <TableLIstTransactions transactions={transactions} {...props} />
+      </div>
+    </LoadingErrorState>
   )
 }

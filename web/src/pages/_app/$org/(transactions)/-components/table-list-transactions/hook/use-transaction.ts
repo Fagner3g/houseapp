@@ -36,14 +36,7 @@ export const useTransaction = () => {
     onlyMarked,
   }
 
-  const { data, isPending } = useListTransactions(slug, params, {
-    query: {
-      retry: false,
-      staleTime: 5 * 60 * 1000,
-      gcTime: 30 * 60 * 1000,
-      refetchOnWindowFocus: true,
-    },
-  })
+  const { data, isPending, error, refetch } = useListTransactions(slug, params)
 
   const onPageChange = (page: number) => {
     navigate({ to: '.', search: prev => ({ ...prev, page }), replace: true })
@@ -66,6 +59,8 @@ export const useTransaction = () => {
     totalPages: data?.totalPages ?? 1,
     pagesRemaining: data?.pagesRemaining ?? 0,
     isPending,
+    error,
+    refetch,
     type,
     dateFrom,
     dateTo,
