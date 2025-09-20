@@ -14,7 +14,13 @@ import {
   type VisibilityState,
 } from '@tanstack/react-table'
 import dayjs from 'dayjs'
-import { AlertOctagon, LucideClockFading, TrendingDown, TrendingUp } from 'lucide-react'
+import {
+  AlertOctagon,
+  AlertTriangle,
+  LucideClockFading,
+  TrendingDown,
+  TrendingUp,
+} from 'lucide-react'
 import { useEffect, useState } from 'react'
 import { toast } from 'sonner'
 
@@ -187,11 +193,25 @@ export const useTable = (
                 </Tooltip>
               </TooltipProvider>
             )}
-            {row.original.status === 'pending' && row.original.overdueDays > 0 && (
+            {row.original.status === 'pending' &&
+              row.original.overdueDays > 0 &&
+              row.original.overdueDays <= 5 && (
+                <TooltipProvider>
+                  <Tooltip>
+                    <TooltipTrigger asChild>
+                      <AlertOctagon className="text-red-400 cursor-help" />
+                    </TooltipTrigger>
+                    <TooltipContent>
+                      <p>Em atraso há {row.original.overdueDays} dias</p>
+                    </TooltipContent>
+                  </Tooltip>
+                </TooltipProvider>
+              )}
+            {row.original.status === 'pending' && row.original.overdueDays > 5 && (
               <TooltipProvider>
                 <Tooltip>
                   <TooltipTrigger asChild>
-                    <AlertOctagon className="text-red-400 cursor-help" />
+                    <AlertTriangle className="text-red-600 cursor-help" />
                   </TooltipTrigger>
                   <TooltipContent>
                     <p>Em atraso há {row.original.overdueDays} dias</p>
@@ -199,26 +219,42 @@ export const useTable = (
                 </Tooltip>
               </TooltipProvider>
             )}
-            {row.original.status === 'pending' && row.original.overdueDays === 0 && (
-              <TooltipProvider>
-                <Tooltip>
-                  <TooltipTrigger asChild>
-                    <LucideClockFading className="text-yellow-500 cursor-help" />
-                  </TooltipTrigger>
-                  <TooltipContent>
-                    <p>
-                      {daysUntilDue === 0
-                        ? 'Vence hoje'
-                        : daysUntilDue === 1
-                          ? 'Vence amanhã'
-                          : daysUntilDue > 0
-                            ? `Vence em ${daysUntilDue} dias`
-                            : 'Vencida'}
-                    </p>
-                  </TooltipContent>
-                </Tooltip>
-              </TooltipProvider>
-            )}
+            {row.original.status === 'pending' &&
+              row.original.overdueDays === 0 &&
+              daysUntilDue > 5 && (
+                <TooltipProvider>
+                  <Tooltip>
+                    <TooltipTrigger asChild>
+                      <LucideClockFading className="text-gray-500 cursor-help" />
+                    </TooltipTrigger>
+                    <TooltipContent>
+                      <p>Vence em {daysUntilDue} dias</p>
+                    </TooltipContent>
+                  </Tooltip>
+                </TooltipProvider>
+              )}
+            {row.original.status === 'pending' &&
+              row.original.overdueDays === 0 &&
+              daysUntilDue <= 5 && (
+                <TooltipProvider>
+                  <Tooltip>
+                    <TooltipTrigger asChild>
+                      <LucideClockFading className="text-yellow-500 cursor-help" />
+                    </TooltipTrigger>
+                    <TooltipContent>
+                      <p>
+                        {daysUntilDue === 0
+                          ? 'Vence hoje'
+                          : daysUntilDue === 1
+                            ? 'Vence amanhã'
+                            : daysUntilDue > 0
+                              ? `Vence em ${daysUntilDue} dias`
+                              : 'Vencida'}
+                      </p>
+                    </TooltipContent>
+                  </Tooltip>
+                </TooltipProvider>
+              )}
             {row.original.status === 'canceled' && (
               <TooltipProvider>
                 <Tooltip>

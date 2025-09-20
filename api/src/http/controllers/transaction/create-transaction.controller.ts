@@ -62,6 +62,7 @@ export async function createTransactionController(request: Req, reply: FastifyRe
       installmentsTotal,
       installmentsPaid,
     })
+    logger.debug('Transaction created successfully')
   } catch (error) {
     logger.error(error)
     throw new BadRequestError('Error creating transaction')

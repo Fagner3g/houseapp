@@ -7,6 +7,7 @@ export const getProfileSchema = {
   response: {
     200: z.object({
       user: z.object({
+        id: z.string(),
         name: z.string(),
         email: z.string(),
         phone: z.string(),
