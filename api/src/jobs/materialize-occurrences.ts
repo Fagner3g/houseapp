@@ -1,51 +1,53 @@
 import { eq } from 'drizzle-orm'
-import * as cron from 'node-cron'
 
 import { db } from '@/db'
 import { transactionSeries } from '@/db/schemas/transactionSeries'
 import { materializeOccurrences } from '@/domain/transactions/materialize-occurrences'
-import { logger } from '@/http/utils/logger'
+import { JOB_CONFIGS } from './config'
+import { jobManager } from './job-manager'
+import type { JobResult } from './types'
 
-async function ensureOccurrences() {
-  const series = await db
-    .select({ id: transactionSeries.id })
-    .from(transactionSeries)
-    .where(eq(transactionSeries.active, true))
+async function ensureOccurrences(): Promise<JobResult> {
+  const startTime = Date.now()
+  let processed = 0
+  let errors = 0
 
-  for (const s of series) {
-    try {
-      await materializeOccurrences(s.id)
-    } catch (err) {
-      logger.error({ err, seriesId: s.id }, 'failed to materialize occurrences')
+  try {
+    const series = await db
+      .select({ id: transactionSeries.id })
+      .from(transactionSeries)
+      .where(eq(transactionSeries.active, true))
+
+    for (const s of series) {
+      try {
+        await materializeOccurrences(s.id)
+        processed++
+      } catch {
+        errors++
+        // Log individual errors but continue processing
+      }
+    }
+
+    return {
+      success: errors === 0,
+      processed,
+      errors,
+      duration: Date.now() - startTime,
+    }
+  } catch {
+    return {
+      success: false,
+      processed,
+      errors: errors + 1,
+      duration: Date.now() - startTime,
     }
   }
 }
 
-const JOB_KEY = 'transactions:materialize'
-const TZ = 'America/Sao_Paulo'
+// Registrar o job
+jobManager.registerJob(JOB_CONFIGS.MATERIALIZE_OCCURRENCES, ensureOccurrences)
 
-const g = globalThis as unknown as { __cronTasks?: Map<string, cron.ScheduledTask> }
-g.__cronTasks ??= new Map()
-
-if (!g.__cronTasks.has(JOB_KEY)) {
-  const task = cron.schedule(
-    '0 3 * * *',
-    async () => {
-      try {
-        await ensureOccurrences()
-      } catch (err) {
-        logger.error({ err }, 'cron materialize occurrences failed')
-      }
-    },
-    { timezone: TZ }
-  )
-  g.__cronTasks.set(JOB_KEY, task)
-  task.start()
-  logger.info('cron materialize occurrences scheduled')
-} else {
-  logger.info({ JOB_KEY }, 'materialize occurrences cron already scheduled')
-}
-
-export async function runMaterializeNow() {
-  await ensureOccurrences()
+// Export para execução manual
+export async function runMaterializeNow(): Promise<JobResult | null> {
+  return await jobManager.runJobNow(JOB_CONFIGS.MATERIALIZE_OCCURRENCES.key)
 }

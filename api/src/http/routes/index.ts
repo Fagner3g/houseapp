@@ -9,6 +9,7 @@ import {
 } from './goals.routes'
 import { healthRoute } from './health.routes'
 import { acceptInviteRoute, createInviteRoute, getInvitesRoute } from './invite.routes'
+import { jobsRoutes } from './jobs.routes'
 import {
   createOrgRoute,
   deleteOrgRoute,
@@ -31,6 +32,9 @@ import { createUserWithInviteRoute, getProfileRoute, updateUserRoute } from './u
 export function createRoutes(app: FastifyInstance) {
   // Health
   app.register(healthRoute)
+
+  // Jobs
+  app.register(jobsRoutes)
 
   // Auth
   app.register(signInRoute)

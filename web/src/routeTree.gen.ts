@@ -19,6 +19,7 @@ import { Route as AppOrguserUsersRouteImport } from './pages/_app/$org/(user)/us
 import { Route as AppOrgtransactionsTransactionsRouteImport } from './pages/_app/$org/(transactions)/transactions'
 import { Route as AppOrggoalGoalsRouteImport } from './pages/_app/$org/(goal)/goals'
 import { Route as AppOrgdashboardDashboardRouteImport } from './pages/_app/$org/(dashboard)/dashboard'
+import { Route as AppOrgadminJobsRouteImport } from './pages/_app/$org/(admin)/jobs'
 
 const AuthLayoutRoute = AuthLayoutRouteImport.update({
   id: '/_auth',
@@ -70,12 +71,18 @@ const AppOrgdashboardDashboardRoute =
     path: '/$org/dashboard',
     getParentRoute: () => AppLayoutRoute,
   } as any)
+const AppOrgadminJobsRoute = AppOrgadminJobsRouteImport.update({
+  id: '/$org/(admin)/jobs',
+  path: '/$org/jobs',
+  getParentRoute: () => AppLayoutRoute,
+} as any)
 
 export interface FileRoutesByFullPath {
   '/invite': typeof AuthInviteRoute
   '/sign-in': typeof AuthSignInRoute
   '/sign-up': typeof AuthSignUpRoute
   '/validate': typeof AuthValidateRoute
+  '/$org/jobs': typeof AppOrgadminJobsRoute
   '/$org/dashboard': typeof AppOrgdashboardDashboardRoute
   '/$org/goals': typeof AppOrggoalGoalsRoute
   '/$org/transactions': typeof AppOrgtransactionsTransactionsRoute
@@ -86,6 +93,7 @@ export interface FileRoutesByTo {
   '/sign-in': typeof AuthSignInRoute
   '/sign-up': typeof AuthSignUpRoute
   '/validate': typeof AuthValidateRoute
+  '/$org/jobs': typeof AppOrgadminJobsRoute
   '/$org/dashboard': typeof AppOrgdashboardDashboardRoute
   '/$org/goals': typeof AppOrggoalGoalsRoute
   '/$org/transactions': typeof AppOrgtransactionsTransactionsRoute
@@ -99,6 +107,7 @@ export interface FileRoutesById {
   '/_auth/sign-in': typeof AuthSignInRoute
   '/_auth/sign-up': typeof AuthSignUpRoute
   '/_auth/validate': typeof AuthValidateRoute
+  '/_app/$org/(admin)/jobs': typeof AppOrgadminJobsRoute
   '/_app/$org/(dashboard)/dashboard': typeof AppOrgdashboardDashboardRoute
   '/_app/$org/(goal)/goals': typeof AppOrggoalGoalsRoute
   '/_app/$org/(transactions)/transactions': typeof AppOrgtransactionsTransactionsRoute
@@ -111,6 +120,7 @@ export interface FileRouteTypes {
     | '/sign-in'
     | '/sign-up'
     | '/validate'
+    | '/$org/jobs'
     | '/$org/dashboard'
     | '/$org/goals'
     | '/$org/transactions'
@@ -121,6 +131,7 @@ export interface FileRouteTypes {
     | '/sign-in'
     | '/sign-up'
     | '/validate'
+    | '/$org/jobs'
     | '/$org/dashboard'
     | '/$org/goals'
     | '/$org/transactions'
@@ -133,6 +144,7 @@ export interface FileRouteTypes {
     | '/_auth/sign-in'
     | '/_auth/sign-up'
     | '/_auth/validate'
+    | '/_app/$org/(admin)/jobs'
     | '/_app/$org/(dashboard)/dashboard'
     | '/_app/$org/(goal)/goals'
     | '/_app/$org/(transactions)/transactions'
@@ -216,10 +228,18 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AppOrgdashboardDashboardRouteImport
       parentRoute: typeof AppLayoutRoute
     }
+    '/_app/$org/(admin)/jobs': {
+      id: '/_app/$org/(admin)/jobs'
+      path: '/$org/jobs'
+      fullPath: '/$org/jobs'
+      preLoaderRoute: typeof AppOrgadminJobsRouteImport
+      parentRoute: typeof AppLayoutRoute
+    }
   }
 }
 
 interface AppLayoutRouteChildren {
+  AppOrgadminJobsRoute: typeof AppOrgadminJobsRoute
   AppOrgdashboardDashboardRoute: typeof AppOrgdashboardDashboardRoute
   AppOrggoalGoalsRoute: typeof AppOrggoalGoalsRoute
   AppOrgtransactionsTransactionsRoute: typeof AppOrgtransactionsTransactionsRoute
@@ -227,6 +247,7 @@ interface AppLayoutRouteChildren {
 }
 
 const AppLayoutRouteChildren: AppLayoutRouteChildren = {
+  AppOrgadminJobsRoute: AppOrgadminJobsRoute,
   AppOrgdashboardDashboardRoute: AppOrgdashboardDashboardRoute,
   AppOrggoalGoalsRoute: AppOrggoalGoalsRoute,
   AppOrgtransactionsTransactionsRoute: AppOrgtransactionsTransactionsRoute,
