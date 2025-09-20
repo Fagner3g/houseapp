@@ -328,42 +328,16 @@ export const useTable = (
       accessorKey: 'Para',
       header: 'Para',
       cell: ({ row }) => (
-        <Label className="text-muted-foreground px-1.5">{row.original.payTo}</Label>
+        <Label className="text-muted-foreground px-1.5">{row.original.payTo.split(' ')[0]}</Label>
       ),
     },
     {
       accessorKey: 'Responsável',
       header: 'Responsável',
       cell: ({ row }) => {
-        const isOwner = row.original.ownerId === row.original.payToId
-        const isCurrentUserOwner = currentUser?.id === row.original.ownerId
-
         return (
           <div className="px-1.5 flex items-center gap-2">
-            <Label className="text-muted-foreground">{row.original.ownerName}</Label>
-            {isOwner && (
-              <span className="text-xs bg-blue-100 text-blue-800 dark:bg-blue-900 dark:text-blue-300 px-1.5 py-0.5 rounded">
-                Owner
-              </span>
-            )}
-            {!isCurrentUserOwner && (
-              <TooltipProvider>
-                <Tooltip>
-                  <TooltipTrigger asChild>
-                    <button
-                      type="button"
-                      className="text-lg cursor-help hover:opacity-70 transition-opacity"
-                      aria-label={`Criado por: ${row.original.ownerName}`}
-                    >
-                      👤
-                    </button>
-                  </TooltipTrigger>
-                  <TooltipContent>
-                    <p>Criado por: {row.original.ownerName}</p>
-                  </TooltipContent>
-                </Tooltip>
-              </TooltipProvider>
-            )}
+            <Label className="text-muted-foreground">{row.original.ownerName.split(' ')[0]}</Label>
           </div>
         )
       },
