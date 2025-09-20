@@ -4,13 +4,16 @@ import { z } from 'zod'
 import {
   getJobController,
   getJobsStatsController,
+  getTransactionReportsController,
   listJobsController,
+  previewTransactionAlertsController,
   runJobController,
   startAllJobsController,
   startJobController,
   stopAllJobsController,
   stopJobController,
 } from '../controllers/jobs.controller'
+import { authenticateUserHook } from '../hooks/authenticate-user'
 
 // Schemas Zod
 const JobConfigSchema = z.object({
@@ -83,6 +86,97 @@ const StartAllJobsResponseSchema = z.object({
 const StartJobResponseSchema = z.object({
   success: z.boolean(),
   message: z.string(),
+  timestamp: z.string(),
+})
+
+const TransactionAlertPreviewSchema = z.object({
+  id: z.string(),
+  title: z.string(),
+  amount: z.number(),
+  dueDate: z.string(),
+  daysUntilDue: z.number(),
+  alertType: z.enum(['warning', 'urgent', 'overdue']),
+  ownerName: z.string(),
+  ownerPhone: z.string(),
+  payToName: z.string().nullable(),
+  payToPhone: z.string().nullable(),
+})
+
+const PreviewSummarySchema = z.object({
+  total: z.number(),
+  today: z.number(),
+  tomorrow: z.number(),
+  twoDays: z.number(),
+  threeToFourDays: z.number(),
+})
+
+const PreviewTransactionAlertsResponseSchema = z.object({
+  preview: z.object({
+    transactions: z.array(TransactionAlertPreviewSchema),
+    summary: PreviewSummarySchema,
+  }),
+  timestamp: z.string(),
+})
+
+const MonthlyStatsSchema = z.object({
+  totalTransactions: z.number(),
+  totalAmount: z.number(),
+  paidTransactions: z.number(),
+  pendingTransactions: z.number(),
+  overdueTransactions: z.number(),
+})
+
+const RecentActivitySchema = z.object({
+  id: z.string(),
+  title: z.string(),
+  amount: z.number(),
+  status: z.enum(['paid', 'pending']),
+  dueDate: z.string(),
+  ownerName: z.string(),
+  updatedAt: z.string(),
+})
+
+const ChartDataSchema = z.object({
+  dailyTransactions: z.array(
+    z.object({
+      date: z.string(),
+      paid: z.number(),
+      pending: z.number(),
+      total: z.number(),
+    })
+  ),
+  monthlyTrend: z.array(
+    z.object({
+      month: z.string(),
+      total: z.number(),
+      paid: z.number(),
+      pending: z.number(),
+    })
+  ),
+  categoryBreakdown: z.array(
+    z.object({
+      category: z.string(),
+      count: z.number(),
+      totalAmount: z.number(),
+    })
+  ),
+  statusDistribution: z.object({
+    paid: z.number(),
+    pending: z.number(),
+    overdue: z.number(),
+  }),
+})
+
+const TransactionReportsResponseSchema = z.object({
+  reports: z.object({
+    upcomingAlerts: z.object({
+      transactions: z.array(TransactionAlertPreviewSchema),
+      summary: PreviewSummarySchema,
+    }),
+    monthlyStats: MonthlyStatsSchema,
+    recentActivity: z.array(RecentActivitySchema),
+    chartData: ChartDataSchema,
+  }),
   timestamp: z.string(),
 })
 
@@ -226,5 +320,39 @@ export async function jobsRoutes(app: FastifyInstance) {
       },
     },
     startAllJobsController
+  )
+
+  // Preview dos alertas de transação
+  app.get(
+    '/jobs/transactions:alerts/preview',
+    {
+      onRequest: [authenticateUserHook],
+      schema: {
+        tags: ['Jobs'],
+        summary: 'Preview das transações que seriam processadas pelo job de alertas',
+        security: [{ bearerAuth: [] }],
+        response: {
+          200: PreviewTransactionAlertsResponseSchema,
+        },
+      },
+    },
+    previewTransactionAlertsController
+  )
+
+  // Relatórios completos para o dashboard
+  app.get(
+    '/reports/transactions',
+    {
+      onRequest: [authenticateUserHook],
+      schema: {
+        tags: ['Reports'],
+        summary: 'Relatórios completos de transações para o dashboard',
+        security: [{ bearerAuth: [] }],
+        response: {
+          200: TransactionReportsResponseSchema,
+        },
+      },
+    },
+    getTransactionReportsController
   )
 }

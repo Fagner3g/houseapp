@@ -12,6 +12,7 @@ import {
   stopAllJobs,
   stopJob,
 } from '@/jobs'
+import { getTransactionReports, previewTransactionAlerts } from '@/jobs/transaction-alerts'
 
 /**
  * Lista o status de todos os jobs
@@ -222,6 +223,54 @@ export async function startAllJobsController(_request: FastifyRequest, reply: Fa
     return reply.status(500).send({
       error: 'Erro interno do servidor',
       message: 'Não foi possível iniciar os jobs',
+    })
+  }
+}
+
+/**
+ * Preview das transações que seriam processadas pelo job de alertas
+ */
+export async function previewTransactionAlertsController(
+  _request: FastifyRequest,
+  reply: FastifyReply
+) {
+  try {
+    const preview = await previewTransactionAlerts()
+
+    return reply.status(200).send({
+      preview,
+      timestamp: new Date().toISOString(),
+    })
+  } catch (error) {
+    logger.error({ error }, 'Erro ao fazer preview dos alertas de transação')
+    return reply.status(500).send({
+      error: 'Internal Server Error',
+      message: 'Failed to preview transaction alerts',
+      timestamp: new Date().toISOString(),
+    })
+  }
+}
+
+/**
+ * Relatórios completos para o dashboard
+ */
+export async function getTransactionReportsController(
+  _request: FastifyRequest,
+  reply: FastifyReply
+) {
+  try {
+    const reports = await getTransactionReports()
+
+    return reply.status(200).send({
+      reports,
+      timestamp: new Date().toISOString(),
+    })
+  } catch (error) {
+    logger.error({ error }, 'Erro ao obter relatórios de transação')
+    return reply.status(500).send({
+      error: 'Internal Server Error',
+      message: 'Failed to get transaction reports',
+      timestamp: new Date().toISOString(),
     })
   }
 }

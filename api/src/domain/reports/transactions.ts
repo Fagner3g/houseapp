@@ -6,6 +6,7 @@ import { transactionOccurrences } from '@/db/schemas/transactionOccurrences'
 import { transactionSeries } from '@/db/schemas/transactionSeries'
 import { users } from '@/db/schemas/users'
 import { logger } from '@/http/utils/logger'
+import { addMessageFooter } from '@/jobs/utils/message-footer'
 import { sendWhatsAppMessage } from '../whatsapp'
 
 export interface Row {
@@ -268,7 +269,7 @@ export function generateReport(rows: Row[], userId: string): { phone: string; me
         ? `💵 *Saldo com ${client}:* ${fmtBRL.format(saldo)} a receber`
         : `💰 *Saldo com ${client}:* ${fmtBRL.format(Math.abs(saldo))} a pagar`
 
-    reports.push({ phone, message: summaryMessage })
+    reports.push({ phone, message: addMessageFooter(summaryMessage) })
 
     // 2. Mensagens individuais para cada transação a receber
     for (const item of receber) {

@@ -4,6 +4,7 @@ import {
   AlertTriangle,
   CheckCircle,
   Clock,
+  Eye,
   Play,
   Square,
   StopCircle,
@@ -34,12 +35,36 @@ import {
   DialogTitle,
 } from '@/components/ui/dialog'
 import { Separator } from '@/components/ui/separator'
+import { http } from '@/lib/http'
 
 function JobsPage() {
   const [runningJobs, setRunningJobs] = useState<Set<string>>(new Set())
   const [stoppingJobs, setStoppingJobs] = useState<Set<string>>(new Set())
   const [startingJobs, setStartingJobs] = useState<Set<string>>(new Set())
   const [showStopAllModal, setShowStopAllModal] = useState(false)
+  const [showPreviewModal, setShowPreviewModal] = useState(false)
+  const [previewData, setPreviewData] = useState<{
+    transactions: Array<{
+      id: string
+      title: string
+      amount: number
+      dueDate: string
+      daysUntilDue: number
+      alertType: 'warning' | 'urgent' | 'overdue'
+      ownerName: string
+      ownerPhone: string
+      payToName: string | null
+      payToPhone: string | null
+    }>
+    summary: {
+      total: number
+      today: number
+      tomorrow: number
+      twoDays: number
+      threeToFourDays: number
+    }
+  } | null>(null)
+  const [loadingPreview, setLoadingPreview] = useState(false)
 
   const { data: jobs, isLoading, error, refetch } = useGetJobs()
   const { data: stats } = useGetJobsStats()
@@ -139,6 +164,44 @@ function JobsPage() {
     }
   }
 
+  const handlePreviewAlerts = async () => {
+    setLoadingPreview(true)
+    try {
+      const data = await http<{
+        preview: {
+          transactions: Array<{
+            id: string
+            title: string
+            amount: number
+            dueDate: string
+            daysUntilDue: number
+            alertType: 'warning' | 'urgent' | 'overdue'
+            ownerName: string
+            ownerPhone: string
+            payToName: string | null
+            payToPhone: string | null
+          }>
+          summary: {
+            total: number
+            today: number
+            tomorrow: number
+            twoDays: number
+            threeToFourDays: number
+          }
+        }
+      }>('/jobs/transactions:alerts/preview', {
+        method: 'GET',
+      })
+      setPreviewData(data.preview)
+      setShowPreviewModal(true)
+    } catch (error) {
+      console.error('Erro ao carregar preview:', error)
+      toast.error('Erro ao carregar preview dos alertas')
+    } finally {
+      setLoadingPreview(false)
+    }
+  }
+
   const formatDuration = (ms: number) => {
     if (ms < 1000) return `${ms}ms`
     if (ms < 60000) return `${(ms / 1000).toFixed(1)}s`
@@ -204,9 +267,29 @@ function JobsPage() {
       case 'transactions:alerts':
         return (
           <div className="space-y-2">
-            <div className="flex items-center gap-2">
-              <Activity className="h-4 w-4 text-orange-500" />
-              <span className="text-sm font-medium">Alertas de Vencimento</span>
+            <div className="flex items-center justify-between">
+              <div className="flex items-center gap-2">
+                <Activity className="h-4 w-4 text-orange-500" />
+                <span className="text-sm font-medium">Alertas de Vencimento</span>
+              </div>
+              <Button
+                size="sm"
+                variant="outline"
+                onClick={handlePreviewAlerts}
+                disabled={loadingPreview}
+              >
+                {loadingPreview ? (
+                  <>
+                    <Square className="mr-2 h-4 w-4" />
+                    Carregando...
+                  </>
+                ) : (
+                  <>
+                    <Eye className="mr-2 h-4 w-4" />
+                    Preview
+                  </>
+                )}
+              </Button>
             </div>
             <div className="pl-6 space-y-1 text-sm text-muted-foreground">
               <p>• Envia alertas para transações próximas do vencimento</p>
@@ -472,6 +555,118 @@ function JobsPage() {
           </div>
         </div>
       </div>
+
+      {/* Modal de preview dos alertas */}
+      <Dialog open={showPreviewModal} onOpenChange={setShowPreviewModal}>
+        <DialogContent className="max-w-4xl max-h-[80vh] overflow-y-auto">
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2">
+              <Eye className="h-5 w-5 text-blue-500" />
+              Preview dos Alertas de Transação
+            </DialogTitle>
+            <DialogDescription>
+              Visualize as transações que seriam processadas pelo job de alertas
+            </DialogDescription>
+          </DialogHeader>
+
+          {previewData && (
+            <div className="space-y-6">
+              {/* Resumo */}
+              <div className="grid grid-cols-2 md:grid-cols-5 gap-4">
+                <div className="text-center p-3 bg-blue-50 dark:bg-blue-950/20 rounded-lg">
+                  <div className="text-2xl font-bold text-blue-600">
+                    {previewData.summary.total}
+                  </div>
+                  <div className="text-sm text-muted-foreground">Total</div>
+                </div>
+                <div className="text-center p-3 bg-red-50 dark:bg-red-950/20 rounded-lg">
+                  <div className="text-2xl font-bold text-red-600">{previewData.summary.today}</div>
+                  <div className="text-sm text-muted-foreground">Hoje</div>
+                </div>
+                <div className="text-center p-3 bg-orange-50 dark:bg-orange-950/20 rounded-lg">
+                  <div className="text-2xl font-bold text-orange-600">
+                    {previewData.summary.tomorrow}
+                  </div>
+                  <div className="text-sm text-muted-foreground">Amanhã</div>
+                </div>
+                <div className="text-center p-3 bg-yellow-50 dark:bg-yellow-950/20 rounded-lg">
+                  <div className="text-2xl font-bold text-yellow-600">
+                    {previewData.summary.twoDays}
+                  </div>
+                  <div className="text-sm text-muted-foreground">2 dias</div>
+                </div>
+                <div className="text-center p-3 bg-gray-50 dark:bg-gray-950/20 rounded-lg">
+                  <div className="text-2xl font-bold text-gray-600">
+                    {previewData.summary.threeToFourDays}
+                  </div>
+                  <div className="text-sm text-muted-foreground">3-4 dias</div>
+                </div>
+              </div>
+
+              {/* Lista de transações */}
+              <div className="space-y-3">
+                <h3 className="text-lg font-semibold">Transações que serão processadas:</h3>
+                <div className="space-y-2 max-h-96 overflow-y-auto custom-scrollbar">
+                  {previewData.transactions.map(transaction => (
+                    <div key={transaction.id} className="p-4 border rounded-lg space-y-2">
+                      <div className="flex items-center justify-between">
+                        <div className="flex items-center gap-3">
+                          <div
+                            className={`w-3 h-3 rounded-full ${
+                              transaction.alertType === 'urgent' ? 'bg-red-500' : 'bg-yellow-500'
+                            }`}
+                          />
+                          <h4 className="font-medium">{transaction.title}</h4>
+                          <span className="text-sm text-muted-foreground">
+                            R$ {transaction.amount.toFixed(2)}
+                          </span>
+                        </div>
+                        <div className="flex items-center gap-2">
+                          <Badge
+                            variant={
+                              transaction.alertType === 'urgent' ? 'destructive' : 'secondary'
+                            }
+                          >
+                            {transaction.alertType === 'urgent' ? 'Urgente' : 'Aviso'}
+                          </Badge>
+                          <span className="text-sm text-muted-foreground">
+                            {transaction.daysUntilDue === 0
+                              ? 'Hoje'
+                              : transaction.daysUntilDue === 1
+                                ? 'Amanhã'
+                                : `${transaction.daysUntilDue} dias`}
+                          </span>
+                        </div>
+                      </div>
+
+                      <div className="grid grid-cols-1 md:grid-cols-2 gap-4 text-sm">
+                        <div>
+                          <span className="text-muted-foreground">Proprietário:</span>
+                          <div className="font-medium">{transaction.ownerName}</div>
+                          <div className="text-muted-foreground">{transaction.ownerPhone}</div>
+                        </div>
+                        {transaction.payToName && (
+                          <div>
+                            <span className="text-muted-foreground">Responsável:</span>
+                            <div className="font-medium">{transaction.payToName}</div>
+                            <div className="text-muted-foreground">{transaction.payToPhone}</div>
+                          </div>
+                        )}
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            </div>
+          )}
+
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setShowPreviewModal(false)}>
+              Fechar
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
 
       {/* Modal de confirmação para parar todos os jobs */}
       <Dialog open={showStopAllModal} onOpenChange={setShowStopAllModal}>

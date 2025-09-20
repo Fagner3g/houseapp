@@ -8,6 +8,7 @@ import { normalizePhone, sendWhatsAppMessage } from '@/domain/whatsapp'
 import { JOB_CONFIGS } from './config'
 import { jobManager } from './job-manager'
 import type { JobResult } from './types'
+import { addMessageFooter } from './utils/message-footer'
 
 // ====================== helpers ======================
 async function getDistinctOwnerIds(): Promise<string[]> {
@@ -224,7 +225,7 @@ async function runOwnerDigestForAllOwners(): Promise<JobResult> {
         }))
 
         const message = await generateOwnerDigestMessage(ownerRow.name ?? 'Você', mapped)
-        await sendWhatsAppMessage({ phone, message })
+        await sendWhatsAppMessage({ phone, message: addMessageFooter(message) })
         processed++
       } catch {
         errors++

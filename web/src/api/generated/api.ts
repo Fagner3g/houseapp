@@ -37,8 +37,10 @@ import type {
   GetJobsJobKey200,
   GetJobsJobKey404,
   GetJobsStats200,
+  GetJobsTransactionsalertsPreview200,
   GetPendingGoals200,
   GetProfile200,
+  GetReportsTransactions200,
   GetTransactionById200,
   GetWeekSummary200,
   ListOrganizations200,
@@ -1054,6 +1056,345 @@ export const usePostJobsStartAll = <TError = unknown, TContext = unknown>(
 
   return useMutation(mutationOptions, queryClient);
 };
+
+/**
+ * @summary Preview das transações que seriam processadas pelo job de alertas
+ */
+export const getGetJobsTransactionsalertsPreviewUrl = (alerts: string) => {
+  return `/jobs/transactions${alerts}/preview`;
+};
+
+export const getJobsTransactionsalertsPreview = async (
+  alerts: string,
+  options?: RequestInit,
+): Promise<GetJobsTransactionsalertsPreview200> => {
+  return http<GetJobsTransactionsalertsPreview200>(
+    getGetJobsTransactionsalertsPreviewUrl(alerts),
+    {
+      ...options,
+      method: "GET",
+    },
+  );
+};
+
+export const getGetJobsTransactionsalertsPreviewQueryKey = (
+  alerts?: string,
+) => {
+  return [`/jobs/transactions${alerts}/preview`] as const;
+};
+
+export const getGetJobsTransactionsalertsPreviewQueryOptions = <
+  TData = Awaited<ReturnType<typeof getJobsTransactionsalertsPreview>>,
+  TError = unknown,
+>(
+  alerts: string,
+  options?: {
+    query?: Partial<
+      UseQueryOptions<
+        Awaited<ReturnType<typeof getJobsTransactionsalertsPreview>>,
+        TError,
+        TData
+      >
+    >;
+    request?: SecondParameter<typeof http>;
+  },
+) => {
+  const { query: queryOptions, request: requestOptions } = options ?? {};
+
+  const queryKey =
+    queryOptions?.queryKey ??
+    getGetJobsTransactionsalertsPreviewQueryKey(alerts);
+
+  const queryFn: QueryFunction<
+    Awaited<ReturnType<typeof getJobsTransactionsalertsPreview>>
+  > = ({ signal }) =>
+    getJobsTransactionsalertsPreview(alerts, { signal, ...requestOptions });
+
+  return {
+    queryKey,
+    queryFn,
+    enabled: !!alerts,
+    ...queryOptions,
+  } as UseQueryOptions<
+    Awaited<ReturnType<typeof getJobsTransactionsalertsPreview>>,
+    TError,
+    TData
+  > & { queryKey: DataTag<QueryKey, TData, TError> };
+};
+
+export type GetJobsTransactionsalertsPreviewQueryResult = NonNullable<
+  Awaited<ReturnType<typeof getJobsTransactionsalertsPreview>>
+>;
+export type GetJobsTransactionsalertsPreviewQueryError = unknown;
+
+export function useGetJobsTransactionsalertsPreview<
+  TData = Awaited<ReturnType<typeof getJobsTransactionsalertsPreview>>,
+  TError = unknown,
+>(
+  alerts: string,
+  options: {
+    query: Partial<
+      UseQueryOptions<
+        Awaited<ReturnType<typeof getJobsTransactionsalertsPreview>>,
+        TError,
+        TData
+      >
+    > &
+      Pick<
+        DefinedInitialDataOptions<
+          Awaited<ReturnType<typeof getJobsTransactionsalertsPreview>>,
+          TError,
+          Awaited<ReturnType<typeof getJobsTransactionsalertsPreview>>
+        >,
+        "initialData"
+      >;
+    request?: SecondParameter<typeof http>;
+  },
+  queryClient?: QueryClient,
+): DefinedUseQueryResult<TData, TError> & {
+  queryKey: DataTag<QueryKey, TData, TError>;
+};
+export function useGetJobsTransactionsalertsPreview<
+  TData = Awaited<ReturnType<typeof getJobsTransactionsalertsPreview>>,
+  TError = unknown,
+>(
+  alerts: string,
+  options?: {
+    query?: Partial<
+      UseQueryOptions<
+        Awaited<ReturnType<typeof getJobsTransactionsalertsPreview>>,
+        TError,
+        TData
+      >
+    > &
+      Pick<
+        UndefinedInitialDataOptions<
+          Awaited<ReturnType<typeof getJobsTransactionsalertsPreview>>,
+          TError,
+          Awaited<ReturnType<typeof getJobsTransactionsalertsPreview>>
+        >,
+        "initialData"
+      >;
+    request?: SecondParameter<typeof http>;
+  },
+  queryClient?: QueryClient,
+): UseQueryResult<TData, TError> & {
+  queryKey: DataTag<QueryKey, TData, TError>;
+};
+export function useGetJobsTransactionsalertsPreview<
+  TData = Awaited<ReturnType<typeof getJobsTransactionsalertsPreview>>,
+  TError = unknown,
+>(
+  alerts: string,
+  options?: {
+    query?: Partial<
+      UseQueryOptions<
+        Awaited<ReturnType<typeof getJobsTransactionsalertsPreview>>,
+        TError,
+        TData
+      >
+    >;
+    request?: SecondParameter<typeof http>;
+  },
+  queryClient?: QueryClient,
+): UseQueryResult<TData, TError> & {
+  queryKey: DataTag<QueryKey, TData, TError>;
+};
+/**
+ * @summary Preview das transações que seriam processadas pelo job de alertas
+ */
+
+export function useGetJobsTransactionsalertsPreview<
+  TData = Awaited<ReturnType<typeof getJobsTransactionsalertsPreview>>,
+  TError = unknown,
+>(
+  alerts: string,
+  options?: {
+    query?: Partial<
+      UseQueryOptions<
+        Awaited<ReturnType<typeof getJobsTransactionsalertsPreview>>,
+        TError,
+        TData
+      >
+    >;
+    request?: SecondParameter<typeof http>;
+  },
+  queryClient?: QueryClient,
+): UseQueryResult<TData, TError> & {
+  queryKey: DataTag<QueryKey, TData, TError>;
+} {
+  const queryOptions = getGetJobsTransactionsalertsPreviewQueryOptions(
+    alerts,
+    options,
+  );
+
+  const query = useQuery(queryOptions, queryClient) as UseQueryResult<
+    TData,
+    TError
+  > & { queryKey: DataTag<QueryKey, TData, TError> };
+
+  query.queryKey = queryOptions.queryKey;
+
+  return query;
+}
+
+/**
+ * @summary Relatórios completos de transações para o dashboard
+ */
+export const getGetReportsTransactionsUrl = () => {
+  return `/reports/transactions`;
+};
+
+export const getReportsTransactions = async (
+  options?: RequestInit,
+): Promise<GetReportsTransactions200> => {
+  return http<GetReportsTransactions200>(getGetReportsTransactionsUrl(), {
+    ...options,
+    method: "GET",
+  });
+};
+
+export const getGetReportsTransactionsQueryKey = () => {
+  return [`/reports/transactions`] as const;
+};
+
+export const getGetReportsTransactionsQueryOptions = <
+  TData = Awaited<ReturnType<typeof getReportsTransactions>>,
+  TError = unknown,
+>(options?: {
+  query?: Partial<
+    UseQueryOptions<
+      Awaited<ReturnType<typeof getReportsTransactions>>,
+      TError,
+      TData
+    >
+  >;
+  request?: SecondParameter<typeof http>;
+}) => {
+  const { query: queryOptions, request: requestOptions } = options ?? {};
+
+  const queryKey =
+    queryOptions?.queryKey ?? getGetReportsTransactionsQueryKey();
+
+  const queryFn: QueryFunction<
+    Awaited<ReturnType<typeof getReportsTransactions>>
+  > = ({ signal }) => getReportsTransactions({ signal, ...requestOptions });
+
+  return { queryKey, queryFn, ...queryOptions } as UseQueryOptions<
+    Awaited<ReturnType<typeof getReportsTransactions>>,
+    TError,
+    TData
+  > & { queryKey: DataTag<QueryKey, TData, TError> };
+};
+
+export type GetReportsTransactionsQueryResult = NonNullable<
+  Awaited<ReturnType<typeof getReportsTransactions>>
+>;
+export type GetReportsTransactionsQueryError = unknown;
+
+export function useGetReportsTransactions<
+  TData = Awaited<ReturnType<typeof getReportsTransactions>>,
+  TError = unknown,
+>(
+  options: {
+    query: Partial<
+      UseQueryOptions<
+        Awaited<ReturnType<typeof getReportsTransactions>>,
+        TError,
+        TData
+      >
+    > &
+      Pick<
+        DefinedInitialDataOptions<
+          Awaited<ReturnType<typeof getReportsTransactions>>,
+          TError,
+          Awaited<ReturnType<typeof getReportsTransactions>>
+        >,
+        "initialData"
+      >;
+    request?: SecondParameter<typeof http>;
+  },
+  queryClient?: QueryClient,
+): DefinedUseQueryResult<TData, TError> & {
+  queryKey: DataTag<QueryKey, TData, TError>;
+};
+export function useGetReportsTransactions<
+  TData = Awaited<ReturnType<typeof getReportsTransactions>>,
+  TError = unknown,
+>(
+  options?: {
+    query?: Partial<
+      UseQueryOptions<
+        Awaited<ReturnType<typeof getReportsTransactions>>,
+        TError,
+        TData
+      >
+    > &
+      Pick<
+        UndefinedInitialDataOptions<
+          Awaited<ReturnType<typeof getReportsTransactions>>,
+          TError,
+          Awaited<ReturnType<typeof getReportsTransactions>>
+        >,
+        "initialData"
+      >;
+    request?: SecondParameter<typeof http>;
+  },
+  queryClient?: QueryClient,
+): UseQueryResult<TData, TError> & {
+  queryKey: DataTag<QueryKey, TData, TError>;
+};
+export function useGetReportsTransactions<
+  TData = Awaited<ReturnType<typeof getReportsTransactions>>,
+  TError = unknown,
+>(
+  options?: {
+    query?: Partial<
+      UseQueryOptions<
+        Awaited<ReturnType<typeof getReportsTransactions>>,
+        TError,
+        TData
+      >
+    >;
+    request?: SecondParameter<typeof http>;
+  },
+  queryClient?: QueryClient,
+): UseQueryResult<TData, TError> & {
+  queryKey: DataTag<QueryKey, TData, TError>;
+};
+/**
+ * @summary Relatórios completos de transações para o dashboard
+ */
+
+export function useGetReportsTransactions<
+  TData = Awaited<ReturnType<typeof getReportsTransactions>>,
+  TError = unknown,
+>(
+  options?: {
+    query?: Partial<
+      UseQueryOptions<
+        Awaited<ReturnType<typeof getReportsTransactions>>,
+        TError,
+        TData
+      >
+    >;
+    request?: SecondParameter<typeof http>;
+  },
+  queryClient?: QueryClient,
+): UseQueryResult<TData, TError> & {
+  queryKey: DataTag<QueryKey, TData, TError>;
+} {
+  const queryOptions = getGetReportsTransactionsQueryOptions(options);
+
+  const query = useQuery(queryOptions, queryClient) as UseQueryResult<
+    TData,
+    TError
+  > & { queryKey: DataTag<QueryKey, TData, TError> };
+
+  query.queryKey = queryOptions.queryKey;
+
+  return query;
+}
 
 /**
  * Sigin In
