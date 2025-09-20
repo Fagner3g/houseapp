@@ -1,10 +1,11 @@
 import { useNavigate, useSearch } from '@tanstack/react-router'
 import dayjs from 'dayjs'
-import { ListFilterIcon, X } from 'lucide-react'
-import { useId } from 'react'
+import { Check, ListFilterIcon, X } from 'lucide-react'
+import { useEffect, useId, useState } from 'react'
+import type { DateRange } from 'react-day-picker'
 
 import { Button } from '@/components/ui/button'
-import { Input } from '@/components/ui/input'
+import { DateRangePicker } from '@/components/ui/date-range-picker'
 import { Label } from '@/components/ui/label'
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover'
 import {
@@ -27,22 +28,91 @@ export default function FilterTable({ type, dateFrom, dateTo }: FilterTableProps
 
   const typeFilterId = useId()
   const responsibleFilterId = useId()
-  const dateFromId = useId()
-  const dateToId = useId()
 
   const defaultFrom = dayjs().startOf('month').format('YYYY-MM-DD')
   const defaultTo = dayjs().endOf('month').format('YYYY-MM-DD')
+
+  // Estados locais para os filtros
+  const [localType, setLocalType] = useState(type)
+  const [localOnlyMarked, setLocalOnlyMarked] = useState(onlyMarked)
+  const [localDateRange, setLocalDateRange] = useState<DateRange | undefined>(() => {
+    if (dateFrom && dateTo) {
+      return { from: new Date(dateFrom), to: new Date(dateTo) }
+    } else if (dateFrom) {
+      return { from: new Date(dateFrom), to: undefined }
+    }
+    return undefined
+  })
+
   const hasFilters =
-    type !== 'all' || dateFrom !== defaultFrom || dateTo !== defaultTo || onlyMarked
+    type !== 'all' || dateFrom !== defaultFrom || dateTo !== defaultTo || onlyMarked === true
+
+  // Sincronizar estados locais com props
+  useEffect(() => {
+    setLocalType(type)
+  }, [type])
+
+  useEffect(() => {
+    setLocalOnlyMarked(onlyMarked)
+  }, [onlyMarked])
+
+  useEffect(() => {
+    if (dateFrom && dateTo) {
+      setLocalDateRange({ from: new Date(dateFrom), to: new Date(dateTo) })
+    } else if (dateFrom) {
+      setLocalDateRange({ from: new Date(dateFrom), to: undefined })
+    } else {
+      setLocalDateRange(undefined)
+    }
+  }, [dateFrom, dateTo])
+
+  const handleDateRangeChange = (range: DateRange | undefined) => {
+    setLocalDateRange(range)
+  }
+
+  const applyFilters = () => {
+    const dateFrom = localDateRange?.from
+      ? dayjs(localDateRange.from).format('YYYY-MM-DD')
+      : defaultFrom
+    const dateTo = localDateRange?.to ? dayjs(localDateRange.to).format('YYYY-MM-DD') : defaultTo
+
+    const searchParams: {
+      type: string
+      dateFrom: string
+      dateTo: string
+      page: number
+      onlyMarked?: boolean
+    } = {
+      type: localType,
+      dateFrom,
+      dateTo,
+      page: 1,
+    }
+
+    // Só adiciona onlyMarked se for true
+    if (localOnlyMarked) {
+      searchParams.onlyMarked = true
+    }
+
+    navigate({
+      to: '.',
+      search: searchParams,
+      replace: true,
+    })
+  }
 
   const clearFilters = () => {
+    setLocalType('all')
+    setLocalOnlyMarked(false)
+    // Manter o range do mês atual
+    setLocalDateRange({ from: new Date(defaultFrom), to: new Date(defaultTo) })
+
     navigate({
       to: '.',
       search: {
         type: 'all',
         dateFrom: defaultFrom,
         dateTo: defaultTo,
-        onlyMarked: false,
         page: 1,
       },
       replace: true,
@@ -61,20 +131,9 @@ export default function FilterTable({ type, dateFrom, dateTo }: FilterTableProps
       </PopoverTrigger>
       <PopoverContent className="w-[calc(100vw-2rem)] p-4 sm:w-96">
         <div className="space-y-4">
-          {/* Header com título e botão limpar */}
+          {/* Header com título */}
           <div className="flex items-center justify-between">
             <h3 className="text-sm font-medium">Filtros</h3>
-            {hasFilters && (
-              <Button
-                variant="ghost"
-                size="sm"
-                onClick={clearFilters}
-                className="h-8 px-2 text-xs text-muted-foreground hover:text-foreground"
-              >
-                <X className="h-3 w-3 mr-1" />
-                Limpar
-              </Button>
-            )}
           </div>
 
           {/* Filtros organizados em grid */}
@@ -85,13 +144,9 @@ export default function FilterTable({ type, dateFrom, dateTo }: FilterTableProps
                 Tipo de transação
               </Label>
               <Select
-                value={type}
+                value={localType}
                 onValueChange={(value = 'all') => {
-                  navigate({
-                    to: '.',
-                    search: prev => ({ ...prev, type: value as typeof type, page: 1 }),
-                    replace: true,
-                  })
+                  setLocalType(value as typeof type)
                 }}
               >
                 <SelectTrigger id={typeFilterId} className="w-full">
@@ -114,17 +169,9 @@ export default function FilterTable({ type, dateFrom, dateTo }: FilterTableProps
                 Responsável
               </Label>
               <Select
-                value={onlyMarked ? 'marked' : 'all'}
+                value={localOnlyMarked ? 'marked' : 'all'}
                 onValueChange={value => {
-                  navigate({
-                    to: '.',
-                    search: prev => ({
-                      ...prev,
-                      onlyMarked: value === 'marked',
-                      page: 1,
-                    }),
-                    replace: true,
-                  })
+                  setLocalOnlyMarked(value === 'marked')
                 }}
               >
                 <SelectTrigger id={responsibleFilterId} className="w-full">
@@ -140,45 +187,42 @@ export default function FilterTable({ type, dateFrom, dateTo }: FilterTableProps
             {/* Período */}
             <div className="space-y-2">
               <Label className="text-xs font-medium text-muted-foreground">Período</Label>
-              <div className="grid grid-cols-2 gap-2">
-                <div className="space-y-1">
-                  <Label htmlFor={dateFromId} className="text-xs text-muted-foreground">
-                    De
-                  </Label>
-                  <Input
-                    id={dateFromId}
-                    type="date"
-                    value={dateFrom}
-                    onChange={e =>
-                      navigate({
-                        to: '.',
-                        search: prev => ({ ...prev, dateFrom: e.target.value, page: 1 }),
-                        replace: true,
-                      })
-                    }
-                    className="w-full"
-                  />
-                </div>
-                <div className="space-y-1">
-                  <Label htmlFor={dateToId} className="text-xs text-muted-foreground">
-                    Até
-                  </Label>
-                  <Input
-                    id={dateToId}
-                    type="date"
-                    value={dateTo}
-                    onChange={e =>
-                      navigate({
-                        to: '.',
-                        search: prev => ({ ...prev, dateTo: e.target.value, page: 1 }),
-                        replace: true,
-                      })
-                    }
-                    className="w-full"
-                  />
-                </div>
-              </div>
+              <DateRangePicker
+                value={localDateRange}
+                onChange={handleDateRangeChange}
+                placeholder="Selecione o período"
+                className="w-full"
+                showFooter={true}
+                onApply={range => {
+                  setLocalDateRange(range)
+                }}
+                onApplyCurrentMonth={() => {
+                  const now = new Date()
+                  const currentMonthRange = {
+                    from: new Date(now.getFullYear(), now.getMonth(), 1),
+                    to: new Date(now.getFullYear(), now.getMonth() + 1, 0),
+                  }
+                  setLocalDateRange(currentMonthRange)
+                }}
+              />
             </div>
+          </div>
+
+          {/* Footer com botões de ação */}
+          <div className="flex items-center justify-between pt-4 border-t">
+            <Button
+              variant="ghost"
+              size="sm"
+              onClick={clearFilters}
+              className="h-8 px-3 text-xs text-muted-foreground hover:text-foreground"
+            >
+              <X className="h-3 w-3 mr-1" />
+              Limpar
+            </Button>
+            <Button size="sm" onClick={applyFilters} className="h-8 px-3 text-xs">
+              <Check className="h-3 w-3 mr-1" />
+              Salvar
+            </Button>
           </div>
         </div>
       </PopoverContent>
