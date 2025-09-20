@@ -21,6 +21,13 @@ export const JOB_CONFIGS: Record<string, JobConfig> = {
     timezone: 'America/Sao_Paulo',
     description: 'Materialização de ocorrências de transações recorrentes',
   },
+
+  TRANSACTION_ALERTS: {
+    key: 'transactions:alerts',
+    schedule: '0 9,15,21 * * *', // Todo dia às 09:00, 15:00 e 21:00
+    timezone: 'America/Sao_Paulo',
+    description: 'Alertas para transações vencidas ou prestes a vencer',
+  },
 }
 
 export const TIMEZONE = 'America/Sao_Paulo'

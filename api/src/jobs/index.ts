@@ -2,6 +2,7 @@
 import './transactions'
 import './transactions-to-owner'
 import './materialize-occurrences'
+import './transaction-alerts'
 
 // Importar o registry
 import { jobRegistry } from './registry'

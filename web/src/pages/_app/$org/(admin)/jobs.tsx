@@ -63,7 +63,7 @@ function JobsPage() {
 
       // Atualizar a lista de jobs
       refetch()
-    } catch (error) {
+    } catch {
       toast.error('Erro ao executar job')
     } finally {
       setRunningJobs(prev => {
@@ -86,7 +86,7 @@ function JobsPage() {
       toast.success(`Job '${jobKey}' foi iniciado com sucesso!`)
       // Atualizar a lista de jobs
       refetch()
-    } catch (error) {
+    } catch {
       toast.error('Erro ao iniciar job')
     } finally {
       setStartingJobs(prev => {
@@ -105,7 +105,7 @@ function JobsPage() {
       toast.success(`Job '${jobKey}' foi parado com sucesso!`)
       // Atualizar a lista de jobs
       refetch()
-    } catch (error) {
+    } catch {
       toast.error('Erro ao parar job')
     } finally {
       setStoppingJobs(prev => {
@@ -122,7 +122,7 @@ function JobsPage() {
       toast.success('Todos os jobs foram iniciados com sucesso!')
       // Atualizar a lista de jobs
       refetch()
-    } catch (error) {
+    } catch {
       toast.error('Erro ao iniciar jobs')
     }
   }
@@ -134,7 +134,7 @@ function JobsPage() {
       setShowStopAllModal(false)
       // Atualizar a lista de jobs
       refetch()
-    } catch (error) {
+    } catch {
       toast.error('Erro ao parar jobs')
     }
   }
@@ -149,6 +149,90 @@ function JobsPage() {
   const formatUptime = (ms?: number) => {
     if (!ms) return 'N/A'
     return formatDuration(ms)
+  }
+
+  const getJobSpecificInfo = (jobKey: string) => {
+    switch (jobKey) {
+      case 'reports:all-owners':
+        return (
+          <div className="space-y-2">
+            <div className="flex items-center gap-2">
+              <Activity className="h-4 w-4 text-blue-500" />
+              <span className="text-sm font-medium">Relatórios de Transações</span>
+            </div>
+            <div className="pl-6 space-y-1 text-sm text-muted-foreground">
+              <p>• Envia relatórios mensais para todos os proprietários</p>
+              <p>• Executa no dia 5 de cada mês às 10:00</p>
+              <p>• Inclui resumo de transações do mês anterior</p>
+              <p>• Envia via WhatsApp para cada proprietário</p>
+            </div>
+          </div>
+        )
+
+      case 'reports:owner-digest':
+        return (
+          <div className="space-y-2">
+            <div className="flex items-center gap-2">
+              <Activity className="h-4 w-4 text-green-500" />
+              <span className="text-sm font-medium">Digest para Proprietários</span>
+            </div>
+            <div className="pl-6 space-y-1 text-sm text-muted-foreground">
+              <p>• Consolida informações de todos os proprietários</p>
+              <p>• Executa no dia 5 de cada mês às 10:00</p>
+              <p>• Gera resumo executivo das finanças</p>
+              <p>• Envia relatório consolidado</p>
+            </div>
+          </div>
+        )
+
+      case 'transactions:materialize':
+        return (
+          <div className="space-y-2">
+            <div className="flex items-center gap-2">
+              <Activity className="h-4 w-4 text-purple-500" />
+              <span className="text-sm font-medium">Materialização de Ocorrências</span>
+            </div>
+            <div className="pl-6 space-y-1 text-sm text-muted-foreground">
+              <p>• Cria ocorrências futuras de transações recorrentes</p>
+              <p>• Executa diariamente às 03:00</p>
+              <p>• Garante que transações futuras estejam disponíveis</p>
+              <p>• Processa séries mensais, semanais e anuais</p>
+            </div>
+          </div>
+        )
+
+      case 'transactions:alerts':
+        return (
+          <div className="space-y-2">
+            <div className="flex items-center gap-2">
+              <Activity className="h-4 w-4 text-orange-500" />
+              <span className="text-sm font-medium">Alertas de Vencimento</span>
+            </div>
+            <div className="pl-6 space-y-1 text-sm text-muted-foreground">
+              <p>• Envia alertas para transações próximas do vencimento</p>
+              <p>• Executa 3x por dia: 09:00, 15:00 e 21:00</p>
+              <p>• Alertas urgentes (hoje/amanhã): sempre envia</p>
+              <p>• Alertas de 2 dias: apenas às 09:00</p>
+              <p>• Lembretes (3-4 dias): apenas às 09:00 em dias pares</p>
+              <p>• Mensagens personalizadas com nome do destinatário</p>
+            </div>
+          </div>
+        )
+
+      default:
+        return (
+          <div className="space-y-2">
+            <div className="flex items-center gap-2">
+              <Activity className="h-4 w-4 text-gray-500" />
+              <span className="text-sm font-medium">Job Personalizado</span>
+            </div>
+            <div className="pl-6 space-y-1 text-sm text-muted-foreground">
+              <p>• Job configurado para execução automática</p>
+              <p>• Verifique a documentação para mais detalhes</p>
+            </div>
+          </div>
+        )
+    }
   }
 
   const getStatusIcon = (isRunning: boolean) => {
@@ -376,45 +460,14 @@ function JobsPage() {
                           <p className="text-sm">{formatUptime(job.uptime)}</p>
                         </div>
                       </div>
+
+                      {/* Informações específicas do job */}
+                      <Separator className="my-4" />
+                      <div className="space-y-3">{getJobSpecificInfo(job.key)}</div>
                     </CardContent>
                   </Card>
                 ))}
               </div>
-            </div>
-
-            {/* Informações Adicionais */}
-            <div className="px-4 lg:px-6">
-              <Card>
-                <CardHeader>
-                  <CardTitle>Informações sobre Jobs</CardTitle>
-                  <CardDescription>Entenda como funciona o sistema de jobs</CardDescription>
-                </CardHeader>
-                <CardContent className="space-y-4">
-                  <div>
-                    <h4 className="font-medium mb-2">Relatórios de Transações</h4>
-                    <p className="text-sm text-muted-foreground">
-                      Envia relatórios consolidados via WhatsApp para todos os proprietários.
-                      Executa no dia 5 de cada mês às 10:00.
-                    </p>
-                  </div>
-                  <Separator />
-                  <div>
-                    <h4 className="font-medium mb-2">Digest Consolidado</h4>
-                    <p className="text-sm text-muted-foreground">
-                      Envia um relatório detalhado e consolidado para cada proprietário, agrupando
-                      transações por cliente. Executa no dia 5 de cada mês às 10:00.
-                    </p>
-                  </div>
-                  <Separator />
-                  <div>
-                    <h4 className="font-medium mb-2">Materialização de Ocorrências</h4>
-                    <p className="text-sm text-muted-foreground">
-                      Garante que todas as transações recorrentes tenham suas ocorrências futuras
-                      geradas. Executa diariamente às 03:00.
-                    </p>
-                  </div>
-                </CardContent>
-              </Card>
             </div>
           </div>
         </div>
