@@ -57,7 +57,8 @@ export function NavbarTable({
       : ''
 
   return (
-    <div className="flex flex-col gap-2 px-4 lg:px-6">
+    <div className="flex flex-col gap-3 px-4 lg:px-6">
+      {/* Primeira linha: Filtros e botão adicionar */}
       <div className="flex items-center justify-between gap-2">
         <div className="flex min-w-0 items-center gap-2">
           <FilterTable {...props} />
@@ -90,24 +91,32 @@ export function NavbarTable({
           )}
         </div>
 
-        <div className="flex items-center gap-2">
-          <div className="relative">
-            <IconSearch className="absolute left-2 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
-            <Input
-              placeholder="Pesquisar por nome da transação..."
-              value={globalFilter ?? ''}
-              onChange={event => setGlobalFilter(String(event.target.value))}
-              className="pl-8 w-64"
-            />
-          </div>
+        <Button variant="outline" size="sm" onClick={onCreate}>
+          <IconPlus />
+          <span className="hidden lg:inline">Adicionar transação</span>
+        </Button>
+      </div>
+
+      {/* Segunda linha: Pesquisa, visualização e colunas */}
+      <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
+        {/* Campo de pesquisa - ocupa toda a largura em mobile */}
+        <div className="relative flex-1">
+          <IconSearch className="absolute left-2 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
+          <Input
+            placeholder="Pesquisar por nome da transação..."
+            value={globalFilter ?? ''}
+            onChange={event => setGlobalFilter(String(event.target.value))}
+            className="pl-8 w-full sm:w-64"
+          />
         </div>
 
-        <TabsList>
-          <TabsTrigger value="table">Tabela</TabsTrigger>
-          <TabsTrigger value="calendar">Calendário</TabsTrigger>
-        </TabsList>
-
+        {/* Controles de visualização */}
         <div className="flex items-center gap-2">
+          <TabsList>
+            <TabsTrigger value="table">Tabela</TabsTrigger>
+            <TabsTrigger value="calendar">Calendário</TabsTrigger>
+          </TabsList>
+
           {view === 'table' && (
             <DropdownMenu>
               <DropdownMenuTrigger asChild>
@@ -135,12 +144,10 @@ export function NavbarTable({
               </DropdownMenuContent>
             </DropdownMenu>
           )}
-          <Button variant="outline" size="sm" onClick={onCreate}>
-            <IconPlus />
-            <span className="hidden lg:inline">Adicionar transação</span>
-          </Button>
         </div>
       </div>
+
+      {/* Terceira linha: Ações em lote (quando há seleção) */}
       {selected > 0 && (
         <div className="flex flex-wrap items-center justify-end gap-2">
           <PaySelected table={table} />
