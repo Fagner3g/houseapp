@@ -82,6 +82,7 @@ export * from "./listUsersByOrg200";
 export * from "./listUsersByOrg200UsersItem";
 export * from "./patchOrgSlugUsers200";
 export * from "./patchOrgSlugUsersBody";
+export * from "./payTransactionBody";
 export * from "./postJobsJobKeyRun200";
 export * from "./postJobsJobKeyRun200Result";
 export * from "./postJobsJobKeyRun404";

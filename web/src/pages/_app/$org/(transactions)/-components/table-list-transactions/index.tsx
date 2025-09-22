@@ -1,12 +1,11 @@
+import { useNavigate, useSearch } from '@tanstack/react-router'
+import { useState } from 'react'
+
 import type {
   ListTransactions200,
   ListTransactions200TransactionsItem,
 } from '@/api/generated/model'
-import { useState } from 'react'
-
 import { Tabs, TabsContent } from '@/components/ui/tabs'
-import { useNavigate, useSearch } from '@tanstack/react-router'
-
 import { CalendarTransactions } from '../calendar'
 import { DrawerNewTransaction } from '../modal-new-transaction'
 import { DrawerEdit } from './drawer-edit'
@@ -27,10 +26,14 @@ export function TableLIstTransactions({ transactions, dateFrom, dateTo, ...props
   const navigate = useNavigate()
   const { view = 'table' } = useSearch({ strict: false })
 
-  const { table, editing, setEditing } = useTable(transactions, props.perPage, item => {
-    setDraft(item)
-    setOpenNew(true)
-  })
+  const { table, editing, setEditing, globalFilter, setGlobalFilter } = useTable(
+    transactions,
+    props.perPage,
+    item => {
+      setDraft(item)
+      setOpenNew(true)
+    }
+  )
 
   return (
     <Tabs
@@ -50,6 +53,8 @@ export function TableLIstTransactions({ transactions, dateFrom, dateTo, ...props
         type={props.type}
         dateFrom={dateFrom}
         dateTo={dateTo}
+        globalFilter={globalFilter}
+        setGlobalFilter={setGlobalFilter}
       />
       <TabsContent value="table" className="flex flex-col gap-4">
         <TableView table={table} />
@@ -59,11 +64,7 @@ export function TableLIstTransactions({ transactions, dateFrom, dateTo, ...props
         value="calendar"
         className="relative flex flex-col gap-4 overflow-auto px-4 lg:px-6"
       >
-        <CalendarTransactions
-          transactions={transactions}
-          dateFrom={dateFrom}
-          dateTo={dateTo}
-        />
+        <CalendarTransactions transactions={transactions} dateFrom={dateFrom} dateTo={dateTo} />
       </TabsContent>
       <DrawerNewTransaction
         open={openNew}

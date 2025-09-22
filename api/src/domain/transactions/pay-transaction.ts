@@ -6,9 +6,10 @@ import { transactionOccurrences } from '@/db/schemas/transactionOccurrences'
 interface PayTransactionParams {
   id: string
   valuePaid?: number
+  paidAt?: Date
 }
 
-export async function payTransactionService({ id, valuePaid }: PayTransactionParams) {
+export async function payTransactionService({ id, valuePaid, paidAt }: PayTransactionParams) {
   const [existing] = await db
     .select()
     .from(transactionOccurrences)
@@ -24,7 +25,7 @@ export async function payTransactionService({ id, valuePaid }: PayTransactionPar
         ? { status: 'pending', paidAt: null, valuePaid: null }
         : {
             status: 'paid',
-            paidAt: new Date(),
+            paidAt: paidAt ?? new Date(),
             valuePaid: valuePaid ?? existing.amount,
           }
     )

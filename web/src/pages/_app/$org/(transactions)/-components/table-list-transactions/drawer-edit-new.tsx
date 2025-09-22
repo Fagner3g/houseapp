@@ -162,7 +162,7 @@ export function DrawerEdit({ transaction, open, onOpenChange }: Props) {
               <DescriptionField form={form} disabled={isReadOnly} />
             </form>
           </Form>
-          <TransactionSummary transaction={transaction} />
+          <TransactionSummary transaction={transaction} onDelete={() => onOpenChange(false)} />
         </div>
         <DrawerFooter className="flex gap-2">
           <DrawerClose asChild>
