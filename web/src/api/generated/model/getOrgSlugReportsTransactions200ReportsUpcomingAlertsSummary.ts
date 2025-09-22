@@ -6,7 +6,7 @@
  * OpenAPI spec version: 1.0.1
  */
 
-export type GetReportsTransactions200ReportsUpcomingAlertsSummary = {
+export type GetOrgSlugReportsTransactions200ReportsUpcomingAlertsSummary = {
   total: number;
   today: number;
   tomorrow: number;

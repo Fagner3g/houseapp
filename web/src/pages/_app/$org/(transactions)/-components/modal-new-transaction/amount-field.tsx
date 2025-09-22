@@ -24,8 +24,17 @@ export function AmountField({ form, disabled }: AmountFieldProps) {
               onBlur={field.onBlur}
               value={field.value ? (Number(field.value) ?? 0) : 0}
               onValueChange={e => {
-                field.onChange(e)
-                field.onChange(String(e))
+                // Garantir formato decimal com 2 casas
+                const stringValue = e.toFixed(2)
+                field.onChange(stringValue)
+              }}
+              onChange={e => {
+                // Extrair o valor numérico do input formatado
+                const raw = e.target.value.replace(/\D/g, '')
+                const numeric = Number(raw) / 100
+                // Garantir formato decimal com 2 casas
+                const stringValue = numeric.toFixed(2)
+                field.onChange(stringValue)
               }}
               placeholder="R$ 0,00"
               disabled={disabled}

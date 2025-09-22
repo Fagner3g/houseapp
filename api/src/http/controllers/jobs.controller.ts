@@ -13,6 +13,7 @@ import {
   stopJob,
 } from '@/jobs'
 import { getTransactionReports, previewTransactionAlerts } from '@/jobs/transaction-alerts'
+import { BadRequestError } from '../utils/error'
 
 /**
  * Lista o status de todos os jobs
@@ -231,11 +232,25 @@ export async function startAllJobsController(_request: FastifyRequest, reply: Fa
  * Preview das transações que seriam processadas pelo job de alertas
  */
 export async function previewTransactionAlertsController(
-  _request: FastifyRequest,
+  request: FastifyRequest,
   reply: FastifyReply
 ) {
   try {
-    const preview = await previewTransactionAlerts()
+    const userId = request.user?.sub
+    if (!userId) {
+      throw new Error('Usuário não autenticado')
+    }
+
+    // Buscar a primeira organização do usuário
+    const { listOrganizations } = await import('@/domain/organization/list-organizations')
+    const result = await listOrganizations({ userId })
+
+    if (result.organizations.length === 0) {
+      throw new BadRequestError('Usuário não pertence a nenhuma organização')
+    }
+
+    const orgId = result.organizations[0].id
+    const preview = await previewTransactionAlerts(orgId, userId)
 
     return reply.status(200).send({
       preview,
@@ -246,6 +261,7 @@ export async function previewTransactionAlertsController(
     return reply.status(500).send({
       error: 'Internal Server Error',
       message: 'Failed to preview transaction alerts',
+      details: error instanceof Error ? error.message : String(error),
       timestamp: new Date().toISOString(),
     })
   }
@@ -255,21 +271,36 @@ export async function previewTransactionAlertsController(
  * Relatórios completos para o dashboard
  */
 export async function getTransactionReportsController(
-  _request: FastifyRequest,
+  request: FastifyRequest,
   reply: FastifyReply
 ) {
   try {
-    const reports = await getTransactionReports()
+    // Por enquanto, vamos usar uma organização padrão ou buscar a primeira do usuário
+    // TODO: Implementar lógica para obter organização do usuário
+    const userId = request.user?.sub
+    if (!userId) {
+      throw new Error('Usuário não autenticado')
+    }
+
+    // Usar organização do slug (já validada no preHandler)
+    const orgId = request.organization?.id
+    if (!orgId) {
+      throw new Error('Organização não encontrada no contexto da requisição')
+    }
+
+    const reports = await getTransactionReports(orgId, userId)
 
     return reply.status(200).send({
       reports,
       timestamp: new Date().toISOString(),
     })
   } catch (error) {
+    console.error('❌ Erro ao obter relatórios:', error)
     logger.error({ error }, 'Erro ao obter relatórios de transação')
     return reply.status(500).send({
       error: 'Internal Server Error',
       message: 'Failed to get transaction reports',
+      details: error instanceof Error ? error.message : String(error),
       timestamp: new Date().toISOString(),
     })
   }

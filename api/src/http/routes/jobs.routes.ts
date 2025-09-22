@@ -14,6 +14,7 @@ import {
   stopJobController,
 } from '../controllers/jobs.controller'
 import { authenticateUserHook } from '../hooks/authenticate-user'
+import { verifyOrgAccessHook } from '../hooks/verify-user-belongs-to-org'
 
 // Schemas Zod
 const JobConfigSchema = z.object({
@@ -341,9 +342,10 @@ export async function jobsRoutes(app: FastifyInstance) {
 
   // Relatórios completos para o dashboard
   app.get(
-    '/reports/transactions',
+    '/org/:slug/reports/transactions',
     {
       onRequest: [authenticateUserHook],
+      preHandler: [verifyOrgAccessHook],
       schema: {
         tags: ['Reports'],
         summary: 'Relatórios completos de transações para o dashboard',

@@ -1,4 +1,4 @@
-import { and, eq, gte, lt, lte, sql } from 'drizzle-orm'
+import { and, eq, gte, inArray, lt, lte, or, sql } from 'drizzle-orm'
 
 import { db } from '@/db'
 import { tags } from '@/db/schemas/tags'
@@ -214,16 +214,6 @@ async function sendWhatsAppAlert(
     console.log(`📱 Enviando WhatsApp Alert (${type}) para: ${phone}`)
     console.log(`📝 Mensagem: ${message.substring(0, 100)}...`)
 
-    // Em desenvolvimento, apenas simular o envio
-    if (process.env.NODE_ENV === 'development') {
-      console.log(`🧪 MODO DESENVOLVIMENTO: Simulando envio de WhatsApp`)
-      console.log(`📱 Para: ${phone}`)
-      console.log(`📝 Mensagem completa:`)
-      console.log(message)
-      console.log(`✅ Simulação de envio bem-sucedida`)
-      return
-    }
-
     const result = await sendWhatsAppMessage({ phone, message })
 
     console.log(`📊 Resultado do envio:`, result)
@@ -249,18 +239,26 @@ export async function runTransactionAlertsNow(): Promise<JobResult | null> {
 }
 
 // Export para preview (sem envio de WhatsApp)
-export async function previewTransactionAlerts(): Promise<{
+export async function previewTransactionAlerts(
+  orgIds: string | string[],
+  userId?: string
+): Promise<{
   transactions: Array<{
+    seriesId: string
     id: string
     title: string
     amount: number
     dueDate: Date
     daysUntilDue: number
     alertType: 'warning' | 'urgent' | 'overdue'
+    ownerId: string
     ownerName: string
     ownerPhone: string
     payToName: string | null
+    payToEmail: string | null
     payToPhone: string | null
+    installmentsTotal: number | null
+    installmentsPaid: number
   }>
   summary: {
     total: number
@@ -278,6 +276,7 @@ export async function previewTransactionAlerts(): Promise<{
   const upcomingTransactions = await db
     .select({
       id: transactionOccurrences.id,
+      seriesId: transactionOccurrences.seriesId,
       title: transactionSeries.title,
       amount: transactionOccurrences.amount,
       dueDate: transactionOccurrences.dueDate,
@@ -287,19 +286,76 @@ export async function previewTransactionAlerts(): Promise<{
       ownerPhone: sql<string>`owner.phone`,
       payToId: transactionSeries.payToId,
       payToName: sql<string>`pay_to.name`,
+      payToEmail: sql<string>`pay_to.email`,
       payToPhone: sql<string>`pay_to.phone`,
+      description: transactionOccurrences.description,
+      installmentsTotal: transactionSeries.installmentsTotal,
+      tags: sql<{ name: string; color: string }[]>`
+        coalesce(
+          jsonb_agg(distinct jsonb_build_object('name', ${tags.name}, 'color', ${tags.color}))
+            filter (where ${tags.id} is not null),
+          '[]'::jsonb
+        )
+      `,
     })
     .from(transactionOccurrences)
     .innerJoin(transactionSeries, eq(transactionOccurrences.seriesId, transactionSeries.id))
     .innerJoin(sql`users as owner`, eq(transactionSeries.ownerId, sql`owner.id`))
     .leftJoin(sql`users as pay_to`, eq(transactionSeries.payToId, sql`pay_to.id`))
+    .leftJoin(transactionTags, eq(transactionTags.transactionId, transactionSeries.id))
+    .leftJoin(tags, eq(transactionTags.tagId, tags.id))
     .where(
       and(
+        Array.isArray(orgIds)
+          ? inArray(transactionSeries.organizationId, orgIds)
+          : eq(transactionSeries.organizationId, orgIds),
         eq(transactionOccurrences.status, 'pending'),
         gte(transactionOccurrences.dueDate, today),
-        lte(transactionOccurrences.dueDate, fourDaysFromNow)
+        lte(transactionOccurrences.dueDate, fourDaysFromNow),
+        userId
+          ? or(eq(transactionSeries.ownerId, userId), eq(transactionSeries.payToId, userId))
+          : sql`true`
       )
     )
+    .groupBy(
+      transactionOccurrences.id,
+      transactionOccurrences.seriesId,
+      transactionSeries.title,
+      transactionSeries.amount,
+      transactionOccurrences.dueDate,
+      transactionOccurrences.status,
+      transactionSeries.ownerId,
+      sql`owner.name`,
+      sql`owner.phone`,
+      transactionSeries.payToId,
+      sql`pay_to.name`,
+      sql`pay_to.email`,
+      sql`pay_to.phone`,
+      transactionOccurrences.description,
+      transactionSeries.installmentsTotal
+    )
+
+  // Calcular installmentsPaid para cada série
+  const seriesIds = Array.from(new Set(upcomingTransactions.map(t => t.seriesId)))
+  const paidMap: Record<string, number> = {}
+
+  if (seriesIds.length > 0) {
+    const paidRows = await db
+      .select({
+        seriesId: transactionOccurrences.seriesId,
+        paid: sql<number>`count(*)`,
+      })
+      .from(transactionOccurrences)
+      .where(
+        and(
+          inArray(transactionOccurrences.seriesId, seriesIds),
+          eq(transactionOccurrences.status, 'paid')
+        )
+      )
+      .groupBy(transactionOccurrences.seriesId)
+
+    for (const r of paidRows) paidMap[r.seriesId] = Number(r.paid)
+  }
 
   const processedTransactions = upcomingTransactions.map(transaction => {
     const dueDate = new Date(transaction.dueDate)
@@ -320,15 +376,22 @@ export async function previewTransactionAlerts(): Promise<{
 
     return {
       id: transaction.id,
+      seriesId: transaction.seriesId,
       title: transaction.title,
       amount: Number(transaction.amount) / 100,
       dueDate: transaction.dueDate,
       daysUntilDue,
       alertType,
+      ownerId: transaction.ownerId,
       ownerName: transaction.ownerName,
       ownerPhone: transaction.ownerPhone,
       payToName: transaction.payToName,
+      payToEmail: transaction.payToEmail,
       payToPhone: transaction.payToPhone,
+      description: transaction.description,
+      tags: transaction.tags,
+      installmentsTotal: transaction.installmentsTotal,
+      installmentsPaid: paidMap[transaction.seriesId] ?? 0,
     }
   })
 
@@ -347,15 +410,59 @@ export async function previewTransactionAlerts(): Promise<{
 }
 
 // Export para relatórios do dashboard
-export async function getTransactionReports(): Promise<{
+export async function getTransactionReports(
+  orgIds: string | string[],
+  userId?: string
+): Promise<{
+  overdueTransactions: {
+    transactions: Array<{
+      id: string
+      seriesId: string
+      title: string
+      amount: number
+      dueDate: Date
+      daysOverdue: number
+      ownerId: string
+      ownerName: string
+      ownerPhone: string
+      payToName: string | null
+      payToEmail: string | null
+      payToPhone: string | null
+      installmentsTotal: number | null
+      installmentsPaid: number
+    }>
+    summary: {
+      total: number
+    }
+  }
+  paidThisMonth: {
+    transactions: Array<{
+      id: string
+      seriesId: string
+      title: string
+      amount: number
+      dueDate: Date
+      paidAt: Date | null
+      ownerId: string
+      ownerName: string
+      payToId: string | null
+      payToName: string | null
+    }>
+    summary: {
+      total: number
+      totalAmount: number
+    }
+  }
   upcomingAlerts: {
     transactions: Array<{
       id: string
+      seriesId: string
       title: string
       amount: number
       dueDate: Date
       daysUntilDue: number
       alertType: 'warning' | 'urgent' | 'overdue'
+      ownerId: string
       ownerName: string
       ownerPhone: string
       payToName: string | null
@@ -416,7 +523,116 @@ export async function getTransactionReports(): Promise<{
   fourDaysFromNow.setHours(23, 59, 59, 999)
 
   // Buscar alertas próximos (reutilizando a lógica do preview)
-  const upcomingAlerts = await previewTransactionAlerts()
+  const upcomingAlerts = await previewTransactionAlerts(orgIds, userId)
+
+  // Buscar transações vencidas
+  const overdueTransactions = await db
+    .select({
+      id: transactionOccurrences.id,
+      seriesId: transactionOccurrences.seriesId,
+      title: transactionSeries.title,
+      amount: transactionOccurrences.amount,
+      dueDate: transactionOccurrences.dueDate,
+      ownerId: transactionSeries.ownerId,
+      ownerName: sql<string>`owner.name`,
+      ownerPhone: sql<string>`owner.phone`,
+      payToId: transactionSeries.payToId,
+      payToName: sql<string>`pay_to.name`,
+      payToEmail: sql<string>`pay_to.email`,
+      payToPhone: sql<string>`pay_to.phone`,
+      description: transactionOccurrences.description,
+      installmentsTotal: transactionSeries.installmentsTotal,
+      tags: sql<{ name: string; color: string }[]>`
+        coalesce(
+          jsonb_agg(distinct jsonb_build_object('name', ${tags.name}, 'color', ${tags.color}))
+            filter (where ${tags.id} is not null),
+          '[]'::jsonb
+        )
+      `,
+    })
+    .from(transactionOccurrences)
+    .innerJoin(transactionSeries, eq(transactionOccurrences.seriesId, transactionSeries.id))
+    .innerJoin(sql`users as owner`, eq(transactionSeries.ownerId, sql`owner.id`))
+    .leftJoin(sql`users as pay_to`, eq(transactionSeries.payToId, sql`pay_to.id`))
+    .leftJoin(transactionTags, eq(transactionTags.transactionId, transactionSeries.id))
+    .leftJoin(tags, eq(transactionTags.tagId, tags.id))
+    .where(
+      and(
+        Array.isArray(orgIds)
+          ? inArray(transactionSeries.organizationId, orgIds)
+          : eq(transactionSeries.organizationId, orgIds),
+        eq(transactionOccurrences.status, 'pending'),
+        lt(transactionOccurrences.dueDate, today),
+        userId
+          ? or(eq(transactionSeries.ownerId, userId), eq(transactionSeries.payToId, userId))
+          : sql`true`
+      )
+    )
+    .groupBy(
+      transactionOccurrences.id,
+      transactionOccurrences.seriesId,
+      transactionSeries.title,
+      transactionOccurrences.amount,
+      transactionOccurrences.dueDate,
+      transactionSeries.ownerId,
+      sql`owner.name`,
+      sql`owner.phone`,
+      transactionSeries.payToId,
+      sql`pay_to.name`,
+      sql`pay_to.email`,
+      sql`pay_to.phone`,
+      transactionOccurrences.description,
+      transactionSeries.installmentsTotal
+    )
+    .orderBy(transactionOccurrences.dueDate)
+
+  // Calcular installmentsPaid para transações vencidas
+  const overdueSeriesIds = Array.from(new Set(overdueTransactions.map(t => t.seriesId)))
+  const overduePaidMap: Record<string, number> = {}
+
+  if (overdueSeriesIds.length > 0) {
+    const overduePaidRows = await db
+      .select({
+        seriesId: transactionOccurrences.seriesId,
+        paid: sql<number>`count(*)`,
+      })
+      .from(transactionOccurrences)
+      .where(
+        and(
+          inArray(transactionOccurrences.seriesId, overdueSeriesIds),
+          eq(transactionOccurrences.status, 'paid')
+        )
+      )
+      .groupBy(transactionOccurrences.seriesId)
+
+    for (const r of overduePaidRows) overduePaidMap[r.seriesId] = Number(r.paid)
+  }
+
+  const processedOverdueTransactions = overdueTransactions.map(transaction => {
+    const dueDate = new Date(transaction.dueDate)
+    dueDate.setHours(0, 0, 0, 0)
+
+    const daysOverdue = Math.ceil((today.getTime() - dueDate.getTime()) / (24 * 60 * 60 * 1000))
+
+    return {
+      id: transaction.id,
+      seriesId: transaction.seriesId,
+      title: transaction.title,
+      amount: Number(transaction.amount) / 100,
+      dueDate: transaction.dueDate,
+      daysOverdue,
+      ownerId: transaction.ownerId,
+      ownerName: transaction.ownerName,
+      ownerPhone: transaction.ownerPhone,
+      payToName: transaction.payToName,
+      payToEmail: transaction.payToEmail,
+      payToPhone: transaction.payToPhone,
+      description: transaction.description,
+      tags: transaction.tags,
+      installmentsTotal: transaction.installmentsTotal,
+      installmentsPaid: overduePaidMap[transaction.seriesId] ?? 0,
+    }
+  })
 
   // Buscar estatísticas mensais
   const startOfMonth = new Date(today.getFullYear(), today.getMonth(), 1)
@@ -433,8 +649,14 @@ export async function getTransactionReports(): Promise<{
     .innerJoin(transactionSeries, eq(transactionOccurrences.seriesId, transactionSeries.id))
     .where(
       and(
+        Array.isArray(orgIds)
+          ? inArray(transactionSeries.organizationId, orgIds)
+          : eq(transactionSeries.organizationId, orgIds),
         gte(transactionOccurrences.dueDate, startOfMonth),
-        lte(transactionOccurrences.dueDate, endOfMonth)
+        lte(transactionOccurrences.dueDate, endOfMonth),
+        userId
+          ? or(eq(transactionSeries.ownerId, userId), eq(transactionSeries.payToId, userId))
+          : sql`true`
       )
     )
 
@@ -447,10 +669,16 @@ export async function getTransactionReports(): Promise<{
     .innerJoin(transactionSeries, eq(transactionOccurrences.seriesId, transactionSeries.id))
     .where(
       and(
+        Array.isArray(orgIds)
+          ? inArray(transactionSeries.organizationId, orgIds)
+          : eq(transactionSeries.organizationId, orgIds),
         eq(transactionOccurrences.status, 'pending'),
         lt(transactionOccurrences.dueDate, today),
         gte(transactionOccurrences.dueDate, startOfMonth),
-        lte(transactionOccurrences.dueDate, endOfMonth)
+        lte(transactionOccurrences.dueDate, endOfMonth),
+        userId
+          ? or(eq(transactionSeries.ownerId, userId), eq(transactionSeries.payToId, userId))
+          : sql`true`
       )
     )
 
@@ -468,14 +696,88 @@ export async function getTransactionReports(): Promise<{
     .from(transactionOccurrences)
     .innerJoin(transactionSeries, eq(transactionOccurrences.seriesId, transactionSeries.id))
     .innerJoin(sql`users as owner`, eq(transactionSeries.ownerId, sql`owner.id`))
+    .where(
+      and(
+        Array.isArray(orgIds)
+          ? inArray(transactionSeries.organizationId, orgIds)
+          : eq(transactionSeries.organizationId, orgIds),
+        userId
+          ? or(eq(transactionSeries.ownerId, userId), eq(transactionSeries.payToId, userId))
+          : sql`true`
+      )
+    )
     .orderBy(sql`${transactionOccurrences.updatedAt} desc`)
     .limit(10)
 
+  // Transações pagas no mês
+  const paidThisMonthRows = await db
+    .select({
+      id: transactionOccurrences.id,
+      seriesId: transactionOccurrences.seriesId,
+      title: transactionSeries.title,
+      amount: transactionOccurrences.amount,
+      dueDate: transactionOccurrences.dueDate,
+      paidAt: transactionOccurrences.paidAt,
+      ownerId: transactionSeries.ownerId,
+      ownerName: sql<string>`owner.name`,
+      payToId: transactionSeries.payToId,
+      payToName: sql<string>`pay_to.name`,
+    })
+    .from(transactionOccurrences)
+    .innerJoin(transactionSeries, eq(transactionOccurrences.seriesId, transactionSeries.id))
+    .innerJoin(sql`users as owner`, eq(transactionSeries.ownerId, sql`owner.id`))
+    .leftJoin(sql`users as pay_to`, eq(transactionSeries.payToId, sql`pay_to.id`))
+    .where(
+      and(
+        Array.isArray(orgIds)
+          ? inArray(transactionSeries.organizationId, orgIds)
+          : eq(transactionSeries.organizationId, orgIds),
+        eq(transactionOccurrences.status, 'paid'),
+        gte(transactionOccurrences.dueDate, startOfMonth),
+        lte(transactionOccurrences.dueDate, endOfMonth),
+        userId
+          ? or(eq(transactionSeries.ownerId, userId), eq(transactionSeries.payToId, userId))
+          : sql`true`
+      )
+    )
+    .orderBy(sql`${transactionOccurrences.paidAt} desc`)
+
   // Gerar dados para gráficos
-  const chartData = await generateChartData(today)
+  const chartData = await generateChartData(today, String(orgIds), userId)
 
   return {
-    upcomingAlerts,
+    overdueTransactions: {
+      transactions: processedOverdueTransactions,
+      summary: {
+        total: processedOverdueTransactions.length,
+      },
+    },
+    paidThisMonth: {
+      transactions: paidThisMonthRows.map(row => ({
+        id: row.id,
+        seriesId: row.seriesId,
+        title: row.title,
+        amount: Number(row.amount) / 100,
+        dueDate: row.dueDate,
+        paidAt: row.paidAt ?? null,
+        ownerId: row.ownerId,
+        ownerName: row.ownerName,
+        payToId: row.payToId ?? null,
+        payToName: row.payToName ?? null,
+      })),
+      summary: {
+        total: paidThisMonthRows.length,
+        totalAmount: paidThisMonthRows.reduce((acc, r) => acc + Number(r.amount) / 100, 0),
+      },
+    },
+    upcomingAlerts: {
+      ...upcomingAlerts,
+      transactions: upcomingAlerts.transactions.map(transaction => ({
+        ...transaction,
+        seriesId: transaction.seriesId,
+        ownerId: transaction.ownerId || '', // Adicionar ownerId se não existir
+      })),
+    },
     monthlyStats: {
       totalTransactions: monthlyStats[0]?.totalTransactions || 0,
       totalAmount: Number(monthlyStats[0]?.totalAmount || 0) / 100,
@@ -497,7 +799,7 @@ export async function getTransactionReports(): Promise<{
 }
 
 // Função auxiliar para gerar dados dos gráficos
-async function generateChartData(today: Date) {
+async function generateChartData(today: Date, orgId: string, userId?: string) {
   const startOfMonth = new Date(today.getFullYear(), today.getMonth(), 1)
   const endOfMonth = new Date(today.getFullYear(), today.getMonth() + 1, 0, 23, 59, 59, 999)
 
@@ -512,8 +814,12 @@ async function generateChartData(today: Date) {
     .innerJoin(transactionSeries, eq(transactionOccurrences.seriesId, transactionSeries.id))
     .where(
       and(
+        eq(transactionSeries.organizationId, orgId),
         gte(transactionOccurrences.dueDate, startOfMonth),
-        lte(transactionOccurrences.dueDate, endOfMonth)
+        lte(transactionOccurrences.dueDate, endOfMonth),
+        userId
+          ? or(eq(transactionSeries.ownerId, userId), eq(transactionSeries.payToId, userId))
+          : sql`true`
       )
     )
 
@@ -568,8 +874,12 @@ async function generateChartData(today: Date) {
       .innerJoin(transactionSeries, eq(transactionOccurrences.seriesId, transactionSeries.id))
       .where(
         and(
+          eq(transactionSeries.organizationId, orgId),
           gte(transactionOccurrences.dueDate, monthDate),
-          lte(transactionOccurrences.dueDate, monthEnd)
+          lte(transactionOccurrences.dueDate, monthEnd),
+          userId
+            ? or(eq(transactionSeries.ownerId, userId), eq(transactionSeries.payToId, userId))
+            : sql`true`
         )
       )
 
@@ -605,8 +915,12 @@ async function generateChartData(today: Date) {
     .innerJoin(tags, eq(transactionTags.tagId, tags.id))
     .where(
       and(
+        eq(transactionSeries.organizationId, orgId),
         gte(transactionOccurrences.dueDate, startOfMonth),
-        lte(transactionOccurrences.dueDate, endOfMonth)
+        lte(transactionOccurrences.dueDate, endOfMonth),
+        userId
+          ? or(eq(transactionSeries.ownerId, userId), eq(transactionSeries.payToId, userId))
+          : sql`true`
       )
     )
 
@@ -638,6 +952,7 @@ async function generateChartData(today: Date) {
     .innerJoin(transactionSeries, eq(transactionOccurrences.seriesId, transactionSeries.id))
     .where(
       and(
+        eq(transactionSeries.organizationId, orgId),
         gte(transactionOccurrences.dueDate, startOfMonth),
         lte(transactionOccurrences.dueDate, endOfMonth)
       )
@@ -667,10 +982,14 @@ async function generateChartData(today: Date) {
     .innerJoin(transactionSeries, eq(transactionOccurrences.seriesId, transactionSeries.id))
     .where(
       and(
+        eq(transactionSeries.organizationId, orgId),
         eq(transactionOccurrences.status, 'pending'),
         lt(transactionOccurrences.dueDate, today),
         gte(transactionOccurrences.dueDate, startOfMonth),
-        lte(transactionOccurrences.dueDate, endOfMonth)
+        lte(transactionOccurrences.dueDate, endOfMonth),
+        userId
+          ? or(eq(transactionSeries.ownerId, userId), eq(transactionSeries.payToId, userId))
+          : sql`true`
       )
     )
 

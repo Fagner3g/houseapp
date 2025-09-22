@@ -688,7 +688,7 @@
         }
       }
     },
-    "/reports/transactions": {
+    "/org/{slug}/reports/transactions": {
       "get": {
         "summary": "Relatórios completos de transações para o dashboard",
         "tags": [
@@ -697,6 +697,16 @@
         "security": [
           {
             "bearerAuth": []
+          }
+        ],
+        "parameters": [
+          {
+            "schema": {
+              "type": "string"
+            },
+            "in": "path",
+            "name": "slug",
+            "required": true
           }
         ],
         "responses": {

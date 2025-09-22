@@ -6,8 +6,9 @@
  * OpenAPI spec version: 1.0.1
  */
 
-export type GetReportsTransactions200ReportsChartDataStatusDistribution = {
+export type GetOrgSlugReportsTransactions200ReportsChartDataMonthlyTrendItem = {
+  month: string;
+  total: number;
   paid: number;
   pending: number;
-  overdue: number;
 };

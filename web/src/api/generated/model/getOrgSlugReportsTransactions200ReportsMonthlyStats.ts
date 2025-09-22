@@ -6,7 +6,7 @@
  * OpenAPI spec version: 1.0.1
  */
 
-export type GetReportsTransactions200ReportsMonthlyStats = {
+export type GetOrgSlugReportsTransactions200ReportsMonthlyStats = {
   totalTransactions: number;
   totalAmount: number;
   paidTransactions: number;

@@ -38,9 +38,9 @@ import type {
   GetJobsJobKey404,
   GetJobsStats200,
   GetJobsTransactionsalertsPreview200,
+  GetOrgSlugReportsTransactions200,
   GetPendingGoals200,
   GetProfile200,
-  GetReportsTransactions200,
   GetTransactionById200,
   GetWeekSummary200,
   ListOrganizations200,
@@ -1241,74 +1241,88 @@ export function useGetJobsTransactionsalertsPreview<
 /**
  * @summary Relatórios completos de transações para o dashboard
  */
-export const getGetReportsTransactionsUrl = () => {
-  return `/reports/transactions`;
+export const getGetOrgSlugReportsTransactionsUrl = (slug: string) => {
+  return `/org/${slug}/reports/transactions`;
 };
 
-export const getReportsTransactions = async (
+export const getOrgSlugReportsTransactions = async (
+  slug: string,
   options?: RequestInit,
-): Promise<GetReportsTransactions200> => {
-  return http<GetReportsTransactions200>(getGetReportsTransactionsUrl(), {
-    ...options,
-    method: "GET",
-  });
+): Promise<GetOrgSlugReportsTransactions200> => {
+  return http<GetOrgSlugReportsTransactions200>(
+    getGetOrgSlugReportsTransactionsUrl(slug),
+    {
+      ...options,
+      method: "GET",
+    },
+  );
 };
 
-export const getGetReportsTransactionsQueryKey = () => {
-  return [`/reports/transactions`] as const;
+export const getGetOrgSlugReportsTransactionsQueryKey = (slug?: string) => {
+  return [`/org/${slug}/reports/transactions`] as const;
 };
 
-export const getGetReportsTransactionsQueryOptions = <
-  TData = Awaited<ReturnType<typeof getReportsTransactions>>,
+export const getGetOrgSlugReportsTransactionsQueryOptions = <
+  TData = Awaited<ReturnType<typeof getOrgSlugReportsTransactions>>,
   TError = unknown,
->(options?: {
-  query?: Partial<
-    UseQueryOptions<
-      Awaited<ReturnType<typeof getReportsTransactions>>,
-      TError,
-      TData
-    >
-  >;
-  request?: SecondParameter<typeof http>;
-}) => {
+>(
+  slug: string,
+  options?: {
+    query?: Partial<
+      UseQueryOptions<
+        Awaited<ReturnType<typeof getOrgSlugReportsTransactions>>,
+        TError,
+        TData
+      >
+    >;
+    request?: SecondParameter<typeof http>;
+  },
+) => {
   const { query: queryOptions, request: requestOptions } = options ?? {};
 
   const queryKey =
-    queryOptions?.queryKey ?? getGetReportsTransactionsQueryKey();
+    queryOptions?.queryKey ?? getGetOrgSlugReportsTransactionsQueryKey(slug);
 
   const queryFn: QueryFunction<
-    Awaited<ReturnType<typeof getReportsTransactions>>
-  > = ({ signal }) => getReportsTransactions({ signal, ...requestOptions });
+    Awaited<ReturnType<typeof getOrgSlugReportsTransactions>>
+  > = ({ signal }) =>
+    getOrgSlugReportsTransactions(slug, { signal, ...requestOptions });
 
-  return { queryKey, queryFn, ...queryOptions } as UseQueryOptions<
-    Awaited<ReturnType<typeof getReportsTransactions>>,
+  return {
+    queryKey,
+    queryFn,
+    enabled: !!slug,
+    ...queryOptions,
+  } as UseQueryOptions<
+    Awaited<ReturnType<typeof getOrgSlugReportsTransactions>>,
     TError,
     TData
   > & { queryKey: DataTag<QueryKey, TData, TError> };
 };
 
-export type GetReportsTransactionsQueryResult = NonNullable<
-  Awaited<ReturnType<typeof getReportsTransactions>>
+export type GetOrgSlugReportsTransactionsQueryResult = NonNullable<
+  Awaited<ReturnType<typeof getOrgSlugReportsTransactions>>
 >;
-export type GetReportsTransactionsQueryError = unknown;
+export type GetOrgSlugReportsTransactionsQueryError = unknown;
 
-export function useGetReportsTransactions<
-  TData = Awaited<ReturnType<typeof getReportsTransactions>>,
+export function useGetOrgSlugReportsTransactions<
+  TData = Awaited<ReturnType<typeof getOrgSlugReportsTransactions>>,
   TError = unknown,
 >(
+  slug: string,
   options: {
     query: Partial<
       UseQueryOptions<
-        Awaited<ReturnType<typeof getReportsTransactions>>,
+        Awaited<ReturnType<typeof getOrgSlugReportsTransactions>>,
         TError,
         TData
       >
     > &
       Pick<
         DefinedInitialDataOptions<
-          Awaited<ReturnType<typeof getReportsTransactions>>,
+          Awaited<ReturnType<typeof getOrgSlugReportsTransactions>>,
           TError,
-          Awaited<ReturnType<typeof getReportsTransactions>>
+          Awaited<ReturnType<typeof getOrgSlugReportsTransactions>>
         >,
         "initialData"
       >;
@@ -1318,23 +1332,24 @@ export function useGetReportsTransactions<
 ): DefinedUseQueryResult<TData, TError> & {
   queryKey: DataTag<QueryKey, TData, TError>;
 };
-export function useGetReportsTransactions<
-  TData = Awaited<ReturnType<typeof getReportsTransactions>>,
+export function useGetOrgSlugReportsTransactions<
+  TData = Awaited<ReturnType<typeof getOrgSlugReportsTransactions>>,
   TError = unknown,
 >(
+  slug: string,
   options?: {
     query?: Partial<
       UseQueryOptions<
-        Awaited<ReturnType<typeof getReportsTransactions>>,
+        Awaited<ReturnType<typeof getOrgSlugReportsTransactions>>,
         TError,
         TData
       >
     > &
       Pick<
         UndefinedInitialDataOptions<
-          Awaited<ReturnType<typeof getReportsTransactions>>,
+          Awaited<ReturnType<typeof getOrgSlugReportsTransactions>>,
           TError,
-          Awaited<ReturnType<typeof getReportsTransactions>>
+          Awaited<ReturnType<typeof getOrgSlugReportsTransactions>>
         >,
         "initialData"
       >;
@@ -1344,14 +1359,15 @@ export function useGetReportsTransactions<
 ): UseQueryResult<TData, TError> & {
   queryKey: DataTag<QueryKey, TData, TError>;
 };
-export function useGetReportsTransactions<
-  TData = Awaited<ReturnType<typeof getReportsTransactions>>,
+export function useGetOrgSlugReportsTransactions<
+  TData = Awaited<ReturnType<typeof getOrgSlugReportsTransactions>>,
   TError = unknown,
 >(
+  slug: string,
   options?: {
     query?: Partial<
       UseQueryOptions<
-        Awaited<ReturnType<typeof getReportsTransactions>>,
+        Awaited<ReturnType<typeof getOrgSlugReportsTransactions>>,
         TError,
         TData
       >
@@ -1366,14 +1382,15 @@ export function useGetReportsTransactions<
  * @summary Relatórios completos de transações para o dashboard
  */
 
-export function useGetReportsTransactions<
-  TData = Awaited<ReturnType<typeof getReportsTransactions>>,
+export function useGetOrgSlugReportsTransactions<
+  TData = Awaited<ReturnType<typeof getOrgSlugReportsTransactions>>,
   TError = unknown,
 >(
+  slug: string,
   options?: {
     query?: Partial<
       UseQueryOptions<
-        Awaited<ReturnType<typeof getReportsTransactions>>,
+        Awaited<ReturnType<typeof getOrgSlugReportsTransactions>>,
         TError,
         TData
       >
@@ -1384,7 +1401,10 @@ export function useGetReportsTransactions<
 ): UseQueryResult<TData, TError> & {
   queryKey: DataTag<QueryKey, TData, TError>;
 } {
-  const queryOptions = getGetReportsTransactionsQueryOptions(options);
+  const queryOptions = getGetOrgSlugReportsTransactionsQueryOptions(
+    slug,
+    options,
+  );
 
   const query = useQuery(queryOptions, queryClient) as UseQueryResult<
     TData,

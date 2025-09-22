@@ -3,26 +3,104 @@ import {
   AlertTriangle,
   BarChart3,
   Calendar,
+  Clock,
   DollarSign,
   PieChart,
   TrendingUp,
+  User,
   Users,
 } from 'lucide-react'
+import { useState } from 'react'
 
-import { useGetReportsTransactions } from '@/api/generated/api'
+import { useGetOrgSlugReportsTransactions } from '@/api/generated/api'
 import { CategoryBreakdownChart } from '@/components/charts/category-breakdown-chart'
 import { DailyTransactionsChart } from '@/components/charts/daily-transactions-chart'
 import { MonthlyTrendChart } from '@/components/charts/monthly-trend-chart'
 import { StatusDistributionChart } from '@/components/charts/status-distribution-chart'
 import { LoadingErrorState } from '@/components/loading-error-state'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
+import { useActiveOrganization } from '@/hooks/use-active-organization'
+import { DrawerEdit } from '@/pages/_app/$org/(transactions)/-components/table-list-transactions/drawer-edit'
+import { useAuthStore } from '@/stores/auth'
+
+interface TransactionCardProps {
+  transaction: any
+  isOwner: boolean
+  onEdit: (transaction: any) => void
+  children: React.ReactNode
+  className?: string
+  variant?: 'default' | 'overdue' | 'upcoming'
+}
+
+function TransactionCard({
+  transaction,
+  isOwner,
+  onEdit,
+  children,
+  className = '',
+  variant = 'default',
+}: TransactionCardProps) {
+  const baseClasses =
+    'flex items-center justify-between p-4 border rounded-lg transition-all duration-200'
+
+  const variantClasses = {
+    default: 'hover:bg-muted/50',
+    overdue:
+      'border-red-200 bg-red-50/50 hover:bg-red-100/50 dark:border-red-800 dark:bg-red-950/20 dark:hover:bg-red-950/30',
+    upcoming: 'hover:bg-muted/50',
+  }
+
+  // Sempre permitir clique para visualização, independente de ser o dono
+  return (
+    <button
+      type="button"
+      className={`${baseClasses} cursor-pointer w-full text-left ${variantClasses[variant]} ${className}`}
+      onClick={() => onEdit(transaction)}
+    >
+      {children}
+    </button>
+  )
+}
 
 export const Route = createFileRoute('/_app/$org/(dashboard)/dashboard')({
   component: RouteComponent,
 })
 
 function RouteComponent() {
-  const { data: reports, isPending: isLoading, error, refetch } = useGetReportsTransactions()
+  const { slug } = useActiveOrganization()
+  const {
+    data: reports,
+    isPending: isLoading,
+    error,
+    refetch,
+  } = useGetOrgSlugReportsTransactions(slug)
+  const currentUser = useAuthStore(s => s.user)
+  const [editingTransaction, setEditingTransaction] = useState<any>(null)
+
+  const convertToEditFormat = (transaction: any) => ({
+    id: transaction.id,
+    serieId: transaction.seriesId || transaction.id, // ✅ Usar seriesId se disponível
+    title: transaction.title,
+    amount: Number(transaction.amount).toFixed(2), // ✅ Converter para string decimal com 2 casas
+    dueDate: transaction.dueDate,
+    type: 'expense' as const,
+    status: 'pending' as const,
+    ownerId: transaction.ownerId,
+    payTo: transaction.payToName || '',
+    payToId: transaction.payToId || null,
+    payToEmail: transaction.payToEmail || '', // ✅ ADICIONAR payToEmail para validação
+    tags: transaction.tags || [],
+    description: transaction.description || '',
+    // ✅ ADICIONAR campos essenciais para cálculo de parcelas
+    installmentsTotal: transaction.installmentsTotal || null,
+    installmentsPaid: transaction.installmentsPaid || 0,
+    createdAt: new Date().toISOString(),
+    updatedAt: new Date().toISOString(),
+  })
+
+  const handleEditTransaction = (transaction: any) => {
+    setEditingTransaction(convertToEditFormat(transaction))
+  }
 
   return (
     <LoadingErrorState
@@ -104,6 +182,83 @@ function RouteComponent() {
               </div>
             </div>
 
+            {/* Transações Vencidas */}
+            {(reports.reports as any).overdueTransactions?.transactions?.length > 0 && (
+              <div className="px-4 lg:px-6">
+                <Card className="border-red-200 bg-red-50 dark:border-red-800 dark:bg-red-950">
+                  <CardHeader>
+                    <CardTitle className="flex items-center gap-2 text-red-700 dark:text-red-300">
+                      <AlertTriangle className="h-5 w-5" />
+                      Transações Vencidas
+                    </CardTitle>
+                    <CardDescription className="text-red-600 dark:text-red-400">
+                      {(reports.reports as any).overdueTransactions?.summary?.total || 0}{' '}
+                      transação(ões) vencida(s) requerem atenção
+                    </CardDescription>
+                  </CardHeader>
+                  <CardContent>
+                    <div className="space-y-3">
+                      {(reports.reports as any).overdueTransactions?.transactions?.map(
+                        (transaction: any) => {
+                          const isOwner =
+                            currentUser?.id &&
+                            transaction.ownerId &&
+                            currentUser.id === transaction.ownerId
+                          return (
+                            <TransactionCard
+                              key={transaction.id}
+                              transaction={transaction}
+                              isOwner={isOwner}
+                              onEdit={handleEditTransaction}
+                              variant="overdue"
+                            >
+                              <div className="flex-1">
+                                <div className="flex items-center gap-2 mb-1">
+                                  <AlertTriangle className="h-4 w-4 text-red-500" />
+                                  <h4 className="font-medium text-foreground">
+                                    {transaction.title}
+                                  </h4>
+                                </div>
+                                <div className="flex items-center gap-4 text-sm text-muted-foreground">
+                                  <div className="flex items-center gap-1">
+                                    <User className="h-3 w-3" />
+                                    <span>{transaction.ownerName}</span>
+                                  </div>
+                                  <div className="flex items-center gap-1">
+                                    <DollarSign className="h-3 w-3" />
+                                    <span className="font-medium">
+                                      R${' '}
+                                      {transaction.amount.toLocaleString('pt-BR', {
+                                        minimumFractionDigits: 2,
+                                      })}
+                                    </span>
+                                  </div>
+                                </div>
+                              </div>
+                              <div className="text-right">
+                                <div className="flex items-center gap-1 justify-end mb-1">
+                                  <Clock className="h-3 w-3 text-red-500" />
+                                  <span className="text-sm font-medium text-red-600 dark:text-red-400">
+                                    {transaction.daysOverdue === 1
+                                      ? '1 dia vencido'
+                                      : `${transaction.daysOverdue} dias vencidos`}
+                                  </span>
+                                </div>
+                                <p className="text-xs text-muted-foreground">
+                                  Venceu em{' '}
+                                  {new Date(transaction.dueDate).toLocaleDateString('pt-BR')}
+                                </p>
+                              </div>
+                            </TransactionCard>
+                          )
+                        }
+                      )}
+                    </div>
+                  </CardContent>
+                </Card>
+              </div>
+            )}
+
             {/* Alertas Próximos */}
             <div className="px-4 lg:px-6">
               <Card>
@@ -144,46 +299,161 @@ function RouteComponent() {
 
                   {reports.reports.upcomingAlerts.transactions.length > 0 ? (
                     <div className="space-y-3">
-                      {reports.reports.upcomingAlerts.transactions.map(transaction => (
-                        <div
-                          key={transaction.id}
-                          className="flex items-center justify-between p-3 border rounded-lg"
-                        >
-                          <div className="flex-1">
-                            <h4 className="font-medium">{transaction.title}</h4>
-                            <p className="text-sm text-muted-foreground">
-                              {transaction.ownerName} • R${' '}
-                              {transaction.amount.toLocaleString('pt-BR', {
-                                minimumFractionDigits: 2,
-                              })}
-                            </p>
-                          </div>
-                          <div className="text-right">
-                            <div
-                              className={`text-sm font-medium ${
-                                transaction.alertType === 'urgent'
-                                  ? 'text-red-600'
-                                  : transaction.alertType === 'warning'
-                                    ? 'text-yellow-600'
-                                    : 'text-blue-600'
-                              }`}
-                            >
-                              {transaction.daysUntilDue === 0
-                                ? 'Hoje'
-                                : transaction.daysUntilDue === 1
-                                  ? 'Amanhã'
-                                  : `Em ${transaction.daysUntilDue} dias`}
+                      {reports.reports.upcomingAlerts.transactions.map((transaction: any) => {
+                        const isOwner =
+                          currentUser?.id &&
+                          transaction.ownerId &&
+                          currentUser.id === transaction.ownerId
+                        return (
+                          <TransactionCard
+                            key={transaction.id}
+                            transaction={transaction}
+                            isOwner={isOwner}
+                            onEdit={handleEditTransaction}
+                            variant="upcoming"
+                          >
+                            <div className="flex-1">
+                              <div className="flex items-center gap-2 mb-1">
+                                <Calendar className="h-4 w-4 text-blue-500" />
+                                <h4 className="font-medium text-foreground">{transaction.title}</h4>
+                              </div>
+                              <div className="flex items-center gap-4 text-sm text-muted-foreground">
+                                <div className="flex items-center gap-1">
+                                  <User className="h-3 w-3" />
+                                  <span>{transaction.ownerName}</span>
+                                </div>
+                                <div className="flex items-center gap-1">
+                                  <DollarSign className="h-3 w-3" />
+                                  <span className="font-medium">
+                                    R${' '}
+                                    {transaction.amount.toLocaleString('pt-BR', {
+                                      minimumFractionDigits: 2,
+                                    })}
+                                  </span>
+                                </div>
+                              </div>
                             </div>
-                            <p className="text-xs text-muted-foreground">
-                              {new Date(transaction.dueDate).toLocaleDateString('pt-BR')}
-                            </p>
-                          </div>
-                        </div>
-                      ))}
+                            <div className="text-right">
+                              <div className="flex items-center gap-1 justify-end mb-1">
+                                <Clock
+                                  className={`h-3 w-3 ${
+                                    transaction.alertType === 'urgent'
+                                      ? 'text-red-500'
+                                      : transaction.alertType === 'warning'
+                                        ? 'text-orange-500'
+                                        : 'text-blue-500'
+                                  }`}
+                                />
+                                <span
+                                  className={`text-sm font-medium ${
+                                    transaction.alertType === 'urgent'
+                                      ? 'text-red-600 dark:text-red-400'
+                                      : transaction.alertType === 'warning'
+                                        ? 'text-orange-600 dark:text-orange-400'
+                                        : 'text-blue-600 dark:text-blue-400'
+                                  }`}
+                                >
+                                  {transaction.daysUntilDue === 0
+                                    ? 'Vence hoje'
+                                    : transaction.daysUntilDue === 1
+                                      ? 'Vence amanhã'
+                                      : `Vence em ${transaction.daysUntilDue} dias`}
+                                </span>
+                              </div>
+                              <p className="text-xs text-muted-foreground">
+                                Vence em {new Date(transaction.dueDate).toLocaleDateString('pt-BR')}
+                              </p>
+                            </div>
+                          </TransactionCard>
+                        )
+                      })}
                     </div>
                   ) : (
                     <p className="text-center text-muted-foreground py-8">
                       Nenhuma transação próxima do vencimento
+                    </p>
+                  )}
+                </CardContent>
+              </Card>
+            </div>
+
+            {/* Pagas neste mês */}
+            <div className="px-4 lg:px-6">
+              <Card>
+                <CardHeader>
+                  <CardTitle className="flex items-center gap-2">
+                    <DollarSign className="h-5 w-5" />
+                    Pagas neste mês
+                  </CardTitle>
+                  <CardDescription>
+                    {(reports as any)?.reports?.paidThisMonth?.summary?.total || 0} transações • R${' '}
+                    {(
+                      (reports as any)?.reports?.paidThisMonth?.summary?.totalAmount || 0
+                    ).toLocaleString('pt-BR', {
+                      minimumFractionDigits: 2,
+                    })}
+                  </CardDescription>
+                </CardHeader>
+                <CardContent>
+                  {((reports as any)?.reports?.paidThisMonth?.transactions || []).length > 0 ? (
+                    <div className="space-y-3">
+                      {(reports as any).reports.paidThisMonth.transactions.map(
+                        (transaction: any) => {
+                          const isOwner =
+                            currentUser?.id &&
+                            transaction.ownerId &&
+                            currentUser.id === transaction.ownerId
+                          return (
+                            <TransactionCard
+                              key={transaction.id}
+                              transaction={transaction}
+                              isOwner={isOwner}
+                              onEdit={handleEditTransaction}
+                              variant="default"
+                            >
+                              <div className="flex-1">
+                                <div className="flex items-center gap-2 mb-1">
+                                  <DollarSign className="h-4 w-4 text-emerald-500" />
+                                  <h4 className="font-medium text-foreground">
+                                    {transaction.title}
+                                  </h4>
+                                </div>
+                                <div className="flex items-center gap-4 text-sm text-muted-foreground">
+                                  <div className="flex items-center gap-1">
+                                    <User className="h-3 w-3" />
+                                    <span>{transaction.ownerName}</span>
+                                  </div>
+                                  <div className="flex items-center gap-1">
+                                    <DollarSign className="h-3 w-3" />
+                                    <span className="font-medium">
+                                      R${' '}
+                                      {Number(transaction.amount).toLocaleString('pt-BR', {
+                                        minimumFractionDigits: 2,
+                                      })}
+                                    </span>
+                                  </div>
+                                </div>
+                              </div>
+                              <div className="text-right">
+                                <div className="text-sm font-medium text-emerald-600 dark:text-emerald-400">
+                                  Pago em{' '}
+                                  {new Date(
+                                    transaction.paidAt ?? transaction.dueDate
+                                  ).toLocaleDateString('pt-BR')}
+                                </div>
+                                <p className="text-xs text-muted-foreground">
+                                  Vencimento{' '}
+                                  {new Date(transaction.dueDate).toLocaleDateString('pt-BR')}
+                                </p>
+                              </div>
+                            </TransactionCard>
+                          )
+                        }
+                      )}
+                    </div>
+                  ) : (
+                    <p className="text-center text-muted-foreground py-8">
+                      Nenhuma transação paga neste mês
                     </p>
                   )}
                 </CardContent>
@@ -302,6 +572,15 @@ function RouteComponent() {
           </>
         )}
       </div>
+
+      {/* Drawer de Edição */}
+      <DrawerEdit
+        transaction={editingTransaction}
+        open={!!editingTransaction}
+        onOpenChange={open => {
+          if (!open) setEditingTransaction(null)
+        }}
+      />
     </LoadingErrorState>
   )
 }

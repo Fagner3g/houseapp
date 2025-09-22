@@ -6,6 +6,7 @@ import { transactionSeries } from '@/db/schemas/transactionSeries'
 import { transactionTags } from '@/db/schemas/transactionTags'
 import type { CreateTransactionsSchemaBody } from '@/http/schemas/transaction/create-transaction.schema'
 import { materializeOccurrences } from './materialize-occurrences'
+import { calculateTotalInstallments } from './utils/installments-calculator'
 
 type CreateTransaction = Omit<CreateTransactionsSchemaBody, 'payToEmail'> & {
   ownerId: string
@@ -30,6 +31,17 @@ export async function createTransactionService({
   installmentsTotal,
 }: CreateTransaction) {
   const startDate = recurrenceStart ?? dueDate
+
+  // Calcular o número total de parcelas usando a função utilitária
+  const calculatedInstallmentsTotal = calculateTotalInstallments(
+    isRecurring,
+    recurrenceType,
+    recurrenceInterval,
+    recurrenceUntil,
+    startDate,
+    installmentsTotal
+  )
+
   const seriesResult = await db
     .insert(transactionSeries)
     .values({
@@ -43,7 +55,7 @@ export async function createTransactionService({
       recurrenceType: recurrenceType ?? 'monthly',
       recurrenceInterval: recurrenceInterval ?? 1,
       recurrenceUntil,
-      installmentsTotal: installmentsTotal ?? (isRecurring ? null : 1),
+      installmentsTotal: calculatedInstallmentsTotal,
     })
     .returning()
 
