@@ -1,4 +1,4 @@
-import { CreditCard, LayoutDashboard, Rocket, Users } from 'lucide-react'
+import { CreditCard, LayoutDashboard, Rocket, Settings, Users } from 'lucide-react'
 
 import { useOrgStore } from '@/stores/org'
 
@@ -7,6 +7,7 @@ const baseItems = [
   { title: 'Metas', path: 'goals', icon: Rocket },
   { title: 'Transações', path: 'transactions', icon: CreditCard },
   { title: 'Usuários', path: 'users', icon: Users },
+  { title: 'Jobs', path: 'jobs', icon: Settings },
 ]
 
 export function useNavItems() {

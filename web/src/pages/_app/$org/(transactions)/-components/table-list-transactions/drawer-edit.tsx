@@ -5,6 +5,7 @@ import { useForm } from 'react-hook-form'
 import { toast } from 'sonner'
 
 import {
+  getGetOrgSlugReportsTransactionsQueryKey,
   getListTransactionsQueryKey,
   useListUsersByOrg,
   usePayTransaction,
@@ -23,8 +24,8 @@ import {
 import { Form } from '@/components/ui/form'
 import { useActiveOrganization } from '@/hooks/use-active-organization'
 import { useIsMobile } from '@/hooks/use-mobile'
-import { useAuthStore } from '@/stores/auth'
 import { showToastOnErrorSubmit } from '@/lib/utils'
+import { useAuthStore } from '@/stores/auth'
 import { AmountField } from '../modal-new-transaction/amount-field'
 import { DescriptionField } from '../modal-new-transaction/description-field'
 import { CalendarField } from '../modal-new-transaction/due-date-field'
@@ -52,7 +53,7 @@ export function DrawerEdit({ transaction, open, onOpenChange }: Props) {
   const isMobile = useIsMobile()
   const currentUser = useAuthStore(s => s.user)
   const [hasChanges, setHasChanges] = useState(false)
-  
+
   // Check if current user is the owner of the transaction
   const isOwner = currentUser?.id === transaction?.ownerId
   const isReadOnly = !isOwner
@@ -92,8 +93,13 @@ export function DrawerEdit({ transaction, open, onOpenChange }: Props) {
     mutation: {
       onSuccess: () => {
         toast.success('Transação atualizada com sucesso!')
+        // Invalidar cache das transações
         queryClient.invalidateQueries({
           queryKey: getListTransactionsQueryKey(slug),
+        })
+        // Invalidar cache do dashboard
+        queryClient.invalidateQueries({
+          queryKey: getGetOrgSlugReportsTransactionsQueryKey(slug),
         })
         onOpenChange(false)
       },
@@ -106,8 +112,13 @@ export function DrawerEdit({ transaction, open, onOpenChange }: Props) {
       onSuccess: () => {
         const isPaid = transaction?.status === 'paid'
         toast.success(isPaid ? 'Pagamento cancelado com sucesso!' : 'Transação paga com sucesso!')
+        // Invalidar cache das transações
         queryClient.invalidateQueries({
           queryKey: getListTransactionsQueryKey(slug),
+        })
+        // Invalidar cache do dashboard
+        queryClient.invalidateQueries({
+          queryKey: getGetOrgSlugReportsTransactionsQueryKey(slug),
         })
         onOpenChange(false)
       },
@@ -132,7 +143,9 @@ export function DrawerEdit({ transaction, open, onOpenChange }: Props) {
 
     if (hasChanges) {
       // Save changes
-      form.handleSubmit(handleSubmit)()
+      form.handleSubmit(handleSubmit, () => {
+        showToastOnErrorSubmit({ form })
+      })()
     } else {
       // Toggle payment status
       payTransaction({ slug, id: transaction.id })

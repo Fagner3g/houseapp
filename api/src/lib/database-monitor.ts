@@ -5,6 +5,7 @@ interface DatabaseMonitorOptions {
   intervalMs?: number
   maxRetries?: number
   failFast?: boolean // Se true, para o servidor na primeira falha
+  enabled?: boolean // Se false, desabilita o monitoramento
   onConnectionLost?: () => void
 }
 
@@ -16,9 +17,10 @@ export class DatabaseMonitor {
 
   constructor(options: DatabaseMonitorOptions = {}) {
     this.options = {
-      intervalMs: options.intervalMs ?? 15000, // 15 segundos por padrão (mais agressivo)
-      maxRetries: options.maxRetries ?? 2, // Menos tentativas antes de parar
+      intervalMs: options.intervalMs ?? 60000, // 1 minuto por padrão (menos agressivo)
+      maxRetries: options.maxRetries ?? 3, // Mais tentativas antes de parar
       failFast: options.failFast ?? false, // Por padrão, permite algumas tentativas
+      enabled: options.enabled ?? true, // Habilitado por padrão
       onConnectionLost:
         options.onConnectionLost ??
         (() => {
@@ -30,6 +32,11 @@ export class DatabaseMonitor {
   }
 
   start(): void {
+    if (!this.options.enabled) {
+      logger.info('🔍 Monitoramento de banco de dados desabilitado')
+      return
+    }
+
     if (this.isMonitoring) {
       logger.warn('Database monitor já está em execução')
       return
@@ -103,5 +110,6 @@ export class DatabaseMonitor {
 // Instância global do monitor
 export const databaseMonitor = new DatabaseMonitor({
   failFast: process.env.NODE_ENV === 'production', // FailFast em produção
-  intervalMs: process.env.NODE_ENV === 'production' ? 10000 : 15000, // Mais agressivo em produção
+  intervalMs: process.env.NODE_ENV === 'production' ? 30000 : 60000, // Menos agressivo
+  enabled: process.env.NODE_ENV === 'production' || process.env.ENABLE_DB_MONITOR === 'true', // Só em produção ou se explicitamente habilitado
 })

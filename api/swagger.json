@@ -24,6 +24,1003 @@
         }
       }
     },
+    "/jobs": {
+      "get": {
+        "summary": "Lista o status de todos os jobs",
+        "tags": [
+          "Jobs"
+        ],
+        "responses": {
+          "200": {
+            "description": "Default Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "jobs": {
+                      "type": "array",
+                      "items": {
+                        "type": "object",
+                        "properties": {
+                          "key": {
+                            "type": "string"
+                          },
+                          "isRunning": {
+                            "type": "boolean"
+                          },
+                          "config": {
+                            "type": "object",
+                            "properties": {
+                              "key": {
+                                "type": "string"
+                              },
+                              "schedule": {
+                                "type": "string"
+                              },
+                              "timezone": {
+                                "type": "string"
+                              },
+                              "description": {
+                                "type": "string"
+                              }
+                            },
+                            "required": [
+                              "key",
+                              "schedule",
+                              "timezone",
+                              "description"
+                            ],
+                            "additionalProperties": false
+                          },
+                          "uptime": {
+                            "type": "number"
+                          }
+                        },
+                        "required": [
+                          "key",
+                          "isRunning",
+                          "config"
+                        ],
+                        "additionalProperties": false
+                      }
+                    },
+                    "timestamp": {
+                      "type": "string"
+                    }
+                  },
+                  "required": [
+                    "jobs",
+                    "timestamp"
+                  ],
+                  "additionalProperties": false
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/jobs/{jobKey}/run": {
+      "post": {
+        "summary": "Executa um job específico manualmente",
+        "tags": [
+          "Jobs"
+        ],
+        "parameters": [
+          {
+            "schema": {
+              "type": "string"
+            },
+            "in": "path",
+            "name": "jobKey",
+            "required": true
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Default Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "success": {
+                      "type": "boolean"
+                    },
+                    "result": {
+                      "type": "object",
+                      "properties": {
+                        "success": {
+                          "type": "boolean"
+                        },
+                        "processed": {
+                          "type": "number"
+                        },
+                        "errors": {
+                          "type": "number"
+                        },
+                        "duration": {
+                          "type": "number"
+                        }
+                      },
+                      "required": [
+                        "success",
+                        "processed",
+                        "errors",
+                        "duration"
+                      ],
+                      "additionalProperties": false
+                    },
+                    "timestamp": {
+                      "type": "string"
+                    }
+                  },
+                  "required": [
+                    "success",
+                    "result",
+                    "timestamp"
+                  ],
+                  "additionalProperties": false
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Default Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "error": {
+                      "type": "string"
+                    },
+                    "message": {
+                      "type": "string"
+                    }
+                  },
+                  "required": [
+                    "error",
+                    "message"
+                  ],
+                  "additionalProperties": false
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/jobs/{jobKey}": {
+      "get": {
+        "summary": "Retorna informações detalhadas de um job",
+        "tags": [
+          "Jobs"
+        ],
+        "parameters": [
+          {
+            "schema": {
+              "type": "string"
+            },
+            "in": "path",
+            "name": "jobKey",
+            "required": true
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Default Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "job": {
+                      "type": "object",
+                      "properties": {
+                        "key": {
+                          "type": "string"
+                        },
+                        "schedule": {
+                          "type": "string"
+                        },
+                        "timezone": {
+                          "type": "string"
+                        },
+                        "description": {
+                          "type": "string"
+                        }
+                      },
+                      "required": [
+                        "key",
+                        "schedule",
+                        "timezone",
+                        "description"
+                      ],
+                      "additionalProperties": false
+                    },
+                    "timestamp": {
+                      "type": "string"
+                    }
+                  },
+                  "required": [
+                    "job",
+                    "timestamp"
+                  ],
+                  "additionalProperties": false
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Default Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "error": {
+                      "type": "string"
+                    },
+                    "message": {
+                      "type": "string"
+                    }
+                  },
+                  "required": [
+                    "error",
+                    "message"
+                  ],
+                  "additionalProperties": false
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/jobs/stats": {
+      "get": {
+        "summary": "Retorna estatísticas do sistema de jobs",
+        "tags": [
+          "Jobs"
+        ],
+        "responses": {
+          "200": {
+            "description": "Default Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "stats": {
+                      "type": "object",
+                      "properties": {
+                        "totalJobs": {
+                          "type": "number"
+                        },
+                        "runningJobs": {
+                          "type": "number"
+                        },
+                        "uptime": {
+                          "type": "number"
+                        },
+                        "isInitialized": {
+                          "type": "boolean"
+                        }
+                      },
+                      "required": [
+                        "totalJobs",
+                        "runningJobs",
+                        "uptime",
+                        "isInitialized"
+                      ],
+                      "additionalProperties": false
+                    },
+                    "timestamp": {
+                      "type": "string"
+                    }
+                  },
+                  "required": [
+                    "stats",
+                    "timestamp"
+                  ],
+                  "additionalProperties": false
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/jobs/stop-all": {
+      "post": {
+        "summary": "Para todos os jobs do sistema",
+        "tags": [
+          "Jobs"
+        ],
+        "responses": {
+          "200": {
+            "description": "Default Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "success": {
+                      "type": "boolean"
+                    },
+                    "message": {
+                      "type": "string"
+                    },
+                    "timestamp": {
+                      "type": "string"
+                    }
+                  },
+                  "required": [
+                    "success",
+                    "message",
+                    "timestamp"
+                  ],
+                  "additionalProperties": false
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/jobs/{jobKey}/stop": {
+      "post": {
+        "summary": "Para um job específico",
+        "tags": [
+          "Jobs"
+        ],
+        "parameters": [
+          {
+            "schema": {
+              "type": "string"
+            },
+            "in": "path",
+            "name": "jobKey",
+            "required": true
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Default Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "success": {
+                      "type": "boolean"
+                    },
+                    "message": {
+                      "type": "string"
+                    },
+                    "timestamp": {
+                      "type": "string"
+                    }
+                  },
+                  "required": [
+                    "success",
+                    "message",
+                    "timestamp"
+                  ],
+                  "additionalProperties": false
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Default Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "error": {
+                      "type": "string"
+                    },
+                    "message": {
+                      "type": "string"
+                    }
+                  },
+                  "required": [
+                    "error",
+                    "message"
+                  ],
+                  "additionalProperties": false
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/jobs/{jobKey}/start": {
+      "post": {
+        "summary": "Inicia um job específico",
+        "tags": [
+          "Jobs"
+        ],
+        "parameters": [
+          {
+            "schema": {
+              "type": "string"
+            },
+            "in": "path",
+            "name": "jobKey",
+            "required": true
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Default Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "success": {
+                      "type": "boolean"
+                    },
+                    "message": {
+                      "type": "string"
+                    },
+                    "timestamp": {
+                      "type": "string"
+                    }
+                  },
+                  "required": [
+                    "success",
+                    "message",
+                    "timestamp"
+                  ],
+                  "additionalProperties": false
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Default Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "error": {
+                      "type": "string"
+                    },
+                    "message": {
+                      "type": "string"
+                    }
+                  },
+                  "required": [
+                    "error",
+                    "message"
+                  ],
+                  "additionalProperties": false
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/jobs/start-all": {
+      "post": {
+        "summary": "Inicia todos os jobs do sistema",
+        "tags": [
+          "Jobs"
+        ],
+        "responses": {
+          "200": {
+            "description": "Default Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "success": {
+                      "type": "boolean"
+                    },
+                    "message": {
+                      "type": "string"
+                    },
+                    "timestamp": {
+                      "type": "string"
+                    }
+                  },
+                  "required": [
+                    "success",
+                    "message",
+                    "timestamp"
+                  ],
+                  "additionalProperties": false
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/jobs/transactions{alerts}/preview": {
+      "get": {
+        "summary": "Preview das transações que seriam processadas pelo job de alertas",
+        "tags": [
+          "Jobs"
+        ],
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "parameters": [
+          {
+            "schema": {
+              "type": "string"
+            },
+            "in": "path",
+            "name": "alerts",
+            "required": true
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Default Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "preview": {
+                      "type": "object",
+                      "properties": {
+                        "transactions": {
+                          "type": "array",
+                          "items": {
+                            "type": "object",
+                            "properties": {
+                              "id": {
+                                "type": "string"
+                              },
+                              "title": {
+                                "type": "string"
+                              },
+                              "amount": {
+                                "type": "number"
+                              },
+                              "dueDate": {
+                                "type": "string"
+                              },
+                              "daysUntilDue": {
+                                "type": "number"
+                              },
+                              "alertType": {
+                                "type": "string",
+                                "enum": [
+                                  "warning",
+                                  "urgent",
+                                  "overdue"
+                                ]
+                              },
+                              "ownerName": {
+                                "type": "string"
+                              },
+                              "ownerPhone": {
+                                "type": "string"
+                              },
+                              "payToName": {
+                                "type": "string",
+                                "nullable": true
+                              },
+                              "payToPhone": {
+                                "type": "string",
+                                "nullable": true
+                              }
+                            },
+                            "required": [
+                              "id",
+                              "title",
+                              "amount",
+                              "dueDate",
+                              "daysUntilDue",
+                              "alertType",
+                              "ownerName",
+                              "ownerPhone",
+                              "payToName",
+                              "payToPhone"
+                            ],
+                            "additionalProperties": false
+                          }
+                        },
+                        "summary": {
+                          "type": "object",
+                          "properties": {
+                            "total": {
+                              "type": "number"
+                            },
+                            "today": {
+                              "type": "number"
+                            },
+                            "tomorrow": {
+                              "type": "number"
+                            },
+                            "twoDays": {
+                              "type": "number"
+                            },
+                            "threeToFourDays": {
+                              "type": "number"
+                            }
+                          },
+                          "required": [
+                            "total",
+                            "today",
+                            "tomorrow",
+                            "twoDays",
+                            "threeToFourDays"
+                          ],
+                          "additionalProperties": false
+                        }
+                      },
+                      "required": [
+                        "transactions",
+                        "summary"
+                      ],
+                      "additionalProperties": false
+                    },
+                    "timestamp": {
+                      "type": "string"
+                    }
+                  },
+                  "required": [
+                    "preview",
+                    "timestamp"
+                  ],
+                  "additionalProperties": false
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/org/{slug}/reports/transactions": {
+      "get": {
+        "summary": "Relatórios completos de transações para o dashboard",
+        "tags": [
+          "Reports"
+        ],
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "parameters": [
+          {
+            "schema": {
+              "type": "string"
+            },
+            "in": "path",
+            "name": "slug",
+            "required": true
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Default Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "reports": {
+                      "type": "object",
+                      "properties": {
+                        "upcomingAlerts": {
+                          "type": "object",
+                          "properties": {
+                            "transactions": {
+                              "type": "array",
+                              "items": {
+                                "type": "object",
+                                "properties": {
+                                  "id": {
+                                    "type": "string"
+                                  },
+                                  "title": {
+                                    "type": "string"
+                                  },
+                                  "amount": {
+                                    "type": "number"
+                                  },
+                                  "dueDate": {
+                                    "type": "string"
+                                  },
+                                  "daysUntilDue": {
+                                    "type": "number"
+                                  },
+                                  "alertType": {
+                                    "type": "string",
+                                    "enum": [
+                                      "warning",
+                                      "urgent",
+                                      "overdue"
+                                    ]
+                                  },
+                                  "ownerName": {
+                                    "type": "string"
+                                  },
+                                  "ownerPhone": {
+                                    "type": "string"
+                                  },
+                                  "payToName": {
+                                    "type": "string",
+                                    "nullable": true
+                                  },
+                                  "payToPhone": {
+                                    "type": "string",
+                                    "nullable": true
+                                  }
+                                },
+                                "required": [
+                                  "id",
+                                  "title",
+                                  "amount",
+                                  "dueDate",
+                                  "daysUntilDue",
+                                  "alertType",
+                                  "ownerName",
+                                  "ownerPhone",
+                                  "payToName",
+                                  "payToPhone"
+                                ],
+                                "additionalProperties": false
+                              }
+                            },
+                            "summary": {
+                              "type": "object",
+                              "properties": {
+                                "total": {
+                                  "type": "number"
+                                },
+                                "today": {
+                                  "type": "number"
+                                },
+                                "tomorrow": {
+                                  "type": "number"
+                                },
+                                "twoDays": {
+                                  "type": "number"
+                                },
+                                "threeToFourDays": {
+                                  "type": "number"
+                                }
+                              },
+                              "required": [
+                                "total",
+                                "today",
+                                "tomorrow",
+                                "twoDays",
+                                "threeToFourDays"
+                              ],
+                              "additionalProperties": false
+                            }
+                          },
+                          "required": [
+                            "transactions",
+                            "summary"
+                          ],
+                          "additionalProperties": false
+                        },
+                        "monthlyStats": {
+                          "type": "object",
+                          "properties": {
+                            "totalTransactions": {
+                              "type": "number"
+                            },
+                            "totalAmount": {
+                              "type": "number"
+                            },
+                            "paidTransactions": {
+                              "type": "number"
+                            },
+                            "pendingTransactions": {
+                              "type": "number"
+                            },
+                            "overdueTransactions": {
+                              "type": "number"
+                            }
+                          },
+                          "required": [
+                            "totalTransactions",
+                            "totalAmount",
+                            "paidTransactions",
+                            "pendingTransactions",
+                            "overdueTransactions"
+                          ],
+                          "additionalProperties": false
+                        },
+                        "recentActivity": {
+                          "type": "array",
+                          "items": {
+                            "type": "object",
+                            "properties": {
+                              "id": {
+                                "type": "string"
+                              },
+                              "title": {
+                                "type": "string"
+                              },
+                              "amount": {
+                                "type": "number"
+                              },
+                              "status": {
+                                "type": "string",
+                                "enum": [
+                                  "paid",
+                                  "pending"
+                                ]
+                              },
+                              "dueDate": {
+                                "type": "string"
+                              },
+                              "ownerName": {
+                                "type": "string"
+                              },
+                              "updatedAt": {
+                                "type": "string"
+                              }
+                            },
+                            "required": [
+                              "id",
+                              "title",
+                              "amount",
+                              "status",
+                              "dueDate",
+                              "ownerName",
+                              "updatedAt"
+                            ],
+                            "additionalProperties": false
+                          }
+                        },
+                        "chartData": {
+                          "type": "object",
+                          "properties": {
+                            "dailyTransactions": {
+                              "type": "array",
+                              "items": {
+                                "type": "object",
+                                "properties": {
+                                  "date": {
+                                    "type": "string"
+                                  },
+                                  "paid": {
+                                    "type": "number"
+                                  },
+                                  "pending": {
+                                    "type": "number"
+                                  },
+                                  "total": {
+                                    "type": "number"
+                                  }
+                                },
+                                "required": [
+                                  "date",
+                                  "paid",
+                                  "pending",
+                                  "total"
+                                ],
+                                "additionalProperties": false
+                              }
+                            },
+                            "monthlyTrend": {
+                              "type": "array",
+                              "items": {
+                                "type": "object",
+                                "properties": {
+                                  "month": {
+                                    "type": "string"
+                                  },
+                                  "total": {
+                                    "type": "number"
+                                  },
+                                  "paid": {
+                                    "type": "number"
+                                  },
+                                  "pending": {
+                                    "type": "number"
+                                  }
+                                },
+                                "required": [
+                                  "month",
+                                  "total",
+                                  "paid",
+                                  "pending"
+                                ],
+                                "additionalProperties": false
+                              }
+                            },
+                            "categoryBreakdown": {
+                              "type": "array",
+                              "items": {
+                                "type": "object",
+                                "properties": {
+                                  "category": {
+                                    "type": "string"
+                                  },
+                                  "count": {
+                                    "type": "number"
+                                  },
+                                  "totalAmount": {
+                                    "type": "number"
+                                  }
+                                },
+                                "required": [
+                                  "category",
+                                  "count",
+                                  "totalAmount"
+                                ],
+                                "additionalProperties": false
+                              }
+                            },
+                            "statusDistribution": {
+                              "type": "object",
+                              "properties": {
+                                "paid": {
+                                  "type": "number"
+                                },
+                                "pending": {
+                                  "type": "number"
+                                },
+                                "overdue": {
+                                  "type": "number"
+                                }
+                              },
+                              "required": [
+                                "paid",
+                                "pending",
+                                "overdue"
+                              ],
+                              "additionalProperties": false
+                            }
+                          },
+                          "required": [
+                            "dailyTransactions",
+                            "monthlyTrend",
+                            "categoryBreakdown",
+                            "statusDistribution"
+                          ],
+                          "additionalProperties": false
+                        }
+                      },
+                      "required": [
+                        "upcomingAlerts",
+                        "monthlyStats",
+                        "recentActivity",
+                        "chartData"
+                      ],
+                      "additionalProperties": false
+                    },
+                    "timestamp": {
+                      "type": "string"
+                    }
+                  },
+                  "required": [
+                    "reports",
+                    "timestamp"
+                  ],
+                  "additionalProperties": false
+                }
+              }
+            }
+          }
+        }
+      }
+    },
     "/sign-in": {
       "post": {
         "operationId": "signIn",

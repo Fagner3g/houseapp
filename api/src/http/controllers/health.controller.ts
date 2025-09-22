@@ -6,36 +6,39 @@ import { logger } from '@/lib/logger'
 
 export async function healthController(_request: FastifyRequest, reply: FastifyReply) {
   try {
-    // Verificar conexão com o banco de dados
+    const monitorStatus = databaseMonitor.getStatus()
+
+    // Se o monitor está ativo, confiar nele
+    if (monitorStatus.isMonitoring) {
+      return reply.status(200).send({
+        status: 'ok',
+        database: 'connected',
+        monitor: {
+          isMonitoring: monitorStatus.isMonitoring,
+          consecutiveFailures: monitorStatus.consecutiveFailures,
+        },
+        timestamp: new Date().toISOString(),
+      })
+    }
+
+    // Se o monitor não está ativo, fazer verificação manual
     const dbConnected = await checkDatabaseConnection()
 
     if (!dbConnected) {
       logger.error('💥 Health check falhou: Banco de dados indisponível!')
-      logger.error('💥 O servidor será interrompido para evitar instabilidade.')
-
-      // Enviar resposta de erro antes de parar o servidor
-      reply.status(503).send({
+      return reply.status(503).send({
         status: 'error',
-        message: 'Database connection failed - Server shutting down',
+        message: 'Database connection failed',
         timestamp: new Date().toISOString(),
       })
-
-      // Parar o servidor após um pequeno delay para permitir a resposta
-      setTimeout(() => {
-        process.exit(1)
-      }, 100)
-
-      return
     }
-
-    const monitorStatus = databaseMonitor.getStatus()
 
     return reply.status(200).send({
       status: 'ok',
       database: 'connected',
       monitor: {
-        isMonitoring: monitorStatus.isMonitoring,
-        consecutiveFailures: monitorStatus.consecutiveFailures,
+        isMonitoring: false,
+        consecutiveFailures: 0,
       },
       timestamp: new Date().toISOString(),
     })
