@@ -27,12 +27,16 @@ async function testPostgresConnection(postgresUrl: string): Promise<boolean> {
   const client = postgres(postgresUrl, { max: 1, idle_timeout: 10 })
 
   try {
-    logger.debug(`URL: ${postgresUrl}`)
+    logger.debug(
+      `\nTestando conexão com PostgreSQL: \n${postgresUrl.replace(/\/\/.*@/, '//***:***@')}\n`
+    )
     await client`SELECT 1`
     logger.info('Conexão com PostgreSQL estabelecida com sucesso! ✅')
     return true
   } catch (error) {
-    logger.error(`Erro na conexão: ${error instanceof Error ? error.message : 'Erro desconhecido'}`)
+    logger.error(
+      `❌ Erro na conexão com PostgreSQL: ${error instanceof Error ? error.message : 'Erro desconhecido'}`
+    )
     return false
   } finally {
     await client.end()
@@ -72,27 +76,56 @@ async function createDatabase(dbName: string, postgresUrl: string): Promise<void
 }
 
 // Função principal para setup do banco
+// Função para verificar se a conexão com o banco está funcionando
+export async function checkDatabaseConnection(): Promise<boolean> {
+  try {
+    const { baseUrl } = getDatabaseString()
+    return await testPostgresConnection(baseUrl)
+  } catch (error) {
+    logger.error('Erro ao verificar conexão com banco:', error)
+    return false
+  }
+}
+
+// Função principal para setup do banco
 export async function setupDatabase(): Promise<void> {
   try {
     const { dbName, baseUrl, postgresUrl } = getDatabaseString()
 
+    logger.info('🔍 Iniciando verificação de conexão com o banco de dados...')
+
     // Primeiro, testar conexão com PostgreSQL
     const isConnected = await testPostgresConnection(postgresUrl)
     if (!isConnected) {
-      throw new Error('Não foi possível conectar ao PostgreSQL')
+      logger.error('💥 CRÍTICO: Não foi possível conectar ao PostgreSQL!')
+      logger.error('💥 O servidor será interrompido para evitar instabilidade.')
+      process.exit(1)
     }
 
     const exists = await databaseExists(dbName, postgresUrl)
 
     if (exists) {
-      logger.info(`Banco de dados ${dbName} já existe, prosseguindo...`)
+      logger.info(`✅ Banco de dados '${dbName}' já existe, prosseguindo...`)
     } else {
-      logger.info(`Banco de dados ${dbName} não existe, criando...`)
+      logger.info(`📦 Banco de dados '${dbName}' não existe, criando...`)
       await createDatabase(dbName, postgresUrl)
+      logger.info(`✅ Banco de dados '${dbName}' criado com sucesso!`)
     }
+
+    // Teste final de conexão com o banco específico
+    logger.info('🔍 Testando conexão final com o banco de dados...')
+    const finalTest = await testPostgresConnection(baseUrl)
+    if (!finalTest) {
+      logger.error('💥 CRÍTICO: Não foi possível conectar ao banco de dados final!')
+      logger.error('💥 O servidor será interrompido para evitar instabilidade.')
+      process.exit(1)
+    }
+
+    logger.info('🎉 Setup do banco de dados concluído com sucesso!')
   } catch (error) {
-    logger.error('Erro no setup do banco de dados')
-    throw error
+    logger.error('💥 Erro crítico no setup do banco de dados:', error)
+    logger.error('💥 O servidor será interrompido para evitar instabilidade.')
+    process.exit(1)
   }
 }
 

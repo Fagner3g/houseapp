@@ -6,9 +6,10 @@ import type { NewTransactionSchema } from './schema'
 
 export interface TitleFieldProps {
   form: UseFormReturn<NewTransactionSchema>
+  disabled?: boolean
 }
 
-export function TitleField({ form }: TitleFieldProps) {
+export function TitleField({ form, disabled }: TitleFieldProps) {
   return (
     <FormField
       control={form.control}
@@ -17,7 +18,12 @@ export function TitleField({ form }: TitleFieldProps) {
         <FormItem>
           <FormLabel>Título</FormLabel>
           <FormControl>
-            <Input {...field} placeholder="Ex: Aluguel, luz, etc..." value={field.value || ''} />
+            <Input
+              {...field}
+              placeholder="Ex: Aluguel, luz, etc..."
+              value={field.value || ''}
+              disabled={disabled}
+            />
           </FormControl>
         </FormItem>
       )}

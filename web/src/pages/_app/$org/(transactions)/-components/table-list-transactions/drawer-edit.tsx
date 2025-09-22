@@ -1,12 +1,14 @@
 import { zodResolver } from '@hookform/resolvers/zod'
 import { useQueryClient } from '@tanstack/react-query'
-import { useEffect } from 'react'
+import { useEffect, useState } from 'react'
 import { useForm } from 'react-hook-form'
 import { toast } from 'sonner'
 
 import {
+  getGetOrgSlugReportsTransactionsQueryKey,
   getListTransactionsQueryKey,
   useListUsersByOrg,
+  usePayTransaction,
   useUpdateTransaction,
 } from '@/api/generated/api'
 import type { ListTransactions200TransactionsItem } from '@/api/generated/model'
@@ -23,6 +25,7 @@ import { Form } from '@/components/ui/form'
 import { useActiveOrganization } from '@/hooks/use-active-organization'
 import { useIsMobile } from '@/hooks/use-mobile'
 import { showToastOnErrorSubmit } from '@/lib/utils'
+import { useAuthStore } from '@/stores/auth'
 import { AmountField } from '../modal-new-transaction/amount-field'
 import { DescriptionField } from '../modal-new-transaction/description-field'
 import { CalendarField } from '../modal-new-transaction/due-date-field'
@@ -48,6 +51,12 @@ export function DrawerEdit({ transaction, open, onOpenChange }: Props) {
   const queryClient = useQueryClient()
   const { data } = useListUsersByOrg(slug)
   const isMobile = useIsMobile()
+  const currentUser = useAuthStore(s => s.user)
+  const [hasChanges, setHasChanges] = useState(false)
+
+  // Check if current user is the owner of the transaction
+  const isOwner = currentUser?.id === transaction?.ownerId
+  const isReadOnly = !isOwner
 
   const form = useForm<NewTransactionSchema>({
     resolver: zodResolver(newTransactionSchema),
@@ -66,20 +75,57 @@ export function DrawerEdit({ transaction, open, onOpenChange }: Props) {
       dueDate: new Date(transaction.dueDate),
       payToEmail,
       tags: transaction.tags,
+      description: transaction.description || '',
       isRecurring: false,
     })
+    setHasChanges(false)
   }, [transaction, form, data])
+
+  // Monitor form changes
+  useEffect(() => {
+    const subscription = form.watch(() => {
+      setHasChanges(true)
+    })
+    return () => subscription.unsubscribe()
+  }, [form])
 
   const { mutate: updateTransaction } = useUpdateTransaction({
     mutation: {
       onSuccess: () => {
         toast.success('Transação atualizada com sucesso!')
+        // Invalidar cache das transações
         queryClient.invalidateQueries({
           queryKey: getListTransactionsQueryKey(slug),
+        })
+        // Invalidar cache do dashboard
+        queryClient.invalidateQueries({
+          queryKey: getGetOrgSlugReportsTransactionsQueryKey(slug),
         })
         onOpenChange(false)
       },
       onError: () => toast.error('Erro ao atualizar transação'),
+    },
+  })
+
+  const { mutate: payTransaction, isPending: isPaying } = usePayTransaction({
+    mutation: {
+      onSuccess: () => {
+        const isPaid = transaction?.status === 'paid'
+        toast.success(isPaid ? 'Pagamento cancelado com sucesso!' : 'Transação paga com sucesso!')
+        // Invalidar cache das transações
+        queryClient.invalidateQueries({
+          queryKey: getListTransactionsQueryKey(slug),
+        })
+        // Invalidar cache do dashboard
+        queryClient.invalidateQueries({
+          queryKey: getGetOrgSlugReportsTransactionsQueryKey(slug),
+        })
+        onOpenChange(false)
+      },
+      onError: () => {
+        const isPaid = transaction?.status === 'paid'
+        toast.error(isPaid ? 'Erro ao cancelar pagamento' : 'Erro ao pagar transação')
+      },
     },
   })
 
@@ -92,11 +138,25 @@ export function DrawerEdit({ transaction, open, onOpenChange }: Props) {
     })
   }
 
+  function handleMainAction() {
+    if (!transaction) return
+
+    if (hasChanges) {
+      // Save changes
+      form.handleSubmit(handleSubmit, () => {
+        showToastOnErrorSubmit({ form })
+      })()
+    } else {
+      // Toggle payment status
+      payTransaction({ slug, id: transaction.id })
+    }
+  }
+
   return (
     <Drawer open={open} onOpenChange={onOpenChange} direction={isMobile ? 'bottom' : 'right'}>
       <DrawerContent>
         <DrawerHeader>
-          <DrawerTitle>Editar transação</DrawerTitle>
+          <DrawerTitle>{isReadOnly ? 'Visualizar transação' : 'Editar transação'}</DrawerTitle>
         </DrawerHeader>
         <div className="flex flex-col gap-4 p-4 overflow-y-auto overflow-x-hidden">
           <Form {...form}>
@@ -104,24 +164,40 @@ export function DrawerEdit({ transaction, open, onOpenChange }: Props) {
               onSubmit={form.handleSubmit(handleSubmit, () => showToastOnErrorSubmit({ form }))}
               className="flex flex-col gap-4"
             >
-              <TypeField form={form} />
-              <TitleField form={form} />
+              <TypeField form={form} disabled={isReadOnly} />
+              <TitleField form={form} disabled={isReadOnly} />
               <div className="flex flex-col gap-5 sm:flex-row">
-                <AmountField form={form} />
-                <CalendarField form={form} />
+                <AmountField form={form} disabled={isReadOnly} />
+                <CalendarField form={form} disabled={isReadOnly} />
               </div>
-              <PayToField form={form} data={data} />
-              <TagField form={form} />
-              <DescriptionField form={form} />
-              <Button type="submit">Salvar</Button>
+              <PayToField form={form} data={data} disabled={isReadOnly} />
+              <TagField form={form} disabled={isReadOnly} />
+              <DescriptionField form={form} disabled={isReadOnly} />
             </form>
           </Form>
           <TransactionSummary transaction={transaction} />
         </div>
-        <DrawerFooter>
+        <DrawerFooter className="flex gap-2">
           <DrawerClose asChild>
-            <Button variant="outline">Cancelar</Button>
+            <Button variant="outline">{isReadOnly ? 'Fechar' : 'Cancelar'}</Button>
           </DrawerClose>
+          {transaction && !isReadOnly && (
+            <Button
+              onClick={handleMainAction}
+              disabled={isPaying}
+              variant={
+                hasChanges ? 'default' : transaction.status === 'paid' ? 'outline' : 'default'
+              }
+            >
+              {isPaying
+                ? 'Processando...'
+                : hasChanges
+                  ? 'Salvar Edição'
+                  : transaction.status === 'paid'
+                    ? 'Cancelar Pagamento'
+                    : 'Marcar como Pago'}
+            </Button>
+          )}
         </DrawerFooter>
       </DrawerContent>
     </Drawer>

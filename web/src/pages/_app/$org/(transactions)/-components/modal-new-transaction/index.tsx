@@ -56,7 +56,16 @@ export function DrawerNewTransaction({ open, onOpenChange, transaction }: Props)
 
   const form = useForm<NewTransactionSchema>({
     resolver: zodResolver(newTransactionSchema),
-    defaultValues: { type: RegisterType.EXPENSE, isRecurring: false },
+    defaultValues: {
+      type: RegisterType.EXPENSE,
+      isRecurring: false,
+      recurrenceSelector: undefined,
+      recurrenceType: undefined,
+      recurrenceUntil: undefined,
+      recurrenceInterval: undefined,
+      installmentsTotal: undefined,
+      recurrenceStart: undefined,
+    },
   })
 
   const { mutate: createTransaction } = useCreateTransaction({
@@ -154,9 +163,24 @@ export function DrawerNewTransaction({ open, onOpenChange, transaction }: Props)
         tags: transaction.tags,
         description: undefined,
         isRecurring: false,
+        recurrenceSelector: undefined,
+        recurrenceType: undefined,
+        recurrenceUntil: undefined,
+        recurrenceInterval: undefined,
+        installmentsTotal: undefined,
+        recurrenceStart: undefined,
       })
     } else {
-      form.reset({ type: RegisterType.EXPENSE, isRecurring: false })
+      form.reset({
+        type: RegisterType.EXPENSE,
+        isRecurring: false,
+        recurrenceSelector: undefined,
+        recurrenceType: undefined,
+        recurrenceUntil: undefined,
+        recurrenceInterval: undefined,
+        installmentsTotal: undefined,
+        recurrenceStart: undefined,
+      })
     }
   }, [open, transaction, userData, form])
 

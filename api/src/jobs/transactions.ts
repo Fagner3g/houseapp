@@ -1,61 +1,58 @@
-import * as cron from 'node-cron'
-
 import { runReports } from '@/domain/reports/transactions'
 import { getDistinctOwnerIds } from '@/domain/reports/utils'
-import { logger } from '@/http/utils/logger'
+import { JOB_CONFIGS } from './config'
+import { jobManager } from './job-manager'
+import type { JobResult } from './types'
 
 /**
  * Executa o relatório para todos os owners distintos
  */
-async function runReportsForAllOwners() {
-  const ownerIds = await getDistinctOwnerIds()
-  if (!ownerIds.length) {
-    logger.warn('[reports] nenhum ownerId encontrado, nada a processar')
-    return
-  }
+async function runReportsForAllOwners(): Promise<JobResult> {
+  const startTime = Date.now()
+  let processed = 0
+  let errors = 0
 
-  for (const ownerId of ownerIds) {
-    try {
-      await runReports(ownerId)
-    } catch (err) {
-      logger.error({ err, ownerId }, '❌ Falha ao gerar relatório para owner')
+  try {
+    const ownerIds = await getDistinctOwnerIds()
+    if (!ownerIds.length) {
+      return {
+        success: true,
+        processed: 0,
+        errors: 0,
+        duration: Date.now() - startTime,
+      }
+    }
+
+    for (const ownerId of ownerIds) {
+      try {
+        await runReports(ownerId)
+        processed++
+      } catch {
+        errors++
+        // Log individual errors but continue processing
+      }
+    }
+
+    return {
+      success: errors === 0,
+      processed,
+      errors,
+      duration: Date.now() - startTime,
+    }
+  } catch {
+    return {
+      success: false,
+      processed,
+      errors: errors + 1,
+      duration: Date.now() - startTime,
     }
   }
 }
 
-const JOB_KEY = 'reports:all-owners'
-const TZ = 'America/Sao_Paulo'
+// Registrar o job
+jobManager.registerJob(JOB_CONFIGS.REPORTS, runReportsForAllOwners)
 
-// Usa registro global para evitar múltiplos schedules em dev/HMR
-const g = globalThis as unknown as { __cronTasks?: Map<string, cron.ScheduledTask> }
-g.__cronTasks ??= new Map()
-
-if (!g.__cronTasks.has(JOB_KEY)) {
-  const task = cron.schedule(
-    // TROQUE para '0 10 5 * *' quando sair do teste
-    '0 10 5 * *',
-    async () => {
-      try {
-        await runReportsForAllOwners()
-      } catch (err) {
-        // Garante que erros não matem o job nas próximas execuções
-        logger.error(
-          { err },
-          '❌ Erro no cron de relatórios — próxima execução seguirá normalmente'
-        )
-      }
-    },
-    { timezone: TZ } // deixa explícito
-  )
-
-  g.__cronTasks.set(JOB_KEY, task)
-  task.start()
-  logger.info('📅 Cron agendado')
-} else {
-  logger.info({ JOB_KEY }, 'Cron já estava agendado — evitando duplicar')
-}
-
-// Opcional: exporta função para execução manual (ex.: rota admin)
-export async function runAllOwnersNow() {
-  await runReportsForAllOwners()
+// Export para execução manual
+export async function runAllOwnersNow(): Promise<JobResult | null> {
+  return await jobManager.runJobNow(JOB_CONFIGS.REPORTS.key)
 }

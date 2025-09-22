@@ -11,13 +11,8 @@ import {
   useUpdateTag,
 } from '@/api/generated/api'
 import type { ListTags200TagsItem } from '@/api/generated/model'
-import {
-  DropdownMenu,
-  DropdownMenuContent,
-  DropdownMenuItem,
-  DropdownMenuSeparator,
-  DropdownMenuTrigger,
-} from '@/components/ui/dropdown-menu'
+import { Button } from '@/components/ui/button'
+import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog'
 import { FormControl, FormField, FormItem, FormLabel } from '@/components/ui/form'
 import { Input } from '@/components/ui/input'
 import MultipleSelector, { type Option } from '@/components/ui/multiselect'
@@ -26,6 +21,7 @@ import type { NewTransactionSchema } from './schema'
 
 export interface TagFieldProps {
   form: UseFormReturn<NewTransactionSchema>
+  disabled?: boolean
 }
 
 const randomColor = () => {
@@ -42,7 +38,7 @@ const randomColor = () => {
   return palette[Math.floor(Math.random() * palette.length)]
 }
 
-export function TagField({ form }: TagFieldProps) {
+export function TagField({ form, disabled }: TagFieldProps) {
   const { slug } = useActiveOrganization()
   const queryClient = useQueryClient()
   const colorInputId = useId()
@@ -55,6 +51,7 @@ export function TagField({ form }: TagFieldProps) {
     name: string
     color: string
   } | null>(null)
+
   const selected = form.watch('tags') ?? []
   const defaultOptions: Option[] = useMemo(
     () =>
@@ -86,7 +83,7 @@ export function TagField({ form }: TagFieldProps) {
             if (!old) return old
             return {
               ...old,
-              tags: (old.tags || []).map(t => (t.id === id ? { ...t, ...(data as any) } : t)),
+              tags: (old.tags || []).map(t => (t.id === id ? { ...t, ...data } : t)),
             }
           }
         )
@@ -143,6 +140,7 @@ export function TagField({ form }: TagFieldProps) {
                   placeholder="Selecione ou digite para criar"
                   creatable
                   hidePlaceholderWhenSelected
+                  disabled={disabled}
                   value={selected.map(t => ({ value: t.name, label: t.name, color: t.color }))}
                   onBadgeClick={opt => {
                     const backend = availableTags.find(t => t.name === opt.value)
@@ -164,34 +162,35 @@ export function TagField({ form }: TagFieldProps) {
                   }}
                   onChange={opts => {
                     const next = opts.map(opt => {
-                      const existing = availableTags.find(t => t.name === opt.value)
-                      const previous = selected.find(s => s.name === opt.value)
+                      const normalizedName = opt.value.toLowerCase().trim()
+                      const existing = availableTags.find(t => t.name === normalizedName)
+                      const previous = selected.find(s => s.name === normalizedName)
                       const color = existing?.color ?? previous?.color ?? randomColor()
 
-                      if (!existing && !createdNames.includes(opt.value)) {
-                        createTagMutation.mutate({ slug, data: { name: opt.value, color } })
-                        setCreatedNames(prev => [...prev, opt.value])
+                      if (!existing && !createdNames.includes(normalizedName)) {
+                        createTagMutation.mutate({ slug, data: { name: normalizedName, color } })
+                        setCreatedNames(prev => [...prev, normalizedName])
                       }
 
-                      return { name: opt.value, color }
+                      return { name: normalizedName, color }
                     })
                     form.setValue('tags', next)
                   }}
                   emptyIndicator={<p className="text-center text-sm">Nenhuma tag encontrada</p>}
                 />
 
-                {configuring && (
-                  <DropdownMenu open onOpenChange={open => !open && setConfiguring(null)}>
-                    <DropdownMenuTrigger asChild>
-                      <span />
-                    </DropdownMenuTrigger>
-                    <DropdownMenuContent align="end" className="w-80">
-                      <div className="p-2">
-                        <div className="text-sm font-medium">Configurar tag</div>
-                        <div className="mt-2 flex items-center gap-2">
+                <Dialog open={!!configuring} onOpenChange={open => !open && setConfiguring(null)}>
+                  <DialogContent className="w-80">
+                    <DialogHeader>
+                      <DialogTitle>Configurar tag</DialogTitle>
+                    </DialogHeader>
+                    {configuring && (
+                      <div className="space-y-4">
+                        <div className="flex items-center gap-2">
                           <Input
                             value={configuring.name}
                             onChange={e => setConfiguring({ ...configuring, name: e.target.value })}
+                            placeholder="Nome da tag"
                           />
                           <input
                             id={`tag-config-color-${colorInputId}`}
@@ -203,7 +202,7 @@ export function TagField({ form }: TagFieldProps) {
                             }
                           />
                         </div>
-                        <div className="mt-2 flex items-center gap-1">
+                        <div className="flex items-center gap-1">
                           {['#ef4444', '#3b82f6', '#10b981', '#f59e0b', '#a855f7'].map(c => (
                             <button
                               key={c}
@@ -241,59 +240,61 @@ export function TagField({ form }: TagFieldProps) {
                             <Pipette size={12} />
                           </button>
                         </div>
-                      </div>
-                      <DropdownMenuSeparator />
-                      <div className="flex items-center justify-between px-2 py-1.5">
-                        <DropdownMenuItem
-                          className="text-destructive hover:!bg-destructive/10"
-                          onClick={() => {
-                            if (!configuring?.id) return
-                            // otimista: remove da seleção atual
-                            form.setValue(
-                              'tags',
-                              (selected ?? []).filter(t => t.name !== configuring.originalName)
-                            )
-                            deleteTagMutation.mutate({ slug, id: configuring.id })
-                            setConfiguring(null)
-                          }}
-                        >
-                          Excluir
-                        </DropdownMenuItem>
-                        <div className="flex gap-2">
-                          <DropdownMenuItem
-                            onClick={() => setConfiguring(null)}
-                            className="justify-center"
-                          >
-                            Cancelar
-                          </DropdownMenuItem>
-                          <DropdownMenuItem
+                        <div className="flex items-center justify-between">
+                          <Button
+                            variant="destructive"
+                            size="sm"
                             onClick={() => {
                               if (!configuring?.id) return
-                              // otimista: atualiza seleção pelo nome original
+                              // otimista: remove da seleção atual
                               form.setValue(
                                 'tags',
-                                (selected ?? []).map(t =>
-                                  t.name === configuring.originalName
-                                    ? { name: configuring.name, color: configuring.color }
-                                    : t
-                                )
+                                (selected ?? []).filter(t => t.name !== configuring.originalName)
                               )
-                              updateTagMutation.mutate({
-                                slug,
-                                id: configuring.id,
-                                data: { name: configuring.name, color: configuring.color },
-                              })
+                              deleteTagMutation.mutate({ slug, id: configuring.id })
                               setConfiguring(null)
                             }}
-                            className="bg-primary text-primary-foreground hover:!bg-primary/90 justify-center"
                           >
-                            Salvar
-                          </DropdownMenuItem>
+                            Excluir
+                          </Button>
+                          <div className="flex gap-2">
+                            <Button
+                              variant="outline"
+                              size="sm"
+                              onClick={() => setConfiguring(null)}
+                            >
+                              Cancelar
+                            </Button>
+                            <Button
+                              size="sm"
+                              onClick={() => {
+                                if (!configuring?.id) return
+                                const normalizedName = configuring.name.toLowerCase().trim()
+                                // otimista: atualiza seleção pelo nome original
+                                form.setValue(
+                                  'tags',
+                                  (selected ?? []).map(t =>
+                                    t.name === configuring.originalName
+                                      ? { name: normalizedName, color: configuring.color }
+                                      : t
+                                  )
+                                )
+                                updateTagMutation.mutate({
+                                  slug,
+                                  id: configuring.id,
+                                  data: { name: normalizedName, color: configuring.color },
+                                })
+                                setConfiguring(null)
+                              }}
+                            >
+                              Salvar
+                            </Button>
+                          </div>
                         </div>
                       </div>
-                    </DropdownMenuContent>
-                  </DropdownMenu>
-                )}
+                    )}
+                  </DialogContent>
+                </Dialog>
               </div>
             </div>
           </FormControl>

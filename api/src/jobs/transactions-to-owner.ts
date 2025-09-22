@@ -1,12 +1,14 @@
 import { and, eq, gte, isNotNull, lt, lte, or } from 'drizzle-orm'
-import { type ScheduledTask, schedule } from 'node-cron'
 
 import { db } from '@/db'
 import { transactionOccurrences } from '@/db/schemas/transactionOccurrences'
 import { transactionSeries } from '@/db/schemas/transactionSeries'
 import { users } from '@/db/schemas/users'
 import { normalizePhone, sendWhatsAppMessage } from '@/domain/whatsapp'
-import { logger } from '@/http/utils/logger'
+import { JOB_CONFIGS } from './config'
+import { jobManager } from './job-manager'
+import type { JobResult } from './types'
+import { addMessageFooter } from './utils/message-footer'
 
 // ====================== helpers ======================
 async function getDistinctOwnerIds(): Promise<string[]> {
@@ -19,8 +21,7 @@ async function getDistinctOwnerIds(): Promise<string[]> {
       .groupBy(transactionSeries.ownerId)
 
     return rows.map(r => r.ownerId!).filter(Boolean)
-  } catch (err) {
-    logger.error({ err }, '[owner-digest] erro ao obter owners distintos')
+  } catch {
     return []
   }
 }
@@ -146,114 +147,112 @@ async function generateOwnerDigestMessage(
 }
 
 // ====================== runner ======================
-async function runOwnerDigestForAllOwners() {
-  const ownerIds = await getDistinctOwnerIds()
-  if (!ownerIds.length) {
-    logger.warn('[owner-digest] nenhum ownerId encontrado, nada a processar')
-    return
-  }
+async function runOwnerDigestForAllOwners(): Promise<JobResult> {
+  const startTime = Date.now()
+  let processed = 0
+  let errors = 0
 
-  const now = new Date()
-  const startOfMonth = new Date(now.getFullYear(), now.getMonth(), 1)
-  const endOfMonth = new Date(now.getFullYear(), now.getMonth() + 1, 0, 23, 59, 59, 999)
-
-  for (const ownerId of ownerIds) {
-    try {
-      // Owner (nome/telefone)
-      const owner = await db
-        .select({ id: users.id, name: users.name, phone: users.phone })
-        .from(users)
-        .where(eq(users.id, ownerId))
-        .limit(1)
-
-      const ownerRow = owner[0]
-      if (!ownerRow) {
-        logger.warn({ ownerId }, '[owner-digest] owner não encontrado — pulando')
-        continue
+  try {
+    const ownerIds = await getDistinctOwnerIds()
+    if (!ownerIds.length) {
+      return {
+        success: true,
+        processed: 0,
+        errors: 0,
+        duration: Date.now() - startTime,
       }
+    }
 
-      const phone = normalizePhone(ownerRow.phone)
-      if (!phone) {
-        logger.warn({ ownerId }, '[owner-digest] owner sem telefone — pulando envio')
-        continue
-      }
+    const now = new Date()
+    const startOfMonth = new Date(now.getFullYear(), now.getMonth(), 1)
+    const endOfMonth = new Date(now.getFullYear(), now.getMonth() + 1, 0, 23, 59, 59, 999)
 
-      // Transações do owner (mês atual) OU (vencidas e não pagas)
-      const rows = await db
-        .select({
-          title: transactionSeries.title,
-          amount: transactionOccurrences.amount,
-          dueDate: transactionOccurrences.dueDate,
-          paidAt: transactionOccurrences.paidAt,
-          type: transactionSeries.type,
-          payToName: users.name,
-        })
-        .from(transactionOccurrences)
-        .innerJoin(transactionSeries, eq(transactionOccurrences.seriesId, transactionSeries.id))
-        .leftJoin(users, eq(users.id, transactionSeries.payToId))
-        .where(
-          and(
-            eq(transactionSeries.ownerId, ownerId),
-            or(
-              and(
-                gte(transactionOccurrences.dueDate, startOfMonth),
-                lte(transactionOccurrences.dueDate, endOfMonth)
-              ),
-              and(
-                eq(transactionOccurrences.status, 'pending'),
-                lt(transactionOccurrences.dueDate, now)
+    for (const ownerId of ownerIds) {
+      try {
+        // Owner (nome/telefone)
+        const owner = await db
+          .select({ id: users.id, name: users.name, phone: users.phone })
+          .from(users)
+          .where(eq(users.id, ownerId))
+          .limit(1)
+
+        const ownerRow = owner[0]
+        if (!ownerRow) {
+          continue // Skip owners not found
+        }
+
+        const phone = normalizePhone(ownerRow.phone)
+        if (!phone) {
+          continue // Skip owners without phone
+        }
+
+        // Transações do owner (mês atual) OU (vencidas e não pagas)
+        const rows = await db
+          .select({
+            title: transactionSeries.title,
+            amount: transactionOccurrences.amount,
+            dueDate: transactionOccurrences.dueDate,
+            paidAt: transactionOccurrences.paidAt,
+            type: transactionSeries.type,
+            payToName: users.name,
+          })
+          .from(transactionOccurrences)
+          .innerJoin(transactionSeries, eq(transactionOccurrences.seriesId, transactionSeries.id))
+          .leftJoin(users, eq(users.id, transactionSeries.payToId))
+          .where(
+            and(
+              eq(transactionSeries.ownerId, ownerId),
+              or(
+                and(
+                  gte(transactionOccurrences.dueDate, startOfMonth),
+                  lte(transactionOccurrences.dueDate, endOfMonth)
+                ),
+                and(
+                  eq(transactionOccurrences.status, 'pending'),
+                  lt(transactionOccurrences.dueDate, now)
+                )
               )
             )
           )
-        )
 
-      const mapped = rows.map(r => ({
-        title: r.title,
-        amount: Number(r.amount),
-        dueDate: new Date(r.dueDate as unknown as string),
-        paidAt: r.paidAt ? new Date(r.paidAt as unknown as string) : null,
-        type: r.type as 'income' | 'expense',
-        payToName: r.payToName ?? null,
-      }))
+        const mapped = rows.map(r => ({
+          title: r.title,
+          amount: Number(r.amount),
+          dueDate: new Date(r.dueDate as unknown as string),
+          paidAt: r.paidAt ? new Date(r.paidAt as unknown as string) : null,
+          type: r.type as 'income' | 'expense',
+          payToName: r.payToName ?? null,
+        }))
 
-      const message = await generateOwnerDigestMessage(ownerRow.name ?? 'Você', mapped)
-      await sendWhatsAppMessage({ phone, message })
-      logger.info({ ownerRow: ownerRow.name }, '[owner-digest] mensagem enviada para o owner')
-    } catch (err) {
-      logger.error({ err, ownerId }, '[owner-digest] falha ao processar owner')
+        const message = await generateOwnerDigestMessage(ownerRow.name ?? 'Você', mapped)
+        await sendWhatsAppMessage({ phone, message: addMessageFooter(message) })
+        processed++
+      } catch {
+        errors++
+        // Log individual errors but continue processing
+      }
+    }
+
+    return {
+      success: errors === 0,
+      processed,
+      errors,
+      duration: Date.now() - startTime,
+    }
+  } catch {
+    return {
+      success: false,
+      processed,
+      errors: errors + 1,
+      duration: Date.now() - startTime,
     }
   }
 }
 
-// ====================== schedule (singleton) ======================
-const JOB_KEY_OWNER = 'reports:owner-digest'
-const TZ = 'America/Sao_Paulo'
+// Registrar o job
+jobManager.registerJob(JOB_CONFIGS.OWNER_DIGEST, runOwnerDigestForAllOwners)
 
-const g = globalThis as unknown as { __cronTasks?: Map<string, ScheduledTask> }
-g.__cronTasks ??= new Map()
-
-if (!g.__cronTasks.has(JOB_KEY_OWNER)) {
-  const taskOwner = schedule(
-    '0 10 5 * *', // dia 5 às 10:00
-    async () => {
-      try {
-        logger.info('⏰ Cron disparado: owner digest (todos os owners)')
-        await runOwnerDigestForAllOwners()
-        logger.info('✅ Owner digest concluído')
-      } catch (err) {
-        logger.error({ err }, '❌ Erro no cron de owner digest')
-      }
-    },
-    { timezone: TZ }
-  )
-  g.__cronTasks.set(JOB_KEY_OWNER, taskOwner)
-  taskOwner.start()
-  logger.info('📅 Cron (owner digest) agendado')
-} else {
-  logger.info({ JOB_KEY_OWNER }, 'Cron (owner digest) já estava agendado — evitando duplicar')
-}
-
-// Opcional: export para disparo manual
-export async function runOwnerDigestNow() {
-  await runOwnerDigestForAllOwners()
+// Export para execução manual
+export async function runOwnerDigestNow(): Promise<JobResult | null> {
+  return await jobManager.runJobNow(JOB_CONFIGS.OWNER_DIGEST.key)
 }

@@ -6,6 +6,7 @@ import { transactionOccurrences } from '@/db/schemas/transactionOccurrences'
 import { transactionSeries } from '@/db/schemas/transactionSeries'
 import { users } from '@/db/schemas/users'
 import { logger } from '@/http/utils/logger'
+import { addMessageFooter } from '@/jobs/utils/message-footer'
 import { sendWhatsAppMessage } from '../whatsapp'
 
 export interface Row {
@@ -14,6 +15,7 @@ export interface Row {
   amount: number
   dueDate: Date
   paidAt: Date | null
+  description?: string | null
   type: 'income' | 'expense'
   ownerId: string
   payToId: string
@@ -46,6 +48,7 @@ export async function runReports(ownerId: string) {
       amount: transactionOccurrences.amount,
       dueDate: transactionOccurrences.dueDate,
       paidAt: transactionOccurrences.paidAt,
+      description: transactionOccurrences.description,
       type: transactionSeries.type,
       ownerId: transactionSeries.ownerId,
       payToId: transactionSeries.payToId,
@@ -115,6 +118,8 @@ export async function runReports(ownerId: string) {
 
   const rows: Row[] = rowsRaw.map(r => ({
     ...r,
+    // amount comes from DB as bigint -> coerce to number (cents)
+    amount: Number(r.amount),
     installmentsPaid: r.seriesId ? (aggregates[r.seriesId]?.paid ?? 0) : 0,
     overdueUnpaid: r.seriesId ? (aggregates[r.seriesId]?.overdueUnpaid ?? 0) : 0,
   }))
@@ -142,6 +147,7 @@ export function generateReport(rows: Row[], userId: string): { phone: string; me
     dueDateStr: string
     status: string
     icon: string
+    description?: string | null
     recurrenceBlock?: string
   }
 
@@ -161,7 +167,8 @@ export function generateReport(rows: Row[], userId: string): { phone: string; me
     const isOwner = row.ownerId === userId
     const client = isOwner ? (row.payToName ?? 'Cliente') : (row.ownerName ?? 'Cliente')
     const phone = isOwner ? (row.payToPhone ?? '') : (row.ownerPhone ?? '')
-    const type = isOwner ? (row.type === 'income' ? 'expense' : 'income') : row.type
+    // keep original type; do not invert (owner is always the series owner in this query)
+    const type = row.type
     const otherId = isOwner ? row.payToId : row.ownerId
 
     if (!grouped.has(otherId)) {
@@ -176,7 +183,7 @@ export function generateReport(rows: Row[], userId: string): { phone: string; me
     }
     const bucket = grouped.get(otherId)!
 
-    const valueNum = row.amount / 100
+    const valueNum = Number(row.amount) / 100
     const valueStr = fmtBRL.format(valueNum)
     const dueDate = new Date(row.dueDate)
     const dueDateStr = dueDate.toLocaleDateString('pt-BR')
@@ -197,9 +204,9 @@ export function generateReport(rows: Row[], userId: string): { phone: string; me
       icon = '⏰'
     }
 
-    // recurrence details
+    // recurrence details - only show if truly recurring (more than 1 installment)
     let recurrenceBlock: string | undefined
-    if (row.recurrenceType && row.recurrenceInterval) {
+    if (row.recurrenceType && row.recurrenceInterval && (row.installmentsTotal ?? 0) > 1) {
       const indent = '      '
       const every =
         row.recurrenceType === 'monthly'
@@ -226,6 +233,7 @@ export function generateReport(rows: Row[], userId: string): { phone: string; me
       dueDateStr,
       status,
       icon,
+      description: row.description,
       recurrenceBlock,
     }
     if (type === 'expense') {
@@ -239,38 +247,55 @@ export function generateReport(rows: Row[], userId: string): { phone: string; me
 
   const reports: { phone: string; message: string }[] = []
   for (const { client, phone, pagar, receber, total } of grouped.values()) {
-    let message = `📩 *Relatório para ${client}*\n\n`
+    // 1. Mensagem de saudação e resumo
+    const currentDate = new Date().toLocaleDateString('pt-BR')
+    let summaryMessage = `📩 *Relatório para ${client}*\n`
+    summaryMessage += `📅 *Data:* ${currentDate}\n\n`
+
     if (receber.length > 0) {
-      message += '🟢 *Contas a Receber*\n\n'
-      for (const item of receber) {
-        message += `${item.icon} *${item.name}*\n`
-        message += `      • \`Valor:\` ${item.valueStr}\n`
-        message += `      • \`Vencimento:\` ${item.dueDateStr}\n`
-        message += `      • \`Status:\` ${item.status}\n`
-        if (item.recurrenceBlock) message += item.recurrenceBlock
-        message += `\n`
-      }
-      message += `🪙 *Total a receber:* ${fmtBRL.format(total.receber)}\n\n`
+      summaryMessage += `🟢 *Contas a Receber:* ${receber.length} transação(ões)\n`
+      summaryMessage += `🪙 *Total a receber:* ${fmtBRL.format(total.receber)}\n\n`
     }
+
     if (pagar.length > 0) {
-      message += '🔴 *Contas a Pagar*\n\n'
-      for (const item of pagar) {
-        message += `${item.icon} *${item.name}*\n`
-        message += `      • \`Valor:\` ${item.valueStr}\n`
-        message += `      • \`Vencimento:\` ${item.dueDateStr}\n`
-        message += `      • \`Status:\` ${item.status}\n`
-        if (item.recurrenceBlock) message += item.recurrenceBlock
-        message += `\n`
-      }
-      message += `🪙 *Total a pagar:* ${fmtBRL.format(total.pagar)}\n\n`
+      summaryMessage += `🔴 *Contas a Pagar:* ${pagar.length} transação(ões)\n`
+      summaryMessage += `🪙 *Total a pagar:* ${fmtBRL.format(total.pagar)}\n\n`
     }
+
     const saldo = total.receber - total.pagar
-    message += '━━━━━━━━━━━━━━━━━━━━\n'
-    message +=
+    summaryMessage += '━━━━━━━━━━━━━━━━━━━━\n'
+    summaryMessage +=
       saldo >= 0
         ? `💵 *Saldo com ${client}:* ${fmtBRL.format(saldo)} a receber`
         : `💰 *Saldo com ${client}:* ${fmtBRL.format(Math.abs(saldo))} a pagar`
-    reports.push({ phone, message })
+
+    reports.push({ phone, message: addMessageFooter(summaryMessage) })
+
+    // 2. Mensagens individuais para cada transação a receber
+    for (const item of receber) {
+      let transactionMessage = `🟢 *Conta a Receber*\n\n`
+      transactionMessage += `${item.icon} *${item.name}*\n`
+      transactionMessage += `      • \`Valor:\` ${item.valueStr}\n`
+      transactionMessage += `      • \`Vencimento:\` ${item.dueDateStr}\n`
+      transactionMessage += `      • \`Status:\` ${item.status}\n`
+      if (item.recurrenceBlock) transactionMessage += item.recurrenceBlock
+      if (item.description) transactionMessage += `      • \`Descrição:\` ${item.description}\n`
+
+      reports.push({ phone, message: transactionMessage })
+    }
+
+    // 3. Mensagens individuais para cada transação a pagar
+    for (const item of pagar) {
+      let transactionMessage = `🔴 *Conta a Pagar*\n\n`
+      transactionMessage += `${item.icon} *${item.name}*\n`
+      transactionMessage += `      • \`Valor:\` ${item.valueStr}\n`
+      transactionMessage += `      • \`Vencimento:\` ${item.dueDateStr}\n`
+      transactionMessage += `      • \`Status:\` ${item.status}\n`
+      if (item.recurrenceBlock) transactionMessage += item.recurrenceBlock
+      if (item.description) transactionMessage += `      • \`Descrição:\` ${item.description}\n`
+
+      reports.push({ phone, message: transactionMessage })
+    }
   }
   return reports
 }

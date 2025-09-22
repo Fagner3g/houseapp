@@ -3,7 +3,7 @@
  * Do not edit manually.
  * HouseApp API
  * API for HouseApp
- * OpenAPI spec version: 1.0.0
+ * OpenAPI spec version: 1.0.1
  */
 
 export * from "./completeGoalBody";
@@ -27,6 +27,33 @@ export * from "./createUserWithInviteBody";
 export * from "./deleteTransactionsBody";
 export * from "./getInvite200";
 export * from "./getInvite200InvitesItem";
+export * from "./getJobs200";
+export * from "./getJobs200JobsItem";
+export * from "./getJobs200JobsItemConfig";
+export * from "./getJobsJobKey200";
+export * from "./getJobsJobKey200Job";
+export * from "./getJobsJobKey404";
+export * from "./getJobsStats200";
+export * from "./getJobsStats200Stats";
+export * from "./getJobsTransactionsalertsPreview200";
+export * from "./getJobsTransactionsalertsPreview200Preview";
+export * from "./getJobsTransactionsalertsPreview200PreviewSummary";
+export * from "./getJobsTransactionsalertsPreview200PreviewTransactionsItem";
+export * from "./getJobsTransactionsalertsPreview200PreviewTransactionsItemAlertType";
+export * from "./getOrgSlugReportsTransactions200";
+export * from "./getOrgSlugReportsTransactions200Reports";
+export * from "./getOrgSlugReportsTransactions200ReportsChartData";
+export * from "./getOrgSlugReportsTransactions200ReportsChartDataCategoryBreakdownItem";
+export * from "./getOrgSlugReportsTransactions200ReportsChartDataDailyTransactionsItem";
+export * from "./getOrgSlugReportsTransactions200ReportsChartDataMonthlyTrendItem";
+export * from "./getOrgSlugReportsTransactions200ReportsChartDataStatusDistribution";
+export * from "./getOrgSlugReportsTransactions200ReportsMonthlyStats";
+export * from "./getOrgSlugReportsTransactions200ReportsRecentActivityItem";
+export * from "./getOrgSlugReportsTransactions200ReportsRecentActivityItemStatus";
+export * from "./getOrgSlugReportsTransactions200ReportsUpcomingAlerts";
+export * from "./getOrgSlugReportsTransactions200ReportsUpcomingAlertsSummary";
+export * from "./getOrgSlugReportsTransactions200ReportsUpcomingAlertsTransactionsItem";
+export * from "./getOrgSlugReportsTransactions200ReportsUpcomingAlertsTransactionsItemAlertType";
 export * from "./getPendingGoals200";
 export * from "./getPendingGoals200PendingGoalsItem";
 export * from "./getProfile200";
@@ -53,6 +80,17 @@ export * from "./listTransactionsTagFilterMode";
 export * from "./listTransactionsType";
 export * from "./listUsersByOrg200";
 export * from "./listUsersByOrg200UsersItem";
+export * from "./patchOrgSlugUsers200";
+export * from "./patchOrgSlugUsersBody";
+export * from "./postJobsJobKeyRun200";
+export * from "./postJobsJobKeyRun200Result";
+export * from "./postJobsJobKeyRun404";
+export * from "./postJobsJobKeyStart200";
+export * from "./postJobsJobKeyStart404";
+export * from "./postJobsJobKeyStop200";
+export * from "./postJobsJobKeyStop404";
+export * from "./postJobsStartAll200";
+export * from "./postJobsStopAll200";
 export * from "./renameOrg200";
 export * from "./renameOrg200Organization";
 export * from "./renameOrgBody";

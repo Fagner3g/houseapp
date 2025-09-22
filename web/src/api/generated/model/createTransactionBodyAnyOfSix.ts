@@ -3,7 +3,7 @@
  * Do not edit manually.
  * HouseApp API
  * API for HouseApp
- * OpenAPI spec version: 1.0.0
+ * OpenAPI spec version: 1.0.1
  */
 import type { CreateTransactionBodyAnyOfSixType } from "./createTransactionBodyAnyOfSixType";
 import type { CreateTransactionBodyAnyOfSixTagsItem } from "./createTransactionBodyAnyOfSixTagsItem";

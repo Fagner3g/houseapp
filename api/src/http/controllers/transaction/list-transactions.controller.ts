@@ -17,7 +17,17 @@ export async function listTransactionsController(request: Req, reply: FastifyRep
   const userId = request.user.sub
   const orgId = request.organization.id
 
-  const { tags, tagFilterMode, type, dateFrom, dateTo, page, perPage } = request.query
+  const {
+    tags,
+    tagFilterMode,
+    type,
+    dateFrom,
+    dateTo,
+    page,
+    perPage,
+    responsibleUserId,
+    onlyMarked,
+  } = request.query
 
   try {
     const payload = await listTransactionsService({
@@ -30,6 +40,8 @@ export async function listTransactionsController(request: Req, reply: FastifyRep
       dateTo,
       page,
       perPage,
+      responsibleUserId,
+      onlyMarked,
     })
 
     return reply.status(200).send(payload)

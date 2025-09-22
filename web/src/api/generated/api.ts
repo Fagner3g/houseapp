@@ -3,7 +3,7 @@
  * Do not edit manually.
  * HouseApp API
  * API for HouseApp
- * OpenAPI spec version: 1.0.0
+ * OpenAPI spec version: 1.0.1
  */
 import { useMutation, useQuery } from "@tanstack/react-query";
 import type {
@@ -33,9 +33,14 @@ import type {
   CreateUserWithInviteBody,
   DeleteTransactionsBody,
   GetInvite200,
+  GetJobs200,
+  GetJobsJobKey200,
+  GetJobsJobKey404,
+  GetJobsStats200,
+  GetJobsTransactionsalertsPreview200,
+  GetOrgSlugReportsTransactions200,
   GetPendingGoals200,
   GetProfile200,
-  ListUsersByOrg200UsersItem,
   GetTransactionById200,
   GetWeekSummary200,
   ListOrganizations200,
@@ -43,6 +48,16 @@ import type {
   ListTransactions200,
   ListTransactionsParams,
   ListUsersByOrg200,
+  PatchOrgSlugUsers200,
+  PatchOrgSlugUsersBody,
+  PostJobsJobKeyRun200,
+  PostJobsJobKeyRun404,
+  PostJobsJobKeyStart200,
+  PostJobsJobKeyStart404,
+  PostJobsJobKeyStop200,
+  PostJobsJobKeyStop404,
+  PostJobsStartAll200,
+  PostJobsStopAll200,
   RenameOrg200,
   RenameOrgBody,
   SignInBody,
@@ -176,6 +191,1220 @@ export function useGetHealth<
   queryKey: DataTag<QueryKey, TData, TError>;
 } {
   const queryOptions = getGetHealthQueryOptions(options);
+
+  const query = useQuery(queryOptions, queryClient) as UseQueryResult<
+    TData,
+    TError
+  > & { queryKey: DataTag<QueryKey, TData, TError> };
+
+  query.queryKey = queryOptions.queryKey;
+
+  return query;
+}
+
+/**
+ * @summary Lista o status de todos os jobs
+ */
+export const getGetJobsUrl = () => {
+  return `/jobs`;
+};
+
+export const getJobs = async (options?: RequestInit): Promise<GetJobs200> => {
+  return http<GetJobs200>(getGetJobsUrl(), {
+    ...options,
+    method: "GET",
+  });
+};
+
+export const getGetJobsQueryKey = () => {
+  return [`/jobs`] as const;
+};
+
+export const getGetJobsQueryOptions = <
+  TData = Awaited<ReturnType<typeof getJobs>>,
+  TError = unknown,
+>(options?: {
+  query?: Partial<
+    UseQueryOptions<Awaited<ReturnType<typeof getJobs>>, TError, TData>
+  >;
+  request?: SecondParameter<typeof http>;
+}) => {
+  const { query: queryOptions, request: requestOptions } = options ?? {};
+
+  const queryKey = queryOptions?.queryKey ?? getGetJobsQueryKey();
+
+  const queryFn: QueryFunction<Awaited<ReturnType<typeof getJobs>>> = ({
+    signal,
+  }) => getJobs({ signal, ...requestOptions });
+
+  return { queryKey, queryFn, ...queryOptions } as UseQueryOptions<
+    Awaited<ReturnType<typeof getJobs>>,
+    TError,
+    TData
+  > & { queryKey: DataTag<QueryKey, TData, TError> };
+};
+
+export type GetJobsQueryResult = NonNullable<
+  Awaited<ReturnType<typeof getJobs>>
+>;
+export type GetJobsQueryError = unknown;
+
+export function useGetJobs<
+  TData = Awaited<ReturnType<typeof getJobs>>,
+  TError = unknown,
+>(
+  options: {
+    query: Partial<
+      UseQueryOptions<Awaited<ReturnType<typeof getJobs>>, TError, TData>
+    > &
+      Pick<
+        DefinedInitialDataOptions<
+          Awaited<ReturnType<typeof getJobs>>,
+          TError,
+          Awaited<ReturnType<typeof getJobs>>
+        >,
+        "initialData"
+      >;
+    request?: SecondParameter<typeof http>;
+  },
+  queryClient?: QueryClient,
+): DefinedUseQueryResult<TData, TError> & {
+  queryKey: DataTag<QueryKey, TData, TError>;
+};
+export function useGetJobs<
+  TData = Awaited<ReturnType<typeof getJobs>>,
+  TError = unknown,
+>(
+  options?: {
+    query?: Partial<
+      UseQueryOptions<Awaited<ReturnType<typeof getJobs>>, TError, TData>
+    > &
+      Pick<
+        UndefinedInitialDataOptions<
+          Awaited<ReturnType<typeof getJobs>>,
+          TError,
+          Awaited<ReturnType<typeof getJobs>>
+        >,
+        "initialData"
+      >;
+    request?: SecondParameter<typeof http>;
+  },
+  queryClient?: QueryClient,
+): UseQueryResult<TData, TError> & {
+  queryKey: DataTag<QueryKey, TData, TError>;
+};
+export function useGetJobs<
+  TData = Awaited<ReturnType<typeof getJobs>>,
+  TError = unknown,
+>(
+  options?: {
+    query?: Partial<
+      UseQueryOptions<Awaited<ReturnType<typeof getJobs>>, TError, TData>
+    >;
+    request?: SecondParameter<typeof http>;
+  },
+  queryClient?: QueryClient,
+): UseQueryResult<TData, TError> & {
+  queryKey: DataTag<QueryKey, TData, TError>;
+};
+/**
+ * @summary Lista o status de todos os jobs
+ */
+
+export function useGetJobs<
+  TData = Awaited<ReturnType<typeof getJobs>>,
+  TError = unknown,
+>(
+  options?: {
+    query?: Partial<
+      UseQueryOptions<Awaited<ReturnType<typeof getJobs>>, TError, TData>
+    >;
+    request?: SecondParameter<typeof http>;
+  },
+  queryClient?: QueryClient,
+): UseQueryResult<TData, TError> & {
+  queryKey: DataTag<QueryKey, TData, TError>;
+} {
+  const queryOptions = getGetJobsQueryOptions(options);
+
+  const query = useQuery(queryOptions, queryClient) as UseQueryResult<
+    TData,
+    TError
+  > & { queryKey: DataTag<QueryKey, TData, TError> };
+
+  query.queryKey = queryOptions.queryKey;
+
+  return query;
+}
+
+/**
+ * @summary Executa um job específico manualmente
+ */
+export const getPostJobsJobKeyRunUrl = (jobKey: string) => {
+  return `/jobs/${jobKey}/run`;
+};
+
+export const postJobsJobKeyRun = async (
+  jobKey: string,
+  options?: RequestInit,
+): Promise<PostJobsJobKeyRun200> => {
+  return http<PostJobsJobKeyRun200>(getPostJobsJobKeyRunUrl(jobKey), {
+    ...options,
+    method: "POST",
+  });
+};
+
+export const getPostJobsJobKeyRunMutationOptions = <
+  TError = PostJobsJobKeyRun404,
+  TContext = unknown,
+>(options?: {
+  mutation?: UseMutationOptions<
+    Awaited<ReturnType<typeof postJobsJobKeyRun>>,
+    TError,
+    { jobKey: string },
+    TContext
+  >;
+  request?: SecondParameter<typeof http>;
+}): UseMutationOptions<
+  Awaited<ReturnType<typeof postJobsJobKeyRun>>,
+  TError,
+  { jobKey: string },
+  TContext
+> => {
+  const mutationKey = ["postJobsJobKeyRun"];
+  const { mutation: mutationOptions, request: requestOptions } = options
+    ? options.mutation &&
+      "mutationKey" in options.mutation &&
+      options.mutation.mutationKey
+      ? options
+      : { ...options, mutation: { ...options.mutation, mutationKey } }
+    : { mutation: { mutationKey }, request: undefined };
+
+  const mutationFn: MutationFunction<
+    Awaited<ReturnType<typeof postJobsJobKeyRun>>,
+    { jobKey: string }
+  > = (props) => {
+    const { jobKey } = props ?? {};
+
+    return postJobsJobKeyRun(jobKey, requestOptions);
+  };
+
+  return { mutationFn, ...mutationOptions };
+};
+
+export type PostJobsJobKeyRunMutationResult = NonNullable<
+  Awaited<ReturnType<typeof postJobsJobKeyRun>>
+>;
+
+export type PostJobsJobKeyRunMutationError = PostJobsJobKeyRun404;
+
+/**
+ * @summary Executa um job específico manualmente
+ */
+export const usePostJobsJobKeyRun = <
+  TError = PostJobsJobKeyRun404,
+  TContext = unknown,
+>(
+  options?: {
+    mutation?: UseMutationOptions<
+      Awaited<ReturnType<typeof postJobsJobKeyRun>>,
+      TError,
+      { jobKey: string },
+      TContext
+    >;
+    request?: SecondParameter<typeof http>;
+  },
+  queryClient?: QueryClient,
+): UseMutationResult<
+  Awaited<ReturnType<typeof postJobsJobKeyRun>>,
+  TError,
+  { jobKey: string },
+  TContext
+> => {
+  const mutationOptions = getPostJobsJobKeyRunMutationOptions(options);
+
+  return useMutation(mutationOptions, queryClient);
+};
+
+/**
+ * @summary Retorna informações detalhadas de um job
+ */
+export const getGetJobsJobKeyUrl = (jobKey: string) => {
+  return `/jobs/${jobKey}`;
+};
+
+export const getJobsJobKey = async (
+  jobKey: string,
+  options?: RequestInit,
+): Promise<GetJobsJobKey200> => {
+  return http<GetJobsJobKey200>(getGetJobsJobKeyUrl(jobKey), {
+    ...options,
+    method: "GET",
+  });
+};
+
+export const getGetJobsJobKeyQueryKey = (jobKey?: string) => {
+  return [`/jobs/${jobKey}`] as const;
+};
+
+export const getGetJobsJobKeyQueryOptions = <
+  TData = Awaited<ReturnType<typeof getJobsJobKey>>,
+  TError = GetJobsJobKey404,
+>(
+  jobKey: string,
+  options?: {
+    query?: Partial<
+      UseQueryOptions<Awaited<ReturnType<typeof getJobsJobKey>>, TError, TData>
+    >;
+    request?: SecondParameter<typeof http>;
+  },
+) => {
+  const { query: queryOptions, request: requestOptions } = options ?? {};
+
+  const queryKey = queryOptions?.queryKey ?? getGetJobsJobKeyQueryKey(jobKey);
+
+  const queryFn: QueryFunction<Awaited<ReturnType<typeof getJobsJobKey>>> = ({
+    signal,
+  }) => getJobsJobKey(jobKey, { signal, ...requestOptions });
+
+  return {
+    queryKey,
+    queryFn,
+    enabled: !!jobKey,
+    ...queryOptions,
+  } as UseQueryOptions<
+    Awaited<ReturnType<typeof getJobsJobKey>>,
+    TError,
+    TData
+  > & { queryKey: DataTag<QueryKey, TData, TError> };
+};
+
+export type GetJobsJobKeyQueryResult = NonNullable<
+  Awaited<ReturnType<typeof getJobsJobKey>>
+>;
+export type GetJobsJobKeyQueryError = GetJobsJobKey404;
+
+export function useGetJobsJobKey<
+  TData = Awaited<ReturnType<typeof getJobsJobKey>>,
+  TError = GetJobsJobKey404,
+>(
+  jobKey: string,
+  options: {
+    query: Partial<
+      UseQueryOptions<Awaited<ReturnType<typeof getJobsJobKey>>, TError, TData>
+    > &
+      Pick<
+        DefinedInitialDataOptions<
+          Awaited<ReturnType<typeof getJobsJobKey>>,
+          TError,
+          Awaited<ReturnType<typeof getJobsJobKey>>
+        >,
+        "initialData"
+      >;
+    request?: SecondParameter<typeof http>;
+  },
+  queryClient?: QueryClient,
+): DefinedUseQueryResult<TData, TError> & {
+  queryKey: DataTag<QueryKey, TData, TError>;
+};
+export function useGetJobsJobKey<
+  TData = Awaited<ReturnType<typeof getJobsJobKey>>,
+  TError = GetJobsJobKey404,
+>(
+  jobKey: string,
+  options?: {
+    query?: Partial<
+      UseQueryOptions<Awaited<ReturnType<typeof getJobsJobKey>>, TError, TData>
+    > &
+      Pick<
+        UndefinedInitialDataOptions<
+          Awaited<ReturnType<typeof getJobsJobKey>>,
+          TError,
+          Awaited<ReturnType<typeof getJobsJobKey>>
+        >,
+        "initialData"
+      >;
+    request?: SecondParameter<typeof http>;
+  },
+  queryClient?: QueryClient,
+): UseQueryResult<TData, TError> & {
+  queryKey: DataTag<QueryKey, TData, TError>;
+};
+export function useGetJobsJobKey<
+  TData = Awaited<ReturnType<typeof getJobsJobKey>>,
+  TError = GetJobsJobKey404,
+>(
+  jobKey: string,
+  options?: {
+    query?: Partial<
+      UseQueryOptions<Awaited<ReturnType<typeof getJobsJobKey>>, TError, TData>
+    >;
+    request?: SecondParameter<typeof http>;
+  },
+  queryClient?: QueryClient,
+): UseQueryResult<TData, TError> & {
+  queryKey: DataTag<QueryKey, TData, TError>;
+};
+/**
+ * @summary Retorna informações detalhadas de um job
+ */
+
+export function useGetJobsJobKey<
+  TData = Awaited<ReturnType<typeof getJobsJobKey>>,
+  TError = GetJobsJobKey404,
+>(
+  jobKey: string,
+  options?: {
+    query?: Partial<
+      UseQueryOptions<Awaited<ReturnType<typeof getJobsJobKey>>, TError, TData>
+    >;
+    request?: SecondParameter<typeof http>;
+  },
+  queryClient?: QueryClient,
+): UseQueryResult<TData, TError> & {
+  queryKey: DataTag<QueryKey, TData, TError>;
+} {
+  const queryOptions = getGetJobsJobKeyQueryOptions(jobKey, options);
+
+  const query = useQuery(queryOptions, queryClient) as UseQueryResult<
+    TData,
+    TError
+  > & { queryKey: DataTag<QueryKey, TData, TError> };
+
+  query.queryKey = queryOptions.queryKey;
+
+  return query;
+}
+
+/**
+ * @summary Retorna estatísticas do sistema de jobs
+ */
+export const getGetJobsStatsUrl = () => {
+  return `/jobs/stats`;
+};
+
+export const getJobsStats = async (
+  options?: RequestInit,
+): Promise<GetJobsStats200> => {
+  return http<GetJobsStats200>(getGetJobsStatsUrl(), {
+    ...options,
+    method: "GET",
+  });
+};
+
+export const getGetJobsStatsQueryKey = () => {
+  return [`/jobs/stats`] as const;
+};
+
+export const getGetJobsStatsQueryOptions = <
+  TData = Awaited<ReturnType<typeof getJobsStats>>,
+  TError = unknown,
+>(options?: {
+  query?: Partial<
+    UseQueryOptions<Awaited<ReturnType<typeof getJobsStats>>, TError, TData>
+  >;
+  request?: SecondParameter<typeof http>;
+}) => {
+  const { query: queryOptions, request: requestOptions } = options ?? {};
+
+  const queryKey = queryOptions?.queryKey ?? getGetJobsStatsQueryKey();
+
+  const queryFn: QueryFunction<Awaited<ReturnType<typeof getJobsStats>>> = ({
+    signal,
+  }) => getJobsStats({ signal, ...requestOptions });
+
+  return { queryKey, queryFn, ...queryOptions } as UseQueryOptions<
+    Awaited<ReturnType<typeof getJobsStats>>,
+    TError,
+    TData
+  > & { queryKey: DataTag<QueryKey, TData, TError> };
+};
+
+export type GetJobsStatsQueryResult = NonNullable<
+  Awaited<ReturnType<typeof getJobsStats>>
+>;
+export type GetJobsStatsQueryError = unknown;
+
+export function useGetJobsStats<
+  TData = Awaited<ReturnType<typeof getJobsStats>>,
+  TError = unknown,
+>(
+  options: {
+    query: Partial<
+      UseQueryOptions<Awaited<ReturnType<typeof getJobsStats>>, TError, TData>
+    > &
+      Pick<
+        DefinedInitialDataOptions<
+          Awaited<ReturnType<typeof getJobsStats>>,
+          TError,
+          Awaited<ReturnType<typeof getJobsStats>>
+        >,
+        "initialData"
+      >;
+    request?: SecondParameter<typeof http>;
+  },
+  queryClient?: QueryClient,
+): DefinedUseQueryResult<TData, TError> & {
+  queryKey: DataTag<QueryKey, TData, TError>;
+};
+export function useGetJobsStats<
+  TData = Awaited<ReturnType<typeof getJobsStats>>,
+  TError = unknown,
+>(
+  options?: {
+    query?: Partial<
+      UseQueryOptions<Awaited<ReturnType<typeof getJobsStats>>, TError, TData>
+    > &
+      Pick<
+        UndefinedInitialDataOptions<
+          Awaited<ReturnType<typeof getJobsStats>>,
+          TError,
+          Awaited<ReturnType<typeof getJobsStats>>
+        >,
+        "initialData"
+      >;
+    request?: SecondParameter<typeof http>;
+  },
+  queryClient?: QueryClient,
+): UseQueryResult<TData, TError> & {
+  queryKey: DataTag<QueryKey, TData, TError>;
+};
+export function useGetJobsStats<
+  TData = Awaited<ReturnType<typeof getJobsStats>>,
+  TError = unknown,
+>(
+  options?: {
+    query?: Partial<
+      UseQueryOptions<Awaited<ReturnType<typeof getJobsStats>>, TError, TData>
+    >;
+    request?: SecondParameter<typeof http>;
+  },
+  queryClient?: QueryClient,
+): UseQueryResult<TData, TError> & {
+  queryKey: DataTag<QueryKey, TData, TError>;
+};
+/**
+ * @summary Retorna estatísticas do sistema de jobs
+ */
+
+export function useGetJobsStats<
+  TData = Awaited<ReturnType<typeof getJobsStats>>,
+  TError = unknown,
+>(
+  options?: {
+    query?: Partial<
+      UseQueryOptions<Awaited<ReturnType<typeof getJobsStats>>, TError, TData>
+    >;
+    request?: SecondParameter<typeof http>;
+  },
+  queryClient?: QueryClient,
+): UseQueryResult<TData, TError> & {
+  queryKey: DataTag<QueryKey, TData, TError>;
+} {
+  const queryOptions = getGetJobsStatsQueryOptions(options);
+
+  const query = useQuery(queryOptions, queryClient) as UseQueryResult<
+    TData,
+    TError
+  > & { queryKey: DataTag<QueryKey, TData, TError> };
+
+  query.queryKey = queryOptions.queryKey;
+
+  return query;
+}
+
+/**
+ * @summary Para todos os jobs do sistema
+ */
+export const getPostJobsStopAllUrl = () => {
+  return `/jobs/stop-all`;
+};
+
+export const postJobsStopAll = async (
+  options?: RequestInit,
+): Promise<PostJobsStopAll200> => {
+  return http<PostJobsStopAll200>(getPostJobsStopAllUrl(), {
+    ...options,
+    method: "POST",
+  });
+};
+
+export const getPostJobsStopAllMutationOptions = <
+  TError = unknown,
+  TContext = unknown,
+>(options?: {
+  mutation?: UseMutationOptions<
+    Awaited<ReturnType<typeof postJobsStopAll>>,
+    TError,
+    void,
+    TContext
+  >;
+  request?: SecondParameter<typeof http>;
+}): UseMutationOptions<
+  Awaited<ReturnType<typeof postJobsStopAll>>,
+  TError,
+  void,
+  TContext
+> => {
+  const mutationKey = ["postJobsStopAll"];
+  const { mutation: mutationOptions, request: requestOptions } = options
+    ? options.mutation &&
+      "mutationKey" in options.mutation &&
+      options.mutation.mutationKey
+      ? options
+      : { ...options, mutation: { ...options.mutation, mutationKey } }
+    : { mutation: { mutationKey }, request: undefined };
+
+  const mutationFn: MutationFunction<
+    Awaited<ReturnType<typeof postJobsStopAll>>,
+    void
+  > = () => {
+    return postJobsStopAll(requestOptions);
+  };
+
+  return { mutationFn, ...mutationOptions };
+};
+
+export type PostJobsStopAllMutationResult = NonNullable<
+  Awaited<ReturnType<typeof postJobsStopAll>>
+>;
+
+export type PostJobsStopAllMutationError = unknown;
+
+/**
+ * @summary Para todos os jobs do sistema
+ */
+export const usePostJobsStopAll = <TError = unknown, TContext = unknown>(
+  options?: {
+    mutation?: UseMutationOptions<
+      Awaited<ReturnType<typeof postJobsStopAll>>,
+      TError,
+      void,
+      TContext
+    >;
+    request?: SecondParameter<typeof http>;
+  },
+  queryClient?: QueryClient,
+): UseMutationResult<
+  Awaited<ReturnType<typeof postJobsStopAll>>,
+  TError,
+  void,
+  TContext
+> => {
+  const mutationOptions = getPostJobsStopAllMutationOptions(options);
+
+  return useMutation(mutationOptions, queryClient);
+};
+
+/**
+ * @summary Para um job específico
+ */
+export const getPostJobsJobKeyStopUrl = (jobKey: string) => {
+  return `/jobs/${jobKey}/stop`;
+};
+
+export const postJobsJobKeyStop = async (
+  jobKey: string,
+  options?: RequestInit,
+): Promise<PostJobsJobKeyStop200> => {
+  return http<PostJobsJobKeyStop200>(getPostJobsJobKeyStopUrl(jobKey), {
+    ...options,
+    method: "POST",
+  });
+};
+
+export const getPostJobsJobKeyStopMutationOptions = <
+  TError = PostJobsJobKeyStop404,
+  TContext = unknown,
+>(options?: {
+  mutation?: UseMutationOptions<
+    Awaited<ReturnType<typeof postJobsJobKeyStop>>,
+    TError,
+    { jobKey: string },
+    TContext
+  >;
+  request?: SecondParameter<typeof http>;
+}): UseMutationOptions<
+  Awaited<ReturnType<typeof postJobsJobKeyStop>>,
+  TError,
+  { jobKey: string },
+  TContext
+> => {
+  const mutationKey = ["postJobsJobKeyStop"];
+  const { mutation: mutationOptions, request: requestOptions } = options
+    ? options.mutation &&
+      "mutationKey" in options.mutation &&
+      options.mutation.mutationKey
+      ? options
+      : { ...options, mutation: { ...options.mutation, mutationKey } }
+    : { mutation: { mutationKey }, request: undefined };
+
+  const mutationFn: MutationFunction<
+    Awaited<ReturnType<typeof postJobsJobKeyStop>>,
+    { jobKey: string }
+  > = (props) => {
+    const { jobKey } = props ?? {};
+
+    return postJobsJobKeyStop(jobKey, requestOptions);
+  };
+
+  return { mutationFn, ...mutationOptions };
+};
+
+export type PostJobsJobKeyStopMutationResult = NonNullable<
+  Awaited<ReturnType<typeof postJobsJobKeyStop>>
+>;
+
+export type PostJobsJobKeyStopMutationError = PostJobsJobKeyStop404;
+
+/**
+ * @summary Para um job específico
+ */
+export const usePostJobsJobKeyStop = <
+  TError = PostJobsJobKeyStop404,
+  TContext = unknown,
+>(
+  options?: {
+    mutation?: UseMutationOptions<
+      Awaited<ReturnType<typeof postJobsJobKeyStop>>,
+      TError,
+      { jobKey: string },
+      TContext
+    >;
+    request?: SecondParameter<typeof http>;
+  },
+  queryClient?: QueryClient,
+): UseMutationResult<
+  Awaited<ReturnType<typeof postJobsJobKeyStop>>,
+  TError,
+  { jobKey: string },
+  TContext
+> => {
+  const mutationOptions = getPostJobsJobKeyStopMutationOptions(options);
+
+  return useMutation(mutationOptions, queryClient);
+};
+
+/**
+ * @summary Inicia um job específico
+ */
+export const getPostJobsJobKeyStartUrl = (jobKey: string) => {
+  return `/jobs/${jobKey}/start`;
+};
+
+export const postJobsJobKeyStart = async (
+  jobKey: string,
+  options?: RequestInit,
+): Promise<PostJobsJobKeyStart200> => {
+  return http<PostJobsJobKeyStart200>(getPostJobsJobKeyStartUrl(jobKey), {
+    ...options,
+    method: "POST",
+  });
+};
+
+export const getPostJobsJobKeyStartMutationOptions = <
+  TError = PostJobsJobKeyStart404,
+  TContext = unknown,
+>(options?: {
+  mutation?: UseMutationOptions<
+    Awaited<ReturnType<typeof postJobsJobKeyStart>>,
+    TError,
+    { jobKey: string },
+    TContext
+  >;
+  request?: SecondParameter<typeof http>;
+}): UseMutationOptions<
+  Awaited<ReturnType<typeof postJobsJobKeyStart>>,
+  TError,
+  { jobKey: string },
+  TContext
+> => {
+  const mutationKey = ["postJobsJobKeyStart"];
+  const { mutation: mutationOptions, request: requestOptions } = options
+    ? options.mutation &&
+      "mutationKey" in options.mutation &&
+      options.mutation.mutationKey
+      ? options
+      : { ...options, mutation: { ...options.mutation, mutationKey } }
+    : { mutation: { mutationKey }, request: undefined };
+
+  const mutationFn: MutationFunction<
+    Awaited<ReturnType<typeof postJobsJobKeyStart>>,
+    { jobKey: string }
+  > = (props) => {
+    const { jobKey } = props ?? {};
+
+    return postJobsJobKeyStart(jobKey, requestOptions);
+  };
+
+  return { mutationFn, ...mutationOptions };
+};
+
+export type PostJobsJobKeyStartMutationResult = NonNullable<
+  Awaited<ReturnType<typeof postJobsJobKeyStart>>
+>;
+
+export type PostJobsJobKeyStartMutationError = PostJobsJobKeyStart404;
+
+/**
+ * @summary Inicia um job específico
+ */
+export const usePostJobsJobKeyStart = <
+  TError = PostJobsJobKeyStart404,
+  TContext = unknown,
+>(
+  options?: {
+    mutation?: UseMutationOptions<
+      Awaited<ReturnType<typeof postJobsJobKeyStart>>,
+      TError,
+      { jobKey: string },
+      TContext
+    >;
+    request?: SecondParameter<typeof http>;
+  },
+  queryClient?: QueryClient,
+): UseMutationResult<
+  Awaited<ReturnType<typeof postJobsJobKeyStart>>,
+  TError,
+  { jobKey: string },
+  TContext
+> => {
+  const mutationOptions = getPostJobsJobKeyStartMutationOptions(options);
+
+  return useMutation(mutationOptions, queryClient);
+};
+
+/**
+ * @summary Inicia todos os jobs do sistema
+ */
+export const getPostJobsStartAllUrl = () => {
+  return `/jobs/start-all`;
+};
+
+export const postJobsStartAll = async (
+  options?: RequestInit,
+): Promise<PostJobsStartAll200> => {
+  return http<PostJobsStartAll200>(getPostJobsStartAllUrl(), {
+    ...options,
+    method: "POST",
+  });
+};
+
+export const getPostJobsStartAllMutationOptions = <
+  TError = unknown,
+  TContext = unknown,
+>(options?: {
+  mutation?: UseMutationOptions<
+    Awaited<ReturnType<typeof postJobsStartAll>>,
+    TError,
+    void,
+    TContext
+  >;
+  request?: SecondParameter<typeof http>;
+}): UseMutationOptions<
+  Awaited<ReturnType<typeof postJobsStartAll>>,
+  TError,
+  void,
+  TContext
+> => {
+  const mutationKey = ["postJobsStartAll"];
+  const { mutation: mutationOptions, request: requestOptions } = options
+    ? options.mutation &&
+      "mutationKey" in options.mutation &&
+      options.mutation.mutationKey
+      ? options
+      : { ...options, mutation: { ...options.mutation, mutationKey } }
+    : { mutation: { mutationKey }, request: undefined };
+
+  const mutationFn: MutationFunction<
+    Awaited<ReturnType<typeof postJobsStartAll>>,
+    void
+  > = () => {
+    return postJobsStartAll(requestOptions);
+  };
+
+  return { mutationFn, ...mutationOptions };
+};
+
+export type PostJobsStartAllMutationResult = NonNullable<
+  Awaited<ReturnType<typeof postJobsStartAll>>
+>;
+
+export type PostJobsStartAllMutationError = unknown;
+
+/**
+ * @summary Inicia todos os jobs do sistema
+ */
+export const usePostJobsStartAll = <TError = unknown, TContext = unknown>(
+  options?: {
+    mutation?: UseMutationOptions<
+      Awaited<ReturnType<typeof postJobsStartAll>>,
+      TError,
+      void,
+      TContext
+    >;
+    request?: SecondParameter<typeof http>;
+  },
+  queryClient?: QueryClient,
+): UseMutationResult<
+  Awaited<ReturnType<typeof postJobsStartAll>>,
+  TError,
+  void,
+  TContext
+> => {
+  const mutationOptions = getPostJobsStartAllMutationOptions(options);
+
+  return useMutation(mutationOptions, queryClient);
+};
+
+/**
+ * @summary Preview das transações que seriam processadas pelo job de alertas
+ */
+export const getGetJobsTransactionsalertsPreviewUrl = (alerts: string) => {
+  return `/jobs/transactions${alerts}/preview`;
+};
+
+export const getJobsTransactionsalertsPreview = async (
+  alerts: string,
+  options?: RequestInit,
+): Promise<GetJobsTransactionsalertsPreview200> => {
+  return http<GetJobsTransactionsalertsPreview200>(
+    getGetJobsTransactionsalertsPreviewUrl(alerts),
+    {
+      ...options,
+      method: "GET",
+    },
+  );
+};
+
+export const getGetJobsTransactionsalertsPreviewQueryKey = (
+  alerts?: string,
+) => {
+  return [`/jobs/transactions${alerts}/preview`] as const;
+};
+
+export const getGetJobsTransactionsalertsPreviewQueryOptions = <
+  TData = Awaited<ReturnType<typeof getJobsTransactionsalertsPreview>>,
+  TError = unknown,
+>(
+  alerts: string,
+  options?: {
+    query?: Partial<
+      UseQueryOptions<
+        Awaited<ReturnType<typeof getJobsTransactionsalertsPreview>>,
+        TError,
+        TData
+      >
+    >;
+    request?: SecondParameter<typeof http>;
+  },
+) => {
+  const { query: queryOptions, request: requestOptions } = options ?? {};
+
+  const queryKey =
+    queryOptions?.queryKey ??
+    getGetJobsTransactionsalertsPreviewQueryKey(alerts);
+
+  const queryFn: QueryFunction<
+    Awaited<ReturnType<typeof getJobsTransactionsalertsPreview>>
+  > = ({ signal }) =>
+    getJobsTransactionsalertsPreview(alerts, { signal, ...requestOptions });
+
+  return {
+    queryKey,
+    queryFn,
+    enabled: !!alerts,
+    ...queryOptions,
+  } as UseQueryOptions<
+    Awaited<ReturnType<typeof getJobsTransactionsalertsPreview>>,
+    TError,
+    TData
+  > & { queryKey: DataTag<QueryKey, TData, TError> };
+};
+
+export type GetJobsTransactionsalertsPreviewQueryResult = NonNullable<
+  Awaited<ReturnType<typeof getJobsTransactionsalertsPreview>>
+>;
+export type GetJobsTransactionsalertsPreviewQueryError = unknown;
+
+export function useGetJobsTransactionsalertsPreview<
+  TData = Awaited<ReturnType<typeof getJobsTransactionsalertsPreview>>,
+  TError = unknown,
+>(
+  alerts: string,
+  options: {
+    query: Partial<
+      UseQueryOptions<
+        Awaited<ReturnType<typeof getJobsTransactionsalertsPreview>>,
+        TError,
+        TData
+      >
+    > &
+      Pick<
+        DefinedInitialDataOptions<
+          Awaited<ReturnType<typeof getJobsTransactionsalertsPreview>>,
+          TError,
+          Awaited<ReturnType<typeof getJobsTransactionsalertsPreview>>
+        >,
+        "initialData"
+      >;
+    request?: SecondParameter<typeof http>;
+  },
+  queryClient?: QueryClient,
+): DefinedUseQueryResult<TData, TError> & {
+  queryKey: DataTag<QueryKey, TData, TError>;
+};
+export function useGetJobsTransactionsalertsPreview<
+  TData = Awaited<ReturnType<typeof getJobsTransactionsalertsPreview>>,
+  TError = unknown,
+>(
+  alerts: string,
+  options?: {
+    query?: Partial<
+      UseQueryOptions<
+        Awaited<ReturnType<typeof getJobsTransactionsalertsPreview>>,
+        TError,
+        TData
+      >
+    > &
+      Pick<
+        UndefinedInitialDataOptions<
+          Awaited<ReturnType<typeof getJobsTransactionsalertsPreview>>,
+          TError,
+          Awaited<ReturnType<typeof getJobsTransactionsalertsPreview>>
+        >,
+        "initialData"
+      >;
+    request?: SecondParameter<typeof http>;
+  },
+  queryClient?: QueryClient,
+): UseQueryResult<TData, TError> & {
+  queryKey: DataTag<QueryKey, TData, TError>;
+};
+export function useGetJobsTransactionsalertsPreview<
+  TData = Awaited<ReturnType<typeof getJobsTransactionsalertsPreview>>,
+  TError = unknown,
+>(
+  alerts: string,
+  options?: {
+    query?: Partial<
+      UseQueryOptions<
+        Awaited<ReturnType<typeof getJobsTransactionsalertsPreview>>,
+        TError,
+        TData
+      >
+    >;
+    request?: SecondParameter<typeof http>;
+  },
+  queryClient?: QueryClient,
+): UseQueryResult<TData, TError> & {
+  queryKey: DataTag<QueryKey, TData, TError>;
+};
+/**
+ * @summary Preview das transações que seriam processadas pelo job de alertas
+ */
+
+export function useGetJobsTransactionsalertsPreview<
+  TData = Awaited<ReturnType<typeof getJobsTransactionsalertsPreview>>,
+  TError = unknown,
+>(
+  alerts: string,
+  options?: {
+    query?: Partial<
+      UseQueryOptions<
+        Awaited<ReturnType<typeof getJobsTransactionsalertsPreview>>,
+        TError,
+        TData
+      >
+    >;
+    request?: SecondParameter<typeof http>;
+  },
+  queryClient?: QueryClient,
+): UseQueryResult<TData, TError> & {
+  queryKey: DataTag<QueryKey, TData, TError>;
+} {
+  const queryOptions = getGetJobsTransactionsalertsPreviewQueryOptions(
+    alerts,
+    options,
+  );
+
+  const query = useQuery(queryOptions, queryClient) as UseQueryResult<
+    TData,
+    TError
+  > & { queryKey: DataTag<QueryKey, TData, TError> };
+
+  query.queryKey = queryOptions.queryKey;
+
+  return query;
+}
+
+/**
+ * @summary Relatórios completos de transações para o dashboard
+ */
+export const getGetOrgSlugReportsTransactionsUrl = (slug: string) => {
+  return `/org/${slug}/reports/transactions`;
+};
+
+export const getOrgSlugReportsTransactions = async (
+  slug: string,
+  options?: RequestInit,
+): Promise<GetOrgSlugReportsTransactions200> => {
+  return http<GetOrgSlugReportsTransactions200>(
+    getGetOrgSlugReportsTransactionsUrl(slug),
+    {
+      ...options,
+      method: "GET",
+    },
+  );
+};
+
+export const getGetOrgSlugReportsTransactionsQueryKey = (slug?: string) => {
+  return [`/org/${slug}/reports/transactions`] as const;
+};
+
+export const getGetOrgSlugReportsTransactionsQueryOptions = <
+  TData = Awaited<ReturnType<typeof getOrgSlugReportsTransactions>>,
+  TError = unknown,
+>(
+  slug: string,
+  options?: {
+    query?: Partial<
+      UseQueryOptions<
+        Awaited<ReturnType<typeof getOrgSlugReportsTransactions>>,
+        TError,
+        TData
+      >
+    >;
+    request?: SecondParameter<typeof http>;
+  },
+) => {
+  const { query: queryOptions, request: requestOptions } = options ?? {};
+
+  const queryKey =
+    queryOptions?.queryKey ?? getGetOrgSlugReportsTransactionsQueryKey(slug);
+
+  const queryFn: QueryFunction<
+    Awaited<ReturnType<typeof getOrgSlugReportsTransactions>>
+  > = ({ signal }) =>
+    getOrgSlugReportsTransactions(slug, { signal, ...requestOptions });
+
+  return {
+    queryKey,
+    queryFn,
+    enabled: !!slug,
+    ...queryOptions,
+  } as UseQueryOptions<
+    Awaited<ReturnType<typeof getOrgSlugReportsTransactions>>,
+    TError,
+    TData
+  > & { queryKey: DataTag<QueryKey, TData, TError> };
+};
+
+export type GetOrgSlugReportsTransactionsQueryResult = NonNullable<
+  Awaited<ReturnType<typeof getOrgSlugReportsTransactions>>
+>;
+export type GetOrgSlugReportsTransactionsQueryError = unknown;
+
+export function useGetOrgSlugReportsTransactions<
+  TData = Awaited<ReturnType<typeof getOrgSlugReportsTransactions>>,
+  TError = unknown,
+>(
+  slug: string,
+  options: {
+    query: Partial<
+      UseQueryOptions<
+        Awaited<ReturnType<typeof getOrgSlugReportsTransactions>>,
+        TError,
+        TData
+      >
+    > &
+      Pick<
+        DefinedInitialDataOptions<
+          Awaited<ReturnType<typeof getOrgSlugReportsTransactions>>,
+          TError,
+          Awaited<ReturnType<typeof getOrgSlugReportsTransactions>>
+        >,
+        "initialData"
+      >;
+    request?: SecondParameter<typeof http>;
+  },
+  queryClient?: QueryClient,
+): DefinedUseQueryResult<TData, TError> & {
+  queryKey: DataTag<QueryKey, TData, TError>;
+};
+export function useGetOrgSlugReportsTransactions<
+  TData = Awaited<ReturnType<typeof getOrgSlugReportsTransactions>>,
+  TError = unknown,
+>(
+  slug: string,
+  options?: {
+    query?: Partial<
+      UseQueryOptions<
+        Awaited<ReturnType<typeof getOrgSlugReportsTransactions>>,
+        TError,
+        TData
+      >
+    > &
+      Pick<
+        UndefinedInitialDataOptions<
+          Awaited<ReturnType<typeof getOrgSlugReportsTransactions>>,
+          TError,
+          Awaited<ReturnType<typeof getOrgSlugReportsTransactions>>
+        >,
+        "initialData"
+      >;
+    request?: SecondParameter<typeof http>;
+  },
+  queryClient?: QueryClient,
+): UseQueryResult<TData, TError> & {
+  queryKey: DataTag<QueryKey, TData, TError>;
+};
+export function useGetOrgSlugReportsTransactions<
+  TData = Awaited<ReturnType<typeof getOrgSlugReportsTransactions>>,
+  TError = unknown,
+>(
+  slug: string,
+  options?: {
+    query?: Partial<
+      UseQueryOptions<
+        Awaited<ReturnType<typeof getOrgSlugReportsTransactions>>,
+        TError,
+        TData
+      >
+    >;
+    request?: SecondParameter<typeof http>;
+  },
+  queryClient?: QueryClient,
+): UseQueryResult<TData, TError> & {
+  queryKey: DataTag<QueryKey, TData, TError>;
+};
+/**
+ * @summary Relatórios completos de transações para o dashboard
+ */
+
+export function useGetOrgSlugReportsTransactions<
+  TData = Awaited<ReturnType<typeof getOrgSlugReportsTransactions>>,
+  TError = unknown,
+>(
+  slug: string,
+  options?: {
+    query?: Partial<
+      UseQueryOptions<
+        Awaited<ReturnType<typeof getOrgSlugReportsTransactions>>,
+        TError,
+        TData
+      >
+    >;
+    request?: SecondParameter<typeof http>;
+  },
+  queryClient?: QueryClient,
+): UseQueryResult<TData, TError> & {
+  queryKey: DataTag<QueryKey, TData, TError>;
+} {
+  const queryOptions = getGetOrgSlugReportsTransactionsQueryOptions(
+    slug,
+    options,
+  );
 
   const query = useQuery(queryOptions, queryClient) as UseQueryResult<
     TData,
@@ -741,6 +1970,242 @@ export const useCreateUserWithInvite = <TError = unknown, TContext = unknown>(
 };
 
 /**
+ * @summary Update user basic info
+ */
+export const getPatchOrgSlugUsersUrl = (slug: string) => {
+  return `/org/${slug}/users`;
+};
+
+export const patchOrgSlugUsers = async (
+  slug: string,
+  patchOrgSlugUsersBody: PatchOrgSlugUsersBody,
+  options?: RequestInit,
+): Promise<PatchOrgSlugUsers200> => {
+  return http<PatchOrgSlugUsers200>(getPatchOrgSlugUsersUrl(slug), {
+    ...options,
+    method: "PATCH",
+    headers: { "Content-Type": "application/json", ...options?.headers },
+    body: JSON.stringify(patchOrgSlugUsersBody),
+  });
+};
+
+export const getPatchOrgSlugUsersMutationOptions = <
+  TError = unknown,
+  TContext = unknown,
+>(options?: {
+  mutation?: UseMutationOptions<
+    Awaited<ReturnType<typeof patchOrgSlugUsers>>,
+    TError,
+    { slug: string; data: PatchOrgSlugUsersBody },
+    TContext
+  >;
+  request?: SecondParameter<typeof http>;
+}): UseMutationOptions<
+  Awaited<ReturnType<typeof patchOrgSlugUsers>>,
+  TError,
+  { slug: string; data: PatchOrgSlugUsersBody },
+  TContext
+> => {
+  const mutationKey = ["patchOrgSlugUsers"];
+  const { mutation: mutationOptions, request: requestOptions } = options
+    ? options.mutation &&
+      "mutationKey" in options.mutation &&
+      options.mutation.mutationKey
+      ? options
+      : { ...options, mutation: { ...options.mutation, mutationKey } }
+    : { mutation: { mutationKey }, request: undefined };
+
+  const mutationFn: MutationFunction<
+    Awaited<ReturnType<typeof patchOrgSlugUsers>>,
+    { slug: string; data: PatchOrgSlugUsersBody }
+  > = (props) => {
+    const { slug, data } = props ?? {};
+
+    return patchOrgSlugUsers(slug, data, requestOptions);
+  };
+
+  return { mutationFn, ...mutationOptions };
+};
+
+export type PatchOrgSlugUsersMutationResult = NonNullable<
+  Awaited<ReturnType<typeof patchOrgSlugUsers>>
+>;
+export type PatchOrgSlugUsersMutationBody = PatchOrgSlugUsersBody;
+export type PatchOrgSlugUsersMutationError = unknown;
+
+/**
+ * @summary Update user basic info
+ */
+export const usePatchOrgSlugUsers = <TError = unknown, TContext = unknown>(
+  options?: {
+    mutation?: UseMutationOptions<
+      Awaited<ReturnType<typeof patchOrgSlugUsers>>,
+      TError,
+      { slug: string; data: PatchOrgSlugUsersBody },
+      TContext
+    >;
+    request?: SecondParameter<typeof http>;
+  },
+  queryClient?: QueryClient,
+): UseMutationResult<
+  Awaited<ReturnType<typeof patchOrgSlugUsers>>,
+  TError,
+  { slug: string; data: PatchOrgSlugUsersBody },
+  TContext
+> => {
+  const mutationOptions = getPatchOrgSlugUsersMutationOptions(options);
+
+  return useMutation(mutationOptions, queryClient);
+};
+
+/**
+ * List all users in an organization
+ */
+export const getListUsersByOrgUrl = (slug: string) => {
+  return `/org/${slug}/users`;
+};
+
+export const listUsersByOrg = async (
+  slug: string,
+  options?: RequestInit,
+): Promise<ListUsersByOrg200> => {
+  return http<ListUsersByOrg200>(getListUsersByOrgUrl(slug), {
+    ...options,
+    method: "GET",
+  });
+};
+
+export const getListUsersByOrgQueryKey = (slug?: string) => {
+  return [`/org/${slug}/users`] as const;
+};
+
+export const getListUsersByOrgQueryOptions = <
+  TData = Awaited<ReturnType<typeof listUsersByOrg>>,
+  TError = unknown,
+>(
+  slug: string,
+  options?: {
+    query?: Partial<
+      UseQueryOptions<Awaited<ReturnType<typeof listUsersByOrg>>, TError, TData>
+    >;
+    request?: SecondParameter<typeof http>;
+  },
+) => {
+  const { query: queryOptions, request: requestOptions } = options ?? {};
+
+  const queryKey = queryOptions?.queryKey ?? getListUsersByOrgQueryKey(slug);
+
+  const queryFn: QueryFunction<Awaited<ReturnType<typeof listUsersByOrg>>> = ({
+    signal,
+  }) => listUsersByOrg(slug, { signal, ...requestOptions });
+
+  return {
+    queryKey,
+    queryFn,
+    enabled: !!slug,
+    ...queryOptions,
+  } as UseQueryOptions<
+    Awaited<ReturnType<typeof listUsersByOrg>>,
+    TError,
+    TData
+  > & { queryKey: DataTag<QueryKey, TData, TError> };
+};
+
+export type ListUsersByOrgQueryResult = NonNullable<
+  Awaited<ReturnType<typeof listUsersByOrg>>
+>;
+export type ListUsersByOrgQueryError = unknown;
+
+export function useListUsersByOrg<
+  TData = Awaited<ReturnType<typeof listUsersByOrg>>,
+  TError = unknown,
+>(
+  slug: string,
+  options: {
+    query: Partial<
+      UseQueryOptions<Awaited<ReturnType<typeof listUsersByOrg>>, TError, TData>
+    > &
+      Pick<
+        DefinedInitialDataOptions<
+          Awaited<ReturnType<typeof listUsersByOrg>>,
+          TError,
+          Awaited<ReturnType<typeof listUsersByOrg>>
+        >,
+        "initialData"
+      >;
+    request?: SecondParameter<typeof http>;
+  },
+  queryClient?: QueryClient,
+): DefinedUseQueryResult<TData, TError> & {
+  queryKey: DataTag<QueryKey, TData, TError>;
+};
+export function useListUsersByOrg<
+  TData = Awaited<ReturnType<typeof listUsersByOrg>>,
+  TError = unknown,
+>(
+  slug: string,
+  options?: {
+    query?: Partial<
+      UseQueryOptions<Awaited<ReturnType<typeof listUsersByOrg>>, TError, TData>
+    > &
+      Pick<
+        UndefinedInitialDataOptions<
+          Awaited<ReturnType<typeof listUsersByOrg>>,
+          TError,
+          Awaited<ReturnType<typeof listUsersByOrg>>
+        >,
+        "initialData"
+      >;
+    request?: SecondParameter<typeof http>;
+  },
+  queryClient?: QueryClient,
+): UseQueryResult<TData, TError> & {
+  queryKey: DataTag<QueryKey, TData, TError>;
+};
+export function useListUsersByOrg<
+  TData = Awaited<ReturnType<typeof listUsersByOrg>>,
+  TError = unknown,
+>(
+  slug: string,
+  options?: {
+    query?: Partial<
+      UseQueryOptions<Awaited<ReturnType<typeof listUsersByOrg>>, TError, TData>
+    >;
+    request?: SecondParameter<typeof http>;
+  },
+  queryClient?: QueryClient,
+): UseQueryResult<TData, TError> & {
+  queryKey: DataTag<QueryKey, TData, TError>;
+};
+
+export function useListUsersByOrg<
+  TData = Awaited<ReturnType<typeof listUsersByOrg>>,
+  TError = unknown,
+>(
+  slug: string,
+  options?: {
+    query?: Partial<
+      UseQueryOptions<Awaited<ReturnType<typeof listUsersByOrg>>, TError, TData>
+    >;
+    request?: SecondParameter<typeof http>;
+  },
+  queryClient?: QueryClient,
+): UseQueryResult<TData, TError> & {
+  queryKey: DataTag<QueryKey, TData, TError>;
+} {
+  const queryOptions = getListUsersByOrgQueryOptions(slug, options);
+
+  const query = useQuery(queryOptions, queryClient) as UseQueryResult<
+    TData,
+    TError
+  > & { queryKey: DataTag<QueryKey, TData, TError> };
+
+  query.queryKey = queryOptions.queryKey;
+
+  return query;
+}
+
+/**
  * Create a new organization
  */
 export const getCreateOrganizationUrl = () => {
@@ -1147,239 +2612,6 @@ export function useListOrganizations<
 
   return query;
 }
-
-/**
- * List all users in an organization
- */
-export const getListUsersByOrgUrl = (slug: string) => {
-  return `/org/${slug}/users`;
-};
-
-export const listUsersByOrg = async (
-  slug: string,
-  options?: RequestInit,
-): Promise<ListUsersByOrg200> => {
-  return http<ListUsersByOrg200>(getListUsersByOrgUrl(slug), {
-    ...options,
-    method: "GET",
-  });
-};
-
-export const getListUsersByOrgQueryKey = (slug?: string) => {
-  return [`/org/${slug}/users`] as const;
-};
-
-export const getListUsersByOrgQueryOptions = <
-  TData = Awaited<ReturnType<typeof listUsersByOrg>>,
-  TError = unknown,
->(
-  slug: string,
-  options?: {
-    query?: Partial<
-      UseQueryOptions<Awaited<ReturnType<typeof listUsersByOrg>>, TError, TData>
-    >;
-    request?: SecondParameter<typeof http>;
-  },
-) => {
-  const { query: queryOptions, request: requestOptions } = options ?? {};
-
-  const queryKey = queryOptions?.queryKey ?? getListUsersByOrgQueryKey(slug);
-
-  const queryFn: QueryFunction<Awaited<ReturnType<typeof listUsersByOrg>>> = ({
-    signal,
-  }) => listUsersByOrg(slug, { signal, ...requestOptions });
-
-  return {
-    queryKey,
-    queryFn,
-    enabled: !!slug,
-    ...queryOptions,
-  } as UseQueryOptions<
-    Awaited<ReturnType<typeof listUsersByOrg>>,
-    TError,
-    TData
-  > & { queryKey: DataTag<QueryKey, TData, TError> };
-};
-
-export type ListUsersByOrgQueryResult = NonNullable<
-  Awaited<ReturnType<typeof listUsersByOrg>>
->;
-export type ListUsersByOrgQueryError = unknown;
-
-export function useListUsersByOrg<
-  TData = Awaited<ReturnType<typeof listUsersByOrg>>,
-  TError = unknown,
->(
-  slug: string,
-  options: {
-    query: Partial<
-      UseQueryOptions<Awaited<ReturnType<typeof listUsersByOrg>>, TError, TData>
-    > &
-      Pick<
-        DefinedInitialDataOptions<
-          Awaited<ReturnType<typeof listUsersByOrg>>,
-          TError,
-          Awaited<ReturnType<typeof listUsersByOrg>>
-        >,
-        "initialData"
-      >;
-    request?: SecondParameter<typeof http>;
-  },
-  queryClient?: QueryClient,
-): DefinedUseQueryResult<TData, TError> & {
-  queryKey: DataTag<QueryKey, TData, TError>;
-};
-export function useListUsersByOrg<
-  TData = Awaited<ReturnType<typeof listUsersByOrg>>,
-  TError = unknown,
->(
-  slug: string,
-  options?: {
-    query?: Partial<
-      UseQueryOptions<Awaited<ReturnType<typeof listUsersByOrg>>, TError, TData>
-    > &
-      Pick<
-        UndefinedInitialDataOptions<
-          Awaited<ReturnType<typeof listUsersByOrg>>,
-          TError,
-          Awaited<ReturnType<typeof listUsersByOrg>>
-        >,
-        "initialData"
-      >;
-    request?: SecondParameter<typeof http>;
-  },
-  queryClient?: QueryClient,
-): UseQueryResult<TData, TError> & {
-  queryKey: DataTag<QueryKey, TData, TError>;
-};
-export function useListUsersByOrg<
-  TData = Awaited<ReturnType<typeof listUsersByOrg>>,
-  TError = unknown,
->(
-  slug: string,
-  options?: {
-    query?: Partial<
-      UseQueryOptions<Awaited<ReturnType<typeof listUsersByOrg>>, TError, TData>
-    >;
-    request?: SecondParameter<typeof http>;
-  },
-  queryClient?: QueryClient,
-): UseQueryResult<TData, TError> & {
-  queryKey: DataTag<QueryKey, TData, TError>;
-};
-
-export function useListUsersByOrg<
-  TData = Awaited<ReturnType<typeof listUsersByOrg>>,
-  TError = unknown,
->(
-  slug: string,
-  options?: {
-    query?: Partial<
-      UseQueryOptions<Awaited<ReturnType<typeof listUsersByOrg>>, TError, TData>
-    >;
-    request?: SecondParameter<typeof http>;
-  },
-  queryClient?: QueryClient,
-): UseQueryResult<TData, TError> & {
-  queryKey: DataTag<QueryKey, TData, TError>;
-} {
-  const queryOptions = getListUsersByOrgQueryOptions(slug, options);
-
-  const query = useQuery(queryOptions, queryClient) as UseQueryResult<
-    TData,
-    TError
-  > & { queryKey: DataTag<QueryKey, TData, TError> };
-
-  query.queryKey = queryOptions.queryKey;
-
-  return query;
-}
-
-/**
- * Update user
- */
-export const getUpdateUserUrl = (slug: string) => {
-  return `/org/${slug}/users`;
-};
-
-export const updateUser = async (
-  slug: string,
-  body: { email: string; name?: string; phone?: string },
-  options?: RequestInit,
-): Promise<ListUsersByOrg200UsersItem> => {
-  return http<ListUsersByOrg200UsersItem>(getUpdateUserUrl(slug), {
-    ...options,
-    method: "PATCH",
-    headers: { "Content-Type": "application/json", ...options?.headers },
-    body: JSON.stringify(body),
-  });
-};
-
-export const getUpdateUserMutationOptions = <
-  TError = unknown,
-  TContext = unknown,
->(options?: {
-  mutation?: UseMutationOptions<
-    Awaited<ReturnType<typeof updateUser>>,
-    TError,
-    { slug: string; data: { email: string; name?: string; phone?: string } },
-    TContext
-  >;
-  request?: SecondParameter<typeof http>;
-}): UseMutationOptions<
-  Awaited<ReturnType<typeof updateUser>>,
-  TError,
-  { slug: string; data: { email: string; name?: string; phone?: string } },
-  TContext
-> => {
-  const mutationKey = ["updateUser"];
-  const { mutation: mutationOptions, request: requestOptions } = options
-    ? options.mutation &&
-      "mutationKey" in options.mutation &&
-      options.mutation.mutationKey
-      ? options
-      : { ...options, mutation: { ...options.mutation, mutationKey } }
-    : { mutation: { mutationKey }, request: undefined };
-
-  const mutationFn: MutationFunction<
-    Awaited<ReturnType<typeof updateUser>>,
-    { slug: string; data: { email: string; name?: string; phone?: string } }
-  > = (props) => {
-    const { slug, data } = props ?? {};
-
-    return updateUser(slug, data, requestOptions);
-  };
-
-  return { mutationFn, ...mutationOptions };
-};
-
-export type UpdateUserMutationResult = NonNullable<
-  Awaited<ReturnType<typeof updateUser>>
->;
-export type UpdateUserMutationBody = { email: string; name?: string; phone?: string };
-export type UpdateUserMutationError = unknown;
-
-export const useUpdateUser = <TError = unknown, TContext = unknown>(
-  options?: {
-    mutation?: UseMutationOptions<
-      Awaited<ReturnType<typeof updateUser>>,
-      TError,
-      { slug: string; data: { email: string; name?: string; phone?: string } },
-      TContext
-    >;
-    request?: SecondParameter<typeof http>;
-  },
-  queryClient?: QueryClient,
-): UseMutationResult<
-  Awaited<ReturnType<typeof updateUser>>,
-  TError,
-  { slug: string; data: { email: string; name?: string; phone?: string } },
-  TContext
-> => {
-  const mutationOptions = getUpdateUserMutationOptions(options);
-
-  return useMutation(mutationOptions, queryClient);
-};
 
 /**
  * Accept organization invite
