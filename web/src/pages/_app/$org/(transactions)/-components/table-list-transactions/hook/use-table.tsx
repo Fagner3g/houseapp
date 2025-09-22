@@ -17,6 +17,9 @@ import dayjs from 'dayjs'
 import {
   AlertOctagon,
   AlertTriangle,
+  ArrowDown,
+  ArrowUp,
+  ArrowUpDown,
   LucideClockFading,
   TrendingDown,
   TrendingUp,
@@ -25,6 +28,7 @@ import { useEffect, useState } from 'react'
 import { toast } from 'sonner'
 
 import {
+  getGetOrgSlugReportsTransactionsQueryKey,
   getListTransactionsQueryKey,
   useDeleteTransactions,
   usePayTransaction,
@@ -57,11 +61,16 @@ export const useTable = (
 ) => {
   const [rowSelection, setRowSelection] = useState({})
   const [columnVisibility, setColumnVisibility] = useState<VisibilityState>({
-    Pagamento: false,
-    Parcelas: false,
-    Pagas: false,
+    // Visíveis por padrão: Tipo, title (Nome), status, amount (Valor), dueDate (Vencimento), tags
+    // Ocultos por padrão, mas disponíveis no menu:
+    paidAt: false,
+    installmentsTotal: false,
+    installmentsPaid: false,
+    payTo: false,
+    ownerName: false,
   })
   const [columnFilters, setColumnFilters] = useState<ColumnFiltersState>([])
+  const [globalFilter, setGlobalFilter] = useState('')
   const [sorting, setSorting] = useState<SortingState>([])
   const [pagination, setPagination] = useState({
     pageIndex: 0,
@@ -114,6 +123,29 @@ export const useTable = (
     setPagination({ pageIndex: 0, pageSize: perPage })
   }, [perPage])
 
+  // Helper function to create sortable headers
+  const createSortableHeader = (
+    title: string,
+    column: { toggleSorting: (desc?: boolean) => void; getIsSorted: () => false | 'asc' | 'desc' }
+  ) => {
+    return (
+      <Button
+        variant="ghost"
+        className="h-auto p-0 font-semibold hover:bg-transparent"
+        onClick={() => column.toggleSorting(column.getIsSorted() === 'asc')}
+      >
+        {title}
+        {column.getIsSorted() === 'asc' ? (
+          <ArrowUp className="ml-2 h-4 w-4" />
+        ) : column.getIsSorted() === 'desc' ? (
+          <ArrowDown className="ml-2 h-4 w-4" />
+        ) : (
+          <ArrowUpDown className="ml-2 h-4 w-4" />
+        )}
+      </Button>
+    )
+  }
+
   const columns: ColumnDef<ListTransactions200TransactionsItem>[] = [
     {
       id: 'select',
@@ -157,8 +189,10 @@ export const useTable = (
     },
     {
       accessorKey: 'title',
-      header: 'Nome',
+      header: ({ column }) => createSortableHeader('Nome', column),
       enableHiding: false,
+      enableSorting: true,
+      sortingFn: 'alphanumeric',
       cell: ({ row, table }) => (
         <Button
           variant="link"
@@ -170,8 +204,10 @@ export const useTable = (
       ),
     },
     {
-      accessorKey: 'Status',
-      header: 'Status',
+      accessorKey: 'status',
+      header: ({ column }) => createSortableHeader('Status', column),
+      enableSorting: true,
+      sortingFn: 'alphanumeric',
       cell: ({ row }) => {
         const today = new Date()
         const dueDate = new Date(row.original.dueDate)
@@ -273,7 +309,9 @@ export const useTable = (
     },
     {
       accessorKey: 'amount',
-      header: 'Valor',
+      header: ({ column }) => createSortableHeader('Valor', column),
+      enableSorting: true,
+      sortingFn: 'basic',
       cell: ({ row }) => (
         <Label className="text-muted-foreground px-1.5">
           {Number(row.original.amount).toLocaleString('pt-BR', {
@@ -284,8 +322,10 @@ export const useTable = (
       ),
     },
     {
-      accessorKey: 'Vencimento',
-      header: 'Vencimento',
+      accessorKey: 'dueDate',
+      header: ({ column }) => createSortableHeader('Vencimento', column),
+      enableSorting: true,
+      sortingFn: 'datetime',
       cell: ({ row }) => (
         <Label className="text-muted-foreground px-1.5">
           {dayjs(row.original.dueDate).format('DD/MM/YYYY')}
@@ -293,9 +333,11 @@ export const useTable = (
       ),
     },
     {
-      accessorKey: 'Pagamento',
-      header: 'Pagamento',
+      accessorKey: 'paidAt',
+      header: ({ column }) => createSortableHeader('Pagamento', column),
       enableHiding: true,
+      enableSorting: true,
+      sortingFn: 'datetime',
       cell: ({ row }) => {
         return (
           <Label className="text-muted-foreground px-1.5">
@@ -305,9 +347,11 @@ export const useTable = (
       },
     },
     {
-      accessorKey: 'Parcelas',
-      header: 'Parcelas',
+      accessorKey: 'installmentsTotal',
+      header: ({ column }) => createSortableHeader('Parcelas', column),
       enableHiding: true,
+      enableSorting: true,
+      sortingFn: 'basic',
       cell: ({ row }) => (
         <Label className="text-muted-foreground px-1.5">
           {row.original.installmentsTotal ?? ''}
@@ -315,9 +359,11 @@ export const useTable = (
       ),
     },
     {
-      accessorKey: 'Pagas',
-      header: 'Pagas',
+      accessorKey: 'installmentsPaid',
+      header: ({ column }) => createSortableHeader('Pagas', column),
       enableHiding: true,
+      enableSorting: true,
+      sortingFn: 'basic',
       cell: ({ row }) => (
         <Label className="text-muted-foreground px-1.5">
           {row.original.installmentsPaid ?? ''}
@@ -325,15 +371,19 @@ export const useTable = (
       ),
     },
     {
-      accessorKey: 'Para',
-      header: 'Para',
+      accessorKey: 'payTo',
+      header: ({ column }) => createSortableHeader('Para', column),
+      enableSorting: true,
+      sortingFn: 'alphanumeric',
       cell: ({ row }) => (
         <Label className="text-muted-foreground px-1.5">{row.original.payTo.split(' ')[0]}</Label>
       ),
     },
     {
-      accessorKey: 'Responsável',
-      header: 'Responsável',
+      accessorKey: 'ownerName',
+      header: ({ column }) => createSortableHeader('Responsável', column),
+      enableSorting: true,
+      sortingFn: 'alphanumeric',
       cell: ({ row }) => {
         return (
           <div className="px-1.5 flex items-center gap-2">
@@ -397,6 +447,7 @@ export const useTable = (
       columnVisibility,
       rowSelection,
       columnFilters,
+      globalFilter,
       pagination,
     },
     getRowId: row => row.id.toString(),
@@ -404,6 +455,7 @@ export const useTable = (
     onRowSelectionChange: setRowSelection,
     onSortingChange: setSorting,
     onColumnFiltersChange: setColumnFilters,
+    onGlobalFilterChange: setGlobalFilter,
     onColumnVisibilityChange: setColumnVisibility,
     onPaginationChange: setPagination,
     getCoreRowModel: getCoreRowModel(),
@@ -428,7 +480,7 @@ export const useTable = (
         const allPaid = items.every(t => t.status === 'paid')
 
         try {
-          await Promise.all(ids.map(id => payTransaction({ slug, id })))
+          await Promise.all(ids.map(id => payTransaction({ slug, id, data: {} })))
           toast.success(
             ids.length > 1
               ? allPaid
@@ -441,13 +493,27 @@ export const useTable = (
         } catch {
           toast.error(allPaid ? 'Erro ao cancelar pagamento' : 'Erro ao pagar transações')
         } finally {
-          queryClient.invalidateQueries({
-            queryKey: getListTransactionsQueryKey(slug),
-          })
+          // Pequeno delay para garantir que todas as transações foram processadas
+          setTimeout(async () => {
+            await queryClient.invalidateQueries({
+              queryKey: getListTransactionsQueryKey(slug),
+              refetchType: 'all',
+            })
+
+            await queryClient.invalidateQueries({
+              queryKey: getGetOrgSlugReportsTransactionsQueryKey(slug),
+              refetchType: 'all',
+            })
+
+            // Forçar refetch das queries para garantir atualização
+            await queryClient.refetchQueries({
+              queryKey: getListTransactionsQueryKey(slug),
+            })
+          }, 100)
         }
       },
     },
   })
 
-  return { table, columns, editing, setEditing }
+  return { table, columns, editing, setEditing, globalFilter, setGlobalFilter }
 }

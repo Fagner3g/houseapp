@@ -73,6 +73,16 @@ export async function buildServer() {
 
   app.register(fastifyJwt, { secret: env.JWT_SECRET })
 
+  // Configurar parser JSON para aceitar corpos vazios
+  app.addContentTypeParser('application/json', { parseAs: 'string' }, (_req, body, done) => {
+    try {
+      const json = body === '' ? {} : JSON.parse(body)
+      done(null, json)
+    } catch (err) {
+      done(err, undefined)
+    }
+  })
+
   app.register(fastifySwagger, {
     openapi: {
       info: {

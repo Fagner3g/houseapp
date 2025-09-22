@@ -1,4 +1,4 @@
-import { IconLayoutColumns, IconPlus, IconX } from '@tabler/icons-react'
+import { IconLayoutColumns, IconPlus, IconSearch, IconX } from '@tabler/icons-react'
 import { useNavigate } from '@tanstack/react-router'
 import type { Table } from '@tanstack/react-table'
 import dayjs from 'dayjs'
@@ -12,6 +12,7 @@ import {
   DropdownMenuContent,
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu'
+import { Input } from '@/components/ui/input'
 import { TabsList, TabsTrigger } from '@/components/ui/tabs'
 import { DeleteSelected } from './delete-selected'
 import FilterTable, { type FilterTableProps } from './filter'
@@ -21,9 +22,18 @@ interface Props extends FilterTableProps {
   table: Table<ListTransactions200TransactionsItem>
   onCreate: () => void
   view: 'table' | 'calendar'
+  globalFilter: string
+  setGlobalFilter: (value: string) => void
 }
 
-export function NavbarTable({ table, onCreate, view, ...props }: Props) {
+export function NavbarTable({
+  table,
+  onCreate,
+  view,
+  globalFilter,
+  setGlobalFilter,
+  ...props
+}: Props) {
   const navigate = useNavigate()
   const selected = table.getSelectedRowModel().rows.length
 
@@ -78,6 +88,18 @@ export function NavbarTable({ table, onCreate, view, ...props }: Props) {
               {rangeLabel}
             </span>
           )}
+        </div>
+
+        <div className="flex items-center gap-2">
+          <div className="relative">
+            <IconSearch className="absolute left-2 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
+            <Input
+              placeholder="Pesquisar por nome da transação..."
+              value={globalFilter ?? ''}
+              onChange={event => setGlobalFilter(String(event.target.value))}
+              className="pl-8 w-64"
+            />
+          </div>
         </div>
 
         <TabsList>

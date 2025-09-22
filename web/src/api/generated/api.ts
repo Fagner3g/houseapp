@@ -50,6 +50,7 @@ import type {
   ListUsersByOrg200,
   PatchOrgSlugUsers200,
   PatchOrgSlugUsersBody,
+  PayTransactionBody,
   PostJobsJobKeyRun200,
   PostJobsJobKeyRun404,
   PostJobsJobKeyStart200,
@@ -4059,11 +4060,14 @@ export const getPayTransactionUrl = (slug: string, id: string) => {
 export const payTransaction = async (
   slug: string,
   id: string,
+  payTransactionBody: PayTransactionBody,
   options?: RequestInit,
 ): Promise<null> => {
   return http<null>(getPayTransactionUrl(slug, id), {
     ...options,
     method: "PATCH",
+    headers: { "Content-Type": "application/json", ...options?.headers },
+    body: JSON.stringify(payTransactionBody),
   });
 };
 
@@ -4074,14 +4078,14 @@ export const getPayTransactionMutationOptions = <
   mutation?: UseMutationOptions<
     Awaited<ReturnType<typeof payTransaction>>,
     TError,
-    { slug: string; id: string },
+    { slug: string; id: string; data: PayTransactionBody },
     TContext
   >;
   request?: SecondParameter<typeof http>;
 }): UseMutationOptions<
   Awaited<ReturnType<typeof payTransaction>>,
   TError,
-  { slug: string; id: string },
+  { slug: string; id: string; data: PayTransactionBody },
   TContext
 > => {
   const mutationKey = ["payTransaction"];
@@ -4095,11 +4099,11 @@ export const getPayTransactionMutationOptions = <
 
   const mutationFn: MutationFunction<
     Awaited<ReturnType<typeof payTransaction>>,
-    { slug: string; id: string }
+    { slug: string; id: string; data: PayTransactionBody }
   > = (props) => {
-    const { slug, id } = props ?? {};
+    const { slug, id, data } = props ?? {};
 
-    return payTransaction(slug, id, requestOptions);
+    return payTransaction(slug, id, data, requestOptions);
   };
 
   return { mutationFn, ...mutationOptions };
@@ -4108,7 +4112,7 @@ export const getPayTransactionMutationOptions = <
 export type PayTransactionMutationResult = NonNullable<
   Awaited<ReturnType<typeof payTransaction>>
 >;
-
+export type PayTransactionMutationBody = PayTransactionBody;
 export type PayTransactionMutationError = unknown;
 
 export const usePayTransaction = <TError = unknown, TContext = unknown>(
@@ -4116,7 +4120,7 @@ export const usePayTransaction = <TError = unknown, TContext = unknown>(
     mutation?: UseMutationOptions<
       Awaited<ReturnType<typeof payTransaction>>,
       TError,
-      { slug: string; id: string },
+      { slug: string; id: string; data: PayTransactionBody },
       TContext
     >;
     request?: SecondParameter<typeof http>;
@@ -4125,7 +4129,7 @@ export const usePayTransaction = <TError = unknown, TContext = unknown>(
 ): UseMutationResult<
   Awaited<ReturnType<typeof payTransaction>>,
   TError,
-  { slug: string; id: string },
+  { slug: string; id: string; data: PayTransactionBody },
   TContext
 > => {
   const mutationOptions = getPayTransactionMutationOptions(options);

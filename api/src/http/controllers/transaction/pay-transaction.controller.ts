@@ -1,17 +1,21 @@
 import type { FastifyReply, FastifyRequest } from 'fastify'
 
 import { payTransactionService } from '@/domain/transactions/pay-transaction'
-
-interface Params {
-  id: string
-  slug: string
-}
+import type {
+  PayTransactionSchemaBody,
+  PayTransactionSchemaParams,
+} from '@/http/schemas/transaction/pay-transaction.schema'
 
 export async function payTransactionController(
-  request: FastifyRequest<{ Params: Params }>,
+  request: FastifyRequest<{
+    Params: PayTransactionSchemaParams
+    Body: PayTransactionSchemaBody
+  }>,
   reply: FastifyReply
 ) {
   const { id } = request.params
-  await payTransactionService({ id })
+  const body = request.body || {}
+  const { paidAt } = body
+  await payTransactionService({ id, paidAt: paidAt ? new Date(paidAt) : undefined })
   return reply.status(204).send()
 }
