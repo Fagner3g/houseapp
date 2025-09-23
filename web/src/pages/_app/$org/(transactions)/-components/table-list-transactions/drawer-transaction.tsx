@@ -28,6 +28,8 @@ import {
 import { Form } from '@/components/ui/form'
 import { useActiveOrganization } from '@/hooks/use-active-organization'
 import { useIsMobile } from '@/hooks/use-mobile'
+import { useScrollToActiveField } from '@/hooks/use-scroll-to-active-field'
+import { useVirtualKeyboard } from '@/hooks/use-virtual-keyboard'
 import { showToastOnErrorSubmit } from '@/lib/utils'
 import { useAuthStore } from '@/stores/auth'
 import { AmountField } from '../modal-new-transaction/amount-field'
@@ -62,11 +64,14 @@ export function DrawerTransaction({ transaction, open, onOpenChange }: Props) {
   const { data: userData } = useListUsersByOrg(slug)
   const currentUser = useAuthStore(s => s.user)
   const isMobile = useIsMobile()
+  const { isKeyboardOpen, keyboardHeight } = useVirtualKeyboard()
+  const scrollContainerRef = useScrollToActiveField(isKeyboardOpen)
   const [hasChanges, setHasChanges] = useState(false)
   const [paymentDialogOpen, setPaymentDialogOpen] = useState(false)
 
   const isEditMode = !!transaction
   const isOwner = currentUser?.id === transaction?.ownerId
+  const isPaid = transaction?.status === 'paid'
   const isReadOnly = isEditMode && !isOwner
 
   const form = useForm<NewTransactionSchema>({
@@ -243,33 +248,104 @@ export function DrawerTransaction({ transaction, open, onOpenChange }: Props) {
         recurrenceStart: undefined,
       })
     }
+    // Sempre resetar hasChanges quando o drawer abrir
     setHasChanges(false)
+
+    // Garantir que hasChanges seja false após um delay adicional
+    const resetTimeout = setTimeout(() => {
+      setHasChanges(false)
+    }, 100)
+
+    return () => clearTimeout(resetTimeout)
   }, [open, transaction, userData, form])
+
+  // Cancel changes when drawer closes
+  useEffect(() => {
+    if (!open && hasChanges) {
+      // Reset form to original values
+      if (transaction) {
+        const payToEmail = userData?.users.find(user => user.name === transaction.payTo)?.email
+        form.reset({
+          type: transaction.type,
+          title: transaction.title,
+          amount: transaction.amount,
+          dueDate: new Date(transaction.dueDate),
+          payToEmail,
+          tags: transaction.tags,
+          description: transaction.description || '',
+          isRecurring: false,
+          recurrenceSelector: undefined,
+          recurrenceType: undefined,
+          recurrenceUntil: undefined,
+          recurrenceInterval: undefined,
+          installmentsTotal: undefined,
+          recurrenceStart: undefined,
+        })
+      }
+      setHasChanges(false)
+    }
+  }, [open, hasChanges, transaction, userData, form])
 
   // Monitor form changes (only in edit mode)
   useEffect(() => {
-    if (!isEditMode) return
+    if (!isEditMode || !transaction || !open) return
 
-    const subscription = form.watch(() => {
-      setHasChanges(true)
-    })
-    return () => subscription.unsubscribe()
-  }, [form, isEditMode])
+    const timeoutId = setTimeout(() => {
+      const subscription = form.watch(currentValues => {
+        if (!currentValues.type) return
+
+        const payToEmail = userData?.users.find(user => user.name === transaction.payTo)?.email
+        const originalValues = {
+          type: transaction.type,
+          title: transaction.title,
+          amount: transaction.amount,
+          dueDate: new Date(transaction.dueDate),
+          payToEmail,
+          tags: transaction.tags,
+          description: transaction.description || '',
+        }
+
+        const changes = {
+          type: currentValues.type !== originalValues.type,
+          title: currentValues.title !== originalValues.title,
+          amount: currentValues.amount !== originalValues.amount,
+          dueDate:
+            currentValues.dueDate &&
+            new Date(currentValues.dueDate).getTime() !== originalValues.dueDate.getTime(),
+          payToEmail: currentValues.payToEmail !== originalValues.payToEmail,
+          tags: JSON.stringify(currentValues.tags) !== JSON.stringify(originalValues.tags),
+          description: currentValues.description !== originalValues.description,
+        }
+
+        const hasSignificantChanges = Object.values(changes).some(Boolean)
+
+        setHasChanges(hasSignificantChanges)
+      })
+
+      return () => subscription.unsubscribe()
+    }, 500) // Aumentar delay para garantir que form.reset() terminou completamente
+
+    return () => clearTimeout(timeoutId)
+  }, [form, isEditMode, transaction, userData, open])
 
   async function handleSubmit(data: NewTransactionSchema) {
     if (isEditMode && transaction) {
-      updateTransaction({
+      const payload = {
+        type: data.type,
+        title: data.title,
+        amount: data.amount,
+        dueDate: data.dueDate.toISOString(),
+        tags: data.tags,
+        description: data.description,
+        serieId: transaction.serieId,
+        ...(data.payToEmail && { payToEmail: data.payToEmail }),
+      }
+
+      // Atualizar a transação (incluindo payTo se fornecido)
+      await updateTransaction({
         slug,
         id: transaction.id,
-        data: {
-          type: data.type,
-          title: data.title,
-          amount: data.amount,
-          dueDate: data.dueDate.toISOString(),
-          tags: data.tags,
-          description: data.description,
-          serieId: transaction.serieId,
-        },
+        data: payload,
       })
     } else {
       createTransaction({ slug, data: { ...data, amount: data.amount } })
@@ -279,18 +355,43 @@ export function DrawerTransaction({ transaction, open, onOpenChange }: Props) {
   function handleMainAction() {
     if (isEditMode && hasChanges) {
       // Save changes
-      form.handleSubmit(handleSubmit)()
+      const formData = form.getValues()
+
+      // Se o form não tem dados completos, usa os dados da transação com as mudanças
+      if (!formData.title || !formData.amount) {
+        const payToEmail = userData?.users.find(user => user.name === transaction.payTo)?.email
+        const completeData = {
+          type: formData.type || transaction.type,
+          title: formData.title || transaction.title,
+          amount: formData.amount || transaction.amount,
+          dueDate: formData.dueDate || new Date(transaction.dueDate),
+          payToEmail: formData.payToEmail || payToEmail || '',
+          tags: formData.tags || transaction.tags,
+          description: formData.description || transaction.description || '',
+          isRecurring: false as const,
+          recurrenceSelector: undefined,
+          recurrenceType: undefined,
+          recurrenceUntil: undefined,
+          recurrenceInterval: undefined,
+          installmentsTotal: undefined,
+          recurrenceStart: undefined,
+        }
+        handleSubmit(completeData)
+      } else {
+        handleSubmit(formData)
+      }
     } else if (isEditMode) {
-      // Open payment dialog
       setPaymentDialogOpen(true)
     } else {
-      // Create new transaction
       form.handleSubmit(handleSubmit)()
     }
   }
 
   const getTitle = () => {
     if (isEditMode) {
+      if (isPaid) {
+        return 'Transação paga'
+      }
       return isReadOnly ? 'Visualizar transação' : 'Editar transação'
     }
     return `Criar nova ${isExpense ? 'Despesa' : 'Receita'}`
@@ -298,6 +399,9 @@ export function DrawerTransaction({ transaction, open, onOpenChange }: Props) {
 
   const getDescription = () => {
     if (isEditMode) {
+      if (isPaid) {
+        return 'Transações pagas não podem ser editadas, mas o status pode ser alterado.'
+      }
       return transaction?.title
     }
     return `Crie um nova ${isExpense ? 'despesa' : 'receita'} e defina os detalhes.`
@@ -309,12 +413,21 @@ export function DrawerTransaction({ transaction, open, onOpenChange }: Props) {
         <DrawerContent
           className={
             isMobile
-              ? 'h-[100vh] w-full [&[data-vaul-drawer-direction=bottom]]:!max-h-[100vh] [&[data-vaul-drawer-direction=bottom]]:!h-[100vh]'
+              ? `w-full [&[data-vaul-drawer-direction=bottom]]:!min-h-[50vh] ${isKeyboardOpen ? 'keyboard-active' : ''}`
               : 'h-full w-[450px] max-w-[90vw] [&[data-vaul-drawer-direction=right]]:!max-h-[100vh] [&[data-vaul-drawer-direction=right]]:!h-[100vh]'
           }
           style={{
-            maxHeight: '100vh',
-            height: isMobile ? '100vh' : '100vh',
+            maxHeight: isMobile
+              ? isKeyboardOpen
+                ? `calc(100vh - ${keyboardHeight}px - 20px)`
+                : '95vh'
+              : '100vh',
+            height: isMobile
+              ? isKeyboardOpen
+                ? `calc(100vh - ${keyboardHeight}px - 20px)`
+                : '95vh'
+              : '100vh',
+            minHeight: isMobile ? '50vh' : 'auto',
             width: isMobile ? '100%' : '450px',
             maxWidth: isMobile ? 'none' : '90vw',
           }}
@@ -324,7 +437,10 @@ export function DrawerTransaction({ transaction, open, onOpenChange }: Props) {
             <p className="text-sm text-muted-foreground mt-1">{getDescription()}</p>
           </DrawerHeader>
 
-          <div className={`flex-1 overflow-y-auto ${isMobile ? 'px-4 py-4' : 'px-6 py-4'}`}>
+          <div
+            ref={scrollContainerRef}
+            className={`flex-1 overflow-y-auto overscroll-contain scroll-to-active ${isMobile ? 'px-4 py-4' : 'px-6 py-4'}`}
+          >
             <div className={isMobile ? 'max-w-2xl mx-auto' : 'w-full'}>
               <Form {...form}>
                 <form
@@ -334,11 +450,11 @@ export function DrawerTransaction({ transaction, open, onOpenChange }: Props) {
                   className={isMobile ? 'space-y-6' : 'space-y-4'}
                 >
                   <div className="space-y-4">
-                    <TypeField form={form} disabled={isReadOnly} />
-                    <TitleField form={form} disabled={isReadOnly} />
-                    <AmountField form={form} disabled={isReadOnly} />
-                    <CalendarField form={form} disabled={isReadOnly} />
-                    <PayToField form={form} data={userData} disabled={isReadOnly} />
+                    <TypeField form={form} disabled={isReadOnly || isPaid} />
+                    <TitleField form={form} disabled={isReadOnly || isPaid} />
+                    <AmountField form={form} disabled={isReadOnly || isPaid} />
+                    <CalendarField form={form} disabled={isReadOnly || isPaid} />
+                    <PayToField form={form} data={userData} disabled={isReadOnly || isPaid} />
                     {!isEditMode && <RecurrenceField form={form} />}
                   </div>
 
@@ -362,8 +478,8 @@ export function DrawerTransaction({ transaction, open, onOpenChange }: Props) {
                   )}
 
                   <div className="space-y-4">
-                    <TagField form={form} disabled={isReadOnly} />
-                    <DescriptionField form={form} disabled={isReadOnly} />
+                    <TagField form={form} disabled={isReadOnly || isPaid} />
+                    <DescriptionField form={form} disabled={isReadOnly || isPaid} />
                   </div>
                 </form>
               </Form>
@@ -396,14 +512,20 @@ export function DrawerTransaction({ transaction, open, onOpenChange }: Props) {
                       handleMainAction()
                     }}
                     disabled={isUpdating}
-                    className="flex-1 h-11"
                     variant={
                       isEditMode && hasChanges
                         ? 'default'
                         : isEditMode && transaction?.status === 'paid'
                           ? 'outline'
-                          : 'default'
+                          : isEditMode
+                            ? 'default'
+                            : 'default'
                     }
+                    className={`flex-1 h-11 ${
+                      isEditMode && !hasChanges && transaction?.status !== 'paid'
+                        ? 'bg-green-600 hover:bg-green-700 text-white'
+                        : ''
+                    }`}
                   >
                     {isUpdating
                       ? 'Processando...'
@@ -429,9 +551,15 @@ export function DrawerTransaction({ transaction, open, onOpenChange }: Props) {
           open={paymentDialogOpen}
           onOpenChange={setPaymentDialogOpen}
           onSuccess={() => {
-            if (transaction?.status !== 'paid') {
-              onOpenChange(false)
-            }
+            // Invalidar queries para atualizar os dados
+            queryClient.invalidateQueries({
+              queryKey: getListTransactionsQueryKey(slug),
+            })
+            queryClient.invalidateQueries({
+              queryKey: getGetOrgSlugReportsTransactionsQueryKey(slug),
+            })
+            // Sempre fechar o drawer após mudança de status de pagamento
+            onOpenChange(false)
           }}
         />
       )}

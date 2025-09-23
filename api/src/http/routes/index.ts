@@ -22,6 +22,7 @@ import { createTagRoute, deleteTagRoute, listTagsRoute, updateTagRoute } from '.
 import {
   createTransactionRoute,
   deleteTransactionsRoute,
+  getTransactionInstallmentsRoute,
   getTransactionRoute,
   listTransactionRoute,
   payTransactionRoute,
@@ -68,6 +69,7 @@ export function createRoutes(app: FastifyInstance) {
   // Transaction
   app.register(createTransactionRoute)
   app.register(getTransactionRoute)
+  app.register(getTransactionInstallmentsRoute)
   app.register(listTransactionRoute)
   app.register(deleteTransactionsRoute)
   app.register(updateTransactionRoute)

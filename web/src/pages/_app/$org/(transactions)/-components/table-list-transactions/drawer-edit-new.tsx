@@ -5,6 +5,7 @@ import { useForm } from 'react-hook-form'
 import { toast } from 'sonner'
 
 import {
+  getGetOrgSlugReportsTransactionsQueryKey,
   getListTransactionsQueryKey,
   useListUsersByOrg,
   usePayTransaction,
@@ -55,6 +56,7 @@ export function DrawerEdit({ transaction, open, onOpenChange }: Props) {
 
   // Check if current user is the owner of the transaction
   const isOwner = currentUser?.id === transaction?.ownerId
+  const isPaid = transaction?.status === 'paid'
   const isReadOnly = !isOwner
 
   const form = useForm<NewTransactionSchema>({
@@ -77,16 +79,50 @@ export function DrawerEdit({ transaction, open, onOpenChange }: Props) {
       description: transaction.description || '',
       isRecurring: false,
     })
+    // Sempre resetar hasChanges quando a transação mudar
     setHasChanges(false)
   }, [transaction, form, data])
 
   // Monitor form changes
   useEffect(() => {
-    const subscription = form.watch(() => {
-      setHasChanges(true)
-    })
-    return () => subscription.unsubscribe()
-  }, [form])
+    if (!transaction) return
+
+    const timeoutId = setTimeout(() => {
+      const subscription = form.watch(currentValues => {
+        if (!currentValues.type) return
+
+        const payToEmail = data?.users?.find(u => u.name === transaction.payTo)?.email ?? ''
+        const originalValues = {
+          type: transaction.type as RegisterType,
+          title: transaction.title,
+          amount: transaction.amount,
+          dueDate: new Date(transaction.dueDate),
+          payToEmail,
+          tags: transaction.tags,
+          description: transaction.description || '',
+        }
+
+        const changes = {
+          type: currentValues.type !== originalValues.type,
+          title: currentValues.title !== originalValues.title,
+          amount: currentValues.amount !== originalValues.amount,
+          dueDate:
+            currentValues.dueDate &&
+            new Date(currentValues.dueDate).getTime() !== originalValues.dueDate.getTime(),
+          payToEmail: currentValues.payToEmail !== originalValues.payToEmail,
+          tags: JSON.stringify(currentValues.tags) !== JSON.stringify(originalValues.tags),
+          description: currentValues.description !== originalValues.description,
+        }
+
+        const hasSignificantChanges = Object.values(changes).some(Boolean)
+        setHasChanges(hasSignificantChanges)
+      })
+
+      return () => subscription.unsubscribe()
+    }, 100)
+
+    return () => clearTimeout(timeoutId)
+  }, [form, transaction, data])
 
   const { mutate: updateTransaction } = useUpdateTransaction({
     mutation: {
@@ -108,6 +144,9 @@ export function DrawerEdit({ transaction, open, onOpenChange }: Props) {
         toast.success(isPaid ? 'Pagamento cancelado com sucesso!' : 'Transação paga com sucesso!')
         queryClient.invalidateQueries({
           queryKey: getListTransactionsQueryKey(slug),
+        })
+        queryClient.invalidateQueries({
+          queryKey: getGetOrgSlugReportsTransactionsQueryKey(slug),
         })
         onOpenChange(false)
       },
@@ -141,11 +180,26 @@ export function DrawerEdit({ transaction, open, onOpenChange }: Props) {
 
   return (
     <Drawer open={open} onOpenChange={onOpenChange} direction={isMobile ? 'bottom' : 'right'}>
-      <DrawerContent>
+      <DrawerContent
+        className={
+          isMobile
+            ? 'h-[95vh] w-full [&[data-vaul-drawer-direction=bottom]]:!max-h-[95vh] [&[data-vaul-drawer-direction=bottom]]:!h-[95vh] [&[data-vaul-drawer-direction=bottom]]:!min-h-[50vh]'
+            : 'h-full w-[450px] max-w-[90vw] [&[data-vaul-drawer-direction=right]]:!max-h-[100vh] [&[data-vaul-drawer-direction=right]]:!h-[100vh]'
+        }
+        style={{
+          maxHeight: isMobile ? '95vh' : '100vh',
+          height: isMobile ? '95vh' : '100vh',
+          minHeight: isMobile ? '50vh' : 'auto',
+          width: isMobile ? '100%' : '450px',
+          maxWidth: isMobile ? 'none' : '90vw',
+        }}
+      >
         <DrawerHeader>
-          <DrawerTitle>{isReadOnly ? 'Visualizar transação' : 'Editar transação'}</DrawerTitle>
+          <DrawerTitle>
+            {isPaid ? 'Transação paga' : isReadOnly ? 'Visualizar transação' : 'Editar transação'}
+          </DrawerTitle>
         </DrawerHeader>
-        <div className="flex flex-col gap-4 p-4 overflow-y-auto overflow-x-hidden">
+        <div className="flex flex-col gap-4 p-4 overflow-y-auto overflow-x-hidden overscroll-contain">
           <Form {...form}>
             <form
               onSubmit={form.handleSubmit(handleSubmit, errors =>
@@ -153,15 +207,15 @@ export function DrawerEdit({ transaction, open, onOpenChange }: Props) {
               )}
               className="flex flex-col gap-4"
             >
-              <TypeField form={form} disabled={isReadOnly} />
-              <TitleField form={form} disabled={isReadOnly} />
+              <TypeField form={form} disabled={isReadOnly || isPaid} />
+              <TitleField form={form} disabled={isReadOnly || isPaid} />
               <div className="flex flex-col gap-5 sm:flex-row">
-                <AmountField form={form} disabled={isReadOnly} />
-                <CalendarField form={form} disabled={isReadOnly} />
+                <AmountField form={form} disabled={isReadOnly || isPaid} />
+                <CalendarField form={form} disabled={isReadOnly || isPaid} />
               </div>
-              <PayToField form={form} data={data} disabled={isReadOnly} />
-              <TagField form={form} disabled={isReadOnly} />
-              <DescriptionField form={form} disabled={isReadOnly} />
+              <PayToField form={form} data={data} disabled={isReadOnly || isPaid} />
+              <TagField form={form} disabled={isReadOnly || isPaid} />
+              <DescriptionField form={form} disabled={isReadOnly || isPaid} />
             </form>
           </Form>
           <TransactionSummary transaction={transaction} onDelete={() => onOpenChange(false)} />
@@ -176,6 +230,11 @@ export function DrawerEdit({ transaction, open, onOpenChange }: Props) {
               disabled={isPaying}
               variant={
                 hasChanges ? 'default' : transaction.status === 'paid' ? 'outline' : 'default'
+              }
+              className={
+                !hasChanges && transaction.status !== 'paid'
+                  ? 'bg-green-600 hover:bg-green-700 text-white'
+                  : ''
               }
             >
               {isPaying

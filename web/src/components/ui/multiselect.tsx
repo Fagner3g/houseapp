@@ -469,6 +469,7 @@ const MultipleSelector = ({
                     onBadgeClick(option)
                   }
                 }}
+                aria-label={`Tag: ${option.label}`}
               >
                 {/* colored dot before label if provided */}
                 {option.color ? (
@@ -479,14 +480,11 @@ const MultipleSelector = ({
                   />
                 ) : null}
                 {option.label}
-                <button
-                  className="text-muted-foreground/80 hover:text-foreground focus-visible:border-ring focus-visible:ring-ring/50 absolute -inset-y-px -end-px flex size-7 items-center justify-center rounded-e-md border border-transparent p-0 outline-hidden transition-[color,box-shadow] outline-none focus-visible:ring-[3px]"
-                  type="button"
-                  onKeyDown={e => {
-                    if (e.key === 'Enter') {
-                      handleUnselect(option)
-                    }
-                  }}
+                {/* biome-ignore lint/a11y/useSemanticElements: Need span for nested button structure */}
+                <span
+                  className="text-muted-foreground/80 hover:text-foreground focus-visible:border-ring focus-visible:ring-ring/50 absolute -inset-y-px -end-px flex size-7 items-center justify-center rounded-e-md border border-transparent p-0 outline-hidden transition-[color,box-shadow] outline-none focus-visible:ring-[3px] cursor-pointer"
+                  role="button"
+                  tabIndex={0}
                   onMouseDown={e => {
                     e.stopPropagation()
                   }}
@@ -494,10 +492,16 @@ const MultipleSelector = ({
                     e.stopPropagation()
                     handleUnselect(option)
                   }}
+                  onKeyDown={e => {
+                    if (e.key === 'Enter' || e.key === ' ') {
+                      e.preventDefault()
+                      handleUnselect(option)
+                    }
+                  }}
                   aria-label="Remove"
                 >
                   <XIcon size={14} aria-hidden="true" />
-                </button>
+                </span>
               </button>
             )
           })}
@@ -580,7 +584,7 @@ const MultipleSelector = ({
               }}
             >
               {isLoading ? (
-                <>{loadingIndicator}</>
+                loadingIndicator
               ) : (
                 <>
                   {EmptyItem()}
@@ -588,8 +592,7 @@ const MultipleSelector = ({
                   {!selectFirstItem && <CommandItem value="-" className="hidden" />}
                   {Object.entries(selectables).map(([key, dropdowns]) => (
                     <CommandGroup key={key} heading={key} className="h-full overflow-auto">
-                      <>
-                        {dropdowns.map(option => {
+                      {dropdowns.map(option => {
                           return (
                             <CommandItem
                               key={option.value}
@@ -645,7 +648,6 @@ const MultipleSelector = ({
                             </CommandItem>
                           )
                         })}
-                      </>
                     </CommandGroup>
                   ))}
                 </>

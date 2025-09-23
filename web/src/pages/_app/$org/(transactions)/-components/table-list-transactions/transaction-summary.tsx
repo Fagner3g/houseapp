@@ -22,7 +22,7 @@ import {
 import { Button } from '@/components/ui/button'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { useActiveOrganization } from '@/hooks/use-active-organization'
-import { PaymentTimelineChart } from './payment-timeline-chart'
+import { PaymentTimelineChartReal } from './payment-timeline-chart-real'
 
 // Função utilitária para calcular informações de parcelas
 function calculateInstallmentsInfo(
@@ -229,7 +229,7 @@ export function TransactionSummary({ transaction, onDelete }: Props) {
             </div>
           </div>
         )}
-        <PaymentTimelineChart transaction={transaction} />
+        <PaymentTimelineChartReal transaction={transaction} />
 
         {/* Botão de deletar transação */}
         <div className="pt-4 border-t">

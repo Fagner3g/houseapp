@@ -1,0 +1,36 @@
+/* Estilos para melhorar a experiência com teclado virtual no mobile */
+
+/* Garante que o drawer se ajuste corretamente quando o teclado aparece */
+@media (max-width: 768px) {
+  /* Ajusta a altura do drawer baseado na viewport disponível */
+  [data-vaul-drawer-direction="bottom"] {
+    transition:
+      height 0.3s ease-in-out,
+      max-height 0.3s ease-in-out;
+  }
+
+  /* Melhora o scroll quando o teclado está ativo */
+  .keyboard-active {
+    scroll-behavior: smooth;
+  }
+
+  /* Garante que campos focados sejam visíveis */
+  .keyboard-active input:focus,
+  .keyboard-active textarea:focus,
+  .keyboard-active select:focus {
+    scroll-margin-top: 20px;
+    scroll-margin-bottom: 20px;
+  }
+
+  /* Ajusta o padding bottom quando o teclado está ativo */
+  .keyboard-active .drawer-content {
+    padding-bottom: 20px;
+  }
+}
+
+/* Força o scroll para o elemento ativo quando necessário */
+@supports (scroll-behavior: smooth) {
+  .scroll-to-active {
+    scroll-behavior: smooth;
+  }
+}

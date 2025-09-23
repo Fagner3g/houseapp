@@ -229,14 +229,27 @@ export function DrawerNewTransaction({ open, onOpenChange, transaction }: Props)
 
   return (
     <Drawer open={open} onOpenChange={onOpenChange} direction={isMobile ? 'bottom' : 'right'}>
-      <DrawerContent>
+      <DrawerContent
+        className={
+          isMobile
+            ? 'h-[95vh] w-full [&[data-vaul-drawer-direction=bottom]]:!max-h-[95vh] [&[data-vaul-drawer-direction=bottom]]:!h-[95vh] [&[data-vaul-drawer-direction=bottom]]:!min-h-[50vh]'
+            : 'h-full w-[450px] max-w-[90vw] [&[data-vaul-drawer-direction=right]]:!max-h-[100vh] [&[data-vaul-drawer-direction=right]]:!h-[100vh]'
+        }
+        style={{
+          maxHeight: isMobile ? '95vh' : '100vh',
+          height: isMobile ? '95vh' : '100vh',
+          minHeight: isMobile ? '50vh' : 'auto',
+          width: isMobile ? '100%' : '450px',
+          maxWidth: isMobile ? 'none' : '90vw',
+        }}
+      >
         <DrawerHeader>
           <DrawerTitle>Criar nova {isExpense ? 'Receita' : 'Despesa'}</DrawerTitle>
           <DrawerDescription>
             Crie um nova {isExpense ? 'receita' : 'despesa'} e defina os detalhes.
           </DrawerDescription>
         </DrawerHeader>
-        <div className="flex flex-col gap-4 p-4 overflow-y-auto">
+        <div className="flex flex-col gap-4 p-4 overflow-y-auto overscroll-contain">
           <Form {...form}>
             <form
               noValidate
