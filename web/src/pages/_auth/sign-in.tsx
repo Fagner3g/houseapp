@@ -54,7 +54,7 @@ function Index() {
             ? { phone: phoneDigits }
             : undefined
       if (!payload) return
-      await signIn({ data: payload as any })
+      await signIn({ data: payload })
       setStatus(Status.Success)
       setCooldown(45)
     } catch {
@@ -89,7 +89,7 @@ function Index() {
           <div className="mt-4 grid gap-2">
             <Button
               variant="outline"
-              disabled={cooldown > 0 || status === Status.Pending}
+              disabled={cooldown > 0 || status !== Status.Success}
               onClick={handleSignIn}
             >
               {cooldown > 0
@@ -127,7 +127,7 @@ function Index() {
         <div className="mb-4 text-center">
           <h1 className="text-xl font-semibold tracking-tight">Entrar</h1>
           <p className="text-sm text-muted-foreground">
-            Receba um link mágico por e-mail ou WhatsApp
+            Enviaremos o link de acesso para seu {channel === 'email' ? 'e-mail' : 'WhatsApp'}
           </p>
         </div>
 
