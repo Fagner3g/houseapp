@@ -39,7 +39,11 @@ export function TableLIstTransactions({ transactions, dateFrom, dateTo, ...props
     <Tabs
       value={view}
       onValueChange={value =>
-        navigate({ to: '.', search: prev => ({ ...prev, view: value }), replace: true })
+        navigate({
+          to: '.',
+          search: prev => ({ ...prev, view: value as 'table' | 'calendar' }),
+          replace: true,
+        })
       }
       className="flex flex-col gap-4"
     >
@@ -62,9 +66,13 @@ export function TableLIstTransactions({ transactions, dateFrom, dateTo, ...props
       </TabsContent>
       <TabsContent
         value="calendar"
-        className="relative flex flex-col gap-4 overflow-auto px-4 lg:px-6"
+        className="relative flex flex-col gap-2 overflow-auto px-2 sm:px-4 lg:px-6"
       >
-        <CalendarTransactions transactions={transactions} dateFrom={dateFrom} dateTo={dateTo} />
+        <CalendarTransactions
+          transactions={transactions}
+          dateFrom={dateFrom || ''}
+          dateTo={dateTo || ''}
+        />
       </TabsContent>
       <DrawerNewTransaction
         open={openNew}
