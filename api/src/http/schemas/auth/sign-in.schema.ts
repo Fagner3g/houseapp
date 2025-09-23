@@ -2,13 +2,19 @@ import z from 'zod'
 
 export const signInSchema = {
   tags: ['Auth'],
-  description: 'Sigin In',
+  description: 'Sigin In (email or whatsapp)',
   operationId: 'signIn',
-  body: z.object({
-    email: z.email('E-mail inválido'),
-  }),
+  body: z
+    .object({
+      email: z.string().optional(),
+      phone: z
+        .string()
+        .transform(v => v.replace(/\D/g, ''))
+        .optional(),
+    })
+    .refine(v => !!(v.email || v.phone), { message: 'email or phone is required' }),
   response: {
-    200: z.null(),
+    200: z.object({ ok: z.boolean() }),
     400: z.null(),
   },
 }

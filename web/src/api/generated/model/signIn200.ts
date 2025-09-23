@@ -6,7 +6,6 @@
  * OpenAPI spec version: 1.0.1
  */
 
-export type SignInBody = {
-  email?: string;
-  phone?: string;
+export type SignIn200 = {
+  ok: boolean;
 };

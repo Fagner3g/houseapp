@@ -30,6 +30,15 @@ const envSchema = z.object({
   EVOLUTION_BASE_URL: z.url().optional(),
   EVOLUTION_INSTANCE: z.string().optional(),
   EVOLUTION_API_KEY: z.string().optional(),
+  // SMTP (Mailtrap)
+  SMTP_HOST: z.string().optional(),
+  SMTP_PORT: z.coerce.number().optional(),
+  SMTP_USER: z.string().optional(),
+  SMTP_PASS: z.string().optional(),
+  // Brevo API
+  BREVO_API_KEY: z.string().optional(),
+  MAIL_FROM_EMAIL: z.string().optional(),
+  MAIL_FROM_NAME: z.string().optional(),
 })
 
 export const env = envSchema.parse(process.env)

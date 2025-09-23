@@ -13,6 +13,7 @@ import {
 } from 'fastify-type-provider-zod'
 
 import { env } from '@/config/env'
+import mailPlugin from '@/plugins/mail'
 import { version } from '../../../package.json'
 import { createRoutes } from '../routes'
 import { errorHandler } from './error/handlers'
@@ -73,13 +74,18 @@ export async function buildServer() {
 
   app.register(fastifyJwt, { secret: env.JWT_SECRET })
 
+  // Mail (SMTP)
+  app.register(mailPlugin)
+
   // Configurar parser JSON para aceitar corpos vazios
   app.addContentTypeParser('application/json', { parseAs: 'string' }, (_req, body, done) => {
     try {
-      const json = body === '' ? {} : JSON.parse(body)
+      const text = typeof body === 'string' ? body : body.toString('utf8')
+      const json = text === '' ? {} : JSON.parse(text)
       done(null, json)
     } catch (err) {
-      done(err, undefined)
+      const e = err instanceof Error ? err : new Error(String(err))
+      done(e, undefined)
     }
   })
 
