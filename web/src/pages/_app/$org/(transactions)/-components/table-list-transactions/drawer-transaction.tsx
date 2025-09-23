@@ -277,7 +277,6 @@ export function DrawerTransaction({ transaction, open, onOpenChange }: Props) {
   }
 
   function handleMainAction() {
-    console.log('handleMainAction', isEditMode, hasChanges)
     if (isEditMode && hasChanges) {
       // Save changes
       form.handleSubmit(handleSubmit)()
@@ -322,9 +321,7 @@ export function DrawerTransaction({ transaction, open, onOpenChange }: Props) {
         >
           <DrawerHeader className="pb-4 border-b">
             <DrawerTitle className="text-lg font-semibold">{getTitle()}</DrawerTitle>
-            {!isEditMode && (
-              <p className="text-sm text-muted-foreground mt-1">{getDescription()}</p>
-            )}
+            <p className="text-sm text-muted-foreground mt-1">{getDescription()}</p>
           </DrawerHeader>
 
           <div className={`flex-1 overflow-y-auto ${isMobile ? 'px-4 py-4' : 'px-6 py-4'}`}>
