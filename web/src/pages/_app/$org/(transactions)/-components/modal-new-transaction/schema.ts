@@ -35,7 +35,8 @@ const nonRecurring = base.extend({
   recurrenceType: z.undefined(),
   recurrenceUntil: z.undefined(),
   recurrenceInterval: z.undefined(),
-  installmentsTotal: z.undefined(),
+  // Do not validate installments when not recurring
+  installmentsTotal: z.any().optional(),
   recurrenceStart: z.undefined(),
 })
 

@@ -1,6 +1,6 @@
 import { zodResolver } from '@hookform/resolvers/zod'
 import { useQueryClient } from '@tanstack/react-query'
-import { useEffect } from 'react'
+import { useEffect, useRef } from 'react'
 import { useForm } from 'react-hook-form'
 import { toast } from 'sonner'
 
@@ -56,6 +56,7 @@ export function DrawerNewTransaction({ open, onOpenChange, transaction }: Props)
 
   const form = useForm<NewTransactionSchema>({
     resolver: zodResolver(newTransactionSchema),
+    shouldUnregister: true,
     defaultValues: {
       type: RegisterType.EXPENSE,
       isRecurring: false,
@@ -68,7 +69,7 @@ export function DrawerNewTransaction({ open, onOpenChange, transaction }: Props)
     },
   })
 
-  const { mutate: createTransaction } = useCreateTransaction({
+  const { mutate: createTransaction, isPending: isCreating } = useCreateTransaction({
     mutation: {
       // roda ANTES do request
       onMutate: async ({ slug, data }) => {
@@ -118,15 +119,48 @@ export function DrawerNewTransaction({ open, onOpenChange, transaction }: Props)
   const mode = form.getValues('recurrenceSelector')
   const dueDate = form.watch('dueDate')
 
-  useEffect(() => {
-    if (!isRecurring) return
+  // removed debug useEffect
 
-    // aguarda o próximo tick para garantir que os campos condicionais já registraram
-    queueMicrotask(() => {
-      form.setValue('recurrenceType', 'monthly', { shouldValidate: true, shouldTouch: true })
-      form.setValue('recurrenceSelector', 'repeat', { shouldValidate: true, shouldTouch: true })
-      form.setValue('recurrenceInterval', 1, { shouldValidate: true, shouldTouch: true })
-    })
+  const wasRecurringRef = useRef<boolean>(false)
+  useEffect(() => {
+    // Quando marcar, inicializa padrões
+    if (isRecurring) {
+      // aguarda o próximo tick para garantir que os campos condicionais já registraram
+      queueMicrotask(() => {
+        form.setValue('recurrenceType', 'monthly', { shouldValidate: true, shouldTouch: true })
+        form.setValue('recurrenceSelector', 'repeat', { shouldValidate: true, shouldTouch: true })
+        form.setValue('recurrenceInterval', 1, { shouldValidate: true, shouldTouch: true })
+      })
+      wasRecurringRef.current = true
+      return
+    }
+
+    // Quando desmarcar, limpa totalmente os campos relacionados
+    if (wasRecurringRef.current) {
+      queueMicrotask(() => {
+        const fields: Array<keyof NewTransactionSchema> = [
+          'recurrenceSelector',
+          'recurrenceType',
+          'recurrenceUntil',
+          'recurrenceInterval',
+          'installmentsTotal',
+          'recurrenceStart',
+        ]
+        fields.forEach(name => {
+          form.resetField(name, {
+            defaultValue: undefined,
+            keepDirty: false,
+            keepTouched: false,
+            keepError: false,
+          })
+        })
+        form.clearErrors(fields)
+        form.unregister(fields)
+        // Revalida o formulário após limpar (apenas após alternar de true->false)
+        form.trigger()
+      })
+      wasRecurringRef.current = false
+    }
   }, [isRecurring, form])
 
   useEffect(() => {
@@ -189,6 +223,10 @@ export function DrawerNewTransaction({ open, onOpenChange, transaction }: Props)
     onOpenChange(false)
   }
 
+  function handleInvalidSubmit(errors: unknown) {
+    showToastOnErrorSubmit({ form, errors: errors as Record<string, unknown> })
+  }
+
   return (
     <Drawer open={open} onOpenChange={onOpenChange} direction={isMobile ? 'bottom' : 'right'}>
       <DrawerContent>
@@ -201,7 +239,8 @@ export function DrawerNewTransaction({ open, onOpenChange, transaction }: Props)
         <div className="flex flex-col gap-4 p-4 overflow-y-auto">
           <Form {...form}>
             <form
-              onSubmit={form.handleSubmit(handleSubmit, () => showToastOnErrorSubmit({ form }))}
+              noValidate
+              onSubmit={form.handleSubmit(handleSubmit, handleInvalidSubmit)}
               className="flex flex-col gap-4"
             >
               <TypeField form={form} />
@@ -230,7 +269,9 @@ export function DrawerNewTransaction({ open, onOpenChange, transaction }: Props)
               <TagField form={form} />
 
               <DescriptionField form={form} />
-              <Button type="submit">Cadastrar</Button>
+              <Button type="submit" disabled={isCreating}>
+                {isCreating ? 'Cadastrando...' : 'Cadastrar'}
+              </Button>
             </form>
           </Form>
         </div>

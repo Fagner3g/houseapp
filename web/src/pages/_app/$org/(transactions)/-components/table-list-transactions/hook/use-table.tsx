@@ -50,6 +50,7 @@ import {
 import { Label } from '@/components/ui/label'
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip'
 import { useActiveOrganization } from '@/hooks/use-active-organization'
+import { useIsMobile } from '@/hooks/use-mobile'
 import { useAuthStore } from '@/stores/auth'
 import { DeleteRowAction } from '../delete-row'
 import { PayRowAction } from '../pay-row'
@@ -80,6 +81,7 @@ export const useTable = (
   const { slug } = useActiveOrganization()
   const queryClient = useQueryClient()
   const currentUser = useAuthStore(s => s.user)
+  const isMobile = useIsMobile()
   const { mutate: deleteTransactions } = useDeleteTransactions({
     mutation: {
       onMutate: async ({ slug, data }) => {
@@ -122,6 +124,47 @@ export const useTable = (
   useEffect(() => {
     setPagination({ pageIndex: 0, pageSize: perPage })
   }, [perPage])
+
+  // Ajustar visibilidade das colunas para mobile
+  useEffect(() => {
+    if (isMobile) {
+      setColumnVisibility(prev => ({
+        ...prev,
+        // Em mobile, mostrar apenas as colunas essenciais
+        select: true,
+        Tipo: true,
+        title: true,
+        status: true,
+        amount: true,
+        dueDate: false, // Ocultar vencimento em mobile
+        tags: false, // Ocultar tags em mobile
+        paidAt: false,
+        installmentsTotal: false,
+        installmentsPaid: false,
+        payTo: false,
+        ownerName: false,
+        actions: true,
+      }))
+    } else {
+      setColumnVisibility(prev => ({
+        ...prev,
+        // Em desktop, mostrar colunas padrão
+        select: true,
+        Tipo: true,
+        title: true,
+        status: true,
+        amount: true,
+        dueDate: true,
+        tags: true,
+        paidAt: false,
+        installmentsTotal: false,
+        installmentsPaid: false,
+        payTo: false,
+        ownerName: false,
+        actions: true,
+      }))
+    }
+  }, [isMobile])
 
   // Helper function to create sortable headers
   const createSortableHeader = (
@@ -515,5 +558,5 @@ export const useTable = (
     },
   })
 
-  return { table, columns, editing, setEditing, globalFilter, setGlobalFilter }
+  return { table, columns, editing, setEditing, globalFilter, setGlobalFilter, isMobile }
 }

@@ -284,14 +284,19 @@ export function PaymentDateDialog({ transaction, open, onOpenChange, onSuccess }
           </div>
         )}
 
-        <DialogFooter>
-          <Button variant="outline" onClick={() => handleOpenChange(false)} disabled={isPending}>
+        <DialogFooter className="flex flex-row gap-3">
+          <Button
+            variant="outline"
+            onClick={() => handleOpenChange(false)}
+            disabled={isPending}
+            className="flex-1"
+          >
             Cancelar
           </Button>
           <Button
             onClick={handlePayment}
             disabled={isPending}
-            className={isPaid ? 'bg-red-600 hover:bg-red-700' : 'bg-green-600 hover:bg-green-700'}
+            className={`flex-1 ${isPaid ? 'bg-red-600 hover:bg-red-700' : 'bg-green-600 hover:bg-green-700'}`}
           >
             {isPending ? 'Processando...' : isPaid ? 'Cancelar pagamento' : 'Marcar como pago'}
           </Button>

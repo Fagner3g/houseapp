@@ -53,11 +53,16 @@ export function PayToField({ form, data, disabled }: PayToFieldProps) {
                   <ChevronsUpDown className="opacity-50" />
                 </Button>
               </PopoverTrigger>
-              <PopoverContent className="z-[90] w-[200px] p-0 verflow-hidden pointer-events-auto">
+              <PopoverContent className="z-[90] w-[320px] p-0 overflow-hidden pointer-events-auto">
                 <Command>
-                  <CommandInput placeholder="Pesquise o usuário..." className="h-9" />
-                  <CommandList>
-                    <CommandEmpty>Nenhum usuário encontrado</CommandEmpty>
+                  <CommandInput
+                    placeholder="Pesquise o usuário..."
+                    className="h-10 border-0 focus:ring-0"
+                  />
+                  <CommandList className="max-h-[200px]">
+                    <CommandEmpty className="py-6 text-center text-sm text-muted-foreground">
+                      Nenhum usuário encontrado
+                    </CommandEmpty>
                     <CommandGroup>
                       {data?.users.map(user => (
                         <CommandItem
@@ -67,11 +72,30 @@ export function PayToField({ form, data, disabled }: PayToFieldProps) {
                             field.onChange(currentValue)
                             setOpen(false)
                           }}
+                          className="flex items-center justify-between px-4 py-3 cursor-pointer hover:bg-accent"
                         >
-                          {user.name}
+                          <div className="flex items-center gap-3">
+                            <div className="h-10 w-10 rounded-full bg-gradient-to-br from-primary/20 to-primary/40 flex items-center justify-center border-2 border-primary/20 overflow-hidden">
+                              {(user as { avatar?: string }).avatar ? (
+                                <img
+                                  src={(user as { avatar?: string }).avatar as string}
+                                  alt={user.name}
+                                  className="h-full w-full object-cover rounded-full"
+                                />
+                              ) : (
+                                <span className="text-sm font-semibold text-primary">
+                                  {user.name.charAt(0).toUpperCase()}
+                                </span>
+                              )}
+                            </div>
+                            <div className="flex flex-col">
+                              <span className="text-sm font-medium">{user.name}</span>
+                              <span className="text-xs text-muted-foreground">{user.email}</span>
+                            </div>
+                          </div>
                           <Check
                             className={cn(
-                              'ml-auto',
+                              'h-4 w-4',
                               field.value === user.email ? 'opacity-100' : 'opacity-0'
                             )}
                           />
@@ -80,7 +104,9 @@ export function PayToField({ form, data, disabled }: PayToFieldProps) {
                     </CommandGroup>
                   </CommandList>
                   <Separator />
-                  <ModalNewUser />
+                  <div className="p-2">
+                    <ModalNewUser />
+                  </div>
                 </Command>
               </PopoverContent>
             </Popover>

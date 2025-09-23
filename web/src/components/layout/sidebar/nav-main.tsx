@@ -20,14 +20,27 @@ export function NavMain({
     icon?: React.ComponentType<JSX.IntrinsicElements['svg']>
   }[]
 }) {
-  const { route } = useSidebar()
+  const { route, isMobile, setOpenMobile, setOpen } = useSidebar()
+
+  const handleNavigationClick = () => {
+    // Fechar o sidebar quando um item de navegação for clicado
+    if (isMobile) {
+      setOpenMobile(false)
+    } else {
+      setOpen(false)
+    }
+  }
 
   return (
     <SidebarGroup>
       <SidebarGroupContent className="flex flex-col gap-2">
         <SidebarMenu>
           {items.map(item => (
-            <Link key={item.title} to={item.url}>
+            <Link 
+              key={item.title} 
+              to={item.url}
+              onClick={handleNavigationClick}
+            >
               <SidebarMenuItem>
                 <SidebarMenuButton tooltip={item.title} isActive={route?.url === item.url}>
                   {item.icon && (

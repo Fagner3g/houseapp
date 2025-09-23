@@ -39,14 +39,11 @@ export function DeleteSelected({ table }: Props) {
         <Button
           variant="destructive"
           size="sm"
-          className="gap-1 px-2 sm:px-3"
+          className="gap-2 px-3"
           aria-label={`Excluir ${selected} transação(ões)`}
         >
           <IconTrash size={16} />
-          <span className="sm:hidden" aria-hidden>
-            {selected}
-          </span>
-          <span className="hidden sm:inline">Excluir selecionadas ({selected})</span>
+          <span className="text-sm">Excluir</span>
         </Button>
       </AlertDialogTrigger>
       <AlertDialogContent>

@@ -9,12 +9,16 @@ export interface InstallmentsTotalFieldProps {
 }
 
 export function InstallmentsTotalField({ form }: InstallmentsTotalFieldProps) {
+  // Show/validate this field ONLY when recurrence is enabled
+  const isRecurring = form.watch('isRecurring')
+  if (!isRecurring) return null
+
   return (
     <FormField
       control={form.control}
       name="installmentsTotal"
       render={({ field }) => (
-        <FormItem className="justify-center">
+        <FormItem>
           <FormLabel>Nº Parcelas</FormLabel>
           <FormControl>
             <Input

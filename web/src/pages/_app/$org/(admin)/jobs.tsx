@@ -267,7 +267,7 @@ function JobsPage() {
       case 'transactions:alerts':
         return (
           <div className="space-y-2">
-            <div className="flex items-center justify-between">
+            <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
               <div className="flex items-center gap-2">
                 <Activity className="h-4 w-4 text-orange-500" />
                 <span className="text-sm font-medium">Alertas de Vencimento</span>
@@ -277,6 +277,7 @@ function JobsPage() {
                 variant="outline"
                 onClick={handlePreviewAlerts}
                 disabled={loadingPreview}
+                className="w-full sm:w-auto"
               >
                 {loadingPreview ? (
                   <>
@@ -349,18 +350,19 @@ function JobsPage() {
           <div className="flex flex-col gap-4 py-4 md:gap-6 md:py-6">
             {/* Header */}
             <div className="px-4 lg:px-6">
-              <div className="flex items-center justify-between">
+              <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
                 <div>
-                  <h1 className="text-3xl font-bold tracking-tight">Controle de Jobs</h1>
+                  <h1 className="text-2xl font-bold tracking-tight sm:text-3xl">Controle de Jobs</h1>
                   <p className="text-muted-foreground">
                     Monitore e execute jobs do sistema manualmente
                   </p>
                 </div>
-                <div className="flex gap-2">
+                <div className="flex flex-col gap-2 sm:flex-row">
                   <Button
                     variant="default"
                     onClick={handleStartAllJobs}
                     disabled={startAllJobsMutation.isPending}
+                    className="w-full sm:w-auto"
                   >
                     {startAllJobsMutation.isPending ? (
                       <>
@@ -378,6 +380,7 @@ function JobsPage() {
                     variant="destructive"
                     onClick={handleStopAllJobs}
                     disabled={stopAllJobsMutation.isPending}
+                    className="w-full sm:w-auto"
                   >
                     {stopAllJobsMutation.isPending ? (
                       <>
@@ -456,25 +459,26 @@ function JobsPage() {
                 {jobs?.jobs.map(job => (
                   <Card key={job.key}>
                     <CardHeader>
-                      <div className="flex items-center justify-between">
+                      <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
                         <div className="flex items-center gap-3">
                           {getStatusIcon(job.isRunning)}
                           <div>
-                            <CardTitle className="text-lg">{job.config.description}</CardTitle>
-                            <CardDescription className="font-mono text-sm">
+                            <CardTitle className="text-base sm:text-lg">{job.config.description}</CardTitle>
+                            <CardDescription className="font-mono text-xs sm:text-sm">
                               {job.key}
                             </CardDescription>
                           </div>
                         </div>
-                        <div className="flex items-center gap-2">
+                        <div className="flex flex-col gap-2 sm:flex-row sm:items-center">
                           {getStatusBadge(job.isRunning)}
                           {job.isRunning ? (
-                            <>
+                            <div className="flex gap-2">
                               <Button
                                 size="sm"
                                 variant="outline"
                                 onClick={() => handleStopJob(job.key)}
                                 disabled={stoppingJobs.has(job.key)}
+                                className="flex-1 sm:flex-none"
                               >
                                 {stoppingJobs.has(job.key) ? (
                                   <>
@@ -492,6 +496,7 @@ function JobsPage() {
                                 size="sm"
                                 onClick={() => handleRunJob(job.key)}
                                 disabled={runningJobs.has(job.key)}
+                                className="flex-1 sm:flex-none"
                               >
                                 {runningJobs.has(job.key) ? (
                                   <>
@@ -505,12 +510,13 @@ function JobsPage() {
                                   </>
                                 )}
                               </Button>
-                            </>
+                            </div>
                           ) : (
                             <Button
                               size="sm"
                               onClick={() => handleStartJob(job.key)}
                               disabled={startingJobs.has(job.key)}
+                              className="w-full sm:w-auto"
                             >
                               {startingJobs.has(job.key) ? (
                                 <>
@@ -529,18 +535,18 @@ function JobsPage() {
                       </div>
                     </CardHeader>
                     <CardContent>
-                      <div className="grid gap-4 md:grid-cols-3">
+                      <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
                         <div>
                           <p className="text-sm font-medium text-muted-foreground">Agendamento</p>
-                          <p className="font-mono text-sm">{job.config.schedule}</p>
+                          <p className="font-mono text-xs sm:text-sm break-all">{job.config.schedule}</p>
                         </div>
                         <div>
                           <p className="text-sm font-medium text-muted-foreground">Timezone</p>
-                          <p className="text-sm">{job.config.timezone}</p>
+                          <p className="text-xs sm:text-sm">{job.config.timezone}</p>
                         </div>
-                        <div>
+                        <div className="sm:col-span-2 lg:col-span-1">
                           <p className="text-sm font-medium text-muted-foreground">Uptime</p>
-                          <p className="text-sm">{formatUptime(job.uptime)}</p>
+                          <p className="text-xs sm:text-sm">{formatUptime(job.uptime)}</p>
                         </div>
                       </div>
 
