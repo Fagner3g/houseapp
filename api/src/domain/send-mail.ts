@@ -1,4 +1,5 @@
-import nodemailer from 'nodemailer'
+import { env } from '@/config/env'
+import { createMailClient, sendEmail } from '@/lib/mail'
 
 interface SendMailRequest {
   name: string
@@ -8,17 +9,12 @@ interface SendMailRequest {
 }
 
 export async function SendMail({ email, name, phone, url }: SendMailRequest) {
-  const transporter = nodemailer.createTransport({
-    host: 'smtp.ethereal.email',
-    port: 587,
-    auth: {
-      user: 'myrl.parker62@ethereal.email',
-      pass: 'N1fWmhRSm18X3TXmUs',
+  const client = createMailClient()
+  const resp = await sendEmail(client, {
+    from: {
+      email: env.MAIL_FROM_EMAIL || 'no-reply@jarvis.dev.br',
+      name: env.MAIL_FROM_NAME || 'HouseApp',
     },
-  })
-
-  await transporter.sendMail({
-    from: '"House App" <houseapp@gmail.com>',
     to: email,
     subject: 'Seu link de acesso',
     html: `
@@ -67,4 +63,5 @@ export async function SendMail({ email, name, phone, url }: SendMailRequest) {
           </html>
     `,
   })
+  return resp
 }

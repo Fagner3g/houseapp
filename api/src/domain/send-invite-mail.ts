@@ -1,22 +1,18 @@
-import nodemailer from 'nodemailer'
+import type { FastifyInstance } from 'fastify'
+
+import { env } from '@/config/env'
 
 interface SendInviteMailRequest {
   email: string
   url: string
 }
 
-export async function sendInviteMail({ email, url }: SendInviteMailRequest) {
-  const transporter = nodemailer.createTransport({
-    host: 'smtp.ethereal.email',
-    port: 587,
-    auth: {
-      user: 'myrl.parker62@ethereal.email',
-      pass: 'N1fWmhRSm18X3TXmUs',
+export async function sendInviteMail(app: FastifyInstance, { email, url }: SendInviteMailRequest) {
+  await app.mail.sendMail({
+    from: {
+      email: env.MAIL_FROM_EMAIL || 'no-reply@houseapp.local',
+      name: env.MAIL_FROM_NAME || 'HouseApp',
     },
-  })
-
-  await transporter.sendMail({
-    from: '"House App" <houseapp@gmail.com>',
     to: email,
     subject: 'Convite para o House App',
     html: `Clique <a href="${url}">aqui</a> para aceitar o convite`,

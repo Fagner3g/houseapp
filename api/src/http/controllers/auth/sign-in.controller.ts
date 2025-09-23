@@ -8,17 +8,14 @@ import { logger } from '@/lib/logger'
 type Req = FastifyRequest<{ Body: SignInSchemaBody }>
 
 export async function signInController(request: Req, reply: FastifyReply) {
-  const { email } = request.body
-
-  if (!email) {
-    throw new BadRequestError('Email is required')
-  }
+  const { email, phone } = request.body
+  if (!email && !phone) throw new BadRequestError('Email or phone is required')
 
   try {
-    await SignIn({ email })
+    await SignIn({ email, phone })
+    return reply.status(200).send({ ok: true })
   } catch (e) {
     logger.error(e)
+    return reply.status(500).send({ ok: false })
   }
-
-  return reply.status(200).send(null)
 }

@@ -1027,7 +1027,7 @@
         "tags": [
           "Auth"
         ],
-        "description": "Sigin In",
+        "description": "Sigin In (email or whatsapp)",
         "requestBody": {
           "content": {
             "application/json": {
@@ -1035,22 +1035,35 @@
                 "type": "object",
                 "properties": {
                   "email": {
-                    "type": "string",
-                    "format": "email",
-                    "pattern": "^(?!\\.)(?!.*\\.\\.)([A-Za-z0-9_'+\\-\\.]*)[A-Za-z0-9_+-]@([A-Za-z0-9][A-Za-z0-9\\-]*\\.)+[A-Za-z]{2,}$"
+                    "type": "string"
+                  },
+                  "phone": {
+                    "type": "string"
                   }
-                },
-                "required": [
-                  "email"
-                ]
+                }
               }
             }
-          },
-          "required": true
+          }
         },
         "responses": {
           "200": {
-            "description": "Default Response"
+            "description": "Default Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "ok": {
+                      "type": "boolean"
+                    }
+                  },
+                  "required": [
+                    "ok"
+                  ],
+                  "additionalProperties": false
+                }
+              }
+            }
           },
           "400": {
             "description": "Default Response"

@@ -61,6 +61,7 @@ import type {
   PostJobsStopAll200,
   RenameOrg200,
   RenameOrgBody,
+  SignIn200,
   SignInBody,
   SignUpBody,
   UpdateTag200,
@@ -1418,7 +1419,7 @@ export function useGetOrgSlugReportsTransactions<
 }
 
 /**
- * Sigin In
+ * Sigin In (email or whatsapp)
  */
 export const getSignInUrl = () => {
   return `/sign-in`;
@@ -1427,8 +1428,8 @@ export const getSignInUrl = () => {
 export const signIn = async (
   signInBody: SignInBody,
   options?: RequestInit,
-): Promise<null> => {
-  return http<null>(getSignInUrl(), {
+): Promise<SignIn200> => {
+  return http<SignIn200>(getSignInUrl(), {
     ...options,
     method: "POST",
     headers: { "Content-Type": "application/json", ...options?.headers },

@@ -95,6 +95,7 @@ export * from "./postJobsStopAll200";
 export * from "./renameOrg200";
 export * from "./renameOrg200Organization";
 export * from "./renameOrgBody";
+export * from "./signIn200";
 export * from "./signInBody";
 export * from "./signUpBody";
 export * from "./updateTag200";
