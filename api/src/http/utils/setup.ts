@@ -63,6 +63,21 @@ export async function buildServer() {
       const allowed = [env.WEB_URL, 'http://localhost:5173', 'http://localhost:3333'].filter(
         Boolean
       )
+
+      // Em desenvolvimento, permite qualquer origem local (IPs locais)
+      if (env.NODE_ENV === 'development') {
+        if (
+          !origin ||
+          allowed.includes(origin) ||
+          origin?.startsWith('http://192.168.') ||
+          origin?.startsWith('http://10.') ||
+          origin?.startsWith('http://172.') ||
+          origin?.includes('localhost')
+        ) {
+          return cb(null, true)
+        }
+      }
+
       if (!origin || allowed.includes(origin)) return cb(null, true)
       return cb(new Error('Not allowed by CORS'), false)
     },

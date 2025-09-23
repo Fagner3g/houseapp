@@ -15,7 +15,8 @@ type Req = FastifyRequest<{
 
 export async function updateTransactionController(request: Req, reply: FastifyReply) {
   const organizationId = request.organization.id
-  const { type, title, amount, dueDate, description, tags, serieId, updateSeries } = request.body
+  const { type, title, amount, dueDate, description, tags, serieId, updateSeries, payToEmail } =
+    request.body
   const { id: occurrenceId } = request.params
 
   const ownerId = request.user.sub
@@ -33,6 +34,7 @@ export async function updateTransactionController(request: Req, reply: FastifyRe
       dueDate,
       description,
       tags,
+      payToEmail,
       updateSerie: true,
     })
 

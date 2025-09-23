@@ -1,6 +1,6 @@
 import { useQueryClient } from '@tanstack/react-query'
 import { Pipette } from 'lucide-react'
-import { useId, useMemo, useState } from 'react'
+import { useEffect, useId, useMemo, useState } from 'react'
 import type { UseFormReturn } from 'react-hook-form'
 
 import {
@@ -53,6 +53,18 @@ export function TagField({ form, disabled }: TagFieldProps) {
   } | null>(null)
 
   const selected = form.watch('tags') ?? []
+
+  // Forçar atualização das tags quando o formulário for resetado
+  useEffect(() => {
+    const formTags = form.getValues('tags')
+    if (formTags && formTags.length > 0 && selected.length === 0) {
+      // Usar setTimeout para evitar conflitos com outros updates
+      setTimeout(() => {
+        form.setValue('tags', formTags, { shouldDirty: false, shouldTouch: false })
+      }, 0)
+    }
+  }, [form, selected.length])
+
   const defaultOptions: Option[] = useMemo(
     () =>
       availableTags.map(tag => ({

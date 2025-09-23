@@ -29,7 +29,7 @@ function Index() {
   const [cooldown, setCooldown] = useState(0)
   const navigate = useNavigate()
   const { mutateAsync: signIn } = useSignIn()
-  const idInputId = crypto.randomUUID()
+  const idInputId = 'signin-input'
 
   // form infra just to reuse the same phone mask used in user list
   const form = useForm<{ phone: string }>()
@@ -136,7 +136,10 @@ function Index() {
             type="single"
             value={channel}
             onValueChange={(v: 'email' | 'whatsapp' | '') => {
-              if (v === 'email' || v === 'whatsapp') setChannel(v)
+              if (v === 'email' || v === 'whatsapp') {
+                setChannel(v)
+                setIdentifier('') // Limpar o input ao trocar de canal
+              }
             }}
             className="w-full"
           >
@@ -152,6 +155,7 @@ function Index() {
               placeholder="voce@empresa.com"
               inputMode="email"
               autoComplete="email"
+              value={identifier}
               onChange={e => setIdentifier(e.target.value)}
             />
           ) : (
@@ -161,6 +165,7 @@ function Index() {
               inputMode="tel"
               autoComplete="tel"
               {...registerWithMask('phone', ['(99) 99999-9999', '(99) 9999-9999'])}
+              value={identifier}
               onChange={e => setIdentifier(e.target.value)}
             />
           )}

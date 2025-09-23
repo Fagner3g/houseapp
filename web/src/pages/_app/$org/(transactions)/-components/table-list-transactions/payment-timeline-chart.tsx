@@ -61,11 +61,15 @@ function generatePaymentTimelineData(transaction: ListTransactions200Transaction
     ]
   }
 
-  // Para transações recorrentes, gerar cronograma
+  // Para transações recorrentes, gerar cronograma baseado na data de início
   const timelineData = []
 
+  // Calcular a data da primeira parcela baseada na data de vencimento
+  // Se a primeira parcela foi em fevereiro, precisamos ajustar a data base
+  const firstInstallmentDate = dueDate.subtract(installmentsPaid, 'month')
+
   for (let i = 0; i < installmentsTotal; i++) {
-    const installmentDate = dueDate.add(i, 'month')
+    const installmentDate = firstInstallmentDate.add(i, 'month')
     const isPaid = i < installmentsPaid
 
     // O número da parcela é simplesmente a posição na sequência (i + 1)
@@ -94,7 +98,11 @@ export function PaymentTimelineChart({ transaction }: Props) {
   const [isExpanded, setIsExpanded] = useState(false)
 
   // Encontrar o índice do último pagamento
-  const lastPaidIndex = timelineData.findLastIndex(entry => entry.status === 'paid')
+  const lastPaidIndex =
+    timelineData
+      .map((entry, index) => (entry.status === 'paid' ? index : -1))
+      .filter(i => i !== -1)
+      .pop() ?? -1
 
   // Calcular quantos itens mostrar por padrão (último pago + 2 seguintes)
   const defaultVisibleCount = lastPaidIndex >= 0 ? lastPaidIndex + 3 : 2

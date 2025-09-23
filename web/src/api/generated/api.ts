@@ -42,6 +42,7 @@ import type {
   GetPendingGoals200,
   GetProfile200,
   GetTransactionById200,
+  GetTransactionInstallments200,
   GetWeekSummary200,
   ListOrganizations200,
   ListTags200,
@@ -3762,6 +3763,195 @@ export const useUpdateTransaction = <TError = unknown, TContext = unknown>(
 
   return useMutation(mutationOptions, queryClient);
 };
+
+/**
+ * Get transaction installments by series id
+ */
+export const getGetTransactionInstallmentsUrl = (
+  slug: string,
+  seriesId: string,
+) => {
+  return `/org/${slug}/transaction/${seriesId}/installments`;
+};
+
+export const getTransactionInstallments = async (
+  slug: string,
+  seriesId: string,
+  options?: RequestInit,
+): Promise<GetTransactionInstallments200> => {
+  return http<GetTransactionInstallments200>(
+    getGetTransactionInstallmentsUrl(slug, seriesId),
+    {
+      ...options,
+      method: "GET",
+    },
+  );
+};
+
+export const getGetTransactionInstallmentsQueryKey = (
+  slug?: string,
+  seriesId?: string,
+) => {
+  return [`/org/${slug}/transaction/${seriesId}/installments`] as const;
+};
+
+export const getGetTransactionInstallmentsQueryOptions = <
+  TData = Awaited<ReturnType<typeof getTransactionInstallments>>,
+  TError = unknown,
+>(
+  slug: string,
+  seriesId: string,
+  options?: {
+    query?: Partial<
+      UseQueryOptions<
+        Awaited<ReturnType<typeof getTransactionInstallments>>,
+        TError,
+        TData
+      >
+    >;
+    request?: SecondParameter<typeof http>;
+  },
+) => {
+  const { query: queryOptions, request: requestOptions } = options ?? {};
+
+  const queryKey =
+    queryOptions?.queryKey ??
+    getGetTransactionInstallmentsQueryKey(slug, seriesId);
+
+  const queryFn: QueryFunction<
+    Awaited<ReturnType<typeof getTransactionInstallments>>
+  > = ({ signal }) =>
+    getTransactionInstallments(slug, seriesId, { signal, ...requestOptions });
+
+  return {
+    queryKey,
+    queryFn,
+    enabled: !!(slug && seriesId),
+    ...queryOptions,
+  } as UseQueryOptions<
+    Awaited<ReturnType<typeof getTransactionInstallments>>,
+    TError,
+    TData
+  > & { queryKey: DataTag<QueryKey, TData, TError> };
+};
+
+export type GetTransactionInstallmentsQueryResult = NonNullable<
+  Awaited<ReturnType<typeof getTransactionInstallments>>
+>;
+export type GetTransactionInstallmentsQueryError = unknown;
+
+export function useGetTransactionInstallments<
+  TData = Awaited<ReturnType<typeof getTransactionInstallments>>,
+  TError = unknown,
+>(
+  slug: string,
+  seriesId: string,
+  options: {
+    query: Partial<
+      UseQueryOptions<
+        Awaited<ReturnType<typeof getTransactionInstallments>>,
+        TError,
+        TData
+      >
+    > &
+      Pick<
+        DefinedInitialDataOptions<
+          Awaited<ReturnType<typeof getTransactionInstallments>>,
+          TError,
+          Awaited<ReturnType<typeof getTransactionInstallments>>
+        >,
+        "initialData"
+      >;
+    request?: SecondParameter<typeof http>;
+  },
+  queryClient?: QueryClient,
+): DefinedUseQueryResult<TData, TError> & {
+  queryKey: DataTag<QueryKey, TData, TError>;
+};
+export function useGetTransactionInstallments<
+  TData = Awaited<ReturnType<typeof getTransactionInstallments>>,
+  TError = unknown,
+>(
+  slug: string,
+  seriesId: string,
+  options?: {
+    query?: Partial<
+      UseQueryOptions<
+        Awaited<ReturnType<typeof getTransactionInstallments>>,
+        TError,
+        TData
+      >
+    > &
+      Pick<
+        UndefinedInitialDataOptions<
+          Awaited<ReturnType<typeof getTransactionInstallments>>,
+          TError,
+          Awaited<ReturnType<typeof getTransactionInstallments>>
+        >,
+        "initialData"
+      >;
+    request?: SecondParameter<typeof http>;
+  },
+  queryClient?: QueryClient,
+): UseQueryResult<TData, TError> & {
+  queryKey: DataTag<QueryKey, TData, TError>;
+};
+export function useGetTransactionInstallments<
+  TData = Awaited<ReturnType<typeof getTransactionInstallments>>,
+  TError = unknown,
+>(
+  slug: string,
+  seriesId: string,
+  options?: {
+    query?: Partial<
+      UseQueryOptions<
+        Awaited<ReturnType<typeof getTransactionInstallments>>,
+        TError,
+        TData
+      >
+    >;
+    request?: SecondParameter<typeof http>;
+  },
+  queryClient?: QueryClient,
+): UseQueryResult<TData, TError> & {
+  queryKey: DataTag<QueryKey, TData, TError>;
+};
+
+export function useGetTransactionInstallments<
+  TData = Awaited<ReturnType<typeof getTransactionInstallments>>,
+  TError = unknown,
+>(
+  slug: string,
+  seriesId: string,
+  options?: {
+    query?: Partial<
+      UseQueryOptions<
+        Awaited<ReturnType<typeof getTransactionInstallments>>,
+        TError,
+        TData
+      >
+    >;
+    request?: SecondParameter<typeof http>;
+  },
+  queryClient?: QueryClient,
+): UseQueryResult<TData, TError> & {
+  queryKey: DataTag<QueryKey, TData, TError>;
+} {
+  const queryOptions = getGetTransactionInstallmentsQueryOptions(
+    slug,
+    seriesId,
+    options,
+  );
+
+  const query = useQuery(queryOptions, queryClient) as UseQueryResult<
+    TData,
+    TError
+  > & { queryKey: DataTag<QueryKey, TData, TError> };
+
+  query.queryKey = queryOptions.queryKey;
+
+  return query;
+}
 
 /**
  * List transactions for authenticated user
