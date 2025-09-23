@@ -27,6 +27,7 @@ import {
 import { Form, FormControl, FormField, FormItem, FormLabel } from '@/components/ui/form'
 import { Input } from '@/components/ui/input'
 import { schemaSignUp } from '@/pages/_auth/sign-up'
+import { useAuthStore } from '@/stores/auth'
 
 export type EditableUser = {
   name: string
@@ -54,9 +55,13 @@ export function ModalEditUser({
   isDeleting,
 }: ModalEditUserProps) {
   const [showDeleteDialog, setShowDeleteDialog] = useState(false)
+  const currentUser = useAuthStore(s => s.user)
   type FormValues = z.infer<typeof schemaSignUp>
   const form = useForm<FormValues>({ resolver: zodResolver(schemaSignUp) })
   const registerWithMask = useHookFormMask(form.register)
+
+  // Verificar se o usuário atual é o dono e está tentando excluir a si mesmo
+  const isCurrentUserOwner = currentUser?.email === user?.email
 
   useEffect(() => {
     if (user) {
@@ -174,21 +179,26 @@ export function ModalEditUser({
                 />
               </div>
 
-              <DialogFooter className="flex flex-col gap-3 sm:flex-row sm:justify-between pt-4 border-t">
-                <div className="flex justify-center sm:justify-start">
-                  {onDelete && (
-                    <Button
-                      type="button"
-                      variant="ghost"
-                      onClick={() => setShowDeleteDialog(true)}
-                      disabled={isSubmitting || isDeleting}
-                      className="text-muted-foreground hover:text-destructive hover:bg-destructive/10"
-                    >
-                      <Trash2 className="mr-2 h-4 w-4" />
-                      Excluir usuário
-                    </Button>
-                  )}
-                </div>
+               <DialogFooter className="flex flex-col gap-3 sm:flex-row sm:justify-between pt-4 border-t">
+                 <div className="flex justify-center sm:justify-start">
+                   {onDelete && !isCurrentUserOwner && (
+                     <Button
+                       type="button"
+                       variant="ghost"
+                       onClick={() => setShowDeleteDialog(true)}
+                       disabled={isSubmitting || isDeleting}
+                       className="text-muted-foreground hover:text-destructive hover:bg-destructive/10"
+                     >
+                       <Trash2 className="mr-2 h-4 w-4" />
+                       Excluir usuário
+                     </Button>
+                   )}
+                   {isCurrentUserOwner && (
+                     <div className="text-xs text-muted-foreground text-center sm:text-left">
+                       Você não pode excluir sua própria conta
+                     </div>
+                   )}
+                 </div>
                 <div className="flex gap-3 w-full sm:w-auto">
                   <Button
                     variant="outline"
