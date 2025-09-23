@@ -24,7 +24,11 @@ export function PaySelected({ table }: Props) {
     <>
       <Button
         size="sm"
-        className="gap-1 px-2 sm:px-3 bg-green-600 text-white hover:bg-green-700 dark:bg-green-600 dark:hover:bg-green-700"
+        className={`gap-2 px-3 ${
+          allPaid
+            ? 'bg-orange-600 hover:bg-orange-700 text-white'
+            : 'bg-green-600 hover:bg-green-700 text-white'
+        }`}
         aria-label={
           allPaid
             ? `Cancelar pagamento de ${selected} transação(ões)`
@@ -33,12 +37,7 @@ export function PaySelected({ table }: Props) {
         onClick={() => setOpen(true)}
       >
         {allPaid ? <IconX size={16} /> : <IconCheck size={16} />}
-        <span className="sm:hidden" aria-hidden>
-          {selected}
-        </span>
-        <span className="hidden sm:inline">
-          {allPaid ? `Cancelar pagamento (${selected})` : `Pagar selecionadas (${selected})`}
-        </span>
+        <span className="text-sm">{allPaid ? 'Cancelar' : 'Pagar'}</span>
       </Button>
 
       <BulkPaymentDialog

@@ -13,6 +13,10 @@ import {
 import { useState } from 'react'
 
 import { useGetOrgSlugReportsTransactions } from '@/api/generated/api'
+import type {
+  GetOrgSlugReportsTransactions200Reports,
+  ListTransactions200TransactionsItem,
+} from '@/api/generated/model'
 import { CategoryBreakdownChart } from '@/components/charts/category-breakdown-chart'
 import { DailyTransactionsChart } from '@/components/charts/daily-transactions-chart'
 import { MonthlyTrendChart } from '@/components/charts/monthly-trend-chart'
@@ -20,13 +24,11 @@ import { StatusDistributionChart } from '@/components/charts/status-distribution
 import { LoadingErrorState } from '@/components/loading-error-state'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
 import { useActiveOrganization } from '@/hooks/use-active-organization'
-import { DrawerEdit } from '@/pages/_app/$org/(transactions)/-components/table-list-transactions/drawer-edit'
-import { useAuthStore } from '@/stores/auth'
+import { DrawerTransaction } from '@/pages/_app/$org/(transactions)/-components/table-list-transactions/drawer-transaction'
 
 interface TransactionCardProps {
-  transaction: any
-  isOwner: boolean
-  onEdit: (transaction: any) => void
+  transaction: ListTransactions200TransactionsItem
+  onEdit: (transaction: ListTransactions200TransactionsItem) => void
   children: React.ReactNode
   className?: string
   variant?: 'default' | 'overdue' | 'upcoming'
@@ -34,7 +36,6 @@ interface TransactionCardProps {
 
 function TransactionCard({
   transaction,
-  isOwner,
   onEdit,
   children,
   className = '',
@@ -74,32 +75,25 @@ function RouteComponent() {
     error,
     refetch,
   } = useGetOrgSlugReportsTransactions(slug)
-  const currentUser = useAuthStore(s => s.user)
-  const [editingTransaction, setEditingTransaction] = useState<any>(null)
+  const [editingTransaction, setEditingTransaction] =
+    useState<ListTransactions200TransactionsItem | null>(null)
 
-  const convertToEditFormat = (transaction: any) => ({
-    id: transaction.id,
-    serieId: transaction.seriesId || transaction.id, // ✅ Usar seriesId se disponível
-    title: transaction.title,
-    amount: Number(transaction.amount).toFixed(2), // ✅ Converter para string decimal com 2 casas
-    dueDate: transaction.dueDate,
-    type: 'expense' as const,
-    status: 'pending' as const,
-    ownerId: transaction.ownerId,
-    payTo: transaction.payToName || '',
-    payToId: transaction.payToId || null,
-    payToEmail: transaction.payToEmail || '', // ✅ ADICIONAR payToEmail para validação
-    tags: transaction.tags || [],
-    description: transaction.description || '',
-    // ✅ ADICIONAR campos essenciais para cálculo de parcelas
-    installmentsTotal: transaction.installmentsTotal || null,
-    installmentsPaid: transaction.installmentsPaid || 0,
-    createdAt: new Date().toISOString(),
-    updatedAt: new Date().toISOString(),
-  })
+  // Use o item original da listagem diretamente no editor
 
-  const handleEditTransaction = (transaction: any) => {
-    setEditingTransaction(convertToEditFormat(transaction))
+  const handleEditTransaction = (transaction: ListTransactions200TransactionsItem) => {
+    setEditingTransaction(transaction)
+  }
+
+  // Tipar blocos extras retornados pelo backend (fora do OpenAPI)
+  const extReports = reports?.reports as GetOrgSlugReportsTransactions200Reports & {
+    overdueTransactions?: {
+      summary?: { total?: number }
+      transactions: ListTransactions200TransactionsItem[]
+    }
+    paidThisMonth?: {
+      summary?: { total?: number; totalAmount?: number }
+      transactions: ListTransactions200TransactionsItem[]
+    }
   }
 
   return (
@@ -118,6 +112,25 @@ function RouteComponent() {
 
         {reports && (
           <>
+            {(() => {
+              type Overdue = {
+                summary?: { total?: number }
+                transactions: ListTransactions200TransactionsItem[]
+              }
+              type PaidThisMonth = {
+                summary?: { total?: number; totalAmount?: number }
+                transactions: ListTransactions200TransactionsItem[]
+              }
+              // Extend server payload (extra fields not in OpenAPI)
+              const ext = reports.reports as unknown as {
+                overdueTransactions?: Overdue
+                paidThisMonth?: PaidThisMonth
+              }
+              // Expose once for JSX below
+              // @ts-expect-error - captured in closure
+              window.__dash_ext__ = ext
+              return null
+            })()}
             {/* Cards de Estatísticas Mensais */}
             <div className="px-4 lg:px-6">
               <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
@@ -183,7 +196,7 @@ function RouteComponent() {
             </div>
 
             {/* Transações Vencidas */}
-            {(reports.reports as any).overdueTransactions?.transactions?.length > 0 && (
+            {(extReports?.overdueTransactions?.transactions?.length ?? 0) > 0 && (
               <div className="px-4 lg:px-6">
                 <Card className="border-red-200 bg-red-50 dark:border-red-800 dark:bg-red-950">
                   <CardHeader>
@@ -192,23 +205,18 @@ function RouteComponent() {
                       Transações Vencidas
                     </CardTitle>
                     <CardDescription className="text-red-600 dark:text-red-400">
-                      {(reports.reports as any).overdueTransactions?.summary?.total || 0}{' '}
-                      transação(ões) vencida(s) requerem atenção
+                      {extReports?.overdueTransactions?.summary?.total || 0} transação(ões)
+                      vencida(s) requerem atenção
                     </CardDescription>
                   </CardHeader>
                   <CardContent>
                     <div className="space-y-3">
-                      {(reports.reports as any).overdueTransactions?.transactions?.map(
-                        (transaction: any) => {
-                          const isOwner =
-                            currentUser?.id &&
-                            transaction.ownerId &&
-                            currentUser.id === transaction.ownerId
+                      {extReports?.overdueTransactions?.transactions?.map(
+                        (transaction: ListTransactions200TransactionsItem) => {
                           return (
                             <TransactionCard
                               key={transaction.id}
                               transaction={transaction}
-                              isOwner={isOwner}
                               onEdit={handleEditTransaction}
                               variant="overdue"
                             >
@@ -228,7 +236,7 @@ function RouteComponent() {
                                     <DollarSign className="h-3 w-3" />
                                     <span className="font-medium">
                                       R${' '}
-                                      {transaction.amount.toLocaleString('pt-BR', {
+                                      {Number(transaction.amount).toLocaleString('pt-BR', {
                                         minimumFractionDigits: 2,
                                       })}
                                     </span>
@@ -239,9 +247,9 @@ function RouteComponent() {
                                 <div className="flex items-center gap-1 justify-end mb-1">
                                   <Clock className="h-3 w-3 text-red-500" />
                                   <span className="text-sm font-medium text-red-600 dark:text-red-400">
-                                    {transaction.daysOverdue === 1
+                                    {transaction.overdueDays === 1
                                       ? '1 dia vencido'
-                                      : `${transaction.daysOverdue} dias vencidos`}
+                                      : `${transaction.overdueDays} dias vencidos`}
                                   </span>
                                 </div>
                                 <p className="text-xs text-muted-foreground">
@@ -299,16 +307,30 @@ function RouteComponent() {
 
                   {reports.reports.upcomingAlerts.transactions.length > 0 ? (
                     <div className="space-y-3">
-                      {reports.reports.upcomingAlerts.transactions.map((transaction: any) => {
-                        const isOwner =
-                          currentUser?.id &&
-                          transaction.ownerId &&
-                          currentUser.id === transaction.ownerId
+                      {reports.reports.upcomingAlerts.transactions.map(transaction => {
+                        const normalized = {
+                          id: transaction.id,
+                          serieId: transaction.id,
+                          type: 'expense',
+                          title: transaction.title,
+                          payTo: transaction.payToName ?? '',
+                          ownerId: '',
+                          payToId: '',
+                          ownerName: transaction.ownerName,
+                          amount: String(transaction.amount),
+                          dueDate: transaction.dueDate,
+                          paidAt: null,
+                          status: 'pending',
+                          overdueDays: 0,
+                          tags: [],
+                          installmentsTotal: null,
+                          installmentsPaid: null,
+                          description: null,
+                        } as ListTransactions200TransactionsItem
                         return (
                           <TransactionCard
                             key={transaction.id}
-                            transaction={transaction}
-                            isOwner={isOwner}
+                            transaction={normalized}
                             onEdit={handleEditTransaction}
                             variant="upcoming"
                           >
@@ -386,70 +408,62 @@ function RouteComponent() {
                     Pagas neste mês
                   </CardTitle>
                   <CardDescription>
-                    {(reports as any)?.reports?.paidThisMonth?.summary?.total || 0} transações • R${' '}
-                    {(
-                      (reports as any)?.reports?.paidThisMonth?.summary?.totalAmount || 0
-                    ).toLocaleString('pt-BR', {
-                      minimumFractionDigits: 2,
-                    })}
+                    {extReports?.paidThisMonth?.summary?.total || 0} transações • R${' '}
+                    {(extReports?.paidThisMonth?.summary?.totalAmount || 0).toLocaleString(
+                      'pt-BR',
+                      {
+                        minimumFractionDigits: 2,
+                      }
+                    )}
                   </CardDescription>
                 </CardHeader>
                 <CardContent>
-                  {((reports as any)?.reports?.paidThisMonth?.transactions || []).length > 0 ? (
+                  {(extReports?.paidThisMonth?.transactions || []).length > 0 ? (
                     <div className="space-y-3">
-                      {(reports as any).reports.paidThisMonth.transactions.map(
-                        (transaction: any) => {
-                          const isOwner =
-                            currentUser?.id &&
-                            transaction.ownerId &&
-                            currentUser.id === transaction.ownerId
-                          return (
-                            <TransactionCard
-                              key={transaction.id}
-                              transaction={transaction}
-                              isOwner={isOwner}
-                              onEdit={handleEditTransaction}
-                              variant="default"
-                            >
-                              <div className="flex-1">
-                                <div className="flex items-center gap-2 mb-1">
-                                  <DollarSign className="h-4 w-4 text-emerald-500" />
-                                  <h4 className="font-medium text-foreground">
-                                    {transaction.title}
-                                  </h4>
+                      {(extReports?.paidThisMonth?.transactions || []).map(transaction => {
+                        return (
+                          <TransactionCard
+                            key={transaction.id}
+                            transaction={transaction}
+                            onEdit={handleEditTransaction}
+                            variant="default"
+                          >
+                            <div className="flex-1">
+                              <div className="flex items-center gap-2 mb-1">
+                                <DollarSign className="h-4 w-4 text-emerald-500" />
+                                <h4 className="font-medium text-foreground">{transaction.title}</h4>
+                              </div>
+                              <div className="flex items-center gap-4 text-sm text-muted-foreground">
+                                <div className="flex items-center gap-1">
+                                  <User className="h-3 w-3" />
+                                  <span>{transaction.ownerName}</span>
                                 </div>
-                                <div className="flex items-center gap-4 text-sm text-muted-foreground">
-                                  <div className="flex items-center gap-1">
-                                    <User className="h-3 w-3" />
-                                    <span>{transaction.ownerName}</span>
-                                  </div>
-                                  <div className="flex items-center gap-1">
-                                    <DollarSign className="h-3 w-3" />
-                                    <span className="font-medium">
-                                      R${' '}
-                                      {Number(transaction.amount).toLocaleString('pt-BR', {
-                                        minimumFractionDigits: 2,
-                                      })}
-                                    </span>
-                                  </div>
+                                <div className="flex items-center gap-1">
+                                  <DollarSign className="h-3 w-3" />
+                                  <span className="font-medium">
+                                    R${' '}
+                                    {Number(transaction.amount).toLocaleString('pt-BR', {
+                                      minimumFractionDigits: 2,
+                                    })}
+                                  </span>
                                 </div>
                               </div>
-                              <div className="text-right">
-                                <div className="text-sm font-medium text-emerald-600 dark:text-emerald-400">
-                                  Pago em{' '}
-                                  {new Date(
-                                    transaction.paidAt ?? transaction.dueDate
-                                  ).toLocaleDateString('pt-BR')}
-                                </div>
-                                <p className="text-xs text-muted-foreground">
-                                  Vencimento{' '}
-                                  {new Date(transaction.dueDate).toLocaleDateString('pt-BR')}
-                                </p>
+                            </div>
+                            <div className="text-right">
+                              <div className="text-sm font-medium text-emerald-600 dark:text-emerald-400">
+                                Pago em{' '}
+                                {new Date(
+                                  transaction.paidAt ?? transaction.dueDate
+                                ).toLocaleDateString('pt-BR')}
                               </div>
-                            </TransactionCard>
-                          )
-                        }
-                      )}
+                              <p className="text-xs text-muted-foreground">
+                                Vencimento{' '}
+                                {new Date(transaction.dueDate).toLocaleDateString('pt-BR')}
+                              </p>
+                            </div>
+                          </TransactionCard>
+                        )
+                      })}
                     </div>
                   ) : (
                     <p className="text-center text-muted-foreground py-8">
@@ -574,7 +588,7 @@ function RouteComponent() {
       </div>
 
       {/* Drawer de Edição */}
-      <DrawerEdit
+      <DrawerTransaction
         transaction={editingTransaction}
         open={!!editingTransaction}
         onOpenChange={open => {

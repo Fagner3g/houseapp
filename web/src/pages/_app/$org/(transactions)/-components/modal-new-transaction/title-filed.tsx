@@ -20,7 +20,11 @@ export function TitleField({ form, disabled }: TitleFieldProps) {
           <FormControl>
             <Input
               {...field}
-              placeholder="Ex: Aluguel, luz, etc..."
+              placeholder={
+                form.getValues('type') === 'expense'
+                  ? 'Ex: Aluguel, luz, etc...'
+                  : 'Ex: Salário, vendas, etc...'
+              }
               value={field.value || ''}
               disabled={disabled}
             />

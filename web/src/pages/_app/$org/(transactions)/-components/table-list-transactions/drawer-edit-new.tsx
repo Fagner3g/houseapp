@@ -135,7 +135,7 @@ export function DrawerEdit({ transaction, open, onOpenChange }: Props) {
       form.handleSubmit(handleSubmit)()
     } else {
       // Toggle payment status
-      payTransaction({ slug, id: transaction.id })
+      payTransaction({ slug, id: transaction.id, data: {} })
     }
   }
 
@@ -148,7 +148,9 @@ export function DrawerEdit({ transaction, open, onOpenChange }: Props) {
         <div className="flex flex-col gap-4 p-4 overflow-y-auto overflow-x-hidden">
           <Form {...form}>
             <form
-              onSubmit={form.handleSubmit(handleSubmit, () => showToastOnErrorSubmit({ form }))}
+              onSubmit={form.handleSubmit(handleSubmit, errors =>
+                showToastOnErrorSubmit({ form, errors })
+              )}
               className="flex flex-col gap-4"
             >
               <TypeField form={form} disabled={isReadOnly} />

@@ -1,3 +1,4 @@
+import { useId } from 'react'
 import type { UseFormReturn } from 'react-hook-form'
 
 import { Checkbox } from '@/components/ui/checkbox'
@@ -10,21 +11,28 @@ export interface RecurrenceFieldProps {
 }
 
 export function RecurrenceField({ form }: RecurrenceFieldProps) {
+  const id = useId()
+  
   return (
     <FormField
       control={form.control}
       name="isRecurring"
       render={({ field }) => (
-        <FormItem className="flex-1 items-end">
-          <FormControl className="flex gap-2">
-            <Label className="hover:bg-accent/50 rounded-lg border p-2.5 has-[[aria-checked=true]]:border-blue-600 has-[[aria-checked=true]]:bg-blue-50 dark:has-[[aria-checked=true]]:border-blue-900 dark:has-[[aria-checked=true]]:bg-blue-950">
+        <FormItem>
+          <FormControl>
+            <div className="flex items-center space-x-2">
               <Checkbox
-                defaultChecked={false}
-                value={field.value ? 1 : 0}
+                id={id}
+                checked={field.value}
                 onCheckedChange={checked => field.onChange(!!checked)}
               />
-              <p>Recorrente</p>
-            </Label>
+              <Label 
+                htmlFor={id} 
+                className="text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70"
+              >
+                Recorrente
+              </Label>
+            </div>
           </FormControl>
         </FormItem>
       )}

@@ -21,7 +21,7 @@ export function RecurrenceTypeField({ form }: RecurrenceTypeFieldProps) {
       control={form.control}
       name="recurrenceType"
       render={({ field }) => (
-        <FormItem className="justify-center">
+        <FormItem>
           <FormLabel>Recorrência</FormLabel>
           <FormControl>
             <Select onValueChange={field.onChange} value={field.value?.toString() || ''}>

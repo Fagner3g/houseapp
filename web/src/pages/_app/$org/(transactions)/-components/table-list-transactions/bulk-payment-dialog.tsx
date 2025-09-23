@@ -145,14 +145,19 @@ export function BulkPaymentDialog({ transactions, open, onOpenChange, onSuccess 
           </div>
         )}
 
-        <DialogFooter>
-          <Button variant="outline" onClick={() => onOpenChange(false)} disabled={isProcessing}>
+        <DialogFooter className="flex flex-row gap-3">
+          <Button
+            variant="outline"
+            onClick={() => onOpenChange(false)}
+            disabled={isProcessing}
+            className="flex-1"
+          >
             Cancelar
           </Button>
           <Button
             onClick={handlePayment}
             disabled={isProcessing}
-            className={allPaid ? 'bg-red-600 hover:bg-red-700' : 'bg-green-600 hover:bg-green-700'}
+            className={`flex-1 ${allPaid ? 'bg-red-600 hover:bg-red-700' : 'bg-green-600 hover:bg-green-700'}`}
           >
             {isProcessing ? 'Processando...' : allPaid ? 'Cancelar pagamento' : 'Marcar como pagas'}
           </Button>

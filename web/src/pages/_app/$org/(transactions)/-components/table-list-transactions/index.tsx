@@ -7,8 +7,7 @@ import type {
 } from '@/api/generated/model'
 import { Tabs, TabsContent } from '@/components/ui/tabs'
 import { CalendarTransactions } from '../calendar'
-import { DrawerNewTransaction } from '../modal-new-transaction'
-import { DrawerEdit } from './drawer-edit'
+import { DrawerTransaction } from './drawer-transaction'
 import type { FilterTableProps } from './filter'
 import { Footer, type FooterProps } from './footer'
 import { useTable } from './hook/use-table'
@@ -20,18 +19,19 @@ interface Props extends FooterProps, FilterTableProps {
 }
 
 export function TableLIstTransactions({ transactions, dateFrom, dateTo, ...props }: Props) {
-  const [draft, setDraft] = useState<ListTransactions200TransactionsItem | null>(null)
-  const [openNew, setOpenNew] = useState(false)
+  const [currentTransaction, setCurrentTransaction] =
+    useState<ListTransactions200TransactionsItem | null>(null)
+  const [drawerOpen, setDrawerOpen] = useState(false)
 
   const navigate = useNavigate()
   const { view = 'table' } = useSearch({ strict: false })
 
-  const { table, editing, setEditing, globalFilter, setGlobalFilter } = useTable(
+  const { table, editing, setEditing, globalFilter, setGlobalFilter, isMobile } = useTable(
     transactions,
     props.perPage,
     item => {
-      setDraft(item)
-      setOpenNew(true)
+      setCurrentTransaction(item)
+      setDrawerOpen(true)
     }
   )
 
@@ -45,14 +45,14 @@ export function TableLIstTransactions({ transactions, dateFrom, dateTo, ...props
           replace: true,
         })
       }
-      className="flex flex-col gap-4"
+      className="flex flex-col min-h-screen bg-background"
     >
       <NavbarTable
         table={table}
         view={view}
         onCreate={() => {
-          setDraft(null)
-          setOpenNew(true)
+          setCurrentTransaction(null)
+          setDrawerOpen(true)
         }}
         type={props.type}
         dateFrom={dateFrom}
@@ -60,33 +60,30 @@ export function TableLIstTransactions({ transactions, dateFrom, dateTo, ...props
         globalFilter={globalFilter}
         setGlobalFilter={setGlobalFilter}
       />
-      <TabsContent value="table" className="flex flex-col gap-4">
-        <TableView table={table} />
-        <Footer {...props} />
+      <TabsContent value="table" className="flex flex-col flex-1">
+        <div className="flex flex-col flex-1">
+          <TableView table={table} isMobile={isMobile} />
+          <Footer {...props} />
+        </div>
       </TabsContent>
-      <TabsContent
-        value="calendar"
-        className="relative flex flex-col gap-2 overflow-auto px-2 sm:px-4 lg:px-6"
-      >
-        <CalendarTransactions
-          transactions={transactions}
-          dateFrom={dateFrom || ''}
-          dateTo={dateTo || ''}
-        />
+      <TabsContent value="calendar" className="relative flex flex-col flex-1 overflow-auto">
+        <div className="p-6 lg:p-8">
+          <CalendarTransactions
+            transactions={transactions}
+            dateFrom={dateFrom || ''}
+            dateTo={dateTo || ''}
+          />
+        </div>
       </TabsContent>
-      <DrawerNewTransaction
-        open={openNew}
+      <DrawerTransaction
+        transaction={editing || currentTransaction}
+        open={drawerOpen || !!editing}
         onOpenChange={open => {
-          setOpenNew(open)
-          if (!open) setDraft(null)
-        }}
-        transaction={draft}
-      />
-      <DrawerEdit
-        transaction={editing}
-        open={!!editing}
-        onOpenChange={open => {
-          if (!open) setEditing(null)
+          if (!open) {
+            setDrawerOpen(false)
+            setCurrentTransaction(null)
+            setEditing(null)
+          }
         }}
       />
     </Tabs>

@@ -179,26 +179,26 @@ export function ModalEditUser({
                 />
               </div>
 
-               <DialogFooter className="flex flex-col gap-3 sm:flex-row sm:justify-between pt-4 border-t">
-                 <div className="flex justify-center sm:justify-start">
-                   {onDelete && !isCurrentUserOwner && (
-                     <Button
-                       type="button"
-                       variant="ghost"
-                       onClick={() => setShowDeleteDialog(true)}
-                       disabled={isSubmitting || isDeleting}
-                       className="text-muted-foreground hover:text-destructive hover:bg-destructive/10"
-                     >
-                       <Trash2 className="mr-2 h-4 w-4" />
-                       Excluir usuário
-                     </Button>
-                   )}
-                   {isCurrentUserOwner && (
-                     <div className="text-xs text-muted-foreground text-center sm:text-left">
-                       Você não pode excluir sua própria conta
-                     </div>
-                   )}
-                 </div>
+              <DialogFooter className="flex flex-col gap-3 sm:flex-row sm:justify-between pt-4 border-t">
+                <div className="flex justify-center sm:justify-start">
+                  {onDelete && !isCurrentUserOwner && (
+                    <Button
+                      type="button"
+                      variant="ghost"
+                      onClick={() => setShowDeleteDialog(true)}
+                      disabled={isSubmitting || isDeleting}
+                      className="text-muted-foreground hover:text-destructive hover:bg-destructive/10"
+                    >
+                      <Trash2 className="mr-2 h-4 w-4" />
+                      Excluir usuário
+                    </Button>
+                  )}
+                  {isCurrentUserOwner && (
+                    <div className="text-xs text-muted-foreground text-center sm:text-left">
+                      Você não pode excluir sua própria conta
+                    </div>
+                  )}
+                </div>
                 <div className="flex gap-3 w-full sm:w-auto">
                   <Button
                     variant="outline"
