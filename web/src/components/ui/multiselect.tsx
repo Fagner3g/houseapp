@@ -593,61 +593,60 @@ const MultipleSelector = ({
                   {Object.entries(selectables).map(([key, dropdowns]) => (
                     <CommandGroup key={key} heading={key} className="h-full overflow-auto">
                       {dropdowns.map(option => {
-                          return (
-                            <CommandItem
-                              key={option.value}
-                              value={option.value}
-                              disabled={option.disable}
-                              onMouseDown={e => {
-                                e.preventDefault()
-                                e.stopPropagation()
-                              }}
-                              onSelect={() => {
-                                if (selected.length >= maxSelected) {
-                                  onMaxSelected?.(selected.length)
-                                  return
-                                }
-                                setInputValue('')
-                                const newOptions = [...selected, option]
-                                setSelected(newOptions)
-                                onChange?.(newOptions)
-                                setOpen(false)
-                                inputRef.current?.blur()
-                              }}
-                              className={cn(
-                                'cursor-pointer',
-                                option.disable &&
-                                  'pointer-events-none cursor-not-allowed opacity-50'
-                              )}
-                            >
-                              {option.color ? (
-                                <span
-                                  aria-hidden="true"
-                                  className="mr-2 inline-block size-2 rounded-full border"
-                                  style={{ backgroundColor: option.color }}
-                                />
-                              ) : null}
-                              {option.label}
-                              {onOptionConfigClick && (
-                                <button
-                                  type="button"
-                                  className="ml-auto inline-flex size-6 items-center justify-center rounded hover:bg-muted"
-                                  onMouseDown={e => {
-                                    e.preventDefault()
-                                    e.stopPropagation()
-                                  }}
-                                  onClick={e => {
-                                    e.stopPropagation()
-                                    onOptionConfigClick(option)
-                                  }}
-                                  aria-label="Configurar"
-                                >
-                                  ···
-                                </button>
-                              )}
-                            </CommandItem>
-                          )
-                        })}
+                        return (
+                          <CommandItem
+                            key={option.value}
+                            value={option.value}
+                            disabled={option.disable}
+                            onMouseDown={e => {
+                              e.preventDefault()
+                              e.stopPropagation()
+                            }}
+                            onSelect={() => {
+                              if (selected.length >= maxSelected) {
+                                onMaxSelected?.(selected.length)
+                                return
+                              }
+                              setInputValue('')
+                              const newOptions = [...selected, option]
+                              setSelected(newOptions)
+                              onChange?.(newOptions)
+                              setOpen(false)
+                              inputRef.current?.blur()
+                            }}
+                            className={cn(
+                              'cursor-pointer',
+                              option.disable && 'pointer-events-none cursor-not-allowed opacity-50'
+                            )}
+                          >
+                            {option.color ? (
+                              <span
+                                aria-hidden="true"
+                                className="mr-2 inline-block size-2 rounded-full border"
+                                style={{ backgroundColor: option.color }}
+                              />
+                            ) : null}
+                            {option.label}
+                            {onOptionConfigClick && (
+                              <button
+                                type="button"
+                                className="ml-auto inline-flex size-6 items-center justify-center rounded hover:bg-muted"
+                                onMouseDown={e => {
+                                  e.preventDefault()
+                                  e.stopPropagation()
+                                }}
+                                onClick={e => {
+                                  e.stopPropagation()
+                                  onOptionConfigClick(option)
+                                }}
+                                aria-label="Configurar"
+                              >
+                                ···
+                              </button>
+                            )}
+                          </CommandItem>
+                        )
+                      })}
                     </CommandGroup>
                   ))}
                 </>
