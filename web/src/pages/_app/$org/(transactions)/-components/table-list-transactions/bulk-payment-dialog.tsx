@@ -3,11 +3,7 @@ import dayjs from 'dayjs'
 import { useState } from 'react'
 import { toast } from 'sonner'
 
-import {
-  getGetOrgSlugReportsTransactionsQueryKey,
-  getListTransactionsQueryKey,
-  usePayTransaction,
-} from '@/api/generated/api'
+import { getListTransactionsQueryKey, usePayTransaction } from '@/api/generated/api'
 import type { ListTransactions200TransactionsItem } from '@/api/generated/model'
 import { Button } from '@/components/ui/button'
 import {
@@ -83,11 +79,6 @@ export function BulkPaymentDialog({ transactions, open, onOpenChange, onSuccess 
       // Invalidar cache após todos os pagamentos com refetch forçado
       await queryClient.invalidateQueries({
         queryKey: getListTransactionsQueryKey(slug),
-        refetchType: 'all',
-      })
-
-      await queryClient.invalidateQueries({
-        queryKey: getGetOrgSlugReportsTransactionsQueryKey(slug),
         refetchType: 'all',
       })
 

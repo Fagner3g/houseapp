@@ -72,7 +72,7 @@ export const payTransactionRoute: FastifyPluginAsyncZod = async app => {
 }
 
 export const getTransactionInstallmentsRoute: FastifyPluginAsyncZod = async app => {
-  app.get('/org/:slug/transaction/:seriesId/installments', {
+  app.get('/org/:slug/transaction/:serieId/installments', {
     onRequest: [authenticateUserHook],
     preHandler: [verifyOrgAccessHook],
     schema: getTransactionInstallmentsSchema,

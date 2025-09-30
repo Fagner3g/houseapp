@@ -1,5 +1,6 @@
 import type { FastifyReply, FastifyRequest } from 'fastify'
 
+import { getTransactionReports } from '@/domain/reports/dashboard'
 import { logger } from '@/http/utils/logger'
 import {
   getJobInfo,
@@ -12,7 +13,7 @@ import {
   stopAllJobs,
   stopJob,
 } from '@/jobs'
-import { getTransactionReports, previewTransactionAlerts } from '@/jobs/transaction-alerts'
+import { runTransactionAlertsNow } from '@/jobs/transaction-alerts'
 import { BadRequestError } from '../utils/error'
 
 /**
@@ -243,17 +244,17 @@ export async function previewTransactionAlertsController(
 
     // Buscar a primeira organização do usuário
     const { listOrganizations } = await import('@/domain/organization/list-organizations')
-    const result = await listOrganizations({ userId })
+    const orgs = await listOrganizations({ userId })
 
-    if (result.organizations.length === 0) {
+    if (orgs.organizations.length === 0) {
       throw new BadRequestError('Usuário não pertence a nenhuma organização')
     }
 
-    const orgId = result.organizations[0].id
-    const preview = await previewTransactionAlerts(orgId, userId)
+    const orgId = orgs.organizations[0].id
+    const runResult = await runTransactionAlertsNow()
 
     return reply.status(200).send({
-      preview,
+      preview: runResult,
       timestamp: new Date().toISOString(),
     })
   } catch (error) {
@@ -290,10 +291,8 @@ export async function getTransactionReportsController(
 
     const reports = await getTransactionReports(orgId, userId)
 
-    return reply.status(200).send({
-      reports,
-      timestamp: new Date().toISOString(),
-    })
+    // O serviço já retorna no formato { reports: { ... }, timestamp }
+    return reply.status(200).send(reports)
   } catch (error) {
     console.error('❌ Erro ao obter relatórios:', error)
     logger.error({ error }, 'Erro ao obter relatórios de transação')

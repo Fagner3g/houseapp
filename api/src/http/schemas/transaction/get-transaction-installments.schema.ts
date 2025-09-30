@@ -5,7 +5,7 @@ export const getTransactionInstallmentsSchema = {
   description: 'Get transaction installments by series id',
   operationId: 'getTransactionInstallments',
   params: z.object({
-    seriesId: z.string(),
+    serieId: z.string(),
     slug: z.string(),
   }),
   response: {

@@ -2,32 +2,22 @@ import dayjs from 'dayjs'
 import { ChevronDown, ChevronUp } from 'lucide-react'
 import { useState } from 'react'
 
+import { useGetTransactionInstallments } from '@/api/generated/api'
 import type { ListTransactions200TransactionsItem } from '@/api/generated/model'
 import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
-import { useTransactionInstallments } from '@/hooks/use-transaction-installments'
+import { useActiveOrganization } from '@/hooks/use-active-organization'
 
-// CSS para animação suave
-const animationStyles = `
-  @keyframes slideInDown {
-    from {
-      opacity: 0;
-      transform: translateY(-10px);
-    }
-    to {
-      opacity: 1;
-      transform: translateY(0);
-    }
-  }
-`
-
-// Injetar estilos no head se não existirem
-if (typeof document !== 'undefined' && !document.getElementById('payment-timeline-animations')) {
-  const style = document.createElement('style')
-  style.id = 'payment-timeline-animations'
-  style.textContent = animationStyles
-  document.head.appendChild(style)
+type InstallmentEntry = {
+  id: string
+  installmentIndex: number
+  dueDate: string
+  amount: string | number
+  status: 'pending' | 'paid' | 'canceled'
+  paidAt: string | null
+  valuePaid: number | null
+  description: string | null
 }
 
 interface Props {
@@ -37,21 +27,23 @@ interface Props {
 export function PaymentTimelineChartReal({ transaction }: Props) {
   const [isExpanded, setIsExpanded] = useState(false)
 
-  // Buscar parcelas reais da API
+  // Buscar parcelas reais da API (hook gerado pelo Orval)
+  const { slug } = useActiveOrganization()
+  const serieId = transaction.serieId || ''
   const {
-    data: installments = [],
+    data: installmentsResp,
     isLoading,
     error,
-  } = useTransactionInstallments({
-    seriesId: transaction.serieId || '',
-    enabled: false, // Desabilitado por enquanto até a API estar pronta
+  } = useGetTransactionInstallments(slug, serieId, {
+    query: { enabled: Boolean(serieId) },
   })
+  const installments = installmentsResp?.installments ?? []
 
   // Simular dados reais baseados no que vemos na tabela
   // Se não tem parcelas da API, criar simulação realista
-  const displayInstallments =
+  const displayInstallments: InstallmentEntry[] =
     installments.length > 0
-      ? installments
+      ? (installments as InstallmentEntry[])
       : (() => {
           const installmentsTotal = transaction.installmentsTotal || 1
           const installmentsPaid = transaction.installmentsPaid || 0
@@ -68,15 +60,32 @@ export function PaymentTimelineChartReal({ transaction }: Props) {
                 valuePaid: transaction.status === 'paid' ? Number(transaction.amount) : null,
                 description: null,
               },
-            ]
+            ] as InstallmentEntry[]
           }
 
-          // Para transações com múltiplas parcelas, simular status realista
-          const mockInstallments = []
+          // Para transações ilimitadas (null ou undefined), mostrar apenas resumo
+          if (!installmentsTotal) {
+            return [
+              {
+                id: transaction.id,
+                installmentIndex: 1,
+                dueDate: transaction.dueDate,
+                amount: transaction.amount,
+                status: transaction.status as 'pending' | 'paid' | 'canceled',
+                paidAt: transaction.paidAt,
+                valuePaid: transaction.status === 'paid' ? Number(transaction.amount) : null,
+                description: null,
+              },
+            ] as InstallmentEntry[]
+          }
+
+          // Para transações recorrentes, limitar a 36 meses
+          const maxInstallments = Math.min(installmentsTotal, 36)
+          const mockInstallments: InstallmentEntry[] = []
           const dueDate = dayjs(transaction.dueDate)
 
           // Calcular a data da primeira parcela (assumindo que começou há alguns meses)
-          const firstInstallmentDate = dueDate.subtract(installmentsTotal - 1, 'month')
+          const firstInstallmentDate = dueDate.subtract(maxInstallments - 1, 'month')
 
           // Simular parcelas pagas e pendentes intercaladas (como na tabela)
           const paidIndices = new Set<number>()
@@ -86,13 +95,13 @@ export function PaymentTimelineChartReal({ transaction }: Props) {
             // Simular parcelas pagas em posições variadas
             const paidPositions = [0, 1, 2, 5, 8] // Exemplo: parcelas 1, 2, 3, 6, 9 pagas
             for (let i = 0; i < Math.min(installmentsPaid, paidPositions.length); i++) {
-              if (paidPositions[i] < installmentsTotal) {
+              if (paidPositions[i] < maxInstallments) {
                 paidIndices.add(paidPositions[i])
               }
             }
           }
 
-          for (let i = 0; i < installmentsTotal; i++) {
+          for (let i = 0; i < maxInstallments; i++) {
             const installmentDate = firstInstallmentDate.add(i, 'month')
             const isPaid = paidIndices.has(i)
 
@@ -138,10 +147,15 @@ export function PaymentTimelineChartReal({ transaction }: Props) {
   }
 
   // Encontrar o índice do último pagamento
-  const lastPaidIndex = displayInstallments.findLastIndex(entry => entry.status === 'paid')
+  const lastPaidIndex = displayInstallments
+    .slice()
+    .reverse()
+    .findIndex(entry => entry.status === 'paid')
+  const actualLastPaidIndex =
+    lastPaidIndex >= 0 ? displayInstallments.length - 1 - lastPaidIndex : -1
 
   // Calcular quantos itens mostrar por padrão (último pago + 2 seguintes)
-  const defaultVisibleCount = lastPaidIndex >= 0 ? lastPaidIndex + 3 : 2
+  const defaultVisibleCount = actualLastPaidIndex >= 0 ? actualLastPaidIndex + 3 : 2
 
   // Determinar quais itens mostrar
   const visibleItems = isExpanded
@@ -149,11 +163,21 @@ export function PaymentTimelineChartReal({ transaction }: Props) {
     : displayInstallments.slice(0, Math.min(defaultVisibleCount, displayInstallments.length))
 
   const hasMoreItems = displayInstallments.length > visibleItems.length
+  const installmentsTotal = transaction.installmentsTotal || 1
+  const isUnlimited = !installmentsTotal
+  const isLimited = installmentsTotal && installmentsTotal > 36
 
   return (
     <Card>
       <CardHeader className="pb-2">
-        <CardTitle className="text-base">Cronograma de Pagamentos</CardTitle>
+        <CardTitle className="text-base">
+          {isUnlimited ? 'Resumo da Transação' : 'Cronograma de Pagamentos'}
+        </CardTitle>
+        {isLimited && (
+          <p className="text-xs text-muted-foreground">
+            Exibindo apenas os próximos 36 meses de {installmentsTotal} parcelas
+          </p>
+        )}
       </CardHeader>
       <CardContent className="space-y-2">
         {/* Barra de Progresso */}
@@ -162,7 +186,8 @@ export function PaymentTimelineChartReal({ transaction }: Props) {
             <span className="text-muted-foreground">Progresso:</span>
             <span className="font-medium">
               {displayInstallments.filter(entry => entry.status === 'paid').length} de{' '}
-              {displayInstallments.length} parcelas
+              {isUnlimited ? '1' : isLimited ? '36' : displayInstallments.length} parcelas
+              {isLimited && ` (de ${installmentsTotal} total)`}
             </span>
           </div>
           <div className="mt-1 h-1 w-full rounded-full bg-muted">
@@ -202,7 +227,11 @@ export function PaymentTimelineChartReal({ transaction }: Props) {
                 {/* Informações */}
                 <div>
                   <div className="text-sm font-medium">
-                    Parcela {entry.installmentIndex} de {displayInstallments.length}
+                    {isUnlimited
+                      ? 'Transação Única'
+                      : isLimited
+                        ? `Parcela ${entry.installmentIndex} de 36 (${installmentsTotal} total)`
+                        : `Parcela ${entry.installmentIndex} de ${displayInstallments.length}`}
                   </div>
                   <div className="text-xs text-muted-foreground">
                     {dayjs(entry.dueDate).format('MMM/YY')} •{' '}
@@ -222,8 +251,8 @@ export function PaymentTimelineChartReal({ transaction }: Props) {
           ))}
         </div>
 
-        {/* Botão Ver Mais/Menos */}
-        {hasMoreItems && (
+        {/* Botão Ver Mais/Menos - não mostrar para transações ilimitadas */}
+        {hasMoreItems && !isUnlimited && (
           <div className="flex justify-center pt-2">
             <Button
               variant="ghost"

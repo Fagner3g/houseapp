@@ -6,6 +6,7 @@ import { transactionOccurrences } from '@/db/schemas/transactionOccurrences'
 import { transactionSeries } from '@/db/schemas/transactionSeries'
 import { transactionTags } from '@/db/schemas/transactionTags'
 import { users } from '@/db/schemas/users'
+import { getContextualizedTransactionType } from './get-contextualized-type'
 
 interface ListTransactionsRequest {
   userId: string
@@ -100,7 +101,8 @@ export async function listTransactionsService({
         installmentsTotal: transactionSeries.installmentsTotal,
         ownerId: transactionSeries.ownerId,
         payToId: transactionSeries.payToId,
-        payTo: users.name,
+        payToName: users.name,
+        payToEmail: users.email,
         ownerName: sql<string>`owner.name`,
         tags: sql<{ name: string; color: string }[]>`
           coalesce(
@@ -133,6 +135,7 @@ export async function listTransactionsService({
         transactionSeries.ownerId,
         transactionSeries.payToId,
         users.name,
+        users.email,
         sql`owner.name`
       )
       .orderBy(desc(transactionOccurrences.dueDate))
@@ -171,6 +174,7 @@ export async function listTransactionsService({
 
   const transactions = result.map(row => ({
     ...row,
+    payTo: { name: row.payToName, email: row.payToEmail },
     installmentsPaid: paidMap[row.seriesId] ?? 0,
   }))
 
@@ -178,8 +182,18 @@ export async function listTransactionsService({
   const totalPages = Math.ceil(totalItems / perPage)
   const pagesRemaining = Math.max(0, totalPages - page)
 
+  // Adicionar tipo contextualizado para cada transação
+  const contextualizedTransactions = transactions.map(transaction => ({
+    ...transaction,
+    contextualizedType: getContextualizedTransactionType(
+      transaction.type,
+      transaction.ownerId,
+      userId
+    ),
+  }))
+
   return {
-    transactions,
+    transactions: contextualizedTransactions,
     page,
     perPage,
     totalItems,

@@ -6,8 +6,8 @@ import type {
   ListTransactions200TransactionsItem,
 } from '@/api/generated/model'
 import { Tabs, TabsContent } from '@/components/ui/tabs'
+import { DrawerTransaction } from '../../../../../../components/drawer-transaction'
 import { CalendarTransactions } from '../calendar'
-import { DrawerTransaction } from './drawer-transaction'
 import type { FilterTableProps } from './filter'
 import { Footer, type FooterProps } from './footer'
 import { useTable } from './hook/use-table'
@@ -75,17 +75,19 @@ export function TableLIstTransactions({ transactions, dateFrom, dateTo, ...props
           />
         </div>
       </TabsContent>
-      <DrawerTransaction
-        transaction={editing || currentTransaction}
-        open={drawerOpen || !!editing}
-        onOpenChange={open => {
-          if (!open) {
-            setDrawerOpen(false)
-            setCurrentTransaction(null)
-            setEditing(null)
-          }
-        }}
-      />
+      {(editing || currentTransaction) && (
+        <DrawerTransaction
+          transaction={editing || currentTransaction}
+          open={drawerOpen || !!editing}
+          onOpenChange={open => {
+            if (!open) {
+              setDrawerOpen(false)
+              setCurrentTransaction(null)
+              setEditing(null)
+            }
+          }}
+        />
+      )}
     </Tabs>
   )
 }

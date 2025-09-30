@@ -1,19 +1,7 @@
 import type { JobConfig } from './types'
 
 export const JOB_CONFIGS: Record<string, JobConfig> = {
-  REPORTS: {
-    key: 'reports:all-owners',
-    schedule: '0 10 5 * *', // Dia 5 às 10:00
-    timezone: 'America/Sao_Paulo',
-    description: 'Relatórios de transações para todos os proprietários',
-  },
-
-  OWNER_DIGEST: {
-    key: 'reports:owner-digest',
-    schedule: '0 10 5 * *', // Dia 5 às 10:00
-    timezone: 'America/Sao_Paulo',
-    description: 'Digest consolidado para proprietários',
-  },
+  // Relatórios removidos (reports:all-owners e reports:owner-digest)
 
   MATERIALIZE_OCCURRENCES: {
     key: 'transactions:materialize',

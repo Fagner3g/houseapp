@@ -5,7 +5,6 @@ import { useForm } from 'react-hook-form'
 import { toast } from 'sonner'
 
 import {
-  getGetOrgSlugReportsTransactionsQueryKey,
   getListTransactionsQueryKey,
   useListUsersByOrg,
   usePayTransaction,
@@ -145,9 +144,7 @@ export function DrawerEdit({ transaction, open, onOpenChange }: Props) {
         queryClient.invalidateQueries({
           queryKey: getListTransactionsQueryKey(slug),
         })
-        queryClient.invalidateQueries({
-          queryKey: getGetOrgSlugReportsTransactionsQueryKey(slug),
-        })
+        // reports removed
         onOpenChange(false)
       },
       onError: () => {
