@@ -75,7 +75,7 @@ export function TableLIstTransactions({ transactions, dateFrom, dateTo, ...props
           />
         </div>
       </TabsContent>
-      {(editing || currentTransaction) && (
+      {(editing || currentTransaction !== undefined) && (
         <DrawerTransaction
           transaction={editing || currentTransaction}
           open={drawerOpen || !!editing}

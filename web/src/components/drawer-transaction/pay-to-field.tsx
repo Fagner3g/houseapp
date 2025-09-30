@@ -16,7 +16,7 @@ import { FormControl, FormField, FormItem, FormLabel } from '@/components/ui/for
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover'
 import { Separator } from '@/components/ui/separator'
 import { cn } from '@/lib/utils'
-import { ModalNewUser } from '../../../../../../components/modal-new-user'
+import { ModalNewUser } from '../modal-new-user'
 import type { NewTransactionSchema } from './schema'
 
 export interface PayToFieldProps {

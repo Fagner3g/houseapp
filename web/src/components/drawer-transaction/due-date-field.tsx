@@ -2,12 +2,12 @@ import { ChevronDownIcon } from 'lucide-react'
 import { useState } from 'react'
 import type { UseFormReturn } from 'react-hook-form'
 
+import type { NewTransactionSchema } from '@/components/drawer-transaction/schema'
 import { Button } from '@/components/ui/button'
 import { Calendar } from '@/components/ui/calendar'
 import { FormControl, FormField, FormItem, FormLabel } from '@/components/ui/form'
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover'
 import { cn } from '@/lib/utils'
-import type { NewTransactionSchema } from './schema'
 
 interface CalendarFieldProps {
   form: UseFormReturn<NewTransactionSchema>

@@ -12,7 +12,7 @@ export function mapUpcomingAlertToListItem(
   return {
     id: t.id,
     serieId: (t as any).seriesId || t.id,
-    type: 'expense',
+    type: (t as any).type || 'expense',
     title: t.title,
     payTo: (t as any).payTo || (t as any).payToEmail || '',
     ownerId: (t as any).ownerId || '',
@@ -27,7 +27,7 @@ export function mapUpcomingAlertToListItem(
     installmentsTotal: (t as any).installmentsTotal ?? null,
     installmentsPaid: null,
     description: null,
-    contextualizedType: 'expense',
+    contextualizedType: (t as any).type || 'expense',
   }
 }
 
@@ -38,7 +38,7 @@ export function mapOverdueToListItem(
   return {
     id: t.id,
     serieId: (t as any).seriesId || (t as any).serieId || t.id,
-    type: 'expense',
+    type: (t as any).type || 'expense',
     title: t.title,
     payTo: (t as any).payTo || (t as any).payToEmail || '',
     ownerId: (t as any).ownerId || '',
@@ -53,7 +53,7 @@ export function mapOverdueToListItem(
     installmentsTotal: null,
     installmentsPaid: null,
     description: null,
-    contextualizedType: 'expense',
+    contextualizedType: (t as any).type || 'expense',
   }
 }
 
@@ -64,7 +64,7 @@ export function mapPaidThisMonthToListItem(
   return {
     id: t.id,
     serieId: (t as any).seriesId || (t as any).serieId || t.id,
-    type: 'expense',
+    type: (t as any).type || 'expense',
     title: t.title,
     payTo: (t as any).payTo || (t as any).payToEmail || '',
     ownerId: (t as any).ownerId || '',
@@ -79,7 +79,7 @@ export function mapPaidThisMonthToListItem(
     installmentsTotal: null,
     installmentsPaid: null,
     description: null,
-    contextualizedType: 'expense',
+    contextualizedType: (t as any).type || 'expense',
   }
 }
 
@@ -99,7 +99,7 @@ export interface SerializedTransactionData {
   description: string
 }
 
-export function serializeTransactionForDrawer(
+export function getDrawerContext(
   transaction: ListTransactions200TransactionsItem | null,
   currentUserId?: string
 ): SerializedTransactionData {

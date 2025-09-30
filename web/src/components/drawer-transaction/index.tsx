@@ -1,6 +1,6 @@
 import { zodResolver } from '@hookform/resolvers/zod'
 import { useQueryClient } from '@tanstack/react-query'
-import { useCallback, useEffect, useMemo, useState } from 'react'
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import { useForm } from 'react-hook-form'
 import { toast } from 'sonner'
 
@@ -33,26 +33,22 @@ import { useScrollToActiveField } from '@/hooks/use-scroll-to-active-field'
 import { useVirtualKeyboard } from '@/hooks/use-virtual-keyboard'
 import { showToastOnErrorSubmit } from '@/lib/utils'
 import { useAuthStore } from '@/stores/auth'
-import { AmountField } from '../../pages/_app/$org/(transactions)/-components/modal-new-transaction/amount-field'
-import { DescriptionField } from '../../pages/_app/$org/(transactions)/-components/modal-new-transaction/description-field'
-import { CalendarField } from '../../pages/_app/$org/(transactions)/-components/modal-new-transaction/due-date-field'
-import { InstallmentsTotalField } from '../../pages/_app/$org/(transactions)/-components/modal-new-transaction/installments-total-field'
-import { RecurrenceField } from '../../pages/_app/$org/(transactions)/-components/modal-new-transaction/is-recurring-filed'
-import { PayToField } from '../../pages/_app/$org/(transactions)/-components/modal-new-transaction/pay-to-field'
-import { RecurrenceSelectorField } from '../../pages/_app/$org/(transactions)/-components/modal-new-transaction/recurrence-selector-field'
-import { RecurrenceTypeField } from '../../pages/_app/$org/(transactions)/-components/modal-new-transaction/recurrence-type-field'
-import { RecurrenceUntilField } from '../../pages/_app/$org/(transactions)/-components/modal-new-transaction/recurrence-until-field'
-import {
-  type NewTransactionSchema,
-  newTransactionSchema,
-  RegisterType,
-} from '../../pages/_app/$org/(transactions)/-components/modal-new-transaction/schema'
-import { TagField } from '../../pages/_app/$org/(transactions)/-components/modal-new-transaction/tag-field'
-import { TitleField } from '../../pages/_app/$org/(transactions)/-components/modal-new-transaction/title-filed'
-import { TypeField } from '../../pages/_app/$org/(transactions)/-components/modal-new-transaction/type-field'
 import { PaymentDateDialog } from '../../pages/_app/$org/(transactions)/-components/table-list-transactions/payment-date-dialog'
 import { TransactionSummary } from '../../pages/_app/$org/(transactions)/-components/table-list-transactions/transaction-summary'
-import { serializeTransactionForDrawer } from './row-mapper'
+import { AmountField } from './amount-field'
+import { DescriptionField } from './description-field'
+import { CalendarField } from './due-date-field'
+import { InstallmentsTotalField } from './installments-total-field'
+import { RecurrenceField } from './is-recurring-filed'
+import { PayToField } from './pay-to-field'
+import { RecurrenceSelectorField } from './recurrence-selector-field'
+import { RecurrenceTypeField } from './recurrence-type-field'
+import { RecurrenceUntilField } from './recurrence-until-field'
+import { getDrawerContext } from './row-mapper'
+import { type NewTransactionSchema, newTransactionSchema, RegisterType } from './schema'
+import { TagField } from './tag-field'
+import { TitleField } from './title-filed'
+import { TypeField } from './type-field'
 
 interface Props {
   transaction: ListTransactions200TransactionsItem | null
@@ -74,6 +70,7 @@ export function DrawerTransaction({ transaction, open, onOpenChange, onExternalS
   const { isKeyboardOpen, keyboardHeight } = useVirtualKeyboard()
   const scrollContainerRef = useScrollToActiveField(isKeyboardOpen)
   const [paymentDialogOpen, setPaymentDialogOpen] = useState(false)
+  const initializedTransactionRef = useRef<string | null>(null)
   const form = useForm<NewTransactionSchema>({
     resolver: zodResolver(newTransactionSchema),
     shouldUnregister: true,
@@ -89,54 +86,106 @@ export function DrawerTransaction({ transaction, open, onOpenChange, onExternalS
     },
   })
   // Serializar dados da transação com cálculos derivados
-  const serializedData = serializeTransactionForDrawer(transaction, currentUser?.id)
-  const {
-    isEditMode,
-    isPaid,
-    isReadOnly,
-    title: baseTitle,
-    description: baseDescription,
-  } = serializedData
+  const labels = getDrawerContext(transaction, currentUser?.id)
+  const { isEditMode, isPaid, isReadOnly, title: baseTitle, description: baseDescription } = labels
 
   // Usar form.getValues() em vez de form.watch() para evitar re-renders
   const formType = form.getValues('type')
   const isExpense = formType === RegisterType.EXPENSE
-  const isDirty = form.formState.isDirty
+
+  // Estado local para controlar isDirty - mais confiável que form.formState.isDirty
+  const [isDirty, setIsDirty] = useState(false)
+  const [isResetting, setIsResetting] = useState(false)
+
+  // Detectar mudanças reais no form
+  useEffect(() => {
+    if (!transaction || !isEditMode) {
+      setIsDirty(false)
+      return
+    }
+
+    const subscription = form.watch((_, { name, type }) => {
+      // Ignorar mudanças durante o reset
+      if (isResetting) {
+        return
+      }
+
+      // Só considerar como mudança se não for o reset inicial
+      if (type === 'change' && name) {
+        setIsDirty(true)
+      }
+    })
+
+    return () => subscription.unsubscribe()
+  }, [form, transaction, isEditMode, isResetting])
 
   // Preencher formulário quando a transação mudar
   useEffect(() => {
     if (!open) return
-    if (transaction) {
-      form.reset({
-        type: transaction.type,
-        title: transaction.title,
-        amount: transaction.amount,
-        dueDate: new Date(transaction.dueDate),
-        payToEmail: transaction.payTo.email,
-        tags: transaction.tags ?? [],
-        description: transaction.description || '',
-        isRecurring: false,
-        recurrenceSelector: undefined,
-        recurrenceType: undefined,
-        recurrenceUntil: undefined,
-        recurrenceInterval: undefined,
-        installmentsTotal: undefined,
-        recurrenceStart: undefined,
-      })
-    } else {
-      // Reset para modo criação
-      form.reset({
-        type: RegisterType.EXPENSE,
-        isRecurring: false,
-        recurrenceSelector: undefined,
-        recurrenceType: undefined,
-        recurrenceUntil: undefined,
-        recurrenceInterval: undefined,
-        installmentsTotal: undefined,
-        recurrenceStart: undefined,
-      })
+
+    const currentTransactionId = transaction?.id || 'new'
+
+    // Só resetar se a transação mudou
+    if (initializedTransactionRef.current !== currentTransactionId) {
+      if (transaction) {
+        const formData = {
+          type: transaction.type,
+          title: transaction.title,
+          amount: transaction.amount,
+          dueDate: new Date(transaction.dueDate),
+          payToEmail: transaction.payTo.email,
+          tags: transaction.tags ?? [],
+          description: transaction.description || '',
+          isRecurring: false,
+          recurrenceSelector: undefined,
+          recurrenceType: undefined,
+          recurrenceUntil: undefined,
+          recurrenceInterval: undefined,
+          installmentsTotal: undefined,
+          recurrenceStart: undefined,
+        }
+        setIsResetting(true)
+        form.reset(formData)
+
+        // Aguardar todos os re-renders e forçar isDirty = false
+        setTimeout(() => {
+          // Reset novamente para garantir que não há mudanças
+          form.reset(formData, { keepDefaultValues: false })
+          // Resetar o estado local também
+          setIsDirty(false)
+          setIsResetting(false)
+        }, 0)
+      } else {
+        // Reset para modo criação
+        form.reset({
+          type: RegisterType.EXPENSE,
+          title: '',
+          amount: '',
+          dueDate: new Date(),
+          payToEmail: '',
+          tags: [],
+          description: '',
+          isRecurring: false,
+          recurrenceSelector: undefined,
+          recurrenceType: undefined,
+          recurrenceUntil: undefined,
+          recurrenceInterval: undefined,
+          installmentsTotal: undefined,
+          recurrenceStart: undefined,
+        })
+      }
+      initializedTransactionRef.current = currentTransactionId
     }
   }, [open, transaction, form])
+
+  // Resetar ref e estado quando o drawer for fechado
+  useEffect(() => {
+    if (!open) {
+      initializedTransactionRef.current = null
+      setIsDirty(false)
+      setIsResetting(false)
+    }
+  }, [open])
 
   const { mutate: createTransaction } = useCreateTransaction({
     mutation: {
@@ -214,9 +263,11 @@ export function DrawerTransaction({ transaction, open, onOpenChange, onExternalS
           return '0.00'
         }
         const normalizedAmount = normalizeAmount(
-          (data as any)?.amount ?? (transaction as any)?.amount ?? '0.00'
+          (data as NewTransactionSchema)?.amount ??
+            (transaction as ListTransactions200TransactionsItem)?.amount ??
+            '0.00'
         )
-        const serieId = String((transaction as any).serieId ?? '')
+        const serieId = String((transaction as ListTransactions200TransactionsItem).serieId ?? '')
         const payload = {
           type: data.type,
           title: data.title,
@@ -247,7 +298,13 @@ export function DrawerTransaction({ transaction, open, onOpenChange, onExternalS
 
   const handleMainAction = useCallback(() => {
     if (isEditMode) {
-      // Save changes
+      // Se não há mudanças, marcar como pago
+      if (!isDirty) {
+        setPaymentDialogOpen(true)
+        return
+      }
+
+      // Se há mudanças, salvar edição
       const formData = form.getValues()
 
       // Se o form não tem dados completos, usa os dados da transação com as mudanças
@@ -256,7 +313,10 @@ export function DrawerTransaction({ transaction, open, onOpenChange, onExternalS
         const completeData = {
           type: formData.type || transaction?.type,
           title: formData.title || transaction?.title || '',
-          amount: (formData.amount as any) || (transaction as any)?.amount || '0.00',
+          amount:
+            (formData.amount as string) ||
+            (transaction as ListTransactions200TransactionsItem)?.amount ||
+            '0.00',
           dueDate: formData.dueDate || new Date(transaction?.dueDate || new Date()),
           payToEmail: computedEmail,
           tags: formData.tags || transaction?.tags,
@@ -274,9 +334,36 @@ export function DrawerTransaction({ transaction, open, onOpenChange, onExternalS
         handleSubmit(formData)
       }
     } else {
-      form.handleSubmit(handleSubmit)()
+      // Se isRecurring for true, mas o usuário não preencheu os campos de recorrência,
+      // desmarcar isRecurring e limpar todos os campos de recorrência
+      const isRecurring = form.getValues('isRecurring')
+      if (isRecurring) {
+        const recurrenceType = form.getValues('recurrenceType')
+        const recurrenceInterval = form.getValues('recurrenceInterval')
+        if (!recurrenceType || !recurrenceInterval) {
+          form.setValue('isRecurring', false)
+          form.setValue('recurrenceSelector', undefined)
+          form.setValue('recurrenceType', undefined)
+          form.setValue('recurrenceInterval', undefined)
+          form.setValue('recurrenceUntil', undefined)
+          form.setValue('installmentsTotal', undefined)
+          form.setValue('recurrenceStart', undefined)
+        }
+      }
+
+      // Aguardar um pouco para os campos serem limpos e então verificar erros
+      setTimeout(() => {
+        const errors = form.formState.errors
+        if (Object.keys(errors).length > 0) {
+          // Forçar validação e mostrar erros
+          form.trigger()
+          return
+        }
+
+        form.handleSubmit(handleSubmit)()
+      }, 100)
     }
-  }, [isEditMode, form, transaction, handleSubmit])
+  }, [isEditMode, isDirty, handleSubmit, form, transaction])
 
   // Títulos dinâmicos baseados no tipo do form (apenas para modo criação)
   const title = isEditMode ? baseTitle : `Criar nova ${isExpense ? 'Despesa' : 'Receita'}`

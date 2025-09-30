@@ -12,7 +12,7 @@ export interface RecurrenceFieldProps {
 
 export function RecurrenceField({ form }: RecurrenceFieldProps) {
   const id = useId()
-  
+
   return (
     <FormField
       control={form.control}
@@ -26,8 +26,8 @@ export function RecurrenceField({ form }: RecurrenceFieldProps) {
                 checked={field.value}
                 onCheckedChange={checked => field.onChange(!!checked)}
               />
-              <Label 
-                htmlFor={id} 
+              <Label
+                htmlFor={id}
                 className="text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70"
               >
                 Recorrente
