@@ -24,7 +24,29 @@ export function RecurrenceField({ form }: RecurrenceFieldProps) {
               <Checkbox
                 id={id}
                 checked={field.value}
-                onCheckedChange={checked => field.onChange(!!checked)}
+                onCheckedChange={checked => {
+                  const isChecked = !!checked
+                  field.onChange(isChecked)
+
+                  // Se marcou como recorrente, definir valores padrão
+                  if (isChecked) {
+                    // Usar setTimeout para garantir que os valores sejam definidos
+                    setTimeout(() => {
+                      form.setValue('recurrenceSelector', 'repeat')
+                      form.setValue('recurrenceType', 'monthly')
+                      form.setValue('recurrenceInterval', 1)
+                      form.setValue('installmentsTotal', 1)
+                    }, 10)
+                  } else {
+                    // Se desmarcou, limpar os campos
+                    form.setValue('recurrenceSelector', undefined)
+                    form.setValue('recurrenceType', undefined)
+                    form.setValue('recurrenceInterval', undefined)
+                    form.setValue('installmentsTotal', undefined)
+                    form.setValue('recurrenceUntil', undefined)
+                    form.setValue('recurrenceStart', undefined)
+                  }
+                }}
               />
               <Label
                 htmlFor={id}

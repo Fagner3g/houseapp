@@ -106,7 +106,7 @@ export function getDrawerContext(
   const isEditMode = !!transaction
   const isOwner = transaction?.ownerId === currentUserId
   const isPaid = transaction?.status === 'paid'
-  const isReadOnly = isEditMode && !(isOwner && !isPaid)
+  const isReadOnly = isEditMode && !isOwner
 
   // Títulos e descrições baseados no estado
   let title: string

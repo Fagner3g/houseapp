@@ -6,9 +6,12 @@ import { toast } from 'sonner'
 
 import {
   getGetOrgSlugReportsTransactionsQueryKey,
+  getGetTransactionInstallmentsQueryKey,
   getListTransactionsQueryKey,
   useCreateTransaction,
+  useGetTransactionInstallments,
   useListUsersByOrg,
+  usePayTransaction,
   useUpdateTransaction,
 } from '@/api/generated/api'
 import type {
@@ -69,6 +72,16 @@ export function DrawerTransaction({ transaction, open, onOpenChange, onExternalS
   const { data: userData } = useListUsersByOrg(slug)
   const { isKeyboardOpen, keyboardHeight } = useVirtualKeyboard()
   const scrollContainerRef = useScrollToActiveField(isKeyboardOpen)
+
+  // Buscar installments quando o drawer estiver aberto e houver uma transação
+  const serieId = transaction?.serieId || ''
+  const { refetch: refetchInstallments } = useGetTransactionInstallments(slug, serieId, {
+    query: {
+      enabled: Boolean(open && transaction && serieId),
+      staleTime: 0, // Sempre buscar dados frescos
+      refetchOnWindowFocus: false,
+    },
+  })
   const [paymentDialogOpen, setPaymentDialogOpen] = useState(false)
   const initializedTransactionRef = useRef<string | null>(null)
   const form = useForm<NewTransactionSchema>({
@@ -187,6 +200,13 @@ export function DrawerTransaction({ transaction, open, onOpenChange, onExternalS
     }
   }, [open])
 
+  // Forçar refetch dos installments toda vez que o drawer for aberto
+  useEffect(() => {
+    if (open && transaction && serieId) {
+      refetchInstallments()
+    }
+  }, [open, transaction, serieId, refetchInstallments])
+
   const { mutate: createTransaction } = useCreateTransaction({
     mutation: {
       onMutate: async ({ slug, data }) => {
@@ -228,7 +248,32 @@ export function DrawerTransaction({ transaction, open, onOpenChange, onExternalS
       },
       onSettled: () => {
         queryClient.invalidateQueries({ queryKey: getListTransactionsQueryKey(slug) })
+        queryClient.invalidateQueries({ queryKey: getGetOrgSlugReportsTransactionsQueryKey(slug) })
       },
+    },
+  })
+
+  const { mutate: payTransaction } = usePayTransaction({
+    mutation: {
+      onSuccess: () => {
+        toast.success('Status da transação atualizado com sucesso!')
+        queryClient.invalidateQueries({
+          queryKey: getListTransactionsQueryKey(slug),
+        })
+        queryClient.invalidateQueries({
+          queryKey: getGetOrgSlugReportsTransactionsQueryKey(slug),
+        })
+        
+        // Invalidar installments se houver serieId
+        if (serieId) {
+          queryClient.invalidateQueries({
+            queryKey: getGetTransactionInstallmentsQueryKey(slug, serieId),
+          })
+        }
+        
+        onOpenChange(false)
+      },
+      onError: () => toast.error('Erro ao atualizar status da transação'),
     },
   })
 
@@ -243,6 +288,14 @@ export function DrawerTransaction({ transaction, open, onOpenChange, onExternalS
         queryClient.invalidateQueries({
           queryKey: getGetOrgSlugReportsTransactionsQueryKey(slug),
         })
+
+        // Invalidar installments se houver serieId
+        if (serieId) {
+          queryClient.invalidateQueries({
+            queryKey: getGetTransactionInstallmentsQueryKey(slug, serieId),
+          })
+        }
+
         onOpenChange(false)
       },
       onError: () => toast.error('Erro ao atualizar transação'),
@@ -298,9 +351,35 @@ export function DrawerTransaction({ transaction, open, onOpenChange, onExternalS
 
   const handleMainAction = useCallback(() => {
     if (isEditMode) {
-      // Se não há mudanças, marcar como pago
+      // Se não há mudanças, verificar se deve marcar como pago ou cancelar pagamento
       if (!isDirty) {
-        setPaymentDialogOpen(true)
+        if (transaction?.status === 'paid') {
+          // Cancelar pagamento - usar endpoint específico
+          payTransaction({ slug, id: transaction.id, data: {} })
+        } else if (transaction?.status === 'canceled') {
+          // Reativar transação - marcar como pendente
+          toast.success('Transação reativada com sucesso!')
+          const payload = {
+            type: transaction.type,
+            title: transaction.title,
+            amount: transaction.amount,
+            dueDate: new Date(transaction.dueDate),
+            payToEmail: transaction.payTo?.email || '',
+            tags: transaction.tags || [],
+            description: transaction.description || '',
+            isRecurring: false,
+            recurrenceSelector: undefined,
+            recurrenceType: undefined,
+            recurrenceUntil: undefined,
+            recurrenceInterval: undefined,
+            installmentsTotal: undefined,
+            recurrenceStart: undefined,
+          }
+          handleSubmit(payload as NewTransactionSchema)
+        } else {
+          // Marcar como pago
+          setPaymentDialogOpen(true)
+        }
         return
       }
 
@@ -321,25 +400,28 @@ export function DrawerTransaction({ transaction, open, onOpenChange, onExternalS
           payToEmail: computedEmail,
           tags: formData.tags || transaction?.tags,
           description: formData.description || transaction?.description || '',
-          isRecurring: false as const,
-          recurrenceSelector: undefined,
-          recurrenceType: undefined,
-          recurrenceUntil: undefined,
-          recurrenceInterval: undefined,
-          installmentsTotal: undefined,
-          recurrenceStart: undefined,
+          isRecurring: formData.isRecurring || false,
+          recurrenceSelector: formData.recurrenceSelector,
+          recurrenceType: formData.recurrenceType,
+          recurrenceUntil: formData.recurrenceUntil,
+          recurrenceInterval: formData.recurrenceInterval,
+          installmentsTotal: formData.installmentsTotal,
+          recurrenceStart: formData.recurrenceStart,
         }
-        handleSubmit(completeData)
+        handleSubmit(completeData as NewTransactionSchema)
       } else {
         handleSubmit(formData)
       }
     } else {
+      // Para modo criação, usar form.watch() para obter valores em tempo real
+      const watchedValues = form.watch()
+
       // Se isRecurring for true, mas o usuário não preencheu os campos de recorrência,
       // desmarcar isRecurring e limpar todos os campos de recorrência
-      const isRecurring = form.getValues('isRecurring')
-      if (isRecurring) {
-        const recurrenceType = form.getValues('recurrenceType')
-        const recurrenceInterval = form.getValues('recurrenceInterval')
+      if (watchedValues.isRecurring) {
+        const recurrenceType = watchedValues.recurrenceType
+        const recurrenceInterval = watchedValues.recurrenceInterval
+
         if (!recurrenceType || !recurrenceInterval) {
           form.setValue('isRecurring', false)
           form.setValue('recurrenceSelector', undefined)
@@ -348,22 +430,26 @@ export function DrawerTransaction({ transaction, open, onOpenChange, onExternalS
           form.setValue('recurrenceUntil', undefined)
           form.setValue('installmentsTotal', undefined)
           form.setValue('recurrenceStart', undefined)
+
+          // Aguardar um pouco para os campos serem limpos e então verificar erros
+          setTimeout(() => {
+            const errors = form.formState.errors
+            if (Object.keys(errors).length > 0) {
+              // Forçar validação e mostrar erros
+              form.trigger()
+              return
+            }
+
+            form.handleSubmit(handleSubmit)()
+          }, 100)
+          return
         }
       }
 
-      // Aguardar um pouco para os campos serem limpos e então verificar erros
-      setTimeout(() => {
-        const errors = form.formState.errors
-        if (Object.keys(errors).length > 0) {
-          // Forçar validação e mostrar erros
-          form.trigger()
-          return
-        }
-
-        form.handleSubmit(handleSubmit)()
-      }, 100)
+      // Se chegou até aqui, os dados estão válidos
+      form.handleSubmit(handleSubmit)()
     }
-  }, [isEditMode, isDirty, handleSubmit, form, transaction])
+  }, [isEditMode, isDirty, handleSubmit, form, transaction, payTransaction, slug])
 
   // Títulos dinâmicos baseados no tipo do form (apenas para modo criação)
   const title = isEditMode ? baseTitle : `Criar nova ${isExpense ? 'Despesa' : 'Receita'}`
@@ -508,9 +594,11 @@ export function DrawerTransaction({ transaction, open, onOpenChange, onExternalS
                       : isEditMode
                         ? transaction?.status === 'paid'
                           ? 'Cancelar Pagamento'
-                          : isDirty
-                            ? 'Salvar edição'
-                            : 'Marcar como Pago'
+                          : transaction?.status === 'canceled'
+                            ? 'Reativar Transação'
+                            : isDirty
+                              ? 'Salvar edição'
+                              : 'Marcar como Pago'
                         : 'Cadastrar'}
                   </Button>
                 )}
