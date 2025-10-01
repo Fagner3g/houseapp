@@ -10,6 +10,7 @@ import type { GetOrgSlugReportsTransactions200ReportsMonthlyStats } from "./getO
 import type { GetOrgSlugReportsTransactions200ReportsRecentActivityItem } from "./getOrgSlugReportsTransactions200ReportsRecentActivityItem";
 import type { GetOrgSlugReportsTransactions200ReportsChartData } from "./getOrgSlugReportsTransactions200ReportsChartData";
 import type { GetOrgSlugReportsTransactions200ReportsKpis } from "./getOrgSlugReportsTransactions200ReportsKpis";
+import type { GetOrgSlugReportsTransactions200ReportsCounterparties } from "./getOrgSlugReportsTransactions200ReportsCounterparties";
 import type { GetOrgSlugReportsTransactions200ReportsIncomeVsExpenseDailyItem } from "./getOrgSlugReportsTransactions200ReportsIncomeVsExpenseDailyItem";
 import type { GetOrgSlugReportsTransactions200ReportsOverdueTransactions } from "./getOrgSlugReportsTransactions200ReportsOverdueTransactions";
 import type { GetOrgSlugReportsTransactions200ReportsPaidThisMonth } from "./getOrgSlugReportsTransactions200ReportsPaidThisMonth";
@@ -20,6 +21,7 @@ export type GetOrgSlugReportsTransactions200Reports = {
   recentActivity: GetOrgSlugReportsTransactions200ReportsRecentActivityItem[];
   chartData: GetOrgSlugReportsTransactions200ReportsChartData;
   kpis?: GetOrgSlugReportsTransactions200ReportsKpis;
+  counterparties?: GetOrgSlugReportsTransactions200ReportsCounterparties;
   incomeVsExpenseDaily?: GetOrgSlugReportsTransactions200ReportsIncomeVsExpenseDailyItem[];
   overdueTransactions?: GetOrgSlugReportsTransactions200ReportsOverdueTransactions;
   paidThisMonth?: GetOrgSlugReportsTransactions200ReportsPaidThisMonth;

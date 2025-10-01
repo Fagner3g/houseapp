@@ -12,7 +12,7 @@ export const JOB_CONFIGS: Record<string, JobConfig> = {
 
   TRANSACTION_ALERTS: {
     key: 'transactions:alerts',
-    schedule: '0 9,15,21 * * *', // Todo dia às 09:00, 15:00 e 21:00
+    schedule: '0 9 * * *', // Todo dia às 09:00
     timezone: 'America/Sao_Paulo',
     description: 'Alertas para transações vencidas ou prestes a vencer',
   },

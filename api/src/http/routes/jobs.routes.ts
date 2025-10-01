@@ -173,6 +173,7 @@ const KPISchema = z.object({
   incomeRegistered: z.number(),
   expenseRegistered: z.number(),
   receivedTotal: z.number(),
+  toReceiveTotal: z.number(),
   toSpendTotal: z.number(),
 })
 
@@ -190,6 +191,24 @@ const TransactionReportsResponseSchema = z.object({
     recentActivity: z.array(RecentActivitySchema),
     chartData: ChartDataSchema,
     kpis: KPISchema.optional(),
+    counterparties: z
+      .object({
+        toReceive: z.array(
+          z.object({
+            name: z.string(),
+            amount: z.number(),
+            items: z.array(z.object({ title: z.string(), amount: z.number() })),
+          })
+        ),
+        toPay: z.array(
+          z.object({
+            name: z.string(),
+            amount: z.number(),
+            items: z.array(z.object({ title: z.string(), amount: z.number() })),
+          })
+        ),
+      })
+      .optional(),
     incomeVsExpenseDaily: IncomeVsExpenseDailySchema.optional(),
     overdueTransactions: z
       .object({

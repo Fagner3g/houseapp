@@ -1011,6 +1011,9 @@
                             "receivedTotal": {
                               "type": "number"
                             },
+                            "toReceiveTotal": {
+                              "type": "number"
+                            },
                             "toSpendTotal": {
                               "type": "number"
                             }
@@ -1020,7 +1023,96 @@
                             "incomeRegistered",
                             "expenseRegistered",
                             "receivedTotal",
+                            "toReceiveTotal",
                             "toSpendTotal"
+                          ],
+                          "additionalProperties": false
+                        },
+                        "counterparties": {
+                          "type": "object",
+                          "properties": {
+                            "toReceive": {
+                              "type": "array",
+                              "items": {
+                                "type": "object",
+                                "properties": {
+                                  "name": {
+                                    "type": "string"
+                                  },
+                                  "amount": {
+                                    "type": "number"
+                                  },
+                                  "items": {
+                                    "type": "array",
+                                    "items": {
+                                      "type": "object",
+                                      "properties": {
+                                        "title": {
+                                          "type": "string"
+                                        },
+                                        "amount": {
+                                          "type": "number"
+                                        }
+                                      },
+                                      "required": [
+                                        "title",
+                                        "amount"
+                                      ],
+                                      "additionalProperties": false
+                                    }
+                                  }
+                                },
+                                "required": [
+                                  "name",
+                                  "amount",
+                                  "items"
+                                ],
+                                "additionalProperties": false
+                              }
+                            },
+                            "toPay": {
+                              "type": "array",
+                              "items": {
+                                "type": "object",
+                                "properties": {
+                                  "name": {
+                                    "type": "string"
+                                  },
+                                  "amount": {
+                                    "type": "number"
+                                  },
+                                  "items": {
+                                    "type": "array",
+                                    "items": {
+                                      "type": "object",
+                                      "properties": {
+                                        "title": {
+                                          "type": "string"
+                                        },
+                                        "amount": {
+                                          "type": "number"
+                                        }
+                                      },
+                                      "required": [
+                                        "title",
+                                        "amount"
+                                      ],
+                                      "additionalProperties": false
+                                    }
+                                  }
+                                },
+                                "required": [
+                                  "name",
+                                  "amount",
+                                  "items"
+                                ],
+                                "additionalProperties": false
+                              }
+                            }
+                          },
+                          "required": [
+                            "toReceive",
+                            "toPay"
                           ],
                           "additionalProperties": false
                         },

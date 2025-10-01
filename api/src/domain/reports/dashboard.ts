@@ -52,7 +52,12 @@ export async function getTransactionReports(orgId: string, userId: string) {
   let incomeRegistered = 0
   let expenseRegistered = 0
   let receivedTotal = 0
+  let toReceiveTotal = 0
   let toSpendTotal = 0
+  const toReceiveBy = new Map<string, number>()
+  const toPayBy = new Map<string, number>()
+  const toReceiveItems = new Map<string, { title: string; amount: number }[]>()
+  const toPayItems = new Map<string, { title: string; amount: number }[]>()
   const incomeVsExpenseDailyMap = new Map<string, { income: number; expense: number }>()
 
   for (const r of rows) {
@@ -67,14 +72,45 @@ export async function getTransactionReports(orgId: string, userId: string) {
       r.ownerId,
       userId
     )
+    // para cálculos específicos abaixo, recalculamos o contraparte conforme a regra
+
     if (ctxType === 'income') {
       incomeRegistered += amountNum
       if (r.paidAt) receivedTotal += amountNum
+      if (r.status === 'pending') {
+        // Receber quando: sou dono e é income OR sou payTo e original é expense
+        const willReceive =
+          (r.ownerId === userId && r.type === 'income') ||
+          (r.payToId === userId && r.type === 'expense')
+        if (willReceive) {
+          toReceiveTotal += amountNum
+          const counterparty =
+            r.ownerId === userId ? r.payToName || r.payToEmail || 'Desconhecido' : r.ownerName
+          toReceiveBy.set(counterparty, (toReceiveBy.get(counterparty) ?? 0) + amountNum)
+          const arr = toReceiveItems.get(counterparty) ?? []
+          arr.push({ title: r.title, amount: amountNum })
+          toReceiveItems.set(counterparty, arr)
+        }
+      }
       const d = incomeVsExpenseDailyMap.get(dateKey)!
       d.income += amountNum
     } else {
       expenseRegistered += amountNum
-      if (r.status === 'pending') toSpendTotal += amountNum
+      if (r.status === 'pending') {
+        // Pagar quando: sou payTo e original é income OR sou dono e original é expense
+        const willPay =
+          (r.payToId === userId && r.type === 'income') ||
+          (r.ownerId === userId && r.type === 'expense')
+        if (willPay) {
+          toSpendTotal += amountNum
+          const counterparty =
+            r.payToId === userId ? r.ownerName : r.payToName || r.payToEmail || 'Desconhecido'
+          toPayBy.set(counterparty, (toPayBy.get(counterparty) ?? 0) + amountNum)
+          const arr = toPayItems.get(counterparty) ?? []
+          arr.push({ title: r.title, amount: amountNum })
+          toPayItems.set(counterparty, arr)
+        }
+      }
       const d = incomeVsExpenseDailyMap.get(dateKey)!
       d.expense += amountNum
     }
@@ -223,7 +259,20 @@ export async function getTransactionReports(orgId: string, userId: string) {
         incomeRegistered,
         expenseRegistered,
         receivedTotal,
+        toReceiveTotal,
         toSpendTotal,
+      },
+      counterparties: {
+        toReceive: Array.from(toReceiveBy.entries()).map(([name, amount]) => ({
+          name,
+          amount,
+          items: (toReceiveItems.get(name) ?? []).slice(0, 5),
+        })),
+        toPay: Array.from(toPayBy.entries()).map(([name, amount]) => ({
+          name,
+          amount,
+          items: (toPayItems.get(name) ?? []).slice(0, 5),
+        })),
       },
       incomeVsExpenseDaily,
       overdueTransactions: {

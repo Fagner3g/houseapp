@@ -47,6 +47,11 @@ export * from "./getOrgSlugReportsTransactions200ReportsChartDataCategoryBreakdo
 export * from "./getOrgSlugReportsTransactions200ReportsChartDataDailyTransactionsItem";
 export * from "./getOrgSlugReportsTransactions200ReportsChartDataMonthlyTrendItem";
 export * from "./getOrgSlugReportsTransactions200ReportsChartDataStatusDistribution";
+export * from "./getOrgSlugReportsTransactions200ReportsCounterparties";
+export * from "./getOrgSlugReportsTransactions200ReportsCounterpartiesToPayItem";
+export * from "./getOrgSlugReportsTransactions200ReportsCounterpartiesToPayItemItemsItem";
+export * from "./getOrgSlugReportsTransactions200ReportsCounterpartiesToReceiveItem";
+export * from "./getOrgSlugReportsTransactions200ReportsCounterpartiesToReceiveItemItemsItem";
 export * from "./getOrgSlugReportsTransactions200ReportsIncomeVsExpenseDailyItem";
 export * from "./getOrgSlugReportsTransactions200ReportsKpis";
 export * from "./getOrgSlugReportsTransactions200ReportsMonthlyStats";
