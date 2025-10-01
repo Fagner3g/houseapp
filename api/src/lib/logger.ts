@@ -24,14 +24,19 @@ const base = pino({
       ignore: 'pid,hostname',
     },
   },
+  serializers: {
+    err: (err: Error) => {
+      return env.LOG_STACK ? { message: err.message, stack: err.stack } : { message: err.message }
+    },
+  },
   redact: ['DATABASE_URL', 'DB_PASSWORD', 'JWT_SECRET'],
 })
 
 export const logger: ILogger = {
-  debug: (message, ...args) => base.debug(String(message), ...(args as any[])),
-  info: (message, ...args) => base.info(String(message), ...(args as any[])),
-  warn: (message, ...args) => base.warn(String(message), ...(args as any[])),
-  error: (message, ...args) => base.error(String(message), ...(args as any[])),
+  debug: (message, ...args) => base.debug(message, ...(args as any[])),
+  info: (message, ...args) => base.info(message, ...(args as any[])),
+  warn: (message, ...args) => base.warn(message, ...(args as any[])),
+  error: (message, ...args) => base.error(message, ...(args as any[])),
 }
 
 // Exportar tipos para uso em outros módulos

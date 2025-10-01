@@ -55,7 +55,11 @@ export async function SignIn({ email, phone }: SignInRequest) {
     const targetPhone = normalizedPhone || normalizePhone(user.phone)
     if (targetPhone) {
       const message = `Olá ${user.name?.split(' ')[0] || ''}!\n\nAcesse seu painel clicando no link:\n<${url.toString()}>\n\nSe não foi você, ignore esta mensagem.`
-      await sendWhatsAppMessage({ phone: targetPhone, message })
+      const result = await sendWhatsAppMessage({ phone: targetPhone, message })
+
+      if (result.status === 'error') {
+        throw new Error(`WhatsApp delivery failed: ${result.error}`)
+      }
     }
     return
   }

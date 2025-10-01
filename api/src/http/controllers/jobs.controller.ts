@@ -1,7 +1,6 @@
 import type { FastifyReply, FastifyRequest } from 'fastify'
 
 import { getTransactionReports } from '@/domain/reports/dashboard'
-import { logger } from '@/http/utils/logger'
 import {
   getJobInfo,
   getJobsStatus,
@@ -14,6 +13,7 @@ import {
   stopJob,
 } from '@/jobs'
 import { runTransactionAlertsNow } from '@/jobs/transaction-alerts'
+import { logger } from '@/lib/logger'
 import { BadRequestError } from '../utils/error'
 
 /**

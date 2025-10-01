@@ -7,7 +7,7 @@ import type {
   CreateTransactionsSchemaParams,
 } from '@/http/schemas/transaction/create-transaction.schema'
 import { BadRequestError } from '@/http/utils/error'
-import { logger } from '@/http/utils/logger'
+import { logger } from '@/lib/logger'
 
 type Req = FastifyRequest<{
   Params: CreateTransactionsSchemaParams

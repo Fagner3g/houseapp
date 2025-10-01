@@ -7,7 +7,7 @@ import { userOrganizations } from '@/db/schemas/userOrganization'
 import type { ValidateTokenSchemaBody } from '@/http/schemas/auth/validate-token.schema'
 import { VerifyToken } from '@/http/utils/auth'
 import { UnauthorizedError } from '@/http/utils/error'
-import { logger } from '@/http/utils/logger'
+import { logger } from '@/lib/logger'
 
 type Req = FastifyRequest<{ Body: ValidateTokenSchemaBody }>
 

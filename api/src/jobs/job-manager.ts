@@ -1,6 +1,6 @@
 import * as cron from 'node-cron'
 
-import { logger } from '@/http/utils/logger'
+import { logger } from '@/lib/logger'
 import type { JobConfig, JobFunction, JobResult } from './types'
 
 export class JobManager {
