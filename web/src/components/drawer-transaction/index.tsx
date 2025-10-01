@@ -263,14 +263,14 @@ export function DrawerTransaction({ transaction, open, onOpenChange, onExternalS
         queryClient.invalidateQueries({
           queryKey: getGetOrgSlugReportsTransactionsQueryKey(slug),
         })
-        
+
         // Invalidar installments se houver serieId
         if (serieId) {
           queryClient.invalidateQueries({
             queryKey: getGetTransactionInstallmentsQueryKey(slug, serieId),
           })
         }
-        
+
         onOpenChange(false)
       },
       onError: () => toast.error('Erro ao atualizar status da transação'),
