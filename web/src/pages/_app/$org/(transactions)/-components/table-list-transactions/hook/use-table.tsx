@@ -28,7 +28,6 @@ import { useEffect, useState } from 'react'
 import { toast } from 'sonner'
 
 import {
-  getGetOrgSlugReportsTransactionsQueryKey,
   getListTransactionsQueryKey,
   useDeleteTransactions,
   usePayTransaction,
@@ -225,8 +224,12 @@ export const useTable = (
       ),
       cell: ({ row }) => (
         <div>
-          {row.original.type === 'expense' && <TrendingDown className="text-red-600" />}
-          {row.original.type === 'income' && <TrendingUp className="text-green-500" />}
+          {(row.original.contextualizedType || row.original.type) === 'expense' && (
+            <TrendingDown className="text-red-600" />
+          )}
+          {(row.original.contextualizedType || row.original.type) === 'income' && (
+            <TrendingUp className="text-green-500" />
+          )}
         </div>
       ),
     },
@@ -543,10 +546,7 @@ export const useTable = (
               refetchType: 'all',
             })
 
-            await queryClient.invalidateQueries({
-              queryKey: getGetOrgSlugReportsTransactionsQueryKey(slug),
-              refetchType: 'all',
-            })
+            // reports removed
 
             // Forçar refetch das queries para garantir atualização
             await queryClient.refetchQueries({

@@ -10,7 +10,7 @@ const base = z.object({
   title: z.string('O título é obrigatório').nonempty(),
   amount: z.string('Valor da transação é obrigatório'),
   dueDate: z.date({ error: 'A data de vencimento é obrigatória' }),
-  payToEmail: z.email('Informe um e-mail válido'),
+  payToEmail: z.string().email('Informe um e-mail válido'),
   tags: z.array(z.object({ name: z.string(), color: z.string() })).optional(),
   description: z.string().optional(),
 })

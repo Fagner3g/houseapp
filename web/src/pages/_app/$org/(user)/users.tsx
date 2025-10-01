@@ -110,13 +110,29 @@ function Users() {
         </div>
 
         {/* Barra de pesquisa e botão adicionar */}
-        <div className="flex flex-col gap-3 sm:flex-row sm:items-stretch sm:gap-3">
-          <Input
-            placeholder="Pesquisar por nome, e-mail ou telefone"
-            value={search}
-            onChange={e => setSearch(e.target.value)}
-            className="flex-1"
-          />
+        <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:gap-4">
+          <div className="relative flex-1">
+            <Input
+              placeholder="Pesquisar por nome, e-mail ou telefone"
+              value={search}
+              onChange={e => setSearch(e.target.value)}
+              className="pl-10"
+            />
+            <svg
+              className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground"
+              fill="none"
+              stroke="currentColor"
+              viewBox="0 0 24 24"
+              aria-hidden="true"
+            >
+              <path
+                strokeLinecap="round"
+                strokeLinejoin="round"
+                strokeWidth={2}
+                d="m21 21-6-6m2-5a7 7 0 1 1-14 0 7 7 0 0 1 14 0Z"
+              />
+            </svg>
+          </div>
           <ModalNewUser />
         </div>
 

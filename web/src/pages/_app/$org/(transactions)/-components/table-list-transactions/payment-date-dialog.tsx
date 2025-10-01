@@ -4,11 +4,7 @@ import { ChevronDownIcon } from 'lucide-react'
 import { useEffect, useState } from 'react'
 import { toast } from 'sonner'
 
-import {
-  getGetOrgSlugReportsTransactionsQueryKey,
-  getListTransactionsQueryKey,
-  usePayTransaction,
-} from '@/api/generated/api'
+import { getListTransactionsQueryKey, usePayTransaction } from '@/api/generated/api'
 import type { ListTransactions200TransactionsItem } from '@/api/generated/model'
 import { Button } from '@/components/ui/button'
 import { Calendar } from '@/components/ui/calendar'
@@ -88,11 +84,6 @@ export function PaymentDateDialog({ transaction, open, onOpenChange, onSuccess }
         // Invalidar cache das transações
         queryClient.invalidateQueries({
           queryKey: getListTransactionsQueryKey(slug),
-        })
-
-        // Invalidar cache do dashboard
-        queryClient.invalidateQueries({
-          queryKey: getGetOrgSlugReportsTransactionsQueryKey(slug),
         })
 
         // Sempre fechar o modal após sucesso

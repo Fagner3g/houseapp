@@ -4,8 +4,12 @@ export const transactionResponseSchema = z.object({
   id: z.string(),
   serieId: z.string(),
   type: z.enum(['expense', 'income']),
+  contextualizedType: z.enum(['expense', 'income']),
   title: z.string(),
-  payTo: z.string(),
+  payTo: z.object({
+    name: z.string(),
+    email: z.string(),
+  }),
   ownerId: z.string(),
   payToId: z.string(),
   ownerName: z.string(),

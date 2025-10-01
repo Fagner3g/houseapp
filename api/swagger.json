@@ -690,7 +690,7 @@
     },
     "/org/{slug}/reports/transactions": {
       "get": {
-        "summary": "Relatórios completos de transações para o dashboard",
+        "summary": "Retorna dados consolidados para o dashboard da organização",
         "tags": [
           "Reports"
         ],
@@ -995,6 +995,218 @@
                             "statusDistribution"
                           ],
                           "additionalProperties": false
+                        },
+                        "kpis": {
+                          "type": "object",
+                          "properties": {
+                            "totalMonth": {
+                              "type": "number"
+                            },
+                            "incomeRegistered": {
+                              "type": "number"
+                            },
+                            "expenseRegistered": {
+                              "type": "number"
+                            },
+                            "receivedTotal": {
+                              "type": "number"
+                            },
+                            "toSpendTotal": {
+                              "type": "number"
+                            }
+                          },
+                          "required": [
+                            "totalMonth",
+                            "incomeRegistered",
+                            "expenseRegistered",
+                            "receivedTotal",
+                            "toSpendTotal"
+                          ],
+                          "additionalProperties": false
+                        },
+                        "incomeVsExpenseDaily": {
+                          "type": "array",
+                          "items": {
+                            "type": "object",
+                            "properties": {
+                              "date": {
+                                "type": "string"
+                              },
+                              "income": {
+                                "type": "number"
+                              },
+                              "expense": {
+                                "type": "number"
+                              }
+                            },
+                            "required": [
+                              "date",
+                              "income",
+                              "expense"
+                            ],
+                            "additionalProperties": false
+                          }
+                        },
+                        "overdueTransactions": {
+                          "type": "object",
+                          "properties": {
+                            "summary": {
+                              "type": "object",
+                              "properties": {
+                                "total": {
+                                  "type": "number"
+                                }
+                              },
+                              "required": [
+                                "total"
+                              ],
+                              "additionalProperties": false
+                            },
+                            "transactions": {
+                              "type": "array",
+                              "items": {
+                                "type": "object",
+                                "properties": {
+                                  "id": {
+                                    "type": "string"
+                                  },
+                                  "title": {
+                                    "type": "string"
+                                  },
+                                  "amount": {
+                                    "type": "number"
+                                  },
+                                  "dueDate": {
+                                    "type": "string"
+                                  },
+                                  "ownerName": {
+                                    "type": "string"
+                                  },
+                                  "ownerId": {
+                                    "type": "string"
+                                  },
+                                  "payTo": {
+                                    "type": "string"
+                                  },
+                                  "payToId": {
+                                    "type": "string"
+                                  },
+                                  "payToName": {
+                                    "type": "string"
+                                  },
+                                  "payToEmail": {
+                                    "type": "string"
+                                  },
+                                  "status": {
+                                    "type": "string",
+                                    "enum": [
+                                      "paid",
+                                      "pending"
+                                    ]
+                                  },
+                                  "overdueDays": {
+                                    "type": "number"
+                                  }
+                                },
+                                "required": [
+                                  "id",
+                                  "title",
+                                  "amount",
+                                  "dueDate",
+                                  "ownerName"
+                                ],
+                                "additionalProperties": false
+                              }
+                            }
+                          },
+                          "required": [
+                            "summary",
+                            "transactions"
+                          ],
+                          "additionalProperties": false
+                        },
+                        "paidThisMonth": {
+                          "type": "object",
+                          "properties": {
+                            "summary": {
+                              "type": "object",
+                              "properties": {
+                                "total": {
+                                  "type": "number"
+                                },
+                                "totalAmount": {
+                                  "type": "number"
+                                }
+                              },
+                              "required": [
+                                "total",
+                                "totalAmount"
+                              ],
+                              "additionalProperties": false
+                            },
+                            "transactions": {
+                              "type": "array",
+                              "items": {
+                                "type": "object",
+                                "properties": {
+                                  "id": {
+                                    "type": "string"
+                                  },
+                                  "title": {
+                                    "type": "string"
+                                  },
+                                  "amount": {
+                                    "type": "number"
+                                  },
+                                  "dueDate": {
+                                    "type": "string"
+                                  },
+                                  "paidAt": {
+                                    "type": "string",
+                                    "nullable": true
+                                  },
+                                  "ownerName": {
+                                    "type": "string"
+                                  },
+                                  "ownerId": {
+                                    "type": "string"
+                                  },
+                                  "payTo": {
+                                    "type": "string"
+                                  },
+                                  "payToId": {
+                                    "type": "string"
+                                  },
+                                  "payToName": {
+                                    "type": "string"
+                                  },
+                                  "payToEmail": {
+                                    "type": "string"
+                                  },
+                                  "status": {
+                                    "type": "string",
+                                    "enum": [
+                                      "paid",
+                                      "pending"
+                                    ]
+                                  }
+                                },
+                                "required": [
+                                  "id",
+                                  "title",
+                                  "amount",
+                                  "dueDate",
+                                  "ownerName"
+                                ],
+                                "additionalProperties": false
+                              }
+                            }
+                          },
+                          "required": [
+                            "summary",
+                            "transactions"
+                          ],
+                          "additionalProperties": false
                         }
                       },
                       "required": [
@@ -1012,6 +1224,52 @@
                   "required": [
                     "reports",
                     "timestamp"
+                  ],
+                  "additionalProperties": false
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Default Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "error": {
+                      "type": "string"
+                    },
+                    "message": {
+                      "type": "string"
+                    }
+                  },
+                  "required": [
+                    "error",
+                    "message"
+                  ],
+                  "additionalProperties": false
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Default Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "error": {
+                      "type": "string"
+                    },
+                    "message": {
+                      "type": "string"
+                    }
+                  },
+                  "required": [
+                    "error",
+                    "message"
                   ],
                   "additionalProperties": false
                 }
@@ -2261,11 +2519,31 @@
                             "income"
                           ]
                         },
+                        "contextualizedType": {
+                          "type": "string",
+                          "enum": [
+                            "expense",
+                            "income"
+                          ]
+                        },
                         "title": {
                           "type": "string"
                         },
                         "payTo": {
-                          "type": "string"
+                          "type": "object",
+                          "properties": {
+                            "name": {
+                              "type": "string"
+                            },
+                            "email": {
+                              "type": "string"
+                            }
+                          },
+                          "required": [
+                            "name",
+                            "email"
+                          ],
+                          "additionalProperties": false
                         },
                         "ownerId": {
                           "type": "string"
@@ -2334,6 +2612,7 @@
                         "id",
                         "serieId",
                         "type",
+                        "contextualizedType",
                         "title",
                         "payTo",
                         "ownerId",
@@ -2464,7 +2743,7 @@
         }
       }
     },
-    "/org/{slug}/transaction/{seriesId}/installments": {
+    "/org/{slug}/transaction/{serieId}/installments": {
       "get": {
         "operationId": "getTransactionInstallments",
         "tags": [
@@ -2477,7 +2756,7 @@
               "type": "string"
             },
             "in": "path",
-            "name": "seriesId",
+            "name": "serieId",
             "required": true
           },
           {
@@ -2609,7 +2888,7 @@
           },
           {
             "schema": {
-              "default": "2025-09-01T03:00:00.000Z"
+              "default": "2025-10-01T03:00:00.000Z"
             },
             "in": "query",
             "name": "dateFrom",
@@ -2617,7 +2896,7 @@
           },
           {
             "schema": {
-              "default": "2025-10-01T02:59:59.999Z"
+              "default": "2025-11-01T02:59:59.999Z"
             },
             "in": "query",
             "name": "dateTo",
@@ -2697,11 +2976,31 @@
                               "income"
                             ]
                           },
+                          "contextualizedType": {
+                            "type": "string",
+                            "enum": [
+                              "expense",
+                              "income"
+                            ]
+                          },
                           "title": {
                             "type": "string"
                           },
                           "payTo": {
-                            "type": "string"
+                            "type": "object",
+                            "properties": {
+                              "name": {
+                                "type": "string"
+                              },
+                              "email": {
+                                "type": "string"
+                              }
+                            },
+                            "required": [
+                              "name",
+                              "email"
+                            ],
+                            "additionalProperties": false
                           },
                           "ownerId": {
                             "type": "string"
@@ -2770,6 +3069,7 @@
                           "id",
                           "serieId",
                           "type",
+                          "contextualizedType",
                           "title",
                           "payTo",
                           "ownerId",
@@ -2908,34 +3208,6 @@
         ],
         "responses": {
           "204": {
-            "description": "Default Response"
-          }
-        }
-      }
-    },
-    "/reports/transactions/run": {
-      "post": {
-        "operationId": "runMyTransactionsReport",
-        "tags": [
-          "Reports"
-        ],
-        "description": "Trigger transactions report for authenticated user",
-        "responses": {
-          "202": {
-            "description": "Default Response"
-          }
-        }
-      }
-    },
-    "/reports/transactions/run-all-owners": {
-      "post": {
-        "operationId": "runAllOwnersTransactionsReport",
-        "tags": [
-          "Reports"
-        ],
-        "description": "Trigger transactions report for all owners",
-        "responses": {
-          "202": {
             "description": "Default Response"
           }
         }

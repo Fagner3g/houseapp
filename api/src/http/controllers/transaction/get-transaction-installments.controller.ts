@@ -6,10 +6,10 @@ import type { GetTransactionInstallmentsSchemaParams } from '@/http/schemas/tran
 type Req = FastifyRequest<{ Params: GetTransactionInstallmentsSchemaParams }>
 
 export async function getTransactionInstallmentsController(request: Req, reply: FastifyReply) {
-  const { seriesId } = request.params
+  const { serieId } = request.params
   // request.organization.id - para verificação de acesso se necessário
 
-  const { installments } = await getTransactionInstallments({ seriesId })
+  const { installments } = await getTransactionInstallments({ serieId })
 
   return reply.status(200).send({ installments })
 }

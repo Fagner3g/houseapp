@@ -39,6 +39,8 @@ import type {
   GetJobsStats200,
   GetJobsTransactionsalertsPreview200,
   GetOrgSlugReportsTransactions200,
+  GetOrgSlugReportsTransactions401,
+  GetOrgSlugReportsTransactions403,
   GetPendingGoals200,
   GetProfile200,
   GetTransactionById200,
@@ -1242,7 +1244,7 @@ export function useGetJobsTransactionsalertsPreview<
 }
 
 /**
- * @summary Relatórios completos de transações para o dashboard
+ * @summary Retorna dados consolidados para o dashboard da organização
  */
 export const getGetOrgSlugReportsTransactionsUrl = (slug: string) => {
   return `/org/${slug}/reports/transactions`;
@@ -1267,7 +1269,7 @@ export const getGetOrgSlugReportsTransactionsQueryKey = (slug?: string) => {
 
 export const getGetOrgSlugReportsTransactionsQueryOptions = <
   TData = Awaited<ReturnType<typeof getOrgSlugReportsTransactions>>,
-  TError = unknown,
+  TError = GetOrgSlugReportsTransactions401 | GetOrgSlugReportsTransactions403,
 >(
   slug: string,
   options?: {
@@ -1306,11 +1308,13 @@ export const getGetOrgSlugReportsTransactionsQueryOptions = <
 export type GetOrgSlugReportsTransactionsQueryResult = NonNullable<
   Awaited<ReturnType<typeof getOrgSlugReportsTransactions>>
 >;
-export type GetOrgSlugReportsTransactionsQueryError = unknown;
+export type GetOrgSlugReportsTransactionsQueryError =
+  | GetOrgSlugReportsTransactions401
+  | GetOrgSlugReportsTransactions403;
 
 export function useGetOrgSlugReportsTransactions<
   TData = Awaited<ReturnType<typeof getOrgSlugReportsTransactions>>,
-  TError = unknown,
+  TError = GetOrgSlugReportsTransactions401 | GetOrgSlugReportsTransactions403,
 >(
   slug: string,
   options: {
@@ -1337,7 +1341,7 @@ export function useGetOrgSlugReportsTransactions<
 };
 export function useGetOrgSlugReportsTransactions<
   TData = Awaited<ReturnType<typeof getOrgSlugReportsTransactions>>,
-  TError = unknown,
+  TError = GetOrgSlugReportsTransactions401 | GetOrgSlugReportsTransactions403,
 >(
   slug: string,
   options?: {
@@ -1364,7 +1368,7 @@ export function useGetOrgSlugReportsTransactions<
 };
 export function useGetOrgSlugReportsTransactions<
   TData = Awaited<ReturnType<typeof getOrgSlugReportsTransactions>>,
-  TError = unknown,
+  TError = GetOrgSlugReportsTransactions401 | GetOrgSlugReportsTransactions403,
 >(
   slug: string,
   options?: {
@@ -1382,12 +1386,12 @@ export function useGetOrgSlugReportsTransactions<
   queryKey: DataTag<QueryKey, TData, TError>;
 };
 /**
- * @summary Relatórios completos de transações para o dashboard
+ * @summary Retorna dados consolidados para o dashboard da organização
  */
 
 export function useGetOrgSlugReportsTransactions<
   TData = Awaited<ReturnType<typeof getOrgSlugReportsTransactions>>,
-  TError = unknown,
+  TError = GetOrgSlugReportsTransactions401 | GetOrgSlugReportsTransactions403,
 >(
   slug: string,
   options?: {
@@ -3769,18 +3773,18 @@ export const useUpdateTransaction = <TError = unknown, TContext = unknown>(
  */
 export const getGetTransactionInstallmentsUrl = (
   slug: string,
-  seriesId: string,
+  serieId: string,
 ) => {
-  return `/org/${slug}/transaction/${seriesId}/installments`;
+  return `/org/${slug}/transaction/${serieId}/installments`;
 };
 
 export const getTransactionInstallments = async (
   slug: string,
-  seriesId: string,
+  serieId: string,
   options?: RequestInit,
 ): Promise<GetTransactionInstallments200> => {
   return http<GetTransactionInstallments200>(
-    getGetTransactionInstallmentsUrl(slug, seriesId),
+    getGetTransactionInstallmentsUrl(slug, serieId),
     {
       ...options,
       method: "GET",
@@ -3790,9 +3794,9 @@ export const getTransactionInstallments = async (
 
 export const getGetTransactionInstallmentsQueryKey = (
   slug?: string,
-  seriesId?: string,
+  serieId?: string,
 ) => {
-  return [`/org/${slug}/transaction/${seriesId}/installments`] as const;
+  return [`/org/${slug}/transaction/${serieId}/installments`] as const;
 };
 
 export const getGetTransactionInstallmentsQueryOptions = <
@@ -3800,7 +3804,7 @@ export const getGetTransactionInstallmentsQueryOptions = <
   TError = unknown,
 >(
   slug: string,
-  seriesId: string,
+  serieId: string,
   options?: {
     query?: Partial<
       UseQueryOptions<
@@ -3816,17 +3820,17 @@ export const getGetTransactionInstallmentsQueryOptions = <
 
   const queryKey =
     queryOptions?.queryKey ??
-    getGetTransactionInstallmentsQueryKey(slug, seriesId);
+    getGetTransactionInstallmentsQueryKey(slug, serieId);
 
   const queryFn: QueryFunction<
     Awaited<ReturnType<typeof getTransactionInstallments>>
   > = ({ signal }) =>
-    getTransactionInstallments(slug, seriesId, { signal, ...requestOptions });
+    getTransactionInstallments(slug, serieId, { signal, ...requestOptions });
 
   return {
     queryKey,
     queryFn,
-    enabled: !!(slug && seriesId),
+    enabled: !!(slug && serieId),
     ...queryOptions,
   } as UseQueryOptions<
     Awaited<ReturnType<typeof getTransactionInstallments>>,
@@ -3845,7 +3849,7 @@ export function useGetTransactionInstallments<
   TError = unknown,
 >(
   slug: string,
-  seriesId: string,
+  serieId: string,
   options: {
     query: Partial<
       UseQueryOptions<
@@ -3873,7 +3877,7 @@ export function useGetTransactionInstallments<
   TError = unknown,
 >(
   slug: string,
-  seriesId: string,
+  serieId: string,
   options?: {
     query?: Partial<
       UseQueryOptions<
@@ -3901,7 +3905,7 @@ export function useGetTransactionInstallments<
   TError = unknown,
 >(
   slug: string,
-  seriesId: string,
+  serieId: string,
   options?: {
     query?: Partial<
       UseQueryOptions<
@@ -3922,7 +3926,7 @@ export function useGetTransactionInstallments<
   TError = unknown,
 >(
   slug: string,
-  seriesId: string,
+  serieId: string,
   options?: {
     query?: Partial<
       UseQueryOptions<
@@ -3939,7 +3943,7 @@ export function useGetTransactionInstallments<
 } {
   const queryOptions = getGetTransactionInstallmentsQueryOptions(
     slug,
-    seriesId,
+    serieId,
     options,
   );
 
@@ -4324,173 +4328,6 @@ export const usePayTransaction = <TError = unknown, TContext = unknown>(
   TContext
 > => {
   const mutationOptions = getPayTransactionMutationOptions(options);
-
-  return useMutation(mutationOptions, queryClient);
-};
-
-/**
- * Trigger transactions report for authenticated user
- */
-export const getRunMyTransactionsReportUrl = () => {
-  return `/reports/transactions/run`;
-};
-
-export const runMyTransactionsReport = async (
-  options?: RequestInit,
-): Promise<null> => {
-  return http<null>(getRunMyTransactionsReportUrl(), {
-    ...options,
-    method: "POST",
-  });
-};
-
-export const getRunMyTransactionsReportMutationOptions = <
-  TError = unknown,
-  TContext = unknown,
->(options?: {
-  mutation?: UseMutationOptions<
-    Awaited<ReturnType<typeof runMyTransactionsReport>>,
-    TError,
-    void,
-    TContext
-  >;
-  request?: SecondParameter<typeof http>;
-}): UseMutationOptions<
-  Awaited<ReturnType<typeof runMyTransactionsReport>>,
-  TError,
-  void,
-  TContext
-> => {
-  const mutationKey = ["runMyTransactionsReport"];
-  const { mutation: mutationOptions, request: requestOptions } = options
-    ? options.mutation &&
-      "mutationKey" in options.mutation &&
-      options.mutation.mutationKey
-      ? options
-      : { ...options, mutation: { ...options.mutation, mutationKey } }
-    : { mutation: { mutationKey }, request: undefined };
-
-  const mutationFn: MutationFunction<
-    Awaited<ReturnType<typeof runMyTransactionsReport>>,
-    void
-  > = () => {
-    return runMyTransactionsReport(requestOptions);
-  };
-
-  return { mutationFn, ...mutationOptions };
-};
-
-export type RunMyTransactionsReportMutationResult = NonNullable<
-  Awaited<ReturnType<typeof runMyTransactionsReport>>
->;
-
-export type RunMyTransactionsReportMutationError = unknown;
-
-export const useRunMyTransactionsReport = <
-  TError = unknown,
-  TContext = unknown,
->(
-  options?: {
-    mutation?: UseMutationOptions<
-      Awaited<ReturnType<typeof runMyTransactionsReport>>,
-      TError,
-      void,
-      TContext
-    >;
-    request?: SecondParameter<typeof http>;
-  },
-  queryClient?: QueryClient,
-): UseMutationResult<
-  Awaited<ReturnType<typeof runMyTransactionsReport>>,
-  TError,
-  void,
-  TContext
-> => {
-  const mutationOptions = getRunMyTransactionsReportMutationOptions(options);
-
-  return useMutation(mutationOptions, queryClient);
-};
-
-/**
- * Trigger transactions report for all owners
- */
-export const getRunAllOwnersTransactionsReportUrl = () => {
-  return `/reports/transactions/run-all-owners`;
-};
-
-export const runAllOwnersTransactionsReport = async (
-  options?: RequestInit,
-): Promise<null> => {
-  return http<null>(getRunAllOwnersTransactionsReportUrl(), {
-    ...options,
-    method: "POST",
-  });
-};
-
-export const getRunAllOwnersTransactionsReportMutationOptions = <
-  TError = unknown,
-  TContext = unknown,
->(options?: {
-  mutation?: UseMutationOptions<
-    Awaited<ReturnType<typeof runAllOwnersTransactionsReport>>,
-    TError,
-    void,
-    TContext
-  >;
-  request?: SecondParameter<typeof http>;
-}): UseMutationOptions<
-  Awaited<ReturnType<typeof runAllOwnersTransactionsReport>>,
-  TError,
-  void,
-  TContext
-> => {
-  const mutationKey = ["runAllOwnersTransactionsReport"];
-  const { mutation: mutationOptions, request: requestOptions } = options
-    ? options.mutation &&
-      "mutationKey" in options.mutation &&
-      options.mutation.mutationKey
-      ? options
-      : { ...options, mutation: { ...options.mutation, mutationKey } }
-    : { mutation: { mutationKey }, request: undefined };
-
-  const mutationFn: MutationFunction<
-    Awaited<ReturnType<typeof runAllOwnersTransactionsReport>>,
-    void
-  > = () => {
-    return runAllOwnersTransactionsReport(requestOptions);
-  };
-
-  return { mutationFn, ...mutationOptions };
-};
-
-export type RunAllOwnersTransactionsReportMutationResult = NonNullable<
-  Awaited<ReturnType<typeof runAllOwnersTransactionsReport>>
->;
-
-export type RunAllOwnersTransactionsReportMutationError = unknown;
-
-export const useRunAllOwnersTransactionsReport = <
-  TError = unknown,
-  TContext = unknown,
->(
-  options?: {
-    mutation?: UseMutationOptions<
-      Awaited<ReturnType<typeof runAllOwnersTransactionsReport>>,
-      TError,
-      void,
-      TContext
-    >;
-    request?: SecondParameter<typeof http>;
-  },
-  queryClient?: QueryClient,
-): UseMutationResult<
-  Awaited<ReturnType<typeof runAllOwnersTransactionsReport>>,
-  TError,
-  void,
-  TContext
-> => {
-  const mutationOptions =
-    getRunAllOwnersTransactionsReportMutationOptions(options);
 
   return useMutation(mutationOptions, queryClient);
 };

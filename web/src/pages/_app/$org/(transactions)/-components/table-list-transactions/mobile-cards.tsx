@@ -20,6 +20,7 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu'
+import { useAuthStore } from '@/stores/auth'
 
 interface MobileCardsProps {
   transactions: ListTransactions200TransactionsItem[]
@@ -40,6 +41,7 @@ export function MobileCards({
   onPay,
   onDelete,
 }: MobileCardsProps) {
+  const currentUser = useAuthStore(s => s.user)
   const [expandedCard, setExpandedCard] = useState<string | null>(null)
 
   const formatCurrency = (amount: number) => {
@@ -80,8 +82,9 @@ export function MobileCards({
     return null
   }
 
-  const getTypeIcon = (type: string) => {
-    return type === 'expense' ? (
+  const getTypeIcon = (transaction: ListTransactions200TransactionsItem) => {
+    const contextualizedType = transaction.contextualizedType || transaction.type
+    return contextualizedType === 'expense' ? (
       <ArrowDown className="h-4 w-4 text-red-600" />
     ) : (
       <ArrowUp className="h-4 w-4 text-green-500" />
@@ -129,7 +132,7 @@ export function MobileCards({
                   className="h-4 w-4"
                 />
                 <div className="flex items-center gap-1.5">
-                  {getTypeIcon(transaction.type)}
+                  {getTypeIcon(transaction)}
                   <h3 className="font-semibold text-sm truncate">{transaction.title}</h3>
                 </div>
                 <div className="flex items-center gap-1.5 ml-auto">
@@ -152,20 +155,26 @@ export function MobileCards({
                   </Button>
                 </DropdownMenuTrigger>
                 <DropdownMenuContent align="end" className="w-48">
-                  <DropdownMenuItem onClick={() => onEdit(transaction)}>Editar</DropdownMenuItem>
+                  <DropdownMenuItem onClick={() => onEdit(transaction)}>
+                    {currentUser?.id === transaction.ownerId ? 'Editar' : 'Visualizar'}
+                  </DropdownMenuItem>
                   <DropdownMenuItem onClick={() => onDuplicate(transaction)}>
                     Duplicar
                   </DropdownMenuItem>
-                  <DropdownMenuSeparator />
-                  <DropdownMenuItem onClick={() => onPay(transaction.id)}>
-                    {transaction.status === 'paid' ? 'Cancelar Pagamento' : 'Marcar como Pago'}
-                  </DropdownMenuItem>
-                  <DropdownMenuItem
-                    onClick={() => onDelete(transaction.id)}
-                    className="text-destructive focus:text-destructive"
-                  >
-                    Excluir
-                  </DropdownMenuItem>
+                  {currentUser?.id === transaction.ownerId && (
+                    <>
+                      <DropdownMenuSeparator />
+                      <DropdownMenuItem onClick={() => onPay(transaction.id)}>
+                        {transaction.status === 'paid' ? 'Cancelar Pagamento' : 'Marcar como Pago'}
+                      </DropdownMenuItem>
+                      <DropdownMenuItem
+                        onClick={() => onDelete(transaction.id)}
+                        className="text-destructive focus:text-destructive"
+                      >
+                        Excluir
+                      </DropdownMenuItem>
+                    </>
+                  )}
                 </DropdownMenuContent>
               </DropdownMenu>
             </div>

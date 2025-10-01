@@ -1,8 +1,9 @@
 import { createFileRoute, useNavigate } from '@tanstack/react-router'
 import { Mail, Phone } from 'lucide-react'
 import { useEffect, useMemo, useState } from 'react'
-import { useForm } from 'react-hook-form'
-import { useHookFormMask } from 'use-mask-input'
+
+// import { useForm } from 'react-hook-form'
+// import { useHookFormMask } from 'use-mask-input'
 
 import { useSignIn } from '@/api/generated/api'
 import { Button } from '@/components/ui/button'
@@ -31,9 +32,7 @@ function Index() {
   const { mutateAsync: signIn } = useSignIn()
   const idInputId = 'signin-input'
 
-  // form infra just to reuse the same phone mask used in user list
-  const form = useForm<{ phone: string }>()
-  const registerWithMask = useHookFormMask(form.register)
+  // Máscara de telefone implementada manualmente
 
   const isEmailValid = useMemo(() => /.+@.+\..+/.test(identifier.trim()), [identifier])
   const phoneDigits = useMemo(() => identifier.replace(/\D/g, ''), [identifier])
@@ -155,6 +154,7 @@ function Index() {
               placeholder="voce@empresa.com"
               inputMode="email"
               autoComplete="email"
+              type="email"
               value={identifier}
               onChange={e => setIdentifier(e.target.value)}
             />
@@ -164,9 +164,15 @@ function Index() {
               placeholder="(11) 99999-9999"
               inputMode="tel"
               autoComplete="tel"
-              {...registerWithMask('phone', ['(99) 99999-9999', '(99) 9999-9999'])}
               value={identifier}
-              onChange={e => setIdentifier(e.target.value)}
+              onChange={e => {
+                const value = e.target.value.replace(/\D/g, '')
+                const formatted =
+                  value.length <= 10
+                    ? value.replace(/(\d{2})(\d{4})(\d{4})/, '($1) $2-$3')
+                    : value.replace(/(\d{2})(\d{5})(\d{4})/, '($1) $2-$3')
+                setIdentifier(formatted)
+              }}
             />
           )}
           <Button

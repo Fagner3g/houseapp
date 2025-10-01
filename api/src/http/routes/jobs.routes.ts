@@ -168,6 +168,18 @@ const ChartDataSchema = z.object({
   }),
 })
 
+const KPISchema = z.object({
+  totalMonth: z.number(),
+  incomeRegistered: z.number(),
+  expenseRegistered: z.number(),
+  receivedTotal: z.number(),
+  toSpendTotal: z.number(),
+})
+
+const IncomeVsExpenseDailySchema = z.array(
+  z.object({ date: z.string(), income: z.number(), expense: z.number() })
+)
+
 const TransactionReportsResponseSchema = z.object({
   reports: z.object({
     upcomingAlerts: z.object({
@@ -177,6 +189,50 @@ const TransactionReportsResponseSchema = z.object({
     monthlyStats: MonthlyStatsSchema,
     recentActivity: z.array(RecentActivitySchema),
     chartData: ChartDataSchema,
+    kpis: KPISchema.optional(),
+    incomeVsExpenseDaily: IncomeVsExpenseDailySchema.optional(),
+    overdueTransactions: z
+      .object({
+        summary: z.object({ total: z.number() }),
+        transactions: z.array(
+          z.object({
+            id: z.string(),
+            title: z.string(),
+            amount: z.number(),
+            dueDate: z.string(),
+            ownerName: z.string(),
+            ownerId: z.string().optional(),
+            payTo: z.string().optional(),
+            payToId: z.string().optional(),
+            payToName: z.string().optional(),
+            payToEmail: z.string().optional(),
+            status: z.enum(['paid', 'pending']).optional(),
+            overdueDays: z.number().optional(),
+          })
+        ),
+      })
+      .optional(),
+    paidThisMonth: z
+      .object({
+        summary: z.object({ total: z.number(), totalAmount: z.number() }),
+        transactions: z.array(
+          z.object({
+            id: z.string(),
+            title: z.string(),
+            amount: z.number(),
+            dueDate: z.string(),
+            paidAt: z.string().nullable().optional(),
+            ownerName: z.string(),
+            ownerId: z.string().optional(),
+            payTo: z.string().optional(),
+            payToId: z.string().optional(),
+            payToName: z.string().optional(),
+            payToEmail: z.string().optional(),
+            status: z.enum(['paid', 'pending']).optional(),
+          })
+        ),
+      })
+      .optional(),
   }),
   timestamp: z.string(),
 })
@@ -340,7 +396,7 @@ export async function jobsRoutes(app: FastifyInstance) {
     previewTransactionAlertsController
   )
 
-  // Relatórios completos para o dashboard
+  // Relatórios completos para o dashboard (sem envolver jobs agendados)
   app.get(
     '/org/:slug/reports/transactions',
     {
@@ -348,10 +404,12 @@ export async function jobsRoutes(app: FastifyInstance) {
       preHandler: [verifyOrgAccessHook],
       schema: {
         tags: ['Reports'],
-        summary: 'Relatórios completos de transações para o dashboard',
+        summary: 'Retorna dados consolidados para o dashboard da organização',
         security: [{ bearerAuth: [] }],
         response: {
           200: TransactionReportsResponseSchema,
+          401: ErrorResponseSchema,
+          403: ErrorResponseSchema,
         },
       },
     },

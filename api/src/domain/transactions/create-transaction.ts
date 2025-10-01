@@ -22,6 +22,7 @@ export async function createTransactionService({
   organizationId,
   amount,
   dueDate,
+  description,
   tags = [],
   isRecurring,
   recurrenceInterval,
@@ -96,7 +97,7 @@ export async function createTransactionService({
     }
   }
 
-  await materializeOccurrences(series.id)
+  await materializeOccurrences(series.id, 6, description)
 
   return { series }
 }

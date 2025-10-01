@@ -1,6 +1,4 @@
 // Importar todos os jobs para registrar automaticamente
-import './transactions'
-import './transactions-to-owner'
 import './materialize-occurrences'
 import './transaction-alerts'
 

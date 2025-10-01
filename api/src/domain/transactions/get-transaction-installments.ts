@@ -5,10 +5,10 @@ import { transactionOccurrences } from '@/db/schemas/transactionOccurrences'
 import { transactionSeries } from '@/db/schemas/transactionSeries'
 
 interface GetTransactionInstallmentsRequest {
-  seriesId: string
+  serieId: string
 }
 
-export async function getTransactionInstallments({ seriesId }: GetTransactionInstallmentsRequest) {
+export async function getTransactionInstallments({ serieId }: GetTransactionInstallmentsRequest) {
   const installments = await db
     .select({
       id: transactionOccurrences.id,
@@ -22,7 +22,7 @@ export async function getTransactionInstallments({ seriesId }: GetTransactionIns
     })
     .from(transactionOccurrences)
     .innerJoin(transactionSeries, eq(transactionOccurrences.seriesId, transactionSeries.id))
-    .where(eq(transactionOccurrences.seriesId, seriesId))
+    .where(eq(transactionOccurrences.seriesId, serieId))
     .orderBy(transactionOccurrences.installmentIndex)
 
   return { installments }
