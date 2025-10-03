@@ -1,7 +1,6 @@
 import type { FastifyReply, FastifyRequest } from 'fastify'
 
 import { getTransactionReports } from '@/domain/reports/dashboard'
-import { logger } from '@/http/utils/logger'
 import {
   getJobInfo,
   getJobsStatus,
@@ -13,7 +12,7 @@ import {
   stopAllJobs,
   stopJob,
 } from '@/jobs'
-import { runTransactionAlertsNow } from '@/jobs/transaction-alerts'
+import { logger } from '@/lib/logger'
 import { BadRequestError } from '../utils/error'
 
 /**
@@ -250,11 +249,12 @@ export async function previewTransactionAlertsController(
       throw new BadRequestError('Usuário não pertence a nenhuma organização')
     }
 
-    const orgId = orgs.organizations[0].id
-    const runResult = await runTransactionAlertsNow()
+    // Usar a função de preview que não envia mensagens
+    const { previewTransactionAlerts } = await import('@/jobs/transaction-alerts')
+    const previewData = await previewTransactionAlerts()
 
     return reply.status(200).send({
-      preview: runResult,
+      preview: previewData,
       timestamp: new Date().toISOString(),
     })
   } catch (error) {

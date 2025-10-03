@@ -1,4 +1,4 @@
-import { logger } from '@/http/utils/logger'
+import { logger } from '@/lib/logger'
 
 /**
  * Formata duração em milissegundos para string legível

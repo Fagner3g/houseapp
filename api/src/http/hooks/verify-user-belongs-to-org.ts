@@ -1,8 +1,8 @@
 import type { FastifyRequest } from 'fastify'
 
 import { verifyUserBelongsToOrg } from '@/domain/organization/verify-user-belongs-to-org'
+import { logger } from '../../lib/logger'
 import { ForbiddenError } from '../utils/error'
-import { logger } from '../utils/logger'
 
 export async function verifyOrgAccessHook(request: FastifyRequest) {
   const { slug } = request.params as { slug: string }

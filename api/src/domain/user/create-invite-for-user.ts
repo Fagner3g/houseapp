@@ -1,7 +1,8 @@
 import { db } from '@/db'
 import { userOrganizations } from '@/db/schemas/userOrganization'
 import { users } from '@/db/schemas/users'
-import { createOrganization } from '../organization/create-organization'
+
+// Removido: não criar organização automática ao aceitar convite
 
 interface CreateNewUserRequest {
   name: string
@@ -16,8 +17,6 @@ export async function createForUserInvite({
   phone,
   orgIdInvite,
 }: CreateNewUserRequest) {
-  let organizationId: string | null = null
-
   const [user] = await db
     .insert(users)
     .values({
@@ -27,14 +26,6 @@ export async function createForUserInvite({
       avatarUrl: `https://robohash.org/${Math.random().toString(36).slice(2)}?size=200x200`,
     })
     .returning()
-
-  const { organization } = await createOrganization({ name, isFirstOrg: true, ownerId: user.id })
-  organizationId = organization.id
-
-  await db.insert(userOrganizations).values({
-    userId: user.id,
-    organizationId,
-  })
 
   await db.insert(userOrganizations).values({
     userId: user.id,

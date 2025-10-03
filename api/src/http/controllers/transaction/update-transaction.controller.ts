@@ -6,7 +6,7 @@ import type {
   UpdateTransactionSchemaParams,
 } from '@/http/schemas/transaction/update-transaction.schema'
 import { BadRequestError } from '@/http/utils/error'
-import { logger } from '@/http/utils/logger'
+import { logger } from '@/lib/logger'
 
 type Req = FastifyRequest<{
   Params: UpdateTransactionSchemaParams

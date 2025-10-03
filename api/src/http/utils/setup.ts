@@ -15,10 +15,10 @@ import {
 import { env } from '@/config/env'
 import mailPlugin from '@/plugins/mail'
 import { version } from '../../../package.json'
+import { logger } from '../../lib/logger'
 import { createRoutes } from '../routes'
 import { errorHandler } from './error/handlers'
 import { centsToDecimalString } from './format'
-import { logger } from './logger'
 import { reqReplyTime } from './metrics'
 
 export async function buildServer() {

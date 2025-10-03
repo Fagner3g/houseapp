@@ -11,5 +11,6 @@ export type GetOrgSlugReportsTransactions200ReportsKpis = {
   incomeRegistered: number;
   expenseRegistered: number;
   receivedTotal: number;
+  toReceiveTotal: number;
   toSpendTotal: number;
 };

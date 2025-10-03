@@ -31,7 +31,6 @@ function RouteComponent() {
   } = useValidateToken({
     mutation: {
       onSuccess: async data => {
-        console.log('data', data)
         if (data.valid && token) {
           // 1) Salva o token para habilitar chamadas autenticadas
           setAuthToken(token)
@@ -42,9 +41,11 @@ function RouteComponent() {
           const userFromProfile = prof.data?.user ?? null
           setUser(userFromProfile)
 
-          // 3) Navega assim que tiver o slug
+          // 3) Navega: se tiver organização, vai pro dashboard; senão, abre criação
           if (data.slug) {
             navigate({ to: '/$org/dashboard', params: { org: data.slug } })
+          } else {
+            navigate({ to: '/new-org' })
           }
         }
       },

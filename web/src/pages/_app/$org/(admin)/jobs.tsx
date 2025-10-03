@@ -294,10 +294,10 @@ function JobsPage() {
             </div>
             <div className="pl-6 space-y-1 text-sm text-muted-foreground">
               <p>• Envia alertas para transações próximas do vencimento</p>
-              <p>• Executa 3x por dia: 09:00, 15:00 e 21:00</p>
-              <p>• Alertas urgentes (hoje/amanhã): sempre envia</p>
-              <p>• Alertas de 2 dias: apenas às 09:00</p>
-              <p>• Lembretes (3-4 dias): apenas às 09:00 em dias pares</p>
+              <p>• Executa diariamente às 09:00</p>
+              <p>• Busca transações que vencem em até 4 dias</p>
+              <p>• Alertas críticos para vencimentos hoje/amanhã</p>
+              <p>• Lembretes para vencimentos em 2-4 dias</p>
               <p>• Mensagens personalizadas com nome do destinatário</p>
             </div>
           </div>
@@ -352,7 +352,9 @@ function JobsPage() {
             <div className="px-4 lg:px-6">
               <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
                 <div>
-                  <h1 className="text-2xl font-bold tracking-tight sm:text-3xl">Controle de Jobs</h1>
+                  <h1 className="text-2xl font-bold tracking-tight sm:text-3xl">
+                    Controle de Jobs
+                  </h1>
                   <p className="text-muted-foreground">
                     Monitore e execute jobs do sistema manualmente
                   </p>
@@ -463,7 +465,9 @@ function JobsPage() {
                         <div className="flex items-center gap-3">
                           {getStatusIcon(job.isRunning)}
                           <div>
-                            <CardTitle className="text-base sm:text-lg">{job.config.description}</CardTitle>
+                            <CardTitle className="text-base sm:text-lg">
+                              {job.config.description}
+                            </CardTitle>
                             <CardDescription className="font-mono text-xs sm:text-sm">
                               {job.key}
                             </CardDescription>
@@ -538,7 +542,9 @@ function JobsPage() {
                       <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
                         <div>
                           <p className="text-sm font-medium text-muted-foreground">Agendamento</p>
-                          <p className="font-mono text-xs sm:text-sm break-all">{job.config.schedule}</p>
+                          <p className="font-mono text-xs sm:text-sm break-all">
+                            {job.config.schedule}
+                          </p>
                         </div>
                         <div>
                           <p className="text-sm font-medium text-muted-foreground">Timezone</p>

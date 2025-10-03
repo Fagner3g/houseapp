@@ -1,8 +1,8 @@
 import type { FastifyRequest } from 'fastify'
 
+import { logger } from '../../lib/logger'
 import { isTokenRevoked } from '../utils/auth'
 import { UnauthorizedError } from '../utils/error'
-import { logger } from '../utils/logger'
 
 export async function authenticateUserHook(request: FastifyRequest) {
   try {

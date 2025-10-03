@@ -1,11 +1,11 @@
 import { createFileRoute } from '@tanstack/react-router'
 import { Loader2 } from 'lucide-react'
 
+import { useGetWeekSummary } from '@/api/generated/api'
 import { CreateGoal } from '@/components/create-goal'
 import { EmptyGoals } from '@/components/empty-goals'
 import { Dialog } from '@/components/ui/dialog'
 import { useActiveOrganization } from '@/hooks/use-active-organization'
-import { useGetWeekSummary } from '@/api/generated/api'
 import { WeeklySummary } from './-components/weekly-summary'
 
 export const Route = createFileRoute('/_app/$org/(goal)/goals')({

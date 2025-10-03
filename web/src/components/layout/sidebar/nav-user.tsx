@@ -3,6 +3,7 @@ import {
   IconDotsVertical,
   IconLogout,
   IconNotification,
+  IconSettings,
   IconUserCircle,
 } from '@tabler/icons-react'
 import { useNavigate } from '@tanstack/react-router'
@@ -25,6 +26,7 @@ import {
   SidebarMenuItem,
   useSidebar,
 } from '@/components/ui/sidebar'
+import { useActiveOrganization } from '@/hooks/use-active-organization'
 import { useAuthStore } from '@/stores/auth'
 
 interface NavUserProps {
@@ -36,6 +38,7 @@ export function NavUser({ user }: NavUserProps) {
   const navigate = useNavigate()
   const logout = useAuthStore(s => s.logout)
   const { mutateAsync: signOutRequest } = useSignOut()
+  const { slug } = useActiveOrganization()
 
   const handleLogout = async () => {
     await signOutRequest()
@@ -94,6 +97,10 @@ export function NavUser({ user }: NavUserProps) {
               <DropdownMenuItem>
                 <IconNotification />
                 Notifications
+              </DropdownMenuItem>
+              <DropdownMenuItem onClick={() => navigate({ to: `/${slug}/settings` })}>
+                <IconSettings />
+                Configurações
               </DropdownMenuItem>
             </DropdownMenuGroup>
             <DropdownMenuSeparator />

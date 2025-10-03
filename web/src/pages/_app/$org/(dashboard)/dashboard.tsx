@@ -12,6 +12,7 @@ import {
 } from '@/api/generated/api'
 import type {
   GetOrgSlugReportsTransactions200,
+  GetOrgSlugReportsTransactions200ReportsCounterparties,
   ListTransactions200TransactionsItem,
   UpdateTransactionBody,
 } from '@/api/generated/model'
@@ -19,12 +20,14 @@ import { DrawerTransaction } from '@/components/drawer-transaction'
 import { LoadingErrorState } from '@/components/loading-error-state'
 import { useActiveOrganization } from '@/hooks/use-active-organization'
 import { useAuthStore } from '@/stores/auth'
+import { CounterpartySummary } from './components/CounterpartySummary'
 import { DashboardCharts } from './components/DashboardCharts'
 import { MonthlyStatsCards } from './components/MonthlyStatsCards'
 import { OverdueTransactionsCard } from './components/OverdueTransactionsCard'
 import { PaidThisMonthCard } from './components/PaidThisMonthCard'
 import { ReceivedVsToPay } from './components/ReceivedVsToPay'
 import { RecentActivity } from './components/RecentActivity'
+import { TopBillsSummary } from './components/TopBillsSummary'
 import { UpcomingAlerts } from './components/UpcomingAlerts'
 
 interface HandleonExternalSubmitProps {
@@ -100,7 +103,14 @@ function RouteComponent() {
 
         {reports && (
           <>
+            <TopBillsSummary kpis={reports.reports.kpis} />
             <MonthlyStatsCards stats={reports.reports.monthlyStats} />
+            <CounterpartySummary
+              data={
+                reports.reports
+                  .counterparties as unknown as GetOrgSlugReportsTransactions200ReportsCounterparties
+              }
+            />
 
             <OverdueTransactionsCard
               data={reports.reports.overdueTransactions}

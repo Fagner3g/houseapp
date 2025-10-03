@@ -1,4 +1,4 @@
-import { logger } from '@/http/utils/logger'
+import { logger } from '@/lib/logger'
 import { JOB_CONFIGS } from './config'
 import { jobManager } from './job-manager'
 import type { JobConfig, JobResult } from './types'

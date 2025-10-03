@@ -14,7 +14,9 @@ export function buildAlertMessage(
   installmentIndex?: number | null,
   installmentsTotal?: number | null,
   organizationSlug?: string,
-  personName?: string | null
+  personName?: string | null,
+  overdueBlock?: string | null,
+  options?: { includeGreeting?: boolean; includeFooter?: boolean }
 ) {
   const amount = (amountCents / 100).toFixed(2)
   const installmentInfo =
@@ -30,12 +32,15 @@ export function buildAlertMessage(
   } else if (daysUntilDue === 1) {
     message = `🚨 ALERTA URGENTE - VENCIMENTO AMANHÃ 🚨\n\n📋 *${title}${installmentInfo}*\n💰 Valor: R$ ${amount}\n📅 Vencimento: AMANHÃ\n⏰ Ação necessária: URGENTE`
   } else {
-    message = `📅 Lembrete de Vencimento\n\n📋 *${title}${installmentInfo}*\n💰 Valor: R$ ${amount}\n📅 Vencimento: em ${daysUntilDue} dias`
+    message = `Lembrete de Vencimento\n\n📋 *${title}${installmentInfo}*\n💰 Valor: R$ ${amount}\n📅 Vencimento: em ${daysUntilDue} dias`
   }
 
-  const greeting = personName ? `Olá, ${personName}! 👋\n\n` : ''
-  return {
-    kind,
-    message: addMessageFooter(greeting + message, organizationSlug),
-  }
+  const greeting = options?.includeGreeting && personName ? `Olá, ${personName}! 👋\n\n` : ''
+  const withOverdue = overdueBlock ? `${message}\n\n${overdueBlock}` : message
+
+  const base = greeting + withOverdue
+  const finalMessage =
+    options?.includeFooter === false ? base : addMessageFooter(base, organizationSlug)
+
+  return { kind, message: finalMessage }
 }
