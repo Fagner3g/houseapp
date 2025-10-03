@@ -11,8 +11,7 @@ RUN corepack enable && yarn install --frozen-lockfile
 # Copiar arquivos de configuração necessários
 COPY tsconfig*.json ./
 COPY vite.config.ts ./
-COPY tailwind.config.js ./
-COPY postcss.config.js ./
+COPY tailwind.config.ts ./
 
 # Copiar código fonte
 COPY src ./src
