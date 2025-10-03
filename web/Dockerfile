@@ -14,6 +14,7 @@ COPY vite.config.ts ./
 COPY tailwind.config.ts ./
 
 # Copiar código fonte
+COPY index.html ./
 COPY src ./src
 COPY public ./public
 
