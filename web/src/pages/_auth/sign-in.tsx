@@ -69,7 +69,7 @@ function Index() {
 
   if (status === Status.Success) {
     return (
-      <div className="min-h-svh grid place-items-center bg-gradient-to-br from-muted to-background px-4">
+      <div className="h-full grid place-items-center px-4">
         <div className="w-full max-w-sm rounded-xl border bg-card p-6 shadow-sm">
           <div className="mb-4 flex items-center justify-center gap-2 text-center">
             {channel === 'email' ? (
@@ -108,7 +108,7 @@ function Index() {
 
   if (status === Status.Error) {
     return (
-      <div className="min-h-svh grid place-items-center bg-gradient-to-br from-muted to-background px-4">
+      <div className="h-full grid place-items-center px-4">
         <div className="w-full max-w-sm rounded-xl border bg-card p-6 shadow-sm text-center">
           <h1 className="text-lg font-semibold mb-1">Não foi possível enviar</h1>
           <p className="text-sm text-muted-foreground mb-4">
@@ -121,7 +121,7 @@ function Index() {
   }
 
   return (
-    <div className="min-h-svh grid place-items-center bg-gradient-to-br from-muted to-background px-4">
+    <div className="h-full grid place-items-center px-4">
       <div className="w-full max-w-sm rounded-xl border bg-card p-6 shadow-sm">
         <div className="mb-4 text-center">
           <h1 className="text-xl font-semibold tracking-tight">Entrar</h1>

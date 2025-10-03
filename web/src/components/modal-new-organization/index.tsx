@@ -1,5 +1,6 @@
 import { zodResolver } from '@hookform/resolvers/zod'
 import { useQueryClient } from '@tanstack/react-query'
+import { useNavigate } from '@tanstack/react-router'
 import { useState } from 'react'
 import { useForm } from 'react-hook-form'
 import { toast } from 'sonner'
@@ -40,16 +41,19 @@ export function ModalNewOrganization({ open, onOpenChange }: ModalNewOrganizatio
   const { setOrganization } = useActiveOrganization()
   const { mutateAsync: createOrganization, isPending } = useCreateOrganization()
   const [isRedirecting, setIsRedirecting] = useState(false)
+  const navigate = useNavigate()
 
   async function handleSubmit(data: FormValues) {
     setIsRedirecting(true)
     const result = await createOrganization({ data })
     toast.success('Organização criada!')
     await queryClient.invalidateQueries({ queryKey: getListOrganizationsQueryKey() })
-    // Atualiza org ativa (essa função já navega mantendo o path atual para o novo slug)
+    // Atualiza org ativa
     setOrganization(result.slug)
     onOpenChange(false)
     form.reset({ name: '' })
+    // Navegar para o dashboard da nova organização
+    navigate({ to: `/${result.slug}/dashboard` })
     setIsRedirecting(false)
   }
 

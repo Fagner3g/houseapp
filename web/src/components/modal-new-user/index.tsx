@@ -56,7 +56,7 @@ export function ModalNewUser() {
   return (
     <Dialog open={isOpen} onOpenChange={setIsOpen}>
       <DialogTrigger asChild>
-        <Button className="w-full m-2" variant={'outline'}>
+        <Button>
           <Plus className="mr-2 h-4 w-4" />
           Novo Usuário
         </Button>

@@ -31,7 +31,7 @@ export function CounterpartySummary({ data }: Props) {
                 <div className="text-sm text-muted-foreground">Sem valores a receber</div>
               ) : (
                 <ul className="divide-y rounded-md border max-h-72 overflow-auto">
-                  {toReceiveSorted.map((item) => {
+                  {toReceiveSorted.map(item => {
                     return (
                       <li key={`recv-${item.name}-${item.amount}`} className="p-3">
                         <div className="flex items-center justify-between">
@@ -39,7 +39,7 @@ export function CounterpartySummary({ data }: Props) {
                           <span className="font-semibold">{format(item.amount)}</span>
                         </div>
                         <ul className="mt-2 space-y-1 text-sm text-muted-foreground">
-                          {item.items?.map((it) => (
+                          {item.items?.map(it => (
                             <li
                               key={`recv-item-${it.title}-${it.amount}`}
                               className="flex items-center justify-between"
@@ -62,7 +62,7 @@ export function CounterpartySummary({ data }: Props) {
                 <div className="text-sm text-muted-foreground">Sem valores a pagar</div>
               ) : (
                 <ul className="divide-y rounded-md border max-h-72 overflow-auto">
-                  {toPaySorted.map((item) => {
+                  {toPaySorted.map(item => {
                     return (
                       <li key={`pay-${item.name}-${item.amount}`} className="p-3">
                         <div className="flex items-center justify-between">
@@ -70,7 +70,7 @@ export function CounterpartySummary({ data }: Props) {
                           <span className="font-semibold">{format(item.amount)}</span>
                         </div>
                         <ul className="mt-2 space-y-1 text-sm text-muted-foreground">
-                          {item.items?.map((it) => (
+                          {item.items?.map(it => (
                             <li
                               key={`pay-item-${it.title}-${it.amount}`}
                               className="flex items-center justify-between"

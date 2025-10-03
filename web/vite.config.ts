@@ -4,6 +4,9 @@ import { tanstackRouter } from '@tanstack/router-plugin/vite'
 import react from '@vitejs/plugin-react'
 import { defineConfig } from 'vite'
 
+// Ler versão do package.json raiz do projeto
+const rootPackageJson = require('../package.json')
+
 // https://vite.dev/config/
 export default defineConfig({
   plugins: [
@@ -20,5 +23,8 @@ export default defineConfig({
     alias: {
       '@': path.resolve(__dirname, './src'),
     },
+  },
+  define: {
+    'import.meta.env.VITE_APP_VERSION': JSON.stringify(rootPackageJson.version),
   },
 })
