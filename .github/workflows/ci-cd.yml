@@ -77,6 +77,7 @@ jobs:
             ghcr.io/fagner3g/houseapp-${{ matrix.app }}:${{ steps.version.outputs.version }}
           cache-from: type=registry,ref=ghcr.io/fagner3g/houseapp-${{ matrix.app }}:buildcache
           cache-to: type=registry,ref=ghcr.io/fagner3g/houseapp-${{ matrix.app }}:buildcache,mode=max
+          no-cache: true
           platforms: linux/arm64
           build-args: |
             VITE_API_HOST=${{ matrix.app == 'web' && (github.ref_name == 'main' && 'https://api.jarvis.dev.br' || 'https://api.homolog.jarvis.dev.br') || '' }}
