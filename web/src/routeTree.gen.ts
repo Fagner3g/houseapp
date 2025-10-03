@@ -15,10 +15,14 @@ import { Route as AuthValidateRouteImport } from './pages/_auth/validate'
 import { Route as AuthSignUpRouteImport } from './pages/_auth/sign-up'
 import { Route as AuthSignInRouteImport } from './pages/_auth/sign-in'
 import { Route as AuthInviteRouteImport } from './pages/_auth/invite'
+import { Route as AppNewOrgRouteImport } from './pages/_app/new-org'
+import { Route as AppOrgsettingsLayoutRouteImport } from './pages/_app/$org/(settings)/layout'
 import { Route as AppOrguserUsersRouteImport } from './pages/_app/$org/(user)/users'
 import { Route as AppOrgtransactionsTransactionsRouteImport } from './pages/_app/$org/(transactions)/transactions'
+import { Route as AppOrgsettingsSettingsRouteImport } from './pages/_app/$org/(settings)/settings'
 import { Route as AppOrggoalGoalsRouteImport } from './pages/_app/$org/(goal)/goals'
 import { Route as AppOrgdashboardDashboardRouteImport } from './pages/_app/$org/(dashboard)/dashboard'
+import { Route as AppOrgadminJobsRouteImport } from './pages/_app/$org/(admin)/jobs'
 
 const AuthLayoutRoute = AuthLayoutRouteImport.update({
   id: '/_auth',
@@ -48,6 +52,16 @@ const AuthInviteRoute = AuthInviteRouteImport.update({
   path: '/invite',
   getParentRoute: () => AuthLayoutRoute,
 } as any)
+const AppNewOrgRoute = AppNewOrgRouteImport.update({
+  id: '/new-org',
+  path: '/new-org',
+  getParentRoute: () => AppLayoutRoute,
+} as any)
+const AppOrgsettingsLayoutRoute = AppOrgsettingsLayoutRouteImport.update({
+  id: '/$org/(settings)',
+  path: '/$org/',
+  getParentRoute: () => AppLayoutRoute,
+} as any)
 const AppOrguserUsersRoute = AppOrguserUsersRouteImport.update({
   id: '/$org/(user)/users',
   path: '/$org/users',
@@ -59,6 +73,11 @@ const AppOrgtransactionsTransactionsRoute =
     path: '/$org/transactions',
     getParentRoute: () => AppLayoutRoute,
   } as any)
+const AppOrgsettingsSettingsRoute = AppOrgsettingsSettingsRouteImport.update({
+  id: '/settings',
+  path: '/settings',
+  getParentRoute: () => AppOrgsettingsLayoutRoute,
+} as any)
 const AppOrggoalGoalsRoute = AppOrggoalGoalsRouteImport.update({
   id: '/$org/(goal)/goals',
   path: '/$org/goals',
@@ -70,24 +89,37 @@ const AppOrgdashboardDashboardRoute =
     path: '/$org/dashboard',
     getParentRoute: () => AppLayoutRoute,
   } as any)
+const AppOrgadminJobsRoute = AppOrgadminJobsRouteImport.update({
+  id: '/$org/(admin)/jobs',
+  path: '/$org/jobs',
+  getParentRoute: () => AppLayoutRoute,
+} as any)
 
 export interface FileRoutesByFullPath {
+  '/new-org': typeof AppNewOrgRoute
   '/invite': typeof AuthInviteRoute
   '/sign-in': typeof AuthSignInRoute
   '/sign-up': typeof AuthSignUpRoute
   '/validate': typeof AuthValidateRoute
+  '/$org': typeof AppOrgsettingsLayoutRouteWithChildren
+  '/$org/jobs': typeof AppOrgadminJobsRoute
   '/$org/dashboard': typeof AppOrgdashboardDashboardRoute
   '/$org/goals': typeof AppOrggoalGoalsRoute
+  '/$org/settings': typeof AppOrgsettingsSettingsRoute
   '/$org/transactions': typeof AppOrgtransactionsTransactionsRoute
   '/$org/users': typeof AppOrguserUsersRoute
 }
 export interface FileRoutesByTo {
+  '/new-org': typeof AppNewOrgRoute
   '/invite': typeof AuthInviteRoute
   '/sign-in': typeof AuthSignInRoute
   '/sign-up': typeof AuthSignUpRoute
   '/validate': typeof AuthValidateRoute
+  '/$org': typeof AppOrgsettingsLayoutRouteWithChildren
+  '/$org/jobs': typeof AppOrgadminJobsRoute
   '/$org/dashboard': typeof AppOrgdashboardDashboardRoute
   '/$org/goals': typeof AppOrggoalGoalsRoute
+  '/$org/settings': typeof AppOrgsettingsSettingsRoute
   '/$org/transactions': typeof AppOrgtransactionsTransactionsRoute
   '/$org/users': typeof AppOrguserUsersRoute
 }
@@ -95,46 +127,62 @@ export interface FileRoutesById {
   __root__: typeof rootRouteImport
   '/_app': typeof AppLayoutRouteWithChildren
   '/_auth': typeof AuthLayoutRouteWithChildren
+  '/_app/new-org': typeof AppNewOrgRoute
   '/_auth/invite': typeof AuthInviteRoute
   '/_auth/sign-in': typeof AuthSignInRoute
   '/_auth/sign-up': typeof AuthSignUpRoute
   '/_auth/validate': typeof AuthValidateRoute
+  '/_app/$org/(settings)': typeof AppOrgsettingsLayoutRouteWithChildren
+  '/_app/$org/(admin)/jobs': typeof AppOrgadminJobsRoute
   '/_app/$org/(dashboard)/dashboard': typeof AppOrgdashboardDashboardRoute
   '/_app/$org/(goal)/goals': typeof AppOrggoalGoalsRoute
+  '/_app/$org/(settings)/settings': typeof AppOrgsettingsSettingsRoute
   '/_app/$org/(transactions)/transactions': typeof AppOrgtransactionsTransactionsRoute
   '/_app/$org/(user)/users': typeof AppOrguserUsersRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
   fullPaths:
+    | '/new-org'
     | '/invite'
     | '/sign-in'
     | '/sign-up'
     | '/validate'
+    | '/$org'
+    | '/$org/jobs'
     | '/$org/dashboard'
     | '/$org/goals'
+    | '/$org/settings'
     | '/$org/transactions'
     | '/$org/users'
   fileRoutesByTo: FileRoutesByTo
   to:
+    | '/new-org'
     | '/invite'
     | '/sign-in'
     | '/sign-up'
     | '/validate'
+    | '/$org'
+    | '/$org/jobs'
     | '/$org/dashboard'
     | '/$org/goals'
+    | '/$org/settings'
     | '/$org/transactions'
     | '/$org/users'
   id:
     | '__root__'
     | '/_app'
     | '/_auth'
+    | '/_app/new-org'
     | '/_auth/invite'
     | '/_auth/sign-in'
     | '/_auth/sign-up'
     | '/_auth/validate'
+    | '/_app/$org/(settings)'
+    | '/_app/$org/(admin)/jobs'
     | '/_app/$org/(dashboard)/dashboard'
     | '/_app/$org/(goal)/goals'
+    | '/_app/$org/(settings)/settings'
     | '/_app/$org/(transactions)/transactions'
     | '/_app/$org/(user)/users'
   fileRoutesById: FileRoutesById
@@ -188,6 +236,20 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthInviteRouteImport
       parentRoute: typeof AuthLayoutRoute
     }
+    '/_app/new-org': {
+      id: '/_app/new-org'
+      path: '/new-org'
+      fullPath: '/new-org'
+      preLoaderRoute: typeof AppNewOrgRouteImport
+      parentRoute: typeof AppLayoutRoute
+    }
+    '/_app/$org/(settings)': {
+      id: '/_app/$org/(settings)'
+      path: '/$org'
+      fullPath: '/$org'
+      preLoaderRoute: typeof AppOrgsettingsLayoutRouteImport
+      parentRoute: typeof AppLayoutRoute
+    }
     '/_app/$org/(user)/users': {
       id: '/_app/$org/(user)/users'
       path: '/$org/users'
@@ -201,6 +263,13 @@ declare module '@tanstack/react-router' {
       fullPath: '/$org/transactions'
       preLoaderRoute: typeof AppOrgtransactionsTransactionsRouteImport
       parentRoute: typeof AppLayoutRoute
+    }
+    '/_app/$org/(settings)/settings': {
+      id: '/_app/$org/(settings)/settings'
+      path: '/settings'
+      fullPath: '/$org/settings'
+      preLoaderRoute: typeof AppOrgsettingsSettingsRouteImport
+      parentRoute: typeof AppOrgsettingsLayoutRoute
     }
     '/_app/$org/(goal)/goals': {
       id: '/_app/$org/(goal)/goals'
@@ -216,10 +285,31 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AppOrgdashboardDashboardRouteImport
       parentRoute: typeof AppLayoutRoute
     }
+    '/_app/$org/(admin)/jobs': {
+      id: '/_app/$org/(admin)/jobs'
+      path: '/$org/jobs'
+      fullPath: '/$org/jobs'
+      preLoaderRoute: typeof AppOrgadminJobsRouteImport
+      parentRoute: typeof AppLayoutRoute
+    }
   }
 }
 
+interface AppOrgsettingsLayoutRouteChildren {
+  AppOrgsettingsSettingsRoute: typeof AppOrgsettingsSettingsRoute
+}
+
+const AppOrgsettingsLayoutRouteChildren: AppOrgsettingsLayoutRouteChildren = {
+  AppOrgsettingsSettingsRoute: AppOrgsettingsSettingsRoute,
+}
+
+const AppOrgsettingsLayoutRouteWithChildren =
+  AppOrgsettingsLayoutRoute._addFileChildren(AppOrgsettingsLayoutRouteChildren)
+
 interface AppLayoutRouteChildren {
+  AppNewOrgRoute: typeof AppNewOrgRoute
+  AppOrgsettingsLayoutRoute: typeof AppOrgsettingsLayoutRouteWithChildren
+  AppOrgadminJobsRoute: typeof AppOrgadminJobsRoute
   AppOrgdashboardDashboardRoute: typeof AppOrgdashboardDashboardRoute
   AppOrggoalGoalsRoute: typeof AppOrggoalGoalsRoute
   AppOrgtransactionsTransactionsRoute: typeof AppOrgtransactionsTransactionsRoute
@@ -227,6 +317,9 @@ interface AppLayoutRouteChildren {
 }
 
 const AppLayoutRouteChildren: AppLayoutRouteChildren = {
+  AppNewOrgRoute: AppNewOrgRoute,
+  AppOrgsettingsLayoutRoute: AppOrgsettingsLayoutRouteWithChildren,
+  AppOrgadminJobsRoute: AppOrgadminJobsRoute,
   AppOrgdashboardDashboardRoute: AppOrgdashboardDashboardRoute,
   AppOrggoalGoalsRoute: AppOrggoalGoalsRoute,
   AppOrgtransactionsTransactionsRoute: AppOrgtransactionsTransactionsRoute,

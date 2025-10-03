@@ -9,6 +9,7 @@ import {
 } from './goals.routes'
 import { healthRoute } from './health.routes'
 import { acceptInviteRoute, createInviteRoute, getInvitesRoute } from './invite.routes'
+import { jobsRoutes } from './jobs.routes'
 import {
   createOrgRoute,
   deleteOrgRoute,
@@ -16,21 +17,24 @@ import {
   listUsersByOrgRoute,
   renameOrgRoute,
 } from './organization.routes'
-import { reportsRoutes } from './reports.routes'
 import { createTagRoute, deleteTagRoute, listTagsRoute, updateTagRoute } from './tag.routes'
 import {
   createTransactionRoute,
   deleteTransactionsRoute,
+  getTransactionInstallmentsRoute,
   getTransactionRoute,
   listTransactionRoute,
   payTransactionRoute,
   updateTransactionRoute,
 } from './transaction.routes'
-import { createUserWithInviteRoute, getProfileRoute } from './user.routes'
+import { createUserWithInviteRoute, getProfileRoute, updateUserRoute } from './user.routes'
 
 export function createRoutes(app: FastifyInstance) {
   // Health
   app.register(healthRoute)
+
+  // Jobs
+  app.register(jobsRoutes)
 
   // Auth
   app.register(signInRoute)
@@ -41,6 +45,7 @@ export function createRoutes(app: FastifyInstance) {
   // User
   app.register(getProfileRoute)
   app.register(createUserWithInviteRoute)
+  app.register(updateUserRoute)
 
   // Organization
   app.register(createOrgRoute)
@@ -63,13 +68,13 @@ export function createRoutes(app: FastifyInstance) {
   // Transaction
   app.register(createTransactionRoute)
   app.register(getTransactionRoute)
+  app.register(getTransactionInstallmentsRoute)
   app.register(listTransactionRoute)
   app.register(deleteTransactionsRoute)
   app.register(updateTransactionRoute)
   app.register(payTransactionRoute)
 
-  // Reports
-  app.register(reportsRoutes)
+  // Reports removidos
 
   // Tag
   app.register(listTagsRoute)

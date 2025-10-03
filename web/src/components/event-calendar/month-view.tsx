@@ -1,4 +1,4 @@
-/** biome-ignore-all lint/suspicious/noArrayIndexKey: <explanation> */
+/** biome-ignore-all lint/suspicious/noArrayIndexKey: Calendar grid requires index-based keys */
 'use client'
 
 import {
@@ -91,7 +91,10 @@ export function MonthView({ currentDate, events, onEventSelect, onEventCreate }:
     <div data-slot="month-view" className="contents">
       <div className="border-border/70 grid grid-cols-7 border-b">
         {weekdays.map(day => (
-          <div key={day} className="text-muted-foreground/70 py-2 text-center text-sm">
+          <div
+            key={day}
+            className="text-muted-foreground/70 py-1 text-center text-xs sm:py-2 sm:text-sm"
+          >
             {day}
           </div>
         ))}
@@ -117,7 +120,7 @@ export function MonthView({ currentDate, events, onEventSelect, onEventCreate }:
               return (
                 <div
                   key={day.toString()}
-                  className="group border-border/70 data-outside-cell:bg-muted/25 data-outside-cell:text-muted-foreground/70 border-r border-b last:border-r-0"
+                  className="group border-border/70 data-outside-cell:bg-muted/25 data-outside-cell:text-muted-foreground/70 border-r border-b last:border-r-0 min-h-[60px] sm:min-h-[80px]"
                   data-today={isToday(day) || undefined}
                   data-outside-cell={!isCurrentMonth || undefined}
                 >
@@ -130,12 +133,12 @@ export function MonthView({ currentDate, events, onEventSelect, onEventCreate }:
                       onEventCreate(startTime)
                     }}
                   >
-                    <div className="group-data-today:bg-primary group-data-today:text-primary-foreground mt-1 inline-flex size-6 items-center justify-center rounded-full text-sm">
+                    <div className="group-data-today:bg-primary group-data-today:text-primary-foreground mt-1 inline-flex size-5 items-center justify-center rounded-full text-xs sm:size-6 sm:text-sm">
                       {format(day, 'd', { locale: ptBR })}
                     </div>
                     <div
                       ref={isReferenceCell ? contentRef : null}
-                      className="min-h-[calc((var(--event-height)+var(--event-gap))*2)] sm:min-h-[calc((var(--event-height)+var(--event-gap))*3)] lg:min-h-[calc((var(--event-height)+var(--event-gap))*4)]"
+                      className="min-h-[calc((var(--event-height)+var(--event-gap))*1)] sm:min-h-[calc((var(--event-height)+var(--event-gap))*2)] lg:min-h-[calc((var(--event-height)+var(--event-gap))*3)]"
                     >
                       {sortEvents(allDayEvents).map((event, index) => {
                         const eventStart = new Date(event.start)

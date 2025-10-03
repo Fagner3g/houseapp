@@ -54,8 +54,8 @@ jobs:
             VERSION="${{ github.event.inputs.version }}"
             echo "version=$VERSION" >> $GITHUB_OUTPUT
           else
-            # Read version from api/package.json using grep/sed
-            BASE_VERSION=$(grep '"version"' api/package.json | sed 's/.*"version": "\([^"]*\)".*/\1/')
+            # Read version from root package.json using grep/sed
+            BASE_VERSION=$(grep '"version"' package.json | sed 's/.*"version": "\([^"]*\)".*/\1/')
             BRANCH="${{ github.ref_name }}"
             SHA="${GITHUB_SHA::7}"
             
@@ -79,7 +79,7 @@ jobs:
           cache-to: type=registry,ref=ghcr.io/fagner3g/houseapp-${{ matrix.app }}:buildcache,mode=max
           platforms: linux/arm64
           build-args: |
-            VITE_API_HOST=${{ matrix.app == 'web' && 'https://api.jarvis.dev.br' || '' }}
+            VITE_API_HOST=${{ matrix.app == 'web' && (github.ref_name == 'main' && 'https://api.jarvis.dev.br' || 'https://api.homolog.jarvis.dev.br') || '' }}
 
       - name: Build summary
         run: |
@@ -106,8 +106,8 @@ jobs:
             VERSION="${{ github.event.inputs.version }}"
             echo "version=$VERSION" >> $GITHUB_OUTPUT
           else
-            # Read version from api/package.json using grep/sed
-            BASE_VERSION=$(grep '"version"' api/package.json | sed 's/.*"version": "\([^"]*\)".*/\1/')
+            # Read version from root package.json using grep/sed
+            BASE_VERSION=$(grep '"version"' package.json | sed 's/.*"version": "\([^"]*\)".*/\1/')
             BRANCH="${{ github.ref_name }}"
             SHA="${GITHUB_SHA::7}"
             

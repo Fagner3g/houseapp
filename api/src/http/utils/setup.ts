@@ -13,11 +13,12 @@ import {
 } from 'fastify-type-provider-zod'
 
 import { env } from '@/config/env'
+import mailPlugin from '@/plugins/mail'
 import { version } from '../../../package.json'
+import { logger } from '../../lib/logger'
 import { createRoutes } from '../routes'
 import { errorHandler } from './error/handlers'
 import { centsToDecimalString } from './format'
-import { logger } from './logger'
 import { reqReplyTime } from './metrics'
 
 export async function buildServer() {
@@ -62,6 +63,21 @@ export async function buildServer() {
       const allowed = [env.WEB_URL, 'http://localhost:5173', 'http://localhost:3333'].filter(
         Boolean
       )
+
+      // Em desenvolvimento, permite qualquer origem local (IPs locais)
+      if (env.NODE_ENV === 'development') {
+        if (
+          !origin ||
+          allowed.includes(origin) ||
+          origin?.startsWith('http://192.168.') ||
+          origin?.startsWith('http://10.') ||
+          origin?.startsWith('http://172.') ||
+          origin?.includes('localhost')
+        ) {
+          return cb(null, true)
+        }
+      }
+
       if (!origin || allowed.includes(origin)) return cb(null, true)
       return cb(new Error('Not allowed by CORS'), false)
     },
@@ -72,6 +88,21 @@ export async function buildServer() {
   })
 
   app.register(fastifyJwt, { secret: env.JWT_SECRET })
+
+  // Mail (SMTP)
+  app.register(mailPlugin)
+
+  // Configurar parser JSON para aceitar corpos vazios
+  app.addContentTypeParser('application/json', { parseAs: 'string' }, (_req, body, done) => {
+    try {
+      const text = typeof body === 'string' ? body : body.toString('utf8')
+      const json = text === '' ? {} : JSON.parse(text)
+      done(null, json)
+    } catch (err) {
+      const e = err instanceof Error ? err : new Error(String(err))
+      done(e, undefined)
+    }
+  })
 
   app.register(fastifySwagger, {
     openapi: {

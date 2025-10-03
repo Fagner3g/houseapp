@@ -14,7 +14,16 @@ import {
   type VisibilityState,
 } from '@tanstack/react-table'
 import dayjs from 'dayjs'
-import { AlertOctagon, LucideClockFading, TrendingDown, TrendingUp } from 'lucide-react'
+import {
+  AlertOctagon,
+  AlertTriangle,
+  ArrowDown,
+  ArrowUp,
+  ArrowUpDown,
+  LucideClockFading,
+  TrendingDown,
+  TrendingUp,
+} from 'lucide-react'
 import { useEffect, useState } from 'react'
 import { toast } from 'sonner'
 
@@ -38,7 +47,10 @@ import {
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu'
 import { Label } from '@/components/ui/label'
+import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip'
 import { useActiveOrganization } from '@/hooks/use-active-organization'
+import { useIsMobile } from '@/hooks/use-mobile'
+import { useAuthStore } from '@/stores/auth'
 import { DeleteRowAction } from '../delete-row'
 import { PayRowAction } from '../pay-row'
 
@@ -49,11 +61,16 @@ export const useTable = (
 ) => {
   const [rowSelection, setRowSelection] = useState({})
   const [columnVisibility, setColumnVisibility] = useState<VisibilityState>({
-    Pagamento: false,
-    Parcelas: false,
-    Pagas: false,
+    // Visíveis por padrão: Tipo, title (Nome), status, amount (Valor), dueDate (Vencimento), tags
+    // Ocultos por padrão, mas disponíveis no menu:
+    paidAt: false,
+    installmentsTotal: false,
+    installmentsPaid: false,
+    payTo: false,
+    ownerName: false,
   })
   const [columnFilters, setColumnFilters] = useState<ColumnFiltersState>([])
+  const [globalFilter, setGlobalFilter] = useState('')
   const [sorting, setSorting] = useState<SortingState>([])
   const [pagination, setPagination] = useState({
     pageIndex: 0,
@@ -62,6 +79,8 @@ export const useTable = (
   const [editing, setEditing] = useState<ListTransactions200TransactionsItem | null>(null)
   const { slug } = useActiveOrganization()
   const queryClient = useQueryClient()
+  const currentUser = useAuthStore(s => s.user)
+  const isMobile = useIsMobile()
   const { mutate: deleteTransactions } = useDeleteTransactions({
     mutation: {
       onMutate: async ({ slug, data }) => {
@@ -103,12 +122,70 @@ export const useTable = (
 
   useEffect(() => {
     setPagination({ pageIndex: 0, pageSize: perPage })
-  }, [perPage, data])
+  }, [perPage])
 
-  function copyLink(id: string) {
-    const url = `${window.location.origin}/transactions?openId=${id}`
-    navigator.clipboard.writeText(url)
-    toast.success('Link copiado!')
+  // Ajustar visibilidade das colunas para mobile
+  useEffect(() => {
+    if (isMobile) {
+      setColumnVisibility(prev => ({
+        ...prev,
+        // Em mobile, mostrar apenas as colunas essenciais
+        select: true,
+        Tipo: true,
+        title: true,
+        status: true,
+        amount: true,
+        dueDate: false, // Ocultar vencimento em mobile
+        tags: false, // Ocultar tags em mobile
+        paidAt: false,
+        installmentsTotal: false,
+        installmentsPaid: false,
+        payTo: false,
+        ownerName: false,
+        actions: true,
+      }))
+    } else {
+      setColumnVisibility(prev => ({
+        ...prev,
+        // Em desktop, mostrar colunas padrão
+        select: true,
+        Tipo: true,
+        title: true,
+        status: true,
+        amount: true,
+        dueDate: true,
+        tags: true,
+        paidAt: false,
+        installmentsTotal: false,
+        installmentsPaid: false,
+        payTo: false,
+        ownerName: false,
+        actions: true,
+      }))
+    }
+  }, [isMobile])
+
+  // Helper function to create sortable headers
+  const createSortableHeader = (
+    title: string,
+    column: { toggleSorting: (desc?: boolean) => void; getIsSorted: () => false | 'asc' | 'desc' }
+  ) => {
+    return (
+      <Button
+        variant="ghost"
+        className="h-auto p-0 font-semibold hover:bg-transparent"
+        onClick={() => column.toggleSorting(column.getIsSorted() === 'asc')}
+      >
+        {title}
+        {column.getIsSorted() === 'asc' ? (
+          <ArrowUp className="ml-2 h-4 w-4" />
+        ) : column.getIsSorted() === 'desc' ? (
+          <ArrowDown className="ml-2 h-4 w-4" />
+        ) : (
+          <ArrowUpDown className="ml-2 h-4 w-4" />
+        )}
+      </Button>
+    )
   }
 
   const columns: ColumnDef<ListTransactions200TransactionsItem>[] = [
@@ -147,19 +224,25 @@ export const useTable = (
       ),
       cell: ({ row }) => (
         <div>
-          {row.original.type === 'expense' && <TrendingDown className="text-red-600" />}
-          {row.original.type === 'income' && <TrendingUp className="text-green-500" />}
+          {(row.original.contextualizedType || row.original.type) === 'expense' && (
+            <TrendingDown className="text-red-600" />
+          )}
+          {(row.original.contextualizedType || row.original.type) === 'income' && (
+            <TrendingUp className="text-green-500" />
+          )}
         </div>
       ),
     },
     {
       accessorKey: 'title',
-      header: 'Nome',
+      header: ({ column }) => createSortableHeader('Nome', column),
       enableHiding: false,
+      enableSorting: true,
+      sortingFn: 'alphanumeric',
       cell: ({ row, table }) => (
         <Button
           variant="link"
-          className="text-foreground w-fit px-0 text-left"
+          className="w-fit px-0 text-left text-foreground"
           onClick={() => table.options.meta?.editRow(row.original)}
         >
           {row.original.title}
@@ -167,32 +250,114 @@ export const useTable = (
       ),
     },
     {
-      accessorKey: 'Status',
-      header: 'Status',
-      cell: ({ row }) => (
-        <div className="px-1.5 flex items-center gap-2">
-          {row.original.status === 'paid' && (
-            <IconCircleCheckFilled className="fill-green-500 dark:fill-green-400" />
-          )}
-          {row.original.status === 'pending' && row.original.overdueDays > 0 && (
-            <div className="flex items-center gap-1">
-              <AlertOctagon className="text-red-400" />
-              {row.original.overdueDays > 0 && (
-                <span className="text-red-400">{row.original.overdueDays} dias</span>
+      accessorKey: 'status',
+      header: ({ column }) => createSortableHeader('Status', column),
+      enableSorting: true,
+      sortingFn: 'alphanumeric',
+      cell: ({ row }) => {
+        const today = new Date()
+        const dueDate = new Date(row.original.dueDate)
+        const daysUntilDue = Math.ceil(
+          (dueDate.getTime() - today.getTime()) / (1000 * 60 * 60 * 24)
+        )
+
+        return (
+          <div className="px-1.5 flex items-center gap-2">
+            {row.original.status === 'paid' && (
+              <TooltipProvider>
+                <Tooltip>
+                  <TooltipTrigger asChild>
+                    <IconCircleCheckFilled className="fill-green-500 dark:fill-green-400 cursor-help" />
+                  </TooltipTrigger>
+                  <TooltipContent>
+                    <p>Transação paga</p>
+                  </TooltipContent>
+                </Tooltip>
+              </TooltipProvider>
+            )}
+            {row.original.status === 'pending' &&
+              row.original.overdueDays > 0 &&
+              row.original.overdueDays <= 5 && (
+                <TooltipProvider>
+                  <Tooltip>
+                    <TooltipTrigger asChild>
+                      <AlertOctagon className="text-red-400 cursor-help" />
+                    </TooltipTrigger>
+                    <TooltipContent>
+                      <p>Em atraso há {row.original.overdueDays} dias</p>
+                    </TooltipContent>
+                  </Tooltip>
+                </TooltipProvider>
               )}
-              {row.original.overdueDays === 0 && <span className="text-red-400 text-xs">Hoje</span>}
-            </div>
-          )}
-          {row.original.status === 'pending' && row.original.overdueDays === 0 && (
-            <LucideClockFading className="text-yellow-500" />
-          )}
-          {row.original.status === 'canceled' && <AlertOctagon className="text-zinc-400" />}
-        </div>
-      ),
+            {row.original.status === 'pending' && row.original.overdueDays > 5 && (
+              <TooltipProvider>
+                <Tooltip>
+                  <TooltipTrigger asChild>
+                    <AlertTriangle className="text-red-600 cursor-help" />
+                  </TooltipTrigger>
+                  <TooltipContent>
+                    <p>Em atraso há {row.original.overdueDays} dias</p>
+                  </TooltipContent>
+                </Tooltip>
+              </TooltipProvider>
+            )}
+            {row.original.status === 'pending' &&
+              row.original.overdueDays === 0 &&
+              daysUntilDue > 5 && (
+                <TooltipProvider>
+                  <Tooltip>
+                    <TooltipTrigger asChild>
+                      <LucideClockFading className="text-gray-500 cursor-help" />
+                    </TooltipTrigger>
+                    <TooltipContent>
+                      <p>Vence em {daysUntilDue} dias</p>
+                    </TooltipContent>
+                  </Tooltip>
+                </TooltipProvider>
+              )}
+            {row.original.status === 'pending' &&
+              row.original.overdueDays === 0 &&
+              daysUntilDue <= 5 && (
+                <TooltipProvider>
+                  <Tooltip>
+                    <TooltipTrigger asChild>
+                      <LucideClockFading className="text-yellow-500 cursor-help" />
+                    </TooltipTrigger>
+                    <TooltipContent>
+                      <p>
+                        {daysUntilDue === 0
+                          ? 'Vence hoje'
+                          : daysUntilDue === 1
+                            ? 'Vence amanhã'
+                            : daysUntilDue > 0
+                              ? `Vence em ${daysUntilDue} dias`
+                              : 'Vencida'}
+                      </p>
+                    </TooltipContent>
+                  </Tooltip>
+                </TooltipProvider>
+              )}
+            {row.original.status === 'canceled' && (
+              <TooltipProvider>
+                <Tooltip>
+                  <TooltipTrigger asChild>
+                    <AlertOctagon className="text-zinc-400 cursor-help" />
+                  </TooltipTrigger>
+                  <TooltipContent>
+                    <p>Transação cancelada</p>
+                  </TooltipContent>
+                </Tooltip>
+              </TooltipProvider>
+            )}
+          </div>
+        )
+      },
     },
     {
       accessorKey: 'amount',
-      header: 'Valor',
+      header: ({ column }) => createSortableHeader('Valor', column),
+      enableSorting: true,
+      sortingFn: 'basic',
       cell: ({ row }) => (
         <Label className="text-muted-foreground px-1.5">
           {Number(row.original.amount).toLocaleString('pt-BR', {
@@ -203,8 +368,10 @@ export const useTable = (
       ),
     },
     {
-      accessorKey: 'Vencimento',
-      header: 'Vencimento',
+      accessorKey: 'dueDate',
+      header: ({ column }) => createSortableHeader('Vencimento', column),
+      enableSorting: true,
+      sortingFn: 'datetime',
       cell: ({ row }) => (
         <Label className="text-muted-foreground px-1.5">
           {dayjs(row.original.dueDate).format('DD/MM/YYYY')}
@@ -212,9 +379,11 @@ export const useTable = (
       ),
     },
     {
-      accessorKey: 'Pagamento',
-      header: 'Pagamento',
+      accessorKey: 'paidAt',
+      header: ({ column }) => createSortableHeader('Pagamento', column),
       enableHiding: true,
+      enableSorting: true,
+      sortingFn: 'datetime',
       cell: ({ row }) => {
         return (
           <Label className="text-muted-foreground px-1.5">
@@ -224,9 +393,11 @@ export const useTable = (
       },
     },
     {
-      accessorKey: 'Parcelas',
-      header: 'Parcelas',
+      accessorKey: 'installmentsTotal',
+      header: ({ column }) => createSortableHeader('Parcelas', column),
       enableHiding: true,
+      enableSorting: true,
+      sortingFn: 'basic',
       cell: ({ row }) => (
         <Label className="text-muted-foreground px-1.5">
           {row.original.installmentsTotal ?? ''}
@@ -234,9 +405,11 @@ export const useTable = (
       ),
     },
     {
-      accessorKey: 'Pagas',
-      header: 'Pagas',
+      accessorKey: 'installmentsPaid',
+      header: ({ column }) => createSortableHeader('Pagas', column),
       enableHiding: true,
+      enableSorting: true,
+      sortingFn: 'basic',
       cell: ({ row }) => (
         <Label className="text-muted-foreground px-1.5">
           {row.original.installmentsPaid ?? ''}
@@ -244,11 +417,26 @@ export const useTable = (
       ),
     },
     {
-      accessorKey: 'Para',
-      header: 'Para',
+      accessorKey: 'payTo',
+      header: ({ column }) => createSortableHeader('Para', column),
+      enableSorting: true,
+      sortingFn: 'alphanumeric',
       cell: ({ row }) => (
-        <Label className="text-muted-foreground px-1.5">{row.original.payTo}</Label>
+        <Label className="text-muted-foreground px-1.5">{row.original.payTo.split(' ')[0]}</Label>
       ),
+    },
+    {
+      accessorKey: 'ownerName',
+      header: ({ column }) => createSortableHeader('Responsável', column),
+      enableSorting: true,
+      sortingFn: 'alphanumeric',
+      cell: ({ row }) => {
+        return (
+          <div className="px-1.5 flex items-center gap-2">
+            <Label className="text-muted-foreground">{row.original.ownerName.split(' ')[0]}</Label>
+          </div>
+        )
+      },
     },
     {
       accessorKey: 'tags',
@@ -279,20 +467,18 @@ export const useTable = (
           </DropdownMenuTrigger>
           <DropdownMenuContent align="end" className="w-40">
             <DropdownMenuItem onClick={() => table.options.meta?.editRow(row.original)}>
-              Editar
+              {currentUser?.id === row.original.ownerId ? 'Editar' : 'Visualizar'}
             </DropdownMenuItem>
             <DropdownMenuItem onClick={() => table.options.meta?.duplicateRow(row.original)}>
               Duplicar
             </DropdownMenuItem>
-            <DropdownMenuItem onClick={() => toast.success('Favoritado!')}>
-              Favoritar
-            </DropdownMenuItem>
-            <DropdownMenuItem onClick={() => copyLink(row.original.id)}>
-              Copiar link
-            </DropdownMenuItem>
-            <PayRowAction id={row.original.id} status={row.original.status} table={table} />
-            <DropdownMenuSeparator />
-            <DeleteRowAction id={row.original.id} table={table} />
+            {currentUser?.id === row.original.ownerId && (
+              <>
+                <PayRowAction id={row.original.id} status={row.original.status} table={table} />
+                <DropdownMenuSeparator />
+                <DeleteRowAction id={row.original.id} table={table} />
+              </>
+            )}
           </DropdownMenuContent>
         </DropdownMenu>
       ),
@@ -307,6 +493,7 @@ export const useTable = (
       columnVisibility,
       rowSelection,
       columnFilters,
+      globalFilter,
       pagination,
     },
     getRowId: row => row.id.toString(),
@@ -314,6 +501,7 @@ export const useTable = (
     onRowSelectionChange: setRowSelection,
     onSortingChange: setSorting,
     onColumnFiltersChange: setColumnFilters,
+    onGlobalFilterChange: setGlobalFilter,
     onColumnVisibilityChange: setColumnVisibility,
     onPaginationChange: setPagination,
     getCoreRowModel: getCoreRowModel(),
@@ -327,6 +515,7 @@ export const useTable = (
         deleteTransactions({ slug, data: { ids } })
       },
       editRow: (item: ListTransactions200TransactionsItem) => {
+        // Allow viewing for all users, editing only for owners
         setEditing(item)
       },
       duplicateRow: (item: ListTransactions200TransactionsItem) => {
@@ -337,7 +526,7 @@ export const useTable = (
         const allPaid = items.every(t => t.status === 'paid')
 
         try {
-          await Promise.all(ids.map(id => payTransaction({ slug, id })))
+          await Promise.all(ids.map(id => payTransaction({ slug, id, data: {} })))
           toast.success(
             ids.length > 1
               ? allPaid
@@ -350,13 +539,24 @@ export const useTable = (
         } catch {
           toast.error(allPaid ? 'Erro ao cancelar pagamento' : 'Erro ao pagar transações')
         } finally {
-          queryClient.invalidateQueries({
-            queryKey: getListTransactionsQueryKey(slug),
-          })
+          // Pequeno delay para garantir que todas as transações foram processadas
+          setTimeout(async () => {
+            await queryClient.invalidateQueries({
+              queryKey: getListTransactionsQueryKey(slug),
+              refetchType: 'all',
+            })
+
+            // reports removed
+
+            // Forçar refetch das queries para garantir atualização
+            await queryClient.refetchQueries({
+              queryKey: getListTransactionsQueryKey(slug),
+            })
+          }, 100)
         }
       },
     },
   })
 
-  return { table, columns, editing, setEditing }
+  return { table, columns, editing, setEditing, globalFilter, setGlobalFilter, isMobile }
 }

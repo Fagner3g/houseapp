@@ -7,7 +7,7 @@ import type {
   CreateTransactionsSchemaParams,
 } from '@/http/schemas/transaction/create-transaction.schema'
 import { BadRequestError } from '@/http/utils/error'
-import { logger } from '@/http/utils/logger'
+import { logger } from '@/lib/logger'
 
 type Req = FastifyRequest<{
   Params: CreateTransactionsSchemaParams
@@ -62,6 +62,7 @@ export async function createTransactionController(request: Req, reply: FastifyRe
       installmentsTotal,
       installmentsPaid,
     })
+    logger.debug('Transaction created successfully')
   } catch (error) {
     logger.error(error)
     throw new BadRequestError('Error creating transaction')

@@ -3,7 +3,7 @@
  * Do not edit manually.
  * HouseApp API
  * API for HouseApp
- * OpenAPI spec version: 1.0.0
+ * OpenAPI spec version: 1.0.1
  */
 import type { ListTransactionsTagFilterMode } from "./listTransactionsTagFilterMode";
 import type { ListTransactionsType } from "./listTransactionsType";
@@ -24,4 +24,6 @@ export type ListTransactionsParams = {
    * @maximum 9007199254740991
    */
   perPage?: number;
+  responsibleUserId?: string;
+  onlyMarked?: boolean;
 };

@@ -6,7 +6,7 @@ import type {
   DeleteTransactionsSchemaParams,
 } from '@/http/schemas/transaction/delete-transactions.schema'
 import { BadRequestError } from '@/http/utils/error'
-import { logger } from '@/http/utils/logger'
+import { logger } from '@/lib/logger'
 
 type Req = FastifyRequest<{
   Params: DeleteTransactionsSchemaParams

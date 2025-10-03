@@ -2,18 +2,8 @@ import type { Table } from '@tanstack/react-table'
 import { useState } from 'react'
 
 import type { ListTransactions200TransactionsItem } from '@/api/generated/model'
-import {
-  AlertDialog,
-  AlertDialogAction,
-  AlertDialogCancel,
-  AlertDialogContent,
-  AlertDialogDescription,
-  AlertDialogFooter,
-  AlertDialogHeader,
-  AlertDialogTitle,
-  AlertDialogTrigger,
-} from '@/components/ui/alert-dialog'
 import { DropdownMenuItem } from '@/components/ui/dropdown-menu'
+import { PaymentDateDialog } from './payment-date-dialog'
 
 interface Props {
   id: string
@@ -23,35 +13,33 @@ interface Props {
 
 export function PayRowAction({ id, status, table }: Props) {
   const [open, setOpen] = useState(false)
+  const [selectedTransaction, setSelectedTransaction] =
+    useState<ListTransactions200TransactionsItem | null>(null)
 
-  async function handlePay() {
-    await table.options.meta?.payRows([id])
-    setOpen(false)
+  const handleClick = () => {
+    // Encontrar a transação correspondente
+    const transaction = table.getRowModel().rows.find(row => row.original.id === id)?.original
+    setSelectedTransaction(transaction || null)
+    setOpen(true)
   }
 
   const isPaid = status === 'paid'
 
   return (
-    <AlertDialog open={open} onOpenChange={setOpen}>
-      <AlertDialogTrigger asChild>
-        <DropdownMenuItem>{isPaid ? 'Cancelar pagamento' : 'Pagar'}</DropdownMenuItem>
-      </AlertDialogTrigger>
-      <AlertDialogContent>
-        <AlertDialogHeader>
-          <AlertDialogTitle>{isPaid ? 'Cancelar pagamento' : 'Pagar transação'}</AlertDialogTitle>
-          <AlertDialogDescription>
-            {isPaid
-              ? 'Tem certeza que deseja cancelar o pagamento desta transação?'
-              : 'Tem certeza que deseja marcar esta transação como paga?'}
-          </AlertDialogDescription>
-        </AlertDialogHeader>
-        <AlertDialogFooter>
-          <AlertDialogCancel>Cancelar</AlertDialogCancel>
-          <AlertDialogAction onClick={handlePay}>
-            {isPaid ? 'Cancelar pagamento' : 'Pagar'}
-          </AlertDialogAction>
-        </AlertDialogFooter>
-      </AlertDialogContent>
-    </AlertDialog>
+    <>
+      <DropdownMenuItem onClick={handleClick}>
+        {isPaid ? 'Cancelar pagamento' : 'Pagar'}
+      </DropdownMenuItem>
+
+      <PaymentDateDialog
+        transaction={selectedTransaction}
+        open={open}
+        onOpenChange={setOpen}
+        onSuccess={() => {
+          // Invalidar cache da tabela após sucesso
+          table.resetRowSelection()
+        }}
+      />
+    </>
   )
 }

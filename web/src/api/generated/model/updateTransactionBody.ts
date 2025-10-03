@@ -3,7 +3,7 @@
  * Do not edit manually.
  * HouseApp API
  * API for HouseApp
- * OpenAPI spec version: 1.0.0
+ * OpenAPI spec version: 1.0.1
  */
 import type { UpdateTransactionBodyType } from "./updateTransactionBodyType";
 import type { UpdateTransactionBodyTagsItem } from "./updateTransactionBodyTagsItem";
@@ -20,6 +20,8 @@ export type UpdateTransactionBody = {
   serieId: string;
   updateSeries?: boolean;
   dueDate: unknown;
+  /** @pattern ^(?!\.)(?!.*\.\.)([A-Za-z0-9_'+\-\.]*)[A-Za-z0-9_+-]@([A-Za-z0-9][A-Za-z0-9\-]*\.)+[A-Za-z]{2,}$ */
+  payToEmail?: string;
   description?: string;
   tags?: UpdateTransactionBodyTagsItem[];
 };

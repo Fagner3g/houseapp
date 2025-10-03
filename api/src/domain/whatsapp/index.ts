@@ -1,5 +1,3 @@
-import { logger } from '@/http/utils/logger'
-
 type SendWhatsRequest = {
   phone: string
   message: string
@@ -12,15 +10,23 @@ export async function sendWhatsAppMessage({
   const BASE_URL = process.env.EVOLUTION_BASE_URL
   const INSTANCE = process.env.EVOLUTION_INSTANCE
   const API_KEY = process.env.EVOLUTION_API_KEY
+
+  if (!BASE_URL || !INSTANCE || !API_KEY) {
+    return {
+      status: 'error',
+      error: 'WhatsApp API configuration missing',
+      phone,
+    }
+  }
+
   const url = `${BASE_URL}/message/sendText/${INSTANCE}`
+  phone = normalizePhone(phone)
 
   try {
-    phone = normalizePhone(phone)
-
     const response = await fetch(url, {
       method: 'POST',
       headers: {
-        apikey: API_KEY ?? '',
+        apikey: API_KEY,
         'Content-Type': 'application/json',
       },
       body: JSON.stringify({ number: phone, text: message }),
@@ -28,16 +34,30 @@ export async function sendWhatsAppMessage({
 
     if (!response.ok) {
       const errorText = await response.text()
-      return { status: 'error', error: errorText, phone }
+      return {
+        status: 'error',
+        error: `HTTP ${response.status}: ${errorText}`,
+        phone,
+      }
     }
 
     return { status: 'sent', phone }
-  } catch (err) {
-    logger.error(err)
-    if (err instanceof Error) {
-      return { status: 'error', error: err.message }
+  } catch (error) {
+    // Erro de rede/conectividade
+    if (error instanceof TypeError && error.message === 'fetch failed') {
+      return {
+        status: 'error',
+        error: `Network error: Unable to connect to WhatsApp API`,
+        phone,
+      }
     }
-    return { status: 'error', error: 'Unknown error' }
+
+    // Outros erros
+    return {
+      status: 'error',
+      error: error instanceof Error ? error.message : String(error),
+      phone,
+    }
   }
 }
 

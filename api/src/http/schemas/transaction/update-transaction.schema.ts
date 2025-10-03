@@ -16,9 +16,19 @@ const updateTransaction = z.object({
   serieId: z.string(),
   updateSeries: z.boolean().optional(),
   dueDate: z.coerce.date({ error: 'A data de vencimento é obrigatória' }),
+  payToEmail: z.email('Email inválido').optional(),
   description: z.string().optional(),
   tags: z
-    .array(z.object({ name: z.string().trim().min(1), color: z.string().trim().min(1) }))
+    .array(
+      z.object({
+        name: z
+          .string()
+          .trim()
+          .min(1)
+          .transform(val => val.toLowerCase().trim()),
+        color: z.string().trim().min(1),
+      })
+    )
     .optional(),
 })
 

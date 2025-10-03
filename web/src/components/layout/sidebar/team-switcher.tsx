@@ -23,11 +23,12 @@ import { useActiveOrganization } from '@/hooks/use-active-organization'
 import { cn } from '@/lib/utils'
 
 export function TeamSwitcher() {
-  const { isMobile } = useSidebar()
+  const { isMobile, setOpenMobile } = useSidebar()
   const { data } = useListOrganizations()
   const { slug, setOrganization } = useActiveOrganization()
   const [openEdit, setOpenEdit] = useState(false)
   const [openCreate, setOpenCreate] = useState(false)
+  const [openSelector, setOpenSelector] = useState(false)
   const teams = (data?.organizations ?? []).map(org => ({
     id: org.slug,
     name: org.name,
@@ -41,15 +42,19 @@ export function TeamSwitcher() {
     return null
   }
 
+  // sem logs
+
   return (
     <>
       <SidebarMenu>
         <SidebarMenuItem>
-          <DropdownMenu>
+          <DropdownMenu open={openSelector} onOpenChange={setOpenSelector} modal={false}>
             <DropdownMenuTrigger asChild>
               <SidebarMenuButton
+                type="button"
                 size="lg"
                 className="data-[state=open]:bg-sidebar-accent data-[state=open]:text-sidebar-accent-foreground"
+                onClick={() => setOpenSelector(true)}
               >
                 <div className="bg-sidebar-primary text-sidebar-primary-foreground flex aspect-square size-8 items-center justify-center rounded-lg">
                   <activeTeam.logo className="size-4" />
@@ -66,12 +71,19 @@ export function TeamSwitcher() {
               align="start"
               side={isMobile ? 'bottom' : 'right'}
               sideOffset={4}
+              collisionPadding={8}
             >
               <DropdownMenuLabel className="text-muted-foreground text-xs">Teams</DropdownMenuLabel>
               {teams.map((team, index) => (
                 <DropdownMenuItem
                   key={team.id}
-                  onClick={() => setOrganization(team.id)}
+                  onSelect={() => {
+                    setOrganization(team.id)
+                    setOpenSelector(false)
+                    if (isMobile) {
+                      setTimeout(() => setOpenMobile(false), 50)
+                    }
+                  }}
                   className={cn(
                     'gap-2 p-2',
                     team.id === activeTeam.id && 'bg-sidebar-accent text-sidebar-accent-foreground'

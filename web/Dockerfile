@@ -7,7 +7,16 @@ RUN apk add --no-cache python3 make g++ libc6-compat
 # Use Yarn para respeitar yarn.lock e evitar mismatch do esbuild
 COPY package.json yarn.lock ./
 RUN corepack enable && yarn install --frozen-lockfile
-COPY . ./
+
+# Copiar arquivos de configuração necessários
+COPY tsconfig*.json ./
+COPY vite.config.ts ./
+COPY tailwind.config.ts ./
+
+# Copiar código fonte
+COPY index.html ./
+COPY src ./src
+COPY public ./public
 
 # Variáveis de ambiente necessárias para o build do Vite
 ARG VITE_API_HOST

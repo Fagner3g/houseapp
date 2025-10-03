@@ -1,4 +1,4 @@
-import { eq, sql } from 'drizzle-orm'
+import { asc, eq, sql } from 'drizzle-orm'
 
 import { db } from '@/db'
 import { organizations } from '@/db/schemas/organization'
@@ -26,6 +26,7 @@ export async function listUsers({ idOrg }: ListUsersByOrg) {
     .from(users)
     .innerJoin(userOrganizations, eq(users.id, userOrganizations.userId))
     .where(eq(userOrganizations.organizationId, idOrg))
+    .orderBy(asc(users.name))
 
   return { users: result }
 }

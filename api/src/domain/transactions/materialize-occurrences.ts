@@ -7,7 +7,11 @@ import { addPeriod } from '../recurrence/utils'
 
 const HORIZON_MONTHS = 6
 
-export async function materializeOccurrences(seriesId: string, horizon = HORIZON_MONTHS) {
+export async function materializeOccurrences(
+  seriesId: string,
+  horizon = HORIZON_MONTHS,
+  description?: string
+) {
   const series = await db
     .select()
     .from(transactionSeries)
@@ -53,6 +57,7 @@ export async function materializeOccurrences(seriesId: string, horizon = HORIZON
         dueDate: next,
         amount: rule.amount,
         installmentIndex: index,
+        description,
       })
     }
     next = addPeriod(next, rule.recurrenceType, rule.recurrenceInterval ?? 1)

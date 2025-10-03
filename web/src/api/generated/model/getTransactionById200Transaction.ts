@@ -3,9 +3,11 @@
  * Do not edit manually.
  * HouseApp API
  * API for HouseApp
- * OpenAPI spec version: 1.0.0
+ * OpenAPI spec version: 1.0.1
  */
 import type { GetTransactionById200TransactionType } from "./getTransactionById200TransactionType";
+import type { GetTransactionById200TransactionContextualizedType } from "./getTransactionById200TransactionContextualizedType";
+import type { GetTransactionById200TransactionPayTo } from "./getTransactionById200TransactionPayTo";
 import type { GetTransactionById200TransactionStatus } from "./getTransactionById200TransactionStatus";
 import type { GetTransactionById200TransactionTagsItem } from "./getTransactionById200TransactionTagsItem";
 
@@ -13,8 +15,12 @@ export type GetTransactionById200Transaction = {
   id: string;
   serieId: string;
   type: GetTransactionById200TransactionType;
+  contextualizedType: GetTransactionById200TransactionContextualizedType;
   title: string;
-  payTo: string;
+  payTo: GetTransactionById200TransactionPayTo;
+  ownerId: string;
+  payToId: string;
+  ownerName: string;
   amount: string;
   dueDate: string;
   /** @nullable */
@@ -26,4 +32,6 @@ export type GetTransactionById200Transaction = {
   installmentsTotal: number | null;
   /** @nullable */
   installmentsPaid: number | null;
+  /** @nullable */
+  description: string | null;
 };

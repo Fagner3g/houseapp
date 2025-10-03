@@ -2,7 +2,7 @@ import { isNotNull } from 'drizzle-orm'
 
 import { db } from '@/db'
 import { transactionSeries } from '@/db/schemas/transactionSeries'
-import { logger } from '@/http/utils/logger'
+import { logger } from '@/lib/logger'
 
 /**
  * Busca todos os ownerIds distintos que tenham pelo menos 1 transação

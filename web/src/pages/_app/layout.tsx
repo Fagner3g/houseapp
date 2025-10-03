@@ -1,8 +1,9 @@
-import { createFileRoute, Outlet, redirect, useNavigate } from '@tanstack/react-router'
+import { createFileRoute, Outlet, redirect, useNavigate, useSearch } from '@tanstack/react-router'
 import { useEffect } from 'react'
 
 import { Header } from '@/components/layout/header'
 import { AppSidebar } from '@/components/layout/sidebar'
+import { ModalNewOrganization } from '@/components/modal-new-organization'
 import { SidebarInset, SidebarProvider } from '@/components/ui/sidebar'
 import { useAuthHydration } from '@/hooks/use-is-authenticated'
 import { getAuthToken } from '@/lib/auth'
@@ -19,6 +20,7 @@ export const Route = createFileRoute('/_app')({
 
 function RouteComponent() {
   const navigate = useNavigate()
+  const { createOrg = false } = useSearch({ strict: false }) as { createOrg?: boolean }
   const { isAuthed, isLoading } = useAuthHydration()
 
   useEffect(() => {
@@ -33,6 +35,7 @@ function RouteComponent() {
       <SidebarInset>
         <Header />
         <Outlet />
+        <ModalNewOrganization open={!!createOrg} onOpenChange={() => {}} />
       </SidebarInset>
     </SidebarProvider>
   )

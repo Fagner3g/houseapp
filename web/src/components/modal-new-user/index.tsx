@@ -8,6 +8,7 @@ import { toast } from 'sonner'
 import { useHookFormMask } from 'use-mask-input'
 import type z from 'zod'
 
+import { getListUsersByOrgQueryKey, useCreateUserWithInvite } from '@/api/generated/api'
 import { Button } from '@/components/ui/button'
 import {
   Dialog,
@@ -21,7 +22,6 @@ import {
 import { Form, FormControl, FormField, FormItem, FormLabel } from '@/components/ui/form'
 import { Input } from '@/components/ui/input'
 import { useActiveOrganization } from '@/hooks/use-active-organization'
-import { getListUsersByOrgQueryKey, useCreateUserWithInvite } from '@/api/generated/api'
 import { schemaSignUp } from '@/pages/_auth/sign-up'
 
 export type FormValues = z.infer<typeof schemaSignUp>
@@ -56,7 +56,7 @@ export function ModalNewUser() {
   return (
     <Dialog open={isOpen} onOpenChange={setIsOpen}>
       <DialogTrigger asChild>
-        <Button className="m-2" variant={'outline'}>
+        <Button>
           <Plus className="mr-2 h-4 w-4" />
           Novo Usuário
         </Button>

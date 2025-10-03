@@ -6,6 +6,7 @@ import { transactionOccurrences } from '@/db/schemas/transactionOccurrences'
 import { transactionSeries } from '@/db/schemas/transactionSeries'
 import { transactionTags } from '@/db/schemas/transactionTags'
 import { users } from '@/db/schemas/users'
+import { getContextualizedTransactionType } from './get-contextualized-type'
 
 interface ListTransactionsRequest {
   userId: string
@@ -17,6 +18,8 @@ interface ListTransactionsRequest {
   dateTo: Date
   page: number
   perPage: number
+  responsibleUserId?: string // Filter by responsible user (payToId)
+  onlyMarked?: boolean // Show only transactions where user is responsible but not owner
 }
 
 export async function listTransactionsService({
@@ -29,12 +32,28 @@ export async function listTransactionsService({
   dateTo,
   page,
   perPage,
+  responsibleUserId,
+  onlyMarked = false,
 }: ListTransactionsRequest) {
-  const base = and(
-    eq(transactionSeries.ownerId, userId),
+  // Base condition: user must be either owner or responsible for the transaction
+  let base = and(
     eq(transactionSeries.organizationId, orgId),
-    eq(transactionSeries.active, true)
+    eq(transactionSeries.active, true),
+    or(
+      eq(transactionSeries.ownerId, userId), // User is the owner
+      eq(transactionSeries.payToId, userId) // User is responsible for the transaction
+    )
   )
+
+  // If onlyMarked is true, show only transactions where user is responsible but not owner
+  if (onlyMarked) {
+    base = and(
+      eq(transactionSeries.organizationId, orgId),
+      eq(transactionSeries.active, true),
+      eq(transactionSeries.payToId, userId), // User is responsible
+      sql`${transactionSeries.ownerId} != ${userId}` // User is NOT the owner
+    )
+  }
 
   const inSelectedRange = and(
     gte(transactionOccurrences.dueDate, dateFrom),
@@ -49,6 +68,11 @@ export async function listTransactionsService({
 
   if (type !== 'all') {
     where = and(where, eq(transactionSeries.type, type))
+  }
+
+  // Filter by responsible user if specified
+  if (responsibleUserId) {
+    where = and(where, eq(transactionSeries.payToId, responsibleUserId))
   }
 
   if (tags.length > 0) {
@@ -75,7 +99,11 @@ export async function listTransactionsService({
         title: transactionSeries.title,
         type: transactionSeries.type,
         installmentsTotal: transactionSeries.installmentsTotal,
-        payTo: users.name,
+        ownerId: transactionSeries.ownerId,
+        payToId: transactionSeries.payToId,
+        payToName: users.name,
+        payToEmail: users.email,
+        ownerName: sql<string>`owner.name`,
         tags: sql<{ name: string; color: string }[]>`
           coalesce(
             jsonb_agg(distinct jsonb_build_object('name', ${tagsTable.name}, 'color', ${tagsTable.color}))
@@ -94,6 +122,7 @@ export async function listTransactionsService({
       .from(transactionOccurrences)
       .innerJoin(transactionSeries, eq(transactionOccurrences.seriesId, transactionSeries.id))
       .innerJoin(users, eq(transactionSeries.payToId, users.id))
+      .innerJoin(sql`users as owner`, eq(transactionSeries.ownerId, sql`owner.id`))
       .leftJoin(transactionTags, eq(transactionTags.transactionId, transactionSeries.id))
       .leftJoin(tagsTable, eq(transactionTags.tagId, tagsTable.id))
       .where(where)
@@ -103,7 +132,11 @@ export async function listTransactionsService({
         transactionSeries.title,
         transactionSeries.type,
         transactionSeries.installmentsTotal,
-        users.name
+        transactionSeries.ownerId,
+        transactionSeries.payToId,
+        users.name,
+        users.email,
+        sql`owner.name`
       )
       .orderBy(desc(transactionOccurrences.dueDate))
       .limit(perPage)
@@ -141,6 +174,7 @@ export async function listTransactionsService({
 
   const transactions = result.map(row => ({
     ...row,
+    payTo: { name: row.payToName, email: row.payToEmail },
     installmentsPaid: paidMap[row.seriesId] ?? 0,
   }))
 
@@ -148,8 +182,18 @@ export async function listTransactionsService({
   const totalPages = Math.ceil(totalItems / perPage)
   const pagesRemaining = Math.max(0, totalPages - page)
 
+  // Adicionar tipo contextualizado para cada transação
+  const contextualizedTransactions = transactions.map(transaction => ({
+    ...transaction,
+    contextualizedType: getContextualizedTransactionType(
+      transaction.type,
+      transaction.ownerId,
+      userId
+    ),
+  }))
+
   return {
-    transactions,
+    transactions: contextualizedTransactions,
     page,
     perPage,
     totalItems,
