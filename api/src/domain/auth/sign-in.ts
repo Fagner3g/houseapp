@@ -40,7 +40,8 @@ export async function SignIn({ email, phone }: SignInRequest) {
 
   const token = await AuthenticateUser(user.id)
 
-  const url = new URL(`${env.WEB_URL}/validate`)
+  const webUrl = env.WEB_URL.replace(/\/+$/, '')
+  const url = new URL(`${webUrl}/validate`)
   url.searchParams.set('token', token)
 
   // Deliver the magic link only through the requested channel
@@ -54,7 +55,7 @@ export async function SignIn({ email, phone }: SignInRequest) {
   if (phone) {
     const targetPhone = normalizedPhone || normalizePhone(user.phone)
     if (targetPhone) {
-      const message = `Olá ${user.name?.split(' ')[0] || ''}!\n\nAcesse seu painel clicando no link:\n<${url.toString()}>\n\nSe não foi você, ignore esta mensagem.`
+      const message = `Olá ${user.name?.split(' ')[0] || ''}!\n\nAcesse seu painel clicando no link:\n${url.toString()}\n\nSe não foi você, ignore esta mensagem.`
       const result = await sendWhatsAppMessage({ phone: targetPhone, message })
 
       if (result.status === 'error') {

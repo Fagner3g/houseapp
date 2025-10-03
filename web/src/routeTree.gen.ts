@@ -15,6 +15,7 @@ import { Route as AuthValidateRouteImport } from './pages/_auth/validate'
 import { Route as AuthSignUpRouteImport } from './pages/_auth/sign-up'
 import { Route as AuthSignInRouteImport } from './pages/_auth/sign-in'
 import { Route as AuthInviteRouteImport } from './pages/_auth/invite'
+import { Route as AppNewOrgRouteImport } from './pages/_app/new-org'
 import { Route as AppOrguserUsersRouteImport } from './pages/_app/$org/(user)/users'
 import { Route as AppOrgtransactionsTransactionsRouteImport } from './pages/_app/$org/(transactions)/transactions'
 import { Route as AppOrggoalGoalsRouteImport } from './pages/_app/$org/(goal)/goals'
@@ -49,6 +50,11 @@ const AuthInviteRoute = AuthInviteRouteImport.update({
   path: '/invite',
   getParentRoute: () => AuthLayoutRoute,
 } as any)
+const AppNewOrgRoute = AppNewOrgRouteImport.update({
+  id: '/new-org',
+  path: '/new-org',
+  getParentRoute: () => AppLayoutRoute,
+} as any)
 const AppOrguserUsersRoute = AppOrguserUsersRouteImport.update({
   id: '/$org/(user)/users',
   path: '/$org/users',
@@ -78,6 +84,7 @@ const AppOrgadminJobsRoute = AppOrgadminJobsRouteImport.update({
 } as any)
 
 export interface FileRoutesByFullPath {
+  '/new-org': typeof AppNewOrgRoute
   '/invite': typeof AuthInviteRoute
   '/sign-in': typeof AuthSignInRoute
   '/sign-up': typeof AuthSignUpRoute
@@ -89,6 +96,7 @@ export interface FileRoutesByFullPath {
   '/$org/users': typeof AppOrguserUsersRoute
 }
 export interface FileRoutesByTo {
+  '/new-org': typeof AppNewOrgRoute
   '/invite': typeof AuthInviteRoute
   '/sign-in': typeof AuthSignInRoute
   '/sign-up': typeof AuthSignUpRoute
@@ -103,6 +111,7 @@ export interface FileRoutesById {
   __root__: typeof rootRouteImport
   '/_app': typeof AppLayoutRouteWithChildren
   '/_auth': typeof AuthLayoutRouteWithChildren
+  '/_app/new-org': typeof AppNewOrgRoute
   '/_auth/invite': typeof AuthInviteRoute
   '/_auth/sign-in': typeof AuthSignInRoute
   '/_auth/sign-up': typeof AuthSignUpRoute
@@ -116,6 +125,7 @@ export interface FileRoutesById {
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
   fullPaths:
+    | '/new-org'
     | '/invite'
     | '/sign-in'
     | '/sign-up'
@@ -127,6 +137,7 @@ export interface FileRouteTypes {
     | '/$org/users'
   fileRoutesByTo: FileRoutesByTo
   to:
+    | '/new-org'
     | '/invite'
     | '/sign-in'
     | '/sign-up'
@@ -140,6 +151,7 @@ export interface FileRouteTypes {
     | '__root__'
     | '/_app'
     | '/_auth'
+    | '/_app/new-org'
     | '/_auth/invite'
     | '/_auth/sign-in'
     | '/_auth/sign-up'
@@ -200,6 +212,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthInviteRouteImport
       parentRoute: typeof AuthLayoutRoute
     }
+    '/_app/new-org': {
+      id: '/_app/new-org'
+      path: '/new-org'
+      fullPath: '/new-org'
+      preLoaderRoute: typeof AppNewOrgRouteImport
+      parentRoute: typeof AppLayoutRoute
+    }
     '/_app/$org/(user)/users': {
       id: '/_app/$org/(user)/users'
       path: '/$org/users'
@@ -239,6 +258,7 @@ declare module '@tanstack/react-router' {
 }
 
 interface AppLayoutRouteChildren {
+  AppNewOrgRoute: typeof AppNewOrgRoute
   AppOrgadminJobsRoute: typeof AppOrgadminJobsRoute
   AppOrgdashboardDashboardRoute: typeof AppOrgdashboardDashboardRoute
   AppOrggoalGoalsRoute: typeof AppOrggoalGoalsRoute
@@ -247,6 +267,7 @@ interface AppLayoutRouteChildren {
 }
 
 const AppLayoutRouteChildren: AppLayoutRouteChildren = {
+  AppNewOrgRoute: AppNewOrgRoute,
   AppOrgadminJobsRoute: AppOrgadminJobsRoute,
   AppOrgdashboardDashboardRoute: AppOrgdashboardDashboardRoute,
   AppOrggoalGoalsRoute: AppOrggoalGoalsRoute,

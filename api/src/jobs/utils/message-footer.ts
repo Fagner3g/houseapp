@@ -1,8 +1,8 @@
-/**
- * Adiciona o footer padrão do HouseApp em todas as mensagens
- */
+import { env } from '@/config/env'
+
 export function addMessageFooter(message: string, organizationSlug?: string): string {
-  const baseUrl = 'https://app.jarvis.dev.br/'
+  const ensureTrailingSlash = (url: string): string => (url.endsWith('/') ? url : `${url}/`)
+  const baseUrl = ensureTrailingSlash(env.WEB_URL)
   const url = organizationSlug ? `${baseUrl}${organizationSlug}/transactions` : baseUrl
 
   const footer = `---

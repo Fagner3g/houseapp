@@ -10,7 +10,7 @@ interface CreateOrganization {
   ownerId: string
 }
 
-export async function createOrganization({ name, isFirstOrg, ownerId }: CreateOrganization) {
+export async function createOrganization({ name, ownerId }: CreateOrganization) {
   let attempt = 0
   const base = slugify(name, { lower: true, remove: /[*+~.()'"!:@]/g })
 
@@ -18,11 +18,12 @@ export async function createOrganization({ name, isFirstOrg, ownerId }: CreateOr
     const slug = attempt === 0 ? base : `${base}-${attempt}`
 
     try {
+      const finalName = name.trim()
       const [organization] = await db
         .insert(organizations)
         .values({
           ownerId,
-          name: isFirstOrg ? 'My House' : `${name.split(' ')[0]} House`,
+          name: finalName,
           slug,
         })
         .returning()

@@ -1,5 +1,6 @@
 import { zodResolver } from '@hookform/resolvers/zod'
 import { createFileRoute, useNavigate } from '@tanstack/react-router'
+import { useState } from 'react'
 import { useForm } from 'react-hook-form'
 import { toast } from 'sonner'
 import { useHookFormMask } from 'use-mask-input'
@@ -42,15 +43,19 @@ function Index() {
   const { mutateAsync: createUser } = useSignUp()
   const form = useForm<FormValues>({ resolver: zodResolver(schemaSignUp) })
   const registerWithMask = useHookFormMask(form.register)
+  const [isSubmitting, setIsSubmitting] = useState(false)
 
   async function handleSubmit(values: FormValues) {
     const inviteToken = localStorage.getItem('invite-token') || undefined
     try {
+      setIsSubmitting(true)
       await createUser({ data: { ...values, inviteToken } })
       toast.success('Cadastro realizado! Verifique seu e-mail.')
       navigate({ to: '/sign-in' })
     } catch {
       toast.error('Erro ao cadastrar')
+    } finally {
+      setIsSubmitting(false)
     }
   }
 
@@ -114,7 +119,7 @@ function Index() {
               )}
             />
 
-            <Button type="submit" className="mt-1">
+            <Button type="submit" className="mt-1" isLoading={isSubmitting} disabled={isSubmitting}>
               Cadastrar
             </Button>
             <Button

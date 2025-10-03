@@ -142,6 +142,108 @@ async function sendTransactionAlerts(): Promise<JobResult> {
 // Registrar o job
 jobManager.registerJob(JOB_CONFIGS.TRANSACTION_ALERTS, sendTransactionAlerts)
 
+/**
+ * Preview das transações que seriam processadas pelo job de alertas (sem enviar mensagens)
+ */
+export async function previewTransactionAlerts(): Promise<{
+  summary: {
+    total: number
+    today: number
+    tomorrow: number
+    thisWeek: number
+    overdue: number
+  }
+  transactions: Array<{
+    id: string
+    title: string
+    amount: number
+    dueDate: string
+    daysUntilDue: number
+    payToName: string | null
+    payToPhone: string | null
+    organizationSlug: string
+    installmentInfo: string | null
+    overdueCount: number
+  }>
+}> {
+  try {
+    // Buscar transações que vencem em até 4 dias via domínio
+    const upcomingTransactions = await fetchUpcomingTransactionsForAlerts([])
+
+    if (upcomingTransactions.length === 0) {
+      return {
+        summary: { total: 0, today: 0, tomorrow: 0, thisWeek: 0, overdue: 0 },
+        transactions: [],
+      }
+    }
+
+    // Normalizar data de hoje para comparação
+    const today = new Date()
+    today.setHours(0, 0, 0, 0)
+
+    let todayCount = 0
+    let tomorrowCount = 0
+    let thisWeekCount = 0
+    let overdueCount = 0
+
+    const transactions = []
+
+    for (const t of upcomingTransactions) {
+      const dueDate = new Date(t.dueDate)
+      dueDate.setHours(0, 0, 0, 0)
+      const daysUntilDue = Math.ceil((dueDate.getTime() - today.getTime()) / (24 * 60 * 60 * 1000))
+
+      // Contar por categoria
+      if (daysUntilDue === 0) todayCount++
+      else if (daysUntilDue === 1) tomorrowCount++
+      else if (daysUntilDue <= 7) thisWeekCount++
+
+      // Buscar transações vencidas da mesma série
+      const overdueList = t.organizationSlug
+        ? await fetchOverdueTransactionsForAlerts(
+            t.organizationSlug,
+            t.payToId ?? undefined,
+            t.seriesId
+          )
+        : []
+
+      overdueCount += overdueList.length
+
+      const installmentInfo =
+        t.installmentIndex != null && t.installmentsTotal != null
+          ? `Parcela ${t.installmentIndex + 1}/${t.installmentsTotal}`
+          : null
+
+      transactions.push({
+        id: t.id,
+        title: t.title,
+        amount: t.amountCents / 100,
+        dueDate: t.dueDate.toISOString(),
+        daysUntilDue,
+        payToName: t.payToName,
+        payToPhone: t.payToPhone,
+        organizationSlug: t.organizationSlug,
+        installmentInfo,
+        overdueCount: overdueList.length,
+      })
+    }
+
+    return {
+      summary: {
+        total: upcomingTransactions.length,
+        today: todayCount,
+        tomorrow: tomorrowCount,
+        thisWeek: thisWeekCount,
+        overdue: overdueCount,
+      },
+      transactions,
+    }
+  } catch (error) {
+    logger.error(`Erro no preview dos alertas de transações: ${String(error)}`)
+    throw error
+  }
+}
+
 // Export para execução manual
 export async function runTransactionAlertsNow(): Promise<JobResult | null> {
   return await jobManager.runJobNow(JOB_CONFIGS.TRANSACTION_ALERTS.key)
