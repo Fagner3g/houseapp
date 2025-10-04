@@ -16,23 +16,33 @@ export function buildAlertMessage(
   organizationSlug?: string,
   personName?: string | null,
   overdueBlock?: string | null,
+  dueDate?: Date,
   options?: { includeGreeting?: boolean; includeFooter?: boolean }
 ) {
   const amount = (amountCents / 100).toFixed(2)
   const installmentInfo =
     installmentIndex != null && installmentsTotal != null
-      ? ` (Parcela ${installmentIndex + 1}/${installmentsTotal})`
+      ? ` (Parcela ${installmentIndex}/${installmentsTotal})`
       : ''
+
+  // Formatar data de vencimento
+  const dueDateFormatted = dueDate
+    ? dueDate.toLocaleDateString('pt-BR', {
+        day: '2-digit',
+        month: '2-digit',
+        year: 'numeric',
+      })
+    : ''
 
   const kind = computeAlertKind(daysUntilDue)
 
   let message: string
   if (daysUntilDue === 0) {
-    message = `🚨🚨 ALERTA CRÍTICO DE VENCIMENTO 🚨🚨\n\n📋 *${title}${installmentInfo}*\n💰 Valor: R$ ${amount}\n📅 Vencimento: HOJE\n⏰ Ação necessária: URGENTE`
+    message = `🚨🚨 ALERTA CRÍTICO DE VENCIMENTO 🚨🚨\n\n✧ *${title}${installmentInfo}*\n💰 Valor: R$ ${amount}\n📅 Vencimento: HOJE${dueDateFormatted ? ` (${dueDateFormatted})` : ''}\n⏰ Ação necessária: URGENTE`
   } else if (daysUntilDue === 1) {
-    message = `🚨 ALERTA URGENTE - VENCIMENTO AMANHÃ 🚨\n\n📋 *${title}${installmentInfo}*\n💰 Valor: R$ ${amount}\n📅 Vencimento: AMANHÃ\n⏰ Ação necessária: URGENTE`
+    message = `🚨 ALERTA URGENTE - VENCIMENTO AMANHÃ 🚨\n\n✧ *${title}${installmentInfo}*\n✧ Valor: R$ ${amount}\n📅 Vencimento: AMANHÃ${dueDateFormatted ? ` (${dueDateFormatted})` : ''}\n⏰ Ação necessária: URGENTE`
   } else {
-    message = `Lembrete de Vencimento\n\n📋 *${title}${installmentInfo}*\n💰 Valor: R$ ${amount}\n📅 Vencimento: em ${daysUntilDue} dias`
+    message = `Lembrete de Vencimento\n\n✧ *${title}${installmentInfo}*\n✧ Valor: R$ ${amount}\n✧ Vencimento: em ${daysUntilDue} dias${dueDateFormatted ? ` (${dueDateFormatted})` : ''}`
   }
 
   const greeting = options?.includeGreeting && personName ? `Olá, ${personName}! 👋\n\n` : ''

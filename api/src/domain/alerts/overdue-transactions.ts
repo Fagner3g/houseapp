@@ -1,4 +1,4 @@
-import { and, eq, lt, sql } from 'drizzle-orm'
+import { and, eq, lt, or, sql } from 'drizzle-orm'
 
 import { db } from '@/db'
 import { transactionOccurrences } from '@/db/schemas/transactionOccurrences'
@@ -53,7 +53,9 @@ export async function fetchOverdueTransactionsForAlerts(
         eq(sql`org.slug`, orgSlug),
         eq(transactionOccurrences.status, 'pending'),
         lt(transactionOccurrences.dueDate, today),
-        userId ? eq(transactionSeries.payToId, userId) : sql`true`,
+        userId
+          ? or(eq(transactionSeries.ownerId, userId), eq(transactionSeries.payToId, userId))
+          : sql`true`,
         seriesId ? eq(transactionOccurrences.seriesId, seriesId) : sql`true`
       )
     )

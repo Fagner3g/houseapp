@@ -35,21 +35,47 @@ async function sendTransactionAlerts(): Promise<JobResult> {
     const today = new Date()
     today.setHours(0, 0, 0, 0)
 
-    // Agrupar por responsável (payToPhone) para controlar greeting/footer e evitar duplicar vencidas
-    const groups = new Map<string, typeof upcomingTransactions>()
+    // Agrupar por responsável (owner e payTo) para controlar greeting/footer e evitar duplicar vencidas
+    const groups = new Map<
+      string,
+      {
+        transactions: typeof upcomingTransactions
+        userInfo: { name: string | null; phone: string | null }
+      }
+    >()
+
     for (const t of upcomingTransactions) {
-      const key = `${t.payToPhone ?? 'na'}`
-      const arr = groups.get(key) ?? []
-      arr.push(t)
-      groups.set(key, arr)
+      // SEMPRE adicionar para o owner
+      const ownerKey = `owner_${t.ownerPhone ?? 'na'}`
+      if (t.ownerPhone) {
+        const ownerGroup = groups.get(ownerKey) ?? {
+          transactions: [],
+          userInfo: { name: t.ownerName, phone: t.ownerPhone },
+        }
+        ownerGroup.transactions.push(t)
+        groups.set(ownerKey, ownerGroup)
+      }
+
+      // SEMPRE adicionar para o payTo (mesmo que seja a mesma pessoa)
+      if (t.payToPhone) {
+        const payToKey = `payto_${t.payToPhone}`
+        const payToGroup = groups.get(payToKey) ?? {
+          transactions: [],
+          userInfo: { name: t.payToName, phone: t.payToPhone },
+        }
+        payToGroup.transactions.push(t)
+        groups.set(payToKey, payToGroup)
+      }
     }
 
-    for (const [, items] of groups) {
-      // ordenar por dueDate asc para uma ordem consistente
-      items.sort((a, b) => +new Date(a.dueDate) - +new Date(b.dueDate))
+    for (const [, group] of groups) {
+      const { transactions, userInfo } = group
 
-      for (let idx = 0; idx < items.length; idx++) {
-        const t = items[idx]
+      // ordenar por dueDate asc para uma ordem consistente
+      transactions.sort((a, b) => +new Date(a.dueDate) - +new Date(b.dueDate))
+
+      for (let idx = 0; idx < transactions.length; idx++) {
+        const t = transactions[idx]
         try {
           const dueDate = new Date(t.dueDate)
           dueDate.setHours(0, 0, 0, 0)
@@ -57,26 +83,39 @@ async function sendTransactionAlerts(): Promise<JobResult> {
             (dueDate.getTime() - today.getTime()) / (24 * 60 * 60 * 1000)
           )
 
-          // Vencidas que pertencem à mesma série da transação deste bloco
+          // Buscar TODAS as transações vencidas do usuário (não apenas da mesma série)
           const overdueList = t.organizationSlug
             ? await fetchOverdueTransactionsForAlerts(
                 t.organizationSlug,
-                t.payToId ?? undefined,
-                t.seriesId
+                userInfo.phone === t.ownerPhone ? t.ownerId : (t.payToId ?? undefined)
+                // Removido t.seriesId para buscar todas as séries vencidas
               )
             : []
 
           const overdueBlock = overdueList.length
             ? [
                 '🔻 Transações Vencidas',
-                ...overdueList.slice(0, 5).map(ov => {
-                  const amount = (ov.amountCents / 100).toFixed(2)
-                  const parcela =
-                    ov.installmentIndex != null && ov.installmentsTotal != null
-                      ? ` (Parcela ${ov.installmentIndex + 1}/${ov.installmentsTotal})`
-                      : ''
-                  return `• ${ov.title}${parcela} — R$ ${amount} — há ${ov.overdueDays} dias`
-                }),
+                ...overdueList
+                  .sort((a, b) => {
+                    // Ordenar por: 1) dias vencidos (mais vencidas primeiro), 2) data de vencimento
+                    if (a.overdueDays !== b.overdueDays) {
+                      return b.overdueDays - a.overdueDays
+                    }
+                    return new Date(a.dueDate).getTime() - new Date(b.dueDate).getTime()
+                  })
+                  .slice(0, 5)
+                  .map(ov => {
+                    const amount = (ov.amountCents / 100).toFixed(2)
+                    const parcela =
+                      ov.installmentIndex != null && ov.installmentsTotal != null
+                        ? ` (Parcela ${ov.installmentIndex}/${ov.installmentsTotal})`
+                        : ''
+                    const dueDateFormatted = new Date(ov.dueDate).toLocaleDateString('pt-BR', {
+                      day: '2-digit',
+                      month: '2-digit',
+                    })
+                    return `   \n✧ *${ov.title}${parcela}*\n✧ R$ ${amount}\n✧ Vencida em ${dueDateFormatted} (há ${ov.overdueDays} dias)`
+                  }),
                 overdueList.length > 5 ? `… e mais ${overdueList.length - 5}` : undefined,
               ]
                 .filter(Boolean)
@@ -90,22 +129,27 @@ async function sendTransactionAlerts(): Promise<JobResult> {
             t.installmentIndex,
             t.installmentsTotal ?? null,
             t.organizationSlug,
-            t.payToName,
+            userInfo.name,
             overdueBlock,
-            { includeGreeting: idx === 0, includeFooter: idx === items.length - 1 }
+            new Date(t.dueDate),
+            { includeGreeting: idx === 0, includeFooter: idx === transactions.length - 1 }
           )
 
-          if (t.payToPhone) {
-            const result = await sendWhatsAppMessage({ phone: t.payToPhone, message })
+          if (userInfo.phone) {
+            const result = await sendWhatsAppMessage({ phone: userInfo.phone, message })
             if (result.status === 'sent') {
-              logger.info(`✅ WhatsApp enviado com sucesso para: ${t.payToPhone}`)
+              logger.info(
+                `✅ WhatsApp enviado com sucesso para: ${userInfo.phone} (${userInfo.name})`
+              )
             } else {
-              logger.error(`❌ Erro ao enviar WhatsApp para ${t.payToPhone}: ${result.error}`)
+              logger.error(
+                `❌ Erro ao enviar WhatsApp para ${userInfo.phone} (${userInfo.name}): ${result.error}`
+              )
               errors++
             }
           } else {
             logger.info(
-              `⚠️ Pulando envio - telefone vazio para usuário responsável da transação ${t.id}`
+              `⚠️ Pulando envio - telefone vazio para usuário ${userInfo.name} da transação ${t.id}`
             )
           }
 
