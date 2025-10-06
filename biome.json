@@ -19,7 +19,17 @@
     "rules": {
       "recommended": true,
       "style": {
-        "noNonNullAssertion": "error"
+        "noNonNullAssertion": "error",
+        "noRestrictedTypes": {
+          "level": "error",
+          "options": {
+            "types": {
+              "any": {
+                "message": "Evite any; use unknown ou um tipo específico."
+              }
+            }
+          }
+        }
       }
     }
   },
