@@ -1651,6 +1651,9 @@
               "schema": {
                 "type": "object",
                 "properties": {
+                  "userId": {
+                    "type": "string"
+                  },
                   "email": {
                     "type": "string",
                     "format": "email",
@@ -1668,6 +1671,7 @@
                   }
                 },
                 "required": [
+                  "userId",
                   "email"
                 ]
               }
@@ -1700,13 +1704,15 @@
                       "type": "string"
                     },
                     "phone": {
-                      "type": "string"
+                      "type": "string",
+                      "nullable": true
                     },
                     "avatarUrl": {
                       "type": "string"
                     },
                     "isOwner": {
-                      "type": "string"
+                      "type": "string",
+                      "nullable": true
                     }
                   },
                   "required": [
@@ -1752,6 +1758,9 @@
                       "items": {
                         "type": "object",
                         "properties": {
+                          "id": {
+                            "type": "string"
+                          },
                           "name": {
                             "type": "string"
                           },
@@ -1769,6 +1778,7 @@
                           }
                         },
                         "required": [
+                          "id",
                           "name",
                           "email",
                           "phone",

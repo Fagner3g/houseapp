@@ -9,6 +9,7 @@ export const listUsersByOrgSchema = {
     200: z.object({
       users: z.array(
         z.object({
+          id: z.string(),
           name: z.string(),
           email: z.string(),
           phone: z.string(),

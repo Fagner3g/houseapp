@@ -9,7 +9,9 @@
 export type PatchOrgSlugUsers200 = {
   name: string;
   email: string;
-  phone: string;
+  /** @nullable */
+  phone: string | null;
   avatarUrl: string;
-  isOwner: string;
+  /** @nullable */
+  isOwner: string | null;
 };
