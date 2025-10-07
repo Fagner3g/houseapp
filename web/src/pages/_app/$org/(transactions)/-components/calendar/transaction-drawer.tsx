@@ -78,7 +78,10 @@ export function TransactionDrawer({ transaction, open, onOpenChange }: Props) {
                 {format(new Date(transaction.dueDate), "d 'de' MMMM yyyy", { locale: ptBR })}
               </p>
               <p>
-                <span className="font-medium">Responsável:</span> {transaction.payTo}
+                <span className="font-medium">Responsável:</span>{' '}
+                {typeof transaction.payTo === 'object'
+                  ? transaction.payTo.name || transaction.payTo.email
+                  : String(transaction.payTo)}
               </p>
               <div className="flex flex-wrap gap-1">
                 {transaction.tags.map(tag => (

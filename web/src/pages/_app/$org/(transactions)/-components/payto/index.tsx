@@ -1,4 +1,4 @@
-import { Calendar, ChevronDown, ChevronRight, Clock, DollarSign, Tag, Users } from 'lucide-react'
+import { Calendar, ChevronDown, Clock, DollarSign, Users } from 'lucide-react'
 import { useState } from 'react'
 
 import type {
@@ -10,6 +10,7 @@ import { Button } from '@/components/ui/button'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Separator } from '@/components/ui/separator'
 import { cn } from '@/lib/utils'
+import { useAuthStore } from '@/stores/auth'
 
 interface Props {
   transactions: ListTransactions200['transactions']
@@ -18,6 +19,7 @@ interface Props {
 
 export function PayToTransactions({ transactions, onTransactionClick }: Props) {
   const [openGroups, setOpenGroups] = useState<Set<string>>(new Set())
+  const currentUser = useAuthStore(s => s.user)
 
   // Verificação de segurança
   if (!transactions || !Array.isArray(transactions)) {
@@ -130,245 +132,310 @@ export function PayToTransactions({ transactions, onTransactionClick }: Props) {
 
   return (
     <div className="space-y-6">
-      {/* Header moderno */}
-      <div className="flex items-center justify-between">
+      {/* Header */}
+      <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
         <div className="flex items-center gap-3">
-          <div className="h-10 w-10 rounded-xl bg-gradient-to-br from-primary/20 to-primary/40 flex items-center justify-center border border-primary/20">
-            <Users className="h-5 w-5 text-primary" />
+          <div className="h-8 w-8 rounded-lg bg-gradient-to-br from-primary/20 to-primary/40 flex items-center justify-center border border-primary/20">
+            <Users className="h-4 w-4 text-primary" />
           </div>
-          <div>
-            <h2 className="text-xl font-semibold text-foreground">Transações por Usuário</h2>
-            <p className="text-sm text-muted-foreground">
+          <div className="min-w-0">
+            <h2 className="text-base sm:text-lg font-semibold text-foreground leading-tight">
+              Transações por Usuário
+            </h2>
+            <p className="hidden sm:block text-sm text-muted-foreground">
               Visualize transações agrupadas por responsável
             </p>
           </div>
         </div>
-        <div className="flex items-center gap-2">
-          <Badge variant="secondary" className="px-3 py-1 text-sm font-medium">
+        {/* Chips resumo */}
+        <div className="flex gap-2 flex-wrap sm:justify-end">
+          <Badge variant="secondary" className="px-2.5 py-0.5 text-xs sm:text-sm font-medium">
             {Object.keys(groupedTransactions).length} usuário(s)
           </Badge>
-          <Badge variant="outline" className="px-3 py-1 text-sm">
+          <Badge variant="outline" className="px-2.5 py-0.5 text-xs sm:text-sm">
             {transactions.length} transação(ões)
           </Badge>
         </div>
       </div>
 
-      {Object.entries(groupedTransactions).map(([groupKey, group]) => {
-        const isOpen = openGroups.has(groupKey)
-        const transactions = group.transactions || []
-        const totalAmount = transactions.reduce((sum, t) => sum + parseFloat(t.amount), 0)
-        const pendingCount = transactions.filter(t => {
-          const actualStatus = getActualStatus(t.status, t.dueDate)
-          return actualStatus === 'pending'
-        }).length
-        const overdueCount = transactions.filter(t => {
-          const actualStatus = getActualStatus(t.status, t.dueDate)
-          return actualStatus === 'overdue'
-        }).length
-        const canceledCount = transactions.filter(t => t.status === 'canceled').length
+      {Object.entries(groupedTransactions)
+        .sort((a, b) => a[1].payTo.name.localeCompare(b[1].payTo.name, 'pt-BR'))
+        .map(([groupKey, group]) => {
+          const isOpen = openGroups.has(groupKey)
+          const transactions = group.transactions || []
+          // Totais por contexto (se o usuário visualizador é o payTo, invertimos o tipo)
+          const { totalIncome, totalExpense } = transactions.reduce(
+            (acc, t) => {
+              const isViewerPayTo = t.payTo.email === currentUser?.email
+              const effectiveType = isViewerPayTo
+                ? t.type === 'income'
+                  ? 'expense'
+                  : 'income'
+                : t.type
+              const amount = parseFloat(t.amount)
+              if (effectiveType === 'income') acc.totalIncome += amount
+              else acc.totalExpense += amount
+              return acc
+            },
+            { totalIncome: 0, totalExpense: 0 }
+          )
+          const netTotal = totalIncome - totalExpense
+          const pendingCount = transactions.filter(t => {
+            const actualStatus = getActualStatus(t.status, t.dueDate)
+            return actualStatus === 'pending'
+          }).length
+          const overdueCount = transactions.filter(t => {
+            const actualStatus = getActualStatus(t.status, t.dueDate)
+            return actualStatus === 'overdue'
+          }).length
+          const canceledCount = transactions.filter(t => t.status === 'canceled').length
 
-        return (
-          <Card
-            key={groupKey}
-            className="overflow-hidden border-0 shadow-sm bg-card/50 backdrop-blur-sm cursor-pointer hover:bg-muted/30 hover:shadow-md transition-all duration-200"
-            onClick={() => toggleGroup(groupKey)}
-          >
-            <CardHeader className="p-6">
-              <div className="flex items-center justify-between">
-                <div className="flex items-center gap-4">
-                  <div className="h-12 w-12 rounded-xl bg-gradient-to-br from-primary/20 to-primary/40 flex items-center justify-center border border-primary/20 shadow-sm">
-                    <span className="text-lg font-bold text-primary">
-                      {group.payTo.name.charAt(0).toUpperCase()}
-                    </span>
-                  </div>
-                  <div className="flex-1">
-                    <CardTitle className="text-lg font-semibold text-foreground mb-1">
-                      {group.payTo.name}
-                    </CardTitle>
-                    <p className="text-sm text-muted-foreground font-medium">{group.payTo.email}</p>
-                  </div>
-                </div>
-
-                <div className="flex items-center gap-6">
-                  {/* Estatísticas */}
-                  <div className="text-right">
-                    <div className="flex items-center gap-1 mb-1">
-                      <DollarSign className="h-4 w-4 text-green-600" />
-                      <p className="text-lg font-bold text-foreground">
-                        {formatCurrency(totalAmount.toString())}
-                      </p>
+          return (
+            <Card
+              key={groupKey}
+              className="overflow-hidden rounded-2xl border border-border/40 shadow-sm bg-gradient-to-b from-card/70 to-card/40 backdrop-blur cursor-pointer transition-all duration-200 hover:shadow-lg hover:border-border/60"
+              onClick={() => toggleGroup(groupKey)}
+            >
+              <CardHeader className="p-4 lg:p-6">
+                <div className="flex flex-col gap-2 lg:flex-row lg:items-center lg:justify-between">
+                  <div className="flex items-center gap-3 min-w-0">
+                    <div className="h-10 w-10 rounded-xl bg-gradient-to-br from-primary/20 to-primary/40 flex items-center justify-center border border-primary/20 shadow-sm">
+                      <span className="text-base font-bold text-primary">
+                        {group.payTo.name.charAt(0).toUpperCase()}
+                      </span>
                     </div>
-                    <p className="text-xs text-muted-foreground font-medium">
-                      {transactions.length} transação(ões)
-                    </p>
+                    <div className="flex-1 min-w-0">
+                      <CardTitle className="text-base lg:text-lg font-semibold text-foreground truncate">
+                        {group.payTo.name}
+                      </CardTitle>
+                    </div>
+                    {/* Botão expandir recolher */}
+                    <button
+                      type="button"
+                      aria-label={isOpen ? 'Recolher' : 'Expandir'}
+                      aria-expanded={isOpen}
+                      onClick={e => {
+                        e.stopPropagation()
+                        toggleGroup(groupKey)
+                      }}
+                      className="ml-2 h-7 w-7 rounded-full bg-muted/50 border border-border/40 flex items-center justify-center transition-transform duration-200 hover:bg-muted/70"
+                    >
+                      <ChevronDown
+                        className={`h-4 w-4 text-muted-foreground transition-transform ${isOpen ? 'rotate-180' : ''}`}
+                      />
+                    </button>
                   </div>
+                  <div className="flex flex-col gap-2 lg:items-end">
+                    {/* Resumo (mobile: scroll horizontal; desktop: inline) */}
+                    <div className="flex gap-2 whitespace-nowrap overflow-x-auto no-scrollbar pr-1 lg:overflow-visible">
+                      <span className="inline-flex items-center gap-1 rounded-full bg-green-100 text-green-700 px-2 py-0.5 border border-green-200 text-[11px] lg:text-xs">
+                        <DollarSign className="h-3 w-3" /> {formatCurrency(totalIncome.toFixed(2))}
+                      </span>
+                      <span className="inline-flex items-center gap-1 rounded-full bg-red-100 text-red-700 px-2 py-0.5 border border-red-200 text-[11px] lg:text-xs">
+                        <DollarSign className="h-3 w-3" /> {formatCurrency(totalExpense.toFixed(2))}
+                      </span>
+                      <span
+                        className={cn(
+                          'inline-flex items-center gap-1 rounded-full px-2 py-0.5 border text-[11px] lg:text-xs bg-muted text-foreground border-muted',
+                          // mantém contraste adequado no tema atual
+                          'dark:bg-neutral-800 dark:border-neutral-700'
+                        )}
+                        title="Saldo líquido (Receitas - Despesas)"
+                      >
+                        <span className="font-medium">Saldo</span>
+                        <DollarSign className="h-3 w-3 opacity-70" />{' '}
+                        {formatCurrency(Math.abs(netTotal).toFixed(2))}
+                      </span>
+                    </div>
 
-                  {/* Status badges */}
-                  <div className="flex items-center gap-2">
-                    {overdueCount > 0 && (
-                      <Badge
-                        variant="outline"
-                        className="text-red-600 border-red-200 bg-red-50 px-2 py-1"
-                      >
-                        <Clock className="h-3 w-3 mr-1" />
-                        {overdueCount} vencida(s)
-                      </Badge>
-                    )}
-                    {pendingCount > 0 && (
-                      <Badge
-                        variant="outline"
-                        className="text-amber-600 border-amber-200 bg-amber-50 px-2 py-1"
-                      >
-                        <Clock className="h-3 w-3 mr-1" />
-                        {pendingCount} pendente(s)
-                      </Badge>
-                    )}
-                    {canceledCount > 0 && (
-                      <Badge
-                        variant="outline"
-                        className="text-gray-600 border-gray-200 bg-gray-50 px-2 py-1"
-                      >
-                        {canceledCount} cancelada(s)
-                      </Badge>
-                    )}
-                  </div>
+                    {/* Status badges - versão desktop */}
+                    <div className="hidden lg:flex items-center gap-2 flex-wrap justify-end">
+                      {overdueCount > 0 && (
+                        <Badge
+                          variant="outline"
+                          className="text-red-600 border-red-200 bg-red-50 px-2 py-1"
+                        >
+                          <Clock className="h-3 w-3 mr-1" />
+                          {overdueCount} vencida(s)
+                        </Badge>
+                      )}
+                      {pendingCount > 0 && (
+                        <Badge
+                          variant="outline"
+                          className="text-amber-600 border-amber-200 bg-amber-50 px-2 py-1"
+                        >
+                          <Clock className="h-3 w-3 mr-1" />
+                          {pendingCount} pendente(s)
+                        </Badge>
+                      )}
+                      {canceledCount > 0 && (
+                        <Badge
+                          variant="outline"
+                          className="text-gray-600 border-gray-200 bg-gray-50 px-2 py-1"
+                        >
+                          {canceledCount} cancelada(s)
+                        </Badge>
+                      )}
+                    </div>
 
-                  {/* Ícone de expansão */}
-                  <div className="h-8 w-8 rounded-lg bg-muted/50 flex items-center justify-center">
-                    {isOpen ? (
-                      <ChevronDown className="h-4 w-4 text-muted-foreground" />
-                    ) : (
-                      <ChevronRight className="h-4 w-4 text-muted-foreground" />
-                    )}
+                    {/* Status compacto - mobile */}
+                    <div className="flex lg:hidden gap-1 text-[11px] text-muted-foreground">
+                      {overdueCount > 0 && (
+                        <span className="inline-flex items-center gap-1 rounded-full bg-red-100 text-red-700 px-2 py-0.5 border border-red-200">
+                          <Clock className="h-3 w-3" /> {overdueCount} venc.
+                        </span>
+                      )}
+                      {pendingCount > 0 && (
+                        <span className="inline-flex items-center gap-1 rounded-full bg-amber-100 text-amber-700 px-2 py-0.5 border border-amber-200">
+                          <Clock className="h-3 w-3" /> {pendingCount} pend.
+                        </span>
+                      )}
+                    </div>
                   </div>
                 </div>
-              </div>
-            </CardHeader>
 
-            {isOpen && (
-              <>
-                <Separator className="mx-6" />
-                <CardContent className="p-6 pt-4">
-                  <div className="space-y-3">
-                    {transactions.map((transaction, index) => (
-                      <div key={transaction.id}>
-                        <Button
-                          variant="ghost"
-                          onClick={e => {
-                            e.stopPropagation() // Evita que o click propague para o card pai
-                            onTransactionClick(transaction)
-                          }}
-                          className="w-full flex items-center justify-between p-4 h-auto hover:bg-muted/60 transition-all duration-200 rounded-xl border border-transparent hover:border-border/50"
-                        >
-                          <div className="flex items-center gap-4 flex-1">
-                            {/* Ícone do tipo de transação */}
-                            <div
-                              className={cn(
-                                'h-10 w-10 rounded-lg flex items-center justify-center',
-                                transaction.type === 'income'
-                                  ? 'bg-green-100 text-green-600'
-                                  : 'bg-red-100 text-red-600'
-                              )}
+                {/* Contador */}
+                <div className="mt-2 flex items-center justify-between lg:justify-end gap-2 text-xs text-muted-foreground">
+                  <span className="lg:hidden" />
+                  <span className="px-2 py-0.5 rounded-full bg-muted/60 border border-border/40">
+                    {transactions.length} transação(ões)
+                  </span>
+                </div>
+              </CardHeader>
+
+              {isOpen && (
+                <>
+                  <Separator className="mx-6" />
+                  <CardContent className="p-6 pt-4">
+                    <div className="space-y-4">
+                      {transactions
+                        .slice()
+                        .sort((a, b) => a.title.localeCompare(b.title, 'pt-BR'))
+                        .map((transaction, index) => (
+                          <div key={transaction.id}>
+                            <Button
+                              variant="ghost"
+                              onClick={e => {
+                                e.stopPropagation() // Evita que o click propague para o card pai
+                                onTransactionClick(transaction)
+                              }}
+                              className="w-full flex items-start justify-between p-4 h-auto hover:bg-muted/60 transition-all duration-200 rounded-xl border border-transparent hover:border-border/50"
                             >
-                              <DollarSign className="h-4 w-4" />
-                            </div>
+                              <div className="flex items-center gap-4 flex-1">
+                                {/* Ícone do tipo de transação */}
+                                {(() => {
+                                  const isViewerPayTo =
+                                    transaction.payTo.email === currentUser?.email
+                                  const effectiveType = isViewerPayTo
+                                    ? transaction.type === 'income'
+                                      ? 'expense'
+                                      : 'income'
+                                    : transaction.type
+                                  const colorClass =
+                                    effectiveType === 'income'
+                                      ? 'bg-green-100 text-green-600'
+                                      : 'bg-red-100 text-red-600'
+                                  return (
+                                    <div
+                                      className={cn(
+                                        'h-10 w-10 rounded-lg flex items-center justify-center',
+                                        colorClass
+                                      )}
+                                    >
+                                      <DollarSign className="h-4 w-4" />
+                                    </div>
+                                  )
+                                })()}
 
-                            {/* Informações principais */}
-                            <div className="flex-1 min-w-0">
-                              <div className="flex items-center gap-2 mb-1">
-                                <h4 className="font-semibold text-sm text-foreground truncate">
-                                  {transaction.title}
-                                </h4>
-                                <Badge
-                                  variant="outline"
-                                  className={cn(
-                                    'text-xs px-2 py-0.5',
-                                    getStatusColor(transaction.status, transaction.dueDate)
-                                  )}
-                                >
-                                  {getStatusText(transaction.status, transaction.dueDate)}
-                                </Badge>
+                                {/* Informações principais */}
+                                <div className="flex-1 min-w-0">
+                                  <div className="flex items-center gap-2 mb-1">
+                                    <h4 className="font-semibold text-sm text-foreground truncate">
+                                      {transaction.title}
+                                    </h4>
+                                    <Badge
+                                      variant="outline"
+                                      className={cn(
+                                        'text-xs px-2 py-0.5',
+                                        getStatusColor(transaction.status, transaction.dueDate)
+                                      )}
+                                    >
+                                      {getStatusText(transaction.status, transaction.dueDate)}
+                                    </Badge>
+                                  </div>
+
+                                  <div className="flex items-center gap-4 text-xs text-muted-foreground">
+                                    <div className="flex items-center gap-1">
+                                      <Calendar className="h-3 w-3" />
+                                      <span
+                                        className={cn(
+                                          getActualStatus(
+                                            transaction.status,
+                                            transaction.dueDate
+                                          ) === 'overdue'
+                                            ? 'text-red-600 font-medium'
+                                            : ''
+                                        )}
+                                      >
+                                        {getActualStatus(
+                                          transaction.status,
+                                          transaction.dueDate
+                                        ) === 'overdue'
+                                          ? `Vencida em ${formatDate(transaction.dueDate)}`
+                                          : `Vence em ${formatDate(transaction.dueDate)}`}
+                                      </span>
+                                    </div>
+
+                                    {transaction.description && (
+                                      <div className="flex items-center gap-1">
+                                        <span className="truncate max-w-[200px]">
+                                          {transaction.description}
+                                        </span>
+                                      </div>
+                                    )}
+                                  </div>
+
+                                  {/* Tags removidas conforme solicitação */}
+                                </div>
                               </div>
 
-                              <div className="flex items-center gap-4 text-xs text-muted-foreground">
-                                <div className="flex items-center gap-1">
-                                  <Calendar className="h-3 w-3" />
-                                  <span
-                                    className={cn(
-                                      getActualStatus(transaction.status, transaction.dueDate) ===
-                                        'overdue'
-                                        ? 'text-red-600 font-medium'
-                                        : ''
-                                    )}
-                                  >
-                                    {getActualStatus(transaction.status, transaction.dueDate) ===
-                                    'overdue'
-                                      ? `Vencida em ${formatDate(transaction.dueDate)}`
-                                      : `Vence em ${formatDate(transaction.dueDate)}`}
-                                  </span>
+                              <div className="flex items-center gap-3">
+                                {/* Valor */}
+                                <div className="text-right">
+                                  <p className="font-bold text-sm text-foreground">
+                                    {formatCurrency(transaction.amount)}
+                                  </p>
+                                  {(() => {
+                                    const isViewerPayTo =
+                                      transaction.payTo.email === currentUser?.email
+                                    const effectiveType = isViewerPayTo
+                                      ? transaction.type === 'income'
+                                        ? 'expense'
+                                        : 'income'
+                                      : transaction.type
+                                    return (
+                                      <p className="text-xs text-muted-foreground">
+                                        {effectiveType === 'income' ? 'Receita' : 'Despesa'}
+                                      </p>
+                                    )
+                                  })()}
                                 </div>
 
-                                {transaction.description && (
-                                  <div className="flex items-center gap-1">
-                                    <span className="truncate max-w-[200px]">
-                                      {transaction.description}
-                                    </span>
-                                  </div>
-                                )}
+                                {/* Tags foram movidas para abaixo das informações principais para melhor visualização */}
                               </div>
-                            </div>
+                            </Button>
+
+                            {/* Separador entre transações */}
+                            {index < transactions.length - 1 && <Separator className="my-3 mx-4" />}
                           </div>
-
-                          <div className="flex items-center gap-3">
-                            {/* Valor */}
-                            <div className="text-right">
-                              <p className="font-bold text-sm text-foreground">
-                                {formatCurrency(transaction.amount)}
-                              </p>
-                              <p className="text-xs text-muted-foreground">
-                                {transaction.type === 'income' ? 'Receita' : 'Despesa'}
-                              </p>
-                            </div>
-
-                            {/* Tags */}
-                            {transaction.tags && transaction.tags.length > 0 && (
-                              <div className="flex gap-1">
-                                {transaction.tags.slice(0, 2).map(tag => (
-                                  <Badge
-                                    key={tag.name}
-                                    variant="secondary"
-                                    className="text-xs px-2 py-1 flex items-center gap-1"
-                                    style={{
-                                      backgroundColor: tag.color + '15',
-                                      color: tag.color,
-                                      borderColor: tag.color + '30',
-                                    }}
-                                  >
-                                    <Tag className="h-3 w-3" />
-                                    {tag.name}
-                                  </Badge>
-                                ))}
-                                {transaction.tags.length > 2 && (
-                                  <Badge variant="secondary" className="text-xs px-2 py-1">
-                                    +{transaction.tags.length - 2}
-                                  </Badge>
-                                )}
-                              </div>
-                            )}
-                          </div>
-                        </Button>
-
-                        {/* Separador entre transações */}
-                        {index < transactions.length - 1 && <Separator className="my-2 mx-4" />}
-                      </div>
-                    ))}
-                  </div>
-                </CardContent>
-              </>
-            )}
-          </Card>
-        )
-      })}
+                        ))}
+                    </div>
+                  </CardContent>
+                </>
+              )}
+            </Card>
+          )
+        })}
 
       {Object.keys(groupedTransactions).length === 0 && (
         <div className="text-center py-16">
