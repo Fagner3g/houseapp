@@ -46,9 +46,9 @@ export function TopBillsSummary({ kpis }: Props) {
         <Card>
           <CardHeader>
             <CardTitle className="flex items-center gap-2">
-              <Sigma className="h-5 w-5 text-muted-foreground" /> Total do mês
+              <Sigma className="h-5 w-5 text-muted-foreground" /> Saldo do mês
             </CardTitle>
-            <CardDescription>Soma de valores registrados no mês</CardDescription>
+            <CardDescription>Saldo líquido (a receber - a pagar)</CardDescription>
           </CardHeader>
           <CardContent>
             <div className="text-2xl font-semibold">{format(totalMes)}</div>
