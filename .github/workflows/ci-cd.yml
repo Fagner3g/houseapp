@@ -92,7 +92,7 @@ jobs:
     needs: build-and-push
     runs-on: [self-hosted, linux, ARM64]
     if: github.event_name != 'pull_request'
-    environment: staging
+    environment: ${{ github.ref_name == 'main' && 'production' || 'staging' }}
     steps:
       - uses: actions/checkout@v4
 
