@@ -16,6 +16,13 @@ export const JOB_CONFIGS: Record<string, JobConfig> = {
     timezone: 'America/Sao_Paulo',
     description: 'Alertas para transações vencidas ou prestes a vencer',
   },
+
+  OVERDUE_ALERTS: {
+    key: 'transactions:overdue-alerts',
+    schedule: '0 10 1 * *', // Todo dia 1º do mês às 10:00
+    timezone: 'America/Sao_Paulo',
+    description: 'Alertas específicos para transações vencidas',
+  },
 }
 
 export const TIMEZONE = 'America/Sao_Paulo'

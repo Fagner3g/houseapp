@@ -202,6 +202,60 @@ function JobsPage() {
     }
   }
 
+  const handlePreviewOverdueAlerts = async () => {
+    setLoadingPreview(true)
+    try {
+      const data = await http<{
+        preview: {
+          transactions: Array<{
+            id: string
+            title: string
+            amount: number
+            dueDate: string
+            overdueDays: number
+            payToName: string | null
+            payToPhone: string | null
+            organizationSlug: string
+            installmentInfo: string | null
+          }>
+          summary: {
+            total: number
+            overdue: number
+          }
+        }
+      }>('/jobs/overdue-alerts/preview', {
+        method: 'GET',
+      })
+      setPreviewData({
+        transactions: data.preview.transactions.map(t => ({
+          id: t.id,
+          title: t.title,
+          amount: t.amount,
+          dueDate: t.dueDate,
+          daysUntilDue: -t.overdueDays, // Negativo para indicar vencida
+          alertType: 'overdue' as const,
+          ownerName: t.payToName || 'Desconhecido',
+          ownerPhone: t.payToPhone || '',
+          payToName: t.payToName,
+          payToPhone: t.payToPhone,
+        })),
+        summary: {
+          total: data.preview.summary.total,
+          today: 0,
+          tomorrow: 0,
+          twoDays: 0,
+          threeToFourDays: 0,
+        },
+      })
+      setShowPreviewModal(true)
+    } catch (error) {
+      console.error('Erro ao carregar preview dos alertas vencidas:', error)
+      toast.error('Erro ao carregar preview dos alertas vencidas')
+    } finally {
+      setLoadingPreview(false)
+    }
+  }
+
   const formatDuration = (ms: number) => {
     if (ms < 1000) return `${ms}ms`
     if (ms < 60000) return `${(ms / 1000).toFixed(1)}s`
@@ -299,6 +353,43 @@ function JobsPage() {
               <p>• Alertas críticos para vencimentos hoje/amanhã</p>
               <p>• Lembretes para vencimentos em 2-4 dias</p>
               <p>• Mensagens personalizadas com nome do destinatário</p>
+            </div>
+          </div>
+        )
+
+      case 'transactions:overdue-alerts':
+        return (
+          <div className="space-y-2">
+            <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
+              <div className="flex items-center gap-2">
+                <AlertTriangle className="h-4 w-4 text-red-500" />
+                <span className="text-sm font-medium">Alertas de Transações Vencidas</span>
+              </div>
+              <Button
+                size="sm"
+                variant="outline"
+                onClick={handlePreviewOverdueAlerts}
+                disabled={loadingPreview}
+                className="w-full sm:w-auto"
+              >
+                {loadingPreview ? (
+                  <>
+                    <Square className="mr-2 h-4 w-4" />
+                    Carregando...
+                  </>
+                ) : (
+                  <>
+                    <Eye className="mr-2 h-4 w-4" />
+                    Preview
+                  </>
+                )}
+              </Button>
+            </div>
+            <div className="pl-6 space-y-1 text-sm text-muted-foreground">
+              <p>• Envia alertas especificamente para transações vencidas</p>
+              <p>• Executa todo dia 1º do mês às 10:00</p>
+              <p>• Foco em transações que já passaram do vencimento</p>
+              <p>• Lembretes urgentes para pagamentos em atraso</p>
             </div>
           </div>
         )
