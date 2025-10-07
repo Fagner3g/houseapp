@@ -106,7 +106,6 @@ function Users() {
       description="Não foi possível carregar a lista de usuários. Verifique sua conexão e tente novamente."
     >
       <div className="p-4 space-y-4">
-        {/* Header com título */}
         <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
           <div>
             <h1 className="text-2xl font-bold tracking-tight sm:text-3xl">Usuários</h1>
@@ -114,7 +113,6 @@ function Users() {
           </div>
         </div>
 
-        {/* Barra de pesquisa e botão adicionar */}
         <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:gap-4">
           <div className="relative flex-1">
             <Input
@@ -141,7 +139,6 @@ function Users() {
           <ModalNewUser />
         </div>
 
-        {/* Lista de usuários */}
         <div className="space-y-4">
           {filteredUsers.length === 0 ? (
             <div className="text-center py-12">
@@ -184,7 +181,6 @@ function Users() {
                   aria-label={`Editar usuário ${user.name}`}
                 >
                   <div className="flex flex-col items-center text-center space-y-2">
-                    {/* Avatar */}
                     <Avatar className="h-12 w-12">
                       <AvatarImage src={user.avatarUrl} />
                       <AvatarFallback className="text-sm font-semibold">
@@ -192,7 +188,6 @@ function Users() {
                       </AvatarFallback>
                     </Avatar>
 
-                    {/* Informações do usuário */}
                     <div className="w-full space-y-1">
                       <div className="flex flex-col items-center gap-1">
                         <h3 className="font-medium text-sm truncate w-full">{user.name}</h3>
@@ -246,7 +241,6 @@ function Users() {
                       </div>
                     </div>
 
-                    {/* Indicador de clique */}
                     <div className="opacity-0 group-hover:opacity-100 transition-opacity">
                       <svg
                         className="h-3 w-3 text-muted-foreground"
