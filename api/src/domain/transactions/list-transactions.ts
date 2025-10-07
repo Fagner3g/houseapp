@@ -19,6 +19,7 @@ interface ListTransactionsRequest {
   page: number
   perPage: number
   responsibleUserId?: string // Filter by responsible user (payToId)
+  payToId?: string // Filter by specific payTo user
   onlyMarked?: boolean // Show only transactions where user is responsible but not owner
 }
 
@@ -33,6 +34,7 @@ export async function listTransactionsService({
   page,
   perPage,
   responsibleUserId,
+  payToId,
   onlyMarked = false,
 }: ListTransactionsRequest) {
   // Base condition: user must be either owner or responsible for the transaction
@@ -73,6 +75,11 @@ export async function listTransactionsService({
   // Filter by responsible user if specified
   if (responsibleUserId) {
     where = and(where, eq(transactionSeries.payToId, responsibleUserId))
+  }
+
+  // Filter by specific payTo user if specified
+  if (payToId) {
+    where = and(where, eq(transactionSeries.payToId, payToId))
   }
 
   if (tags.length > 0) {

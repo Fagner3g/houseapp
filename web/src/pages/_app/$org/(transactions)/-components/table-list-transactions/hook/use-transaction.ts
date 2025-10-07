@@ -19,6 +19,7 @@ export const useTransaction = () => {
     page,
     perPage,
     responsibleUserId,
+    payToId,
     onlyMarked,
   } = useSearch({ strict: false })
   const navigate = useNavigate()
@@ -33,6 +34,7 @@ export const useTransaction = () => {
     perPage,
     // Only filter by responsible user if explicitly requested and not 'me'
     responsibleUserId: responsibleUserId === 'me' ? currentUser?.id : responsibleUserId,
+    payToId,
     onlyMarked,
   }
 

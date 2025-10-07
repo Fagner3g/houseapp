@@ -17,6 +17,7 @@ export const listTransactionSchema = {
     page: z.coerce.number().int().default(1),
     perPage: z.coerce.number().int().default(10),
     responsibleUserId: z.string().optional(),
+    payToId: z.string().optional(),
     onlyMarked: z.coerce.boolean().optional(),
   }),
   response: {
