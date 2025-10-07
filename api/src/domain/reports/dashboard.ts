@@ -36,6 +36,10 @@ export async function getTransactionReports(orgId: string, userId: string) {
       and(
         eq(transactionSeries.organizationId, orgId),
         or(
+          eq(transactionSeries.ownerId, userId), // User is the owner
+          eq(transactionSeries.payToId, userId) // User is responsible for the transaction
+        ),
+        or(
           and(
             gte(transactionOccurrences.dueDate, startOfMonth),
             lte(transactionOccurrences.dueDate, endOfMonth)
