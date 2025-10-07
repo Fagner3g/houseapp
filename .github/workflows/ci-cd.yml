@@ -80,6 +80,7 @@ jobs:
           platforms: linux/arm64
           build-args: |
             VITE_API_HOST=${{ matrix.app == 'web' && (github.ref_name == 'main' && 'https://api.jarvis.dev.br' || 'https://api.homolog.jarvis.dev.br') || '' }}
+            VITE_APP_VERSION=${{ steps.version.outputs.version }}
 
       - name: Build summary
         run: |
