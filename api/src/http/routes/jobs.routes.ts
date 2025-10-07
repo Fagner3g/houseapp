@@ -6,6 +6,7 @@ import {
   getJobsStatsController,
   getTransactionReportsController,
   listJobsController,
+  previewOverdueAlertsController,
   previewTransactionAlertsController,
   runJobController,
   startAllJobsController,
@@ -115,6 +116,29 @@ const PreviewTransactionAlertsResponseSchema = z.object({
   preview: z.object({
     transactions: z.array(TransactionAlertPreviewSchema),
     summary: PreviewSummarySchema,
+  }),
+  timestamp: z.string(),
+})
+
+const OverdueAlertPreviewSchema = z.object({
+  id: z.string(),
+  title: z.string(),
+  amount: z.number(),
+  dueDate: z.string(),
+  overdueDays: z.number(),
+  payToName: z.string().nullable(),
+  payToPhone: z.string().nullable(),
+  organizationSlug: z.string(),
+  installmentInfo: z.string().nullable(),
+})
+
+const PreviewOverdueAlertsResponseSchema = z.object({
+  preview: z.object({
+    summary: z.object({
+      total: z.number(),
+      overdue: z.number(),
+    }),
+    transactions: z.array(OverdueAlertPreviewSchema),
   }),
   timestamp: z.string(),
 })
@@ -413,6 +437,24 @@ export async function jobsRoutes(app: FastifyInstance) {
       },
     },
     previewTransactionAlertsController
+  )
+
+  // Preview dos alertas de transações vencidas
+  app.get(
+    '/jobs/overdue-alerts/preview',
+    {
+      onRequest: [authenticateUserHook],
+      schema: {
+        tags: ['Jobs'],
+        summary:
+          'Preview das transações vencidas que seriam processadas pelo job de alertas vencidas',
+        security: [{ bearerAuth: [] }],
+        response: {
+          200: PreviewOverdueAlertsResponseSchema,
+        },
+      },
+    },
+    previewOverdueAlertsController
   )
 
   // Relatórios completos para o dashboard (sem envolver jobs agendados)

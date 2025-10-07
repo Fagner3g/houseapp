@@ -688,6 +688,117 @@
         }
       }
     },
+    "/jobs/overdue-alerts/preview": {
+      "get": {
+        "summary": "Preview das transações vencidas que seriam processadas pelo job de alertas vencidas",
+        "tags": [
+          "Jobs"
+        ],
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Default Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "preview": {
+                      "type": "object",
+                      "properties": {
+                        "summary": {
+                          "type": "object",
+                          "properties": {
+                            "total": {
+                              "type": "number"
+                            },
+                            "overdue": {
+                              "type": "number"
+                            }
+                          },
+                          "required": [
+                            "total",
+                            "overdue"
+                          ],
+                          "additionalProperties": false
+                        },
+                        "transactions": {
+                          "type": "array",
+                          "items": {
+                            "type": "object",
+                            "properties": {
+                              "id": {
+                                "type": "string"
+                              },
+                              "title": {
+                                "type": "string"
+                              },
+                              "amount": {
+                                "type": "number"
+                              },
+                              "dueDate": {
+                                "type": "string"
+                              },
+                              "overdueDays": {
+                                "type": "number"
+                              },
+                              "payToName": {
+                                "type": "string",
+                                "nullable": true
+                              },
+                              "payToPhone": {
+                                "type": "string",
+                                "nullable": true
+                              },
+                              "organizationSlug": {
+                                "type": "string"
+                              },
+                              "installmentInfo": {
+                                "type": "string",
+                                "nullable": true
+                              }
+                            },
+                            "required": [
+                              "id",
+                              "title",
+                              "amount",
+                              "dueDate",
+                              "overdueDays",
+                              "payToName",
+                              "payToPhone",
+                              "organizationSlug",
+                              "installmentInfo"
+                            ],
+                            "additionalProperties": false
+                          }
+                        }
+                      },
+                      "required": [
+                        "summary",
+                        "transactions"
+                      ],
+                      "additionalProperties": false
+                    },
+                    "timestamp": {
+                      "type": "string"
+                    }
+                  },
+                  "required": [
+                    "preview",
+                    "timestamp"
+                  ],
+                  "additionalProperties": false
+                }
+              }
+            }
+          }
+        }
+      }
+    },
     "/org/{slug}/reports/transactions": {
       "get": {
         "summary": "Retorna dados consolidados para o dashboard da organização",

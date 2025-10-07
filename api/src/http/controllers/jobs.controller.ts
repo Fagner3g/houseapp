@@ -304,3 +304,29 @@ export async function getTransactionReportsController(
     })
   }
 }
+
+/**
+ * Preview dos alertas de transações vencidas
+ */
+export async function previewOverdueAlertsController(
+  _request: FastifyRequest,
+  reply: FastifyReply
+) {
+  try {
+    const { previewOverdueAlerts } = await import('@/jobs/overdue-alerts')
+    const preview = await previewOverdueAlerts()
+
+    return reply.status(200).send({
+      preview,
+      timestamp: new Date().toISOString(),
+    })
+  } catch (error) {
+    logger.error({ error }, 'Erro ao obter preview dos alertas vencidas')
+    return reply.status(500).send({
+      error: 'Internal Server Error',
+      message: 'Failed to get overdue alerts preview',
+      details: error instanceof Error ? error.message : String(error),
+      timestamp: new Date().toISOString(),
+    })
+  }
+}
