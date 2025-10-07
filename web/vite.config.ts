@@ -12,7 +12,7 @@ try {
     readFileSync(path.resolve(__dirname, '../package.json'), 'utf-8')
   )
   appVersion = rootPackageJson.version
-} catch (error) {
+} catch {
   // Se não conseguir ler o package.json raiz, usa o fallback
   console.warn('Could not read root package.json, using env/fallback version:', appVersion)
 }
