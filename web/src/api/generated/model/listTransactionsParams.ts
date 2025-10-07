@@ -25,5 +25,6 @@ export type ListTransactionsParams = {
    */
   perPage?: number;
   responsibleUserId?: string;
+  payToId?: string;
   onlyMarked?: boolean;
 };

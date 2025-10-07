@@ -26,6 +26,7 @@ export async function listTransactionsController(request: Req, reply: FastifyRep
     page,
     perPage,
     responsibleUserId,
+    payToId,
     onlyMarked,
   } = request.query
 
@@ -41,6 +42,7 @@ export async function listTransactionsController(request: Req, reply: FastifyRep
       page,
       perPage,
       responsibleUserId,
+      payToId,
       onlyMarked,
     })
 

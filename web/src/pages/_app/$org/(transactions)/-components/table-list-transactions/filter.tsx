@@ -4,6 +4,7 @@ import { Check, ListFilterIcon, X } from 'lucide-react'
 import { useEffect, useId, useState } from 'react'
 import type { DateRange } from 'react-day-picker'
 
+import { useListUsersByOrg } from '@/api/generated/api'
 import { Button } from '@/components/ui/button'
 import { DateRangePicker } from '@/components/ui/date-range-picker'
 import { Label } from '@/components/ui/label'
@@ -15,6 +16,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from '@/components/ui/select'
+import { useActiveOrganization } from '@/hooks/use-active-organization'
 
 export interface FilterTableProps {
   type: 'all' | 'income' | 'expense' | undefined
@@ -24,10 +26,15 @@ export interface FilterTableProps {
 
 export default function FilterTable({ type, dateFrom, dateTo }: FilterTableProps) {
   const navigate = useNavigate()
-  const { onlyMarked } = useSearch({ strict: false })
+  const { onlyMarked, payToId } = useSearch({ strict: false })
+  const { slug } = useActiveOrganization()
 
   const typeFilterId = useId()
   const responsibleFilterId = useId()
+  const payToFilterId = useId()
+
+  // Fetch users for payTo filter
+  const { data: usersData } = useListUsersByOrg(slug)
 
   const defaultFrom = dayjs().startOf('month').format('YYYY-MM-DD')
   const defaultTo = dayjs().endOf('month').format('YYYY-MM-DD')
@@ -35,6 +42,7 @@ export default function FilterTable({ type, dateFrom, dateTo }: FilterTableProps
   // Estados locais para os filtros
   const [localType, setLocalType] = useState(type)
   const [localOnlyMarked, setLocalOnlyMarked] = useState(onlyMarked)
+  const [localPayToId, setLocalPayToId] = useState(payToId)
   const [localDateRange, setLocalDateRange] = useState<DateRange | undefined>(() => {
     if (dateFrom && dateTo) {
       return { from: new Date(dateFrom), to: new Date(dateTo) }
@@ -45,7 +53,11 @@ export default function FilterTable({ type, dateFrom, dateTo }: FilterTableProps
   })
 
   const hasFilters =
-    type !== 'all' || dateFrom !== defaultFrom || dateTo !== defaultTo || onlyMarked === true
+    type !== 'all' ||
+    dateFrom !== defaultFrom ||
+    dateTo !== defaultTo ||
+    onlyMarked === true ||
+    payToId !== undefined
 
   // Sincronizar estados locais com props
   useEffect(() => {
@@ -55,6 +67,10 @@ export default function FilterTable({ type, dateFrom, dateTo }: FilterTableProps
   useEffect(() => {
     setLocalOnlyMarked(onlyMarked)
   }, [onlyMarked])
+
+  useEffect(() => {
+    setLocalPayToId(payToId)
+  }, [payToId])
 
   useEffect(() => {
     if (dateFrom && dateTo) {
@@ -82,6 +98,7 @@ export default function FilterTable({ type, dateFrom, dateTo }: FilterTableProps
       dateTo: string
       page: number
       onlyMarked?: boolean
+      payToId?: string
     } = {
       type: localType,
       dateFrom,
@@ -94,6 +111,11 @@ export default function FilterTable({ type, dateFrom, dateTo }: FilterTableProps
       searchParams.onlyMarked = true
     }
 
+    // Só adiciona payToId se for selecionado
+    if (localPayToId) {
+      searchParams.payToId = localPayToId
+    }
+
     navigate({
       to: '.',
       search: searchParams,
@@ -104,6 +126,7 @@ export default function FilterTable({ type, dateFrom, dateTo }: FilterTableProps
   const clearFilters = () => {
     setLocalType('all')
     setLocalOnlyMarked(false)
+    setLocalPayToId(undefined)
     // Manter o range do mês atual
     setLocalDateRange({ from: new Date(defaultFrom), to: new Date(defaultTo) })
 
@@ -180,6 +203,31 @@ export default function FilterTable({ type, dateFrom, dateTo }: FilterTableProps
                 <SelectContent>
                   <SelectItem value="all">Todas as minhas transações</SelectItem>
                   <SelectItem value="marked">Apenas transações marcadas</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
+
+            {/* PayTo */}
+            <div className="space-y-2">
+              <Label htmlFor={payToFilterId} className="text-xs font-medium text-muted-foreground">
+                Pagar para
+              </Label>
+              <Select
+                value={localPayToId || 'all'}
+                onValueChange={value => {
+                  setLocalPayToId(value === 'all' ? undefined : value)
+                }}
+              >
+                <SelectTrigger id={payToFilterId} className="w-full">
+                  <SelectValue placeholder="Selecione o usuário" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="all">Todos os usuários</SelectItem>
+                  {usersData?.users?.map(user => (
+                    <SelectItem key={user.id} value={user.id}>
+                      {user.name}
+                    </SelectItem>
+                  ))}
                 </SelectContent>
               </Select>
             </div>
