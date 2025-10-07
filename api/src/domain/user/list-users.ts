@@ -12,6 +12,7 @@ interface ListUsersByOrg {
 export async function listUsers({ idOrg }: ListUsersByOrg) {
   const result = await db
     .select({
+      id: users.id,
       name: users.name,
       email: users.email,
       phone: users.phone,

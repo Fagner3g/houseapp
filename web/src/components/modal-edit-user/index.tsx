@@ -30,6 +30,7 @@ import { schemaSignUp } from '@/pages/_auth/sign-up'
 import { useAuthStore } from '@/stores/auth'
 
 export type EditableUser = {
+  id: string
   name: string
   email: string
   phone?: string | null
@@ -110,7 +111,14 @@ export function ModalEditUser({
           <Form {...form}>
             <form
               onSubmit={form.handleSubmit(values => {
-                onSubmit({ name: values.name, email: values.email, phone: values.phone })
+                if (user) {
+                  onSubmit({
+                    id: user.id,
+                    name: values.name,
+                    email: values.email,
+                    phone: values.phone,
+                  })
+                }
               })}
               className="space-y-6"
             >
@@ -141,17 +149,13 @@ export function ModalEditUser({
                       <FormLabel className="text-sm font-medium">E-mail</FormLabel>
                       <FormControl>
                         <Input
-                          disabled
-                          placeholder="E-mail"
+                          type="email"
+                          placeholder="Digite o e-mail"
                           {...field}
                           value={field.value || ''}
-                          readOnly
-                          className="h-11 bg-muted/50"
+                          className="h-11"
                         />
                       </FormControl>
-                      <p className="text-xs text-muted-foreground">
-                        O e-mail não pode ser alterado
-                      </p>
                     </FormItem>
                   )}
                 />

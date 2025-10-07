@@ -27,12 +27,16 @@ function Users() {
 
   const [isEditOpen, setIsEditOpen] = useState(false)
   const [editingUser, setEditingUser] = useState<{
+    id: string
     name: string
     email: string
     phone?: string | null
   } | null>(null)
   const [search, setSearch] = useState('')
   const [isDeleting, setIsDeleting] = useState(false)
+  type UserWithId = ListUsersByOrg200['users'][number] & { id: string }
+  type PatchUserBody = PatchOrgSlugUsersBody & { userId: string }
+
   const { mutate: updateUser, isPending: isUpdating } = usePatchOrgSlugUsers({
     mutation: {
       onMutate: async ({ slug: orgSlug, data }) => {
@@ -44,10 +48,11 @@ function Users() {
           getListUsersByOrgQueryKey(orgSlug),
           (old: ListUsersByOrg200 | undefined) => {
             if (!old?.users) return old as unknown as ListUsersByOrg200
+            const body = data as PatchUserBody
             return {
               ...old,
               users: old.users.map(u =>
-                u.email === data.email
+                (u as UserWithId).id === body.userId
                   ? { ...u, name: data.name ?? u.name, phone: data.phone ?? u.phone }
                   : u
               ),
@@ -164,11 +169,16 @@ function Users() {
             <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 2xl:grid-cols-5">
               {filteredUsers.map(user => (
                 <button
-                  key={user.name}
+                  key={(user as UserWithId).id ?? user.name}
                   type="button"
                   className="group w-full text-left cursor-pointer rounded-lg border bg-card p-3 transition-all hover:bg-muted/50 hover:shadow-md hover:border-primary/20"
                   onClick={() => {
-                    setEditingUser({ name: user.name, email: user.email, phone: user.phone })
+                    setEditingUser({
+                      id: (user as UserWithId).id,
+                      name: user.name,
+                      email: user.email,
+                      phone: user.phone,
+                    })
                     setIsEditOpen(true)
                   }}
                   aria-label={`Editar usuário ${user.name}`}
@@ -273,6 +283,7 @@ function Users() {
               updateUser({
                 slug,
                 data: {
+                  userId: values.id,
                   email: values.email,
                   name: values.name,
                   phone: values.phone ?? undefined,

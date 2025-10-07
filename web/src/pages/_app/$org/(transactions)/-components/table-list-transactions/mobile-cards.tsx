@@ -112,35 +112,41 @@ export function MobileCards({
         const isExpanded = expandedCard === transaction.id
 
         return (
-          <button
+          <div
             key={transaction.id}
-            type="button"
-            className={`bg-card border rounded-lg p-3 transition-all duration-200 hover:shadow-md hover:border-primary/20 cursor-pointer w-full text-left ${
+            className={`bg-card border rounded-lg p-3 transition-all duration-200 hover:shadow-md hover:border-primary/20 w-full ${
               isSelected ? 'ring-2 ring-primary/20 border-primary/30' : ''
             }`}
-            onClick={() => onEdit(transaction)}
-            aria-label={`Editar transação ${transaction.title}`}
           >
             {/* Header do card */}
             <div className="flex items-center justify-between mb-2">
               <div className="flex items-center gap-2 flex-1 min-w-0">
-                <Checkbox
-                  checked={isSelected}
-                  onCheckedChange={checked => onRowSelect(transaction.id, !!checked)}
-                  onClick={e => e.stopPropagation()}
-                  aria-label="Selecionar transação"
-                  className="h-4 w-4"
-                />
-                <div className="flex items-center gap-1.5">
-                  {getTypeIcon(transaction)}
-                  <h3 className="font-semibold text-sm truncate">{transaction.title}</h3>
+                <div className="inline-flex">
+                  <Checkbox
+                    checked={isSelected}
+                    onCheckedChange={checked => onRowSelect(transaction.id, !!checked)}
+                    onClick={e => e.stopPropagation()}
+                    aria-label="Selecionar transação"
+                    className="h-4 w-4"
+                  />
                 </div>
-                <div className="flex items-center gap-1.5 ml-auto">
-                  {getStatusIcon(transaction)}
-                  <span className="text-xs text-muted-foreground">
-                    {formatDate(transaction.dueDate)}
-                  </span>
-                </div>
+                <button
+                  type="button"
+                  className="flex items-center gap-2 flex-1 min-w-0 text-left"
+                  onClick={() => onEdit(transaction)}
+                  aria-label={`Editar transação ${transaction.title}`}
+                >
+                  <div className="flex items-center gap-1.5 min-w-0">
+                    {getTypeIcon(transaction)}
+                    <h3 className="font-semibold text-sm truncate">{transaction.title}</h3>
+                  </div>
+                  <div className="flex items-center gap-1.5 ml-auto">
+                    {getStatusIcon(transaction)}
+                    <span className="text-xs text-muted-foreground">
+                      {formatDate(transaction.dueDate)}
+                    </span>
+                  </div>
+                </button>
               </div>
 
               <DropdownMenu>
@@ -180,14 +186,18 @@ export function MobileCards({
             </div>
 
             {/* Valor e tags */}
-            <div className="flex items-center justify-between">
+            <button
+              type="button"
+              className="flex items-center justify-between w-full text-left mt-1"
+              onClick={() => onEdit(transaction)}
+              aria-label={`Editar transação ${transaction.title}`}
+            >
               <div className="flex-1">
                 <span className="text-lg font-bold">
                   {formatCurrency(Number(transaction.amount))}
                 </span>
               </div>
 
-              {/* Tags */}
               {transaction.tags && transaction.tags.length > 0 && (
                 <div className="flex gap-1 flex-wrap">
                   {transaction.tags.slice(0, 2).map((tag, index) => (
@@ -206,7 +216,7 @@ export function MobileCards({
                   )}
                 </div>
               )}
-            </div>
+            </button>
 
             {/* Informações expandidas */}
             <div
@@ -234,7 +244,11 @@ export function MobileCards({
                 {transaction.payTo && (
                   <div className="flex justify-between items-center animate-in slide-in-from-top-1 duration-200 delay-125">
                     <span className="text-xs text-muted-foreground">Para</span>
-                    <span className="text-xs font-medium">{transaction.payTo}</span>
+                    <span className="text-xs font-medium">
+                      {typeof transaction.payTo === 'object'
+                        ? transaction.payTo.name || transaction.payTo.email
+                        : String(transaction.payTo)}
+                    </span>
                   </div>
                 )}
 
@@ -292,7 +306,7 @@ export function MobileCards({
                 </Button>
               </div>
             )}
-          </button>
+          </div>
         )
       })}
     </div>

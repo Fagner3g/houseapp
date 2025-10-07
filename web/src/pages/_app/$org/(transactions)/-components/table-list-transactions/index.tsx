@@ -8,6 +8,7 @@ import type {
 import { Tabs, TabsContent } from '@/components/ui/tabs'
 import { DrawerTransaction } from '../../../../../../components/drawer-transaction'
 import { CalendarTransactions } from '../calendar'
+import { PayToTransactions } from '../payto'
 import type { FilterTableProps } from './filter'
 import { Footer, type FooterProps } from './footer'
 import { useTable } from './hook/use-table'
@@ -41,7 +42,7 @@ export function TableLIstTransactions({ transactions, dateFrom, dateTo, ...props
       onValueChange={value =>
         navigate({
           to: '.',
-          search: prev => ({ ...prev, view: value as 'table' | 'calendar' }),
+          search: prev => ({ ...prev, view: value as 'table' | 'calendar' | 'payto' }),
           replace: true,
         })
       }
@@ -60,6 +61,17 @@ export function TableLIstTransactions({ transactions, dateFrom, dateTo, ...props
         globalFilter={globalFilter}
         setGlobalFilter={setGlobalFilter}
       />
+      <TabsContent value="payto" className="relative flex flex-col flex-1 overflow-auto">
+        <div className="p-6 lg:p-8">
+          <PayToTransactions
+            transactions={transactions}
+            onTransactionClick={transaction => {
+              setCurrentTransaction(transaction)
+              setDrawerOpen(true)
+            }}
+          />
+        </div>
+      </TabsContent>
       <TabsContent value="table" className="flex flex-col flex-1">
         <div className="flex flex-col flex-1">
           <TableView table={table} isMobile={isMobile} />

@@ -21,7 +21,7 @@ import { PaySelected } from './pay-selected'
 interface Props extends FilterTableProps {
   table: Table<ListTransactions200TransactionsItem>
   onCreate: () => void
-  view: 'table' | 'calendar'
+  view: 'table' | 'calendar' | 'payto'
   globalFilter: string
   setGlobalFilter: (value: string) => void
 }
@@ -172,7 +172,10 @@ export function NavbarTable({
 
       {/* Controles de visualização */}
       <div className="flex items-center justify-center lg:justify-start">
-        <TabsList className="grid w-full grid-cols-2 lg:w-auto h-9">
+        <TabsList className="grid w-full grid-cols-3 lg:w-auto h-9">
+          <TabsTrigger value="payto" className="text-sm">
+            Lista
+          </TabsTrigger>
           <TabsTrigger value="table" className="text-sm">
             Tabela
           </TabsTrigger>
