@@ -20,7 +20,9 @@ COPY public ./public
 
 # Variáveis de ambiente necessárias para o build do Vite
 ARG VITE_API_HOST
-ENV VITE_API_HOST=$VITE_API_HOST
+ARG VITE_APP_VERSION
+ENV VITE_API_HOST=$VITE_API_HOST \
+    VITE_APP_VERSION=$VITE_APP_VERSION
 
 RUN yarn build
 
