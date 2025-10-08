@@ -422,7 +422,9 @@ export const useTable = (
       enableSorting: true,
       sortingFn: 'alphanumeric',
       cell: ({ row }) => (
-        <Label className="text-muted-foreground px-1.5">{row.original.payTo.split(' ')[0]}</Label>
+        <Label className="text-muted-foreground px-1.5">
+          {row.original.payTo.name || row.original.payTo.email}
+        </Label>
       ),
     },
     {

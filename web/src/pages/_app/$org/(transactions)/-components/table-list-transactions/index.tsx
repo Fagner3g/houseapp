@@ -8,7 +8,7 @@ import type {
 import { Tabs, TabsContent } from '@/components/ui/tabs'
 import { DrawerTransaction } from '../../../../../../components/drawer-transaction'
 import { CalendarTransactions } from '../calendar'
-import { PayToTransactions } from '../payto'
+import { MobileGroupedCards } from './mobile-grouped-cards'
 import type { FilterTableProps } from './filter'
 import { Footer, type FooterProps } from './footer'
 import { useTable } from './hook/use-table'
@@ -35,6 +35,15 @@ export function TableLIstTransactions({ transactions, dateFrom, dateTo, ...props
       setDrawerOpen(true)
     }
   )
+
+  const selectedRows = table.getSelectedRowModel().rows.map(row => row.id)
+
+  const handleRowSelect = (id: string, selected: boolean) => {
+    const row = table.getRowModel().rows.find(r => r.id === id)
+    if (row) {
+      row.toggleSelected(selected)
+    }
+  }
 
   return (
     <Tabs
@@ -63,12 +72,14 @@ export function TableLIstTransactions({ transactions, dateFrom, dateTo, ...props
       />
       <TabsContent value="payto" className="relative flex flex-col flex-1 overflow-auto">
         <div className="p-6 lg:p-8">
-          <PayToTransactions
+          <MobileGroupedCards
             transactions={transactions}
             onTransactionClick={transaction => {
               setCurrentTransaction(transaction)
               setDrawerOpen(true)
             }}
+            onRowSelect={handleRowSelect}
+            selectedRows={selectedRows}
           />
         </div>
       </TabsContent>
