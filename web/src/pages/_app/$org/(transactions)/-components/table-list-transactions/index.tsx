@@ -8,10 +8,10 @@ import type {
 import { Tabs, TabsContent } from '@/components/ui/tabs'
 import { DrawerTransaction } from '../../../../../../components/drawer-transaction'
 import { CalendarTransactions } from '../calendar'
-import { MobileGroupedCards } from './mobile-grouped-cards'
 import type { FilterTableProps } from './filter'
-import { Footer, type FooterProps } from './footer'
+import type { FooterProps } from './footer'
 import { useTable } from './hook/use-table'
+import { MobileGroupedCards } from './mobile-grouped-cards'
 import { NavbarTable } from './navbar'
 import { TableView } from './table'
 
@@ -55,7 +55,6 @@ export function TableLIstTransactions({ transactions, dateFrom, dateTo, ...props
           replace: true,
         })
       }
-      className="flex flex-col min-h-screen bg-background"
     >
       <NavbarTable
         table={table}
@@ -84,10 +83,15 @@ export function TableLIstTransactions({ transactions, dateFrom, dateTo, ...props
         </div>
       </TabsContent>
       <TabsContent value="table" className="flex flex-col flex-1">
-        <div className="flex flex-col flex-1">
-          <TableView table={table} isMobile={isMobile} />
-          <Footer {...props} />
-        </div>
+        <TableView
+          table={table}
+          isMobile={isMobile}
+          page={props.page}
+          perPage={props.perPage}
+          totalPages={props.totalPages}
+          onPerPageChange={props.onPerPageChange}
+          onPageChange={props.onPageChange}
+        />
       </TabsContent>
       <TabsContent value="calendar" className="relative flex flex-col flex-1 overflow-auto">
         <div className="p-6 lg:p-8">
