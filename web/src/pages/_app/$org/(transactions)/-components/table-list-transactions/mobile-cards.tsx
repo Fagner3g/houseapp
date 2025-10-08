@@ -48,7 +48,7 @@ export function MobileCards({
     return new Intl.NumberFormat('pt-BR', {
       style: 'currency',
       currency: 'BRL',
-    }).format(amount / 100)
+    }).format(amount)
   }
 
   const formatDate = (date: string) => {

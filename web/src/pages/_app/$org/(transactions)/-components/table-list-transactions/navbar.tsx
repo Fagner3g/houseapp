@@ -14,6 +14,7 @@ import {
 } from '@/components/ui/dropdown-menu'
 import { Input } from '@/components/ui/input'
 import { TabsList, TabsTrigger } from '@/components/ui/tabs'
+import { useAuthStore } from '@/stores/auth'
 import { DeleteSelected } from './delete-selected'
 import FilterTable, { type FilterTableProps } from './filter'
 import { PaySelected } from './pay-selected'
@@ -35,6 +36,7 @@ export function NavbarTable({
   ...props
 }: Props) {
   const navigate = useNavigate()
+  const currentUser = useAuthStore(s => s.user)
   const selected = table.getSelectedRowModel().rows.length
 
   const defaultFrom = dayjs().startOf('month').format('YYYY-MM-DD')
@@ -186,19 +188,40 @@ export function NavbarTable({
       </div>
 
       {/* Ações em lote (quando há seleção) */}
-      {selected > 0 && (
-        <div className="flex items-center gap-3 p-3 bg-gradient-to-r from-primary/5 to-primary/10 rounded-lg border border-primary/20">
-          <div className="flex items-center gap-2 flex-1">
-            <span className="text-xs font-medium text-muted-foreground">
-              Ações para {selected} transação{selected > 1 ? 'ões' : ''}:
-            </span>
-          </div>
-          <div className="flex items-center gap-2">
-            <PaySelected table={table} />
-            <DeleteSelected table={table} />
-          </div>
-        </div>
-      )}
+      {selected > 0 &&
+        (() => {
+          const selectedRows = table.getSelectedRowModel().rows
+          const isOwnerOfAllSelected = selectedRows.every(
+            row => row.original.ownerId === currentUser?.id
+          )
+
+          return (
+            <div className="flex items-center gap-3 p-3 bg-gradient-to-r from-primary/5 to-primary/10 rounded-lg border border-primary/20">
+              <div className="flex items-center gap-2 flex-1">
+                <span className="text-xs font-medium text-muted-foreground">
+                  Ações para {selected} transação{selected > 1 ? 'ões' : ''}:
+                </span>
+                <span className="text-sm font-bold text-primary">
+                  Total: {(() => {
+                    const total = selectedRows.reduce((sum, row) => {
+                      return sum + parseFloat(row.original.amount)
+                    }, 0)
+                    return new Intl.NumberFormat('pt-BR', {
+                      style: 'currency',
+                      currency: 'BRL',
+                    }).format(total)
+                  })()}
+                </span>
+              </div>
+              {isOwnerOfAllSelected && (
+                <div className="flex items-center gap-2">
+                  <PaySelected table={table} />
+                  <DeleteSelected table={table} />
+                </div>
+              )}
+            </div>
+          )
+        })()}
     </div>
   )
 }

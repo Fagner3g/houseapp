@@ -201,12 +201,29 @@ export function PayToTransactions({ transactions, onTransactionClick }: Props) {
                   <div className="flex items-center gap-3 min-w-0">
                     <div className="h-10 w-10 rounded-xl bg-gradient-to-br from-primary/20 to-primary/40 flex items-center justify-center border border-primary/20 shadow-sm">
                       <span className="text-base font-bold text-primary">
-                        {group.payTo.name.charAt(0).toUpperCase()}
+                        {(() => {
+                          // Se o usuário atual é o payTo, mostra a inicial do owner (quem criou)
+                          // Se não, mostra a inicial do payTo (quem deve pagar)
+                          const firstTransaction = group.transactions[0]
+                          const isCurrentUserPayTo =
+                            firstTransaction.payTo.email === currentUser?.email
+                          const displayName = isCurrentUserPayTo
+                            ? firstTransaction.ownerName
+                            : group.payTo.name
+                          return displayName.charAt(0).toUpperCase()
+                        })()}
                       </span>
                     </div>
                     <div className="flex-1 min-w-0">
                       <CardTitle className="text-base lg:text-lg font-semibold text-foreground truncate">
-                        {group.payTo.name}
+                        {(() => {
+                          // Se o usuário atual é o payTo, mostra o nome do owner (quem criou)
+                          // Se não, mostra o nome do payTo (quem deve pagar)
+                          const firstTransaction = group.transactions[0]
+                          const isCurrentUserPayTo =
+                            firstTransaction.payTo.email === currentUser?.email
+                          return isCurrentUserPayTo ? firstTransaction.ownerName : group.payTo.name
+                        })()}
                       </CardTitle>
                     </div>
                     {/* Botão expandir recolher */}

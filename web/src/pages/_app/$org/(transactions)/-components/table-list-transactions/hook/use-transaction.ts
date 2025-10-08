@@ -21,6 +21,7 @@ export const useTransaction = () => {
     responsibleUserId,
     payToId,
     onlyMarked,
+    view,
   } = useSearch({ strict: false })
   const navigate = useNavigate()
   const currentUser = useAuthStore(s => s.user)
@@ -31,7 +32,8 @@ export const useTransaction = () => {
     dateFrom: dateFrom ?? startOfMonth,
     dateTo: dateTo ?? endOfMonth,
     page,
-    perPage,
+    // No modo "Lista" (payto), usar um perPage maior para trazer mais transações
+    perPage: view === 'payto' ? 100 : perPage,
     // Only filter by responsible user if explicitly requested and not 'me'
     responsibleUserId: responsibleUserId === 'me' ? currentUser?.id : responsibleUserId,
     payToId,

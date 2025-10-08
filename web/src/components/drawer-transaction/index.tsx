@@ -15,7 +15,6 @@ import {
   useUpdateTransaction,
 } from '@/api/generated/api'
 import type {
-  CreateTransactionBody,
   ListTransactions200,
   ListTransactions200TransactionsItem,
   UpdateTransactionBody,
@@ -217,9 +216,27 @@ export function DrawerTransaction({ transaction, open, onOpenChange, onExternalS
         queryClient.setQueryData(getListTransactionsQueryKey(slug), (olds: ListTransactions200) => {
           const list = olds?.transactions ?? []
 
-          const optimistic: CreateTransactionBody & { id: string } = {
-            ...data,
+          // Criar transação otimista com estrutura completa
+          const optimistic: ListTransactions200TransactionsItem = {
             id: `optimistic-${Date.now()}`,
+            serieId: `optimistic-series-${Date.now()}`,
+            title: data.title,
+            type: data.type,
+            amount: data.amount,
+            dueDate: typeof data.dueDate === 'string' ? data.dueDate : new Date().toISOString(),
+            status: 'pending',
+            ownerId: '', // Será preenchido pelo backend
+            payToId: '', // Será preenchido pelo backend
+            payTo: { name: '', email: data.payToEmail },
+            ownerName: '', // Será preenchido pelo backend
+            installmentsTotal:
+              typeof data.installmentsTotal === 'number' ? data.installmentsTotal : 1,
+            installmentsPaid: 0,
+            tags: data.tags || [],
+            overdueDays: 0,
+            contextualizedType: data.type,
+            paidAt: null,
+            description: data.description || '',
           }
 
           const resp = {
@@ -247,8 +264,20 @@ export function DrawerTransaction({ transaction, open, onOpenChange, onExternalS
         toast.error('Erro ao criar transação')
       },
       onSettled: () => {
-        queryClient.invalidateQueries({ queryKey: getListTransactionsQueryKey(slug) })
-        queryClient.invalidateQueries({ queryKey: getGetOrgSlugReportsTransactionsQueryKey(slug) })
+        // Invalidar cache com refetch forçado
+        queryClient.invalidateQueries({
+          queryKey: getListTransactionsQueryKey(slug),
+          refetchType: 'all',
+        })
+        queryClient.invalidateQueries({
+          queryKey: getGetOrgSlugReportsTransactionsQueryKey(slug),
+          refetchType: 'all',
+        })
+
+        // Forçar refetch imediato para garantir atualização
+        queryClient.refetchQueries({
+          queryKey: getListTransactionsQueryKey(slug),
+        })
       },
     },
   })
