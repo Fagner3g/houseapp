@@ -1,5 +1,5 @@
 import { ChevronDownIcon } from 'lucide-react'
-import { useState } from 'react'
+import { useEffect, useState } from 'react'
 import type { UseFormReturn } from 'react-hook-form'
 
 import type { NewTransactionSchema } from '@/components/drawer-transaction/schema'
@@ -17,6 +17,14 @@ interface CalendarFieldProps {
 export function CalendarField({ form, disabled }: CalendarFieldProps) {
   const [open, setOpen] = useState(false)
 
+  // Garantir que o campo começa preenchido com a data de hoje
+  useEffect(() => {
+    const current = form.getValues('dueDate')
+    if (!current) {
+      form.setValue('dueDate', new Date(), { shouldDirty: false, shouldTouch: false })
+    }
+  }, [form])
+
   return (
     <FormField
       control={form.control}
@@ -30,10 +38,7 @@ export function CalendarField({ form, disabled }: CalendarFieldProps) {
                 <Button
                   variant="outline"
                   aria-invalid={!!form.formState.errors.dueDate}
-                  className={cn(
-                    'w-full justify-between font-normal sm:w-48',
-                    !field.value && 'text-muted-foreground'
-                  )}
+                  className={cn('w-full justify-between font-normal sm:w-48')}
                   disabled={disabled}
                 >
                   {field.value ? field.value.toLocaleDateString() : 'Selecione a data'}

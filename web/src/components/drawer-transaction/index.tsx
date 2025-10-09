@@ -43,6 +43,7 @@ import { CalendarField } from './due-date-field'
 import { InstallmentsTotalField } from './installments-total-field'
 import { RecurrenceField } from './is-recurring-filed'
 import { PayToField } from './pay-to-field'
+import { RecurrenceIntervalField } from './recurrence-interval-field'
 import { RecurrenceSelectorField } from './recurrence-selector-field'
 import { RecurrenceTypeField } from './recurrence-type-field'
 import { RecurrenceUntilField } from './recurrence-until-field'
@@ -547,11 +548,12 @@ export function DrawerTransaction({ transaction, open, onOpenChange, onExternalS
                       <h4 className="text-sm font-medium text-muted-foreground mb-3">
                         Configuração de Recorrência
                       </h4>
-                      <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                      <div className="grid grid-cols-1 gap-3">
                         <RecurrenceTypeField form={form} />
                         <RecurrenceSelectorField form={form} />
+                        <RecurrenceIntervalField form={form} />
                       </div>
-                      <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                      <div className="grid grid-cols-1 gap-3">
                         {form.watch('recurrenceSelector') === 'date' ? (
                           <RecurrenceUntilField form={form} />
                         ) : (
