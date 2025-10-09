@@ -1,0 +1,3 @@
+ALTER TABLE "transaction_chat_messages" DROP CONSTRAINT "transaction_chat_messages_transaction_id_transactions_series_id_fk";
+--> statement-breakpoint
+ALTER TABLE "transaction_chat_messages" ADD CONSTRAINT "transaction_chat_messages_transaction_id_transactions_occurrences_id_fk" FOREIGN KEY ("transaction_id") REFERENCES "public"."transactions_occurrences"("id") ON DELETE cascade ON UPDATE no action;

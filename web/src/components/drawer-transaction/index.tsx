@@ -39,6 +39,7 @@ import { useAuthStore } from '@/stores/auth'
 import { PaymentDateDialog } from '../../pages/_app/$org/(transactions)/-components/table-list-transactions/payment-date-dialog'
 import { TransactionSummary } from '../../pages/_app/$org/(transactions)/-components/table-list-transactions/transaction-summary'
 import { AmountField } from './amount-field'
+import { ChatSection } from './chat-section'
 import { DescriptionField } from './description-field'
 import { CalendarField } from './due-date-field'
 import { InstallmentsTotalField } from './installments-total-field'
@@ -592,7 +593,11 @@ function DrawerTransactionContent({ transaction, open, onOpenChange, onExternalS
 
           <div className="flex-1 overflow-hidden">
             <Form {...form}>
-              <Tabs value={activeTab} onValueChange={setActiveTab} className="h-full flex flex-col">
+              <Tabs
+                value={activeTab}
+                onValueChange={setActiveTab}
+                className="h-full flex flex-col min-h-0"
+              >
                 <div className="px-6 pt-4">
                   <TabsList className="grid w-full grid-cols-2">
                     <TabsTrigger value="form">Transação</TabsTrigger>
@@ -624,7 +629,7 @@ function DrawerTransactionContent({ transaction, open, onOpenChange, onExternalS
                           {!isEditMode && <RecurrenceField form={form} />}
                         </div>
 
-                        {!isEditMode && form.watch('isRecurring') && (
+                        {form.watch('isRecurring') && (
                           <div className="space-y-4 p-4 bg-muted/20 rounded-lg border">
                             <h4 className="text-sm font-medium text-muted-foreground mb-3">
                               Configuração de Recorrência
@@ -684,25 +689,16 @@ function DrawerTransactionContent({ transaction, open, onOpenChange, onExternalS
                   </div>
                 </TabsContent>
 
-                <TabsContent value="chat" className="flex-1 flex flex-col">
-                  <div className="flex-1 p-6">
-                    <div className="text-center text-muted-foreground text-sm">
-                      Área de chat em desenvolvimento
+                <TabsContent value="chat" className="flex-1 flex flex-col min-h-0">
+                  {transaction ? (
+                    <ChatSection transactionId={transaction.id} />
+                  ) : (
+                    <div className="flex-1 p-6">
+                      <div className="text-center text-muted-foreground text-sm">
+                        Selecione uma transação para ver o chat
+                      </div>
                     </div>
-                  </div>
-                  <div className="p-4 border-t">
-                    <div className="flex gap-2">
-                      <input
-                        type="text"
-                        placeholder="Digite uma mensagem..."
-                        className="flex-1 px-3 py-2 text-sm border rounded-md bg-background"
-                        disabled
-                      />
-                      <Button size="sm" disabled>
-                        Enviar
-                      </Button>
-                    </div>
-                  </div>
+                  )}
                 </TabsContent>
               </Tabs>
             </Form>

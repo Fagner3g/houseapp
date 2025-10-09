@@ -6,6 +6,7 @@ import { goalCompletions } from './schemas/goalCompletions'
 import { goals } from './schemas/goals'
 import { invites } from './schemas/invites'
 import { organizations } from './schemas/organization'
+import { transactionChatMessages } from './schemas/transactionChatMessages'
 import { transactionOccurrences } from './schemas/transactionOccurrences'
 import { transactionSeries } from './schemas/transactionSeries'
 import { transactionTags } from './schemas/transactionTags'
@@ -23,6 +24,7 @@ const schema = {
   transactionTags,
   transactionSeries,
   transactionOccurrences,
+  transactionChatMessages,
 }
 
 const { baseUrl } = getDatabaseString()

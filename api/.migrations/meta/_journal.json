@@ -8,6 +8,20 @@
       "when": 1758073567272,
       "tag": "0000_spotty_blazing_skull",
       "breakpoints": true
+    },
+    {
+      "idx": 1,
+      "version": "7",
+      "when": 1760040013978,
+      "tag": "0001_melted_bloodstorm",
+      "breakpoints": true
+    },
+    {
+      "idx": 2,
+      "version": "7",
+      "when": 1760042847805,
+      "tag": "0002_fuzzy_night_thrasher",
+      "breakpoints": true
     }
   ]
 }
