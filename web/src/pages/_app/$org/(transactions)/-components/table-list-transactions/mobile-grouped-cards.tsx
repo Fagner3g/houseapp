@@ -172,7 +172,7 @@ export function MobileGroupedCards({
             >
               <button
                 type="button"
-                className="w-full p-4 text-left cursor-pointer"
+                className="w-full p-3 sm:p-4 text-left cursor-pointer"
                 onClick={() => toggleGroup(groupKey)}
                 aria-expanded={isOpen}
                 aria-label={`${isOpen ? 'Recolher' : 'Expandir'} transações de ${(() => {
@@ -181,46 +181,46 @@ export function MobileGroupedCards({
                   return isCurrentUserPayTo ? firstTransaction.ownerName : group.payTo.name
                 })()}`}
               >
-                <div className="flex items-center justify-between">
+                <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
                   <div className="flex items-center gap-3 min-w-0">
                     <div className="h-10 w-10 rounded-xl bg-gradient-to-br from-primary/20 to-primary/40 flex items-center justify-center border border-primary/20 shadow-sm">
                       <span className="text-base font-bold text-primary">
                         {group.payTo.name.charAt(0).toUpperCase()}
                       </span>
                     </div>
-                    <div className="flex-1 min-w-0">
-                      <CardTitle className="text-base font-semibold text-foreground truncate">
+                    <div className="flex-1 min-w-0 space-y-1">
+                      <CardTitle className="text-sm sm:text-base font-semibold text-foreground truncate">
                         {group.payTo.name}
                       </CardTitle>
-                      <div className="flex gap-2 mt-1">
-                        <Badge variant="outline" className="text-xs">
+                      <div className="flex gap-2 flex-wrap">
+                        <Badge variant="outline" className="text-[10px] sm:text-xs">
                           {transactions.length} transação(ões)
                         </Badge>
                         {overdueCount > 0 && (
-                          <Badge variant="destructive" className="text-xs">
+                          <Badge variant="destructive" className="text-[10px] sm:text-xs">
                             {overdueCount} vencida(s)
                           </Badge>
                         )}
                       </div>
                     </div>
                   </div>
-                  <div className="flex items-center gap-2">
+                  <div className="flex items-center gap-2 sm:mt-0 mt-1">
                     {/* Resumo financeiro */}
                     <div className="text-right">
-                      <div className="text-sm font-medium flex items-center justify-end gap-1">
-                        <span className="text-red-600">
+                      <div className="text-xs sm:text-sm font-medium flex items-center justify-end gap-1 flex-wrap">
+                        <span className="text-red-600 whitespace-nowrap">
                           {new Intl.NumberFormat('pt-BR', { minimumFractionDigits: 2 }).format(
                             totalExpense
                           )}
                         </span>
                         <span className="text-muted-foreground">-</span>
-                        <span className="text-green-600">
+                        <span className="text-green-600 whitespace-nowrap">
                           {new Intl.NumberFormat('pt-BR', { minimumFractionDigits: 2 }).format(
                             totalIncome
                           )}
                         </span>
                         <span className="text-muted-foreground">=</span>
-                        <span className="text-foreground">
+                        <span className="text-foreground whitespace-nowrap">
                           {formatCurrency(Math.abs(netTotal))}
                         </span>
                       </div>
