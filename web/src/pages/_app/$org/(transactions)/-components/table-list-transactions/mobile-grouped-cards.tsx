@@ -4,14 +4,18 @@ import { useState } from 'react'
 import type { ListTransactions200TransactionsItem } from '@/api/generated/model'
 import { Badge } from '@/components/ui/badge'
 import { Card, CardContent, CardTitle } from '@/components/ui/card'
-import { Checkbox } from '@/components/ui/checkbox'
 import { useAuthStore } from '@/stores/auth'
+import { MobileCards } from './mobile-cards'
 
 interface Props {
   transactions: ListTransactions200TransactionsItem[]
   onTransactionClick: (transaction: ListTransactions200TransactionsItem) => void
   onRowSelect?: (id: string, selected: boolean) => void
   selectedRows?: string[]
+  onEdit?: (transaction: ListTransactions200TransactionsItem) => void
+  onDuplicate?: (transaction: ListTransactions200TransactionsItem) => void
+  onPay?: (id: string) => void
+  onDelete?: (id: string) => void
 }
 
 export function MobileGroupedCards({
@@ -19,6 +23,10 @@ export function MobileGroupedCards({
   onTransactionClick,
   onRowSelect,
   selectedRows = [],
+  onEdit,
+  onDuplicate,
+  onPay,
+  onDelete,
 }: Props) {
   const [openGroups, setOpenGroups] = useState<Set<string>>(new Set())
   const currentUser = useAuthStore(s => s.user)
@@ -164,7 +172,7 @@ export function MobileGroupedCards({
             >
               <button
                 type="button"
-                className="w-full p-4 text-left cursor-pointer"
+                className="w-full p-3 sm:p-4 text-left cursor-pointer"
                 onClick={() => toggleGroup(groupKey)}
                 aria-expanded={isOpen}
                 aria-label={`${isOpen ? 'Recolher' : 'Expandir'} transações de ${(() => {
@@ -173,46 +181,46 @@ export function MobileGroupedCards({
                   return isCurrentUserPayTo ? firstTransaction.ownerName : group.payTo.name
                 })()}`}
               >
-                <div className="flex items-center justify-between">
+                <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
                   <div className="flex items-center gap-3 min-w-0">
                     <div className="h-10 w-10 rounded-xl bg-gradient-to-br from-primary/20 to-primary/40 flex items-center justify-center border border-primary/20 shadow-sm">
                       <span className="text-base font-bold text-primary">
                         {group.payTo.name.charAt(0).toUpperCase()}
                       </span>
                     </div>
-                    <div className="flex-1 min-w-0">
-                      <CardTitle className="text-base font-semibold text-foreground truncate">
+                    <div className="flex-1 min-w-0 space-y-1">
+                      <CardTitle className="text-sm sm:text-base font-semibold text-foreground truncate">
                         {group.payTo.name}
                       </CardTitle>
-                      <div className="flex gap-2 mt-1">
-                        <Badge variant="outline" className="text-xs">
+                      <div className="flex gap-2 flex-wrap">
+                        <Badge variant="outline" className="text-[10px] sm:text-xs">
                           {transactions.length} transação(ões)
                         </Badge>
                         {overdueCount > 0 && (
-                          <Badge variant="destructive" className="text-xs">
+                          <Badge variant="destructive" className="text-[10px] sm:text-xs">
                             {overdueCount} vencida(s)
                           </Badge>
                         )}
                       </div>
                     </div>
                   </div>
-                  <div className="flex items-center gap-2">
+                  <div className="flex items-center gap-2 sm:mt-0 mt-1">
                     {/* Resumo financeiro */}
                     <div className="text-right">
-                      <div className="text-sm font-medium flex items-center justify-end gap-1">
-                        <span className="text-red-600">
+                      <div className="text-xs sm:text-sm font-medium flex items-center justify-end gap-1 flex-wrap">
+                        <span className="text-red-600 whitespace-nowrap">
                           {new Intl.NumberFormat('pt-BR', { minimumFractionDigits: 2 }).format(
                             totalExpense
                           )}
                         </span>
                         <span className="text-muted-foreground">-</span>
-                        <span className="text-green-600">
+                        <span className="text-green-600 whitespace-nowrap">
                           {new Intl.NumberFormat('pt-BR', { minimumFractionDigits: 2 }).format(
                             totalIncome
                           )}
                         </span>
                         <span className="text-muted-foreground">=</span>
-                        <span className="text-foreground">
+                        <span className="text-foreground whitespace-nowrap">
                           {formatCurrency(Math.abs(netTotal))}
                         </span>
                       </div>
@@ -228,91 +236,17 @@ export function MobileGroupedCards({
 
               {isOpen && (
                 <CardContent className="p-4 pt-0">
-                  <div className="space-y-3">
-                    {transactions
-                      .sort((a, b) => a.title.localeCompare(b.title, 'pt-BR'))
-                      .map(transaction => {
-                        const actualStatus = getActualStatus(
-                          transaction.status,
-                          transaction.dueDate
-                        )
-                        const isViewerPayTo = transaction.payTo.email === currentUser?.email
-                        const effectiveType = isViewerPayTo
-                          ? transaction.type === 'income'
-                            ? 'expense'
-                            : 'income'
-                          : transaction.type
-
-                        return (
-                          <div
-                            key={transaction.id}
-                            className="flex items-center gap-3 p-3 rounded-lg border border-border/50 bg-card/50 hover:bg-card/70 transition-colors"
-                          >
-                            {/* Checkbox para seleção */}
-                            {onRowSelect && (
-                              <Checkbox
-                                checked={selectedRows.includes(transaction.id)}
-                                onCheckedChange={checked => {
-                                  onRowSelect(transaction.id, !!checked)
-                                }}
-                                aria-label={`Selecionar transação ${transaction.title}`}
-                                onClick={e => e.stopPropagation()}
-                              />
-                            )}
-
-                            {/* Conteúdo da transação */}
-                            <button
-                              type="button"
-                              className="flex-1 flex items-center justify-between text-left cursor-pointer"
-                              onClick={() => onTransactionClick(transaction)}
-                              aria-label={`Editar transação ${transaction.title}`}
-                            >
-                              <div className="flex-1 min-w-0">
-                                <div className="mb-1">
-                                  <span className="text-sm font-medium truncate">
-                                    {transaction.title}
-                                  </span>
-                                </div>
-                                <div className="flex items-center gap-2 text-xs text-muted-foreground">
-                                  <span>
-                                    {new Date(transaction.dueDate).toLocaleDateString('pt-BR')}
-                                  </span>
-                                  <Badge
-                                    variant={
-                                      actualStatus === 'paid'
-                                        ? 'default'
-                                        : actualStatus === 'overdue'
-                                          ? 'destructive'
-                                          : 'secondary'
-                                    }
-                                    className="text-xs"
-                                  >
-                                    {actualStatus === 'paid'
-                                      ? 'Pago'
-                                      : actualStatus === 'overdue'
-                                        ? 'Vencida'
-                                        : 'Pendente'}
-                                  </Badge>
-                                </div>
-                              </div>
-                              <div className="text-right">
-                                <div className="text-sm font-bold">
-                                  {formatCurrency(parseFloat(transaction.amount))}
-                                </div>
-                                <div className="mt-1">
-                                  <Badge
-                                    variant={effectiveType === 'income' ? 'default' : 'destructive'}
-                                    className="text-xs"
-                                  >
-                                    {effectiveType === 'income' ? 'Receita' : 'Despesa'}
-                                  </Badge>
-                                </div>
-                              </div>
-                            </button>
-                          </div>
-                        )
-                      })}
-                  </div>
+                  <MobileCards
+                    transactions={transactions.sort((a, b) =>
+                      a.title.localeCompare(b.title, 'pt-BR')
+                    )}
+                    onRowSelect={(id, selected) => onRowSelect?.(id, selected)}
+                    selectedRows={selectedRows}
+                    onEdit={t => (onEdit ? onEdit(t) : onTransactionClick(t))}
+                    onDuplicate={t => onDuplicate?.(t)}
+                    onPay={id => onPay?.(id)}
+                    onDelete={id => onDelete?.(id)}
+                  />
                 </CardContent>
               )}
             </Card>

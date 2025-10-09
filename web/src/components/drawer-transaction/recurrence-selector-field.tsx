@@ -1,6 +1,6 @@
 import type { UseFormReturn } from 'react-hook-form'
 
-import { FormControl, FormField, FormItem, FormLabel } from '@/components/ui/form'
+import { FormControl, FormDescription, FormField, FormItem, FormLabel } from '@/components/ui/form'
 import {
   Select,
   SelectContent,
@@ -16,17 +16,20 @@ export interface RecurrenceSelectorFieldProps {
 }
 
 export function RecurrenceSelectorField({ form }: RecurrenceSelectorFieldProps) {
+  const hasError = Boolean(form.formState.errors.recurrenceSelector)
   return (
     <FormField
       control={form.control}
       name="recurrenceSelector"
       render={({ field }) => (
         <FormItem>
-          <FormLabel>Modo</FormLabel>
           <FormControl>
             <Select onValueChange={field.onChange} value={field.value?.toString() || ''}>
-              <SelectTrigger aria-invalid={!!form.formState.errors.recurrenceSelector}>
-                <SelectValue placeholder="Selecione" />
+              <SelectTrigger
+                aria-invalid={hasError}
+                className={`h-9 w-full ${hasError ? 'border-destructive ring-1 ring-destructive/50' : ''}`}
+              >
+                <SelectValue placeholder="Selecione" className="truncate" />
               </SelectTrigger>
               <SelectContent>
                 <SelectGroup>
@@ -36,6 +39,9 @@ export function RecurrenceSelectorField({ form }: RecurrenceSelectorFieldProps) 
               </SelectContent>
             </Select>
           </FormControl>
+          <FormDescription className="text-xs">
+            “Termina em” exige data final. “Repete” usa total de parcelas.
+          </FormDescription>
         </FormItem>
       )}
     />

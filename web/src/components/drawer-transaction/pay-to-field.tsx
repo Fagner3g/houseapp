@@ -34,16 +34,21 @@ export function PayToField({ form, data, disabled }: PayToFieldProps) {
       name="payToEmail"
       render={({ field }) => (
         <FormItem className="flex-1/6">
-          <FormLabel>
+          <FormLabel className="flex items-center gap-1">
             {form.getValues('type') !== 'expense' ? 'Pagar para' : 'Receber de'}
           </FormLabel>
           <FormControl>
-            <Popover open={open} onOpenChange={setOpen}>
+            <Popover open={open} onOpenChange={setOpen} modal>
               <PopoverTrigger asChild>
                 <Button
                   variant="outline"
                   aria-expanded={open}
-                  className={cn('flex justify-between', !field.value && 'text-muted-foreground')}
+                  className={cn(
+                    'flex justify-between w-full h-9 px-3',
+                    !field.value && 'text-muted-foreground',
+                    form.formState.errors.payToEmail &&
+                      'border-destructive dark:border-destructive ring-1 ring-destructive/50'
+                  )}
                   aria-invalid={!!form.formState.errors.payToEmail}
                   disabled={disabled}
                 >
@@ -53,13 +58,19 @@ export function PayToField({ form, data, disabled }: PayToFieldProps) {
                   <ChevronsUpDown className="opacity-50" />
                 </Button>
               </PopoverTrigger>
-              <PopoverContent className="z-[90] w-[320px] p-0 overflow-hidden pointer-events-auto">
-                <Command>
+              <PopoverContent
+                className="z-[190] w-[320px] p-0 max-h-[360px] overflow-auto pointer-events-auto"
+                onWheel={e => e.stopPropagation()}
+              >
+                <Command className="max-h-[300px]">
                   <CommandInput
                     placeholder="Pesquise o usuário..."
                     className="h-10 border-0 focus:ring-0"
                   />
-                  <CommandList className="max-h-[200px]">
+                  <CommandList
+                    className="max-h-[280px] overflow-auto"
+                    onWheel={e => e.stopPropagation()}
+                  >
                     <CommandEmpty className="py-6 text-center text-sm text-muted-foreground">
                       Nenhum usuário encontrado
                     </CommandEmpty>

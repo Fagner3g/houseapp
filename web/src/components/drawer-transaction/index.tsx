@@ -29,6 +29,7 @@ import {
   DrawerTitle,
 } from '@/components/ui/drawer'
 import { Form } from '@/components/ui/form'
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs'
 import { useActiveOrganization } from '@/hooks/use-active-organization'
 import { useIsMobile } from '@/hooks/use-mobile'
 import { useScrollToActiveField } from '@/hooks/use-scroll-to-active-field'
@@ -38,11 +39,13 @@ import { useAuthStore } from '@/stores/auth'
 import { PaymentDateDialog } from '../../pages/_app/$org/(transactions)/-components/table-list-transactions/payment-date-dialog'
 import { TransactionSummary } from '../../pages/_app/$org/(transactions)/-components/table-list-transactions/transaction-summary'
 import { AmountField } from './amount-field'
+import { ChatSection } from './chat-section'
 import { DescriptionField } from './description-field'
 import { CalendarField } from './due-date-field'
 import { InstallmentsTotalField } from './installments-total-field'
 import { RecurrenceField } from './is-recurring-filed'
 import { PayToField } from './pay-to-field'
+import { RecurrenceIntervalField } from './recurrence-interval-field'
 import { RecurrenceSelectorField } from './recurrence-selector-field'
 import { RecurrenceTypeField } from './recurrence-type-field'
 import { RecurrenceUntilField } from './recurrence-until-field'
@@ -50,6 +53,7 @@ import { getDrawerContext } from './row-mapper'
 import { type NewTransactionSchema, newTransactionSchema, RegisterType } from './schema'
 import { TagField } from './tag-field'
 import { TitleField } from './title-filed'
+import { useTransactionDrawer } from './transaction-drawer-context'
 import { TypeField } from './type-field'
 
 interface Props {
@@ -63,7 +67,7 @@ interface Props {
   }) => Promise<void> | void
 }
 
-export function DrawerTransaction({ transaction, open, onOpenChange, onExternalSubmit }: Props) {
+function DrawerTransactionContent({ transaction, open, onOpenChange, onExternalSubmit }: Props) {
   const queryClient = useQueryClient()
   const currentUser = useAuthStore(s => s.user)
   const isMobile = useIsMobile()
@@ -71,6 +75,18 @@ export function DrawerTransaction({ transaction, open, onOpenChange, onExternalS
   const { data: userData } = useListUsersByOrg(slug)
   const { isKeyboardOpen, keyboardHeight } = useVirtualKeyboard()
   const scrollContainerRef = useScrollToActiveField(isKeyboardOpen)
+  const {
+    activeTab,
+    setActiveTab,
+    form: contextForm,
+    setForm,
+    isDirty,
+    setIsDirty,
+    isResetting,
+    setIsResetting,
+    transactionData,
+    setTransactionData,
+  } = useTransactionDrawer()
 
   // Buscar installments quando o drawer estiver aberto e houver uma transação
   const serieId = transaction?.serieId || ''
@@ -83,7 +99,9 @@ export function DrawerTransaction({ transaction, open, onOpenChange, onExternalS
   })
   const [paymentDialogOpen, setPaymentDialogOpen] = useState(false)
   const initializedTransactionRef = useRef<string | null>(null)
-  const form = useForm<NewTransactionSchema>({
+
+  // Usar form do contexto se disponível, senão criar novo
+  const localForm = useForm<NewTransactionSchema>({
     resolver: zodResolver(newTransactionSchema),
     shouldUnregister: true,
     defaultValues: {
@@ -97,6 +115,30 @@ export function DrawerTransaction({ transaction, open, onOpenChange, onExternalS
       recurrenceStart: undefined,
     },
   })
+
+  const form = contextForm || localForm
+
+  // Helper para criar formData a partir de uma transação
+  const createFormData = useCallback(
+    (transaction: ListTransactions200TransactionsItem) => ({
+      type: transaction.type as 'expense' | 'income',
+      title: transaction.title as string,
+      amount: transaction.amount as string,
+      dueDate: new Date(transaction.dueDate),
+      payToEmail: transaction.payTo.email as string,
+      tags: transaction.tags ?? [],
+      description: transaction.description || '',
+      isRecurring: false as const,
+      recurrenceSelector: undefined,
+      recurrenceType: undefined,
+      recurrenceUntil: undefined,
+      recurrenceInterval: undefined,
+      installmentsTotal: undefined,
+      recurrenceStart: undefined,
+    }),
+    []
+  )
+
   // Serializar dados da transação com cálculos derivados
   const labels = getDrawerContext(transaction, currentUser?.id)
   const { isEditMode, isPaid, isReadOnly, title: baseTitle, description: baseDescription } = labels
@@ -105,9 +147,12 @@ export function DrawerTransaction({ transaction, open, onOpenChange, onExternalS
   const formType = form.getValues('type')
   const isExpense = formType === RegisterType.EXPENSE
 
-  // Estado local para controlar isDirty - mais confiável que form.formState.isDirty
-  const [isDirty, setIsDirty] = useState(false)
-  const [isResetting, setIsResetting] = useState(false)
+  // Registrar o form no contexto apenas se não existe um form no contexto
+  useEffect(() => {
+    if (!contextForm && form) {
+      setForm(form)
+    }
+  }, [contextForm, form, setForm])
 
   // Detectar mudanças reais no form
   useEffect(() => {
@@ -129,7 +174,7 @@ export function DrawerTransaction({ transaction, open, onOpenChange, onExternalS
     })
 
     return () => subscription.unsubscribe()
-  }, [form, transaction, isEditMode, isResetting])
+  }, [form, transaction, isEditMode, isResetting, setIsDirty])
 
   // Preencher formulário quando a transação mudar
   useEffect(() => {
@@ -139,34 +184,13 @@ export function DrawerTransaction({ transaction, open, onOpenChange, onExternalS
 
     // Só resetar se a transação mudou
     if (initializedTransactionRef.current !== currentTransactionId) {
-      if (transaction) {
-        const formData = {
-          type: transaction.type,
-          title: transaction.title,
-          amount: transaction.amount,
-          dueDate: new Date(transaction.dueDate),
-          payToEmail: transaction.payTo.email,
-          tags: transaction.tags ?? [],
-          description: transaction.description || '',
-          isRecurring: false,
-          recurrenceSelector: undefined,
-          recurrenceType: undefined,
-          recurrenceUntil: undefined,
-          recurrenceInterval: undefined,
-          installmentsTotal: undefined,
-          recurrenceStart: undefined,
-        }
-        setIsResetting(true)
-        form.reset(formData)
+      // Resetar contexto quando uma nova transação é carregada
+      setIsDirty(false)
+      setIsResetting(false)
+      setActiveTab('form')
 
-        // Aguardar todos os re-renders e forçar isDirty = false
-        setTimeout(() => {
-          // Reset novamente para garantir que não há mudanças
-          form.reset(formData, { keepDefaultValues: false })
-          // Resetar o estado local também
-          setIsDirty(false)
-          setIsResetting(false)
-        }, 0)
+      if (transaction) {
+        setIsResetting(true)
       } else {
         // Reset para modo criação
         form.reset({
@@ -188,14 +212,60 @@ export function DrawerTransaction({ transaction, open, onOpenChange, onExternalS
       }
       initializedTransactionRef.current = currentTransactionId
     }
-  }, [open, transaction, form])
+  }, [open, transaction, form, setIsDirty, setIsResetting, setActiveTab])
 
-  // Resetar ref e estado quando o drawer for fechado
+  // Resetar form quando contextForm fica disponível
+  useEffect(() => {
+    if (
+      contextForm &&
+      isResetting &&
+      transaction &&
+      initializedTransactionRef.current === transaction.id
+    ) {
+      // Aguardar o ciclo de renderização para garantir que o reset ocorra corretamente
+      setTimeout(() => {
+        contextForm.reset(createFormData(transaction))
+        setIsDirty(false)
+        setIsResetting(false)
+      }, 0)
+    }
+  }, [contextForm, isResetting, transaction, createFormData, setIsDirty, setIsResetting])
+
+  // Salvar dados da transação no contexto
+  useEffect(() => {
+    if (transaction && open) {
+      setTransactionData(transaction)
+    }
+  }, [transaction, open, setTransactionData])
+
+  // Forçar recarregamento quando form perde dados (trigger manual)
+  useEffect(() => {
+    if (contextForm && transactionData && !isResetting && activeTab === 'form') {
+      // Aguardar um pouco para o form se estabilizar
+      const timeoutId = setTimeout(() => {
+        const currentValues = contextForm.getValues()
+        const hasEmptyValues =
+          !currentValues.title ||
+          !currentValues.amount ||
+          currentValues.title === '' ||
+          currentValues.amount === '' ||
+          currentValues.title === undefined ||
+          currentValues.amount === undefined
+
+        if (hasEmptyValues) {
+          contextForm.reset(createFormData(transactionData))
+        }
+      }, 100) // Aguardar 100ms
+
+      return () => clearTimeout(timeoutId)
+    }
+  }, [activeTab, contextForm, transactionData, isResetting, createFormData])
+
+  // Resetar ref quando o drawer for fechado, mas manter estado do contexto
   useEffect(() => {
     if (!open) {
       initializedTransactionRef.current = null
-      setIsDirty(false)
-      setIsResetting(false)
+      // Não resetar isDirty, isResetting e activeTab para manter estado entre aberturas
     }
   }, [open])
 
@@ -521,82 +591,117 @@ export function DrawerTransaction({ transaction, open, onOpenChange, onExternalS
             <p className="text-sm text-muted-foreground mt-1">{description}</p>
           </DrawerHeader>
 
-          <div
-            ref={scrollContainerRef}
-            className={`flex-1 overflow-y-auto overscroll-contain scroll-to-active ${isMobile ? 'px-4 py-4' : 'px-6 py-4'}`}
-          >
-            <div className={isMobile ? 'max-w-2xl mx-auto' : 'w-full'}>
-              <Form {...form}>
-                <form
-                  onSubmit={form.handleSubmit(handleSubmit, errors =>
-                    showToastOnErrorSubmit({ form, errors })
-                  )}
-                  className={isMobile ? 'space-y-6' : 'space-y-4'}
-                >
-                  <div className="space-y-4">
-                    <TypeField form={form} disabled={isReadOnly || isPaid} />
-                    <TitleField form={form} disabled={isReadOnly || isPaid} />
-                    <AmountField form={form} disabled={isReadOnly || isPaid} />
-                    <CalendarField form={form} disabled={isReadOnly || isPaid} />
-                    <PayToField form={form} data={userData} disabled={isReadOnly || isPaid} />
-                    {!isEditMode && <RecurrenceField form={form} />}
-                  </div>
-
-                  {!isEditMode && form.watch('isRecurring') && (
-                    <div className="space-y-4 p-4 bg-muted/20 rounded-lg border">
-                      <h4 className="text-sm font-medium text-muted-foreground mb-3">
-                        Configuração de Recorrência
-                      </h4>
-                      <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                        <RecurrenceTypeField form={form} />
-                        <RecurrenceSelectorField form={form} />
-                      </div>
-                      <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                        {form.watch('recurrenceSelector') === 'date' ? (
-                          <RecurrenceUntilField form={form} />
-                        ) : (
-                          <InstallmentsTotalField form={form} />
-                        )}
-                      </div>
-                    </div>
-                  )}
-
-                  <div className="space-y-4">
-                    <TagField form={form} disabled={isReadOnly || isPaid} />
-                    <DescriptionField form={form} disabled={isReadOnly || isPaid} />
-                  </div>
-
-                  {isEditMode && (
-                    <div className="space-y-2 p-4 bg-muted/20 rounded-lg border">
-                      <h4 className="text-sm font-medium text-muted-foreground">Recorrência</h4>
-                      {(() => {
-                        const total = transaction?.installmentsTotal
-                        if (total === null) {
-                          return <p className="text-sm">Recorrente: Sim (ilimitada)</p>
-                        }
-                        if (typeof total === 'number' && total > 1) {
-                          return <p className="text-sm">Recorrente: Sim ({total} parcelas)</p>
-                        }
-                        return <p className="text-sm">Recorrente: Não</p>
-                      })()}
-                      <p className="text-xs text-muted-foreground">
-                        Edição de recorrência indisponível no modo edição.
-                      </p>
-                    </div>
-                  )}
-                </form>
-              </Form>
-
-              {/* Resumo da transação (apenas no modo editar) */}
-              {isEditMode && (
-                <div className="mt-8 pt-6 border-t">
-                  <TransactionSummary
-                    transaction={transaction}
-                    onDelete={() => onOpenChange(false)}
-                  />
+          <div className="flex-1 overflow-hidden">
+            <Form {...form}>
+              <Tabs
+                value={activeTab}
+                onValueChange={setActiveTab}
+                className="h-full flex flex-col min-h-0"
+              >
+                <div className="px-6 pt-4">
+                  <TabsList className="grid w-full grid-cols-2">
+                    <TabsTrigger value="form">Transação</TabsTrigger>
+                    <TabsTrigger value="chat">Chat</TabsTrigger>
+                  </TabsList>
                 </div>
-              )}
-            </div>
+
+                <TabsContent
+                  value="form"
+                  className="flex-1 overflow-y-auto overscroll-contain scroll-to-active"
+                >
+                  <div
+                    ref={scrollContainerRef}
+                    className={`${isMobile ? 'px-4 py-4' : 'px-6 py-4'}`}
+                  >
+                    <div className={isMobile ? 'max-w-2xl mx-auto' : 'w-full'}>
+                      <form
+                        onSubmit={form.handleSubmit(handleSubmit, errors =>
+                          showToastOnErrorSubmit({ form, errors })
+                        )}
+                        className={isMobile ? 'space-y-6' : 'space-y-4'}
+                      >
+                        <div className="space-y-4">
+                          <TypeField form={form} disabled={isReadOnly || isPaid} />
+                          <TitleField form={form} disabled={isReadOnly || isPaid} />
+                          <AmountField form={form} disabled={isReadOnly || isPaid} />
+                          <CalendarField form={form} disabled={isReadOnly || isPaid} />
+                          <PayToField form={form} data={userData} disabled={isReadOnly || isPaid} />
+                          {!isEditMode && <RecurrenceField form={form} />}
+                        </div>
+
+                        {form.watch('isRecurring') && (
+                          <div className="space-y-4 p-4 bg-muted/20 rounded-lg border">
+                            <h4 className="text-sm font-medium text-muted-foreground mb-3">
+                              Configuração de Recorrência
+                            </h4>
+                            <div className="grid grid-cols-1 gap-3">
+                              <RecurrenceTypeField form={form} />
+                              <RecurrenceSelectorField form={form} />
+                              <RecurrenceIntervalField form={form} />
+                            </div>
+                            <div className="grid grid-cols-1 gap-3">
+                              {form.watch('recurrenceSelector') === 'date' ? (
+                                <RecurrenceUntilField form={form} />
+                              ) : (
+                                <InstallmentsTotalField form={form} />
+                              )}
+                            </div>
+                          </div>
+                        )}
+
+                        <div className="space-y-4">
+                          <TagField form={form} disabled={isReadOnly || isPaid} />
+                          <DescriptionField form={form} disabled={isReadOnly || isPaid} />
+                        </div>
+
+                        {isEditMode && (
+                          <div className="space-y-2 p-4 bg-muted/20 rounded-lg border">
+                            <h4 className="text-sm font-medium text-muted-foreground">
+                              Recorrência
+                            </h4>
+                            {(() => {
+                              const total = transaction?.installmentsTotal
+                              if (total === null) {
+                                return <p className="text-sm">Recorrente: Sim (ilimitada)</p>
+                              }
+                              if (typeof total === 'number' && total > 1) {
+                                return <p className="text-sm">Recorrente: Sim ({total} parcelas)</p>
+                              }
+                              return <p className="text-sm">Recorrente: Não</p>
+                            })()}
+                            <p className="text-xs text-muted-foreground">
+                              Edição de recorrência indisponível no modo edição.
+                            </p>
+                          </div>
+                        )}
+                      </form>
+
+                      {/* Resumo da transação (apenas no modo editar) */}
+                      {isEditMode && (
+                        <div className="mt-8 pt-6 border-t">
+                          <TransactionSummary
+                            transaction={transaction}
+                            onDelete={() => onOpenChange(false)}
+                          />
+                        </div>
+                      )}
+                    </div>
+                  </div>
+                </TabsContent>
+
+                <TabsContent value="chat" className="flex-1 flex flex-col min-h-0">
+                  {transaction ? (
+                    <ChatSection transactionId={transaction.id} />
+                  ) : (
+                    <div className="flex-1 p-6">
+                      <div className="text-center text-muted-foreground text-sm">
+                        Selecione uma transação para ver o chat
+                      </div>
+                    </div>
+                  )}
+                </TabsContent>
+              </Tabs>
+            </Form>
           </div>
 
           <DrawerFooter className="pt-4 border-t bg-muted/30">
@@ -625,7 +730,7 @@ export function DrawerTransaction({ transaction, open, onOpenChange, onExternalS
                           ? 'Cancelar Pagamento'
                           : transaction?.status === 'canceled'
                             ? 'Reativar Transação'
-                            : isDirty
+                            : isDirty && activeTab === 'form'
                               ? 'Salvar edição'
                               : 'Marcar como Pago'
                         : 'Cadastrar'}
@@ -653,5 +758,16 @@ export function DrawerTransaction({ transaction, open, onOpenChange, onExternalS
         />
       )}
     </>
+  )
+}
+
+export function DrawerTransaction({ transaction, open, onOpenChange, onExternalSubmit }: Props) {
+  return (
+    <DrawerTransactionContent
+      transaction={transaction}
+      open={open}
+      onOpenChange={onOpenChange}
+      onExternalSubmit={onExternalSubmit}
+    />
   )
 }

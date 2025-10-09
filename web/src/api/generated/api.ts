@@ -23,6 +23,10 @@ import type {
 
 import type {
   CompleteGoalBody,
+  CreateChatMessage201,
+  CreateChatMessage400,
+  CreateChatMessage404,
+  CreateChatMessageBody,
   CreateGoalBody,
   CreateInviteBody,
   CreateOrganization201,
@@ -47,6 +51,9 @@ import type {
   GetTransactionById200,
   GetTransactionInstallments200,
   GetWeekSummary200,
+  ListChatMessages200,
+  ListChatMessages404,
+  ListChatMessagesParams,
   ListOrganizations200,
   ListTags200,
   ListTransactions200,
@@ -4491,6 +4498,320 @@ export const usePayTransaction = <TError = unknown, TContext = unknown>(
   TContext
 > => {
   const mutationOptions = getPayTransactionMutationOptions(options);
+
+  return useMutation(mutationOptions, queryClient);
+};
+
+/**
+ * List chat messages for a transaction
+ */
+export const getListChatMessagesUrl = (
+  slug: string,
+  transactionId: string,
+  params?: ListChatMessagesParams,
+) => {
+  const normalizedParams = new URLSearchParams();
+
+  Object.entries(params || {}).forEach(([key, value]) => {
+    if (value !== undefined) {
+      normalizedParams.append(key, value === null ? "null" : value.toString());
+    }
+  });
+
+  const stringifiedParams = normalizedParams.toString();
+
+  return stringifiedParams.length > 0
+    ? `/org/${slug}/transaction/${transactionId}/chat?${stringifiedParams}`
+    : `/org/${slug}/transaction/${transactionId}/chat`;
+};
+
+export const listChatMessages = async (
+  slug: string,
+  transactionId: string,
+  params?: ListChatMessagesParams,
+  options?: RequestInit,
+): Promise<ListChatMessages200> => {
+  return http<ListChatMessages200>(
+    getListChatMessagesUrl(slug, transactionId, params),
+    {
+      ...options,
+      method: "GET",
+    },
+  );
+};
+
+export const getListChatMessagesQueryKey = (
+  slug?: string,
+  transactionId?: string,
+  params?: ListChatMessagesParams,
+) => {
+  return [
+    `/org/${slug}/transaction/${transactionId}/chat`,
+    ...(params ? [params] : []),
+  ] as const;
+};
+
+export const getListChatMessagesQueryOptions = <
+  TData = Awaited<ReturnType<typeof listChatMessages>>,
+  TError = ListChatMessages404,
+>(
+  slug: string,
+  transactionId: string,
+  params?: ListChatMessagesParams,
+  options?: {
+    query?: Partial<
+      UseQueryOptions<
+        Awaited<ReturnType<typeof listChatMessages>>,
+        TError,
+        TData
+      >
+    >;
+    request?: SecondParameter<typeof http>;
+  },
+) => {
+  const { query: queryOptions, request: requestOptions } = options ?? {};
+
+  const queryKey =
+    queryOptions?.queryKey ??
+    getListChatMessagesQueryKey(slug, transactionId, params);
+
+  const queryFn: QueryFunction<
+    Awaited<ReturnType<typeof listChatMessages>>
+  > = ({ signal }) =>
+    listChatMessages(slug, transactionId, params, {
+      signal,
+      ...requestOptions,
+    });
+
+  return {
+    queryKey,
+    queryFn,
+    enabled: !!(slug && transactionId),
+    ...queryOptions,
+  } as UseQueryOptions<
+    Awaited<ReturnType<typeof listChatMessages>>,
+    TError,
+    TData
+  > & { queryKey: DataTag<QueryKey, TData, TError> };
+};
+
+export type ListChatMessagesQueryResult = NonNullable<
+  Awaited<ReturnType<typeof listChatMessages>>
+>;
+export type ListChatMessagesQueryError = ListChatMessages404;
+
+export function useListChatMessages<
+  TData = Awaited<ReturnType<typeof listChatMessages>>,
+  TError = ListChatMessages404,
+>(
+  slug: string,
+  transactionId: string,
+  params: undefined | ListChatMessagesParams,
+  options: {
+    query: Partial<
+      UseQueryOptions<
+        Awaited<ReturnType<typeof listChatMessages>>,
+        TError,
+        TData
+      >
+    > &
+      Pick<
+        DefinedInitialDataOptions<
+          Awaited<ReturnType<typeof listChatMessages>>,
+          TError,
+          Awaited<ReturnType<typeof listChatMessages>>
+        >,
+        "initialData"
+      >;
+    request?: SecondParameter<typeof http>;
+  },
+  queryClient?: QueryClient,
+): DefinedUseQueryResult<TData, TError> & {
+  queryKey: DataTag<QueryKey, TData, TError>;
+};
+export function useListChatMessages<
+  TData = Awaited<ReturnType<typeof listChatMessages>>,
+  TError = ListChatMessages404,
+>(
+  slug: string,
+  transactionId: string,
+  params?: ListChatMessagesParams,
+  options?: {
+    query?: Partial<
+      UseQueryOptions<
+        Awaited<ReturnType<typeof listChatMessages>>,
+        TError,
+        TData
+      >
+    > &
+      Pick<
+        UndefinedInitialDataOptions<
+          Awaited<ReturnType<typeof listChatMessages>>,
+          TError,
+          Awaited<ReturnType<typeof listChatMessages>>
+        >,
+        "initialData"
+      >;
+    request?: SecondParameter<typeof http>;
+  },
+  queryClient?: QueryClient,
+): UseQueryResult<TData, TError> & {
+  queryKey: DataTag<QueryKey, TData, TError>;
+};
+export function useListChatMessages<
+  TData = Awaited<ReturnType<typeof listChatMessages>>,
+  TError = ListChatMessages404,
+>(
+  slug: string,
+  transactionId: string,
+  params?: ListChatMessagesParams,
+  options?: {
+    query?: Partial<
+      UseQueryOptions<
+        Awaited<ReturnType<typeof listChatMessages>>,
+        TError,
+        TData
+      >
+    >;
+    request?: SecondParameter<typeof http>;
+  },
+  queryClient?: QueryClient,
+): UseQueryResult<TData, TError> & {
+  queryKey: DataTag<QueryKey, TData, TError>;
+};
+
+export function useListChatMessages<
+  TData = Awaited<ReturnType<typeof listChatMessages>>,
+  TError = ListChatMessages404,
+>(
+  slug: string,
+  transactionId: string,
+  params?: ListChatMessagesParams,
+  options?: {
+    query?: Partial<
+      UseQueryOptions<
+        Awaited<ReturnType<typeof listChatMessages>>,
+        TError,
+        TData
+      >
+    >;
+    request?: SecondParameter<typeof http>;
+  },
+  queryClient?: QueryClient,
+): UseQueryResult<TData, TError> & {
+  queryKey: DataTag<QueryKey, TData, TError>;
+} {
+  const queryOptions = getListChatMessagesQueryOptions(
+    slug,
+    transactionId,
+    params,
+    options,
+  );
+
+  const query = useQuery(queryOptions, queryClient) as UseQueryResult<
+    TData,
+    TError
+  > & { queryKey: DataTag<QueryKey, TData, TError> };
+
+  query.queryKey = queryOptions.queryKey;
+
+  return query;
+}
+
+/**
+ * Create a new chat message for a transaction
+ */
+export const getCreateChatMessageUrl = (
+  slug: string,
+  transactionId: string,
+) => {
+  return `/org/${slug}/transaction/${transactionId}/chat`;
+};
+
+export const createChatMessage = async (
+  slug: string,
+  transactionId: string,
+  createChatMessageBody: CreateChatMessageBody,
+  options?: RequestInit,
+): Promise<CreateChatMessage201> => {
+  return http<CreateChatMessage201>(
+    getCreateChatMessageUrl(slug, transactionId),
+    {
+      ...options,
+      method: "POST",
+      headers: { "Content-Type": "application/json", ...options?.headers },
+      body: JSON.stringify(createChatMessageBody),
+    },
+  );
+};
+
+export const getCreateChatMessageMutationOptions = <
+  TError = CreateChatMessage400 | CreateChatMessage404,
+  TContext = unknown,
+>(options?: {
+  mutation?: UseMutationOptions<
+    Awaited<ReturnType<typeof createChatMessage>>,
+    TError,
+    { slug: string; transactionId: string; data: CreateChatMessageBody },
+    TContext
+  >;
+  request?: SecondParameter<typeof http>;
+}): UseMutationOptions<
+  Awaited<ReturnType<typeof createChatMessage>>,
+  TError,
+  { slug: string; transactionId: string; data: CreateChatMessageBody },
+  TContext
+> => {
+  const mutationKey = ["createChatMessage"];
+  const { mutation: mutationOptions, request: requestOptions } = options
+    ? options.mutation &&
+      "mutationKey" in options.mutation &&
+      options.mutation.mutationKey
+      ? options
+      : { ...options, mutation: { ...options.mutation, mutationKey } }
+    : { mutation: { mutationKey }, request: undefined };
+
+  const mutationFn: MutationFunction<
+    Awaited<ReturnType<typeof createChatMessage>>,
+    { slug: string; transactionId: string; data: CreateChatMessageBody }
+  > = (props) => {
+    const { slug, transactionId, data } = props ?? {};
+
+    return createChatMessage(slug, transactionId, data, requestOptions);
+  };
+
+  return { mutationFn, ...mutationOptions };
+};
+
+export type CreateChatMessageMutationResult = NonNullable<
+  Awaited<ReturnType<typeof createChatMessage>>
+>;
+export type CreateChatMessageMutationBody = CreateChatMessageBody;
+export type CreateChatMessageMutationError =
+  | CreateChatMessage400
+  | CreateChatMessage404;
+
+export const useCreateChatMessage = <
+  TError = CreateChatMessage400 | CreateChatMessage404,
+  TContext = unknown,
+>(
+  options?: {
+    mutation?: UseMutationOptions<
+      Awaited<ReturnType<typeof createChatMessage>>,
+      TError,
+      { slug: string; transactionId: string; data: CreateChatMessageBody },
+      TContext
+    >;
+    request?: SecondParameter<typeof http>;
+  },
+  queryClient?: QueryClient,
+): UseMutationResult<
+  Awaited<ReturnType<typeof createChatMessage>>,
+  TError,
+  { slug: string; transactionId: string; data: CreateChatMessageBody },
+  TContext
+> => {
+  const mutationOptions = getCreateChatMessageMutationOptions(options);
 
   return useMutation(mutationOptions, queryClient);
 };

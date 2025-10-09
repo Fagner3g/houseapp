@@ -1,18 +1,22 @@
 import type { FastifyPluginAsyncZod } from 'fastify-type-provider-zod'
 
+import { createChatMessageController } from '../controllers/transaction/create-chat-message.controller'
 import { createTransactionController } from '../controllers/transaction/create-transaction.controller'
 import { deleteTransactionsController } from '../controllers/transaction/delete-transactions.controller'
 import { getTransactionController } from '../controllers/transaction/get-transaction.controller'
 import { getTransactionInstallmentsController } from '../controllers/transaction/get-transaction-installments.controller'
+import { listChatMessagesController } from '../controllers/transaction/list-chat-messages.controller'
 import { listTransactionsController } from '../controllers/transaction/list-transactions.controller'
 import { payTransactionController } from '../controllers/transaction/pay-transaction.controller'
 import { updateTransactionController } from '../controllers/transaction/update-transaction.controller'
 import { authenticateUserHook } from '../hooks/authenticate-user'
 import { verifyOrgAccessHook } from '../hooks/verify-user-belongs-to-org'
+import { createChatMessageSchema } from '../schemas/transaction/create-chat-message.schema'
 import { createTransactionsSchema } from '../schemas/transaction/create-transaction.schema'
 import { deleteTransactionsSchema } from '../schemas/transaction/delete-transactions.schema'
 import { getTransactionInstallmentsSchema } from '../schemas/transaction/get-transaction-installments.schema'
 import { getTransactionSchema } from '../schemas/transaction/get-transactions.schema'
+import { listChatMessagesSchema } from '../schemas/transaction/list-chat-messages.schema'
 import { listTransactionSchema } from '../schemas/transaction/list-transactions.schema'
 import { payTransactionSchema } from '../schemas/transaction/pay-transaction.schema'
 import { updateTransactionSchema } from '../schemas/transaction/update-transaction.schema'
@@ -77,5 +81,23 @@ export const getTransactionInstallmentsRoute: FastifyPluginAsyncZod = async app 
     preHandler: [verifyOrgAccessHook],
     schema: getTransactionInstallmentsSchema,
     handler: getTransactionInstallmentsController,
+  })
+}
+
+export const listChatMessagesRoute: FastifyPluginAsyncZod = async app => {
+  app.get('/org/:slug/transaction/:transactionId/chat', {
+    onRequest: [authenticateUserHook],
+    preHandler: [verifyOrgAccessHook],
+    schema: listChatMessagesSchema,
+    handler: listChatMessagesController,
+  })
+}
+
+export const createChatMessageRoute: FastifyPluginAsyncZod = async app => {
+  app.post('/org/:slug/transaction/:transactionId/chat', {
+    onRequest: [authenticateUserHook],
+    preHandler: [verifyOrgAccessHook],
+    schema: createChatMessageSchema,
+    handler: createChatMessageController,
   })
 }

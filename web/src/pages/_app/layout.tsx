@@ -1,6 +1,7 @@
 import { createFileRoute, Outlet, redirect, useNavigate, useSearch } from '@tanstack/react-router'
 import { useEffect } from 'react'
 
+import { TransactionDrawerProvider } from '@/components/drawer-transaction/transaction-drawer-context'
 import { Header } from '@/components/layout/header'
 import { AppSidebar } from '@/components/layout/sidebar'
 import { ModalNewOrganization } from '@/components/modal-new-organization'
@@ -30,13 +31,15 @@ function RouteComponent() {
   }, [isAuthed, isLoading, navigate])
 
   return (
-    <SidebarProvider defaultOpen={false}>
-      <AppSidebar variant="floating" collapsible="icon" />
-      <SidebarInset>
-        <Header />
-        <Outlet />
-        <ModalNewOrganization open={!!createOrg} onOpenChange={() => {}} />
-      </SidebarInset>
-    </SidebarProvider>
+    <TransactionDrawerProvider>
+      <SidebarProvider defaultOpen={false}>
+        <AppSidebar variant="floating" collapsible="icon" />
+        <SidebarInset>
+          <Header />
+          <Outlet />
+          <ModalNewOrganization open={!!createOrg} onOpenChange={() => {}} />
+        </SidebarInset>
+      </SidebarProvider>
+    </TransactionDrawerProvider>
   )
 }

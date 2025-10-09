@@ -1,6 +1,6 @@
 import type { UseFormReturn } from 'react-hook-form'
 
-import { FormControl, FormField, FormItem, FormLabel } from '@/components/ui/form'
+import { FormControl, FormDescription, FormField, FormItem, FormLabel } from '@/components/ui/form'
 import {
   Select,
   SelectContent,
@@ -16,27 +16,33 @@ export interface RecurrenceTypeFieldProps {
 }
 
 export function RecurrenceTypeField({ form }: RecurrenceTypeFieldProps) {
+  const hasError = Boolean(form.formState.errors.recurrenceType)
   return (
     <FormField
       control={form.control}
       name="recurrenceType"
       render={({ field }) => (
         <FormItem>
-          <FormLabel>Recorrência</FormLabel>
           <FormControl>
             <Select onValueChange={field.onChange} value={field.value?.toString() || ''}>
-              <SelectTrigger aria-invalid={!!form.formState.errors.recurrenceType}>
+              <SelectTrigger
+                aria-invalid={hasError}
+                className={`h-9 w-full ${hasError ? 'border-destructive ring-1 ring-destructive/50' : ''}`}
+              >
                 <SelectValue placeholder="Selecione" />
               </SelectTrigger>
               <SelectContent>
                 <SelectGroup>
-                  <SelectItem value="weekly">Semanal</SelectItem>
-                  <SelectItem value="monthly">Mensal</SelectItem>
-                  <SelectItem value="yearly">Anual</SelectItem>
+                  <SelectItem value="weekly">Semanal (toda semana)</SelectItem>
+                  <SelectItem value="monthly">Mensal (todo mês)</SelectItem>
+                  <SelectItem value="yearly">Anual (todo ano)</SelectItem>
                 </SelectGroup>
               </SelectContent>
             </Select>
           </FormControl>
+          <FormDescription className="text-xs">
+            Define a frequência base. Combine com o intervalo.
+          </FormDescription>
         </FormItem>
       )}
     />

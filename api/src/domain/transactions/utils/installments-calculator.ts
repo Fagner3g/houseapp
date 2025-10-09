@@ -17,8 +17,8 @@ export function calculateInstallmentsInfo(
   installmentsPaid: number | null | undefined,
   status: 'paid' | 'pending' | 'canceled'
 ): InstallmentsInfo {
-  // Se installmentsTotal é null/undefined, é uma transação única
-  const isRecurring = installmentsTotal !== null && installmentsTotal !== undefined
+  // Considera recorrente quando o campo existe (mesmo que seja null = infinito)
+  const isRecurring = installmentsTotal !== undefined
 
   if (!isRecurring) {
     // Transação única: sempre 1 parcela
@@ -31,8 +31,9 @@ export function calculateInstallmentsInfo(
     }
   }
 
-  // Transação recorrente: usar valores do banco
-  const total = installmentsTotal ?? 0
+  // Transação recorrente: quando total é null interpretamos como recorrência infinita
+  // Para relatórios, usamos um total aproximado baseado nas parcelas já pagas + 1 próxima
+  const total = installmentsTotal == null ? (installmentsPaid ?? 0) + 1 : installmentsTotal
   const paid = installmentsPaid ?? 0
   const remaining = Math.max(0, total - paid)
 

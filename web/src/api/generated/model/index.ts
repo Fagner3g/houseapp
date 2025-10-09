@@ -7,6 +7,11 @@
  */
 
 export * from "./completeGoalBody";
+export * from "./createChatMessage201";
+export * from "./createChatMessage201User";
+export * from "./createChatMessage400";
+export * from "./createChatMessage404";
+export * from "./createChatMessageBody";
 export * from "./createGoalBody";
 export * from "./createInviteBody";
 export * from "./createOrganization201";
@@ -92,6 +97,12 @@ export * from "./getTransactionInstallments200InstallmentsItemStatus";
 export * from "./getWeekSummary200";
 export * from "./getWeekSummary200Summary";
 export * from "./getWeekSummary200SummaryGoalsPerDay";
+export * from "./listChatMessages200";
+export * from "./listChatMessages200MessagesItem";
+export * from "./listChatMessages200MessagesItemUser";
+export * from "./listChatMessages200Pagination";
+export * from "./listChatMessages404";
+export * from "./listChatMessagesParams";
 export * from "./listOrganizations200";
 export * from "./listOrganizations200OrganizationsItem";
 export * from "./listTags200";

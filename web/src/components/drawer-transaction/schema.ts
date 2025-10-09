@@ -24,6 +24,7 @@ const recurring = base.extend({
     error: 'Selecione uma recorrência',
   }),
   recurrenceUntil: z.date().optional(),
+  recurrenceInfinite: z.boolean().optional(),
   recurrenceInterval: z.number().int().optional(),
   installmentsTotal: z.number().int().optional(),
   recurrenceStart: z.date().optional(),
@@ -34,6 +35,7 @@ const nonRecurring = base.extend({
   recurrenceSelector: z.undefined(),
   recurrenceType: z.undefined(),
   recurrenceUntil: z.undefined(),
+  recurrenceInfinite: z.undefined(),
   recurrenceInterval: z.undefined(),
   // Do not validate installments when not recurring
   installmentsTotal: z.any().optional(),
@@ -56,11 +58,24 @@ export const newTransactionSchema = _schema.superRefine((v, ctx) => {
     })
   }
 
-  if (!v.recurrenceUntil && (v.installmentsTotal == null || Number.isNaN(v.installmentsTotal))) {
+  // Quando o modo é "Repete", exigir total de parcelas válido
+  if (
+    v.recurrenceSelector === 'repeat' &&
+    (v.installmentsTotal == null || Number.isNaN(v.installmentsTotal) || v.installmentsTotal < 1)
+  ) {
+    ctx.addIssue({
+      code: 'custom',
+      path: ['installmentsTotal'],
+      message: 'Informe o total de parcelas',
+    })
+  }
+
+  // Quando o modo é "Termina em", exigir data final se não for infinito
+  if (v.recurrenceSelector === 'date' && !v.recurrenceInfinite && !v.recurrenceUntil) {
     ctx.addIssue({
       code: 'custom',
       path: ['recurrenceUntil'],
-      message: 'Informe uma data final ou total de parcelas',
+      message: 'A data final é obrigatória para o modo "Termina em"',
     })
   }
 

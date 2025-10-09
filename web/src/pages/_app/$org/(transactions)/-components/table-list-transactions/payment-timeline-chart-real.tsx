@@ -163,9 +163,9 @@ export function PaymentTimelineChartReal({ transaction }: Props) {
     : displayInstallments.slice(0, Math.min(defaultVisibleCount, displayInstallments.length))
 
   const hasMoreItems = displayInstallments.length > visibleItems.length
-  const installmentsTotal = transaction.installmentsTotal || 1
-  const isUnlimited = !installmentsTotal
-  const isLimited = installmentsTotal && installmentsTotal > 36
+  const installmentsTotalRaw = transaction.installmentsTotal
+  const isUnlimited = installmentsTotalRaw === null
+  const isLimited = typeof installmentsTotalRaw === 'number' && installmentsTotalRaw > 36
 
   return (
     <Card>
@@ -186,8 +186,8 @@ export function PaymentTimelineChartReal({ transaction }: Props) {
             <span className="text-muted-foreground">Progresso:</span>
             <span className="font-medium">
               {displayInstallments.filter(entry => entry.status === 'paid').length} de{' '}
-              {isUnlimited ? '1' : isLimited ? '36' : displayInstallments.length} parcelas
-              {isLimited && ` (de ${installmentsTotal} total)`}
+              {isUnlimited ? '∞' : isLimited ? '36' : displayInstallments.length} parcelas
+              {isLimited && ` (de ${installmentsTotalRaw} total)`}
             </span>
           </div>
           <div className="mt-1 h-1 w-full rounded-full bg-muted">
@@ -228,9 +228,9 @@ export function PaymentTimelineChartReal({ transaction }: Props) {
                 <div>
                   <div className="text-sm font-medium">
                     {isUnlimited
-                      ? 'Transação Única'
+                      ? `Parcela ${entry.installmentIndex}`
                       : isLimited
-                        ? `Parcela ${entry.installmentIndex} de 36 (${installmentsTotal} total)`
+                        ? `Parcela ${entry.installmentIndex} de 36 (${installmentsTotalRaw} total)`
                         : `Parcela ${entry.installmentIndex} de ${displayInstallments.length}`}
                   </div>
                   <div className="text-xs text-muted-foreground">

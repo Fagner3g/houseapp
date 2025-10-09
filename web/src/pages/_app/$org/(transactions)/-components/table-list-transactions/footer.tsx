@@ -4,6 +4,7 @@ import {
   IconChevronsLeft,
   IconChevronsRight,
 } from '@tabler/icons-react'
+import { useId } from 'react'
 
 import { Button } from '@/components/ui/button'
 import {
@@ -23,8 +24,9 @@ export interface FooterProps {
 }
 
 export function Footer({ page, perPage, totalPages, onPerPageChange, onPageChange }: FooterProps) {
+  const perPageSelectId = useId()
   return (
-    <div className="flex items-center justify-between px-4 lg:px-6">
+    <div className="flex items-center justify-between px-4 lg:px-6 py-1 border-t border-border/50 bg-background">
       <div className="flex w-full items-center gap-8 lg:w-fit">
         <div className=" items-center gap-2 lg:flex">
           <Select
@@ -33,7 +35,7 @@ export function Footer({ page, perPage, totalPages, onPerPageChange, onPageChang
               onPerPageChange(Number(value))
             }}
           >
-            <SelectTrigger className="w-20" id="rows-per-page">
+            <SelectTrigger className="w-20" id={perPageSelectId}>
               <SelectValue placeholder={perPage} />
             </SelectTrigger>
             <SelectContent side="top">

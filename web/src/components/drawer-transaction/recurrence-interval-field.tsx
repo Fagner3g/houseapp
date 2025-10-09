@@ -5,23 +5,23 @@ import { Button } from '@/components/ui/button'
 import { FormControl, FormDescription, FormField, FormItem, FormLabel } from '@/components/ui/form'
 import type { NewTransactionSchema } from './schema'
 
-export interface InstallmentsTotalFieldProps {
+interface RecurrenceIntervalFieldProps {
   form: UseFormReturn<NewTransactionSchema>
 }
 
-export function InstallmentsTotalField({ form }: InstallmentsTotalFieldProps) {
-  // Show/validate this field ONLY when recurrence is enabled
-  const isRecurring = form.watch('isRecurring')
-  if (!isRecurring) return null
-  const hasError = Boolean(form.formState.errors.installmentsTotal)
+export function RecurrenceIntervalField({ form }: RecurrenceIntervalFieldProps) {
+  const type = form.watch('recurrenceType')
+  const unit = type === 'weekly' ? 'semana(s)' : type === 'yearly' ? 'ano(s)' : 'mês(es)'
+  const enabled = Boolean(type)
+  const hasError = Boolean(form.formState.errors.recurrenceInterval)
 
   return (
     <FormField
       control={form.control}
-      name="installmentsTotal"
+      name="recurrenceInterval"
       render={({ field }) => (
         <FormItem>
-          <FormLabel>Total de parcelas</FormLabel>
+          <FormLabel>Intervalo</FormLabel>
           <FormControl>
             <div className="flex items-center gap-2">
               <Button
@@ -29,6 +29,7 @@ export function InstallmentsTotalField({ form }: InstallmentsTotalFieldProps) {
                 size="icon"
                 variant="outline"
                 className="h-9 w-9"
+                disabled={!enabled}
                 onClick={() => {
                   const current = Number.isFinite(field.value as number) ? Number(field.value) : 1
                   const next = Math.max(1, current - 1)
@@ -39,17 +40,16 @@ export function InstallmentsTotalField({ form }: InstallmentsTotalFieldProps) {
               </Button>
               <input
                 type="number"
+                inputMode="numeric"
                 min={1}
                 step={1}
+                placeholder="1"
                 className={`h-9 flex-1 rounded-md border bg-background px-3 py-1 text-sm ${hasError ? 'border-destructive ring-1 ring-destructive/50' : ''}`}
                 value={field.value ?? ''}
+                disabled={!enabled}
                 onChange={e => {
-                  const num = Number.parseInt(e.target.value, 10)
-                  if (Number.isNaN(num)) {
-                    field.onChange(undefined)
-                    return
-                  }
-                  field.onChange(Math.max(1, Math.min(120, num)))
+                  const v = e.target.value
+                  field.onChange(v === '' ? undefined : Number.parseInt(v, 10))
                 }}
               />
               <Button
@@ -57,9 +57,10 @@ export function InstallmentsTotalField({ form }: InstallmentsTotalFieldProps) {
                 size="icon"
                 variant="outline"
                 className="h-9 w-9"
+                disabled={!enabled}
                 onClick={() => {
                   const current = Number.isFinite(field.value as number) ? Number(field.value) : 1
-                  field.onChange(Math.min(120, current + 1))
+                  field.onChange(current + 1)
                 }}
               >
                 <Plus className="h-4 w-4" />
@@ -67,7 +68,9 @@ export function InstallmentsTotalField({ form }: InstallmentsTotalFieldProps) {
             </div>
           </FormControl>
           <FormDescription className="text-xs">
-            Utilizado no modo "Repete": quantas ocorrências serão geradas.
+            {enabled
+              ? `A cada ${unit}. Ex.: 1 = todo ${unit.replace('(s)', '')}; 2 = a cada 2 ${unit}.`
+              : 'Escolha a recorrência primeiro.'}
           </FormDescription>
         </FormItem>
       )}

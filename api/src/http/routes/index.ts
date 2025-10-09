@@ -19,10 +19,12 @@ import {
 } from './organization.routes'
 import { createTagRoute, deleteTagRoute, listTagsRoute, updateTagRoute } from './tag.routes'
 import {
+  createChatMessageRoute,
   createTransactionRoute,
   deleteTransactionsRoute,
   getTransactionInstallmentsRoute,
   getTransactionRoute,
+  listChatMessagesRoute,
   listTransactionRoute,
   payTransactionRoute,
   updateTransactionRoute,
@@ -73,6 +75,10 @@ export function createRoutes(app: FastifyInstance) {
   app.register(deleteTransactionsRoute)
   app.register(updateTransactionRoute)
   app.register(payTransactionRoute)
+  
+  // Transaction Chat
+  app.register(listChatMessagesRoute)
+  app.register(createChatMessageRoute)
 
   // Reports removidos
 

@@ -31,8 +31,8 @@ function calculateInstallmentsInfo(
   installmentsPaid: number | null | undefined,
   status: 'paid' | 'pending' | 'canceled'
 ) {
-  // Se installmentsTotal é null/undefined, é uma transação única
-  const isRecurring = installmentsTotal !== null && installmentsTotal !== undefined
+  // Considera recorrente quando o campo existe (mesmo que null = ilimitada)
+  const isRecurring = installmentsTotal !== undefined
 
   if (!isRecurring) {
     // Transação única: sempre 1 parcela
@@ -45,10 +45,10 @@ function calculateInstallmentsInfo(
     }
   }
 
-  // Transação recorrente: usar valores do banco
-  const total = installmentsTotal ?? 0
+  // Recorrente: quando total é null, tratar como ilimitada para UI
+  const total = installmentsTotal == null ? Infinity : installmentsTotal
   const paid = installmentsPaid ?? 0
-  const remaining = Math.max(0, total - paid)
+  const remaining = total === Infinity ? Infinity : Math.max(0, total - paid)
 
   return {
     total,
@@ -96,8 +96,10 @@ export function TransactionSummary({ transaction, onDelete }: Props) {
 
   // Calcular informações de parcelas usando a função utilitária
   // Para itens abertos via dashboard, garantir números coerentes
-  const normalizedInstallmentsTotal =
-    transaction.installmentsTotal ?? (transaction as any).installmentsTotal ?? 1
+  const normalizedInstallmentsTotal: number | null =
+    typeof transaction.installmentsTotal === 'number' || transaction.installmentsTotal === null
+      ? transaction.installmentsTotal
+      : null
   const normalizedInstallmentsPaid = transaction.installmentsPaid ?? 0
   const installmentsInfo = calculateInstallmentsInfo(
     normalizedInstallmentsTotal,
@@ -128,7 +130,9 @@ export function TransactionSummary({ transaction, onDelete }: Props) {
       <div className="grid grid-cols-3 text-center gap-2">
         <div>
           <p className="text-sm text-muted-foreground">Parcelas</p>
-          <p className="font-semibold">{installmentsInfo.total}</p>
+          <p className="font-semibold">
+            {installmentsInfo.total === Infinity ? '∞' : installmentsInfo.total}
+          </p>
         </div>
         <div>
           <p className="text-sm text-muted-foreground">Pagas</p>
@@ -136,7 +140,9 @@ export function TransactionSummary({ transaction, onDelete }: Props) {
         </div>
         <div>
           <p className="text-sm text-muted-foreground">Faltantes</p>
-          <p className="font-semibold">{installmentsInfo.remaining}</p>
+          <p className="font-semibold">
+            {installmentsInfo.remaining === Infinity ? '∞' : installmentsInfo.remaining}
+          </p>
         </div>
       </div>
 
