@@ -119,7 +119,7 @@ function DrawerTransactionContent({ transaction, open, onOpenChange, onExternalS
 
   // Helper para criar formData a partir de uma transação
   const createFormData = useCallback(
-    (transaction: any) => ({
+    (transaction: ListTransactions200TransactionsItem) => ({
       type: transaction.type as 'expense' | 'income',
       title: transaction.title as string,
       amount: transaction.amount as string,
