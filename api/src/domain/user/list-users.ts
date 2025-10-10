@@ -17,6 +17,7 @@ export async function listUsers({ idOrg }: ListUsersByOrg) {
       email: users.email,
       phone: users.phone,
       avatarUrl: users.avatarUrl,
+      notificationsEnabled: userOrganizations.notificationsEnabled,
       isOwner: sql<boolean>`(${users.id} = (
       SELECT ${organizations.ownerId}
       FROM ${organizations}

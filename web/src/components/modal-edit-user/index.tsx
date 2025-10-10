@@ -3,7 +3,7 @@ import { Trash2 } from 'lucide-react'
 import { useEffect, useState } from 'react'
 import { useForm } from 'react-hook-form'
 import { useHookFormMask } from 'use-mask-input'
-import type z from 'zod'
+import { z } from 'zod'
 
 import {
   AlertDialog,
@@ -16,6 +16,7 @@ import {
   AlertDialogTitle,
 } from '@/components/ui/alert-dialog'
 import { Button } from '@/components/ui/button'
+import { Checkbox } from '@/components/ui/checkbox'
 import {
   Dialog,
   DialogContent,
@@ -26,7 +27,19 @@ import {
 } from '@/components/ui/dialog'
 import { Form, FormControl, FormField, FormItem, FormLabel } from '@/components/ui/form'
 import { Input } from '@/components/ui/input'
-import { schemaSignUp } from '@/pages/_auth/sign-up'
+
+const schemaEditUser = z.object({
+  name: z.string('O nome é obrigatório').min(1).max(50),
+  email: z.email('E-mail inválido'),
+  phone: z
+    .string()
+    .transform(val => val.replace(/\D/g, ''))
+    .refine(val => val.length === 10 || val.length === 11, {
+      error: 'Informe um telefone válido com DDD',
+    }),
+  notificationsEnabled: z.boolean().default(true),
+})
+
 import { useAuthStore } from '@/stores/auth'
 
 export type EditableUser = {
@@ -34,6 +47,7 @@ export type EditableUser = {
   name: string
   email: string
   phone?: string | null
+  notificationsEnabled?: boolean
 }
 
 interface ModalEditUserProps {
@@ -57,8 +71,8 @@ export function ModalEditUser({
 }: ModalEditUserProps) {
   const [showDeleteDialog, setShowDeleteDialog] = useState(false)
   const currentUser = useAuthStore(s => s.user)
-  type FormValues = z.infer<typeof schemaSignUp>
-  const form = useForm<FormValues>({ resolver: zodResolver(schemaSignUp) })
+  type FormValues = z.infer<typeof schemaEditUser>
+  const form = useForm<FormValues>({ resolver: zodResolver(schemaEditUser) })
   const registerWithMask = useHookFormMask(form.register)
 
   // Verificar se o usuário atual é o dono e está tentando excluir a si mesmo
@@ -70,9 +84,10 @@ export function ModalEditUser({
         name: user.name ?? '',
         email: user.email ?? '',
         phone: user.phone ?? '',
+        notificationsEnabled: user.notificationsEnabled ?? true,
       })
     } else {
-      form.reset({ name: '', email: '', phone: '' })
+      form.reset({ name: '', email: '', phone: '', notificationsEnabled: true })
     }
   }, [user, form])
 
@@ -117,6 +132,7 @@ export function ModalEditUser({
                     name: values.name,
                     email: values.email,
                     phone: values.phone,
+                    notificationsEnabled: values.notificationsEnabled,
                   })
                 }
               })}
@@ -178,6 +194,24 @@ export function ModalEditUser({
                           className="h-11"
                         />
                       </FormControl>
+                    </FormItem>
+                  )}
+                />
+
+                <FormField
+                  control={form.control}
+                  name="notificationsEnabled"
+                  render={({ field }) => (
+                    <FormItem className="flex flex-row items-start space-x-3 space-y-0">
+                      <FormControl>
+                        <Checkbox checked={field.value} onCheckedChange={field.onChange} />
+                      </FormControl>
+                      <div className="space-y-1 leading-none">
+                        <FormLabel className="text-sm font-medium">Receber notificações</FormLabel>
+                        <p className="text-xs text-muted-foreground">
+                          Habilitar notificações via WhatsApp para lembretes de pagamento
+                        </p>
+                      </div>
                     </FormItem>
                   )}
                 />
