@@ -1,3 +1,4 @@
+import { useQuery } from '@tanstack/react-query'
 import { createFileRoute } from '@tanstack/react-router'
 import {
   Activity,
@@ -14,6 +15,7 @@ import { useState } from 'react'
 import { toast } from 'sonner'
 
 import {
+  getListUsersByOrgQueryOptions,
   useGetJobs,
   useGetJobsStats,
   usePostJobsJobKeyRun,
@@ -21,7 +23,9 @@ import {
   usePostJobsJobKeyStop,
   usePostJobsStartAll,
   usePostJobsStopAll,
+  usePostOrgSlugJobsSendMonthlySummary,
 } from '@/api/generated/api'
+import type { ListUsersByOrg200UsersItem } from '@/api/generated/model'
 import { LoadingErrorState } from '@/components/loading-error-state'
 import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
@@ -34,15 +38,27 @@ import {
   DialogHeader,
   DialogTitle,
 } from '@/components/ui/dialog'
+import { Label } from '@/components/ui/label'
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from '@/components/ui/select'
 import { Separator } from '@/components/ui/separator'
+import { useActiveOrganization } from '@/hooks/use-active-organization'
 import { http } from '@/lib/http'
 
 function JobsPage() {
+  const { slug } = useActiveOrganization()
   const [runningJobs, setRunningJobs] = useState<Set<string>>(new Set())
   const [stoppingJobs, setStoppingJobs] = useState<Set<string>>(new Set())
   const [startingJobs, setStartingJobs] = useState<Set<string>>(new Set())
   const [showStopAllModal, setShowStopAllModal] = useState(false)
   const [showPreviewModal, setShowPreviewModal] = useState(false)
+  const [selectedUserId, setSelectedUserId] = useState<string | null>(null)
+  const [isSendingMonthly, setIsSendingMonthly] = useState(false)
   const [previewData, setPreviewData] = useState<{
     transactions: Array<{
       id: string
@@ -68,6 +84,8 @@ function JobsPage() {
 
   const { data: jobs, isLoading, error, refetch } = useGetJobs()
   const { data: stats } = useGetJobsStats()
+  const { data: usersData } = useQuery(getListUsersByOrgQueryOptions(slug))
+  const sendMonthlySummary = usePostOrgSlugJobsSendMonthlySummary()
   const runJobMutation = usePostJobsJobKeyRun()
   const startJobMutation = usePostJobsJobKeyStart()
   const stopJobMutation = usePostJobsJobKeyStop()
@@ -161,6 +179,19 @@ function JobsPage() {
       refetch()
     } catch {
       toast.error('Erro ao parar jobs')
+    }
+  }
+
+  const handleSendMonthlySummary = async () => {
+    if (!slug || !selectedUserId) return
+    try {
+      setIsSendingMonthly(true)
+      await sendMonthlySummary.mutateAsync({ slug, data: { userId: selectedUserId } })
+      toast.success('Resumo mensal enviado via WhatsApp')
+    } catch {
+      toast.error('Erro ao enviar resumo mensal')
+    } finally {
+      setIsSendingMonthly(false)
     }
   }
 
@@ -546,6 +577,46 @@ function JobsPage() {
               </div>
             )}
 
+            {/* Ação manual: Enviar resumo mensal por WhatsApp */}
+            <div className="px-4 lg:px-6">
+              <Card>
+                <CardHeader>
+                  <CardTitle>Enviar resumo mensal</CardTitle>
+                  <CardDescription>
+                    Envie um resumo do mês para um usuário específico via WhatsApp
+                  </CardDescription>
+                </CardHeader>
+                <CardContent>
+                  <div className="grid gap-2">
+                    <Label>Usuário</Label>
+                    <div className="flex flex-col gap-2 sm:flex-row sm:items-center">
+                      <Select
+                        value={selectedUserId ?? ''}
+                        onValueChange={v => setSelectedUserId(v)}
+                      >
+                        <SelectTrigger className="sm:w-72">
+                          <SelectValue placeholder="Selecione um usuário" />
+                        </SelectTrigger>
+                        <SelectContent>
+                          {(usersData?.users ?? []).map((u: ListUsersByOrg200UsersItem) => (
+                            <SelectItem key={u.id} value={u.id}>
+                              {u.name} {u.phone ? `(${u.phone})` : ''}
+                            </SelectItem>
+                          ))}
+                        </SelectContent>
+                      </Select>
+                      <Button
+                        onClick={handleSendMonthlySummary}
+                        disabled={!selectedUserId || isSendingMonthly}
+                      >
+                        {isSendingMonthly ? 'Enviando...' : 'Enviar resumo'}
+                      </Button>
+                    </div>
+                  </div>
+                </CardContent>
+              </Card>
+            </div>
+
             {/* Lista de Jobs */}
             <div className="px-4 lg:px-6">
               <div className="grid gap-4">
@@ -650,6 +721,8 @@ function JobsPage() {
                       {/* Informações específicas do job */}
                       <Separator className="my-4" />
                       <div className="space-y-3">{getJobSpecificInfo(job.key)}</div>
+
+                      {/* Removido: UI de enviar resumo por job */}
                     </CardContent>
                   </Card>
                 ))}

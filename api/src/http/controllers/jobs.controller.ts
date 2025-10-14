@@ -1,6 +1,10 @@
-import type { FastifyReply, FastifyRequest } from 'fastify'
+import { eq } from 'drizzle-orm'
+import type { FastifyReply, FastifyRequest, RouteHandler } from 'fastify'
 
+import { db } from '@/db'
+import { users } from '@/db/schemas/users'
 import { getTransactionReports } from '@/domain/reports/dashboard'
+import { normalizePhone, sendWhatsAppMessage } from '@/domain/whatsapp'
 import {
   getJobInfo,
   getJobsStatus,
@@ -13,11 +17,7 @@ import {
   stopJob,
 } from '@/jobs'
 import { logger } from '@/lib/logger'
-import { BadRequestError } from '../utils/error'
 
-/**
- * Lista o status de todos os jobs
- */
 export async function listJobsController(_request: FastifyRequest, reply: FastifyReply) {
   try {
     const jobs = getJobsStatus()
@@ -232,23 +232,10 @@ export async function startAllJobsController(_request: FastifyRequest, reply: Fa
  * Preview das transações que seriam processadas pelo job de alertas
  */
 export async function previewTransactionAlertsController(
-  request: FastifyRequest,
+  _request: FastifyRequest,
   reply: FastifyReply
 ) {
   try {
-    const userId = request.user?.sub
-    if (!userId) {
-      throw new Error('Usuário não autenticado')
-    }
-
-    // Buscar a primeira organização do usuário
-    const { listOrganizations } = await import('@/domain/organization/list-organizations')
-    const orgs = await listOrganizations({ userId })
-
-    if (orgs.organizations.length === 0) {
-      throw new BadRequestError('Usuário não pertence a nenhuma organização')
-    }
-
     // Usar a função de preview que não envia mensagens
     const { previewTransactionAlerts } = await import('@/jobs/transaction-alerts')
     const previewData = await previewTransactionAlerts()
@@ -276,19 +263,9 @@ export async function getTransactionReportsController(
   reply: FastifyReply
 ) {
   try {
-    // Por enquanto, vamos usar uma organização padrão ou buscar a primeira do usuário
-    // TODO: Implementar lógica para obter organização do usuário
-    const userId = request.user?.sub
-    if (!userId) {
-      throw new Error('Usuário não autenticado')
-    }
-
-    // Usar organização do slug (já validada no preHandler)
-    const orgId = request.organization?.id
-    if (!orgId) {
-      throw new Error('Organização não encontrada no contexto da requisição')
-    }
-
+    // userId do solicitante é necessário para montar seus relatórios de dashboard
+    const { sub: userId } = request.user as { sub: string }
+    const { id: orgId } = request.organization
     const reports = await getTransactionReports(orgId, userId)
 
     // O serviço já retorna no formato { reports: { ... }, timestamp }
@@ -302,6 +279,93 @@ export async function getTransactionReportsController(
       details: error instanceof Error ? error.message : String(error),
       timestamp: new Date().toISOString(),
     })
+  }
+}
+
+/**
+ * Envia resumo mensal completo via WhatsApp para um usuário específico
+ */
+type SendMonthlySummaryRoute = {
+  Params: { slug: string }
+  Body: { userId: string }
+}
+
+export const sendMonthlySummaryController: RouteHandler<SendMonthlySummaryRoute> = async (
+  request,
+  reply
+) => {
+  try {
+    // Não precisamos do userId do solicitante para o resumo direcionado; usaremos o alvo
+    const { id: orgId } = request.organization
+    const { userId: targetUserId } = request.body
+
+    // Buscar relatórios do mês atual para o usuário selecionado
+    const reports = await getTransactionReports(orgId, targetUserId)
+
+    // Buscar telefone e nome do usuário alvo
+    const userRow = await db.query.users.findFirst({ where: eq(users.id, targetUserId) })
+    const phone = normalizePhone(userRow?.phone)
+
+    if (!phone) {
+      return reply.status(400).send({ error: 'Bad Request', message: 'Telefone do usuário vazio' })
+    }
+
+    // Montar mensagem de resumo com KPIs e principais categorias
+    const k = reports.reports.kpis
+    const recent = (reports.reports.recentActivity ?? []).slice(0, 3)
+
+    const formatBRL = (value?: number): string => {
+      if (typeof value !== 'number') return '—'
+      return value.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' })
+    }
+
+    const now = new Date()
+    const headerMonth = now.toLocaleDateString('pt-BR', { month: 'long', year: 'numeric' })
+
+    const lines: string[] = []
+    lines.push(`📊 Resumo de ${headerMonth}`)
+    lines.push('')
+
+    const receitasPagas = k?.receivedTotal ?? 0
+    const receitasAReceber = k?.toReceiveTotal ?? 0
+    const receitasRegistradas = k?.incomeRegistered ?? 0
+    const despesasRegistradas = k?.expenseRegistered ?? 0
+    const despesasEmAberto = k?.toSpendTotal ?? 0
+    const saldoMes = receitasRegistradas - despesasRegistradas
+
+    lines.push(
+      `• Receitas: ${formatBRL(receitasRegistradas)} (pagas ${formatBRL(
+        receitasPagas
+      )} | em aberto ${formatBRL(receitasAReceber)})`
+    )
+    lines.push(
+      `• Despesas: ${formatBRL(despesasRegistradas)} (em aberto ${formatBRL(despesasEmAberto)})`
+    )
+    lines.push(`• Saldo do mês (Receitas − Despesas): ${formatBRL(saldoMes)}`)
+
+    if (recent.length > 0) {
+      lines.push('')
+      lines.push('🧾 Transações recentes:')
+      for (const r of recent) {
+        const date = new Date(r.dueDate).toLocaleDateString('pt-BR')
+        const status = r.status === 'paid' ? 'pago' : 'pendente'
+        lines.push(`• ${r.title}: ${formatBRL(r.amount)} (${status}) • ${date}`)
+      }
+    }
+
+    const message = lines.join('\n')
+    const result = await sendWhatsAppMessage({ phone, message })
+
+    if (result.status === 'error') {
+      return reply.status(500).send({ error: 'WhatsAppError', message: result.error })
+    }
+
+    return reply.status(200).send({ success: true, phone: result.phone })
+  } catch (error) {
+    logger.error({ error }, 'Erro ao enviar resumo mensal por WhatsApp')
+    return reply
+      .status(500)
+      .send({ error: 'Internal Server Error', message: 'Falha ao enviar resumo mensal' })
   }
 }
 

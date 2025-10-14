@@ -73,6 +73,9 @@ import type {
   PostJobsJobKeyStop404,
   PostJobsStartAll200,
   PostJobsStopAll200,
+  PostOrgSlugJobsSendMonthlySummary200,
+  PostOrgSlugJobsSendMonthlySummary400,
+  PostOrgSlugJobsSendMonthlySummaryBody,
   RenameOrg200,
   RenameOrgBody,
   SignIn200,
@@ -1595,6 +1598,104 @@ export function useGetOrgSlugReportsTransactions<
 
   return query;
 }
+
+/**
+ * @summary Envia resumo mensal via WhatsApp para um usuário da organização
+ */
+export const getPostOrgSlugJobsSendMonthlySummaryUrl = (slug: string) => {
+  return `/org/${slug}/jobs/send-monthly-summary`;
+};
+
+export const postOrgSlugJobsSendMonthlySummary = async (
+  slug: string,
+  postOrgSlugJobsSendMonthlySummaryBody: PostOrgSlugJobsSendMonthlySummaryBody,
+  options?: RequestInit,
+): Promise<PostOrgSlugJobsSendMonthlySummary200> => {
+  return http<PostOrgSlugJobsSendMonthlySummary200>(
+    getPostOrgSlugJobsSendMonthlySummaryUrl(slug),
+    {
+      ...options,
+      method: "POST",
+      headers: { "Content-Type": "application/json", ...options?.headers },
+      body: JSON.stringify(postOrgSlugJobsSendMonthlySummaryBody),
+    },
+  );
+};
+
+export const getPostOrgSlugJobsSendMonthlySummaryMutationOptions = <
+  TError = PostOrgSlugJobsSendMonthlySummary400,
+  TContext = unknown,
+>(options?: {
+  mutation?: UseMutationOptions<
+    Awaited<ReturnType<typeof postOrgSlugJobsSendMonthlySummary>>,
+    TError,
+    { slug: string; data: PostOrgSlugJobsSendMonthlySummaryBody },
+    TContext
+  >;
+  request?: SecondParameter<typeof http>;
+}): UseMutationOptions<
+  Awaited<ReturnType<typeof postOrgSlugJobsSendMonthlySummary>>,
+  TError,
+  { slug: string; data: PostOrgSlugJobsSendMonthlySummaryBody },
+  TContext
+> => {
+  const mutationKey = ["postOrgSlugJobsSendMonthlySummary"];
+  const { mutation: mutationOptions, request: requestOptions } = options
+    ? options.mutation &&
+      "mutationKey" in options.mutation &&
+      options.mutation.mutationKey
+      ? options
+      : { ...options, mutation: { ...options.mutation, mutationKey } }
+    : { mutation: { mutationKey }, request: undefined };
+
+  const mutationFn: MutationFunction<
+    Awaited<ReturnType<typeof postOrgSlugJobsSendMonthlySummary>>,
+    { slug: string; data: PostOrgSlugJobsSendMonthlySummaryBody }
+  > = (props) => {
+    const { slug, data } = props ?? {};
+
+    return postOrgSlugJobsSendMonthlySummary(slug, data, requestOptions);
+  };
+
+  return { mutationFn, ...mutationOptions };
+};
+
+export type PostOrgSlugJobsSendMonthlySummaryMutationResult = NonNullable<
+  Awaited<ReturnType<typeof postOrgSlugJobsSendMonthlySummary>>
+>;
+export type PostOrgSlugJobsSendMonthlySummaryMutationBody =
+  PostOrgSlugJobsSendMonthlySummaryBody;
+export type PostOrgSlugJobsSendMonthlySummaryMutationError =
+  PostOrgSlugJobsSendMonthlySummary400;
+
+/**
+ * @summary Envia resumo mensal via WhatsApp para um usuário da organização
+ */
+export const usePostOrgSlugJobsSendMonthlySummary = <
+  TError = PostOrgSlugJobsSendMonthlySummary400,
+  TContext = unknown,
+>(
+  options?: {
+    mutation?: UseMutationOptions<
+      Awaited<ReturnType<typeof postOrgSlugJobsSendMonthlySummary>>,
+      TError,
+      { slug: string; data: PostOrgSlugJobsSendMonthlySummaryBody },
+      TContext
+    >;
+    request?: SecondParameter<typeof http>;
+  },
+  queryClient?: QueryClient,
+): UseMutationResult<
+  Awaited<ReturnType<typeof postOrgSlugJobsSendMonthlySummary>>,
+  TError,
+  { slug: string; data: PostOrgSlugJobsSendMonthlySummaryBody },
+  TContext
+> => {
+  const mutationOptions =
+    getPostOrgSlugJobsSendMonthlySummaryMutationOptions(options);
+
+  return useMutation(mutationOptions, queryClient);
+};
 
 /**
  * Sigin In (email or whatsapp)
