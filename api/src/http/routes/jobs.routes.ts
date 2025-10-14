@@ -183,6 +183,7 @@ const ChartDataSchema = z.object({
       category: z.string(),
       count: z.number(),
       totalAmount: z.number(),
+      color: z.string().optional(),
     })
   ),
   statusDistribution: z.object({

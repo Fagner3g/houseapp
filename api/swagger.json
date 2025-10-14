@@ -1068,6 +1068,9 @@
                                   },
                                   "totalAmount": {
                                     "type": "number"
+                                  },
+                                  "color": {
+                                    "type": "string"
                                   }
                                 },
                                 "required": [
@@ -1884,6 +1887,9 @@
                           "avatarUrl": {
                             "type": "string"
                           },
+                          "notificationsEnabled": {
+                            "type": "boolean"
+                          },
                           "isOwner": {
                             "type": "boolean"
                           }
@@ -1894,6 +1900,7 @@
                           "email",
                           "phone",
                           "avatarUrl",
+                          "notificationsEnabled",
                           "isOwner"
                         ],
                         "additionalProperties": false
@@ -1902,6 +1909,90 @@
                   },
                   "required": [
                     "users"
+                  ],
+                  "additionalProperties": false
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/org/{slug}/users/notifications": {
+      "patch": {
+        "summary": "Update user notification preferences",
+        "tags": [
+          "user"
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "userId": {
+                    "type": "string"
+                  },
+                  "notificationsEnabled": {
+                    "type": "boolean"
+                  }
+                },
+                "required": [
+                  "userId",
+                  "notificationsEnabled"
+                ]
+              }
+            }
+          },
+          "required": true
+        },
+        "parameters": [
+          {
+            "schema": {
+              "type": "string"
+            },
+            "in": "path",
+            "name": "slug",
+            "required": true
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Default Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "userId": {
+                      "type": "string"
+                    },
+                    "notificationsEnabled": {
+                      "type": "boolean"
+                    }
+                  },
+                  "required": [
+                    "userId",
+                    "notificationsEnabled"
+                  ],
+                  "additionalProperties": false
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Default Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "message": {
+                      "type": "string"
+                    }
+                  },
+                  "required": [
+                    "message"
                   ],
                   "additionalProperties": false
                 }
