@@ -81,8 +81,8 @@ async function sendTransactionAlerts(userId?: string): Promise<JobResult> {
 
           // Buscar TODAS as transações vencidas do usuário (não apenas da mesma série)
           if (overdueBlock === null && t.organizationSlug) {
-            // Identificar o userId correto baseado no telefone
-            const targetUserId = userInfo.phone === t.ownerPhone ? t.ownerId : t.payToId
+            // Se userId foi passado, usar ele; caso contrário, identificar baseado no telefone
+            const targetUserId = userId ?? (userInfo.phone === t.ownerPhone ? t.ownerId : t.payToId)
             const overdueListRaw = await fetchOverdueTransactionsForAlerts(
               t.organizationSlug,
               targetUserId ?? undefined
