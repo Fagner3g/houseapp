@@ -269,17 +269,16 @@ export async function getTransactionReportsController(
     // userId do solicitante é necessário para montar seus relatórios de dashboard
     const { sub: userId } = request.user as { sub: string }
     const { id: orgId } = request.organization
+
     const reports = await getTransactionReports(orgId, userId)
 
     // O serviço já retorna no formato { reports: { ... }, timestamp }
     return reply.status(200).send(reports)
-  } catch (error) {
-    console.error('❌ Erro ao obter relatórios:', error)
-    logger.error({ error }, 'Erro ao obter relatórios de transação')
+  } catch (err) {
+    logger.error({ err }, 'Failed to get transaction reports')
     return reply.status(500).send({
       error: 'Internal Server Error',
       message: 'Failed to get transaction reports',
-      details: error instanceof Error ? error.message : String(error),
       timestamp: new Date().toISOString(),
     })
   }

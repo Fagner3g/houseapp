@@ -14,7 +14,8 @@ export async function authenticateUserHook(request: FastifyRequest) {
       logger.info(`Token revoked: ${token}`)
       throw new UnauthorizedError()
     }
-  } catch {
+  } catch (error) {
+    logger.error({ error, method: request.method, url: request.url }, 'Authentication failed')
     throw new UnauthorizedError()
   }
 }

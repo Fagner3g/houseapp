@@ -8,14 +8,14 @@ export async function verifyOrgAccessHook(request: FastifyRequest) {
   const { slug } = request.params as { slug: string }
 
   if (!slug) {
-    logger.error('slug not found')
+    logger.error('Organization slug not found in request params')
     throw new ForbiddenError()
   }
 
   const org = await verifyUserBelongsToOrg(request, slug)
 
   if (!org) {
-    logger.error('Hook Error: Access denied to this organization')
+    logger.error({ slug }, 'Access denied to organization')
     throw new ForbiddenError('Access denied to this organization.')
   }
 

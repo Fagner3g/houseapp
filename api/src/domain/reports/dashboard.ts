@@ -157,7 +157,12 @@ export async function getTransactionReports(orgId: string, userId: string) {
     .sort((a, b) => (a[0] < b[0] ? -1 : 1))
     .map(([date, v]) => ({ date, ...v }))
 
-  const monthlyTrend = [] as Array<{ month: string; total: number; paid: number; pending: number }>
+  const monthlyTrend = [] as Array<{
+    month: string
+    total: number
+    paid: number
+    pending: number
+  }>
 
   // Tags breakdown for current month
   const categoryBreakdown = [] as Array<{
