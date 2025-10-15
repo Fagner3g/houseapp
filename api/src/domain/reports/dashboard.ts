@@ -343,11 +343,9 @@ export async function getTransactionReports(orgId: string, userId: string) {
       },
       timestamp: new Date().toISOString(),
     }
-  } catch (error) {
-    const errObj =
-      error instanceof Error ? { message: error.message, stack: error.stack } : { error }
-    logger.error({ err: errObj, orgId, userId }, 'Erro em getTransactionReports')
-    throw error
+  } catch (err) {
+    logger.error({ err, orgId, userId }, 'Erro em getTransactionReports')
+    throw err
   }
 }
 
