@@ -479,6 +479,10 @@ export async function jobsRoutes(app: FastifyInstance) {
         summary: 'Retorna dados consolidados para o dashboard da organização',
         security: [{ bearerAuth: [] }],
         params: z.object({ slug: z.string() }),
+        querystring: z.object({
+          year: z.string().optional(),
+          month: z.string().optional(),
+        }),
         response: {
           200: TransactionReportsResponseSchema,
           401: ErrorResponseSchema,

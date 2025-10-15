@@ -269,8 +269,21 @@ export async function getTransactionReportsController(
     // userId do solicitante é necessário para montar seus relatórios de dashboard
     const { sub: userId } = request.user as { sub: string }
     const { id: orgId } = request.organization
+    
+    // Parâmetros opcionais de ano/mês para visualizar dados históricos
+    const { year, month } = request.query as { year?: string; month?: string }
+    let referenceDate: Date | undefined
+    
+    if (year && month) {
+      const yearNum = Number.parseInt(year, 10)
+      const monthNum = Number.parseInt(month, 10) - 1 // Mês em JS é 0-indexed
+      
+      if (!Number.isNaN(yearNum) && !Number.isNaN(monthNum) && monthNum >= 0 && monthNum <= 11) {
+        referenceDate = new Date(yearNum, monthNum, 15) // 15 do mês para evitar problemas de timezone
+      }
+    }
 
-    const reports = await getTransactionReports(orgId, userId)
+    const reports = await getTransactionReports(orgId, userId, referenceDate)
 
     // O serviço já retorna no formato { reports: { ... }, timestamp }
     return reply.status(200).send(reports)
