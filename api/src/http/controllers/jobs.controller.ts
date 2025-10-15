@@ -273,11 +273,8 @@ export async function getTransactionReportsController(
 
     // O serviço já retorna no formato { reports: { ... }, timestamp }
     return reply.status(200).send(reports)
-  } catch (error) {
-    // Logar com máximo de detalhes para diagnóstico em homolog
-    const errObj =
-      error instanceof Error ? { message: error.message, stack: error.stack } : { error }
-    logger.error({ err: errObj }, 'Erro ao obter relatórios de transação')
+  } catch (err) {
+    logger.error({ err }, 'Erro ao obter relatórios de transação')
     return reply.status(500).send({
       error: 'Internal Server Error',
       message: 'Failed to get transaction reports',

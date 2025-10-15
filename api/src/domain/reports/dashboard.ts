@@ -1,6 +1,7 @@
 import { and, eq, gte, inArray, lte, or, sql } from 'drizzle-orm'
 
 import { db } from '@/db'
+import { logger } from '@/lib/logger'
 import { tags as tagsTable } from '@/db/schemas/tags'
 import { transactionOccurrences } from '@/db/schemas/transactionOccurrences'
 import { transactionSeries } from '@/db/schemas/transactionSeries'
@@ -8,9 +9,10 @@ import { transactionTags } from '@/db/schemas/transactionTags'
 import { getContextualizedTransactionType } from '@/domain/transactions/get-contextualized-type'
 
 export async function getTransactionReports(orgId: string, userId: string) {
-  const now = new Date()
-  const startOfMonth = new Date(now.getFullYear(), now.getMonth(), 1)
-  const endOfMonth = new Date(now.getFullYear(), now.getMonth() + 1, 0, 23, 59, 59, 999)
+  try {
+    const now = new Date()
+    const startOfMonth = new Date(now.getFullYear(), now.getMonth(), 1)
+    const endOfMonth = new Date(now.getFullYear(), now.getMonth() + 1, 0, 23, 59, 59, 999)
 
   // Base rows for current month
   const rows = await db
@@ -297,8 +299,8 @@ export async function getTransactionReports(orgId: string, userId: string) {
     totalAmount: paidThisMonthList.reduce((acc, t) => acc + t.amount, 0),
   }
 
-  return {
-    reports: {
+    return {
+      reports: {
       upcomingAlerts: { transactions: upcomingTransactions, summary: upcomingSummary },
       monthlyStats,
       recentActivity,
@@ -333,8 +335,13 @@ export async function getTransactionReports(orgId: string, userId: string) {
         summary: paidThisMonthSummary,
         transactions: paidThisMonthList,
       },
-    },
-    timestamp: new Date().toISOString(),
+      },
+      timestamp: new Date().toISOString(),
+    }
+  } catch (error) {
+    const errObj = error instanceof Error ? { message: error.message, stack: error.stack } : { error }
+    logger.error({ err: errObj, orgId, userId }, 'Erro em getTransactionReports')
+    throw error
   }
 }
 
