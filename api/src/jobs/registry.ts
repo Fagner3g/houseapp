@@ -110,7 +110,7 @@ export class JobRegistry {
   /**
    * Executa um job específico
    */
-  async runJob(jobKey: string): Promise<JobResult | null> {
+  async runJob(jobKey: string, userId?: string): Promise<JobResult | null> {
     if (!this.isInitialized) {
       throw new Error('JobRegistry não foi inicializado')
     }
@@ -121,8 +121,8 @@ export class JobRegistry {
     }
 
     try {
-      logger.info({ jobKey }, '🚀 Executando job manualmente')
-      const result = await jobManager.runJobNow(jobKey)
+      logger.info({ jobKey, userId }, '🚀 Executando job manualmente')
+      const result = await jobManager.runJobNow(jobKey, userId)
 
       if (result) {
         logger.info(

@@ -319,6 +319,7 @@ export async function jobsRoutes(app: FastifyInstance) {
         params: z.object({
           jobKey: z.string(),
         }),
+        body: z.object({ userId: z.string().optional() }).optional(),
         response: {
           200: RunJobResponseSchema,
           404: ErrorResponseSchema,
@@ -439,6 +440,7 @@ export async function jobsRoutes(app: FastifyInstance) {
         tags: ['Jobs'],
         summary: 'Preview das transações que seriam processadas pelo job de alertas',
         security: [{ bearerAuth: [] }],
+        querystring: z.object({ userId: z.string().optional() }).optional(),
         response: {
           200: PreviewTransactionAlertsResponseSchema,
         },
@@ -457,6 +459,7 @@ export async function jobsRoutes(app: FastifyInstance) {
         summary:
           'Preview das transações vencidas que seriam processadas pelo job de alertas vencidas',
         security: [{ bearerAuth: [] }],
+        querystring: z.object({ userId: z.string().optional() }).optional(),
         response: {
           200: PreviewOverdueAlertsResponseSchema,
         },

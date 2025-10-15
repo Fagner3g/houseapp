@@ -74,15 +74,15 @@ export class JobManager {
     )
   }
 
-  async runJobNow(jobKey: string): Promise<JobResult | null> {
+  async runJobNow(jobKey: string, userId?: string): Promise<JobResult | null> {
     const jobFunction = this.jobFunctions.get(jobKey)
     if (!jobFunction) {
       logger.error({ jobKey }, 'Job não encontrado')
       return null
     }
 
-    logger.info({ jobKey }, '🚀 Executando job manualmente')
-    return await jobFunction()
+    logger.info({ jobKey, userId }, '🚀 Executando job manualmente')
+    return await jobFunction(userId)
   }
 
   stopJob(jobKey: string): void {

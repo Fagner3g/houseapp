@@ -10,7 +10,7 @@ import type { JobResult } from './types'
  * Envia alertas especificamente para transações vencidas
  * Processa uma organização por vez para evitar problemas de contexto
  */
-async function sendOverdueAlerts(): Promise<JobResult> {
+async function sendOverdueAlerts(userId?: string): Promise<JobResult> {
   const startTime = Date.now()
   let processed = 0
   let errors = 0
@@ -30,7 +30,7 @@ async function sendOverdueAlerts(): Promise<JobResult> {
         logger.info(`📋 Processando organização: ${org.slug}`)
 
         // Buscar transações vencidas apenas desta organização
-        const overdueTransactions = await fetchOverdueTransactionsForAlerts(org.slug)
+        const overdueTransactions = await fetchOverdueTransactionsForAlerts(org.slug, userId)
 
         if (overdueTransactions.length === 0) {
           logger.info(`ℹ️ Nenhuma transação vencida encontrada para organização: ${org.slug}`)
@@ -41,7 +41,7 @@ async function sendOverdueAlerts(): Promise<JobResult> {
           `📊 Encontradas ${overdueTransactions.length} transações vencidas para ${org.slug}`
         )
 
-        // Agrupar por responsável (owner e payTo) para controlar greeting/footer
+        // Agrupar por telefone do usuário (evita duplicidade)
         const groups = new Map<
           string,
           {
@@ -57,26 +57,26 @@ async function sendOverdueAlerts(): Promise<JobResult> {
             continue
           }
 
-          // Adicionar para o owner
-          const ownerKey = `owner_${t.payToId ?? 'na'}`
-          if (t.payToId) {
-            const ownerGroup = groups.get(ownerKey) ?? {
-              transactions: [],
-              userInfo: { name: t.payToName, phone: t.payToPhone },
-            }
-            ownerGroup.transactions.push(t)
-            groups.set(ownerKey, ownerGroup)
+          const phone = t.payToPhone
+          if (!phone) continue
+          const key = `user_${phone}`
+          const group = groups.get(key) ?? {
+            transactions: [],
+            userInfo: { name: t.payToName, phone },
           }
+          group.transactions.push(t)
+          groups.set(key, group)
         }
 
         for (const [, group] of groups) {
           const { transactions, userInfo } = group
 
-          // Ordenar por dias vencidos (mais vencidas primeiro)
+          // Ordenar por dias vencidos (mais vencidas primeiro) e deduplicar por id
           transactions.sort((a, b) => b.overdueDays - a.overdueDays)
+          const unique = Array.from(new Map(transactions.map(t => [t.id, t])).values())
 
-          for (let idx = 0; idx < transactions.length; idx++) {
-            const t = transactions[idx]
+          for (let idx = 0; idx < unique.length; idx++) {
+            const t = unique[idx]
             try {
               const { message } = buildAlertMessage(
                 t.title,
@@ -88,7 +88,7 @@ async function sendOverdueAlerts(): Promise<JobResult> {
                 userInfo.name,
                 null, // Não incluir bloco de vencidas pois já estamos processando vencidas
                 new Date(t.dueDate),
-                { includeGreeting: idx === 0, includeFooter: idx === transactions.length - 1 }
+                { includeGreeting: idx === 0, includeFooter: idx === unique.length - 1 }
               )
 
               if (userInfo.phone) {
@@ -149,7 +149,7 @@ jobManager.registerJob(JOB_CONFIGS.OVERDUE_ALERTS, sendOverdueAlerts)
 /**
  * Preview das transações vencidas que seriam processadas pelo job (sem enviar mensagens)
  */
-export async function previewOverdueAlerts(): Promise<{
+export async function previewOverdueAlerts(userId?: string): Promise<{
   summary: {
     total: number
     overdue: number
@@ -176,7 +176,7 @@ export async function previewOverdueAlerts(): Promise<{
     // Buscar transações vencidas de todas as organizações
     const allOverdueTransactions = []
     for (const org of orgs) {
-      const orgOverdue = await fetchOverdueTransactionsForAlerts(org.slug)
+      const orgOverdue = await fetchOverdueTransactionsForAlerts(org.slug, userId)
       allOverdueTransactions.push(...orgOverdue)
     }
 

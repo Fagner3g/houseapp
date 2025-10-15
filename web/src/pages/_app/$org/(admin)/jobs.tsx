@@ -58,7 +58,11 @@ function JobsPage() {
   const [showStopAllModal, setShowStopAllModal] = useState(false)
   const [showPreviewModal, setShowPreviewModal] = useState(false)
   const [selectedUserId, setSelectedUserId] = useState<string | null>(null)
+  const [selectedUserIdAlerts, setSelectedUserIdAlerts] = useState<string | null>(null)
+  const [selectedUserIdOverdue, setSelectedUserIdOverdue] = useState<string | null>(null)
   const [isSendingMonthly, setIsSendingMonthly] = useState(false)
+  const [isSendingAlerts, setIsSendingAlerts] = useState(false)
+  const [isSendingOverdue, setIsSendingOverdue] = useState(false)
   const [previewData, setPreviewData] = useState<{
     transactions: Array<{
       id: string
@@ -86,6 +90,7 @@ function JobsPage() {
   const { data: stats } = useGetJobsStats()
   const { data: usersData } = useQuery(getListUsersByOrgQueryOptions(slug))
   const sendMonthlySummary = usePostOrgSlugJobsSendMonthlySummary()
+  const runJob = usePostJobsJobKeyRun()
   const runJobMutation = usePostJobsJobKeyRun()
   const startJobMutation = usePostJobsJobKeyStart()
   const stopJobMutation = usePostJobsJobKeyStop()
@@ -96,7 +101,10 @@ function JobsPage() {
     setRunningJobs(prev => new Set(prev).add(jobKey))
 
     try {
-      const result = await runJobMutation.mutateAsync({ jobKey })
+      const result = await runJobMutation.mutateAsync({
+        jobKey,
+        data: selectedUserId ? { userId: selectedUserId } : {},
+      })
 
       if (result.result?.success) {
         toast.success(`Job executado com sucesso! Processados: ${result.result.processed}`)
@@ -119,6 +127,46 @@ function JobsPage() {
 
   const handleStopAllJobs = () => {
     setShowStopAllModal(true)
+  }
+
+  const handleSendAlertsForUser = async () => {
+    if (!selectedUserIdAlerts) return
+    try {
+      setIsSendingAlerts(true)
+      const result = await runJobMutation.mutateAsync({
+        jobKey: 'transactions:alerts',
+        data: { userId: selectedUserIdAlerts },
+      })
+      if (result?.result?.success) {
+        toast.success('Alertas enviados com sucesso')
+      } else {
+        toast.error('Erro ao enviar alertas')
+      }
+    } catch {
+      toast.error('Erro ao enviar alertas')
+    } finally {
+      setIsSendingAlerts(false)
+    }
+  }
+
+  const handleSendOverdueForUser = async () => {
+    if (!selectedUserIdOverdue) return
+    try {
+      setIsSendingOverdue(true)
+      const result = await runJobMutation.mutateAsync({
+        jobKey: 'transactions:overdue-alerts',
+        data: { userId: selectedUserIdOverdue },
+      })
+      if (result?.result?.success) {
+        toast.success('Vencidas enviadas com sucesso')
+      } else {
+        toast.error('Erro ao enviar vencidas')
+      }
+    } catch {
+      toast.error('Erro ao enviar vencidas')
+    } finally {
+      setIsSendingOverdue(false)
+    }
   }
 
   const handleStartJob = async (jobKey: string) => {
@@ -220,9 +268,14 @@ function JobsPage() {
             threeToFourDays: number
           }
         }
-      }>('/jobs/transactions:alerts/preview', {
-        method: 'GET',
-      })
+      }>(
+        selectedUserIdAlerts
+          ? `/jobs/transactions:alerts/preview?userId=${encodeURIComponent(selectedUserIdAlerts)}`
+          : '/jobs/transactions:alerts/preview',
+        {
+          method: 'GET',
+        }
+      )
       setPreviewData(data.preview)
       setShowPreviewModal(true)
     } catch (error) {
@@ -254,9 +307,14 @@ function JobsPage() {
             overdue: number
           }
         }
-      }>('/jobs/overdue-alerts/preview', {
-        method: 'GET',
-      })
+      }>(
+        selectedUserIdOverdue
+          ? `/jobs/overdue-alerts/preview?userId=${encodeURIComponent(selectedUserIdOverdue)}`
+          : '/jobs/overdue-alerts/preview',
+        {
+          method: 'GET',
+        }
+      )
       setPreviewData({
         transactions: data.preview.transactions.map(t => ({
           id: t.id,
@@ -385,6 +443,33 @@ function JobsPage() {
               <p>• Lembretes para vencimentos em 2-4 dias</p>
               <p>• Mensagens personalizadas com nome do destinatário</p>
             </div>
+            <div className="pl-6">
+              <div className="flex flex-col gap-2 sm:flex-row sm:items-center">
+                <Select
+                  value={selectedUserIdAlerts ?? ''}
+                  onValueChange={v => setSelectedUserIdAlerts(v)}
+                >
+                  <SelectTrigger className="sm:w-72">
+                    <SelectValue placeholder="Selecione um usuário" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {(usersData?.users ?? []).map((u: ListUsersByOrg200UsersItem) => (
+                      <SelectItem key={u.id} value={u.id}>
+                        {u.name} {u.phone ? `(${u.phone})` : ''}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+                <Button
+                  size="sm"
+                  variant="outline"
+                  onClick={handleSendAlertsForUser}
+                  disabled={!selectedUserIdAlerts || isSendingAlerts}
+                >
+                  {isSendingAlerts ? 'Enviando...' : 'Enviar para usuário'}
+                </Button>
+              </div>
+            </div>
           </div>
         )
 
@@ -421,6 +506,33 @@ function JobsPage() {
               <p>• Executa todo dia 1º do mês às 10:00</p>
               <p>• Foco em transações que já passaram do vencimento</p>
               <p>• Lembretes urgentes para pagamentos em atraso</p>
+            </div>
+            <div className="pl-6">
+              <div className="flex flex-col gap-2 sm:flex-row sm:items-center">
+                <Select
+                  value={selectedUserIdOverdue ?? ''}
+                  onValueChange={v => setSelectedUserIdOverdue(v)}
+                >
+                  <SelectTrigger className="sm:w-72">
+                    <SelectValue placeholder="Selecione um usuário" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {(usersData?.users ?? []).map((u: ListUsersByOrg200UsersItem) => (
+                      <SelectItem key={u.id} value={u.id}>
+                        {u.name} {u.phone ? `(${u.phone})` : ''}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+                <Button
+                  size="sm"
+                  variant="outline"
+                  onClick={handleSendOverdueForUser}
+                  disabled={!selectedUserIdOverdue || isSendingOverdue}
+                >
+                  {isSendingOverdue ? 'Enviando...' : 'Enviar para usuário'}
+                </Button>
+              </div>
             </div>
           </div>
         )
@@ -610,6 +722,32 @@ function JobsPage() {
                         disabled={!selectedUserId || isSendingMonthly}
                       >
                         {isSendingMonthly ? 'Enviando...' : 'Enviar resumo'}
+                      </Button>
+                      <Button
+                        variant="outline"
+                        onClick={() =>
+                          selectedUserId &&
+                          runJob.mutate({
+                            jobKey: 'transactions:alerts',
+                            data: { userId: selectedUserId },
+                          })
+                        }
+                        disabled={!selectedUserId}
+                      >
+                        Enviar alertas
+                      </Button>
+                      <Button
+                        variant="outline"
+                        onClick={() =>
+                          selectedUserId &&
+                          runJob.mutate({
+                            jobKey: 'transactions:overdue-alerts',
+                            data: { userId: selectedUserId },
+                          })
+                        }
+                        disabled={!selectedUserId}
+                      >
+                        Enviar vencidas
                       </Button>
                     </div>
                   </div>

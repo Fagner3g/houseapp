@@ -107,6 +107,20 @@
         "tags": [
           "Jobs"
         ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "userId": {
+                    "type": "string"
+                  }
+                }
+              }
+            }
+          }
+        },
         "parameters": [
           {
             "schema": {
@@ -553,12 +567,15 @@
         "tags": [
           "Jobs"
         ],
-        "security": [
-          {
-            "bearerAuth": []
-          }
-        ],
         "parameters": [
+          {
+            "schema": {
+              "type": "string"
+            },
+            "in": "query",
+            "name": "userId",
+            "required": false
+          },
           {
             "schema": {
               "type": "string"
@@ -566,6 +583,11 @@
             "in": "path",
             "name": "alerts",
             "required": true
+          }
+        ],
+        "security": [
+          {
+            "bearerAuth": []
           }
         ],
         "responses": {
@@ -693,6 +715,16 @@
         "summary": "Preview das transações vencidas que seriam processadas pelo job de alertas vencidas",
         "tags": [
           "Jobs"
+        ],
+        "parameters": [
+          {
+            "schema": {
+              "type": "string"
+            },
+            "in": "query",
+            "name": "userId",
+            "required": false
+          }
         ],
         "security": [
           {

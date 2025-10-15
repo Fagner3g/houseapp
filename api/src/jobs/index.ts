@@ -51,8 +51,8 @@ export function startAllJobs(): void {
 /**
  * Executa um job específico manualmente
  */
-export async function runJobNow(jobKey: string) {
-  return await jobRegistry.runJob(jobKey)
+export async function runJobNow(jobKey: string, userId?: string) {
+  return await jobRegistry.runJob(jobKey, userId)
 }
 
 /**

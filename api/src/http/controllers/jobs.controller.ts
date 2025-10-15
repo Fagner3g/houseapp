@@ -50,7 +50,9 @@ export async function runJobController(request: FastifyRequest, reply: FastifyRe
     }
 
     logger.info({ jobKey }, '🚀 Executando job manualmente via API')
-    const result = await runJobNow(jobKey)
+    // Permitir userId opcional para jobs de alertas
+    const { userId } = (request.body as { userId?: string }) || {}
+    const result = await runJobNow(jobKey, userId)
 
     if (!result) {
       return reply.status(500).send({
@@ -232,13 +234,14 @@ export async function startAllJobsController(_request: FastifyRequest, reply: Fa
  * Preview das transações que seriam processadas pelo job de alertas
  */
 export async function previewTransactionAlertsController(
-  _request: FastifyRequest,
+  request: FastifyRequest,
   reply: FastifyReply
 ) {
   try {
     // Usar a função de preview que não envia mensagens
     const { previewTransactionAlerts } = await import('@/jobs/transaction-alerts')
-    const previewData = await previewTransactionAlerts()
+    const userId = (request.query as { userId?: string } | undefined)?.userId
+    const previewData = await previewTransactionAlerts(userId)
 
     return reply.status(200).send({
       preview: previewData,
@@ -372,13 +375,11 @@ export const sendMonthlySummaryController: RouteHandler<SendMonthlySummaryRoute>
 /**
  * Preview dos alertas de transações vencidas
  */
-export async function previewOverdueAlertsController(
-  _request: FastifyRequest,
-  reply: FastifyReply
-) {
+export async function previewOverdueAlertsController(request: FastifyRequest, reply: FastifyReply) {
   try {
     const { previewOverdueAlerts } = await import('@/jobs/overdue-alerts')
-    const preview = await previewOverdueAlerts()
+    const userId = (request.query as { userId?: string } | undefined)?.userId
+    const preview = await previewOverdueAlerts(userId)
 
     return reply.status(200).send({
       preview,
