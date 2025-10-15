@@ -81,9 +81,11 @@ async function sendTransactionAlerts(userId?: string): Promise<JobResult> {
 
           // Buscar TODAS as transações vencidas do usuário (não apenas da mesma série)
           if (overdueBlock === null && t.organizationSlug) {
+            // Identificar o userId correto baseado no telefone
+            const targetUserId = userInfo.phone === t.ownerPhone ? t.ownerId : t.payToId
             const overdueListRaw = await fetchOverdueTransactionsForAlerts(
               t.organizationSlug,
-              userInfo.phone === t.ownerPhone ? t.ownerId : (t.payToId ?? undefined)
+              targetUserId ?? undefined
             )
             // Deduplicar por ocorrência (pode haver duplicidade pelo join de userOrganizations)
             const overdueList = Array.from(new Map(overdueListRaw.map(ov => [ov.id, ov])).values())
@@ -240,6 +242,13 @@ export async function previewTransactionAlerts(userId?: string): Promise<{
       }
     }
 
+    // Deduplicate transactions by ID
+    const uniqueTransactions = new Map<string, (typeof upcomingTransactions)[number]>()
+    for (const t of upcomingTransactions) {
+      uniqueTransactions.set(t.id, t)
+    }
+    const deduplicatedTransactions = Array.from(uniqueTransactions.values())
+
     // Normalizar data de hoje para comparação
     const today = new Date()
     today.setHours(0, 0, 0, 0)
@@ -251,7 +260,7 @@ export async function previewTransactionAlerts(userId?: string): Promise<{
 
     const transactions = []
 
-    for (const t of upcomingTransactions) {
+    for (const t of deduplicatedTransactions) {
       const dueDate = new Date(t.dueDate)
       dueDate.setHours(0, 0, 0, 0)
       const daysUntilDue = Math.ceil((dueDate.getTime() - today.getTime()) / (24 * 60 * 60 * 1000))
@@ -293,7 +302,7 @@ export async function previewTransactionAlerts(userId?: string): Promise<{
 
     return {
       summary: {
-        total: upcomingTransactions.length,
+        total: deduplicatedTransactions.length,
         today: todayCount,
         tomorrow: tomorrowCount,
         thisWeek: thisWeekCount,
