@@ -29,6 +29,13 @@
       "when": 1760049294222,
       "tag": "0003_slimy_kree",
       "breakpoints": true
+    },
+    {
+      "idx": 4,
+      "version": "7",
+      "when": 1760540000000,
+      "tag": "0004_rename_notifications_column",
+      "breakpoints": true
     }
   ]
 }

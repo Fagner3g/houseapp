@@ -6,8 +6,11 @@ import { ForbiddenError } from '../utils/error'
 
 export async function verifyOrgAccessHook(request: FastifyRequest) {
   try {
-    logger.info({ slug: (request.params as { slug?: string })?.slug }, '🔍 HOOK verifyOrgAccessHook - ENTER')
-    
+    logger.info(
+      { slug: (request.params as { slug?: string })?.slug },
+      '🔍 HOOK verifyOrgAccessHook - ENTER'
+    )
+
     const { slug } = request.params as { slug: string }
 
     if (!slug) {
@@ -27,7 +30,10 @@ export async function verifyOrgAccessHook(request: FastifyRequest) {
     // opcional: deixar o `org.id` disponível no request
     request.organization = org
   } catch (error) {
-    logger.error({ error, stack: error instanceof Error ? error.stack : 'N/A' }, '❌ HOOK verifyOrgAccessHook - ERRO')
+    logger.error(
+      { error, stack: error instanceof Error ? error.stack : 'N/A' },
+      '❌ HOOK verifyOrgAccessHook - ERRO'
+    )
     throw error
   }
 }
