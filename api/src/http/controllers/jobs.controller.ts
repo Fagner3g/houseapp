@@ -268,7 +268,10 @@ export async function getTransactionReportsController(
   try {
     // Log de entrada para isolar se o handler está sendo executado
     logger.info(
-      { slug: (request.params as { slug?: string }).slug, userId: (request.user as { sub?: string })?.sub },
+      {
+        slug: (request.params as { slug?: string }).slug,
+        userId: (request.user as { sub?: string })?.sub,
+      },
       'ENTER /org/:slug/reports/transactions'
     )
 
