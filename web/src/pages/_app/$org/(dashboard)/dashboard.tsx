@@ -18,6 +18,7 @@ import type {
 } from '@/api/generated/model'
 import { DrawerTransaction } from '@/components/drawer-transaction'
 import { LoadingErrorState } from '@/components/loading-error-state'
+import { MonthYearSelector } from '@/components/month-year-selector'
 import { useActiveOrganization } from '@/hooks/use-active-organization'
 import { useAuthStore } from '@/stores/auth'
 import { CounterpartySummary } from './components/CounterpartySummary'
@@ -43,12 +44,25 @@ export const Route = createFileRoute('/_app/$org/(dashboard)/dashboard')({
 function RouteComponent() {
   const { slug } = useActiveOrganization()
   const currentUser = useAuthStore(s => s.user)
+  
+  // Estado para mês/ano selecionado
+  const today = new Date()
+  const [selectedYear, setSelectedYear] = useState(today.getFullYear())
+  const [selectedMonth, setSelectedMonth] = useState(today.getMonth() + 1)
+  
   const {
     data: reports,
     isLoading,
     error,
     refetch,
-  } = useQuery<GetOrgSlugReportsTransactions200>(getGetOrgSlugReportsTransactionsQueryOptions(slug))
+  } = useQuery<GetOrgSlugReportsTransactions200>({
+    ...getGetOrgSlugReportsTransactionsQueryOptions(slug, {
+      year: selectedYear.toString(),
+      month: selectedMonth.toString(),
+    }),
+    queryKey: ['reports', slug, selectedYear, selectedMonth],
+  })
+  
   const [editingTransaction, setEditingTransaction] =
     useState<ListTransactions200TransactionsItem | null>(null)
   const queryClient = useQueryClient()
@@ -98,13 +112,29 @@ function RouteComponent() {
     >
       <div className="flex flex-col gap-4 py-4 md:gap-6 md:py-6">
         <div className="px-4 lg:px-6">
-          <h1 className="text-2xl font-bold tracking-tight">Dashboard</h1>
-          <p className="text-muted-foreground">Visão geral das transações e alertas do sistema</p>
+          <div className="flex flex-col gap-4 md:flex-row md:items-center md:justify-between">
+            <div>
+              <h1 className="text-2xl font-bold tracking-tight">Dashboard</h1>
+              <p className="text-muted-foreground">Visão geral das transações e alertas do sistema</p>
+            </div>
+            <MonthYearSelector
+              selectedYear={selectedYear}
+              selectedMonth={selectedMonth}
+              onMonthYearChange={(year, month) => {
+                setSelectedYear(year)
+                setSelectedMonth(month)
+              }}
+            />
+          </div>
         </div>
 
         {reports && (
           <>
-            <TagsSummary data={reports.reports.chartData.categoryBreakdown} />
+            <TagsSummary 
+              categoryBreakdown={reports.reports.chartData.categoryBreakdown}
+              incomeByTag={reports.reports.chartData.incomeByTag}
+              expenseByTag={reports.reports.chartData.expenseByTag}
+            />
             <TopBillsSummary kpis={reports.reports.kpis} />
             <MonthlyStatsCards stats={reports.reports.monthlyStats} />
             <CounterpartySummary

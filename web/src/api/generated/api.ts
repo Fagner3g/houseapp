@@ -48,6 +48,7 @@ import type {
   GetOrgSlugReportsTransactions200,
   GetOrgSlugReportsTransactions401,
   GetOrgSlugReportsTransactions403,
+  GetOrgSlugReportsTransactionsParams,
   GetPendingGoals200,
   GetProfile200,
   GetTransactionById200,
@@ -1484,16 +1485,32 @@ export function useGetJobsOverdueAlertsPreview<
 /**
  * @summary Retorna dados consolidados para o dashboard da organização
  */
-export const getGetOrgSlugReportsTransactionsUrl = (slug: string) => {
-  return `/org/${slug}/reports/transactions`;
+export const getGetOrgSlugReportsTransactionsUrl = (
+  slug: string,
+  params?: GetOrgSlugReportsTransactionsParams,
+) => {
+  const normalizedParams = new URLSearchParams();
+
+  Object.entries(params || {}).forEach(([key, value]) => {
+    if (value !== undefined) {
+      normalizedParams.append(key, value === null ? "null" : value.toString());
+    }
+  });
+
+  const stringifiedParams = normalizedParams.toString();
+
+  return stringifiedParams.length > 0
+    ? `/org/${slug}/reports/transactions?${stringifiedParams}`
+    : `/org/${slug}/reports/transactions`;
 };
 
 export const getOrgSlugReportsTransactions = async (
   slug: string,
+  params?: GetOrgSlugReportsTransactionsParams,
   options?: RequestInit,
 ): Promise<GetOrgSlugReportsTransactions200> => {
   return http<GetOrgSlugReportsTransactions200>(
-    getGetOrgSlugReportsTransactionsUrl(slug),
+    getGetOrgSlugReportsTransactionsUrl(slug, params),
     {
       ...options,
       method: "GET",
@@ -1501,8 +1518,14 @@ export const getOrgSlugReportsTransactions = async (
   );
 };
 
-export const getGetOrgSlugReportsTransactionsQueryKey = (slug?: string) => {
-  return [`/org/${slug}/reports/transactions`] as const;
+export const getGetOrgSlugReportsTransactionsQueryKey = (
+  slug?: string,
+  params?: GetOrgSlugReportsTransactionsParams,
+) => {
+  return [
+    `/org/${slug}/reports/transactions`,
+    ...(params ? [params] : []),
+  ] as const;
 };
 
 export const getGetOrgSlugReportsTransactionsQueryOptions = <
@@ -1510,6 +1533,7 @@ export const getGetOrgSlugReportsTransactionsQueryOptions = <
   TError = GetOrgSlugReportsTransactions401 | GetOrgSlugReportsTransactions403,
 >(
   slug: string,
+  params?: GetOrgSlugReportsTransactionsParams,
   options?: {
     query?: Partial<
       UseQueryOptions<
@@ -1524,12 +1548,13 @@ export const getGetOrgSlugReportsTransactionsQueryOptions = <
   const { query: queryOptions, request: requestOptions } = options ?? {};
 
   const queryKey =
-    queryOptions?.queryKey ?? getGetOrgSlugReportsTransactionsQueryKey(slug);
+    queryOptions?.queryKey ??
+    getGetOrgSlugReportsTransactionsQueryKey(slug, params);
 
   const queryFn: QueryFunction<
     Awaited<ReturnType<typeof getOrgSlugReportsTransactions>>
   > = ({ signal }) =>
-    getOrgSlugReportsTransactions(slug, { signal, ...requestOptions });
+    getOrgSlugReportsTransactions(slug, params, { signal, ...requestOptions });
 
   return {
     queryKey,
@@ -1555,6 +1580,7 @@ export function useGetOrgSlugReportsTransactions<
   TError = GetOrgSlugReportsTransactions401 | GetOrgSlugReportsTransactions403,
 >(
   slug: string,
+  params: undefined | GetOrgSlugReportsTransactionsParams,
   options: {
     query: Partial<
       UseQueryOptions<
@@ -1582,6 +1608,7 @@ export function useGetOrgSlugReportsTransactions<
   TError = GetOrgSlugReportsTransactions401 | GetOrgSlugReportsTransactions403,
 >(
   slug: string,
+  params?: GetOrgSlugReportsTransactionsParams,
   options?: {
     query?: Partial<
       UseQueryOptions<
@@ -1609,6 +1636,7 @@ export function useGetOrgSlugReportsTransactions<
   TError = GetOrgSlugReportsTransactions401 | GetOrgSlugReportsTransactions403,
 >(
   slug: string,
+  params?: GetOrgSlugReportsTransactionsParams,
   options?: {
     query?: Partial<
       UseQueryOptions<
@@ -1632,6 +1660,7 @@ export function useGetOrgSlugReportsTransactions<
   TError = GetOrgSlugReportsTransactions401 | GetOrgSlugReportsTransactions403,
 >(
   slug: string,
+  params?: GetOrgSlugReportsTransactionsParams,
   options?: {
     query?: Partial<
       UseQueryOptions<
@@ -1648,6 +1677,7 @@ export function useGetOrgSlugReportsTransactions<
 } {
   const queryOptions = getGetOrgSlugReportsTransactionsQueryOptions(
     slug,
+    params,
     options,
   );
 

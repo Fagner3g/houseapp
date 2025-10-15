@@ -82,6 +82,7 @@ export * from "./getOrgSlugReportsTransactions200ReportsUpcomingAlertsTransactio
 export * from "./getOrgSlugReportsTransactions200ReportsUpcomingAlertsTransactionsItemAlertType";
 export * from "./getOrgSlugReportsTransactions401";
 export * from "./getOrgSlugReportsTransactions403";
+export * from "./getOrgSlugReportsTransactionsParams";
 export * from "./getPendingGoals200";
 export * from "./getPendingGoals200PendingGoalsItem";
 export * from "./getProfile200";

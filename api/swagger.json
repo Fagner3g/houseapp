@@ -842,6 +842,22 @@
             "schema": {
               "type": "string"
             },
+            "in": "query",
+            "name": "year",
+            "required": false
+          },
+          {
+            "schema": {
+              "type": "string"
+            },
+            "in": "query",
+            "name": "month",
+            "required": false
+          },
+          {
+            "schema": {
+              "type": "string"
+            },
             "in": "path",
             "name": "slug",
             "required": true
