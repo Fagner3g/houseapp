@@ -458,6 +458,11 @@ const MultipleSelector = ({
                 data-disabled={disabled || undefined}
                 type="button"
                 onClick={e => {
+                  // Não abrir config se clicou no botão de remover
+                  const target = e.target as HTMLElement
+                  if (target.closest('[aria-label="Remove"]')) {
+                    return
+                  }
                   e.stopPropagation()
                   onBadgeClick?.(option)
                 }}
@@ -486,15 +491,18 @@ const MultipleSelector = ({
                   role="button"
                   tabIndex={0}
                   onMouseDown={e => {
+                    e.preventDefault()
                     e.stopPropagation()
                   }}
                   onClick={e => {
+                    e.preventDefault()
                     e.stopPropagation()
                     handleUnselect(option)
                   }}
                   onKeyDown={e => {
                     if (e.key === 'Enter' || e.key === ' ') {
                       e.preventDefault()
+                      e.stopPropagation()
                       handleUnselect(option)
                     }
                   }}

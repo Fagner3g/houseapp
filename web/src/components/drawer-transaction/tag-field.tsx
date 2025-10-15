@@ -186,7 +186,7 @@ export function TagField({ form, disabled }: TagFieldProps) {
 
                       return { name: normalizedName, color }
                     })
-                    form.setValue('tags', next)
+                    form.setValue('tags', next, { shouldDirty: true, shouldTouch: true })
                   }}
                   emptyIndicator={<p className="text-center text-sm">Nenhuma tag encontrada</p>}
                 />
@@ -261,7 +261,8 @@ export function TagField({ form, disabled }: TagFieldProps) {
                               // otimista: remove da seleção atual
                               form.setValue(
                                 'tags',
-                                (selected ?? []).filter(t => t.name !== configuring.originalName)
+                                (selected ?? []).filter(t => t.name !== configuring.originalName),
+                                { shouldDirty: true, shouldTouch: true }
                               )
                               deleteTagMutation.mutate({ slug, id: configuring.id })
                               setConfiguring(null)
@@ -289,7 +290,8 @@ export function TagField({ form, disabled }: TagFieldProps) {
                                     t.name === configuring.originalName
                                       ? { name: normalizedName, color: configuring.color }
                                       : t
-                                  )
+                                  ),
+                                  { shouldDirty: true, shouldTouch: true }
                                 )
                                 updateTagMutation.mutate({
                                   slug,

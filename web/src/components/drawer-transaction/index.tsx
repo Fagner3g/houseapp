@@ -78,13 +78,10 @@ function DrawerTransactionContent({ transaction, open, onOpenChange, onExternalS
   const {
     activeTab,
     setActiveTab,
-    form: contextForm,
-    setForm,
     isDirty,
     setIsDirty,
     isResetting,
     setIsResetting,
-    transactionData,
     setTransactionData,
   } = useTransactionDrawer()
 
@@ -99,13 +96,19 @@ function DrawerTransactionContent({ transaction, open, onOpenChange, onExternalS
   })
   const [paymentDialogOpen, setPaymentDialogOpen] = useState(false)
   const initializedTransactionRef = useRef<string | null>(null)
+  const hadUnsavedChanges = useRef(false)
 
-  // Usar form do contexto se disponível, senão criar novo
+  // Criar form local (não compartilhado)
   const localForm = useForm<NewTransactionSchema>({
     resolver: zodResolver(newTransactionSchema),
-    shouldUnregister: true,
     defaultValues: {
       type: RegisterType.EXPENSE,
+      title: '',
+      amount: '',
+      dueDate: new Date(),
+      payToEmail: '',
+      tags: [],
+      description: '',
       isRecurring: false,
       recurrenceSelector: undefined,
       recurrenceType: undefined,
@@ -116,7 +119,8 @@ function DrawerTransactionContent({ transaction, open, onOpenChange, onExternalS
     },
   })
 
-  const form = contextForm || localForm
+  // Sempre usar localForm para evitar problemas com estado compartilhado
+  const form = localForm
 
   // Helper para criar formData a partir de uma transação
   const createFormData = useCallback(
@@ -147,38 +151,50 @@ function DrawerTransactionContent({ transaction, open, onOpenChange, onExternalS
   const formType = form.getValues('type')
   const isExpense = formType === RegisterType.EXPENSE
 
-  // Registrar o form no contexto apenas se não existe um form no contexto
-  useEffect(() => {
-    if (!contextForm && form) {
-      setForm(form)
-    }
-  }, [contextForm, form, setForm])
-
   // Detectar mudanças reais no form
   useEffect(() => {
     if (!transaction || !isEditMode) {
       setIsDirty(false)
+      hadUnsavedChanges.current = false
       return
     }
 
-    const subscription = form.watch((_, { name, type }) => {
+    const subscription = form.watch((_value, { name }) => {
       // Ignorar mudanças durante o reset
       if (isResetting) {
         return
       }
 
-      // Só considerar como mudança se não for o reset inicial
-      if (type === 'change' && name) {
+      // Considerar como mudança se tiver um nome de campo (type pode ser undefined com setValue)
+      if (name) {
         setIsDirty(true)
+        hadUnsavedChanges.current = true
       }
     })
 
-    return () => subscription.unsubscribe()
+    return () => {
+      subscription.unsubscribe()
+    }
   }, [form, transaction, isEditMode, isResetting, setIsDirty])
+
+  // Removido: useEffect que sincronizava com formState.isDirty
+  // Causava falsos positivos pois formState.isDirty ficava true logo após reset
+  // O form.watch() acima já captura todas as mudanças, incluindo tags (com shouldDirty: true)
 
   // Preencher formulário quando a transação mudar
   useEffect(() => {
-    if (!open) return
+    if (!open) {
+      // Quando o drawer fecha, se houver mudanças não salvas, invalidar cache
+      if (hadUnsavedChanges.current) {
+        queryClient.invalidateQueries({
+          queryKey: getListTransactionsQueryKey(slug),
+        })
+        hadUnsavedChanges.current = false
+      }
+      // Limpar o initializedRef para forçar reset na próxima abertura
+      initializedTransactionRef.current = null
+      return
+    }
 
     const currentTransactionId = transaction?.id || 'new'
 
@@ -188,6 +204,7 @@ function DrawerTransactionContent({ transaction, open, onOpenChange, onExternalS
       setIsDirty(false)
       setIsResetting(false)
       setActiveTab('form')
+      hadUnsavedChanges.current = false
 
       if (transaction) {
         setIsResetting(true)
@@ -212,24 +229,25 @@ function DrawerTransactionContent({ transaction, open, onOpenChange, onExternalS
       }
       initializedTransactionRef.current = currentTransactionId
     }
-  }, [open, transaction, form, setIsDirty, setIsResetting, setActiveTab])
+  }, [open, transaction, form, setIsDirty, setIsResetting, setActiveTab, queryClient, slug])
 
-  // Resetar form quando contextForm fica disponível
+  // Resetar form quando isResetting é marcado
   useEffect(() => {
-    if (
-      contextForm &&
-      isResetting &&
-      transaction &&
-      initializedTransactionRef.current === transaction.id
-    ) {
-      // Aguardar o ciclo de renderização para garantir que o reset ocorra corretamente
+    if (isResetting && transaction && initializedTransactionRef.current === transaction.id) {
       setTimeout(() => {
-        contextForm.reset(createFormData(transaction))
+        form.reset(createFormData(transaction), {
+          keepErrors: false,
+          keepDirty: false,
+          keepIsSubmitted: false,
+          keepTouched: false,
+          keepIsValid: false,
+          keepSubmitCount: false,
+        })
         setIsDirty(false)
         setIsResetting(false)
       }, 0)
     }
-  }, [contextForm, isResetting, transaction, createFormData, setIsDirty, setIsResetting])
+  }, [isResetting, transaction, createFormData, setIsDirty, setIsResetting, form])
 
   // Salvar dados da transação no contexto
   useEffect(() => {
@@ -238,12 +256,11 @@ function DrawerTransactionContent({ transaction, open, onOpenChange, onExternalS
     }
   }, [transaction, open, setTransactionData])
 
-  // Forçar recarregamento quando form perde dados (trigger manual)
+  // Forçar recarregamento quando form perde dados (fallback)
   useEffect(() => {
-    if (contextForm && transactionData && !isResetting && activeTab === 'form') {
-      // Aguardar um pouco para o form se estabilizar
+    if (transaction && !isResetting && activeTab === 'form') {
       const timeoutId = setTimeout(() => {
-        const currentValues = contextForm.getValues()
+        const currentValues = form.getValues()
         const hasEmptyValues =
           !currentValues.title ||
           !currentValues.amount ||
@@ -253,13 +270,20 @@ function DrawerTransactionContent({ transaction, open, onOpenChange, onExternalS
           currentValues.amount === undefined
 
         if (hasEmptyValues) {
-          contextForm.reset(createFormData(transactionData))
+          form.reset(createFormData(transaction), {
+            keepErrors: false,
+            keepDirty: false,
+            keepIsSubmitted: false,
+            keepTouched: false,
+            keepIsValid: false,
+            keepSubmitCount: false,
+          })
         }
-      }, 100) // Aguardar 100ms
+      }, 100)
 
       return () => clearTimeout(timeoutId)
     }
-  }, [activeTab, contextForm, transactionData, isResetting, createFormData])
+  }, [activeTab, transaction, isResetting, createFormData, form])
 
   // Resetar ref quando o drawer for fechado, mas manter estado do contexto
   useEffect(() => {
