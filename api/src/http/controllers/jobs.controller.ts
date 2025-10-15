@@ -266,31 +266,16 @@ export async function getTransactionReportsController(
   reply: FastifyReply
 ) {
   try {
-    // Log de entrada para isolar se o handler está sendo executado
-    logger.info(
-      {
-        slug: (request.params as { slug?: string }).slug,
-        userId: (request.user as { sub?: string })?.sub,
-      },
-      'ENTER /org/:slug/reports/transactions'
-    )
-
-    // Curto-circuito opcional para diagnóstico em homolog
-    if (process.env.DEBUG_REPORTS_EARLY_RETURN === '1') {
-      logger.info('DEBUG_REPORTS_EARLY_RETURN ativo - retornando early { ok: true }')
-      return reply.status(200).send({ ok: true, timestamp: new Date().toISOString() })
-    }
     // userId do solicitante é necessário para montar seus relatórios de dashboard
     const { sub: userId } = request.user as { sub: string }
     const { id: orgId } = request.organization
-    logger.info({ orgId, userId }, 'Invocando getTransactionReports')
+
     const reports = await getTransactionReports(orgId, userId)
-    logger.info('Sucesso getTransactionReports - retornando 200')
 
     // O serviço já retorna no formato { reports: { ... }, timestamp }
     return reply.status(200).send(reports)
   } catch (err) {
-    logger.error({ err }, 'Erro ao obter relatórios de transação')
+    logger.error({ err }, 'Failed to get transaction reports')
     return reply.status(500).send({
       error: 'Internal Server Error',
       message: 'Failed to get transaction reports',

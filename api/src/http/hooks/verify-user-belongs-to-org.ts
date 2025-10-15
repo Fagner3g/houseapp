@@ -5,35 +5,20 @@ import { logger } from '../../lib/logger'
 import { ForbiddenError } from '../utils/error'
 
 export async function verifyOrgAccessHook(request: FastifyRequest) {
-  try {
-    logger.info(
-      { slug: (request.params as { slug?: string })?.slug },
-      '🔍 HOOK verifyOrgAccessHook - ENTER'
-    )
+  const { slug } = request.params as { slug: string }
 
-    const { slug } = request.params as { slug: string }
-
-    if (!slug) {
-      logger.error('slug not found')
-      throw new ForbiddenError()
-    }
-
-    logger.info({ slug }, '🔍 HOOK - Chamando verifyUserBelongsToOrg')
-    const org = await verifyUserBelongsToOrg(request, slug)
-
-    if (!org) {
-      logger.error('Hook Error: Access denied to this organization')
-      throw new ForbiddenError('Access denied to this organization.')
-    }
-
-    logger.info({ orgId: org.id, slug }, '🔍 HOOK - Sucesso, org encontrada')
-    // opcional: deixar o `org.id` disponível no request
-    request.organization = org
-  } catch (error) {
-    logger.error(
-      { error, stack: error instanceof Error ? error.stack : 'N/A' },
-      '❌ HOOK verifyOrgAccessHook - ERRO'
-    )
-    throw error
+  if (!slug) {
+    logger.error('Organization slug not found in request params')
+    throw new ForbiddenError()
   }
+
+  const org = await verifyUserBelongsToOrg(request, slug)
+
+  if (!org) {
+    logger.error({ slug }, 'Access denied to organization')
+    throw new ForbiddenError('Access denied to this organization.')
+  }
+
+  // opcional: deixar o `org.id` disponível no request
+  request.organization = org
 }

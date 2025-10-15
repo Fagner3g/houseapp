@@ -6,11 +6,6 @@ import { UnauthorizedError } from '../utils/error'
 
 export async function authenticateUserHook(request: FastifyRequest) {
   try {
-    logger.info(
-      { method: request.method, url: request.url },
-      '🔐 HOOK authenticateUserHook - ENTER'
-    )
-
     await request.jwtVerify()
     const auth = request.headers.authorization
     const token = auth?.replace('Bearer ', '')
@@ -19,13 +14,8 @@ export async function authenticateUserHook(request: FastifyRequest) {
       logger.info(`Token revoked: ${token}`)
       throw new UnauthorizedError()
     }
-
-    logger.info({ userId: request.user?.sub }, '🔐 HOOK authenticateUserHook - Sucesso')
   } catch (error) {
-    logger.error(
-      { error, stack: error instanceof Error ? error.stack : 'N/A' },
-      '❌ HOOK authenticateUserHook - ERRO'
-    )
+    logger.error({ error, method: request.method, url: request.url }, 'Authentication failed')
     throw new UnauthorizedError()
   }
 }
