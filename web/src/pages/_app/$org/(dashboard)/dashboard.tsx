@@ -27,6 +27,7 @@ import { OverdueTransactionsCard } from './components/OverdueTransactionsCard'
 import { PaidThisMonthCard } from './components/PaidThisMonthCard'
 import { ReceivedVsToPay } from './components/ReceivedVsToPay'
 import { RecentActivity } from './components/RecentActivity'
+import { TagsSummary } from './components/TagsSummary'
 import { TopBillsSummary } from './components/TopBillsSummary'
 import { UpcomingAlerts } from './components/UpcomingAlerts'
 
@@ -103,6 +104,7 @@ function RouteComponent() {
 
         {reports && (
           <>
+            <TagsSummary data={reports.reports.chartData.categoryBreakdown} />
             <TopBillsSummary kpis={reports.reports.kpis} />
             <MonthlyStatsCards stats={reports.reports.monthlyStats} />
             <CounterpartySummary

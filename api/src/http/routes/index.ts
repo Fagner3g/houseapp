@@ -29,7 +29,12 @@ import {
   payTransactionRoute,
   updateTransactionRoute,
 } from './transaction.routes'
-import { createUserWithInviteRoute, getProfileRoute, updateUserRoute } from './user.routes'
+import {
+  createUserWithInviteRoute,
+  getProfileRoute,
+  updateUserNotificationsRoute,
+  updateUserRoute,
+} from './user.routes'
 
 export function createRoutes(app: FastifyInstance) {
   // Health
@@ -48,6 +53,7 @@ export function createRoutes(app: FastifyInstance) {
   app.register(getProfileRoute)
   app.register(createUserWithInviteRoute)
   app.register(updateUserRoute)
+  app.register(updateUserNotificationsRoute)
 
   // Organization
   app.register(createOrgRoute)
@@ -75,7 +81,7 @@ export function createRoutes(app: FastifyInstance) {
   app.register(deleteTransactionsRoute)
   app.register(updateTransactionRoute)
   app.register(payTransactionRoute)
-  
+
   // Transaction Chat
   app.register(listChatMessagesRoute)
   app.register(createChatMessageRoute)

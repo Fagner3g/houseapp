@@ -1,5 +1,6 @@
 import { useQueryClient } from '@tanstack/react-query'
 import { createFileRoute } from '@tanstack/react-router'
+import { Bell, BellOff } from 'lucide-react'
 import { useMemo, useState } from 'react'
 import { toast } from 'sonner'
 
@@ -13,8 +14,10 @@ import { LoadingErrorState } from '@/components/loading-error-state'
 import { ModalEditUser } from '@/components/modal-edit-user'
 import { ModalNewUser } from '@/components/modal-new-user'
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar'
+import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { useActiveOrganization } from '@/hooks/use-active-organization'
+import { useUpdateUserNotifications } from '@/hooks/use-user-notifications'
 
 export const Route = createFileRoute('/_app/$org/(user)/users')({
   component: Users,
@@ -24,6 +27,7 @@ function Users() {
   const queryClient = useQueryClient()
   const { slug } = useActiveOrganization()
   const { data, isLoading, error, refetch } = useListUsersByOrg(slug)
+  const updateNotificationsMutation = useUpdateUserNotifications()
 
   const [isEditOpen, setIsEditOpen] = useState(false)
   const [editingUser, setEditingUser] = useState<{
@@ -31,11 +35,36 @@ function Users() {
     name: string
     email: string
     phone?: string | null
+    notificationsEnabled?: boolean
   } | null>(null)
   const [search, setSearch] = useState('')
   const [isDeleting, setIsDeleting] = useState(false)
   type UserWithId = ListUsersByOrg200['users'][number] & { id: string }
   type PatchUserBody = PatchOrgSlugUsersBody & { userId: string }
+
+  const handleToggleNotifications = async (
+    userId: string,
+    currentValue: boolean,
+    e: React.MouseEvent
+  ) => {
+    e.stopPropagation() // Prevenir que o card seja clicado
+
+    try {
+      await updateNotificationsMutation.mutateAsync({
+        slug,
+        data: {
+          userId,
+          notificationsEnabled: !currentValue,
+        },
+      })
+
+      toast.success(
+        `Notificações ${!currentValue ? 'habilitadas' : 'desabilitadas'} para o usuário`
+      )
+    } catch {
+      toast.error('Erro ao atualizar preferências de notificação')
+    }
+  }
 
   const { mutate: updateUser, isPending: isUpdating } = usePatchOrgSlugUsers({
     mutation: {
@@ -175,6 +204,7 @@ function Users() {
                       name: user.name,
                       email: user.email,
                       phone: user.phone,
+                      notificationsEnabled: user.notificationsEnabled,
                     })
                     setIsEditOpen(true)
                   }}
@@ -238,6 +268,39 @@ function Users() {
                             <span className="text-xs">{user.phone}</span>
                           </div>
                         )}
+
+                        {/* Botão de Notificações */}
+                        <div className="flex items-center justify-center gap-1 pt-1">
+                          <Button
+                            variant="ghost"
+                            size="sm"
+                            className="h-6 px-2 text-xs"
+                            onClick={e =>
+                              handleToggleNotifications(
+                                (user as UserWithId).id,
+                                user.notificationsEnabled,
+                                e
+                              )
+                            }
+                            disabled={updateNotificationsMutation.isPending}
+                            title={
+                              user.notificationsEnabled
+                                ? 'Desabilitar notificações'
+                                : 'Habilitar notificações'
+                            }
+                          >
+                            {user.notificationsEnabled ? (
+                              <Bell className="h-3 w-3 text-green-500" />
+                            ) : (
+                              <BellOff className="h-3 w-3 text-muted-foreground" />
+                            )}
+                            <span className="ml-1 text-xs">
+                              {user.notificationsEnabled
+                                ? 'Notificações ativas'
+                                : 'Notificações desabilitadas'}
+                            </span>
+                          </Button>
+                        </div>
                       </div>
                     </div>
 
@@ -271,10 +334,11 @@ function Users() {
           user={editingUser}
           isSubmitting={isUpdating}
           isDeleting={isDeleting}
-          onSubmit={values => {
+          onSubmit={async values => {
             setEditingUser(values)
             if (values && slug) {
-              updateUser({
+              // Atualizar dados básicos do usuário
+              await updateUser({
                 slug,
                 data: {
                   userId: values.id,
@@ -283,6 +347,18 @@ function Users() {
                   phone: values.phone ?? undefined,
                 } as PatchOrgSlugUsersBody,
               })
+
+              // Atualizar preferências de notificação se mudou
+              if (values.notificationsEnabled !== editingUser?.notificationsEnabled) {
+                await updateNotificationsMutation.mutateAsync({
+                  slug,
+                  data: {
+                    userId: values.id,
+                    notificationsEnabled: values.notificationsEnabled ?? true,
+                  },
+                })
+              }
+
               setIsEditOpen(false)
             }
           }}

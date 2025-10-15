@@ -1,3 +1,4 @@
+import { useQuery } from '@tanstack/react-query'
 import { createFileRoute } from '@tanstack/react-router'
 import {
   Activity,
@@ -14,6 +15,7 @@ import { useState } from 'react'
 import { toast } from 'sonner'
 
 import {
+  getListUsersByOrgQueryOptions,
   useGetJobs,
   useGetJobsStats,
   usePostJobsJobKeyRun,
@@ -21,7 +23,9 @@ import {
   usePostJobsJobKeyStop,
   usePostJobsStartAll,
   usePostJobsStopAll,
+  usePostOrgSlugJobsSendMonthlySummary,
 } from '@/api/generated/api'
+import type { ListUsersByOrg200UsersItem } from '@/api/generated/model'
 import { LoadingErrorState } from '@/components/loading-error-state'
 import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
@@ -34,15 +38,31 @@ import {
   DialogHeader,
   DialogTitle,
 } from '@/components/ui/dialog'
+import { Label } from '@/components/ui/label'
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from '@/components/ui/select'
 import { Separator } from '@/components/ui/separator'
+import { useActiveOrganization } from '@/hooks/use-active-organization'
 import { http } from '@/lib/http'
 
 function JobsPage() {
+  const { slug } = useActiveOrganization()
   const [runningJobs, setRunningJobs] = useState<Set<string>>(new Set())
   const [stoppingJobs, setStoppingJobs] = useState<Set<string>>(new Set())
   const [startingJobs, setStartingJobs] = useState<Set<string>>(new Set())
   const [showStopAllModal, setShowStopAllModal] = useState(false)
   const [showPreviewModal, setShowPreviewModal] = useState(false)
+  const [selectedUserId, setSelectedUserId] = useState<string | null>(null)
+  const [selectedUserIdAlerts, setSelectedUserIdAlerts] = useState<string | null>(null)
+  const [selectedUserIdOverdue, setSelectedUserIdOverdue] = useState<string | null>(null)
+  const [isSendingMonthly, setIsSendingMonthly] = useState(false)
+  const [isSendingAlerts, setIsSendingAlerts] = useState(false)
+  const [isSendingOverdue, setIsSendingOverdue] = useState(false)
   const [previewData, setPreviewData] = useState<{
     transactions: Array<{
       id: string
@@ -68,6 +88,9 @@ function JobsPage() {
 
   const { data: jobs, isLoading, error, refetch } = useGetJobs()
   const { data: stats } = useGetJobsStats()
+  const { data: usersData } = useQuery(getListUsersByOrgQueryOptions(slug))
+  const sendMonthlySummary = usePostOrgSlugJobsSendMonthlySummary()
+  const runJob = usePostJobsJobKeyRun()
   const runJobMutation = usePostJobsJobKeyRun()
   const startJobMutation = usePostJobsJobKeyStart()
   const stopJobMutation = usePostJobsJobKeyStop()
@@ -78,7 +101,10 @@ function JobsPage() {
     setRunningJobs(prev => new Set(prev).add(jobKey))
 
     try {
-      const result = await runJobMutation.mutateAsync({ jobKey })
+      const result = await runJobMutation.mutateAsync({
+        jobKey,
+        data: selectedUserId ? { userId: selectedUserId } : {},
+      })
 
       if (result.result?.success) {
         toast.success(`Job executado com sucesso! Processados: ${result.result.processed}`)
@@ -101,6 +127,46 @@ function JobsPage() {
 
   const handleStopAllJobs = () => {
     setShowStopAllModal(true)
+  }
+
+  const handleSendAlertsForUser = async () => {
+    if (!selectedUserIdAlerts) return
+    try {
+      setIsSendingAlerts(true)
+      const result = await runJobMutation.mutateAsync({
+        jobKey: 'transactions:alerts',
+        data: { userId: selectedUserIdAlerts },
+      })
+      if (result?.result?.success) {
+        toast.success('Alertas enviados com sucesso')
+      } else {
+        toast.error('Erro ao enviar alertas')
+      }
+    } catch {
+      toast.error('Erro ao enviar alertas')
+    } finally {
+      setIsSendingAlerts(false)
+    }
+  }
+
+  const handleSendOverdueForUser = async () => {
+    if (!selectedUserIdOverdue) return
+    try {
+      setIsSendingOverdue(true)
+      const result = await runJobMutation.mutateAsync({
+        jobKey: 'transactions:overdue-alerts',
+        data: { userId: selectedUserIdOverdue },
+      })
+      if (result?.result?.success) {
+        toast.success('Vencidas enviadas com sucesso')
+      } else {
+        toast.error('Erro ao enviar vencidas')
+      }
+    } catch {
+      toast.error('Erro ao enviar vencidas')
+    } finally {
+      setIsSendingOverdue(false)
+    }
   }
 
   const handleStartJob = async (jobKey: string) => {
@@ -164,6 +230,19 @@ function JobsPage() {
     }
   }
 
+  const handleSendMonthlySummary = async () => {
+    if (!slug || !selectedUserId) return
+    try {
+      setIsSendingMonthly(true)
+      await sendMonthlySummary.mutateAsync({ slug, data: { userId: selectedUserId } })
+      toast.success('Resumo mensal enviado via WhatsApp')
+    } catch {
+      toast.error('Erro ao enviar resumo mensal')
+    } finally {
+      setIsSendingMonthly(false)
+    }
+  }
+
   const handlePreviewAlerts = async () => {
     setLoadingPreview(true)
     try {
@@ -189,9 +268,14 @@ function JobsPage() {
             threeToFourDays: number
           }
         }
-      }>('/jobs/transactions:alerts/preview', {
-        method: 'GET',
-      })
+      }>(
+        selectedUserIdAlerts
+          ? `/jobs/transactions:alerts/preview?userId=${encodeURIComponent(selectedUserIdAlerts)}`
+          : '/jobs/transactions:alerts/preview',
+        {
+          method: 'GET',
+        }
+      )
       setPreviewData(data.preview)
       setShowPreviewModal(true)
     } catch (error) {
@@ -223,9 +307,14 @@ function JobsPage() {
             overdue: number
           }
         }
-      }>('/jobs/overdue-alerts/preview', {
-        method: 'GET',
-      })
+      }>(
+        selectedUserIdOverdue
+          ? `/jobs/overdue-alerts/preview?userId=${encodeURIComponent(selectedUserIdOverdue)}`
+          : '/jobs/overdue-alerts/preview',
+        {
+          method: 'GET',
+        }
+      )
       setPreviewData({
         transactions: data.preview.transactions.map(t => ({
           id: t.id,
@@ -354,6 +443,33 @@ function JobsPage() {
               <p>• Lembretes para vencimentos em 2-4 dias</p>
               <p>• Mensagens personalizadas com nome do destinatário</p>
             </div>
+            <div className="pl-6">
+              <div className="flex flex-col gap-2 sm:flex-row sm:items-center">
+                <Select
+                  value={selectedUserIdAlerts ?? ''}
+                  onValueChange={v => setSelectedUserIdAlerts(v)}
+                >
+                  <SelectTrigger className="sm:w-72">
+                    <SelectValue placeholder="Selecione um usuário" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {(usersData?.users ?? []).map((u: ListUsersByOrg200UsersItem) => (
+                      <SelectItem key={u.id} value={u.id}>
+                        {u.name} {u.phone ? `(${u.phone})` : ''}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+                <Button
+                  size="sm"
+                  variant="outline"
+                  onClick={handleSendAlertsForUser}
+                  disabled={!selectedUserIdAlerts || isSendingAlerts}
+                >
+                  {isSendingAlerts ? 'Enviando...' : 'Enviar para usuário'}
+                </Button>
+              </div>
+            </div>
           </div>
         )
 
@@ -390,6 +506,33 @@ function JobsPage() {
               <p>• Executa todo dia 1º do mês às 10:00</p>
               <p>• Foco em transações que já passaram do vencimento</p>
               <p>• Lembretes urgentes para pagamentos em atraso</p>
+            </div>
+            <div className="pl-6">
+              <div className="flex flex-col gap-2 sm:flex-row sm:items-center">
+                <Select
+                  value={selectedUserIdOverdue ?? ''}
+                  onValueChange={v => setSelectedUserIdOverdue(v)}
+                >
+                  <SelectTrigger className="sm:w-72">
+                    <SelectValue placeholder="Selecione um usuário" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {(usersData?.users ?? []).map((u: ListUsersByOrg200UsersItem) => (
+                      <SelectItem key={u.id} value={u.id}>
+                        {u.name} {u.phone ? `(${u.phone})` : ''}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+                <Button
+                  size="sm"
+                  variant="outline"
+                  onClick={handleSendOverdueForUser}
+                  disabled={!selectedUserIdOverdue || isSendingOverdue}
+                >
+                  {isSendingOverdue ? 'Enviando...' : 'Enviar para usuário'}
+                </Button>
+              </div>
             </div>
           </div>
         )
@@ -546,6 +689,72 @@ function JobsPage() {
               </div>
             )}
 
+            {/* Ação manual: Enviar resumo mensal por WhatsApp */}
+            <div className="px-4 lg:px-6">
+              <Card>
+                <CardHeader>
+                  <CardTitle>Enviar resumo mensal</CardTitle>
+                  <CardDescription>
+                    Envie um resumo do mês para um usuário específico via WhatsApp
+                  </CardDescription>
+                </CardHeader>
+                <CardContent>
+                  <div className="grid gap-2">
+                    <Label>Usuário</Label>
+                    <div className="flex flex-col gap-2 sm:flex-row sm:items-center">
+                      <Select
+                        value={selectedUserId ?? ''}
+                        onValueChange={v => setSelectedUserId(v)}
+                      >
+                        <SelectTrigger className="sm:w-72">
+                          <SelectValue placeholder="Selecione um usuário" />
+                        </SelectTrigger>
+                        <SelectContent>
+                          {(usersData?.users ?? []).map((u: ListUsersByOrg200UsersItem) => (
+                            <SelectItem key={u.id} value={u.id}>
+                              {u.name} {u.phone ? `(${u.phone})` : ''}
+                            </SelectItem>
+                          ))}
+                        </SelectContent>
+                      </Select>
+                      <Button
+                        onClick={handleSendMonthlySummary}
+                        disabled={!selectedUserId || isSendingMonthly}
+                      >
+                        {isSendingMonthly ? 'Enviando...' : 'Enviar resumo'}
+                      </Button>
+                      <Button
+                        variant="outline"
+                        onClick={() =>
+                          selectedUserId &&
+                          runJob.mutate({
+                            jobKey: 'transactions:alerts',
+                            data: { userId: selectedUserId },
+                          })
+                        }
+                        disabled={!selectedUserId}
+                      >
+                        Enviar alertas
+                      </Button>
+                      <Button
+                        variant="outline"
+                        onClick={() =>
+                          selectedUserId &&
+                          runJob.mutate({
+                            jobKey: 'transactions:overdue-alerts',
+                            data: { userId: selectedUserId },
+                          })
+                        }
+                        disabled={!selectedUserId}
+                      >
+                        Enviar vencidas
+                      </Button>
+                    </div>
+                  </div>
+                </CardContent>
+              </Card>
+            </div>
+
             {/* Lista de Jobs */}
             <div className="px-4 lg:px-6">
               <div className="grid gap-4">
@@ -650,6 +859,8 @@ function JobsPage() {
                       {/* Informações específicas do job */}
                       <Separator className="my-4" />
                       <div className="space-y-3">{getJobSpecificInfo(job.key)}</div>
+
+                      {/* Removido: UI de enviar resumo por job */}
                     </CardContent>
                   </Card>
                 ))}

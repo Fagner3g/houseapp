@@ -41,8 +41,10 @@ import type {
   GetJobsJobKey200,
   GetJobsJobKey404,
   GetJobsOverdueAlertsPreview200,
+  GetJobsOverdueAlertsPreviewParams,
   GetJobsStats200,
   GetJobsTransactionsalertsPreview200,
+  GetJobsTransactionsalertsPreviewParams,
   GetOrgSlugReportsTransactions200,
   GetOrgSlugReportsTransactions401,
   GetOrgSlugReportsTransactions403,
@@ -61,15 +63,22 @@ import type {
   ListUsersByOrg200,
   PatchOrgSlugUsers200,
   PatchOrgSlugUsersBody,
+  PatchOrgSlugUsersNotifications200,
+  PatchOrgSlugUsersNotifications404,
+  PatchOrgSlugUsersNotificationsBody,
   PayTransactionBody,
   PostJobsJobKeyRun200,
   PostJobsJobKeyRun404,
+  PostJobsJobKeyRunBody,
   PostJobsJobKeyStart200,
   PostJobsJobKeyStart404,
   PostJobsJobKeyStop200,
   PostJobsJobKeyStop404,
   PostJobsStartAll200,
   PostJobsStopAll200,
+  PostOrgSlugJobsSendMonthlySummary200,
+  PostOrgSlugJobsSendMonthlySummary400,
+  PostOrgSlugJobsSendMonthlySummaryBody,
   RenameOrg200,
   RenameOrgBody,
   SignIn200,
@@ -359,11 +368,14 @@ export const getPostJobsJobKeyRunUrl = (jobKey: string) => {
 
 export const postJobsJobKeyRun = async (
   jobKey: string,
+  postJobsJobKeyRunBody: PostJobsJobKeyRunBody,
   options?: RequestInit,
 ): Promise<PostJobsJobKeyRun200> => {
   return http<PostJobsJobKeyRun200>(getPostJobsJobKeyRunUrl(jobKey), {
     ...options,
     method: "POST",
+    headers: { "Content-Type": "application/json", ...options?.headers },
+    body: JSON.stringify(postJobsJobKeyRunBody),
   });
 };
 
@@ -374,14 +386,14 @@ export const getPostJobsJobKeyRunMutationOptions = <
   mutation?: UseMutationOptions<
     Awaited<ReturnType<typeof postJobsJobKeyRun>>,
     TError,
-    { jobKey: string },
+    { jobKey: string; data: PostJobsJobKeyRunBody },
     TContext
   >;
   request?: SecondParameter<typeof http>;
 }): UseMutationOptions<
   Awaited<ReturnType<typeof postJobsJobKeyRun>>,
   TError,
-  { jobKey: string },
+  { jobKey: string; data: PostJobsJobKeyRunBody },
   TContext
 > => {
   const mutationKey = ["postJobsJobKeyRun"];
@@ -395,11 +407,11 @@ export const getPostJobsJobKeyRunMutationOptions = <
 
   const mutationFn: MutationFunction<
     Awaited<ReturnType<typeof postJobsJobKeyRun>>,
-    { jobKey: string }
+    { jobKey: string; data: PostJobsJobKeyRunBody }
   > = (props) => {
-    const { jobKey } = props ?? {};
+    const { jobKey, data } = props ?? {};
 
-    return postJobsJobKeyRun(jobKey, requestOptions);
+    return postJobsJobKeyRun(jobKey, data, requestOptions);
   };
 
   return { mutationFn, ...mutationOptions };
@@ -408,7 +420,7 @@ export const getPostJobsJobKeyRunMutationOptions = <
 export type PostJobsJobKeyRunMutationResult = NonNullable<
   Awaited<ReturnType<typeof postJobsJobKeyRun>>
 >;
-
+export type PostJobsJobKeyRunMutationBody = PostJobsJobKeyRunBody;
 export type PostJobsJobKeyRunMutationError = PostJobsJobKeyRun404;
 
 /**
@@ -422,7 +434,7 @@ export const usePostJobsJobKeyRun = <
     mutation?: UseMutationOptions<
       Awaited<ReturnType<typeof postJobsJobKeyRun>>,
       TError,
-      { jobKey: string },
+      { jobKey: string; data: PostJobsJobKeyRunBody },
       TContext
     >;
     request?: SecondParameter<typeof http>;
@@ -431,7 +443,7 @@ export const usePostJobsJobKeyRun = <
 ): UseMutationResult<
   Awaited<ReturnType<typeof postJobsJobKeyRun>>,
   TError,
-  { jobKey: string },
+  { jobKey: string; data: PostJobsJobKeyRunBody },
   TContext
 > => {
   const mutationOptions = getPostJobsJobKeyRunMutationOptions(options);
@@ -1073,16 +1085,32 @@ export const usePostJobsStartAll = <TError = unknown, TContext = unknown>(
 /**
  * @summary Preview das transações que seriam processadas pelo job de alertas
  */
-export const getGetJobsTransactionsalertsPreviewUrl = (alerts: string) => {
-  return `/jobs/transactions${alerts}/preview`;
+export const getGetJobsTransactionsalertsPreviewUrl = (
+  alerts: string,
+  params?: GetJobsTransactionsalertsPreviewParams,
+) => {
+  const normalizedParams = new URLSearchParams();
+
+  Object.entries(params || {}).forEach(([key, value]) => {
+    if (value !== undefined) {
+      normalizedParams.append(key, value === null ? "null" : value.toString());
+    }
+  });
+
+  const stringifiedParams = normalizedParams.toString();
+
+  return stringifiedParams.length > 0
+    ? `/jobs/transactions${alerts}/preview?${stringifiedParams}`
+    : `/jobs/transactions${alerts}/preview`;
 };
 
 export const getJobsTransactionsalertsPreview = async (
   alerts: string,
+  params?: GetJobsTransactionsalertsPreviewParams,
   options?: RequestInit,
 ): Promise<GetJobsTransactionsalertsPreview200> => {
   return http<GetJobsTransactionsalertsPreview200>(
-    getGetJobsTransactionsalertsPreviewUrl(alerts),
+    getGetJobsTransactionsalertsPreviewUrl(alerts, params),
     {
       ...options,
       method: "GET",
@@ -1092,8 +1120,12 @@ export const getJobsTransactionsalertsPreview = async (
 
 export const getGetJobsTransactionsalertsPreviewQueryKey = (
   alerts?: string,
+  params?: GetJobsTransactionsalertsPreviewParams,
 ) => {
-  return [`/jobs/transactions${alerts}/preview`] as const;
+  return [
+    `/jobs/transactions${alerts}/preview`,
+    ...(params ? [params] : []),
+  ] as const;
 };
 
 export const getGetJobsTransactionsalertsPreviewQueryOptions = <
@@ -1101,6 +1133,7 @@ export const getGetJobsTransactionsalertsPreviewQueryOptions = <
   TError = unknown,
 >(
   alerts: string,
+  params?: GetJobsTransactionsalertsPreviewParams,
   options?: {
     query?: Partial<
       UseQueryOptions<
@@ -1116,12 +1149,15 @@ export const getGetJobsTransactionsalertsPreviewQueryOptions = <
 
   const queryKey =
     queryOptions?.queryKey ??
-    getGetJobsTransactionsalertsPreviewQueryKey(alerts);
+    getGetJobsTransactionsalertsPreviewQueryKey(alerts, params);
 
   const queryFn: QueryFunction<
     Awaited<ReturnType<typeof getJobsTransactionsalertsPreview>>
   > = ({ signal }) =>
-    getJobsTransactionsalertsPreview(alerts, { signal, ...requestOptions });
+    getJobsTransactionsalertsPreview(alerts, params, {
+      signal,
+      ...requestOptions,
+    });
 
   return {
     queryKey,
@@ -1145,6 +1181,7 @@ export function useGetJobsTransactionsalertsPreview<
   TError = unknown,
 >(
   alerts: string,
+  params: undefined | GetJobsTransactionsalertsPreviewParams,
   options: {
     query: Partial<
       UseQueryOptions<
@@ -1172,6 +1209,7 @@ export function useGetJobsTransactionsalertsPreview<
   TError = unknown,
 >(
   alerts: string,
+  params?: GetJobsTransactionsalertsPreviewParams,
   options?: {
     query?: Partial<
       UseQueryOptions<
@@ -1199,6 +1237,7 @@ export function useGetJobsTransactionsalertsPreview<
   TError = unknown,
 >(
   alerts: string,
+  params?: GetJobsTransactionsalertsPreviewParams,
   options?: {
     query?: Partial<
       UseQueryOptions<
@@ -1222,6 +1261,7 @@ export function useGetJobsTransactionsalertsPreview<
   TError = unknown,
 >(
   alerts: string,
+  params?: GetJobsTransactionsalertsPreviewParams,
   options?: {
     query?: Partial<
       UseQueryOptions<
@@ -1238,6 +1278,7 @@ export function useGetJobsTransactionsalertsPreview<
 } {
   const queryOptions = getGetJobsTransactionsalertsPreviewQueryOptions(
     alerts,
+    params,
     options,
   );
 
@@ -1254,15 +1295,30 @@ export function useGetJobsTransactionsalertsPreview<
 /**
  * @summary Preview das transações vencidas que seriam processadas pelo job de alertas vencidas
  */
-export const getGetJobsOverdueAlertsPreviewUrl = () => {
-  return `/jobs/overdue-alerts/preview`;
+export const getGetJobsOverdueAlertsPreviewUrl = (
+  params?: GetJobsOverdueAlertsPreviewParams,
+) => {
+  const normalizedParams = new URLSearchParams();
+
+  Object.entries(params || {}).forEach(([key, value]) => {
+    if (value !== undefined) {
+      normalizedParams.append(key, value === null ? "null" : value.toString());
+    }
+  });
+
+  const stringifiedParams = normalizedParams.toString();
+
+  return stringifiedParams.length > 0
+    ? `/jobs/overdue-alerts/preview?${stringifiedParams}`
+    : `/jobs/overdue-alerts/preview`;
 };
 
 export const getJobsOverdueAlertsPreview = async (
+  params?: GetJobsOverdueAlertsPreviewParams,
   options?: RequestInit,
 ): Promise<GetJobsOverdueAlertsPreview200> => {
   return http<GetJobsOverdueAlertsPreview200>(
-    getGetJobsOverdueAlertsPreviewUrl(),
+    getGetJobsOverdueAlertsPreviewUrl(params),
     {
       ...options,
       method: "GET",
@@ -1270,32 +1326,37 @@ export const getJobsOverdueAlertsPreview = async (
   );
 };
 
-export const getGetJobsOverdueAlertsPreviewQueryKey = () => {
-  return [`/jobs/overdue-alerts/preview`] as const;
+export const getGetJobsOverdueAlertsPreviewQueryKey = (
+  params?: GetJobsOverdueAlertsPreviewParams,
+) => {
+  return [`/jobs/overdue-alerts/preview`, ...(params ? [params] : [])] as const;
 };
 
 export const getGetJobsOverdueAlertsPreviewQueryOptions = <
   TData = Awaited<ReturnType<typeof getJobsOverdueAlertsPreview>>,
   TError = unknown,
->(options?: {
-  query?: Partial<
-    UseQueryOptions<
-      Awaited<ReturnType<typeof getJobsOverdueAlertsPreview>>,
-      TError,
-      TData
-    >
-  >;
-  request?: SecondParameter<typeof http>;
-}) => {
+>(
+  params?: GetJobsOverdueAlertsPreviewParams,
+  options?: {
+    query?: Partial<
+      UseQueryOptions<
+        Awaited<ReturnType<typeof getJobsOverdueAlertsPreview>>,
+        TError,
+        TData
+      >
+    >;
+    request?: SecondParameter<typeof http>;
+  },
+) => {
   const { query: queryOptions, request: requestOptions } = options ?? {};
 
   const queryKey =
-    queryOptions?.queryKey ?? getGetJobsOverdueAlertsPreviewQueryKey();
+    queryOptions?.queryKey ?? getGetJobsOverdueAlertsPreviewQueryKey(params);
 
   const queryFn: QueryFunction<
     Awaited<ReturnType<typeof getJobsOverdueAlertsPreview>>
   > = ({ signal }) =>
-    getJobsOverdueAlertsPreview({ signal, ...requestOptions });
+    getJobsOverdueAlertsPreview(params, { signal, ...requestOptions });
 
   return { queryKey, queryFn, ...queryOptions } as UseQueryOptions<
     Awaited<ReturnType<typeof getJobsOverdueAlertsPreview>>,
@@ -1313,6 +1374,7 @@ export function useGetJobsOverdueAlertsPreview<
   TData = Awaited<ReturnType<typeof getJobsOverdueAlertsPreview>>,
   TError = unknown,
 >(
+  params: undefined | GetJobsOverdueAlertsPreviewParams,
   options: {
     query: Partial<
       UseQueryOptions<
@@ -1339,6 +1401,7 @@ export function useGetJobsOverdueAlertsPreview<
   TData = Awaited<ReturnType<typeof getJobsOverdueAlertsPreview>>,
   TError = unknown,
 >(
+  params?: GetJobsOverdueAlertsPreviewParams,
   options?: {
     query?: Partial<
       UseQueryOptions<
@@ -1365,6 +1428,7 @@ export function useGetJobsOverdueAlertsPreview<
   TData = Awaited<ReturnType<typeof getJobsOverdueAlertsPreview>>,
   TError = unknown,
 >(
+  params?: GetJobsOverdueAlertsPreviewParams,
   options?: {
     query?: Partial<
       UseQueryOptions<
@@ -1387,6 +1451,7 @@ export function useGetJobsOverdueAlertsPreview<
   TData = Awaited<ReturnType<typeof getJobsOverdueAlertsPreview>>,
   TError = unknown,
 >(
+  params?: GetJobsOverdueAlertsPreviewParams,
   options?: {
     query?: Partial<
       UseQueryOptions<
@@ -1401,7 +1466,10 @@ export function useGetJobsOverdueAlertsPreview<
 ): UseQueryResult<TData, TError> & {
   queryKey: DataTag<QueryKey, TData, TError>;
 } {
-  const queryOptions = getGetJobsOverdueAlertsPreviewQueryOptions(options);
+  const queryOptions = getGetJobsOverdueAlertsPreviewQueryOptions(
+    params,
+    options,
+  );
 
   const query = useQuery(queryOptions, queryClient) as UseQueryResult<
     TData,
@@ -1592,6 +1660,104 @@ export function useGetOrgSlugReportsTransactions<
 
   return query;
 }
+
+/**
+ * @summary Envia resumo mensal via WhatsApp para um usuário da organização
+ */
+export const getPostOrgSlugJobsSendMonthlySummaryUrl = (slug: string) => {
+  return `/org/${slug}/jobs/send-monthly-summary`;
+};
+
+export const postOrgSlugJobsSendMonthlySummary = async (
+  slug: string,
+  postOrgSlugJobsSendMonthlySummaryBody: PostOrgSlugJobsSendMonthlySummaryBody,
+  options?: RequestInit,
+): Promise<PostOrgSlugJobsSendMonthlySummary200> => {
+  return http<PostOrgSlugJobsSendMonthlySummary200>(
+    getPostOrgSlugJobsSendMonthlySummaryUrl(slug),
+    {
+      ...options,
+      method: "POST",
+      headers: { "Content-Type": "application/json", ...options?.headers },
+      body: JSON.stringify(postOrgSlugJobsSendMonthlySummaryBody),
+    },
+  );
+};
+
+export const getPostOrgSlugJobsSendMonthlySummaryMutationOptions = <
+  TError = PostOrgSlugJobsSendMonthlySummary400,
+  TContext = unknown,
+>(options?: {
+  mutation?: UseMutationOptions<
+    Awaited<ReturnType<typeof postOrgSlugJobsSendMonthlySummary>>,
+    TError,
+    { slug: string; data: PostOrgSlugJobsSendMonthlySummaryBody },
+    TContext
+  >;
+  request?: SecondParameter<typeof http>;
+}): UseMutationOptions<
+  Awaited<ReturnType<typeof postOrgSlugJobsSendMonthlySummary>>,
+  TError,
+  { slug: string; data: PostOrgSlugJobsSendMonthlySummaryBody },
+  TContext
+> => {
+  const mutationKey = ["postOrgSlugJobsSendMonthlySummary"];
+  const { mutation: mutationOptions, request: requestOptions } = options
+    ? options.mutation &&
+      "mutationKey" in options.mutation &&
+      options.mutation.mutationKey
+      ? options
+      : { ...options, mutation: { ...options.mutation, mutationKey } }
+    : { mutation: { mutationKey }, request: undefined };
+
+  const mutationFn: MutationFunction<
+    Awaited<ReturnType<typeof postOrgSlugJobsSendMonthlySummary>>,
+    { slug: string; data: PostOrgSlugJobsSendMonthlySummaryBody }
+  > = (props) => {
+    const { slug, data } = props ?? {};
+
+    return postOrgSlugJobsSendMonthlySummary(slug, data, requestOptions);
+  };
+
+  return { mutationFn, ...mutationOptions };
+};
+
+export type PostOrgSlugJobsSendMonthlySummaryMutationResult = NonNullable<
+  Awaited<ReturnType<typeof postOrgSlugJobsSendMonthlySummary>>
+>;
+export type PostOrgSlugJobsSendMonthlySummaryMutationBody =
+  PostOrgSlugJobsSendMonthlySummaryBody;
+export type PostOrgSlugJobsSendMonthlySummaryMutationError =
+  PostOrgSlugJobsSendMonthlySummary400;
+
+/**
+ * @summary Envia resumo mensal via WhatsApp para um usuário da organização
+ */
+export const usePostOrgSlugJobsSendMonthlySummary = <
+  TError = PostOrgSlugJobsSendMonthlySummary400,
+  TContext = unknown,
+>(
+  options?: {
+    mutation?: UseMutationOptions<
+      Awaited<ReturnType<typeof postOrgSlugJobsSendMonthlySummary>>,
+      TError,
+      { slug: string; data: PostOrgSlugJobsSendMonthlySummaryBody },
+      TContext
+    >;
+    request?: SecondParameter<typeof http>;
+  },
+  queryClient?: QueryClient,
+): UseMutationResult<
+  Awaited<ReturnType<typeof postOrgSlugJobsSendMonthlySummary>>,
+  TError,
+  { slug: string; data: PostOrgSlugJobsSendMonthlySummaryBody },
+  TContext
+> => {
+  const mutationOptions =
+    getPostOrgSlugJobsSendMonthlySummaryMutationOptions(options);
+
+  return useMutation(mutationOptions, queryClient);
+};
 
 /**
  * Sigin In (email or whatsapp)
@@ -2381,6 +2547,104 @@ export function useListUsersByOrg<
 
   return query;
 }
+
+/**
+ * @summary Update user notification preferences
+ */
+export const getPatchOrgSlugUsersNotificationsUrl = (slug: string) => {
+  return `/org/${slug}/users/notifications`;
+};
+
+export const patchOrgSlugUsersNotifications = async (
+  slug: string,
+  patchOrgSlugUsersNotificationsBody: PatchOrgSlugUsersNotificationsBody,
+  options?: RequestInit,
+): Promise<PatchOrgSlugUsersNotifications200> => {
+  return http<PatchOrgSlugUsersNotifications200>(
+    getPatchOrgSlugUsersNotificationsUrl(slug),
+    {
+      ...options,
+      method: "PATCH",
+      headers: { "Content-Type": "application/json", ...options?.headers },
+      body: JSON.stringify(patchOrgSlugUsersNotificationsBody),
+    },
+  );
+};
+
+export const getPatchOrgSlugUsersNotificationsMutationOptions = <
+  TError = PatchOrgSlugUsersNotifications404,
+  TContext = unknown,
+>(options?: {
+  mutation?: UseMutationOptions<
+    Awaited<ReturnType<typeof patchOrgSlugUsersNotifications>>,
+    TError,
+    { slug: string; data: PatchOrgSlugUsersNotificationsBody },
+    TContext
+  >;
+  request?: SecondParameter<typeof http>;
+}): UseMutationOptions<
+  Awaited<ReturnType<typeof patchOrgSlugUsersNotifications>>,
+  TError,
+  { slug: string; data: PatchOrgSlugUsersNotificationsBody },
+  TContext
+> => {
+  const mutationKey = ["patchOrgSlugUsersNotifications"];
+  const { mutation: mutationOptions, request: requestOptions } = options
+    ? options.mutation &&
+      "mutationKey" in options.mutation &&
+      options.mutation.mutationKey
+      ? options
+      : { ...options, mutation: { ...options.mutation, mutationKey } }
+    : { mutation: { mutationKey }, request: undefined };
+
+  const mutationFn: MutationFunction<
+    Awaited<ReturnType<typeof patchOrgSlugUsersNotifications>>,
+    { slug: string; data: PatchOrgSlugUsersNotificationsBody }
+  > = (props) => {
+    const { slug, data } = props ?? {};
+
+    return patchOrgSlugUsersNotifications(slug, data, requestOptions);
+  };
+
+  return { mutationFn, ...mutationOptions };
+};
+
+export type PatchOrgSlugUsersNotificationsMutationResult = NonNullable<
+  Awaited<ReturnType<typeof patchOrgSlugUsersNotifications>>
+>;
+export type PatchOrgSlugUsersNotificationsMutationBody =
+  PatchOrgSlugUsersNotificationsBody;
+export type PatchOrgSlugUsersNotificationsMutationError =
+  PatchOrgSlugUsersNotifications404;
+
+/**
+ * @summary Update user notification preferences
+ */
+export const usePatchOrgSlugUsersNotifications = <
+  TError = PatchOrgSlugUsersNotifications404,
+  TContext = unknown,
+>(
+  options?: {
+    mutation?: UseMutationOptions<
+      Awaited<ReturnType<typeof patchOrgSlugUsersNotifications>>,
+      TError,
+      { slug: string; data: PatchOrgSlugUsersNotificationsBody },
+      TContext
+    >;
+    request?: SecondParameter<typeof http>;
+  },
+  queryClient?: QueryClient,
+): UseMutationResult<
+  Awaited<ReturnType<typeof patchOrgSlugUsersNotifications>>,
+  TError,
+  { slug: string; data: PatchOrgSlugUsersNotificationsBody },
+  TContext
+> => {
+  const mutationOptions =
+    getPatchOrgSlugUsersNotificationsMutationOptions(options);
+
+  return useMutation(mutationOptions, queryClient);
+};
 
 /**
  * Create a new organization

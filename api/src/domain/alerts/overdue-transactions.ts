@@ -3,6 +3,7 @@ import { and, eq, lt, or, sql } from 'drizzle-orm'
 import { db } from '@/db'
 import { transactionOccurrences } from '@/db/schemas/transactionOccurrences'
 import { transactionSeries } from '@/db/schemas/transactionSeries'
+import { userOrganizations } from '@/db/schemas/userOrganization'
 
 export interface OverdueAlertTransaction {
   id: string
@@ -17,6 +18,7 @@ export interface OverdueAlertTransaction {
   payToId: string | null
   payToName: string | null
   payToPhone: string | null
+  notificationsEnabled: boolean
 }
 
 /**
@@ -43,16 +45,28 @@ export async function fetchOverdueTransactionsForAlerts(
       payToId: transactionSeries.payToId,
       payToName: sql<string>`pay_to.name`,
       payToPhone: sql<string>`pay_to.phone`,
+      notificationsEnabled: userOrganizations.notificationsEnabled,
     })
     .from(transactionOccurrences)
     .innerJoin(transactionSeries, eq(transactionOccurrences.seriesId, transactionSeries.id))
     .leftJoin(sql`users as pay_to`, eq(transactionSeries.payToId, sql`pay_to.id`))
     .innerJoin(sql`organizations as org`, eq(transactionSeries.organizationId, sql`org.id`))
+    .innerJoin(
+      userOrganizations,
+      and(
+        eq(userOrganizations.organizationId, sql`org.id`),
+        or(
+          eq(userOrganizations.userId, transactionSeries.ownerId),
+          eq(userOrganizations.userId, transactionSeries.payToId)
+        )
+      )
+    )
     .where(
       and(
         eq(sql`org.slug`, orgSlug),
         eq(transactionOccurrences.status, 'pending'),
         lt(transactionOccurrences.dueDate, today),
+        eq(userOrganizations.notificationsEnabled, true), // Só usuários com notificações habilitadas
         userId
           ? or(eq(transactionSeries.ownerId, userId), eq(transactionSeries.payToId, userId))
           : sql`true`,
@@ -73,5 +87,6 @@ export async function fetchOverdueTransactionsForAlerts(
     payToId: r.payToId ?? null,
     payToName: r.payToName ?? null,
     payToPhone: r.payToPhone ?? null,
+    notificationsEnabled: r.notificationsEnabled,
   }))
 }

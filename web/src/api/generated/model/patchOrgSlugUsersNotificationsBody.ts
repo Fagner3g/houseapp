@@ -6,12 +6,7 @@
  * OpenAPI spec version: 1.0.1
  */
 
-export type ListUsersByOrg200UsersItem = {
-  id: string;
-  name: string;
-  email: string;
-  phone: string;
-  avatarUrl: string;
+export type PatchOrgSlugUsersNotificationsBody = {
+  userId: string;
   notificationsEnabled: boolean;
-  isOwner: boolean;
 };

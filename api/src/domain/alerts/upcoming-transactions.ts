@@ -3,6 +3,7 @@ import { and, eq, gte, inArray, lte, or, sql } from 'drizzle-orm'
 import { db } from '@/db'
 import { transactionOccurrences } from '@/db/schemas/transactionOccurrences'
 import { transactionSeries } from '@/db/schemas/transactionSeries'
+import { userOrganizations } from '@/db/schemas/userOrganization'
 
 export type AlertTransaction = {
   id: string
@@ -20,6 +21,7 @@ export type AlertTransaction = {
   payToId: string | null
   payToName: string | null
   payToPhone: string | null
+  notificationsEnabled: boolean
 }
 
 /**
@@ -52,12 +54,23 @@ export async function fetchUpcomingTransactionsForAlerts(
       payToId: transactionSeries.payToId,
       payToName: sql<string>`pay_to.name`,
       payToPhone: sql<string>`pay_to.phone`,
+      notificationsEnabled: userOrganizations.notificationsEnabled,
     })
     .from(transactionOccurrences)
     .innerJoin(transactionSeries, eq(transactionOccurrences.seriesId, transactionSeries.id))
     .innerJoin(sql`users as owner`, eq(transactionSeries.ownerId, sql`owner.id`))
     .leftJoin(sql`users as pay_to`, eq(transactionSeries.payToId, sql`pay_to.id`))
     .innerJoin(sql`organizations as org`, eq(transactionSeries.organizationId, sql`org.id`))
+    .innerJoin(
+      userOrganizations,
+      and(
+        eq(userOrganizations.organizationId, sql`org.id`),
+        or(
+          eq(userOrganizations.userId, transactionSeries.ownerId),
+          eq(userOrganizations.userId, transactionSeries.payToId)
+        )
+      )
+    )
     .where(
       and(
         Array.isArray(orgIds)
@@ -68,6 +81,7 @@ export async function fetchUpcomingTransactionsForAlerts(
         eq(transactionOccurrences.status, 'pending'),
         gte(transactionOccurrences.dueDate, today),
         lte(transactionOccurrences.dueDate, fourDaysFromNow),
+        eq(userOrganizations.notificationsEnabled, true), // Só usuários com notificações habilitadas
         userId
           ? or(eq(transactionSeries.ownerId, userId), eq(transactionSeries.payToId, userId))
           : sql`true`
@@ -90,5 +104,6 @@ export async function fetchUpcomingTransactionsForAlerts(
     payToId: r.payToId ?? null,
     payToName: r.payToName ?? null,
     payToPhone: r.payToPhone ?? null,
+    notificationsEnabled: r.notificationsEnabled,
   }))
 }

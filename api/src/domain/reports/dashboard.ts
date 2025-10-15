@@ -1,8 +1,10 @@
-import { and, eq, gte, lte, or, sql } from 'drizzle-orm'
+import { and, eq, gte, inArray, lte, or, sql } from 'drizzle-orm'
 
 import { db } from '@/db'
+import { tags as tagsTable } from '@/db/schemas/tags'
 import { transactionOccurrences } from '@/db/schemas/transactionOccurrences'
 import { transactionSeries } from '@/db/schemas/transactionSeries'
+import { transactionTags } from '@/db/schemas/transactionTags'
 import { getContextualizedTransactionType } from '@/domain/transactions/get-contextualized-type'
 
 export async function getTransactionReports(orgId: string, userId: string) {
@@ -156,7 +158,59 @@ export async function getTransactionReports(orgId: string, userId: string) {
     .map(([date, v]) => ({ date, ...v }))
 
   const monthlyTrend = [] as Array<{ month: string; total: number; paid: number; pending: number }>
-  const categoryBreakdown = [] as Array<{ category: string; count: number; totalAmount: number }>
+
+  // Tags breakdown for current month
+  const categoryBreakdown = [] as Array<{
+    category: string
+    count: number
+    totalAmount: number
+    color?: string
+  }>
+  if (rows.length > 0) {
+    const seriesIds = Array.from(new Set(rows.map(r => r.seriesId)))
+    const tagsRows = await db
+      .select({
+        seriesId: transactionTags.transactionId,
+        tagName: tagsTable.name,
+        tagColor: tagsTable.color,
+      })
+      .from(transactionTags)
+      .innerJoin(tagsTable, eq(transactionTags.tagId, tagsTable.id))
+      .where(inArray(transactionTags.transactionId, seriesIds as string[]))
+
+    const tagTotals = new Map<string, { count: number; total: number; color?: string }>()
+
+    // Map seriesId -> tag names
+    const seriesIdToTags = new Map<string, { name: string; color?: string }[]>()
+    for (const tr of tagsRows) {
+      const list = seriesIdToTags.get(tr.seriesId) ?? []
+      list.push({ name: tr.tagName, color: tr.tagColor })
+      seriesIdToTags.set(tr.seriesId, list)
+    }
+
+    for (const r of rows) {
+      const amountNum = Number(r.amount) / 100
+      const tagItems = seriesIdToTags.get(r.seriesId) ?? []
+      for (const { name, color } of tagItems) {
+        const agg = tagTotals.get(name) ?? { count: 0, total: 0, color }
+        if (agg.color === undefined && color) agg.color = color
+        agg.count += 1
+        agg.total += amountNum
+        tagTotals.set(name, agg)
+      }
+    }
+
+    for (const [name, agg] of tagTotals.entries()) {
+      categoryBreakdown.push({
+        category: name,
+        count: agg.count,
+        totalAmount: agg.total,
+        color: agg.color,
+      })
+    }
+
+    categoryBreakdown.sort((a, b) => b.totalAmount - a.totalAmount)
+  }
   const statusDistribution = {
     paid: dailyTransactions.reduce((acc, d) => acc + d.paid, 0),
     pending: dailyTransactions.reduce((acc, d) => acc + d.pending, 0),

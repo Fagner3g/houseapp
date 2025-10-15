@@ -11,4 +11,5 @@ export type GetOrgSlugReportsTransactions200ReportsChartDataCategoryBreakdownIte
     category: string;
     count: number;
     totalAmount: number;
+    color?: string;
   };

@@ -14,6 +14,7 @@ export const listUsersByOrgSchema = {
           email: z.string(),
           phone: z.string(),
           avatarUrl: z.string(),
+          notificationsEnabled: z.boolean(),
           isOwner: z.boolean(),
         })
       ),

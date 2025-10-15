@@ -8,8 +8,9 @@ import type { JobResult } from './types'
 
 /**
  * Envia alertas especificamente para transações vencidas
+ * Processa uma organização por vez para evitar problemas de contexto
  */
-async function sendOverdueAlerts(): Promise<JobResult> {
+async function sendOverdueAlerts(userId?: string): Promise<JobResult> {
   const startTime = Date.now()
   let processed = 0
   let errors = 0
@@ -17,99 +18,111 @@ async function sendOverdueAlerts(): Promise<JobResult> {
   try {
     logger.info('🚀 Iniciando job de alertas de transações vencidas...')
 
-    // Buscar todas as transações vencidas de todas as organizações
-    // Primeiro, vamos buscar todas as organizações
+    // Buscar todas as organizações
     const { db } = await import('@/db')
     const { organizations } = await import('@/db/schemas/organization')
 
     const orgs = await db.select({ slug: organizations.slug }).from(organizations)
 
-    // Buscar transações vencidas de todas as organizações
-    const allOverdueTransactions = []
+    // Processar cada organização individualmente
     for (const org of orgs) {
-      const orgOverdue = await fetchOverdueTransactionsForAlerts(org.slug)
-      allOverdueTransactions.push(...orgOverdue)
-    }
+      try {
+        logger.info(`📋 Processando organização: ${org.slug}`)
 
-    const overdueTransactions = allOverdueTransactions
+        // Buscar transações vencidas apenas desta organização
+        const overdueTransactions = await fetchOverdueTransactionsForAlerts(org.slug, userId)
 
-    if (overdueTransactions.length === 0) {
-      logger.info('ℹ️ Nenhuma transação vencida encontrada para alertas')
-      return {
-        success: true,
-        processed: 0,
-        errors: 0,
-        duration: Date.now() - startTime,
-      }
-    }
-
-    // Agrupar por responsável (owner e payTo) para controlar greeting/footer
-    const groups = new Map<
-      string,
-      {
-        transactions: typeof overdueTransactions
-        userInfo: { name: string | null; phone: string | null }
-      }
-    >()
-
-    for (const t of overdueTransactions) {
-      // Adicionar para o owner
-      const ownerKey = `owner_${t.payToId ?? 'na'}`
-      if (t.payToId) {
-        const ownerGroup = groups.get(ownerKey) ?? {
-          transactions: [],
-          userInfo: { name: t.payToName, phone: t.payToPhone },
+        if (overdueTransactions.length === 0) {
+          logger.info(`ℹ️ Nenhuma transação vencida encontrada para organização: ${org.slug}`)
+          continue // Pular para próxima organização
         }
-        ownerGroup.transactions.push(t)
-        groups.set(ownerKey, ownerGroup)
-      }
-    }
 
-    for (const [, group] of groups) {
-      const { transactions, userInfo } = group
+        logger.info(
+          `📊 Encontradas ${overdueTransactions.length} transações vencidas para ${org.slug}`
+        )
 
-      // Ordenar por dias vencidos (mais vencidas primeiro)
-      transactions.sort((a, b) => b.overdueDays - a.overdueDays)
+        // Agrupar por telefone do usuário (evita duplicidade)
+        const groups = new Map<
+          string,
+          {
+            transactions: typeof overdueTransactions
+            userInfo: { name: string | null; phone: string | null }
+          }
+        >()
 
-      for (let idx = 0; idx < transactions.length; idx++) {
-        const t = transactions[idx]
-        try {
-          const { message } = buildAlertMessage(
-            t.title,
-            t.amountCents,
-            -t.overdueDays, // Dias negativos para indicar vencida
-            t.installmentIndex,
-            t.installmentsTotal ?? null,
-            t.organizationSlug,
-            userInfo.name,
-            null, // Não incluir bloco de vencidas pois já estamos processando vencidas
-            new Date(t.dueDate),
-            { includeGreeting: idx === 0, includeFooter: idx === transactions.length - 1 }
-          )
+        for (const t of overdueTransactions) {
+          // Verificar se o usuário tem notificações habilitadas
+          if (!t.notificationsEnabled) {
+            logger.info(`⚠️ Pulando usuário ${t.payToName} - notificações desabilitadas`)
+            continue
+          }
 
-          if (userInfo.phone) {
-            const result = await sendWhatsAppMessage({ phone: userInfo.phone, message })
-            if (result.status === 'sent') {
-              logger.info(
-                `✅ WhatsApp de transação vencida enviado com sucesso para: ${userInfo.phone} (${userInfo.name})`
+          const phone = t.payToPhone
+          if (!phone) continue
+          const key = `user_${phone}`
+          const group = groups.get(key) ?? {
+            transactions: [],
+            userInfo: { name: t.payToName, phone },
+          }
+          group.transactions.push(t)
+          groups.set(key, group)
+        }
+
+        for (const [, group] of groups) {
+          const { transactions, userInfo } = group
+
+          // Ordenar por dias vencidos (mais vencidas primeiro) e deduplicar por id
+          transactions.sort((a, b) => b.overdueDays - a.overdueDays)
+          const unique = Array.from(new Map(transactions.map(t => [t.id, t])).values())
+
+          for (let idx = 0; idx < unique.length; idx++) {
+            const t = unique[idx]
+            try {
+              const { message } = buildAlertMessage(
+                t.title,
+                t.amountCents,
+                -t.overdueDays, // Dias negativos para indicar vencida
+                t.installmentIndex,
+                t.installmentsTotal ?? null,
+                t.organizationSlug,
+                userInfo.name,
+                null, // Não incluir bloco de vencidas pois já estamos processando vencidas
+                new Date(t.dueDate),
+                { includeGreeting: idx === 0, includeFooter: idx === unique.length - 1 }
               )
-            } else {
+
+              if (userInfo.phone) {
+                const result = await sendWhatsAppMessage({ phone: userInfo.phone, message })
+                if (result.status === 'sent') {
+                  logger.info(
+                    `✅ WhatsApp de transação vencida enviado com sucesso para: ${userInfo.phone} (${userInfo.name}) - Org: ${org.slug}`
+                  )
+                } else {
+                  logger.error(
+                    `❌ Erro ao enviar WhatsApp de transação vencida para ${userInfo.phone} (${userInfo.name}) - Org: ${org.slug}: ${result.error}`
+                  )
+                  errors++
+                }
+              } else {
+                logger.info(
+                  `⚠️ Pulando envio - telefone vazio para usuário ${userInfo.name} da transação vencida ${t.id} - Org: ${org.slug}`
+                )
+              }
+
+              processed++
+            } catch (error) {
               logger.error(
-                `❌ Erro ao enviar WhatsApp de transação vencida para ${userInfo.phone} (${userInfo.name}): ${result.error}`
+                `Erro ao processar transação vencida ${t.id} - Org: ${org.slug}: ${String(error)}`
               )
               errors++
             }
-          } else {
-            logger.info(
-              `⚠️ Pulando envio - telefone vazio para usuário ${userInfo.name} da transação vencida ${t.id}`
-            )
           }
-
-          processed++
-        } catch (error) {
-          logger.error(`Erro ao processar transação vencida ${t.id}: ${String(error)}`)
-          errors++
         }
+
+        logger.info(`✅ Organização ${org.slug} processada com sucesso`)
+      } catch (orgError) {
+        logger.error(`❌ Erro ao processar organização ${org.slug}: ${String(orgError)}`)
+        errors++
       }
     }
 
@@ -136,7 +149,7 @@ jobManager.registerJob(JOB_CONFIGS.OVERDUE_ALERTS, sendOverdueAlerts)
 /**
  * Preview das transações vencidas que seriam processadas pelo job (sem enviar mensagens)
  */
-export async function previewOverdueAlerts(): Promise<{
+export async function previewOverdueAlerts(userId?: string): Promise<{
   summary: {
     total: number
     overdue: number
@@ -163,7 +176,7 @@ export async function previewOverdueAlerts(): Promise<{
     // Buscar transações vencidas de todas as organizações
     const allOverdueTransactions = []
     for (const org of orgs) {
-      const orgOverdue = await fetchOverdueTransactionsForAlerts(org.slug)
+      const orgOverdue = await fetchOverdueTransactionsForAlerts(org.slug, userId)
       allOverdueTransactions.push(...orgOverdue)
     }
 

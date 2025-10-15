@@ -19,7 +19,10 @@ export function buildAlertMessage(
   dueDate?: Date,
   options?: { includeGreeting?: boolean; includeFooter?: boolean }
 ) {
-  const amount = (amountCents / 100).toFixed(2)
+  const amount = (amountCents / 100).toLocaleString('pt-BR', {
+    style: 'currency',
+    currency: 'BRL',
+  })
   const installmentInfo =
     installmentIndex != null && installmentsTotal != null
       ? ` (Parcela ${installmentIndex}/${installmentsTotal})`
@@ -38,11 +41,11 @@ export function buildAlertMessage(
 
   let message: string
   if (daysUntilDue === 0) {
-    message = `🚨🚨 ALERTA CRÍTICO DE VENCIMENTO 🚨🚨\n\n✧ *${title}${installmentInfo}*\n💰 Valor: R$ ${amount}\n📅 Vencimento: HOJE${dueDateFormatted ? ` (${dueDateFormatted})` : ''}\n⏰ Ação necessária: URGENTE`
+    message = `🚨🚨 ALERTA CRÍTICO DE VENCIMENTO 🚨🚨\n\n✧ *${title}${installmentInfo}*\n💰 Valor: ${amount}\n📅 Vencimento: HOJE${dueDateFormatted ? ` (${dueDateFormatted})` : ''}\n⏰ Ação necessária: URGENTE`
   } else if (daysUntilDue === 1) {
-    message = `🚨 ALERTA URGENTE - VENCIMENTO AMANHÃ 🚨\n\n✧ *${title}${installmentInfo}*\n✧ Valor: R$ ${amount}\n📅 Vencimento: AMANHÃ${dueDateFormatted ? ` (${dueDateFormatted})` : ''}\n⏰ Ação necessária: URGENTE`
+    message = `🚨 ALERTA URGENTE - VENCIMENTO AMANHÃ 🚨\n\n✧ *${title}${installmentInfo}*\n✧ Valor: ${amount}\n📅 Vencimento: AMANHÃ${dueDateFormatted ? ` (${dueDateFormatted})` : ''}\n⏰ Ação necessária: URGENTE`
   } else {
-    message = `Lembrete de Vencimento\n\n✧ *${title}${installmentInfo}*\n✧ Valor: R$ ${amount}\n✧ Vencimento: em ${daysUntilDue} dias${dueDateFormatted ? ` (${dueDateFormatted})` : ''}`
+    message = `Lembrete de Vencimento\n\n✧ *${title}${installmentInfo}*\n✧ Valor: ${amount}\n✧ Vencimento: em ${daysUntilDue} dias${dueDateFormatted ? ` (${dueDateFormatted})` : ''}`
   }
 
   const greeting = options?.includeGreeting && personName ? `Olá, ${personName}! 👋\n\n` : ''

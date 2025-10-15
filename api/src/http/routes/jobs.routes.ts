@@ -9,6 +9,7 @@ import {
   previewOverdueAlertsController,
   previewTransactionAlertsController,
   runJobController,
+  sendMonthlySummaryController,
   startAllJobsController,
   startJobController,
   stopAllJobsController,
@@ -183,6 +184,7 @@ const ChartDataSchema = z.object({
       category: z.string(),
       count: z.number(),
       totalAmount: z.number(),
+      color: z.string().optional(),
     })
   ),
   statusDistribution: z.object({
@@ -280,12 +282,18 @@ const TransactionReportsResponseSchema = z.object({
   timestamp: z.string(),
 })
 
+const SendMonthlySummarySchema = z.object({
+  body: z.object({ userId: z.string() }),
+  response: z.object({ success: z.boolean(), phone: z.string().optional() }),
+})
+
 const ErrorResponseSchema = z.object({
   error: z.string(),
   message: z.string(),
 })
 
 export async function jobsRoutes(app: FastifyInstance) {
+  type SendMonthlySummaryRoute = { Params: { slug: string }; Body: { userId: string } }
   // Listar todos os jobs
   app.get(
     '/jobs',
@@ -311,6 +319,7 @@ export async function jobsRoutes(app: FastifyInstance) {
         params: z.object({
           jobKey: z.string(),
         }),
+        body: z.object({ userId: z.string().optional() }).optional(),
         response: {
           200: RunJobResponseSchema,
           404: ErrorResponseSchema,
@@ -431,6 +440,7 @@ export async function jobsRoutes(app: FastifyInstance) {
         tags: ['Jobs'],
         summary: 'Preview das transações que seriam processadas pelo job de alertas',
         security: [{ bearerAuth: [] }],
+        querystring: z.object({ userId: z.string().optional() }).optional(),
         response: {
           200: PreviewTransactionAlertsResponseSchema,
         },
@@ -449,6 +459,7 @@ export async function jobsRoutes(app: FastifyInstance) {
         summary:
           'Preview das transações vencidas que seriam processadas pelo job de alertas vencidas',
         security: [{ bearerAuth: [] }],
+        querystring: z.object({ userId: z.string().optional() }).optional(),
         response: {
           200: PreviewOverdueAlertsResponseSchema,
         },
@@ -467,6 +478,7 @@ export async function jobsRoutes(app: FastifyInstance) {
         tags: ['Reports'],
         summary: 'Retorna dados consolidados para o dashboard da organização',
         security: [{ bearerAuth: [] }],
+        params: z.object({ slug: z.string() }),
         response: {
           200: TransactionReportsResponseSchema,
           401: ErrorResponseSchema,
@@ -475,5 +487,23 @@ export async function jobsRoutes(app: FastifyInstance) {
       },
     },
     getTransactionReportsController
+  )
+
+  // Enviar resumo mensal via WhatsApp para um usuário específico
+  app.post<SendMonthlySummaryRoute>(
+    '/org/:slug/jobs/send-monthly-summary',
+    {
+      onRequest: [authenticateUserHook],
+      preHandler: [verifyOrgAccessHook],
+      schema: {
+        tags: ['Jobs'],
+        summary: 'Envia resumo mensal via WhatsApp para um usuário da organização',
+        security: [{ bearerAuth: [] }],
+        params: z.object({ slug: z.string() }),
+        body: SendMonthlySummarySchema.shape.body,
+        response: { 200: SendMonthlySummarySchema.shape.response, 400: ErrorResponseSchema },
+      },
+    },
+    sendMonthlySummaryController
   )
 }

@@ -4,13 +4,14 @@ interface CategoryBreakdown {
   category: string
   count: number
   totalAmount: number
+  color?: string
 }
 
 interface CategoryBreakdownChartProps {
   data: CategoryBreakdown[]
 }
 
-const COLORS = [
+const FALLBACK_COLORS = [
   '#3b82f6', // blue
   '#10b981', // emerald
   '#f59e0b', // amber
@@ -48,10 +49,10 @@ export function CategoryBreakdownChart({ data }: CategoryBreakdownChartProps) {
             fill="#8884d8"
             dataKey="totalAmount"
           >
-            {data.map(entry => (
+            {data.map((entry, idx) => (
               <Cell
                 key={`cell-${entry.category}`}
-                fill={COLORS[data.indexOf(entry) % COLORS.length]}
+                fill={entry.color || FALLBACK_COLORS[idx % FALLBACK_COLORS.length]}
               />
             ))}
           </Pie>

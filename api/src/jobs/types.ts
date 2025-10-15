@@ -19,4 +19,4 @@ export interface JobContext {
   processed: number
 }
 
-export type JobFunction = () => Promise<JobResult>
+export type JobFunction = (userId?: string) => Promise<JobResult>

@@ -22,6 +22,13 @@
       "when": 1760042847805,
       "tag": "0002_fuzzy_night_thrasher",
       "breakpoints": true
+    },
+    {
+      "idx": 3,
+      "version": "7",
+      "when": 1760049294222,
+      "tag": "0003_slimy_kree",
+      "breakpoints": true
     }
   ]
 }

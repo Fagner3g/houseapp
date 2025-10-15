@@ -4,10 +4,16 @@ import {
   createUserWithInviteController,
   getProfileController,
   updateUserController,
+  updateUserNotificationsController,
 } from '../controllers/user'
 import { authenticateUserHook } from '../hooks/authenticate-user'
 import { verifyOrgAccessHook } from '../hooks/verify-user-belongs-to-org'
-import { createUserWithInviteSchema, getProfileSchema, updateUserSchema } from '../schemas/user'
+import {
+  createUserWithInviteSchema,
+  getProfileSchema,
+  updateUserNotificationsSchema,
+  updateUserSchema,
+} from '../schemas/user'
 
 export const getProfileRoute: FastifyPluginAsyncZod = async app => {
   app.get('/profile', {
@@ -32,5 +38,14 @@ export const updateUserRoute: FastifyPluginAsyncZod = async app => {
     preHandler: [verifyOrgAccessHook],
     schema: updateUserSchema,
     handler: updateUserController,
+  })
+}
+
+export const updateUserNotificationsRoute: FastifyPluginAsyncZod = async app => {
+  app.patch('/org/:slug/users/notifications', {
+    onRequest: [authenticateUserHook],
+    preHandler: [verifyOrgAccessHook],
+    schema: updateUserNotificationsSchema,
+    handler: updateUserNotificationsController,
   })
 }
