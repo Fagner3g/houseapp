@@ -74,7 +74,15 @@ export async function fetchOverdueTransactionsForAlerts(
       )
     )
 
-  return rows.map(r => ({
+  // Deduplicate by transaction occurrence ID (can have duplicates due to join with userOrganizations)
+  const uniqueRows = new Map<string, (typeof rows)[number]>()
+  for (const row of rows) {
+    if (!uniqueRows.has(row.id)) {
+      uniqueRows.set(row.id, row)
+    }
+  }
+
+  return Array.from(uniqueRows.values()).map(r => ({
     id: r.id,
     seriesId: r.seriesId,
     title: r.title,
