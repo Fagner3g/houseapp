@@ -3331,7 +3331,7 @@
           },
           {
             "schema": {
-              "default": "2025-10-01T03:00:00.000Z"
+              "default": "2026-03-01T03:00:00.000Z"
             },
             "in": "query",
             "name": "dateFrom",
@@ -3339,7 +3339,7 @@
           },
           {
             "schema": {
-              "default": "2025-11-01T02:59:59.999Z"
+              "default": "2026-04-01T02:59:59.999Z"
             },
             "in": "query",
             "name": "dateTo",
