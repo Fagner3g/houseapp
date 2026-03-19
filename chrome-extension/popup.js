@@ -60,8 +60,13 @@ async function apiFetch(path, opts = {}) {
     headers: { ...authHeaders(state.token), ...(opts.headers || {}) },
   })
   if (res.status === 401) throw Object.assign(new Error('unauthorized'), { status: 401 })
-  if (!res.ok) throw new Error(`HTTP ${res.status}`)
-  return res.json()
+  if (!res.ok) {
+    const text = await res.text().catch(() => '')
+    throw Object.assign(new Error(`HTTP ${res.status}`), { status: res.status, body: text })
+  }
+  if (res.status === 204 || res.headers.get('content-length') === '0') return null
+  const ct = res.headers.get('content-type') || ''
+  return ct.includes('application/json') ? res.json() : null
 }
 
 // ── Render ────────────────────────────────────────────────────────────────────
@@ -155,9 +160,10 @@ async function handlePay(txId, liEl) {
     btn.remove()
     await chrome.storage.local.remove('cachedReport')
   } catch (err) {
+    console.error('[HouseApp] pay error:', err, err.body)
     btn.disabled = false
     btn.textContent = 'Pagar'
-    alert('Erro ao marcar como paga. Tente novamente.')
+    alert(`Erro ${err.status || ''}: ${err.body || err.message}`)
   }
 }
 
