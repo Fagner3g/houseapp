@@ -302,7 +302,7 @@ export async function getTransactionReports(orgId: string, userId: string, refer
       installmentsTotal: r.installmentsTotal ?? null,
       daysUntilDue: Math.ceil((+r.dueDate - +today) / (1000 * 60 * 60 * 24)),
       alertType: 'warning' as 'warning',
-      type: r.type as 'income' | 'expense',
+      type: getContextualizedTransactionType(r.type as 'income' | 'expense', r.ownerId, userId),
     }))
 
   // Overdue list and summary
@@ -321,7 +321,7 @@ export async function getTransactionReports(orgId: string, userId: string, refer
       payToEmail: r.payToEmail,
       status: r.status as 'paid' | 'pending',
       overdueDays: Math.ceil((+now - +r.dueDate) / (1000 * 60 * 60 * 24)),
-      type: r.type as 'income' | 'expense',
+      type: getContextualizedTransactionType(r.type as 'income' | 'expense', r.ownerId, userId),
     }))
 
   // Paid this month list and summary
