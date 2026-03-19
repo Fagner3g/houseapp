@@ -242,6 +242,15 @@ async function init() {
 
 // ── Event listeners ───────────────────────────────────────────────────────────
 
+document.getElementById('btn-refresh').addEventListener('click', async () => {
+  const btn = document.getElementById('btn-refresh')
+  btn.classList.add('spinning')
+  btn.disabled = true
+  await loadData()
+  btn.classList.remove('spinning')
+  btn.disabled = false
+})
+
 document.getElementById('btn-options').addEventListener('click', () => {
   chrome.runtime.openOptionsPage()
 })
