@@ -159,7 +159,7 @@ async function poll() {
     let { orgSlug } = await getConfig()
     if (!orgSlug) {
       const orgsData = await fetchOrgs(apiUrl, token)
-      const orgs = orgsData.orgs || orgsData
+      const orgs = orgsData.organizations || orgsData.orgs || orgsData
       if (!orgs?.length) { setBadge(0); return }
       orgSlug = orgs[0].slug
       await chrome.storage.local.set({ orgSlug })

@@ -227,7 +227,7 @@ async function init() {
   } else {
     try {
       const orgsData = await apiFetch('/orgs')
-      const orgs = orgsData.orgs || orgsData
+      const orgs = orgsData.organizations || orgsData.orgs || orgsData
       if (!orgs?.length) { showScreen('error'); return }
       state.orgSlug = orgs[0].slug
       await chrome.storage.local.set({ orgSlug: state.orgSlug })
