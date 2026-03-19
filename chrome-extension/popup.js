@@ -10,12 +10,40 @@ function fmt(amount) {
   return 'R$ ' + num.toLocaleString('pt-BR', { minimumFractionDigits: 2 })
 }
 
+function fmtDate(isoString) {
+  const d = new Date(isoString)
+  return `${d.getDate()}/${String(d.getMonth() + 1).padStart(2, '0')}`
+}
+
 function show(id) { document.getElementById(id).classList.remove('hidden') }
 function hide(id) { document.getElementById(id).classList.add('hidden') }
+
 function showScreen(name) {
   for (const s of ['login','loading','error','main']) {
     document.getElementById(`screen-${s}`).classList.toggle('hidden', s !== name)
   }
+}
+
+// ── Context ───────────────────────────────────────────────────────────────────
+
+/**
+ * Returns 'past' | 'current' | 'future' relative to today.
+ */
+function getViewingContext(year, month) {
+  const now = new Date()
+  const cy = now.getFullYear()
+  const cm = now.getMonth() + 1
+  if (year < cy || (year === cy && month < cm)) return 'past'
+  if (year === cy && month === cm) return 'current'
+  return 'future'
+}
+
+/**
+ * A transaction can only be paid in past or current context, and only if pending.
+ */
+function canPayTransaction(tx, context) {
+  if (context === 'future') return false
+  return tx.status === 'pending'
 }
 
 // ── State ─────────────────────────────────────────────────────────────────────
@@ -69,17 +97,7 @@ async function apiFetch(path, opts = {}) {
   return ct.includes('application/json') ? res.json() : null
 }
 
-// ── Render ────────────────────────────────────────────────────────────────────
-
-function renderKpis(reports) {
-  const kpis = reports.kpis || {}
-  document.getElementById('kpi-income').textContent  = fmt(kpis.toReceiveTotal  ?? 0)
-  document.getElementById('kpi-expense').textContent = fmt(kpis.toSpendTotal    ?? 0)
-  const balance = (kpis.toReceiveTotal ?? 0) - (kpis.toSpendTotal ?? 0)
-  const balEl = document.getElementById('kpi-balance')
-  balEl.textContent = fmt(balance)
-  balEl.className = `kpi-value balance ${balance >= 0 ? '' : 'expense'}`
-}
+// ── Render helpers ────────────────────────────────────────────────────────────
 
 function typeIndicator(type) {
   if (type === 'income')  return '<span class="type-dot income"  title="Receita">▲</span>'
@@ -87,103 +105,148 @@ function typeIndicator(type) {
   return ''
 }
 
-function renderOverdue(transactions) {
-  const list  = document.getElementById('list-overdue')
-  const empty = document.getElementById('overdue-empty')
-  const title = document.getElementById('overdue-title')
+/**
+ * Single reusable transaction item renderer.
+ * @param {object} tx         - Transaction data
+ * @param {string} context    - 'past' | 'current' | 'future'
+ * @param {string} metaLabel  - Text shown in the meta column (date, days, etc.)
+ */
+function renderTransactionItem(tx, context, metaLabel) {
+  const li = document.createElement('li')
+  li.className = 'tx-item'
+  li.dataset.id = tx.id
 
-  list.innerHTML = ''
-  title.textContent = `Vencidas (${transactions.length})`
+  if (tx.status === 'paid') li.classList.add('paid')
 
-  if (!transactions.length) { show('overdue-empty'); return }
-  hide('overdue-empty')
+  const canPay = canPayTransaction(tx, context)
 
-  for (const tx of transactions) {
-    const li = document.createElement('li')
-    li.className = 'tx-item'
-    li.dataset.id = tx.id
+  let actionHtml = ''
+  if (canPay) {
+    actionHtml = `<button class="btn-pay" data-id="${tx.id}">Pagar</button>`
+  } else if (context === 'future') {
+    actionHtml = '<span class="badge badge-future">Prevista</span>'
+  } else if (tx.status === 'paid') {
+    actionHtml = '<span class="badge badge-paid">Paga</span>'
+  }
 
-    const days = tx.overdueDays || 0
-    const dayLabel = days === 1 ? '1 dia' : `${days}d`
+  li.innerHTML = `
+    ${typeIndicator(tx.type)}
+    <span class="tx-title" title="${tx.title}">${tx.title}</span>
+    <span class="tx-meta">${metaLabel}</span>
+    <span class="tx-amount">${fmt(tx.amount)}</span>
+    ${actionHtml}
+  `
 
-    li.innerHTML = `
-      ${typeIndicator(tx.type)}
-      <span class="tx-title" title="${tx.title}">${tx.title}</span>
-      <span class="tx-meta">${dayLabel}</span>
-      <span class="tx-amount">${fmt(tx.amount)}</span>
-      <button class="btn-pay" data-id="${tx.id}">Pagar</button>
-    `
-
+  if (canPay) {
     li.querySelector('.btn-pay').addEventListener('click', (e) => {
       e.stopPropagation()
       handlePay(tx.id, li)
     })
+  }
 
-    list.appendChild(li)
+  return li
+}
+
+// ── Render sections ───────────────────────────────────────────────────────────
+
+function renderKpis(reports, context) {
+  const kpis = reports.kpis || {}
+
+  document.getElementById('label-income').textContent  = context === 'future' ? 'Prev. receber' : 'A receber'
+  document.getElementById('label-expense').textContent = context === 'future' ? 'Prev. pagar'   : 'A pagar'
+
+  const incomeEl  = document.getElementById('kpi-income')
+  const expenseEl = document.getElementById('kpi-expense')
+  incomeEl.classList.toggle('projected', context === 'future')
+  expenseEl.classList.toggle('projected', context === 'future')
+
+  incomeEl.textContent  = fmt(kpis.toReceiveTotal ?? 0)
+  expenseEl.textContent = fmt(kpis.toSpendTotal   ?? 0)
+
+  const balance = (kpis.toReceiveTotal ?? 0) - (kpis.toSpendTotal ?? 0)
+  const balEl = document.getElementById('kpi-balance')
+  balEl.textContent = fmt(balance)
+  balEl.className = `kpi-value balance${balance >= 0 ? '' : ' expense'}`
+}
+
+function renderOverdue(overdueTransactions, upcomingAlerts, context) {
+  const section = document.getElementById('section-overdue')
+  const list    = document.getElementById('list-overdue')
+  const title   = document.getElementById('overdue-title')
+
+  list.innerHTML = ''
+
+  // No "overdue" concept for future months
+  if (context === 'future') {
+    section.classList.add('hidden')
+    return
+  }
+  section.classList.remove('hidden')
+
+  const overdue = (overdueTransactions || []).map(tx => ({
+    ...tx,
+    _days: tx.overdueDays || 0,
+  }))
+
+  // Upcoming alerts with daysUntilDue <= 0 are actually overdue (timezone edge)
+  const alsoOverdue = (upcomingAlerts || [])
+    .filter(tx => tx.daysUntilDue <= 0)
+    .map(tx => ({ ...tx, _days: Math.abs(tx.daysUntilDue) }))
+
+  const all = [...overdue, ...alsoOverdue]
+  title.textContent = `Vencidas (${all.length})`
+
+  if (!all.length) { show('overdue-empty'); return }
+  hide('overdue-empty')
+
+  for (const tx of all) {
+    const days = tx._days
+    const meta = days === 0 ? 'hoje' : days === 1 ? '1 dia' : `${days}d`
+    list.appendChild(renderTransactionItem(tx, context, meta))
   }
 }
 
-function renderUpcoming(allUpcoming) {
-  // Transactions from upcomingAlerts with daysUntilDue <= 0 are actually overdue
-  // (timezone edge case): merge them into the overdue list
-  const overdueEl = document.getElementById('list-overdue')
-  const overdueTitleEl = document.getElementById('overdue-title')
-
-  const alsoOverdue = allUpcoming.filter(tx => tx.daysUntilDue <= 0)
-  const upcoming    = allUpcoming.filter(tx => tx.daysUntilDue > 0)
-
-  // Append any overdue-but-in-upcoming to the overdue section
-  if (alsoOverdue.length) {
-    hide('overdue-empty')
-    const currentCount = overdueEl.querySelectorAll('.tx-item').length
-    overdueTitleEl.textContent = `Vencidas (${currentCount + alsoOverdue.length})`
-
-    for (const tx of alsoOverdue) {
-      const li = document.createElement('li')
-      li.className = 'tx-item'
-      li.dataset.id = tx.id
-
-      const overdueDays = Math.abs(tx.daysUntilDue)
-      const dayLabel = overdueDays === 0 ? 'hoje' : overdueDays === 1 ? '1 dia' : `${overdueDays}d`
-
-      li.innerHTML = `
-        ${typeIndicator(tx.type)}
-        <span class="tx-title" title="${tx.title}">${tx.title}</span>
-        <span class="tx-meta">${dayLabel}</span>
-        <span class="tx-amount">${fmt(tx.amount)}</span>
-        <button class="btn-pay" data-id="${tx.id}">Pagar</button>
-      `
-      li.querySelector('.btn-pay').addEventListener('click', (e) => {
-        e.stopPropagation()
-        handlePay(tx.id, li)
-      })
-      overdueEl.appendChild(li)
-    }
-  }
-
-  const list  = document.getElementById('list-upcoming')
-  const title = document.getElementById('upcoming-title')
+function renderUpcoming(upcomingAlerts, context) {
+  const section = document.getElementById('section-upcoming')
+  const list    = document.getElementById('list-upcoming')
+  const title   = document.getElementById('upcoming-title')
 
   list.innerHTML = ''
+
+  // Only show upcoming section for current month
+  if (context !== 'current') {
+    section.classList.add('hidden')
+    return
+  }
+  section.classList.remove('hidden')
+
+  const upcoming = (upcomingAlerts || []).filter(tx => tx.daysUntilDue > 0)
   title.textContent = `Próximas (${upcoming.length})`
 
   if (!upcoming.length) { show('upcoming-empty'); return }
   hide('upcoming-empty')
 
   for (const tx of upcoming) {
-    const li = document.createElement('li')
-    li.className = 'tx-item'
-
     const d = tx.daysUntilDue
-    const dueLabel = d === 0 ? 'hoje' : d === 1 ? 'amanhã' : `${d} dias`
+    const meta = d === 1 ? 'amanhã' : `${d} dias`
+    list.appendChild(renderTransactionItem(tx, context, meta))
+  }
+}
 
-    li.innerHTML = `
-      ${typeIndicator(tx.type)}
-      <span class="tx-title" title="${tx.title}">${tx.title}</span>
-      <span class="tx-meta">${dueLabel}</span>
-      <span class="tx-amount">${fmt(tx.amount)}</span>
-    `
-    list.appendChild(li)
+function renderAllTransactions(allTransactions, context) {
+  const list  = document.getElementById('list-all')
+  const title = document.getElementById('all-title')
+
+  list.innerHTML = ''
+
+  const txs = allTransactions || []
+  title.textContent = `Todas do mês (${txs.length})`
+
+  if (!txs.length) { show('all-empty'); return }
+  hide('all-empty')
+
+  for (const tx of txs) {
+    list.appendChild(renderTransactionItem(tx, context, fmtDate(tx.dueDate)))
   }
 }
 
@@ -204,6 +267,17 @@ async function handlePay(txId, liEl) {
     liEl.classList.add('paid')
     btn.remove()
     await chrome.storage.local.remove('cachedReport')
+
+    // Mirror the paid state in "Todas do mês" if the same tx is there
+    const twin = document.querySelector(`#list-all [data-id="${txId}"]`)
+    if (twin) {
+      twin.classList.add('paid')
+      const twinBtn = twin.querySelector('.btn-pay')
+      if (twinBtn) twinBtn.replaceWith(Object.assign(document.createElement('span'), {
+        className: 'badge badge-paid',
+        textContent: 'Paga',
+      }))
+    }
   } catch (err) {
     console.error('[HouseApp] pay error:', err, err.body)
     btn.disabled = false
@@ -220,12 +294,18 @@ async function loadData() {
     )
     state.reports = data.reports || data
 
-    renderMonthLabel()
-    renderKpis(state.reports)
-    renderOverdue(state.reports.overdueTransactions?.transactions || [])
-    renderUpcoming(state.reports.upcomingAlerts?.transactions || [])
+    const context = getViewingContext(state.year, state.month)
 
-    // Cache for background worker
+    renderMonthLabel()
+    renderKpis(state.reports, context)
+    renderOverdue(
+      state.reports.overdueTransactions?.transactions,
+      state.reports.upcomingAlerts?.transactions,
+      context
+    )
+    renderUpcoming(state.reports.upcomingAlerts?.transactions, context)
+    renderAllTransactions(state.reports.allTransactions, context)
+
     await chrome.storage.local.set({
       cachedReport: state.reports,
       cachedYear: state.year,
@@ -253,7 +333,6 @@ async function init() {
   state.webUrl = stored.webUrl || ''
 
   if (!state.apiUrl) {
-    // No config yet → open options
     showScreen('login')
     document.getElementById('screen-login').querySelector('p').textContent =
       'Configure a URL da API nas opções.'
@@ -263,7 +342,6 @@ async function init() {
   state.token = await resolveToken()
   if (!state.token) { showScreen('login'); return }
 
-  // Validate token
   try {
     await apiFetch('/profile')
   } catch (_) {
@@ -272,7 +350,6 @@ async function init() {
     return
   }
 
-  // Resolve org slug
   if (stored.orgSlug) {
     state.orgSlug = stored.orgSlug
   } else {
@@ -318,9 +395,7 @@ document.getElementById('btn-login').addEventListener('click', () => {
   })
 })
 
-document.getElementById('btn-retry').addEventListener('click', () => {
-  loadData()
-})
+document.getElementById('btn-retry').addEventListener('click', () => loadData())
 
 document.getElementById('btn-prev-month').addEventListener('click', () => {
   state.month--

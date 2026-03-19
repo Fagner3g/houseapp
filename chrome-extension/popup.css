@@ -235,9 +235,10 @@ header {
   font-weight: 700;
 }
 
-.kpi-value.income  { color: #10b981; }
-.kpi-value.expense { color: #ef4444; }
-.kpi-value.balance { color: #3b82f6; }
+.kpi-value.income    { color: #10b981; }
+.kpi-value.expense   { color: #ef4444; }
+.kpi-value.balance   { color: #3b82f6; }
+.kpi-value.projected { opacity: 0.6; font-style: italic; }
 
 /* ── Sections ────────────────────────────────────────────────── */
 
@@ -268,6 +269,7 @@ section {
 
 .dot-red    { background: #ef4444; }
 .dot-yellow { background: #f59e0b; }
+.dot-gray   { background: #94a3b8; }
 
 /* ── Transaction list ────────────────────────────────────────── */
 
@@ -327,6 +329,32 @@ section {
   text-align: center;
   padding: 8px 0;
 }
+
+/* ── Scrollable list (Todas do mês) ──────────────────────────── */
+
+.tx-list-scroll {
+  max-height: 180px;
+  overflow-y: auto;
+  scrollbar-width: thin;
+  scrollbar-color: #e2e8f0 transparent;
+}
+
+.tx-list-scroll::-webkit-scrollbar { width: 4px; }
+.tx-list-scroll::-webkit-scrollbar-thumb { background: #e2e8f0; border-radius: 2px; }
+
+/* ── Badges ──────────────────────────────────────────────────── */
+
+.badge {
+  font-size: 10px;
+  font-weight: 600;
+  padding: 2px 6px;
+  border-radius: 4px;
+  white-space: nowrap;
+  flex-shrink: 0;
+}
+
+.badge-paid   { background: #dcfce7; color: #16a34a; }
+.badge-future { background: #f1f5f9; color: #64748b; }
 
 /* ── Paid state ──────────────────────────────────────────────── */
 

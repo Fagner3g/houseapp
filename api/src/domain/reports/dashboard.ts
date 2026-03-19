@@ -346,6 +346,20 @@ export async function getTransactionReports(orgId: string, userId: string, refer
     totalAmount: paidThisMonthList.reduce((acc, t) => acc + t.amount, 0),
   }
 
+  // Flat list of all transactions within the queried month (for popup "Todas do mês")
+  const allTransactionsList = rows
+    .filter(r => r.dueDate >= startOfMonth && r.dueDate <= endOfMonth)
+    .sort((a, b) => +a.dueDate - +b.dueDate)
+    .map(r => ({
+      id: r.id,
+      title: r.title,
+      amount: Number(r.amount) / 100,
+      dueDate: r.dueDate.toISOString(),
+      status: r.status as 'paid' | 'pending',
+      paidAt: r.paidAt?.toISOString() ?? null,
+      type: getContextualizedTransactionType(r.type as 'income' | 'expense', r.ownerId, userId),
+    }))
+
   return {
     reports: {
       upcomingAlerts: { transactions: upcomingTransactions, summary: upcomingSummary },
@@ -385,6 +399,7 @@ export async function getTransactionReports(orgId: string, userId: string, refer
         summary: paidThisMonthSummary,
         transactions: paidThisMonthList,
       },
+      allTransactions: allTransactionsList,
     },
     timestamp: new Date().toISOString(),
   }

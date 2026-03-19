@@ -258,6 +258,19 @@ const TransactionReportsResponseSchema = z.object({
         ),
       })
       .optional(),
+    allTransactions: z
+      .array(
+        z.object({
+          id: z.string(),
+          title: z.string(),
+          amount: z.number(),
+          dueDate: z.string(),
+          status: z.enum(['paid', 'pending']),
+          paidAt: z.string().nullable(),
+          type: z.enum(['income', 'expense']),
+        })
+      )
+      .optional(),
   }),
   timestamp: z.string(),
 })
