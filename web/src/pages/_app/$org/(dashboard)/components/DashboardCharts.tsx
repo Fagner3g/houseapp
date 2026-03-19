@@ -1,9 +1,7 @@
-import { BarChart3, PieChart, TrendingUp } from 'lucide-react'
+import { PieChart, TrendingUp } from 'lucide-react'
 
 import type { GetOrgSlugReportsTransactions200ReportsChartData } from '@/api/generated/model'
-import { CategoryBreakdownChart } from '@/components/charts/category-breakdown-chart'
 import { DailyTransactionsChart } from '@/components/charts/daily-transactions-chart'
-import { MonthlyTrendChart } from '@/components/charts/monthly-trend-chart'
 import { StatusDistributionChart } from '@/components/charts/status-distribution-chart'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
 
@@ -19,23 +17,10 @@ export function DashboardCharts({ data }: Props) {
               <TrendingUp className="h-5 w-5" />
               Transações Diárias
             </CardTitle>
-            <CardDescription>Valores por dia do mês atual</CardDescription>
+            <CardDescription>Valores por dia do mês selecionado</CardDescription>
           </CardHeader>
           <CardContent>
             <DailyTransactionsChart data={data.dailyTransactions} />
-          </CardContent>
-        </Card>
-
-        <Card>
-          <CardHeader>
-            <CardTitle className="flex items-center gap-2">
-              <BarChart3 className="h-5 w-5" />
-              Tendência Mensal
-            </CardTitle>
-            <CardDescription>Últimos 6 meses</CardDescription>
-          </CardHeader>
-          <CardContent>
-            <MonthlyTrendChart data={data.monthlyTrend} />
           </CardContent>
         </Card>
 
@@ -49,19 +34,6 @@ export function DashboardCharts({ data }: Props) {
           </CardHeader>
           <CardContent>
             <StatusDistributionChart data={data.statusDistribution} />
-          </CardContent>
-        </Card>
-
-        <Card>
-          <CardHeader>
-            <CardTitle className="flex items-center gap-2">
-              <PieChart className="h-5 w-5" />
-              Categorias
-            </CardTitle>
-            <CardDescription>Valores por categoria do mês</CardDescription>
-          </CardHeader>
-          <CardContent>
-            <CategoryBreakdownChart data={data.categoryBreakdown} />
           </CardContent>
         </Card>
       </div>

@@ -64,15 +64,10 @@ export async function getTransactionReports(orgId: string, userId: string, refer
   const toPayBy = new Map<string, number>()
   const toReceiveItems = new Map<string, { title: string; amount: number }[]>()
   const toPayItems = new Map<string, { title: string; amount: number }[]>()
-  const incomeVsExpenseDailyMap = new Map<string, { income: number; expense: number }>()
 
   for (const r of rows) {
     const amountNum = Number(r.amount) / 100
     totalMonth += amountNum
-    const dateKey = new Date(r.dueDate).toISOString().split('T')[0]
-    if (!incomeVsExpenseDailyMap.has(dateKey))
-      incomeVsExpenseDailyMap.set(dateKey, { income: 0, expense: 0 })
-
     const ctxType = getContextualizedTransactionType(
       r.type as 'income' | 'expense',
       r.ownerId,
@@ -84,13 +79,10 @@ export async function getTransactionReports(orgId: string, userId: string, refer
       incomeRegistered += amountNum
       if (r.paidAt) receivedTotal += amountNum
 
-      // Para meses históricos: considera tudo que tinha vencimento no mês (pago ou não)
-      // Para mês atual: considera apenas o que está realmente pendente
       const isHistorical = endOfMonth < new Date()
       const shouldCountAsToReceive = isHistorical ? true : r.status === 'pending'
 
       if (shouldCountAsToReceive && !r.paidAt) {
-        // Receber quando: tipo contextualizado é income e não foi pago
         toReceiveTotal += amountNum
         const counterparty =
           r.ownerId === userId ? r.payToName || r.payToEmail || 'Desconhecido' : r.ownerName
@@ -99,18 +91,13 @@ export async function getTransactionReports(orgId: string, userId: string, refer
         arr.push({ title: r.title, amount: amountNum })
         toReceiveItems.set(counterparty, arr)
       }
-      const d = incomeVsExpenseDailyMap.get(dateKey)
-      if (d) d.income += amountNum
     } else {
       expenseRegistered += amountNum
 
-      // Para meses históricos: considera tudo que tinha vencimento no mês (pago ou não)
-      // Para mês atual: considera apenas o que está realmente pendente
       const isHistorical = endOfMonth < new Date()
       const shouldCountAsToPay = isHistorical ? true : r.status === 'pending'
 
       if (shouldCountAsToPay && !r.paidAt) {
-        // Pagar quando: tipo contextualizado é expense e não foi pago
         toSpendTotal += amountNum
         const counterparty =
           r.payToId === userId ? r.ownerName : r.payToName || r.payToEmail || 'Desconhecido'
@@ -119,14 +106,8 @@ export async function getTransactionReports(orgId: string, userId: string, refer
         arr.push({ title: r.title, amount: amountNum })
         toPayItems.set(counterparty, arr)
       }
-      const d = incomeVsExpenseDailyMap.get(dateKey)
-      if (d) d.expense += amountNum
     }
   }
-
-  const incomeVsExpenseDaily = Array.from(incomeVsExpenseDailyMap.entries())
-    .sort((a, b) => (a[0] < b[0] ? -1 : 1))
-    .map(([date, v]) => ({ date, income: v.income, expense: v.expense }))
 
   // monthly stats (counts)
   const monthlyStats = {
@@ -136,21 +117,6 @@ export async function getTransactionReports(orgId: string, userId: string, refer
     pendingTransactions: rows.filter(r => r.status === 'pending').length,
     overdueTransactions: rows.filter(r => r.status === 'pending' && r.dueDate < now).length,
   }
-
-  // recent activity (last 10 by dueDate desc)
-  const recentActivity = rows
-    .slice()
-    .sort((a, b) => +b.dueDate - +a.dueDate)
-    .slice(0, 10)
-    .map(r => ({
-      id: r.id,
-      title: r.title,
-      amount: Number(r.amount) / 100,
-      status: r.status as 'paid' | 'pending',
-      dueDate: r.dueDate,
-      ownerName: r.ownerName,
-      updatedAt: r.paidAt ?? r.dueDate,
-    }))
 
   // simple daily chart (paid/pending/total sums per day)
   const dailyMap = new Map<string, { paid: number; pending: number; total: number }>()
@@ -168,13 +134,6 @@ export async function getTransactionReports(orgId: string, userId: string, refer
   const dailyTransactions = Array.from(dailyMap.entries())
     .sort((a, b) => (a[0] < b[0] ? -1 : 1))
     .map(([date, v]) => ({ date, ...v }))
-
-  const monthlyTrend = [] as Array<{
-    month: string
-    total: number
-    paid: number
-    pending: number
-  }>
 
   // Tags breakdown for current month - separated by income/expense
   const categoryBreakdown = [] as Array<{
@@ -389,16 +348,13 @@ export async function getTransactionReports(orgId: string, userId: string, refer
     reports: {
       upcomingAlerts: { transactions: upcomingTransactions, summary: upcomingSummary },
       monthlyStats,
-      recentActivity,
       chartData: {
         dailyTransactions,
-        monthlyTrend,
         categoryBreakdown,
         incomeByTag,
         expenseByTag,
         statusDistribution,
       },
-      // novos campos
       kpis: {
         totalMonth,
         incomeRegistered,
@@ -419,7 +375,6 @@ export async function getTransactionReports(orgId: string, userId: string, refer
           items: (toPayItems.get(name) ?? []).slice(0, 5),
         })),
       },
-      incomeVsExpenseDaily,
       overdueTransactions: {
         summary: { total: overdueList.length },
         transactions: overdueList,
