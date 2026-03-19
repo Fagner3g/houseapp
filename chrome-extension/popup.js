@@ -81,6 +81,12 @@ function renderKpis(reports) {
   balEl.className = `kpi-value balance ${balance >= 0 ? '' : 'expense'}`
 }
 
+function typeIndicator(type) {
+  if (type === 'income')  return '<span class="type-dot income"  title="Receita">▲</span>'
+  if (type === 'expense') return '<span class="type-dot expense" title="Despesa">▼</span>'
+  return ''
+}
+
 function renderOverdue(transactions) {
   const list  = document.getElementById('list-overdue')
   const empty = document.getElementById('overdue-empty')
@@ -101,6 +107,7 @@ function renderOverdue(transactions) {
     const dayLabel = days === 1 ? '1 dia' : `${days}d`
 
     li.innerHTML = `
+      ${typeIndicator(tx.type)}
       <span class="tx-title" title="${tx.title}">${tx.title}</span>
       <span class="tx-meta">${dayLabel}</span>
       <span class="tx-amount">${fmt(tx.amount)}</span>
@@ -116,17 +123,54 @@ function renderOverdue(transactions) {
   }
 }
 
-function renderUpcoming(transactions) {
+function renderUpcoming(allUpcoming) {
+  // Transactions from upcomingAlerts with daysUntilDue <= 0 are actually overdue
+  // (timezone edge case): merge them into the overdue list
+  const overdueEl = document.getElementById('list-overdue')
+  const overdueTitleEl = document.getElementById('overdue-title')
+
+  const alsoOverdue = allUpcoming.filter(tx => tx.daysUntilDue <= 0)
+  const upcoming    = allUpcoming.filter(tx => tx.daysUntilDue > 0)
+
+  // Append any overdue-but-in-upcoming to the overdue section
+  if (alsoOverdue.length) {
+    hide('overdue-empty')
+    const currentCount = overdueEl.querySelectorAll('.tx-item').length
+    overdueTitleEl.textContent = `Vencidas (${currentCount + alsoOverdue.length})`
+
+    for (const tx of alsoOverdue) {
+      const li = document.createElement('li')
+      li.className = 'tx-item'
+      li.dataset.id = tx.id
+
+      const overdueDays = Math.abs(tx.daysUntilDue)
+      const dayLabel = overdueDays === 0 ? 'hoje' : overdueDays === 1 ? '1 dia' : `${overdueDays}d`
+
+      li.innerHTML = `
+        ${typeIndicator(tx.type)}
+        <span class="tx-title" title="${tx.title}">${tx.title}</span>
+        <span class="tx-meta">${dayLabel}</span>
+        <span class="tx-amount">${fmt(tx.amount)}</span>
+        <button class="btn-pay" data-id="${tx.id}">Pagar</button>
+      `
+      li.querySelector('.btn-pay').addEventListener('click', (e) => {
+        e.stopPropagation()
+        handlePay(tx.id, li)
+      })
+      overdueEl.appendChild(li)
+    }
+  }
+
   const list  = document.getElementById('list-upcoming')
   const title = document.getElementById('upcoming-title')
 
   list.innerHTML = ''
-  title.textContent = `Próximas (${transactions.length})`
+  title.textContent = `Próximas (${upcoming.length})`
 
-  if (!transactions.length) { show('upcoming-empty'); return }
+  if (!upcoming.length) { show('upcoming-empty'); return }
   hide('upcoming-empty')
 
-  for (const tx of transactions) {
+  for (const tx of upcoming) {
     const li = document.createElement('li')
     li.className = 'tx-item'
 
@@ -134,6 +178,7 @@ function renderUpcoming(transactions) {
     const dueLabel = d === 0 ? 'hoje' : d === 1 ? 'amanhã' : `${d} dias`
 
     li.innerHTML = `
+      ${typeIndicator(tx.type)}
       <span class="tx-title" title="${tx.title}">${tx.title}</span>
       <span class="tx-meta">${dueLabel}</span>
       <span class="tx-amount">${fmt(tx.amount)}</span>

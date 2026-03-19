@@ -103,6 +103,7 @@ const TransactionAlertPreviewSchema = z.object({
   ownerPhone: z.string(),
   payToName: z.string().nullable(),
   payToPhone: z.string().nullable(),
+  type: z.enum(['income', 'expense']).optional(),
 })
 
 const PreviewSummarySchema = z.object({
@@ -231,6 +232,7 @@ const TransactionReportsResponseSchema = z.object({
             payToEmail: z.string().optional(),
             status: z.enum(['paid', 'pending']).optional(),
             overdueDays: z.number().optional(),
+            type: z.enum(['income', 'expense']).optional(),
           })
         ),
       })

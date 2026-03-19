@@ -288,6 +288,16 @@ section {
   padding: 7px 8px;
 }
 
+.type-dot {
+  font-size: 9px;
+  font-weight: 700;
+  flex-shrink: 0;
+  line-height: 1;
+}
+
+.type-dot.income  { color: #10b981; }
+.type-dot.expense { color: #ef4444; }
+
 .tx-title {
   flex: 1;
   font-size: 12px;
