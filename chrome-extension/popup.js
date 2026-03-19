@@ -183,17 +183,28 @@ function renderOverdue(overdueTransactions, upcomingAlerts, context) {
   }
   section.classList.remove('hidden')
 
+  // Use client-side midnight to correctly handle server/browser timezone differences
+  const todayMidnight = new Date()
+  todayMidnight.setHours(0, 0, 0, 0)
+
   const overdue = (overdueTransactions || []).map(tx => ({
     ...tx,
     _days: tx.overdueDays || 0,
   }))
 
-  // Upcoming alerts with daysUntilDue <= 0 are actually overdue (timezone edge)
+  // Any upcoming alert whose actual dueDate is before today belongs in vencidas
   const alsoOverdue = (upcomingAlerts || [])
-    .filter(tx => tx.daysUntilDue <= 0)
-    .map(tx => ({ ...tx, _days: Math.abs(tx.daysUntilDue) }))
+    .filter(tx => new Date(tx.dueDate) < todayMidnight)
+    .map(tx => {
+      const diffMs = todayMidnight.getTime() - new Date(tx.dueDate).getTime()
+      return { ...tx, _days: Math.ceil(diffMs / (1000 * 60 * 60 * 24)) }
+    })
 
-  const all = [...overdue, ...alsoOverdue]
+  // Deduplicate by id (overdueTransactions and alsoOverdue may overlap)
+  const seenIds = new Set(overdue.map(tx => tx.id))
+  const uniqueAlsoOverdue = alsoOverdue.filter(tx => !seenIds.has(tx.id))
+
+  const all = [...overdue, ...uniqueAlsoOverdue]
   title.textContent = `Vencidas (${all.length})`
 
   if (!all.length) { show('overdue-empty'); return }
@@ -220,7 +231,11 @@ function renderUpcoming(upcomingAlerts, context) {
   }
   section.classList.remove('hidden')
 
-  const upcoming = (upcomingAlerts || []).filter(tx => tx.daysUntilDue > 0)
+  const todayMidnight = new Date()
+  todayMidnight.setHours(0, 0, 0, 0)
+
+  // Only show transactions with dueDate strictly in the future (client-side check)
+  const upcoming = (upcomingAlerts || []).filter(tx => new Date(tx.dueDate) >= todayMidnight)
   title.textContent = `Próximas (${upcoming.length})`
 
   if (!upcoming.length) { show('upcoming-empty'); return }
