@@ -1,0 +1,313 @@
+* {
+  box-sizing: border-box;
+  margin: 0;
+  padding: 0;
+}
+
+body {
+  width: 320px;
+  min-height: 200px;
+  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+  font-size: 13px;
+  color: #1a1a2e;
+  background: #f8f9fc;
+}
+
+#app {
+  display: flex;
+  flex-direction: column;
+}
+
+/* ── Header ─────────────────────────────────────────────────── */
+
+header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 10px 12px;
+  background: #1a1a2e;
+  color: #fff;
+}
+
+.logo {
+  font-weight: 600;
+  font-size: 14px;
+}
+
+.header-actions {
+  display: flex;
+  gap: 4px;
+}
+
+.header-actions button {
+  background: transparent;
+  border: none;
+  color: #cbd5e1;
+  font-size: 16px;
+  cursor: pointer;
+  padding: 2px 5px;
+  border-radius: 4px;
+  line-height: 1;
+}
+
+.header-actions button:hover {
+  background: rgba(255,255,255,0.1);
+  color: #fff;
+}
+
+/* ── Screens ─────────────────────────────────────────────────── */
+
+.screen {
+  padding: 16px 12px;
+}
+
+.hidden {
+  display: none !important;
+}
+
+/* ── Login ───────────────────────────────────────────────────── */
+
+#screen-login {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 12px;
+  padding: 24px 16px;
+}
+
+.login-msg {
+  text-align: center;
+  color: #64748b;
+  line-height: 1.4;
+}
+
+/* ── Buttons ─────────────────────────────────────────────────── */
+
+.btn-primary {
+  background: #3b82f6;
+  color: #fff;
+  border: none;
+  border-radius: 6px;
+  padding: 8px 16px;
+  font-size: 13px;
+  cursor: pointer;
+  font-weight: 500;
+}
+
+.btn-primary:hover {
+  background: #2563eb;
+}
+
+.btn-pay {
+  background: #10b981;
+  color: #fff;
+  border: none;
+  border-radius: 4px;
+  padding: 3px 8px;
+  font-size: 11px;
+  cursor: pointer;
+  white-space: nowrap;
+  font-weight: 500;
+}
+
+.btn-pay:hover {
+  background: #059669;
+}
+
+.btn-pay:disabled {
+  background: #94a3b8;
+  cursor: not-allowed;
+}
+
+/* ── Loading skeletons ───────────────────────────────────────── */
+
+#screen-loading {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.skeleton {
+  background: linear-gradient(90deg, #e2e8f0 25%, #f1f5f9 50%, #e2e8f0 75%);
+  background-size: 200% 100%;
+  animation: shimmer 1.2s infinite;
+  border-radius: 6px;
+}
+
+.skeleton-kpi {
+  height: 56px;
+}
+
+.skeleton-list {
+  height: 120px;
+}
+
+@keyframes shimmer {
+  0% { background-position: 200% 0; }
+  100% { background-position: -200% 0; }
+}
+
+/* ── Error ───────────────────────────────────────────────────── */
+
+#screen-error {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 12px;
+}
+
+.error-msg {
+  color: #ef4444;
+  text-align: center;
+}
+
+/* ── Month nav ───────────────────────────────────────────────── */
+
+.month-nav {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 12px;
+  margin-bottom: 12px;
+  font-weight: 600;
+  font-size: 13px;
+  color: #1e293b;
+}
+
+.month-nav button {
+  background: none;
+  border: 1px solid #e2e8f0;
+  border-radius: 4px;
+  padding: 2px 8px;
+  font-size: 15px;
+  cursor: pointer;
+  color: #475569;
+  line-height: 1.4;
+}
+
+.month-nav button:hover {
+  background: #e2e8f0;
+}
+
+/* ── KPI grid ────────────────────────────────────────────────── */
+
+.kpi-grid {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 8px;
+  margin-bottom: 14px;
+}
+
+.kpi {
+  background: #fff;
+  border: 1px solid #e2e8f0;
+  border-radius: 8px;
+  padding: 8px 6px;
+  text-align: center;
+}
+
+.kpi-label {
+  display: block;
+  font-size: 10px;
+  color: #94a3b8;
+  text-transform: uppercase;
+  letter-spacing: 0.03em;
+  margin-bottom: 2px;
+}
+
+.kpi-value {
+  display: block;
+  font-size: 12px;
+  font-weight: 700;
+}
+
+.kpi-value.income  { color: #10b981; }
+.kpi-value.expense { color: #ef4444; }
+.kpi-value.balance { color: #3b82f6; }
+
+/* ── Sections ────────────────────────────────────────────────── */
+
+section {
+  margin-bottom: 12px;
+}
+
+.section-header {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-weight: 600;
+  font-size: 12px;
+  color: #475569;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  margin-bottom: 6px;
+  padding-bottom: 4px;
+  border-bottom: 1px solid #e2e8f0;
+}
+
+.dot {
+  width: 7px;
+  height: 7px;
+  border-radius: 50%;
+  flex-shrink: 0;
+}
+
+.dot-red    { background: #ef4444; }
+.dot-yellow { background: #f59e0b; }
+
+/* ── Transaction list ────────────────────────────────────────── */
+
+.tx-list {
+  list-style: none;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.tx-item {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  background: #fff;
+  border: 1px solid #e2e8f0;
+  border-radius: 6px;
+  padding: 7px 8px;
+}
+
+.tx-title {
+  flex: 1;
+  font-size: 12px;
+  font-weight: 500;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  color: #1e293b;
+}
+
+.tx-meta {
+  font-size: 11px;
+  color: #94a3b8;
+  white-space: nowrap;
+}
+
+.tx-amount {
+  font-size: 12px;
+  font-weight: 600;
+  color: #1e293b;
+  white-space: nowrap;
+}
+
+.empty-msg {
+  font-size: 12px;
+  color: #94a3b8;
+  text-align: center;
+  padding: 8px 0;
+}
+
+/* ── Paid state ──────────────────────────────────────────────── */
+
+.tx-item.paid .tx-title,
+.tx-item.paid .tx-amount {
+  opacity: 0.45;
+  text-decoration: line-through;
+}

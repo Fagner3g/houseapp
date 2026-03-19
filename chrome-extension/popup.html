@@ -1,0 +1,87 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>HouseApp</title>
+  <link rel="stylesheet" href="popup.css" />
+</head>
+<body>
+  <div id="app">
+    <!-- Header -->
+    <header>
+      <span class="logo">🏠 HouseApp</span>
+      <div class="header-actions">
+        <button id="btn-options" title="Configurações">⚙</button>
+        <button id="btn-open-web" title="Abrir app">↗</button>
+      </div>
+    </header>
+
+    <!-- Login screen -->
+    <div id="screen-login" class="screen hidden">
+      <p class="login-msg">Faça login no HouseApp para continuar.</p>
+      <button id="btn-login" class="btn-primary">Abrir HouseApp</button>
+    </div>
+
+    <!-- Loading screen -->
+    <div id="screen-loading" class="screen hidden">
+      <div class="skeleton skeleton-kpi"></div>
+      <div class="skeleton skeleton-list"></div>
+    </div>
+
+    <!-- Error screen -->
+    <div id="screen-error" class="screen hidden">
+      <p class="error-msg">Erro ao carregar dados.</p>
+      <button id="btn-retry" class="btn-primary">Tentar novamente</button>
+    </div>
+
+    <!-- Main screen -->
+    <div id="screen-main" class="screen hidden">
+      <!-- Month navigator -->
+      <div class="month-nav">
+        <button id="btn-prev-month">‹</button>
+        <span id="month-label"></span>
+        <button id="btn-next-month">›</button>
+      </div>
+
+      <!-- KPIs -->
+      <div class="kpi-grid">
+        <div class="kpi">
+          <span class="kpi-label">A receber</span>
+          <span class="kpi-value income" id="kpi-income">—</span>
+        </div>
+        <div class="kpi">
+          <span class="kpi-label">A pagar</span>
+          <span class="kpi-value expense" id="kpi-expense">—</span>
+        </div>
+        <div class="kpi">
+          <span class="kpi-label">Saldo</span>
+          <span class="kpi-value balance" id="kpi-balance">—</span>
+        </div>
+      </div>
+
+      <!-- Overdue transactions -->
+      <section>
+        <div class="section-header overdue-header">
+          <span class="dot dot-red"></span>
+          <span id="overdue-title">Vencidas</span>
+        </div>
+        <ul id="list-overdue" class="tx-list"></ul>
+        <p id="overdue-empty" class="empty-msg hidden">Nenhuma transação vencida</p>
+      </section>
+
+      <!-- Upcoming alerts -->
+      <section>
+        <div class="section-header upcoming-header">
+          <span class="dot dot-yellow"></span>
+          <span id="upcoming-title">Próximas</span>
+        </div>
+        <ul id="list-upcoming" class="tx-list"></ul>
+        <p id="upcoming-empty" class="empty-msg hidden">Nenhum alerta próximo</p>
+      </section>
+    </div>
+  </div>
+
+  <script src="popup.js"></script>
+</body>
+</html>
