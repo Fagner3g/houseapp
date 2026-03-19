@@ -6,13 +6,15 @@
  * OpenAPI spec version: 1.0.1
  */
 import type { GetOrgSlugReportsTransactions200ReportsChartDataDailyTransactionsItem } from "./getOrgSlugReportsTransactions200ReportsChartDataDailyTransactionsItem";
-import type { GetOrgSlugReportsTransactions200ReportsChartDataMonthlyTrendItem } from "./getOrgSlugReportsTransactions200ReportsChartDataMonthlyTrendItem";
 import type { GetOrgSlugReportsTransactions200ReportsChartDataCategoryBreakdownItem } from "./getOrgSlugReportsTransactions200ReportsChartDataCategoryBreakdownItem";
+import type { GetOrgSlugReportsTransactions200ReportsChartDataIncomeByTagItem } from "./getOrgSlugReportsTransactions200ReportsChartDataIncomeByTagItem";
+import type { GetOrgSlugReportsTransactions200ReportsChartDataExpenseByTagItem } from "./getOrgSlugReportsTransactions200ReportsChartDataExpenseByTagItem";
 import type { GetOrgSlugReportsTransactions200ReportsChartDataStatusDistribution } from "./getOrgSlugReportsTransactions200ReportsChartDataStatusDistribution";
 
 export type GetOrgSlugReportsTransactions200ReportsChartData = {
   dailyTransactions: GetOrgSlugReportsTransactions200ReportsChartDataDailyTransactionsItem[];
-  monthlyTrend: GetOrgSlugReportsTransactions200ReportsChartDataMonthlyTrendItem[];
   categoryBreakdown: GetOrgSlugReportsTransactions200ReportsChartDataCategoryBreakdownItem[];
+  incomeByTag: GetOrgSlugReportsTransactions200ReportsChartDataIncomeByTagItem[];
+  expenseByTag: GetOrgSlugReportsTransactions200ReportsChartDataExpenseByTagItem[];
   statusDistribution: GetOrgSlugReportsTransactions200ReportsChartDataStatusDistribution;
 };

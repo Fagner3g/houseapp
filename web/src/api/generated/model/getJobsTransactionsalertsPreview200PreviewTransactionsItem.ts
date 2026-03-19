@@ -6,6 +6,7 @@
  * OpenAPI spec version: 1.0.1
  */
 import type { GetJobsTransactionsalertsPreview200PreviewTransactionsItemAlertType } from "./getJobsTransactionsalertsPreview200PreviewTransactionsItemAlertType";
+import type { GetJobsTransactionsalertsPreview200PreviewTransactionsItemType } from "./getJobsTransactionsalertsPreview200PreviewTransactionsItemType";
 
 export type GetJobsTransactionsalertsPreview200PreviewTransactionsItem = {
   id: string;
@@ -20,4 +21,5 @@ export type GetJobsTransactionsalertsPreview200PreviewTransactionsItem = {
   payToName: string | null;
   /** @nullable */
   payToPhone: string | null;
+  type?: GetJobsTransactionsalertsPreview200PreviewTransactionsItemType;
 };

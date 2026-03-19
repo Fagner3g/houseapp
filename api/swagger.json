@@ -642,6 +642,13 @@
                               "payToPhone": {
                                 "type": "string",
                                 "nullable": true
+                              },
+                              "type": {
+                                "type": "string",
+                                "enum": [
+                                  "income",
+                                  "expense"
+                                ]
                               }
                             },
                             "required": [
@@ -923,6 +930,13 @@
                                   "payToPhone": {
                                     "type": "string",
                                     "nullable": true
+                                  },
+                                  "type": {
+                                    "type": "string",
+                                    "enum": [
+                                      "income",
+                                      "expense"
+                                    ]
                                   }
                                 },
                                 "required": [
@@ -1003,49 +1017,6 @@
                           ],
                           "additionalProperties": false
                         },
-                        "recentActivity": {
-                          "type": "array",
-                          "items": {
-                            "type": "object",
-                            "properties": {
-                              "id": {
-                                "type": "string"
-                              },
-                              "title": {
-                                "type": "string"
-                              },
-                              "amount": {
-                                "type": "number"
-                              },
-                              "status": {
-                                "type": "string",
-                                "enum": [
-                                  "paid",
-                                  "pending"
-                                ]
-                              },
-                              "dueDate": {
-                                "type": "string"
-                              },
-                              "ownerName": {
-                                "type": "string"
-                              },
-                              "updatedAt": {
-                                "type": "string"
-                              }
-                            },
-                            "required": [
-                              "id",
-                              "title",
-                              "amount",
-                              "status",
-                              "dueDate",
-                              "ownerName",
-                              "updatedAt"
-                            ],
-                            "additionalProperties": false
-                          }
-                        },
                         "chartData": {
                           "type": "object",
                           "properties": {
@@ -1076,34 +1047,59 @@
                                 "additionalProperties": false
                               }
                             },
-                            "monthlyTrend": {
+                            "categoryBreakdown": {
                               "type": "array",
                               "items": {
                                 "type": "object",
                                 "properties": {
-                                  "month": {
+                                  "category": {
                                     "type": "string"
                                   },
-                                  "total": {
+                                  "count": {
                                     "type": "number"
                                   },
-                                  "paid": {
+                                  "totalAmount": {
                                     "type": "number"
                                   },
-                                  "pending": {
-                                    "type": "number"
+                                  "color": {
+                                    "type": "string"
                                   }
                                 },
                                 "required": [
-                                  "month",
-                                  "total",
-                                  "paid",
-                                  "pending"
+                                  "category",
+                                  "count",
+                                  "totalAmount"
                                 ],
                                 "additionalProperties": false
                               }
                             },
-                            "categoryBreakdown": {
+                            "incomeByTag": {
+                              "type": "array",
+                              "items": {
+                                "type": "object",
+                                "properties": {
+                                  "category": {
+                                    "type": "string"
+                                  },
+                                  "count": {
+                                    "type": "number"
+                                  },
+                                  "totalAmount": {
+                                    "type": "number"
+                                  },
+                                  "color": {
+                                    "type": "string"
+                                  }
+                                },
+                                "required": [
+                                  "category",
+                                  "count",
+                                  "totalAmount"
+                                ],
+                                "additionalProperties": false
+                              }
+                            },
+                            "expenseByTag": {
                               "type": "array",
                               "items": {
                                 "type": "object",
@@ -1152,8 +1148,9 @@
                           },
                           "required": [
                             "dailyTransactions",
-                            "monthlyTrend",
                             "categoryBreakdown",
+                            "incomeByTag",
+                            "expenseByTag",
                             "statusDistribution"
                           ],
                           "additionalProperties": false
@@ -1278,29 +1275,6 @@
                           ],
                           "additionalProperties": false
                         },
-                        "incomeVsExpenseDaily": {
-                          "type": "array",
-                          "items": {
-                            "type": "object",
-                            "properties": {
-                              "date": {
-                                "type": "string"
-                              },
-                              "income": {
-                                "type": "number"
-                              },
-                              "expense": {
-                                "type": "number"
-                              }
-                            },
-                            "required": [
-                              "date",
-                              "income",
-                              "expense"
-                            ],
-                            "additionalProperties": false
-                          }
-                        },
                         "overdueTransactions": {
                           "type": "object",
                           "properties": {
@@ -1360,6 +1334,13 @@
                                   },
                                   "overdueDays": {
                                     "type": "number"
+                                  },
+                                  "type": {
+                                    "type": "string",
+                                    "enum": [
+                                      "income",
+                                      "expense"
+                                    ]
                                   }
                                 },
                                 "required": [
@@ -1461,12 +1442,59 @@
                             "transactions"
                           ],
                           "additionalProperties": false
+                        },
+                        "allTransactions": {
+                          "type": "array",
+                          "items": {
+                            "type": "object",
+                            "properties": {
+                              "id": {
+                                "type": "string"
+                              },
+                              "title": {
+                                "type": "string"
+                              },
+                              "amount": {
+                                "type": "number"
+                              },
+                              "dueDate": {
+                                "type": "string"
+                              },
+                              "status": {
+                                "type": "string",
+                                "enum": [
+                                  "paid",
+                                  "pending"
+                                ]
+                              },
+                              "paidAt": {
+                                "type": "string",
+                                "nullable": true
+                              },
+                              "type": {
+                                "type": "string",
+                                "enum": [
+                                  "income",
+                                  "expense"
+                                ]
+                              }
+                            },
+                            "required": [
+                              "id",
+                              "title",
+                              "amount",
+                              "dueDate",
+                              "status",
+                              "paidAt",
+                              "type"
+                            ],
+                            "additionalProperties": false
+                          }
                         }
                       },
                       "required": [
                         "upcomingAlerts",
                         "monthlyStats",
-                        "recentActivity",
                         "chartData"
                       ],
                       "additionalProperties": false
