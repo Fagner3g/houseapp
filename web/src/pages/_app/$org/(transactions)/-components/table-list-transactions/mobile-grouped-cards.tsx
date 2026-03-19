@@ -28,7 +28,7 @@ export function MobileGroupedCards({
   onPay,
   onDelete,
 }: Props) {
-  const [openGroups, setOpenGroups] = useState<Set<string>>(new Set())
+  const [closedGroups, setClosedGroups] = useState<Set<string>>(new Set())
   const currentUser = useAuthStore(s => s.user)
 
   // Verificação de segurança
@@ -93,13 +93,13 @@ export function MobileGroupedCards({
   )
 
   const toggleGroup = (groupKey: string) => {
-    const newOpenGroups = new Set(openGroups)
-    if (newOpenGroups.has(groupKey)) {
-      newOpenGroups.delete(groupKey)
+    const newClosed = new Set(closedGroups)
+    if (newClosed.has(groupKey)) {
+      newClosed.delete(groupKey)
     } else {
-      newOpenGroups.add(groupKey)
+      newClosed.add(groupKey)
     }
-    setOpenGroups(newOpenGroups)
+    setClosedGroups(newClosed)
   }
 
   const formatCurrency = (amount: number) => {
@@ -139,7 +139,7 @@ export function MobileGroupedCards({
       {Object.entries(groupedTransactions)
         .sort((a, b) => a[1].payTo.name.localeCompare(b[1].payTo.name, 'pt-BR'))
         .map(([groupKey, group]) => {
-          const isOpen = openGroups.has(groupKey)
+          const isOpen = !closedGroups.has(groupKey)
           const transactions = group.transactions || []
 
           // Calcular totais
@@ -206,23 +206,22 @@ export function MobileGroupedCards({
                   </div>
                   <div className="flex items-center gap-2 sm:mt-0 mt-1">
                     {/* Resumo financeiro */}
-                    <div className="text-right">
-                      <div className="text-xs sm:text-sm font-medium flex items-center justify-end gap-1 flex-wrap">
-                        <span className="text-red-600 whitespace-nowrap">
-                          {new Intl.NumberFormat('pt-BR', { minimumFractionDigits: 2 }).format(
-                            totalExpense
-                          )}
-                        </span>
-                        <span className="text-muted-foreground">-</span>
-                        <span className="text-green-600 whitespace-nowrap">
-                          {new Intl.NumberFormat('pt-BR', { minimumFractionDigits: 2 }).format(
-                            totalIncome
-                          )}
-                        </span>
-                        <span className="text-muted-foreground">=</span>
-                        <span className="text-foreground whitespace-nowrap">
-                          {formatCurrency(Math.abs(netTotal))}
-                        </span>
+                    <div className="text-right space-y-0.5">
+                      {totalIncome > 0 && (
+                        <div className="text-xs text-green-600 font-medium">
+                          +{formatCurrency(totalIncome)} entrada
+                        </div>
+                      )}
+                      {totalExpense > 0 && (
+                        <div className="text-xs text-red-600 font-medium">
+                          -{formatCurrency(totalExpense)} saída
+                        </div>
+                      )}
+                      <div
+                        className={`text-sm font-bold ${netTotal >= 0 ? 'text-green-700 dark:text-green-400' : 'text-red-700 dark:text-red-400'}`}
+                      >
+                        {netTotal >= 0 ? '+' : '-'}
+                        {formatCurrency(Math.abs(netTotal))}
                       </div>
                     </div>
                     <ChevronDown
