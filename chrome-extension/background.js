@@ -8,7 +8,7 @@ chrome.runtime.onInstalled.addListener(async () => {
   createAlarm(pollMinutes || DEFAULT_POLL_MINUTES)
 })
 
-chrome.alarms.onAlarm.addListener((alarm) => {
+chrome.alarms.onAlarm.addListener(alarm => {
   if (alarm.name === ALARM_NAME) poll()
 })
 
@@ -97,13 +97,15 @@ async function payTransaction(transactionId) {
 
 // ── Badge ────────────────────────────────────────────────────────────────────
 
-function setBadge(count) {
-  if (count > 0) {
-    chrome.action.setBadgeText({ text: String(count) })
-    chrome.action.setBadgeBackgroundColor({ color: '#ef4444' })
-  } else {
+function setBadge(overdueCount, upcomingCount) {
+  const total = overdueCount + upcomingCount
+  if (total === 0) {
     chrome.action.setBadgeText({ text: '' })
+    return
   }
+  chrome.action.setBadgeText({ text: String(total) })
+  chrome.action.setBadgeTextColor({ color: '#ffffff' })
+  chrome.action.setBadgeBackgroundColor({ color: overdueCount > 0 ? '#ef4444' : '#f59e0b' })
 }
 
 // ── Notifications ────────────────────────────────────────────────────────────
@@ -143,24 +145,35 @@ function formatAmount(amount) {
 async function poll() {
   try {
     const token = await getToken()
-    if (!token) { setBadge(0); return }
+    if (!token) {
+      setBadge(0)
+      return
+    }
 
-    const { apiUrl } = await getConfig()
-    if (!apiUrl) { setBadge(0); return }
+    const { apiUrl, orgSlug: savedSlug } = await getConfig()
+    if (!apiUrl) {
+      setBadge(0)
+      return
+    }
 
     // Validate token
-    try { await fetchProfile(apiUrl, token) } catch (_) {
+    try {
+      await fetchProfile(apiUrl, token)
+    } catch (_) {
       await chrome.storage.local.remove('token')
       setBadge(0)
       return
     }
 
     // Resolve org slug
-    let { orgSlug } = await getConfig()
+    let orgSlug = savedSlug
     if (!orgSlug) {
       const orgsData = await fetchOrgs(apiUrl, token)
       const orgs = orgsData.organizations || orgsData.orgs || orgsData
-      if (!orgs?.length) { setBadge(0); return }
+      if (!orgs?.length) {
+        setBadge(0)
+        return
+      }
       orgSlug = orgs[0].slug
       await chrome.storage.local.set({ orgSlug })
     }
@@ -173,8 +186,12 @@ async function poll() {
     const reports = data.reports || data
 
     const { cachedReport } = await chrome.storage.local.get('cachedReport')
-    const prevOverdueIds = new Set((cachedReport?.overdueTransactions?.transactions || []).map(t => t.id))
-    const prevUpcomingIds = new Set((cachedReport?.upcomingAlerts?.transactions || []).map(t => t.id))
+    const prevOverdueIds = new Set(
+      (cachedReport?.overdueTransactions?.transactions || []).map(t => t.id)
+    )
+    const prevUpcomingIds = new Set(
+      (cachedReport?.upcomingAlerts?.transactions || []).map(t => t.id)
+    )
 
     const overdue = reports.overdueTransactions?.transactions || []
     const upcoming = reports.upcomingAlerts?.transactions || []
@@ -187,7 +204,7 @@ async function poll() {
       if (!prevUpcomingIds.has(tx.id)) notifyUpcoming(tx)
     }
 
-    setBadge(overdue.length)
+    setBadge(overdue.length, upcoming.length)
     await chrome.storage.local.set({
       cachedReport: reports,
       cachedYear: year,

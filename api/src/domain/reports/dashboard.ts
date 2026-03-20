@@ -9,6 +9,10 @@ import { getContextualizedTransactionType } from '@/domain/transactions/get-cont
 
 export async function getTransactionReports(orgId: string, userId: string, referenceDate?: Date) {
   const now = referenceDate || new Date()
+  // today is always real current midnight — not the referenceDate — so upcoming/overdue
+  // windows are correct even when viewing historical months
+  const today = new Date()
+  today.setHours(0, 0, 0, 0)
   const startOfMonth = new Date(now.getFullYear(), now.getMonth(), 1)
   const endOfMonth = new Date(now.getFullYear(), now.getMonth() + 1, 0, 23, 59, 59, 999)
 
@@ -37,6 +41,7 @@ export async function getTransactionReports(orgId: string, userId: string, refer
     .where(
       and(
         eq(transactionSeries.organizationId, orgId),
+        eq(transactionSeries.active, true),
         or(
           eq(transactionSeries.ownerId, userId), // User is the owner
           eq(transactionSeries.payToId, userId) // User is responsible for the transaction
@@ -115,7 +120,7 @@ export async function getTransactionReports(orgId: string, userId: string, refer
     totalAmount: rows.reduce((acc, r) => acc + Number(r.amount) / 100, 0),
     paidTransactions: rows.filter(r => r.paidAt).length,
     pendingTransactions: rows.filter(r => r.status === 'pending').length,
-    overdueTransactions: rows.filter(r => r.status === 'pending' && r.dueDate < now).length,
+    overdueTransactions: rows.filter(r => r.status === 'pending' && r.dueDate < today).length,
   }
 
   // simple daily chart (paid/pending/total sums per day)
@@ -255,20 +260,18 @@ export async function getTransactionReports(orgId: string, userId: string, refer
     overdue: rows
       .filter(r => {
         if (r.status !== 'pending' && !r.paidAt) return false
-        const isHistorical = endOfMonth < new Date()
+        const isHistorical = endOfMonth < today
         if (isHistorical) {
           // Mês passado: transações do mês que não foram pagas
           return !r.paidAt
         }
-        // Mês atual: transações vencidas
-        return r.status === 'pending' && r.dueDate < new Date()
+        // Mês atual: transações vencidas (antes da meia-noite de hoje)
+        return r.status === 'pending' && r.dueDate < today
       })
       .reduce((acc, r) => acc + Number(r.amount) / 100, 0),
   }
 
-  // Próximos 4 dias (alertas)
-  const today = new Date(now)
-  today.setHours(0, 0, 0, 0)
+  // Próximos 4 dias (alertas) — sempre relativo à data/hora atual real
   const fourDaysFromNow = new Date(today.getTime() + 4 * 24 * 60 * 60 * 1000)
   fourDaysFromNow.setHours(23, 59, 59, 999)
 
@@ -305,9 +308,9 @@ export async function getTransactionReports(orgId: string, userId: string, refer
       type: getContextualizedTransactionType(r.type as 'income' | 'expense', r.ownerId, userId),
     }))
 
-  // Overdue list and summary
+  // Overdue list and summary — transactions due before today midnight (not today itself)
   const overdueList = rows
-    .filter(r => r.status === 'pending' && r.dueDate < now)
+    .filter(r => r.status === 'pending' && r.dueDate < today)
     .map(r => ({
       id: r.id,
       title: r.title,
@@ -320,7 +323,7 @@ export async function getTransactionReports(orgId: string, userId: string, refer
       payToName: r.payToName,
       payToEmail: r.payToEmail,
       status: r.status as 'paid' | 'pending',
-      overdueDays: Math.ceil((+now - +r.dueDate) / (1000 * 60 * 60 * 24)),
+      overdueDays: Math.ceil((+today - +r.dueDate) / (1000 * 60 * 60 * 24)),
       type: getContextualizedTransactionType(r.type as 'income' | 'expense', r.ownerId, userId),
     }))
 

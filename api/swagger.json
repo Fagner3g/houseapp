@@ -2803,8 +2803,9 @@
                       "recurrenceSelector": {
                         "type": "string",
                         "enum": [
-                          "date",
-                          "repeat"
+                          "infinite",
+                          "times",
+                          "until"
                         ]
                       },
                       "recurrenceType": {
@@ -2816,9 +2817,6 @@
                         ]
                       },
                       "recurrenceUntil": {},
-                      "recurrenceInfinite": {
-                        "type": "boolean"
-                      },
                       "recurrenceInterval": {
                         "type": "integer",
                         "minimum": -9007199254740991,

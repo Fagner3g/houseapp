@@ -7,7 +7,7 @@ const MONTHS = [
 
 function fmt(amount) {
   const num = typeof amount === 'number' ? amount : parseFloat(amount)
-  return 'R$ ' + num.toLocaleString('pt-BR', { minimumFractionDigits: 2 })
+  return `R$ ${num.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}`
 }
 
 function fmtDate(isoString) {
@@ -243,7 +243,7 @@ function renderUpcoming(upcomingAlerts, context) {
 
   for (const tx of upcoming) {
     const d = tx.daysUntilDue
-    const meta = d === 1 ? 'amanhã' : `${d} dias`
+    const meta = d === 0 ? 'hoje' : d === 1 ? 'amanhã' : `${d} dias`
     list.appendChild(renderTransactionItem(tx, context, meta))
   }
 }
