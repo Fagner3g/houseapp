@@ -56,6 +56,7 @@ const state = {
   year: new Date().getFullYear(),
   month: new Date().getMonth() + 1,
   reports: null,
+  orgs: [],
 }
 
 // ── Auth ──────────────────────────────────────────────────────────────────────
@@ -140,7 +141,7 @@ function renderTransactionItem(tx, context, metaLabel) {
   if (canPay) {
     li.querySelector('.btn-pay').addEventListener('click', (e) => {
       e.stopPropagation()
-      handlePay(tx.id, li)
+      handlePay(tx.id, li, tx)
     })
   }
 
@@ -270,15 +271,63 @@ function renderMonthLabel() {
     `${MONTHS[state.month - 1]} de ${state.year}`
 }
 
+function renderOrgSelect() {
+  const sel = document.getElementById('org-select')
+  sel.innerHTML = ''
+  for (const org of state.orgs) {
+    const opt = document.createElement('option')
+    opt.value = org.slug
+    opt.textContent = org.name
+    opt.selected = org.slug === state.orgSlug
+    sel.appendChild(opt)
+  }
+  sel.classList.toggle('hidden', state.orgs.length <= 1)
+}
+
 // ── Actions ───────────────────────────────────────────────────────────────────
 
-async function handlePay(txId, liEl) {
+// ── Pay modal ─────────────────────────────────────────────────────────────────
+
+let _payResolve = null
+
+function openPayModal(tx) {
+  // Pre-fill defaults
+  const todayStr = new Date().toISOString().split('T')[0]
+  document.getElementById('pay-date').value = todayStr
+  document.getElementById('pay-amount').value = tx.amount.toFixed(2).replace('.', ',')
+  document.getElementById('pay-modal').classList.remove('hidden')
+
+  return new Promise(resolve => { _payResolve = resolve })
+}
+
+function closePayModal(result) {
+  document.getElementById('pay-modal').classList.add('hidden')
+  if (_payResolve) { _payResolve(result); _payResolve = null }
+}
+
+document.getElementById('pay-cancel').addEventListener('click', () => closePayModal(null))
+document.getElementById('pay-confirm').addEventListener('click', () => {
+  const dateVal   = document.getElementById('pay-date').value
+  const amountVal = document.getElementById('pay-amount').value.replace(',', '.')
+  const amount    = parseFloat(amountVal)
+  if (!dateVal) { alert('Informe a data do pagamento'); return }
+  if (!amount || amount <= 0) { alert('Informe o valor pago'); return }
+  closePayModal({ paidAt: new Date(dateVal).toISOString(), paidAmount: amount })
+})
+
+async function handlePay(txId, liEl, tx) {
+  const result = await openPayModal(tx)
+  if (!result) return  // cancelled
+
   const btn = liEl.querySelector('.btn-pay')
   btn.disabled = true
   btn.textContent = '...'
 
   try {
-    await apiFetch(`/org/${state.orgSlug}/transaction/${txId}/pay`, { method: 'PATCH' })
+    await apiFetch(`/org/${state.orgSlug}/transaction/${txId}/pay`, {
+      method: 'PATCH',
+      body: JSON.stringify(result),
+    })
     liEl.classList.add('paid')
     btn.remove()
     await chrome.storage.local.remove('cachedReport')
@@ -365,19 +414,18 @@ async function init() {
     return
   }
 
-  if (stored.orgSlug) {
-    state.orgSlug = stored.orgSlug
-  } else {
-    try {
-      const orgsData = await apiFetch('/orgs')
-      const orgs = orgsData.organizations || orgsData.orgs || orgsData
-      if (!orgs?.length) { showScreen('error'); return }
-      state.orgSlug = orgs[0].slug
-      await chrome.storage.local.set({ orgSlug: state.orgSlug })
-    } catch (_) {
-      showScreen('error')
-      return
-    }
+  try {
+    const orgsData = await apiFetch('/orgs')
+    const orgs = orgsData.organizations || orgsData.orgs || orgsData
+    if (!orgs?.length) { showScreen('error'); return }
+    state.orgs = orgs
+    // Use stored slug if it still exists, otherwise fall back to first org
+    state.orgSlug = orgs.find(o => o.slug === stored.orgSlug)?.slug || orgs[0].slug
+    await chrome.storage.local.set({ orgSlug: state.orgSlug })
+    renderOrgSelect()
+  } catch (_) {
+    showScreen('error')
+    return
   }
 
   await loadData()
@@ -411,6 +459,12 @@ document.getElementById('btn-login').addEventListener('click', () => {
 })
 
 document.getElementById('btn-retry').addEventListener('click', () => loadData())
+
+document.getElementById('org-select').addEventListener('change', async (e) => {
+  state.orgSlug = e.target.value
+  await chrome.storage.local.set({ orgSlug: state.orgSlug })
+  loadData()
+})
 
 document.getElementById('btn-prev-month').addEventListener('click', () => {
   state.month--

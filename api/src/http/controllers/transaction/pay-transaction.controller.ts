@@ -15,7 +15,11 @@ export async function payTransactionController(
 ) {
   const { id } = request.params
   const body = request.body || {}
-  const { paidAt } = body
-  await payTransactionService({ id, paidAt: paidAt ? new Date(paidAt) : undefined })
+  const { paidAt, paidAmount } = body
+  await payTransactionService({
+    id,
+    paidAt: paidAt ? new Date(paidAt) : undefined,
+    valuePaid: paidAmount ? BigInt(Math.round(paidAmount * 100)) : undefined,
+  })
   return reply.status(204).send()
 }

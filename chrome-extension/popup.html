@@ -11,6 +11,7 @@
     <!-- Header -->
     <header>
       <span class="logo">🏠 HouseApp</span>
+      <select id="org-select" class="org-select hidden" title="Organização"></select>
       <div class="header-actions">
         <button id="btn-refresh" title="Atualizar">↻</button>
         <button id="btn-options" title="Configurações">⚙</button>
@@ -90,6 +91,23 @@
         <ul id="list-all" class="tx-list tx-list-scroll"></ul>
         <p id="all-empty" class="empty-msg hidden">Nenhuma transação no mês</p>
       </section>
+    </div>
+  </div>
+
+  <!-- Pay modal -->
+  <div id="pay-modal" class="modal-backdrop hidden">
+    <div class="modal">
+      <p class="modal-title">Confirmar pagamento</p>
+      <label class="modal-label">Data do pagamento
+        <input type="date" id="pay-date" class="modal-input" />
+      </label>
+      <label class="modal-label">Valor pago (R$)
+        <input type="number" id="pay-amount" class="modal-input" step="0.01" min="0.01" placeholder="0,00" />
+      </label>
+      <div class="modal-actions">
+        <button id="pay-cancel" class="btn-secondary">Cancelar</button>
+        <button id="pay-confirm" class="btn-primary">Confirmar</button>
+      </div>
     </div>
   </div>
 

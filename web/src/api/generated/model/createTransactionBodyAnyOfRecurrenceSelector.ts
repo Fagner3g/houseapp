@@ -11,7 +11,6 @@ export type CreateTransactionBodyAnyOfRecurrenceSelector =
 
 // eslint-disable-next-line @typescript-eslint/no-redeclare
 export const CreateTransactionBodyAnyOfRecurrenceSelector = {
-  infinite: "infinite",
-  times: "times",
-  until: "until",
+  date: "date",
+  repeat: "repeat",
 } as const;
