@@ -9,6 +9,10 @@ import { getContextualizedTransactionType } from '@/domain/transactions/get-cont
 
 export async function getTransactionReports(orgId: string, userId: string, referenceDate?: Date) {
   const now = referenceDate || new Date()
+  // today is always real current midnight — not the referenceDate — so upcoming/overdue
+  // windows are correct even when viewing historical months
+  const today = new Date()
+  today.setHours(0, 0, 0, 0)
   const startOfMonth = new Date(now.getFullYear(), now.getMonth(), 1)
   const endOfMonth = new Date(now.getFullYear(), now.getMonth() + 1, 0, 23, 59, 59, 999)
 
@@ -37,6 +41,7 @@ export async function getTransactionReports(orgId: string, userId: string, refer
     .where(
       and(
         eq(transactionSeries.organizationId, orgId),
+        eq(transactionSeries.active, true),
         or(
           eq(transactionSeries.ownerId, userId), // User is the owner
           eq(transactionSeries.payToId, userId) // User is responsible for the transaction
@@ -64,15 +69,10 @@ export async function getTransactionReports(orgId: string, userId: string, refer
   const toPayBy = new Map<string, number>()
   const toReceiveItems = new Map<string, { title: string; amount: number }[]>()
   const toPayItems = new Map<string, { title: string; amount: number }[]>()
-  const incomeVsExpenseDailyMap = new Map<string, { income: number; expense: number }>()
 
   for (const r of rows) {
     const amountNum = Number(r.amount) / 100
     totalMonth += amountNum
-    const dateKey = new Date(r.dueDate).toISOString().split('T')[0]
-    if (!incomeVsExpenseDailyMap.has(dateKey))
-      incomeVsExpenseDailyMap.set(dateKey, { income: 0, expense: 0 })
-
     const ctxType = getContextualizedTransactionType(
       r.type as 'income' | 'expense',
       r.ownerId,
@@ -84,13 +84,10 @@ export async function getTransactionReports(orgId: string, userId: string, refer
       incomeRegistered += amountNum
       if (r.paidAt) receivedTotal += amountNum
 
-      // Para meses históricos: considera tudo que tinha vencimento no mês (pago ou não)
-      // Para mês atual: considera apenas o que está realmente pendente
       const isHistorical = endOfMonth < new Date()
       const shouldCountAsToReceive = isHistorical ? true : r.status === 'pending'
 
       if (shouldCountAsToReceive && !r.paidAt) {
-        // Receber quando: tipo contextualizado é income e não foi pago
         toReceiveTotal += amountNum
         const counterparty =
           r.ownerId === userId ? r.payToName || r.payToEmail || 'Desconhecido' : r.ownerName
@@ -99,18 +96,13 @@ export async function getTransactionReports(orgId: string, userId: string, refer
         arr.push({ title: r.title, amount: amountNum })
         toReceiveItems.set(counterparty, arr)
       }
-      const d = incomeVsExpenseDailyMap.get(dateKey)
-      if (d) d.income += amountNum
     } else {
       expenseRegistered += amountNum
 
-      // Para meses históricos: considera tudo que tinha vencimento no mês (pago ou não)
-      // Para mês atual: considera apenas o que está realmente pendente
       const isHistorical = endOfMonth < new Date()
       const shouldCountAsToPay = isHistorical ? true : r.status === 'pending'
 
       if (shouldCountAsToPay && !r.paidAt) {
-        // Pagar quando: tipo contextualizado é expense e não foi pago
         toSpendTotal += amountNum
         const counterparty =
           r.payToId === userId ? r.ownerName : r.payToName || r.payToEmail || 'Desconhecido'
@@ -119,14 +111,8 @@ export async function getTransactionReports(orgId: string, userId: string, refer
         arr.push({ title: r.title, amount: amountNum })
         toPayItems.set(counterparty, arr)
       }
-      const d = incomeVsExpenseDailyMap.get(dateKey)
-      if (d) d.expense += amountNum
     }
   }
-
-  const incomeVsExpenseDaily = Array.from(incomeVsExpenseDailyMap.entries())
-    .sort((a, b) => (a[0] < b[0] ? -1 : 1))
-    .map(([date, v]) => ({ date, income: v.income, expense: v.expense }))
 
   // monthly stats (counts)
   const monthlyStats = {
@@ -134,23 +120,8 @@ export async function getTransactionReports(orgId: string, userId: string, refer
     totalAmount: rows.reduce((acc, r) => acc + Number(r.amount) / 100, 0),
     paidTransactions: rows.filter(r => r.paidAt).length,
     pendingTransactions: rows.filter(r => r.status === 'pending').length,
-    overdueTransactions: rows.filter(r => r.status === 'pending' && r.dueDate < now).length,
+    overdueTransactions: rows.filter(r => r.status === 'pending' && r.dueDate < today).length,
   }
-
-  // recent activity (last 10 by dueDate desc)
-  const recentActivity = rows
-    .slice()
-    .sort((a, b) => +b.dueDate - +a.dueDate)
-    .slice(0, 10)
-    .map(r => ({
-      id: r.id,
-      title: r.title,
-      amount: Number(r.amount) / 100,
-      status: r.status as 'paid' | 'pending',
-      dueDate: r.dueDate,
-      ownerName: r.ownerName,
-      updatedAt: r.paidAt ?? r.dueDate,
-    }))
 
   // simple daily chart (paid/pending/total sums per day)
   const dailyMap = new Map<string, { paid: number; pending: number; total: number }>()
@@ -168,13 +139,6 @@ export async function getTransactionReports(orgId: string, userId: string, refer
   const dailyTransactions = Array.from(dailyMap.entries())
     .sort((a, b) => (a[0] < b[0] ? -1 : 1))
     .map(([date, v]) => ({ date, ...v }))
-
-  const monthlyTrend = [] as Array<{
-    month: string
-    total: number
-    paid: number
-    pending: number
-  }>
 
   // Tags breakdown for current month - separated by income/expense
   const categoryBreakdown = [] as Array<{
@@ -296,20 +260,18 @@ export async function getTransactionReports(orgId: string, userId: string, refer
     overdue: rows
       .filter(r => {
         if (r.status !== 'pending' && !r.paidAt) return false
-        const isHistorical = endOfMonth < new Date()
+        const isHistorical = endOfMonth < today
         if (isHistorical) {
           // Mês passado: transações do mês que não foram pagas
           return !r.paidAt
         }
-        // Mês atual: transações vencidas
-        return r.status === 'pending' && r.dueDate < new Date()
+        // Mês atual: transações vencidas (antes da meia-noite de hoje)
+        return r.status === 'pending' && r.dueDate < today
       })
       .reduce((acc, r) => acc + Number(r.amount) / 100, 0),
   }
 
-  // Próximos 4 dias (alertas)
-  const today = new Date(now)
-  today.setHours(0, 0, 0, 0)
+  // Próximos 4 dias (alertas) — sempre relativo à data/hora atual real
   const fourDaysFromNow = new Date(today.getTime() + 4 * 24 * 60 * 60 * 1000)
   fourDaysFromNow.setHours(23, 59, 59, 999)
 
@@ -341,13 +303,15 @@ export async function getTransactionReports(orgId: string, userId: string, refer
       payToName: r.payToName,
       payToEmail: r.payToEmail,
       installmentsTotal: r.installmentsTotal ?? null,
+      status: r.status as 'paid' | 'pending',
       daysUntilDue: Math.ceil((+r.dueDate - +today) / (1000 * 60 * 60 * 24)),
       alertType: 'warning' as 'warning',
+      type: getContextualizedTransactionType(r.type as 'income' | 'expense', r.ownerId, userId),
     }))
 
-  // Overdue list and summary
+  // Overdue list and summary — transactions due before today midnight (not today itself)
   const overdueList = rows
-    .filter(r => r.status === 'pending' && r.dueDate < now)
+    .filter(r => r.status === 'pending' && r.dueDate < today)
     .map(r => ({
       id: r.id,
       title: r.title,
@@ -360,7 +324,8 @@ export async function getTransactionReports(orgId: string, userId: string, refer
       payToName: r.payToName,
       payToEmail: r.payToEmail,
       status: r.status as 'paid' | 'pending',
-      overdueDays: Math.ceil((+now - +r.dueDate) / (1000 * 60 * 60 * 24)),
+      overdueDays: Math.ceil((+today - +r.dueDate) / (1000 * 60 * 60 * 24)),
+      type: getContextualizedTransactionType(r.type as 'income' | 'expense', r.ownerId, userId),
     }))
 
   // Paid this month list and summary
@@ -385,20 +350,31 @@ export async function getTransactionReports(orgId: string, userId: string, refer
     totalAmount: paidThisMonthList.reduce((acc, t) => acc + t.amount, 0),
   }
 
+  // Flat list of all transactions within the queried month (for popup "Todas do mês")
+  const allTransactionsList = rows
+    .filter(r => r.dueDate >= startOfMonth && r.dueDate <= endOfMonth)
+    .sort((a, b) => +a.dueDate - +b.dueDate)
+    .map(r => ({
+      id: r.id,
+      title: r.title,
+      amount: Number(r.amount) / 100,
+      dueDate: r.dueDate.toISOString(),
+      status: r.status as 'paid' | 'pending',
+      paidAt: r.paidAt?.toISOString() ?? null,
+      type: getContextualizedTransactionType(r.type as 'income' | 'expense', r.ownerId, userId),
+    }))
+
   return {
     reports: {
       upcomingAlerts: { transactions: upcomingTransactions, summary: upcomingSummary },
       monthlyStats,
-      recentActivity,
       chartData: {
         dailyTransactions,
-        monthlyTrend,
         categoryBreakdown,
         incomeByTag,
         expenseByTag,
         statusDistribution,
       },
-      // novos campos
       kpis: {
         totalMonth,
         incomeRegistered,
@@ -419,7 +395,6 @@ export async function getTransactionReports(orgId: string, userId: string, refer
           items: (toPayItems.get(name) ?? []).slice(0, 5),
         })),
       },
-      incomeVsExpenseDaily,
       overdueTransactions: {
         summary: { total: overdueList.length },
         transactions: overdueList,
@@ -428,6 +403,7 @@ export async function getTransactionReports(orgId: string, userId: string, refer
         summary: paidThisMonthSummary,
         transactions: paidThisMonthList,
       },
+      allTransactions: allTransactionsList,
     },
     timestamp: new Date().toISOString(),
   }

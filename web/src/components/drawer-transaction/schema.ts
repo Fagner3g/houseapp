@@ -17,14 +17,13 @@ const base = z.object({
 
 const recurring = base.extend({
   isRecurring: z.literal(true),
-  recurrenceSelector: z.enum(['date', 'repeat'], {
+  recurrenceSelector: z.enum(['infinite', 'times', 'until'], {
     error: 'Selecione um tipo de recorrência',
   }),
   recurrenceType: z.enum(['weekly', 'monthly', 'yearly'], {
     error: 'Selecione uma recorrência',
   }),
   recurrenceUntil: z.date().optional(),
-  recurrenceInfinite: z.boolean().optional(),
   recurrenceInterval: z.number().int().optional(),
   installmentsTotal: z.number().int().optional(),
   recurrenceStart: z.date().optional(),
@@ -35,7 +34,6 @@ const nonRecurring = base.extend({
   recurrenceSelector: z.undefined(),
   recurrenceType: z.undefined(),
   recurrenceUntil: z.undefined(),
-  recurrenceInfinite: z.undefined(),
   recurrenceInterval: z.undefined(),
   // Do not validate installments when not recurring
   installmentsTotal: z.any().optional(),
@@ -46,6 +44,7 @@ const _schema = z.discriminatedUnion('isRecurring', [recurring, nonRecurring])
 
 export const newTransactionSchema = _schema.superRefine((v, ctx) => {
   if (!v.isRecurring) return
+
   if (
     v.recurrenceInterval == null ||
     Number.isNaN(v.recurrenceInterval) ||
@@ -58,36 +57,34 @@ export const newTransactionSchema = _schema.superRefine((v, ctx) => {
     })
   }
 
-  // Quando o modo é "Repete", exigir total de parcelas válido
   if (
-    v.recurrenceSelector === 'repeat' &&
+    v.recurrenceSelector === 'times' &&
     (v.installmentsTotal == null || Number.isNaN(v.installmentsTotal) || v.installmentsTotal < 1)
   ) {
     ctx.addIssue({
       code: 'custom',
       path: ['installmentsTotal'],
-      message: 'Informe o total de parcelas',
+      message: 'Informe o total de vezes',
     })
   }
 
-  // Quando o modo é "Termina em", exigir data final se não for infinito
-  if (v.recurrenceSelector === 'date' && !v.recurrenceInfinite && !v.recurrenceUntil) {
-    ctx.addIssue({
-      code: 'custom',
-      path: ['recurrenceUntil'],
-      message: 'A data final é obrigatória para o modo "Termina em"',
-    })
-  }
-
-  if (v.recurrenceUntil) {
-    const now = new Date()
-    const min = v.dueDate > now ? v.dueDate : now
-    if (v.recurrenceUntil <= min) {
+  if (v.recurrenceSelector === 'until') {
+    if (!v.recurrenceUntil) {
       ctx.addIssue({
         code: 'custom',
         path: ['recurrenceUntil'],
-        message: 'A data final deve ser posterior ao vencimento e à data atual',
+        message: 'A data final é obrigatória',
       })
+    } else {
+      const now = new Date()
+      const min = v.dueDate > now ? v.dueDate : now
+      if (v.recurrenceUntil <= min) {
+        ctx.addIssue({
+          code: 'custom',
+          path: ['recurrenceUntil'],
+          message: 'A data final deve ser posterior ao vencimento e à data atual',
+        })
+      }
     }
   }
 })

@@ -1,13 +1,5 @@
 import { IconCashRegister, IconCircleCheckFilled } from '@tabler/icons-react'
-import {
-  AlertOctagon,
-  AlertTriangle,
-  ArrowDown,
-  ArrowUp,
-  LucideClockFading,
-  MoreHorizontal,
-} from 'lucide-react'
-import { useState } from 'react'
+import { AlertOctagon, AlertTriangle, ArrowDown, ArrowUp, LucideClockFading, MoreHorizontal } from 'lucide-react'
 
 import type { ListTransactions200TransactionsItem } from '@/api/generated/model'
 import { Badge } from '@/components/ui/badge'
@@ -42,7 +34,6 @@ export function MobileCards({
   onDelete,
 }: MobileCardsProps) {
   const currentUser = useAuthStore(s => s.user)
-  const [expandedCard, setExpandedCard] = useState<string | null>(null)
 
   const formatCurrency = (amount: number) => {
     return new Intl.NumberFormat('pt-BR', {
@@ -109,14 +100,11 @@ export function MobileCards({
     <div className="space-y-3 p-4">
       {transactions.map(transaction => {
         const isSelected = selectedRows.includes(transaction.id)
-        const isExpanded = expandedCard === transaction.id
 
         return (
           <div
             key={transaction.id}
-            className={`bg-card border rounded-lg p-3 transition-all duration-200 hover:shadow-md hover:border-primary/20 w-full ${
-              isSelected ? 'ring-2 ring-primary/20 border-primary/30' : ''
-            }`}
+            className={`bg-card border rounded-lg p-3 transition-all duration-200 hover:shadow-md hover:border-primary/20 w-full ${isSelected ? 'ring-2 ring-primary/20 border-primary/30' : ''}`}
           >
             {/* Header do card */}
             <div className="flex items-center justify-between mb-2">
@@ -218,94 +206,33 @@ export function MobileCards({
               )}
             </button>
 
-            {/* Informações expandidas */}
-            <div
-              className={`overflow-hidden transition-all duration-300 ease-in-out ${
-                isExpanded ? 'max-h-80 opacity-100' : 'max-h-0 opacity-0'
-              }`}
-            >
-              <div className="pt-2 border-t space-y-2 mt-2">
+            {/* Detalhes adicionais */}
+            {(transaction.installmentsTotal && transaction.installmentsTotal > 1) ||
+            transaction.paidAt ||
+            transaction.ownerName ? (
+              <div className="pt-2 border-t space-y-1.5 mt-2">
                 {transaction.installmentsTotal && transaction.installmentsTotal > 1 && (
-                  <div className="flex justify-between items-center animate-in slide-in-from-top-1 duration-200 delay-75">
+                  <div className="flex justify-between items-center">
                     <span className="text-xs text-muted-foreground">Parcelas</span>
                     <span className="text-xs font-medium">
-                      {Number(transaction.installmentsPaid) || 0} de {transaction.installmentsTotal}
+                      {Number(transaction.installmentsPaid) || 0}/{transaction.installmentsTotal}
                     </span>
                   </div>
                 )}
-
                 {transaction.paidAt && (
-                  <div className="flex justify-between items-center animate-in slide-in-from-top-1 duration-200 delay-100">
+                  <div className="flex justify-between items-center">
                     <span className="text-xs text-muted-foreground">Pago em</span>
                     <span className="text-xs font-medium">{formatDate(transaction.paidAt)}</span>
                   </div>
                 )}
-
-                {transaction.payTo && (
-                  <div className="flex justify-between items-center animate-in slide-in-from-top-1 duration-200 delay-125">
-                    <span className="text-xs text-muted-foreground">Para</span>
-                    <span className="text-xs font-medium">
-                      {typeof transaction.payTo === 'object'
-                        ? transaction.payTo.name || transaction.payTo.email
-                        : String(transaction.payTo)}
-                    </span>
-                  </div>
-                )}
-
                 {transaction.ownerName && (
-                  <div className="flex justify-between items-center animate-in slide-in-from-top-1 duration-200 delay-150">
+                  <div className="flex justify-between items-center">
                     <span className="text-xs text-muted-foreground">Responsável</span>
                     <span className="text-xs font-medium">{transaction.ownerName}</span>
                   </div>
                 )}
-
-                {/* Todas as tags quando expandido */}
-                {transaction.tags && transaction.tags.length > 2 && (
-                  <div className="flex gap-1 flex-wrap animate-in slide-in-from-top-1 duration-200 delay-175">
-                    {transaction.tags.slice(2).map((tag, index) => (
-                      <Badge
-                        key={`${transaction.id}-tag-expanded-${index}`}
-                        style={{ backgroundColor: typeof tag === 'object' ? tag.color : undefined }}
-                        className="text-white text-xs px-1.5 py-0.5"
-                      >
-                        #{typeof tag === 'string' ? tag : tag.name || 'Tag'}
-                      </Badge>
-                    ))}
-                  </div>
-                )}
               </div>
-            </div>
-
-            {/* Botão para expandir/recolher */}
-            {((transaction.installmentsTotal && transaction.installmentsTotal > 1) ||
-              transaction.paidAt ||
-              transaction.payTo ||
-              transaction.ownerName ||
-              (transaction.tags && transaction.tags.length > 2)) && (
-              <div className="pt-1 mt-1">
-                <Button
-                  variant="ghost"
-                  size="sm"
-                  onClick={e => {
-                    e.stopPropagation()
-                    setExpandedCard(isExpanded ? null : transaction.id)
-                  }}
-                  className="w-full text-xs h-6"
-                >
-                  {isExpanded ? (
-                    <>
-                      <span>Ver menos</span>
-                      <ArrowUp className="ml-1 h-3 w-3" />
-                    </>
-                  ) : (
-                    <>
-                      <span>Ver mais</span>
-                      <ArrowDown className="ml-1 h-3 w-3" />
-                    </>
-                  )}
-                </Button>
-              </div>
-            )}
+            ) : null}
           </div>
         )
       })}

@@ -32,10 +32,9 @@ export function RecurrenceField({ form }: RecurrenceFieldProps) {
                   if (isChecked) {
                     // Usar setTimeout para garantir que os valores sejam definidos
                     setTimeout(() => {
-                      form.setValue('recurrenceSelector', 'repeat')
+                      form.setValue('recurrenceSelector', 'infinite')
                       form.setValue('recurrenceType', 'monthly')
                       form.setValue('recurrenceInterval', 1)
-                      form.setValue('installmentsTotal', 1)
                     }, 10)
                   } else {
                     // Se desmarcou, limpar os campos

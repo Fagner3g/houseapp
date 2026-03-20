@@ -27,8 +27,11 @@ export function Footer({ page, perPage, totalPages, onPerPageChange, onPageChang
   const perPageSelectId = useId()
   return (
     <div className="flex items-center justify-between px-4 lg:px-6 py-1 border-t border-border/50 bg-background">
-      <div className="flex w-full items-center gap-8 lg:w-fit">
-        <div className=" items-center gap-2 lg:flex">
+      <div className="flex w-full items-center gap-4 lg:w-fit">
+        <div className="hidden items-center gap-2 lg:flex">
+          <label htmlFor={perPageSelectId} className="text-sm text-muted-foreground whitespace-nowrap">
+            Linhas por página
+          </label>
           <Select
             value={`${perPage}`}
             onValueChange={value => {

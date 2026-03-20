@@ -32,14 +32,13 @@ const base = z.object({
 
 const recurring = base.extend({
   isRecurring: z.literal(true),
-  recurrenceSelector: z.enum(['date', 'repeat'], {
+  recurrenceSelector: z.enum(['infinite', 'times', 'until'], {
     error: 'Selecione um tipo de recorrência',
   }),
   recurrenceType: z.enum(['weekly', 'monthly', 'yearly'], {
     error: 'Selecione uma recorrência',
   }),
   recurrenceUntil: z.coerce.date().optional(),
-  recurrenceInfinite: z.coerce.boolean().optional(),
   recurrenceInterval: z.coerce.number().int().optional(),
   recurrenceStart: z.coerce.date().optional(),
   installmentsTotal: z.coerce.number().int().optional(),
@@ -61,34 +60,6 @@ const _schema = z.discriminatedUnion('isRecurring', [recurring, nonRecurring])
 
 export const newTransactionSchema = _schema.superRefine((v, ctx) => {
   if (!v.isRecurring) return
-  if (v.recurrenceSelector === 'repeat') {
-    if (v.recurrenceInterval == null || Number.isNaN(v.recurrenceInterval)) {
-      ctx.addIssue({
-        code: 'custom',
-        path: ['recurrenceInterval'],
-        message: 'Informe o intervalo de repetição',
-      })
-    }
-  }
-
-  if (v.recurrenceSelector === 'date') {
-    const now = new Date()
-    const min = v.dueDate > now ? v.dueDate : now
-
-    if (!v.recurrenceInfinite && !v.recurrenceUntil) {
-      ctx.addIssue({
-        code: 'custom',
-        path: ['recurrenceUntil'],
-        message: 'Informe a data final',
-      })
-    } else if (!v.recurrenceInfinite && v.recurrenceUntil && v.recurrenceUntil <= min) {
-      ctx.addIssue({
-        code: 'custom',
-        path: ['recurrenceUntil'],
-        message: 'A data final deve ser posterior ao vencimento e à data atual',
-      })
-    }
-  }
 
   const interval = v.recurrenceInterval ?? 1
   if (interval < 1) {
@@ -99,8 +70,7 @@ export const newTransactionSchema = _schema.superRefine((v, ctx) => {
     })
   }
 
-  // Exigir pelo menos um critério: para "repeat" total de parcelas; para "date" data final, a menos que seja infinito
-  if (v.recurrenceSelector === 'repeat') {
+  if (v.recurrenceSelector === 'times') {
     if (
       v.installmentsTotal == null ||
       Number.isNaN(v.installmentsTotal) ||
@@ -109,15 +79,29 @@ export const newTransactionSchema = _schema.superRefine((v, ctx) => {
       ctx.addIssue({
         code: 'custom',
         path: ['installmentsTotal'],
-        message: 'Informe o total de parcelas',
+        message: 'Informe o total de vezes',
       })
     }
-  } else if (v.recurrenceSelector === 'date' && !v.recurrenceInfinite && !v.recurrenceUntil) {
-    ctx.addIssue({
-      code: 'custom',
-      path: ['recurrenceUntil'],
-      message: 'Informe a data final',
-    })
+  }
+
+  if (v.recurrenceSelector === 'until') {
+    if (!v.recurrenceUntil) {
+      ctx.addIssue({
+        code: 'custom',
+        path: ['recurrenceUntil'],
+        message: 'Informe a data final',
+      })
+    } else {
+      const now = new Date()
+      const min = v.dueDate > now ? v.dueDate : now
+      if (v.recurrenceUntil <= min) {
+        ctx.addIssue({
+          code: 'custom',
+          path: ['recurrenceUntil'],
+          message: 'A data final deve ser posterior ao vencimento e à data atual',
+        })
+      }
+    }
   }
 
   if (v.installmentsTotal != null && v.installmentsPaid != null) {

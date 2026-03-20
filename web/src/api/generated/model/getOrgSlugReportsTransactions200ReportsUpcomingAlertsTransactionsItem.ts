@@ -6,6 +6,7 @@
  * OpenAPI spec version: 1.0.1
  */
 import type { GetOrgSlugReportsTransactions200ReportsUpcomingAlertsTransactionsItemAlertType } from "./getOrgSlugReportsTransactions200ReportsUpcomingAlertsTransactionsItemAlertType";
+import type { GetOrgSlugReportsTransactions200ReportsUpcomingAlertsTransactionsItemType } from "./getOrgSlugReportsTransactions200ReportsUpcomingAlertsTransactionsItemType";
 
 export type GetOrgSlugReportsTransactions200ReportsUpcomingAlertsTransactionsItem =
   {
@@ -21,4 +22,5 @@ export type GetOrgSlugReportsTransactions200ReportsUpcomingAlertsTransactionsIte
     payToName: string | null;
     /** @nullable */
     payToPhone: string | null;
+    type?: GetOrgSlugReportsTransactions200ReportsUpcomingAlertsTransactionsItemType;
   };

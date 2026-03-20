@@ -327,8 +327,6 @@ export const sendMonthlySummaryController: RouteHandler<SendMonthlySummaryRoute>
 
     // Montar mensagem de resumo com KPIs e principais categorias
     const k = reports.reports.kpis
-    const recent = (reports.reports.recentActivity ?? []).slice(0, 3)
-
     const formatBRL = (value?: number): string => {
       if (typeof value !== 'number') return '—'
       return value.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' })
@@ -357,16 +355,6 @@ export const sendMonthlySummaryController: RouteHandler<SendMonthlySummaryRoute>
       `• Despesas: ${formatBRL(despesasRegistradas)} (em aberto ${formatBRL(despesasEmAberto)})`
     )
     lines.push(`• Saldo do mês (Receitas − Despesas): ${formatBRL(saldoMes)}`)
-
-    if (recent.length > 0) {
-      lines.push('')
-      lines.push('🧾 Transações recentes:')
-      for (const r of recent) {
-        const date = new Date(r.dueDate).toLocaleDateString('pt-BR')
-        const status = r.status === 'paid' ? 'pago' : 'pendente'
-        lines.push(`• ${r.title}: ${formatBRL(r.amount)} (${status}) • ${date}`)
-      }
-    }
 
     const message = lines.join('\n')
     const result = await sendWhatsAppMessage({ phone, message })

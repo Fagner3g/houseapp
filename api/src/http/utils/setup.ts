@@ -78,6 +78,7 @@ export async function buildServer() {
         }
       }
 
+      if (origin && origin.startsWith('chrome-extension://')) return cb(null, true)
       if (!origin || allowed.includes(origin)) return cb(null, true)
       return cb(new Error('Not allowed by CORS'), false)
     },

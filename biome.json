@@ -32,7 +32,8 @@
   "overrides": [
     {
       "includes": [
-        "web/src/api/generated/**"
+        "web/src/api/generated/**",
+        "web/src/routeTree.gen.ts"
       ],
       "linter": {
         "enabled": false

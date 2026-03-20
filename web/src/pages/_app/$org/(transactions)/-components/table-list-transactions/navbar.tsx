@@ -19,6 +19,20 @@ import { DeleteSelected } from './delete-selected'
 import FilterTable, { type FilterTableProps } from './filter'
 import { PaySelected } from './pay-selected'
 
+const COLUMN_LABELS: Record<string, string> = {
+  Tipo: 'Tipo',
+  title: 'Nome',
+  status: 'Status',
+  amount: 'Valor',
+  dueDate: 'Vencimento',
+  paidAt: 'Data Pagamento',
+  installmentsTotal: 'Total Parcelas',
+  installmentsPaid: 'Parcelas Pagas',
+  payTo: 'Para',
+  ownerName: 'Responsável',
+  tags: 'Tags',
+}
+
 interface Props extends FilterTableProps {
   table: Table<ListTransactions200TransactionsItem>
   onCreate: () => void
@@ -59,32 +73,31 @@ export function NavbarTable({
       : ''
 
   return (
-    <div className="flex flex-col gap-4 px-6 lg:px-8">
-      {/* Header compacto */}
-      {selected > 0 && (
-        <div className="flex items-center justify-between">
-          <div className="flex items-center gap-2">
-            <div className="h-6 w-6 rounded-full bg-primary/20 flex items-center justify-center">
-              <span className="text-xs font-bold text-primary">{selected}</span>
-            </div>
-            <span className="text-sm font-medium">
-              {selected} selecionada{selected > 1 ? 's' : ''}
-            </span>
-            <Button
-              variant="ghost"
-              size="sm"
-              onClick={() => table.resetRowSelection()}
-              className="h-6 px-2 text-xs hover:bg-muted/80"
-            >
-              Limpar
-            </Button>
-          </div>
-        </div>
-      )}
+    <div className="flex flex-col gap-3 px-6 lg:px-8">
+      {/* Seletor de visualização */}
+      <div className="flex items-center justify-between gap-3">
+        <TabsList className="h-9">
+          <TabsTrigger value="table" className="text-sm">
+            Tabela
+          </TabsTrigger>
+          <TabsTrigger value="payto" className="text-sm">
+            Por pessoa
+          </TabsTrigger>
+          <TabsTrigger value="calendar" className="text-sm">
+            Calendário
+          </TabsTrigger>
+        </TabsList>
 
-      {/* Filtros e pesquisa */}
-      <div className="flex flex-col gap-3 lg:flex-row lg:items-center lg:justify-between">
-        <div className="flex items-center gap-2">
+        {/* Botão Adicionar */}
+        <Button onClick={onCreate} className="gap-2 h-9 px-4 bg-primary hover:bg-primary/90">
+          <IconPlus size={16} />
+          <span className="text-sm font-medium hidden sm:inline">Adicionar</span>
+        </Button>
+      </div>
+
+      {/* Filtros, pesquisa e colunas */}
+      <div className="flex flex-col gap-2 lg:flex-row lg:items-center lg:justify-between">
+        <div className="flex items-center gap-2 flex-wrap">
           <FilterTable {...props} />
           {hasFilters && (
             <Button
@@ -106,7 +119,7 @@ export function NavbarTable({
               className="gap-1 h-7 px-2 text-xs hover:bg-muted/80"
             >
               <IconX size={12} />
-              <span>Limpar</span>
+              Limpar filtros
             </Button>
           )}
           {rangeLabel && (
@@ -116,7 +129,6 @@ export function NavbarTable({
           )}
         </div>
 
-        {/* Campo de pesquisa, botão de colunas e botão adicionar */}
         <div className="flex items-center gap-2 w-full lg:w-auto">
           <div className="relative flex-1 lg:w-72">
             <IconSearch className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
@@ -128,7 +140,6 @@ export function NavbarTable({
             />
           </div>
 
-          {/* Botão de colunas (apenas na visualização de tabela e desktop) */}
           {view === 'table' && (
             <DropdownMenu>
               <DropdownMenuTrigger asChild>
@@ -137,7 +148,7 @@ export function NavbarTable({
                   <span className="text-sm">Colunas</span>
                 </Button>
               </DropdownMenuTrigger>
-              <DropdownMenuContent align="end" className="w-56">
+              <DropdownMenuContent align="end" className="w-48">
                 <div className="p-2">
                   <div className="text-xs font-medium text-muted-foreground mb-2">
                     Colunas visíveis
@@ -147,78 +158,64 @@ export function NavbarTable({
                     .filter(
                       column => typeof column.accessorFn !== 'undefined' && column.getCanHide()
                     )
-                    .map(column => {
-                      return (
-                        <DropdownMenuCheckboxItem
-                          key={column.id}
-                          className="capitalize"
-                          checked={column.getIsVisible()}
-                          onCheckedChange={value => column.toggleVisibility(!!value)}
-                        >
-                          {column.id}
-                        </DropdownMenuCheckboxItem>
-                      )
-                    })}
+                    .map(column => (
+                      <DropdownMenuCheckboxItem
+                        key={column.id}
+                        checked={column.getIsVisible()}
+                        onCheckedChange={value => column.toggleVisibility(!!value)}
+                      >
+                        {COLUMN_LABELS[column.id] ?? column.id}
+                      </DropdownMenuCheckboxItem>
+                    ))}
                 </div>
               </DropdownMenuContent>
             </DropdownMenu>
           )}
-
-          {/* Botão Adicionar */}
-          <Button onClick={onCreate} className="gap-2 h-9 px-4 bg-primary hover:bg-primary/90">
-            <IconPlus size={16} />
-            <span className="text-sm font-medium">Adicionar</span>
-          </Button>
         </div>
       </div>
 
-      {/* Controles de visualização */}
-      <div className="flex items-center justify-center lg:justify-start">
-        <TabsList className="grid w-full grid-cols-3 lg:w-auto h-9">
-          <TabsTrigger value="payto" className="text-sm">
-            Lista
-          </TabsTrigger>
-          <TabsTrigger value="table" className="text-sm">
-            Tabela
-          </TabsTrigger>
-          <TabsTrigger value="calendar" className="text-sm">
-            Calendário
-          </TabsTrigger>
-        </TabsList>
-      </div>
-
-      {/* Ações em lote (quando há seleção) */}
+      {/* Barra de ações em lote */}
       {selected > 0 &&
         (() => {
           const selectedRows = table.getSelectedRowModel().rows
           const isOwnerOfAllSelected = selectedRows.every(
             row => row.original.ownerId === currentUser?.id
           )
+          const total = selectedRows.reduce((sum, row) => sum + parseFloat(row.original.amount), 0)
 
           return (
-            <div className="flex items-center gap-3 p-3 bg-gradient-to-r from-primary/5 to-primary/10 rounded-lg border border-primary/20">
-              <div className="flex items-center gap-2 flex-1">
-                <span className="text-xs font-medium text-muted-foreground">
-                  Ações para {selected} transação{selected > 1 ? 'ões' : ''}:
+            <div className="flex items-center gap-3 px-3 py-2 bg-primary/5 rounded-lg border border-primary/20">
+              <div className="flex items-center gap-2">
+                <div className="h-6 w-6 rounded-full bg-primary/20 flex items-center justify-center">
+                  <span className="text-xs font-bold text-primary">{selected}</span>
+                </div>
+                <span className="text-sm font-medium">
+                  {selected} selecionada{selected > 1 ? 's' : ''}
                 </span>
-                <span className="text-sm font-bold text-primary">
-                  Total: {(() => {
-                    const total = selectedRows.reduce((sum, row) => {
-                      return sum + parseFloat(row.original.amount)
-                    }, 0)
-                    return new Intl.NumberFormat('pt-BR', {
-                      style: 'currency',
-                      currency: 'BRL',
-                    }).format(total)
-                  })()}
+                <span className="text-sm text-muted-foreground">·</span>
+                <span className="text-sm font-semibold text-primary">
+                  {new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(
+                    total
+                  )}
                 </span>
               </div>
-              {isOwnerOfAllSelected && (
-                <div className="flex items-center gap-2">
-                  <PaySelected table={table} />
-                  <DeleteSelected table={table} />
-                </div>
-              )}
+              <div className="flex items-center gap-2 ml-auto">
+                {isOwnerOfAllSelected && (
+                  <>
+                    <PaySelected table={table} />
+                    <DeleteSelected table={table} />
+                  </>
+                )}
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  onClick={() => table.resetRowSelection()}
+                  className="h-7 px-2 text-xs"
+                >
+                  <IconX size={12} className="mr-1" />
+                  Limpar
+                </Button>
+              </div>
             </div>
           )
         })()}

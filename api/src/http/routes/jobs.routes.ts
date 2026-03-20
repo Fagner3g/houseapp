@@ -103,6 +103,7 @@ const TransactionAlertPreviewSchema = z.object({
   ownerPhone: z.string(),
   payToName: z.string().nullable(),
   payToPhone: z.string().nullable(),
+  type: z.enum(['income', 'expense']).optional(),
 })
 
 const PreviewSummarySchema = z.object({
@@ -152,14 +153,11 @@ const MonthlyStatsSchema = z.object({
   overdueTransactions: z.number(),
 })
 
-const RecentActivitySchema = z.object({
-  id: z.string(),
-  title: z.string(),
-  amount: z.number(),
-  status: z.enum(['paid', 'pending']),
-  dueDate: z.string(),
-  ownerName: z.string(),
-  updatedAt: z.string(),
+const TagBreakdownItemSchema = z.object({
+  category: z.string(),
+  count: z.number(),
+  totalAmount: z.number(),
+  color: z.string().optional(),
 })
 
 const ChartDataSchema = z.object({
@@ -171,22 +169,9 @@ const ChartDataSchema = z.object({
       total: z.number(),
     })
   ),
-  monthlyTrend: z.array(
-    z.object({
-      month: z.string(),
-      total: z.number(),
-      paid: z.number(),
-      pending: z.number(),
-    })
-  ),
-  categoryBreakdown: z.array(
-    z.object({
-      category: z.string(),
-      count: z.number(),
-      totalAmount: z.number(),
-      color: z.string().optional(),
-    })
-  ),
+  categoryBreakdown: z.array(TagBreakdownItemSchema),
+  incomeByTag: z.array(TagBreakdownItemSchema),
+  expenseByTag: z.array(TagBreakdownItemSchema),
   statusDistribution: z.object({
     paid: z.number(),
     pending: z.number(),
@@ -203,10 +188,6 @@ const KPISchema = z.object({
   toSpendTotal: z.number(),
 })
 
-const IncomeVsExpenseDailySchema = z.array(
-  z.object({ date: z.string(), income: z.number(), expense: z.number() })
-)
-
 const TransactionReportsResponseSchema = z.object({
   reports: z.object({
     upcomingAlerts: z.object({
@@ -214,7 +195,6 @@ const TransactionReportsResponseSchema = z.object({
       summary: PreviewSummarySchema,
     }),
     monthlyStats: MonthlyStatsSchema,
-    recentActivity: z.array(RecentActivitySchema),
     chartData: ChartDataSchema,
     kpis: KPISchema.optional(),
     counterparties: z
@@ -235,7 +215,6 @@ const TransactionReportsResponseSchema = z.object({
         ),
       })
       .optional(),
-    incomeVsExpenseDaily: IncomeVsExpenseDailySchema.optional(),
     overdueTransactions: z
       .object({
         summary: z.object({ total: z.number() }),
@@ -253,6 +232,7 @@ const TransactionReportsResponseSchema = z.object({
             payToEmail: z.string().optional(),
             status: z.enum(['paid', 'pending']).optional(),
             overdueDays: z.number().optional(),
+            type: z.enum(['income', 'expense']).optional(),
           })
         ),
       })
@@ -277,6 +257,19 @@ const TransactionReportsResponseSchema = z.object({
           })
         ),
       })
+      .optional(),
+    allTransactions: z
+      .array(
+        z.object({
+          id: z.string(),
+          title: z.string(),
+          amount: z.number(),
+          dueDate: z.string(),
+          status: z.enum(['paid', 'pending']),
+          paidAt: z.string().nullable(),
+          type: z.enum(['income', 'expense']),
+        })
+      )
       .optional(),
   }),
   timestamp: z.string(),

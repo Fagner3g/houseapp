@@ -11,6 +11,7 @@
 import { Route as rootRouteImport } from './pages/__root'
 import { Route as AuthLayoutRouteImport } from './pages/_auth/layout'
 import { Route as AppLayoutRouteImport } from './pages/_app/layout'
+import { Route as IndexRouteImport } from './pages/index'
 import { Route as AuthValidateRouteImport } from './pages/_auth/validate'
 import { Route as AuthSignUpRouteImport } from './pages/_auth/sign-up'
 import { Route as AuthSignInRouteImport } from './pages/_auth/sign-in'
@@ -30,6 +31,11 @@ const AuthLayoutRoute = AuthLayoutRouteImport.update({
 } as any)
 const AppLayoutRoute = AppLayoutRouteImport.update({
   id: '/_app',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const IndexRoute = IndexRouteImport.update({
+  id: '/',
+  path: '/',
   getParentRoute: () => rootRouteImport,
 } as any)
 const AuthValidateRoute = AuthValidateRouteImport.update({
@@ -96,6 +102,7 @@ const AppOrgadminJobsRoute = AppOrgadminJobsRouteImport.update({
 } as any)
 
 export interface FileRoutesByFullPath {
+  '/': typeof IndexRoute
   '/new-org': typeof AppNewOrgRoute
   '/invite': typeof AuthInviteRoute
   '/sign-in': typeof AuthSignInRoute
@@ -110,6 +117,7 @@ export interface FileRoutesByFullPath {
   '/$org/users': typeof AppOrguserUsersRoute
 }
 export interface FileRoutesByTo {
+  '/': typeof IndexRoute
   '/new-org': typeof AppNewOrgRoute
   '/invite': typeof AuthInviteRoute
   '/sign-in': typeof AuthSignInRoute
@@ -125,6 +133,7 @@ export interface FileRoutesByTo {
 }
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
+  '/': typeof IndexRoute
   '/_app': typeof AppLayoutRouteWithChildren
   '/_auth': typeof AuthLayoutRouteWithChildren
   '/_app/new-org': typeof AppNewOrgRoute
@@ -143,6 +152,7 @@ export interface FileRoutesById {
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
   fullPaths:
+    | '/'
     | '/new-org'
     | '/invite'
     | '/sign-in'
@@ -157,6 +167,7 @@ export interface FileRouteTypes {
     | '/$org/users'
   fileRoutesByTo: FileRoutesByTo
   to:
+    | '/'
     | '/new-org'
     | '/invite'
     | '/sign-in'
@@ -171,6 +182,7 @@ export interface FileRouteTypes {
     | '/$org/users'
   id:
     | '__root__'
+    | '/'
     | '/_app'
     | '/_auth'
     | '/_app/new-org'
@@ -188,6 +200,7 @@ export interface FileRouteTypes {
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
+  IndexRoute: typeof IndexRoute
   AppLayoutRoute: typeof AppLayoutRouteWithChildren
   AuthLayoutRoute: typeof AuthLayoutRouteWithChildren
 }
@@ -206,6 +219,13 @@ declare module '@tanstack/react-router' {
       path: ''
       fullPath: ''
       preLoaderRoute: typeof AppLayoutRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/': {
+      id: '/'
+      path: '/'
+      fullPath: '/'
+      preLoaderRoute: typeof IndexRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/_auth/validate': {
@@ -349,6 +369,7 @@ const AuthLayoutRouteWithChildren = AuthLayoutRoute._addFileChildren(
 )
 
 const rootRouteChildren: RootRouteChildren = {
+  IndexRoute: IndexRoute,
   AppLayoutRoute: AppLayoutRouteWithChildren,
   AuthLayoutRoute: AuthLayoutRouteWithChildren,
 }

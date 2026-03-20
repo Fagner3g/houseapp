@@ -6,6 +6,7 @@
  * OpenAPI spec version: 1.0.1
  */
 import type { GetOrgSlugReportsTransactions200ReportsOverdueTransactionsTransactionsItemStatus } from "./getOrgSlugReportsTransactions200ReportsOverdueTransactionsTransactionsItemStatus";
+import type { GetOrgSlugReportsTransactions200ReportsOverdueTransactionsTransactionsItemType } from "./getOrgSlugReportsTransactions200ReportsOverdueTransactionsTransactionsItemType";
 
 export type GetOrgSlugReportsTransactions200ReportsOverdueTransactionsTransactionsItem =
   {
@@ -21,4 +22,5 @@ export type GetOrgSlugReportsTransactions200ReportsOverdueTransactionsTransactio
     payToEmail?: string;
     status?: GetOrgSlugReportsTransactions200ReportsOverdueTransactionsTransactionsItemStatus;
     overdueDays?: number;
+    type?: GetOrgSlugReportsTransactions200ReportsOverdueTransactionsTransactionsItemType;
   };

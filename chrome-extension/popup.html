@@ -1,0 +1,116 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>HouseApp</title>
+  <link rel="stylesheet" href="popup.css" />
+</head>
+<body>
+  <div id="app">
+    <!-- Header -->
+    <header>
+      <span class="logo">🏠 HouseApp</span>
+      <select id="org-select" class="org-select hidden" title="Organização"></select>
+      <div class="header-actions">
+        <button id="btn-refresh" title="Atualizar">↻</button>
+        <button id="btn-options" title="Configurações">⚙</button>
+        <button id="btn-open-web" title="Abrir app">↗</button>
+      </div>
+    </header>
+
+    <!-- Login screen -->
+    <div id="screen-login" class="screen hidden">
+      <p class="login-msg">Faça login no HouseApp para continuar.</p>
+      <button id="btn-login" class="btn-primary">Abrir HouseApp</button>
+    </div>
+
+    <!-- Loading screen -->
+    <div id="screen-loading" class="screen hidden">
+      <div class="skeleton skeleton-kpi"></div>
+      <div class="skeleton skeleton-list"></div>
+    </div>
+
+    <!-- Error screen -->
+    <div id="screen-error" class="screen hidden">
+      <p class="error-msg">Erro ao carregar dados.</p>
+      <button id="btn-retry" class="btn-primary">Tentar novamente</button>
+    </div>
+
+    <!-- Main screen -->
+    <div id="screen-main" class="screen hidden">
+      <!-- Month navigator -->
+      <div class="month-nav">
+        <button id="btn-prev-month">‹</button>
+        <span id="month-label"></span>
+        <button id="btn-next-month">›</button>
+      </div>
+
+      <!-- KPIs -->
+      <div class="kpi-grid">
+        <div class="kpi">
+          <span class="kpi-label" id="label-income">A receber</span>
+          <span class="kpi-value income" id="kpi-income">—</span>
+        </div>
+        <div class="kpi">
+          <span class="kpi-label" id="label-expense">A pagar</span>
+          <span class="kpi-value expense" id="kpi-expense">—</span>
+        </div>
+        <div class="kpi">
+          <span class="kpi-label">Saldo</span>
+          <span class="kpi-value balance" id="kpi-balance">—</span>
+        </div>
+      </div>
+
+      <!-- Overdue transactions (hidden for future months) -->
+      <section id="section-overdue">
+        <div class="section-header overdue-header">
+          <span class="dot dot-red"></span>
+          <span id="overdue-title">Vencidas</span>
+        </div>
+        <ul id="list-overdue" class="tx-list"></ul>
+        <p id="overdue-empty" class="empty-msg hidden">Nenhuma transação vencida</p>
+      </section>
+
+      <!-- Upcoming alerts (current month only) -->
+      <section id="section-upcoming">
+        <div class="section-header upcoming-header">
+          <span class="dot dot-yellow"></span>
+          <span id="upcoming-title">Próximas</span>
+        </div>
+        <ul id="list-upcoming" class="tx-list"></ul>
+        <p id="upcoming-empty" class="empty-msg hidden">Nenhum alerta próximo</p>
+      </section>
+
+      <!-- All transactions of the month -->
+      <section id="section-all">
+        <div class="section-header all-header">
+          <span class="dot dot-gray"></span>
+          <span id="all-title">Todas do mês</span>
+        </div>
+        <ul id="list-all" class="tx-list tx-list-scroll"></ul>
+        <p id="all-empty" class="empty-msg hidden">Nenhuma transação no mês</p>
+      </section>
+    </div>
+  </div>
+
+  <!-- Pay modal -->
+  <div id="pay-modal" class="modal-backdrop hidden">
+    <div class="modal">
+      <p class="modal-title">Confirmar pagamento</p>
+      <label class="modal-label">Data do pagamento
+        <input type="date" id="pay-date" class="modal-input" />
+      </label>
+      <label class="modal-label">Valor pago (R$)
+        <input type="number" id="pay-amount" class="modal-input" step="0.01" min="0.01" placeholder="0,00" />
+      </label>
+      <div class="modal-actions">
+        <button id="pay-cancel" class="btn-secondary">Cancelar</button>
+        <button id="pay-confirm" class="btn-primary">Confirmar</button>
+      </div>
+    </div>
+  </div>
+
+  <script src="popup.js"></script>
+</body>
+</html>

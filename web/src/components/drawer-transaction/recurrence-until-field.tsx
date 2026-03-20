@@ -1,11 +1,10 @@
 import { ChevronDownIcon } from 'lucide-react'
-import { useId, useMemo, useState } from 'react'
+import { useMemo, useState } from 'react'
 import type { UseFormReturn } from 'react-hook-form'
 
 import { Button } from '@/components/ui/button'
 import { Calendar } from '@/components/ui/calendar'
-import { Checkbox } from '@/components/ui/checkbox'
-import { FormControl, FormField, FormItem, FormLabel } from '@/components/ui/form'
+import { FormControl, FormField, FormItem, FormLabel, FormMessage } from '@/components/ui/form'
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover'
 import { cn } from '@/lib/utils'
 import type { NewTransactionSchema } from './schema'
@@ -16,7 +15,6 @@ interface RecurrenceUntilFieldProps {
 
 export function RecurrenceUntilField({ form }: RecurrenceUntilFieldProps) {
   const [open, setOpen] = useState(false)
-  const checkboxId = useId()
   const currentYear = new Date().getFullYear()
   const dueDate = form.watch('dueDate') as Date | undefined
   const recurrenceType = form.watch('recurrenceType') as 'weekly' | 'monthly' | 'yearly' | undefined
@@ -46,26 +44,7 @@ export function RecurrenceUntilField({ form }: RecurrenceUntilFieldProps) {
       name="recurrenceUntil"
       render={({ field }) => (
         <FormItem>
-          <FormLabel className="flex items-center justify-between gap-2">
-            <span>Data final da recorrência</span>
-            <div className="flex items-center gap-2">
-              <Checkbox
-                checked={Boolean(form.watch('recurrenceInfinite'))}
-                onCheckedChange={v => {
-                  const checked = Boolean(v)
-                  form.setValue('recurrenceInfinite', checked, { shouldDirty: true })
-                  if (checked) {
-                    form.setValue('recurrenceUntil', undefined, { shouldDirty: true })
-                    form.clearErrors('recurrenceUntil')
-                  }
-                }}
-                id={checkboxId}
-              />
-              <label htmlFor={checkboxId} className="text-xs text-muted-foreground">
-                Sem data de término
-              </label>
-            </div>
-          </FormLabel>
+          <FormLabel>Data final da recorrência</FormLabel>
           <FormControl>
             <Popover open={open} onOpenChange={setOpen}>
               <PopoverTrigger asChild>
@@ -74,12 +53,11 @@ export function RecurrenceUntilField({ form }: RecurrenceUntilFieldProps) {
                   aria-invalid={!!form.formState.errors.recurrenceUntil}
                   className={cn(
                     'w-full justify-between font-normal',
-                    !field.value && !form.watch('recurrenceInfinite') && 'text-muted-foreground',
-                    form.formState.errors.recurrenceUntil && !form.watch('recurrenceInfinite')
+                    !field.value && 'text-muted-foreground',
+                    form.formState.errors.recurrenceUntil
                       ? 'border-destructive ring-1 ring-destructive/50'
                       : ''
                   )}
-                  disabled={Boolean(form.watch('recurrenceInfinite'))}
                 >
                   {field.value ? field.value.toLocaleDateString() : 'Selecione a data'}
                   <ChevronDownIcon />
@@ -98,38 +76,21 @@ export function RecurrenceUntilField({ form }: RecurrenceUntilFieldProps) {
                   fromDate={minEndDate}
                   disabled={{ before: minEndDate }}
                   defaultMonth={minEndDate}
-                  className="border-amber-400"
                   onSelect={date => {
                     if (!date) {
                       field.onChange(undefined)
                       setOpen(false)
                       return
                     }
-                    const min = minEndDate
-                    if (date < min) return
+                    if (date < minEndDate) return
                     field.onChange(date)
                     setOpen(false)
                   }}
                 />
-                <div className="flex items-center gap-2 p-2 border-t">
-                  <Button
-                    type="button"
-                    variant="ghost"
-                    size="sm"
-                    onClick={() => {
-                      field.onChange(undefined)
-                      setOpen(false)
-                    }}
-                  >
-                    Sem data de término
-                  </Button>
-                </div>
               </PopoverContent>
             </Popover>
           </FormControl>
-          <p className="text-[10px] text-muted-foreground">
-            Usado no modo "Termina em": última ocorrência. Opcional quando "Sem data de término".
-          </p>
+          <FormMessage />
         </FormItem>
       )}
     />

@@ -1,0 +1,455 @@
+* {
+  box-sizing: border-box;
+  margin: 0;
+  padding: 0;
+}
+
+body {
+  width: 320px;
+  min-height: 200px;
+  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+  font-size: 13px;
+  color: #1a1a2e;
+  background: #f8f9fc;
+}
+
+#app {
+  display: flex;
+  flex-direction: column;
+}
+
+/* ── Header ─────────────────────────────────────────────────── */
+
+header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 10px 12px;
+  background: #1a1a2e;
+  color: #fff;
+}
+
+.logo {
+  font-weight: 600;
+  font-size: 14px;
+  flex-shrink: 0;
+}
+
+.org-select {
+  flex: 1;
+  margin: 0 8px;
+  padding: 3px 6px;
+  font-size: 12px;
+  border-radius: 6px;
+  border: 1px solid rgba(255,255,255,0.2);
+  background: rgba(255,255,255,0.1);
+  color: #fff;
+  cursor: pointer;
+  max-width: 130px;
+}
+
+.org-select option {
+  background: #1a1a2e;
+  color: #fff;
+}
+
+.header-actions {
+  display: flex;
+  gap: 4px;
+}
+
+.header-actions button {
+  background: transparent;
+  border: none;
+  color: #cbd5e1;
+  font-size: 16px;
+  cursor: pointer;
+  padding: 2px 5px;
+  border-radius: 4px;
+  line-height: 1;
+}
+
+.header-actions button:hover {
+  background: rgba(255,255,255,0.1);
+  color: #fff;
+}
+
+#btn-refresh {
+  transition: opacity 0.2s;
+  display: inline-block;
+}
+
+#btn-refresh.spinning {
+  animation: spin 0.7s linear infinite;
+}
+
+@keyframes spin {
+  from { transform: rotate(0deg); }
+  to   { transform: rotate(360deg); }
+}
+
+/* ── Screens ─────────────────────────────────────────────────── */
+
+.screen {
+  padding: 16px 12px;
+}
+
+.hidden {
+  display: none !important;
+}
+
+/* ── Login ───────────────────────────────────────────────────── */
+
+#screen-login {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 12px;
+  padding: 24px 16px;
+}
+
+.login-msg {
+  text-align: center;
+  color: #64748b;
+  line-height: 1.4;
+}
+
+/* ── Buttons ─────────────────────────────────────────────────── */
+
+.btn-primary {
+  background: #3b82f6;
+  color: #fff;
+  border: none;
+  border-radius: 6px;
+  padding: 8px 16px;
+  font-size: 13px;
+  cursor: pointer;
+  font-weight: 500;
+}
+
+.btn-primary:hover {
+  background: #2563eb;
+}
+
+.btn-pay {
+  background: #10b981;
+  color: #fff;
+  border: none;
+  border-radius: 4px;
+  padding: 3px 8px;
+  font-size: 11px;
+  cursor: pointer;
+  white-space: nowrap;
+  font-weight: 500;
+}
+
+.btn-pay:hover {
+  background: #059669;
+}
+
+.btn-pay:disabled {
+  background: #94a3b8;
+  cursor: not-allowed;
+}
+
+/* ── Loading skeletons ───────────────────────────────────────── */
+
+#screen-loading {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.skeleton {
+  background: linear-gradient(90deg, #e2e8f0 25%, #f1f5f9 50%, #e2e8f0 75%);
+  background-size: 200% 100%;
+  animation: shimmer 1.2s infinite;
+  border-radius: 6px;
+}
+
+.skeleton-kpi {
+  height: 56px;
+}
+
+.skeleton-list {
+  height: 120px;
+}
+
+@keyframes shimmer {
+  0% { background-position: 200% 0; }
+  100% { background-position: -200% 0; }
+}
+
+/* ── Error ───────────────────────────────────────────────────── */
+
+#screen-error {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 12px;
+}
+
+.error-msg {
+  color: #ef4444;
+  text-align: center;
+}
+
+/* ── Month nav ───────────────────────────────────────────────── */
+
+.month-nav {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 12px;
+  margin-bottom: 12px;
+  font-weight: 600;
+  font-size: 13px;
+  color: #1e293b;
+}
+
+.month-nav button {
+  background: none;
+  border: 1px solid #e2e8f0;
+  border-radius: 4px;
+  padding: 2px 8px;
+  font-size: 15px;
+  cursor: pointer;
+  color: #475569;
+  line-height: 1.4;
+}
+
+.month-nav button:hover {
+  background: #e2e8f0;
+}
+
+/* ── KPI grid ────────────────────────────────────────────────── */
+
+.kpi-grid {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 8px;
+  margin-bottom: 14px;
+}
+
+.kpi {
+  background: #fff;
+  border: 1px solid #e2e8f0;
+  border-radius: 8px;
+  padding: 8px 6px;
+  text-align: center;
+}
+
+.kpi-label {
+  display: block;
+  font-size: 10px;
+  color: #94a3b8;
+  text-transform: uppercase;
+  letter-spacing: 0.03em;
+  margin-bottom: 2px;
+}
+
+.kpi-value {
+  display: block;
+  font-size: 12px;
+  font-weight: 700;
+}
+
+.kpi-value.income    { color: #10b981; }
+.kpi-value.expense   { color: #ef4444; }
+.kpi-value.balance   { color: #3b82f6; }
+.kpi-value.projected { opacity: 0.6; font-style: italic; }
+
+/* ── Sections ────────────────────────────────────────────────── */
+
+section {
+  margin-bottom: 12px;
+}
+
+.section-header {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-weight: 600;
+  font-size: 12px;
+  color: #475569;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  margin-bottom: 6px;
+  padding-bottom: 4px;
+  border-bottom: 1px solid #e2e8f0;
+}
+
+.dot {
+  width: 7px;
+  height: 7px;
+  border-radius: 50%;
+  flex-shrink: 0;
+}
+
+.dot-red    { background: #ef4444; }
+.dot-yellow { background: #f59e0b; }
+.dot-gray   { background: #94a3b8; }
+
+/* ── Transaction list ────────────────────────────────────────── */
+
+.tx-list {
+  list-style: none;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.tx-item {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  background: #fff;
+  border: 1px solid #e2e8f0;
+  border-radius: 6px;
+  padding: 7px 8px;
+}
+
+.type-dot {
+  font-size: 9px;
+  font-weight: 700;
+  flex-shrink: 0;
+  line-height: 1;
+}
+
+.type-dot.income  { color: #10b981; }
+.type-dot.expense { color: #ef4444; }
+
+.tx-title {
+  flex: 1;
+  font-size: 12px;
+  font-weight: 500;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  color: #1e293b;
+}
+
+.tx-meta {
+  font-size: 11px;
+  color: #94a3b8;
+  white-space: nowrap;
+}
+
+.tx-amount {
+  font-size: 12px;
+  font-weight: 600;
+  color: #1e293b;
+  white-space: nowrap;
+}
+
+.empty-msg {
+  font-size: 12px;
+  color: #94a3b8;
+  text-align: center;
+  padding: 8px 0;
+}
+
+/* ── Scrollable list (Todas do mês) ──────────────────────────── */
+
+.tx-list-scroll {
+  max-height: 180px;
+  overflow-y: auto;
+  scrollbar-width: thin;
+  scrollbar-color: #e2e8f0 transparent;
+}
+
+.tx-list-scroll::-webkit-scrollbar { width: 4px; }
+.tx-list-scroll::-webkit-scrollbar-thumb { background: #e2e8f0; border-radius: 2px; }
+
+/* ── Badges ──────────────────────────────────────────────────── */
+
+.badge {
+  font-size: 10px;
+  font-weight: 600;
+  padding: 2px 6px;
+  border-radius: 4px;
+  white-space: nowrap;
+  flex-shrink: 0;
+}
+
+.badge-paid   { background: #dcfce7; color: #16a34a; }
+.badge-future { background: #f1f5f9; color: #64748b; }
+
+/* ── Paid state ──────────────────────────────────────────────── */
+
+.tx-item.paid .tx-title,
+.tx-item.paid .tx-amount {
+  opacity: 0.45;
+  text-decoration: line-through;
+}
+
+/* ── Pay modal ──────────────────────────────────────────────── */
+
+.modal-backdrop {
+  position: fixed;
+  inset: 0;
+  background: rgba(0,0,0,0.5);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 100;
+}
+
+.modal {
+  background: #fff;
+  border-radius: 10px;
+  padding: 16px;
+  width: 260px;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  box-shadow: 0 8px 24px rgba(0,0,0,0.2);
+}
+
+.modal-title {
+  font-weight: 600;
+  font-size: 14px;
+  color: #1a1a2e;
+}
+
+.modal-label {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  font-size: 11px;
+  color: #555;
+  font-weight: 500;
+}
+
+.modal-input {
+  padding: 6px 8px;
+  border: 1px solid #d1d5db;
+  border-radius: 6px;
+  font-size: 13px;
+  color: #1a1a2e;
+  outline: none;
+}
+
+.modal-input:focus {
+  border-color: #3b82f6;
+  box-shadow: 0 0 0 2px rgba(59,130,246,0.2);
+}
+
+.modal-actions {
+  display: flex;
+  gap: 8px;
+  justify-content: flex-end;
+  margin-top: 2px;
+}
+
+.btn-secondary {
+  padding: 6px 12px;
+  border-radius: 6px;
+  border: 1px solid #d1d5db;
+  background: #fff;
+  font-size: 12px;
+  cursor: pointer;
+  color: #555;
+}
+
+.btn-secondary:hover { background: #f3f4f6; }

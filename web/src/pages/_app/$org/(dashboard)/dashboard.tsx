@@ -26,8 +26,6 @@ import { DashboardCharts } from './components/DashboardCharts'
 import { MonthlyStatsCards } from './components/MonthlyStatsCards'
 import { OverdueTransactionsCard } from './components/OverdueTransactionsCard'
 import { PaidThisMonthCard } from './components/PaidThisMonthCard'
-import { ReceivedVsToPay } from './components/ReceivedVsToPay'
-import { RecentActivity } from './components/RecentActivity'
 import { TagsSummary } from './components/TagsSummary'
 import { TopBillsSummary } from './components/TopBillsSummary'
 import { UpcomingAlerts } from './components/UpcomingAlerts'
@@ -130,19 +128,8 @@ function RouteComponent() {
 
         {reports && (
           <>
-            <TagsSummary 
-              categoryBreakdown={reports.reports.chartData.categoryBreakdown}
-              incomeByTag={reports.reports.chartData.incomeByTag}
-              expenseByTag={reports.reports.chartData.expenseByTag}
-            />
             <TopBillsSummary kpis={reports.reports.kpis} />
             <MonthlyStatsCards stats={reports.reports.monthlyStats} />
-            <CounterpartySummary
-              data={
-                reports.reports
-                  .counterparties as unknown as GetOrgSlugReportsTransactions200ReportsCounterparties
-              }
-            />
 
             <OverdueTransactionsCard
               data={reports.reports.overdueTransactions}
@@ -159,11 +146,20 @@ function RouteComponent() {
               onEdit={handleEditTransaction}
             />
 
-            <ReceivedVsToPay kpis={reports.reports.kpis} />
+            <CounterpartySummary
+              data={
+                reports.reports
+                  .counterparties as unknown as GetOrgSlugReportsTransactions200ReportsCounterparties
+              }
+            />
+
+            <TagsSummary
+              categoryBreakdown={reports.reports.chartData.categoryBreakdown}
+              incomeByTag={reports.reports.chartData.incomeByTag}
+              expenseByTag={reports.reports.chartData.expenseByTag}
+            />
 
             <DashboardCharts data={reports.reports.chartData} />
-
-            <RecentActivity items={reports.reports.recentActivity} />
           </>
         )}
       </div>

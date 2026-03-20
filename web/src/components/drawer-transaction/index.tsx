@@ -544,8 +544,9 @@ function DrawerTransactionContent({ transaction, open, onOpenChange, onExternalS
       if (watchedValues.isRecurring) {
         const recurrenceType = watchedValues.recurrenceType
         const recurrenceInterval = watchedValues.recurrenceInterval
+        const recurrenceSelector = watchedValues.recurrenceSelector
 
-        if (!recurrenceType || !recurrenceInterval) {
+        if (!recurrenceType || !recurrenceInterval || !recurrenceSelector) {
           form.setValue('isRecurring', false)
           form.setValue('recurrenceSelector', undefined)
           form.setValue('recurrenceType', undefined)
@@ -663,13 +664,16 @@ function DrawerTransactionContent({ transaction, open, onOpenChange, onExternalS
                               <RecurrenceSelectorField form={form} />
                               <RecurrenceIntervalField form={form} />
                             </div>
-                            <div className="grid grid-cols-1 gap-3">
-                              {form.watch('recurrenceSelector') === 'date' ? (
-                                <RecurrenceUntilField form={form} />
-                              ) : (
+                            {form.watch('recurrenceSelector') === 'times' && (
+                              <div className="grid grid-cols-1 gap-3">
                                 <InstallmentsTotalField form={form} />
-                              )}
-                            </div>
+                              </div>
+                            )}
+                            {form.watch('recurrenceSelector') === 'until' && (
+                              <div className="grid grid-cols-1 gap-3">
+                                <RecurrenceUntilField form={form} />
+                              </div>
+                            )}
                           </div>
                         )}
 
