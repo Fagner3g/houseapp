@@ -85,10 +85,43 @@
 
     .status-ok  { color: #10b981; }
     .status-err { color: #ef4444; }
+
+    .env-toggle {
+      display: flex;
+      background: #e2e8f0;
+      border-radius: 8px;
+      padding: 3px;
+      gap: 3px;
+      margin-bottom: 18px;
+      width: fit-content;
+    }
+
+    .env-btn {
+      padding: 6px 18px;
+      border-radius: 6px;
+      font-size: 13px;
+      font-weight: 500;
+      background: transparent;
+      color: #64748b;
+      border: none;
+      cursor: pointer;
+      transition: background 0.15s, color 0.15s;
+    }
+
+    .env-btn.active {
+      background: #fff;
+      color: #1e293b;
+      box-shadow: 0 1px 3px rgba(0,0,0,0.12);
+    }
   </style>
 </head>
 <body>
   <h1>🏠 HouseApp — Configurações</h1>
+
+  <div class="env-toggle">
+    <button class="env-btn active" id="btn-env-prod" data-env="prod">Produção</button>
+    <button class="env-btn" id="btn-env-dev" data-env="dev">Dev</button>
+  </div>
 
   <div class="field">
     <label for="api-url">URL da API</label>

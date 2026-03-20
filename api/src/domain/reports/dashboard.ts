@@ -314,6 +314,7 @@ export async function getTransactionReports(orgId: string, userId: string, refer
     .filter(r => r.status === 'pending' && r.dueDate < today)
     .map(r => ({
       id: r.id,
+      seriesId: r.seriesId,
       title: r.title,
       amount: Number(r.amount) / 100,
       dueDate: r.dueDate.toISOString(),

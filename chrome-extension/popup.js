@@ -304,13 +304,34 @@ function updateBadgeFromReports(reports) {
 
 // ── Pay modal ─────────────────────────────────────────────────────────────────
 
+function maskCurrency(digits) {
+  if (!digits) return ''
+  const num = parseInt(digits.replace(/\D/g, '') || '0', 10)
+  const reais = Math.floor(num / 100)
+  const centavos = num % 100
+  return `${reais.toLocaleString('pt-BR')},${String(centavos).padStart(2, '0')}`
+}
+
+function parseCurrency(masked) {
+  // "1.234,56" → 1234.56
+  return parseFloat(masked.replace(/\./g, '').replace(',', '.')) || 0
+}
+
+const _amountInput = document.getElementById('pay-amount')
+_amountInput.addEventListener('input', (e) => {
+  const digits = e.target.value.replace(/\D/g, '')
+  e.target.value = maskCurrency(digits)
+})
+
 let _payResolve = null
 
 function openPayModal(tx) {
-  // Pre-fill defaults
-  const todayStr = new Date().toISOString().split('T')[0]
-  document.getElementById('pay-date').value = todayStr
-  document.getElementById('pay-amount').value = tx.amount.toFixed(2)
+  // Default date = due date; user can switch to today via button
+  const dueDateStr = tx.dueDate ? tx.dueDate.split('T')[0] : new Date().toISOString().split('T')[0]
+  document.getElementById('pay-date').value = dueDateStr
+  // Pre-fill amount with currency mask
+  const centavos = Math.round(tx.amount * 100)
+  document.getElementById('pay-amount').value = maskCurrency(String(centavos))
   document.getElementById('pay-modal').classList.remove('hidden')
 
   return new Promise(resolve => { _payResolve = resolve })
@@ -321,11 +342,14 @@ function closePayModal(result) {
   if (_payResolve) { _payResolve(result); _payResolve = null }
 }
 
+document.getElementById('btn-today').addEventListener('click', () => {
+  document.getElementById('pay-date').value = new Date().toISOString().split('T')[0]
+})
+
 document.getElementById('pay-cancel').addEventListener('click', () => closePayModal(null))
 document.getElementById('pay-confirm').addEventListener('click', () => {
-  const dateVal   = document.getElementById('pay-date').value
-  const amountVal = document.getElementById('pay-amount').value.replace(',', '.')
-  const amount    = parseFloat(amountVal)
+  const dateVal = document.getElementById('pay-date').value
+  const amount  = parseCurrency(document.getElementById('pay-amount').value)
   if (!dateVal) { alert('Informe a data do pagamento'); return }
   if (!amount || amount <= 0) { alert('Informe o valor pago'); return }
   closePayModal({ paidAt: new Date(dateVal).toISOString(), paidAmount: amount })
@@ -340,12 +364,36 @@ async function handlePay(txId, liEl, tx) {
   btn.textContent = '...'
 
   try {
+    // If amount changed, update the transaction first before marking as paid
+    const amountChanged = Math.abs(result.paidAmount - tx.amount) >= 0.01
+    if (amountChanged && tx.seriesId) {
+      await apiFetch(`/org/${state.orgSlug}/transaction/${txId}`, {
+        method: 'PATCH',
+        body: JSON.stringify({
+          type: tx.type,
+          title: tx.title,
+          amount: result.paidAmount.toFixed(2),
+          serieId: tx.seriesId,
+          dueDate: tx.dueDate,
+          payToEmail: tx.payToEmail || undefined,
+          updateSeries: false,
+        }),
+      })
+    }
+
     await apiFetch(`/org/${state.orgSlug}/transaction/${txId}/pay`, {
       method: 'PATCH',
       body: JSON.stringify(result),
     })
     liEl.classList.add('paid')
     btn.remove()
+
+    // If amount changed, update the displayed value in this item
+    if (amountChanged) {
+      const amountEl = liEl.querySelector('.tx-amount')
+      if (amountEl) amountEl.textContent = fmt(result.paidAmount)
+    }
+
     await chrome.storage.local.remove('cachedReport')
 
     // Update badge: remove this tx from the pending counts
@@ -355,10 +403,14 @@ async function handlePay(txId, liEl, tx) {
     const upcomingCount = upcomingList.filter(t => t.status === 'pending' && t.id !== txId).length
     updateBadge(overdueCount, upcomingCount)
 
-    // Mirror the paid state in "Todas do mês" if the same tx is there
+    // Mirror the paid state (and new amount) in "Todas do mês" if the same tx is there
     const twin = document.querySelector(`#list-all [data-id="${txId}"]`)
     if (twin) {
       twin.classList.add('paid')
+      if (amountChanged) {
+        const twinAmount = twin.querySelector('.tx-amount')
+        if (twinAmount) twinAmount.textContent = fmt(result.paidAmount)
+      }
       const twinBtn = twin.querySelector('.btn-pay')
       if (twinBtn) twinBtn.replaceWith(Object.assign(document.createElement('span'), {
         className: 'badge badge-paid',

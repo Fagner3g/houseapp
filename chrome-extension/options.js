@@ -1,5 +1,20 @@
 const statusEl = document.getElementById('status')
 
+const ENVS = {
+  prod: { apiUrl: 'https://api.jarvis.dev.br', webUrl: 'https://app.jarvis.dev.br' },
+  dev:  { apiUrl: 'http://localhost:3333',      webUrl: 'http://localhost:5173' },
+}
+
+function applyEnv(env) {
+  document.getElementById('api-url').value = ENVS[env].apiUrl
+  document.getElementById('web-url').value = ENVS[env].webUrl
+  document.getElementById('btn-env-prod').classList.toggle('active', env === 'prod')
+  document.getElementById('btn-env-dev').classList.toggle('active',  env === 'dev')
+}
+
+document.getElementById('btn-env-prod').addEventListener('click', () => applyEnv('prod'))
+document.getElementById('btn-env-dev').addEventListener('click',  () => applyEnv('dev'))
+
 function setStatus(msg, type = '') {
   statusEl.textContent = msg
   statusEl.className = type ? `status-${type}` : ''
@@ -13,6 +28,11 @@ chrome.storage.local.get(['apiUrl', 'webUrl', 'pollMinutes'], (data) => {
   if (data.pollMinutes) {
     document.getElementById('poll-minutes').value = String(data.pollMinutes)
   }
+  // highlight active env button based on saved apiUrl
+  const savedApi = data.apiUrl || ''
+  const activeEnv = savedApi.includes('localhost') ? 'dev' : 'prod'
+  document.getElementById('btn-env-prod').classList.toggle('active', activeEnv === 'prod')
+  document.getElementById('btn-env-dev').classList.toggle('active',  activeEnv === 'dev')
 })
 
 // ── Save ──────────────────────────────────────────────────────────────────────

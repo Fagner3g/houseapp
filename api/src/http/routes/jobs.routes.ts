@@ -221,6 +221,7 @@ const TransactionReportsResponseSchema = z.object({
         transactions: z.array(
           z.object({
             id: z.string(),
+            seriesId: z.string().optional(),
             title: z.string(),
             amount: z.number(),
             dueDate: z.string(),
