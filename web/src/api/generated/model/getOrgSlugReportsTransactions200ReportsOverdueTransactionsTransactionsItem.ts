@@ -11,6 +11,7 @@ import type { GetOrgSlugReportsTransactions200ReportsOverdueTransactionsTransact
 export type GetOrgSlugReportsTransactions200ReportsOverdueTransactionsTransactionsItem =
   {
     id: string;
+    seriesId?: string;
     title: string;
     amount: number;
     dueDate: string;

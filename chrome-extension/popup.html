@@ -99,10 +99,13 @@
     <div class="modal">
       <p class="modal-title">Confirmar pagamento</p>
       <label class="modal-label">Data do pagamento
-        <input type="date" id="pay-date" class="modal-input" />
+        <div class="modal-date-row">
+          <input type="date" id="pay-date" class="modal-input" />
+          <button type="button" id="btn-today" class="btn-today">Hoje</button>
+        </div>
       </label>
       <label class="modal-label">Valor pago (R$)
-        <input type="number" id="pay-amount" class="modal-input" step="0.01" min="0.01" placeholder="0,00" />
+        <input type="text" id="pay-amount" class="modal-input" inputmode="numeric" placeholder="0,00" />
       </label>
       <div class="modal-actions">
         <button id="pay-cancel" class="btn-secondary">Cancelar</button>

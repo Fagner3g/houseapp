@@ -1298,6 +1298,9 @@
                                   "id": {
                                     "type": "string"
                                   },
+                                  "seriesId": {
+                                    "type": "string"
+                                  },
                                   "title": {
                                     "type": "string"
                                   },
