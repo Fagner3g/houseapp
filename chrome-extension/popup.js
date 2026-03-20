@@ -286,6 +286,22 @@ function renderOrgSelect() {
 
 // ── Actions ───────────────────────────────────────────────────────────────────
 
+// ── Badge ─────────────────────────────────────────────────────────────────────
+
+function updateBadge(overdueCount, upcomingCount) {
+  const total = overdueCount + upcomingCount
+  if (total === 0) { chrome.action.setBadgeText({ text: '' }); return }
+  chrome.action.setBadgeText({ text: String(total) })
+  chrome.action.setBadgeTextColor({ color: '#ffffff' })
+  chrome.action.setBadgeBackgroundColor({ color: overdueCount > 0 ? '#ef4444' : '#f59e0b' })
+}
+
+function updateBadgeFromReports(reports) {
+  const overdue  = (reports.overdueTransactions?.transactions  || []).filter(t => t.status === 'pending')
+  const upcoming = (reports.upcomingAlerts?.transactions || []).filter(t => t.status === 'pending')
+  updateBadge(overdue.length, upcoming.length)
+}
+
 // ── Pay modal ─────────────────────────────────────────────────────────────────
 
 let _payResolve = null
@@ -294,7 +310,7 @@ function openPayModal(tx) {
   // Pre-fill defaults
   const todayStr = new Date().toISOString().split('T')[0]
   document.getElementById('pay-date').value = todayStr
-  document.getElementById('pay-amount').value = tx.amount.toFixed(2).replace('.', ',')
+  document.getElementById('pay-amount').value = tx.amount.toFixed(2)
   document.getElementById('pay-modal').classList.remove('hidden')
 
   return new Promise(resolve => { _payResolve = resolve })
@@ -331,6 +347,13 @@ async function handlePay(txId, liEl, tx) {
     liEl.classList.add('paid')
     btn.remove()
     await chrome.storage.local.remove('cachedReport')
+
+    // Update badge: remove this tx from the pending counts
+    const overdueList  = state.reports?.overdueTransactions?.transactions  || []
+    const upcomingList = state.reports?.upcomingAlerts?.transactions || []
+    const overdueCount  = overdueList.filter(t => t.status === 'pending' && t.id !== txId).length
+    const upcomingCount = upcomingList.filter(t => t.status === 'pending' && t.id !== txId).length
+    updateBadge(overdueCount, upcomingCount)
 
     // Mirror the paid state in "Todas do mês" if the same tx is there
     const twin = document.querySelector(`#list-all [data-id="${txId}"]`)
@@ -369,6 +392,8 @@ async function loadData() {
     )
     renderUpcoming(state.reports.upcomingAlerts?.transactions, context)
     renderAllTransactions(state.reports.allTransactions, context)
+
+    updateBadgeFromReports(state.reports)
 
     await chrome.storage.local.set({
       cachedReport: state.reports,
