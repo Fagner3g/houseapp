@@ -26,7 +26,7 @@ export async function AuthenticateUser(userId: string) {
   const token = await new SignJWT()
     .setProtectedHeader({ alg: 'HS256' })
     .setSubject(userId)
-    .setExpirationTime('1d')
+    .setExpirationTime('7d')
     .setIssuedAt()
     .sign(secret)
 

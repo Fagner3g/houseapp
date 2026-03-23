@@ -296,10 +296,26 @@ function updateBadge(overdueCount, upcomingCount) {
   chrome.action.setBadgeBackgroundColor({ color: overdueCount > 0 ? '#ef4444' : '#f59e0b' })
 }
 
-function updateBadgeFromReports(reports) {
-  const overdue  = (reports.overdueTransactions?.transactions  || []).filter(t => t.status === 'pending')
-  const upcoming = (reports.upcomingAlerts?.transactions || []).filter(t => t.status === 'pending')
-  updateBadge(overdue.length, upcoming.length)
+/**
+ * Recalculates badge across ALL orgs using the per-org cache.
+ * Updates the current org's data before recalculating so the count is fresh.
+ */
+async function updateBadgeFromReports(reports) {
+  const { cachedReportsByOrg } = await chrome.storage.local.get('cachedReportsByOrg')
+  const allOrgs = { ...(cachedReportsByOrg || {}), [state.orgSlug]: reports }
+
+  let totalOverdue = 0
+  let totalUpcoming = 0
+  for (const r of Object.values(allOrgs)) {
+    totalOverdue  += (r.overdueTransactions?.transactions || []).filter(t => t.status === 'pending').length
+    totalUpcoming += (r.upcomingAlerts?.transactions      || []).filter(t => t.status === 'pending').length
+  }
+
+  updateBadge(totalOverdue, totalUpcoming)
+  await chrome.storage.local.set({
+    cachedReportsByOrg: allOrgs,
+    badgeTotals: { overdue: totalOverdue, upcoming: totalUpcoming },
+  })
 }
 
 // ── Pay modal ─────────────────────────────────────────────────────────────────
@@ -394,14 +410,17 @@ async function handlePay(txId, liEl, tx) {
       if (amountEl) amountEl.textContent = fmt(result.paidAmount)
     }
 
-    await chrome.storage.local.remove('cachedReport')
+    // Update this tx as paid in the in-memory state so badge recalc is correct
+    for (const list of [
+      state.reports?.overdueTransactions?.transactions,
+      state.reports?.upcomingAlerts?.transactions,
+      state.reports?.allTransactions,
+    ]) {
+      const found = (list || []).find(t => t.id === txId)
+      if (found) found.status = 'paid'
+    }
 
-    // Update badge: remove this tx from the pending counts
-    const overdueList  = state.reports?.overdueTransactions?.transactions  || []
-    const upcomingList = state.reports?.upcomingAlerts?.transactions || []
-    const overdueCount  = overdueList.filter(t => t.status === 'pending' && t.id !== txId).length
-    const upcomingCount = upcomingList.filter(t => t.status === 'pending' && t.id !== txId).length
-    updateBadge(overdueCount, upcomingCount)
+    await updateBadgeFromReports(state.reports)
 
     // Mirror the paid state (and new amount) in "Todas do mês" if the same tx is there
     const twin = document.querySelector(`#list-all [data-id="${txId}"]`)
@@ -445,7 +464,7 @@ async function loadData() {
     renderUpcoming(state.reports.upcomingAlerts?.transactions, context)
     renderAllTransactions(state.reports.allTransactions, context)
 
-    updateBadgeFromReports(state.reports)
+    await updateBadgeFromReports(state.reports)
 
     await chrome.storage.local.set({
       cachedReport: state.reports,
