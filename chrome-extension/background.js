@@ -14,10 +14,10 @@ chrome.alarms.onAlarm.addListener(alarm => {
 
 chrome.notifications.onButtonClicked.addListener(async (notificationId, buttonIndex) => {
   if (buttonIndex !== 0) return
-  const match = notificationId.match(/^overdue-(.+)$/)
+  const match = notificationId.match(/^overdue-(.+?)-(.+)$/)
   if (!match) return
-  const transactionId = match[1]
-  await payTransaction(transactionId)
+  const [, orgSlug, transactionId] = match
+  await payTransaction(orgSlug, transactionId)
   chrome.notifications.clear(notificationId)
 })
 
@@ -42,16 +42,10 @@ async function getToken() {
         await chrome.storage.local.set({ token: cookie.value })
         return cookie.value
       }
-    } catch (_) {
-      // cookies API may fail if host_permissions not matched
-    }
+    } catch (_) {}
   }
 
   return null
-}
-
-async function getConfig() {
-  return chrome.storage.local.get(['apiUrl', 'webUrl', 'orgSlug'])
 }
 
 function authHeaders(token) {
@@ -81,8 +75,8 @@ async function fetchReports(apiUrl, token, slug, year, month) {
   return res.json()
 }
 
-async function payTransaction(transactionId) {
-  const { apiUrl, orgSlug } = await getConfig()
+async function payTransaction(orgSlug, transactionId) {
+  const { apiUrl } = await chrome.storage.local.get('apiUrl')
   const token = await getToken()
   if (!apiUrl || !orgSlug || !token) return
 
@@ -91,8 +85,7 @@ async function payTransaction(transactionId) {
     headers: authHeaders(token),
   })
 
-  // Invalidate cache so popup refreshes
-  await chrome.storage.local.remove('cachedReport')
+  await chrome.storage.local.remove('cachedReportsByOrg')
 }
 
 // ── Badge ────────────────────────────────────────────────────────────────────
@@ -110,26 +103,28 @@ function setBadge(overdueCount, upcomingCount) {
 
 // ── Notifications ────────────────────────────────────────────────────────────
 
-function notifyOverdue(tx) {
+function notifyOverdue(tx, orgName) {
   const days = tx.overdueDays || 0
   const dayLabel = days === 1 ? '1 dia' : `${days} dias`
-  chrome.notifications.create(`overdue-${tx.id}`, {
+  const orgSuffix = orgName ? ` [${orgName}]` : ''
+  chrome.notifications.create(`overdue-${tx.orgSlug}-${tx.id}`, {
     type: 'basic',
     iconUrl: 'icons/icon48.png',
-    title: 'Transação vencida',
+    title: `Transação vencida${orgSuffix}`,
     message: `${tx.title} — R$ ${formatAmount(tx.amount)} (${dayLabel} em atraso)`,
     buttons: [{ title: 'Marcar como paga' }],
     requireInteraction: false,
   })
 }
 
-function notifyUpcoming(tx) {
+function notifyUpcoming(tx, orgName) {
   const days = tx.daysUntilDue
   const dueLabel = days === 0 ? 'hoje' : days === 1 ? 'amanhã' : `em ${days} dias`
-  chrome.notifications.create(`upcoming-${tx.id}`, {
+  const orgSuffix = orgName ? ` [${orgName}]` : ''
+  chrome.notifications.create(`upcoming-${tx.orgSlug}-${tx.id}`, {
     type: 'basic',
     iconUrl: 'icons/icon48.png',
-    title: 'Vence em breve',
+    title: `Vence em breve${orgSuffix}`,
     message: `${tx.title} — vence ${dueLabel} (R$ ${formatAmount(tx.amount)})`,
     requireInteraction: false,
   })
@@ -145,68 +140,71 @@ function formatAmount(amount) {
 async function poll() {
   try {
     const token = await getToken()
-    if (!token) {
-      setBadge(0)
-      return
-    }
+    if (!token) { setBadge(0, 0); return }
 
-    const { apiUrl, orgSlug: savedSlug } = await getConfig()
-    if (!apiUrl) {
-      setBadge(0)
-      return
-    }
+    const { apiUrl } = await chrome.storage.local.get('apiUrl')
+    if (!apiUrl) { setBadge(0, 0); return }
 
     // Validate token
     try {
       await fetchProfile(apiUrl, token)
     } catch (_) {
       await chrome.storage.local.remove('token')
-      setBadge(0)
+      setBadge(0, 0)
       return
     }
 
-    // Resolve org slug
-    let orgSlug = savedSlug
-    if (!orgSlug) {
-      const orgsData = await fetchOrgs(apiUrl, token)
-      const orgs = orgsData.organizations || orgsData.orgs || orgsData
-      if (!orgs?.length) {
-        setBadge(0)
-        return
-      }
-      orgSlug = orgs[0].slug
-      await chrome.storage.local.set({ orgSlug })
-    }
+    // Fetch all orgs
+    const orgsData = await fetchOrgs(apiUrl, token)
+    const orgs = orgsData.organizations || orgsData.orgs || orgsData
+    if (!orgs?.length) { setBadge(0, 0); return }
 
     const now = new Date()
     const year = now.getFullYear()
     const month = now.getMonth() + 1
 
-    const data = await fetchReports(apiUrl, token, orgSlug, year, month)
-    const reports = data.reports || data
-
-    const { cachedReport } = await chrome.storage.local.get('cachedReport')
-    const prevOverdueIds = new Set(
-      (cachedReport?.overdueTransactions?.transactions || []).map(t => t.id)
-    )
-    const prevUpcomingIds = new Set(
-      (cachedReport?.upcomingAlerts?.transactions || []).map(t => t.id)
-    )
-
-    const overdue = reports.overdueTransactions?.transactions || []
-    const upcoming = reports.upcomingAlerts?.transactions || []
-
-    // Fire notifications for new items only
-    for (const tx of overdue) {
-      if (!prevOverdueIds.has(tx.id)) notifyOverdue(tx)
-    }
-    for (const tx of upcoming) {
-      if (!prevUpcomingIds.has(tx.id)) notifyUpcoming(tx)
+    // Load previous cache to detect new items
+    const { cachedReportsByOrg: prevCache } = await chrome.storage.local.get('cachedReportsByOrg')
+    const prevOverdueIds = new Set()
+    const prevUpcomingIds = new Set()
+    for (const reports of Object.values(prevCache || {})) {
+      for (const t of reports.overdueTransactions?.transactions || []) prevOverdueIds.add(t.id)
+      for (const t of reports.upcomingAlerts?.transactions    || []) prevUpcomingIds.add(t.id)
     }
 
-    setBadge(overdue.length, upcoming.length)
+    // Fetch reports for all orgs in parallel
+    const results = await Promise.all(
+      orgs.map(org =>
+        fetchReports(apiUrl, token, org.slug, year, month)
+          .then(data => ({ slug: org.slug, name: org.name, reports: data.reports || data }))
+          .catch(() => null)
+      )
+    )
+
+    let totalOverdue = 0
+    let totalUpcoming = 0
+    const newCache = {}
+
+    for (const orgData of results.filter(Boolean)) {
+      const overdue  = (orgData.reports.overdueTransactions?.transactions || [])
+        .map(tx => ({ ...tx, orgSlug: orgData.slug }))
+      const upcoming = (orgData.reports.upcomingAlerts?.transactions || [])
+        .map(tx => ({ ...tx, orgSlug: orgData.slug }))
+
+      for (const tx of overdue)  { if (!prevOverdueIds.has(tx.id))  notifyOverdue(tx,  orgData.name) }
+      for (const tx of upcoming) { if (!prevUpcomingIds.has(tx.id)) notifyUpcoming(tx, orgData.name) }
+
+      totalOverdue  += overdue.filter(t => t.status === 'pending').length
+      totalUpcoming += upcoming.filter(t => t.status === 'pending').length
+
+      newCache[orgData.slug] = orgData.reports
+    }
+
+    setBadge(totalOverdue, totalUpcoming)
+
     await chrome.storage.local.set({
-      cachedReport: reports,
+      cachedReportsByOrg: newCache,
+      badgeTotals: { overdue: totalOverdue, upcoming: totalUpcoming },
       cachedYear: year,
       cachedMonth: month,
     })
