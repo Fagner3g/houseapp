@@ -4,8 +4,8 @@ import type {
   GetOrgSlugReportsTransactions200ReportsUpcomingAlerts,
   ListTransactions200TransactionsItem,
 } from '@/api/generated/model'
+import { mapUpcomingAlertToListItem } from '@/components/drawer-transaction/row-mapper'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
-import { mapUpcomingAlertToListItem } from '../../../../../components/drawer-transaction/row-mapper'
 import { DashboardTransactionItem } from './DashboardTransactionItem'
 
 type Props = {

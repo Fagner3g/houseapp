@@ -4,8 +4,8 @@ import type {
   GetOrgSlugReportsTransactions200ReportsOverdueTransactions,
   ListTransactions200TransactionsItem,
 } from '@/api/generated/model'
+import { mapOverdueToListItem } from '@/components/drawer-transaction/row-mapper'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
-import { mapOverdueToListItem } from '../../../../../components/drawer-transaction/row-mapper'
 
 type Props = {
   data?: GetOrgSlugReportsTransactions200ReportsOverdueTransactions

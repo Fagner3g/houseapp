@@ -1,4 +1,4 @@
-import { writeFile } from 'node:fs'
+import { rename, writeFile } from 'node:fs/promises'
 import { resolve } from 'node:path'
 import fastifyCors from '@fastify/cors'
 import fastifyJwt from '@fastify/jwt'
@@ -155,10 +155,16 @@ export async function buildServer() {
 
     app.ready().then(() => {
       const spec = JSON.stringify(app.swagger(), null, 2)
+      const tempSpecFile = `${specFile}.${process.pid}.tmp`
 
-      writeFile(specFile, spec, () => {
-        logger.info('Swagger spec generated!')
-      })
+      writeFile(tempSpecFile, spec, 'utf8')
+        .then(() => rename(tempSpecFile, specFile))
+        .then(() => {
+          logger.info('Swagger spec generated!')
+        })
+        .catch(error => {
+          logger.error({ error }, 'Failed to generate Swagger spec')
+        })
     })
   }
 

@@ -3,7 +3,6 @@ import type { FastifyReply, FastifyRequest, RouteHandler } from 'fastify'
 
 import { db } from '@/db'
 import { users } from '@/db/schemas/users'
-import { getTransactionReports } from '@/domain/reports/dashboard'
 import { normalizePhone, sendWhatsAppMessage } from '@/domain/whatsapp'
 import {
   getJobInfo,
@@ -259,45 +258,6 @@ export async function previewTransactionAlertsController(
 }
 
 /**
- * Relatórios completos para o dashboard
- */
-export async function getTransactionReportsController(
-  request: FastifyRequest,
-  reply: FastifyReply
-) {
-  try {
-    // userId do solicitante é necessário para montar seus relatórios de dashboard
-    const { sub: userId } = request.user as { sub: string }
-    const { id: orgId } = request.organization
-    
-    // Parâmetros opcionais de ano/mês para visualizar dados históricos
-    const { year, month } = request.query as { year?: string; month?: string }
-    let referenceDate: Date | undefined
-    
-    if (year && month) {
-      const yearNum = Number.parseInt(year, 10)
-      const monthNum = Number.parseInt(month, 10) - 1 // Mês em JS é 0-indexed
-      
-      if (!Number.isNaN(yearNum) && !Number.isNaN(monthNum) && monthNum >= 0 && monthNum <= 11) {
-        referenceDate = new Date(yearNum, monthNum, 15) // 15 do mês para evitar problemas de timezone
-      }
-    }
-
-    const reports = await getTransactionReports(orgId, userId, referenceDate)
-
-    // O serviço já retorna no formato { reports: { ... }, timestamp }
-    return reply.status(200).send(reports)
-  } catch (err) {
-    logger.error({ err }, 'Failed to get transaction reports')
-    return reply.status(500).send({
-      error: 'Internal Server Error',
-      message: 'Failed to get transaction reports',
-      timestamp: new Date().toISOString(),
-    })
-  }
-}
-
-/**
  * Envia resumo mensal completo via WhatsApp para um usuário específico
  */
 type SendMonthlySummaryRoute = {
@@ -315,6 +275,7 @@ export const sendMonthlySummaryController: RouteHandler<SendMonthlySummaryRoute>
     const { userId: targetUserId } = request.body
 
     // Buscar relatórios do mês atual para o usuário selecionado
+    const { getTransactionReports } = await import('@/domain/reports/dashboard')
     const reports = await getTransactionReports(orgId, targetUserId)
 
     // Buscar telefone e nome do usuário alvo

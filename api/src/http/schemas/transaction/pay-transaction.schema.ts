@@ -8,7 +8,7 @@ export const payTransactionSchema = {
   body: z
     .object({
       paidAt: z.string().datetime().optional(),
-      paidAmount: z.coerce.number().positive().optional(),
+      paidAmount: z.coerce.number().min(0.01).optional(),
     })
     .default({}),
   response: { 204: z.null() },
