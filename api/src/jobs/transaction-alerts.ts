@@ -283,7 +283,7 @@ export async function previewTransactionAlerts(userId?: string): Promise<{
 
       const installmentInfo =
         t.installmentIndex != null && t.installmentsTotal != null
-          ? `Parcela ${t.installmentIndex + 1}/${t.installmentsTotal}`
+          ? `Parcela ${t.installmentIndex}/${t.installmentsTotal}`
           : null
 
       transactions.push({

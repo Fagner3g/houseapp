@@ -192,7 +192,7 @@ export async function previewOverdueAlerts(userId?: string): Promise<{
     const transactions = overdueTransactions.map(t => {
       const installmentInfo =
         t.installmentIndex != null && t.installmentsTotal != null
-          ? `Parcela ${t.installmentIndex + 1}/${t.installmentsTotal}`
+          ? `Parcela ${t.installmentIndex}/${t.installmentsTotal}`
           : null
 
       return {

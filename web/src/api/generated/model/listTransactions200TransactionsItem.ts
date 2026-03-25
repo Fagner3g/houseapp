@@ -33,5 +33,7 @@ export type ListTransactions200TransactionsItem = {
   /** @nullable */
   installmentsPaid: number | null;
   /** @nullable */
+  installmentIndex: number | null;
+  /** @nullable */
   description: string | null;
 };

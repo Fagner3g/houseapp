@@ -29,8 +29,8 @@ export function CalendarTransactions({ transactions, dateFrom, dateTo }: Props) 
         color: t.type === 'income' ? 'emerald' : 'rose',
         status: t.status,
         overdueDays: t.overdueDays,
-        description: t.installmentsTotal
-          ? `Parcela ${(t.installmentsPaid ?? 0) + 1} de ${t.installmentsTotal}`
+        description: t.installmentsTotal && t.installmentIndex != null
+          ? `Parcela ${t.installmentIndex} de ${t.installmentsTotal}`
           : undefined,
       })),
     [transactions],
