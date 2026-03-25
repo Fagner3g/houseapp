@@ -2349,6 +2349,10 @@
                           "type": "integer",
                           "nullable": true
                         },
+                        "installmentIndex": {
+                          "type": "integer",
+                          "nullable": true
+                        },
                         "description": {
                           "type": "string",
                           "nullable": true
@@ -2372,6 +2376,7 @@
                         "tags",
                         "installmentsTotal",
                         "installmentsPaid",
+                        "installmentIndex",
                         "description"
                       ],
                       "additionalProperties": false
@@ -2814,6 +2819,10 @@
                             "type": "integer",
                             "nullable": true
                           },
+                          "installmentIndex": {
+                            "type": "integer",
+                            "nullable": true
+                          },
                           "description": {
                             "type": "string",
                             "nullable": true
@@ -2837,6 +2846,7 @@
                           "tags",
                           "installmentsTotal",
                           "installmentsPaid",
+                          "installmentIndex",
                           "description"
                         ],
                         "additionalProperties": false
