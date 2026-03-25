@@ -2,17 +2,18 @@
 
 ## Rotas e organização do backend
 
-- [ ] Mover as rotas de relatórios/dashboards que hoje estão em `api/src/http/routes/jobs.routes.ts` para `api/src/http/routes/reports.routes.ts`.
-- [ ] Atualizar `api/src/http/routes/index.ts` para registrar explicitamente o módulo de relatórios, em vez de concentrar esse comportamento em rotas de jobs.
-- [ ] Separar responsabilidades em `api/src/http/controllers/jobs.controller.ts`, extraindo controllers de relatórios para um arquivo dedicado.
+- [x] Mover as rotas de relatórios/dashboards que hoje estão em `api/src/http/routes/jobs.routes.ts` para `api/src/http/routes/reports.routes.ts`.
+- [x] Atualizar `api/src/http/routes/index.ts` para registrar explicitamente o módulo de relatórios, em vez de concentrar esse comportamento em rotas de jobs.
+- [x] Separar responsabilidades em `api/src/http/controllers/jobs.controller.ts`, extraindo controllers de relatórios para um arquivo dedicado.
 - [ ] Revisar nomes de arquivos, exports e responsabilidades para que "jobs" trate apenas agendamento/execução de jobs e "reports" trate apenas agregações de dashboard.
 
 ## Contrato entre API e frontend
 
-- [ ] Confirmar que todos os endpoints expostos no `swagger.json` correspondem à organização atual das rotas do backend.
-- [ ] Regenerar o cliente do Orval após a reorganização das rotas para evitar contrato obsoleto em `web/src/api/generated`.
+- [x] Confirmar que todos os endpoints expostos no `swagger.json` correspondem à organização atual das rotas do backend.
+- [x] Regenerar o cliente do Orval após a reorganização das rotas para evitar contrato obsoleto em `web/src/api/generated`.
 - [ ] Documentar no fluxo de desenvolvimento que mudanças em rotas/schemas da API exigem atualização do Swagger e do cliente gerado.
 - [ ] Avaliar se arquivos gerados por Orval devem ser versionados do jeito atual ou se o processo deve ser mais explícito no CI.
+- [x] Corrigir a schema OpenAPI de `paidAmount` para evitar erro de validação do Orval no endpoint de pagamento.
 
 ## Estrutura e clareza do domínio
 
@@ -35,11 +36,14 @@
 ## Documentação e onboarding
 
 - [ ] Atualizar o `README.md` para refletir a arquitetura real do monorepo, incluindo `chrome-extension`, jobs e cliente gerado por Orval.
-- [ ] Adicionar um guia curto de navegação do projeto apontando os arquivos centrais de backend, frontend e domínio financeiro.
-- [ ] Documentar o fluxo completo: backend gera Swagger, frontend consome via Orval, e ambos precisam permanecer sincronizados.
+- [x] Adicionar um guia curto de navegação do projeto apontando os arquivos centrais de backend, frontend e domínio financeiro.
+- [x] Documentar o fluxo completo: backend gera Swagger, frontend consome via Orval, e ambos precisam permanecer sincronizados.
+- [x] Criar uma lista técnica de inconsistências para acompanhamento contínuo.
 
 ## Verificações técnicas recomendadas
 
 - [ ] Criar testes para garantir que rotas de relatórios continuem disponíveis após a reorganização dos módulos HTTP.
 - [ ] Criar uma checagem simples no CI para detectar divergência entre `api/swagger.json` e o código atual da API.
 - [ ] Validar se existem endpoints no cliente gerado que já não possuem implementação ou que estão registrados em módulos semanticamente errados.
+- [x] Remover componentes auxiliares do dashboard de `web/src/pages` para evitar falsos arquivos de rota no TanStack Router.
+- [x] Ignorar `api/dist` no versionamento para evitar artefatos locais no Git.

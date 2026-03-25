@@ -55,15 +55,18 @@ const KPISchema = z.object({
 
 const TransactionAlertPreviewSchema = z.object({
   id: z.string(),
+  seriesId: z.string().optional(),
   title: z.string(),
   amount: z.number(),
   dueDate: z.string(),
-  daysUntilDue: z.number(),
-  alertType: z.enum(['warning', 'urgent', 'overdue']),
+  daysUntilDue: z.number().optional(),
+  alertType: z.enum(['warning', 'urgent', 'overdue']).optional(),
   ownerName: z.string(),
-  ownerPhone: z.string(),
-  payToName: z.string().nullable(),
-  payToPhone: z.string().nullable(),
+  ownerPhone: z.string().optional(),
+  payToName: z.string().nullable().optional(),
+  payToPhone: z.string().nullable().optional(),
+  payToEmail: z.string().optional(),
+  status: z.enum(['paid', 'pending']).optional(),
   type: z.enum(['income', 'expense']).optional(),
 })
 

@@ -3330,6 +3330,9 @@
                                   "id": {
                                     "type": "string"
                                   },
+                                  "seriesId": {
+                                    "type": "string"
+                                  },
                                   "title": {
                                     "type": "string"
                                   },
@@ -3364,6 +3367,13 @@
                                     "type": "string",
                                     "nullable": true
                                   },
+                                  "payToEmail": {
+                                    "type": "string"
+                                  },
+                                  "status": {
+                                    "type": "string",
+                                    "enum": ["paid", "pending"]
+                                  },
                                   "type": {
                                     "type": "string",
                                     "enum": [
@@ -3377,12 +3387,7 @@
                                   "title",
                                   "amount",
                                   "dueDate",
-                                  "daysUntilDue",
-                                  "alertType",
-                                  "ownerName",
-                                  "ownerPhone",
-                                  "payToName",
-                                  "payToPhone"
+                                  "ownerName"
                                 ],
                                 "additionalProperties": false
                               }
