@@ -17,6 +17,7 @@ import {
   listUsersByOrgRoute,
   renameOrgRoute,
 } from './organization.routes'
+import { transactionReportsRoute } from './reports.routes'
 import { createTagRoute, deleteTagRoute, listTagsRoute, updateTagRoute } from './tag.routes'
 import {
   createChatMessageRoute,
@@ -86,7 +87,8 @@ export function createRoutes(app: FastifyInstance) {
   app.register(listChatMessagesRoute)
   app.register(createChatMessageRoute)
 
-  // Reports removidos
+  // Reports
+  app.register(transactionReportsRoute)
 
   // Tag
   app.register(listTagsRoute)

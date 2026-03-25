@@ -27,13 +27,28 @@
     }
   },
   "files": {
-    "ignoreUnknown": false
+    "ignoreUnknown": false,
+    "includes": [
+      "**",
+      "!api/dist",
+      "!web/dist",
+      "!web/src/api/generated",
+      "!web/src/routeTree.gen.ts",
+      "!api/swagger.json",
+      "!package-lock.json",
+      "!api/package-lock.json",
+      "!web/package-lock.json"
+    ]
   },
   "overrides": [
     {
       "includes": [
         "web/src/api/generated/**",
-        "web/src/routeTree.gen.ts"
+        "web/src/routeTree.gen.ts",
+        "api/swagger.json",
+        "package-lock.json",
+        "api/package-lock.json",
+        "web/package-lock.json"
       ],
       "linter": {
         "enabled": false
@@ -58,13 +73,7 @@
         "organizeImports": {
           "level": "on",
           "options": {
-            "groups": [
-              ":PACKAGE_WITH_PROTOCOL:",
-              ":PACKAGE:",
-              ":BLANK_LINE:",
-              ":ALIAS:",
-              ":PATH:"
-            ]
+            "groups": [":PACKAGE_WITH_PROTOCOL:", ":PACKAGE:", ":BLANK_LINE:", ":ALIAS:", ":PATH:"]
           }
         }
       }

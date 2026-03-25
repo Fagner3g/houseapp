@@ -83,6 +83,7 @@ export * from "./getOrgSlugReportsTransactions200ReportsUpcomingAlerts";
 export * from "./getOrgSlugReportsTransactions200ReportsUpcomingAlertsSummary";
 export * from "./getOrgSlugReportsTransactions200ReportsUpcomingAlertsTransactionsItem";
 export * from "./getOrgSlugReportsTransactions200ReportsUpcomingAlertsTransactionsItemAlertType";
+export * from "./getOrgSlugReportsTransactions200ReportsUpcomingAlertsTransactionsItemStatus";
 export * from "./getOrgSlugReportsTransactions200ReportsUpcomingAlertsTransactionsItemType";
 export * from "./getOrgSlugReportsTransactions401";
 export * from "./getOrgSlugReportsTransactions403";

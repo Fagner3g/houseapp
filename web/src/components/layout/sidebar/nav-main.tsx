@@ -36,22 +36,18 @@ export function NavMain({
       <SidebarGroupContent className="flex flex-col gap-2">
         <SidebarMenu>
           {items.map(item => (
-            <Link 
-              key={item.title} 
-              to={item.url}
-              onClick={handleNavigationClick}
-            >
-              <SidebarMenuItem>
-                <SidebarMenuButton tooltip={item.title} isActive={route?.url === item.url}>
+            <SidebarMenuItem key={item.title}>
+              <SidebarMenuButton asChild tooltip={item.title} isActive={route?.url === item.url}>
+                <Link to={item.url} onClick={handleNavigationClick}>
                   {item.icon && (
                     <item.icon
                       className={route?.url === item.url ? 'text-foreground' : 'text-foreground/60'}
                     />
                   )}
                   <span>{item.title}</span>
-                </SidebarMenuButton>
-              </SidebarMenuItem>
-            </Link>
+                </Link>
+              </SidebarMenuButton>
+            </SidebarMenuItem>
           ))}
         </SidebarMenu>
       </SidebarGroupContent>

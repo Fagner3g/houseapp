@@ -1483,215 +1483,6 @@ export function useGetJobsOverdueAlertsPreview<
 }
 
 /**
- * @summary Retorna dados consolidados para o dashboard da organização
- */
-export const getGetOrgSlugReportsTransactionsUrl = (
-  slug: string,
-  params?: GetOrgSlugReportsTransactionsParams,
-) => {
-  const normalizedParams = new URLSearchParams();
-
-  Object.entries(params || {}).forEach(([key, value]) => {
-    if (value !== undefined) {
-      normalizedParams.append(key, value === null ? "null" : value.toString());
-    }
-  });
-
-  const stringifiedParams = normalizedParams.toString();
-
-  return stringifiedParams.length > 0
-    ? `/org/${slug}/reports/transactions?${stringifiedParams}`
-    : `/org/${slug}/reports/transactions`;
-};
-
-export const getOrgSlugReportsTransactions = async (
-  slug: string,
-  params?: GetOrgSlugReportsTransactionsParams,
-  options?: RequestInit,
-): Promise<GetOrgSlugReportsTransactions200> => {
-  return http<GetOrgSlugReportsTransactions200>(
-    getGetOrgSlugReportsTransactionsUrl(slug, params),
-    {
-      ...options,
-      method: "GET",
-    },
-  );
-};
-
-export const getGetOrgSlugReportsTransactionsQueryKey = (
-  slug?: string,
-  params?: GetOrgSlugReportsTransactionsParams,
-) => {
-  return [
-    `/org/${slug}/reports/transactions`,
-    ...(params ? [params] : []),
-  ] as const;
-};
-
-export const getGetOrgSlugReportsTransactionsQueryOptions = <
-  TData = Awaited<ReturnType<typeof getOrgSlugReportsTransactions>>,
-  TError = GetOrgSlugReportsTransactions401 | GetOrgSlugReportsTransactions403,
->(
-  slug: string,
-  params?: GetOrgSlugReportsTransactionsParams,
-  options?: {
-    query?: Partial<
-      UseQueryOptions<
-        Awaited<ReturnType<typeof getOrgSlugReportsTransactions>>,
-        TError,
-        TData
-      >
-    >;
-    request?: SecondParameter<typeof http>;
-  },
-) => {
-  const { query: queryOptions, request: requestOptions } = options ?? {};
-
-  const queryKey =
-    queryOptions?.queryKey ??
-    getGetOrgSlugReportsTransactionsQueryKey(slug, params);
-
-  const queryFn: QueryFunction<
-    Awaited<ReturnType<typeof getOrgSlugReportsTransactions>>
-  > = ({ signal }) =>
-    getOrgSlugReportsTransactions(slug, params, { signal, ...requestOptions });
-
-  return {
-    queryKey,
-    queryFn,
-    enabled: !!slug,
-    ...queryOptions,
-  } as UseQueryOptions<
-    Awaited<ReturnType<typeof getOrgSlugReportsTransactions>>,
-    TError,
-    TData
-  > & { queryKey: DataTag<QueryKey, TData, TError> };
-};
-
-export type GetOrgSlugReportsTransactionsQueryResult = NonNullable<
-  Awaited<ReturnType<typeof getOrgSlugReportsTransactions>>
->;
-export type GetOrgSlugReportsTransactionsQueryError =
-  | GetOrgSlugReportsTransactions401
-  | GetOrgSlugReportsTransactions403;
-
-export function useGetOrgSlugReportsTransactions<
-  TData = Awaited<ReturnType<typeof getOrgSlugReportsTransactions>>,
-  TError = GetOrgSlugReportsTransactions401 | GetOrgSlugReportsTransactions403,
->(
-  slug: string,
-  params: undefined | GetOrgSlugReportsTransactionsParams,
-  options: {
-    query: Partial<
-      UseQueryOptions<
-        Awaited<ReturnType<typeof getOrgSlugReportsTransactions>>,
-        TError,
-        TData
-      >
-    > &
-      Pick<
-        DefinedInitialDataOptions<
-          Awaited<ReturnType<typeof getOrgSlugReportsTransactions>>,
-          TError,
-          Awaited<ReturnType<typeof getOrgSlugReportsTransactions>>
-        >,
-        "initialData"
-      >;
-    request?: SecondParameter<typeof http>;
-  },
-  queryClient?: QueryClient,
-): DefinedUseQueryResult<TData, TError> & {
-  queryKey: DataTag<QueryKey, TData, TError>;
-};
-export function useGetOrgSlugReportsTransactions<
-  TData = Awaited<ReturnType<typeof getOrgSlugReportsTransactions>>,
-  TError = GetOrgSlugReportsTransactions401 | GetOrgSlugReportsTransactions403,
->(
-  slug: string,
-  params?: GetOrgSlugReportsTransactionsParams,
-  options?: {
-    query?: Partial<
-      UseQueryOptions<
-        Awaited<ReturnType<typeof getOrgSlugReportsTransactions>>,
-        TError,
-        TData
-      >
-    > &
-      Pick<
-        UndefinedInitialDataOptions<
-          Awaited<ReturnType<typeof getOrgSlugReportsTransactions>>,
-          TError,
-          Awaited<ReturnType<typeof getOrgSlugReportsTransactions>>
-        >,
-        "initialData"
-      >;
-    request?: SecondParameter<typeof http>;
-  },
-  queryClient?: QueryClient,
-): UseQueryResult<TData, TError> & {
-  queryKey: DataTag<QueryKey, TData, TError>;
-};
-export function useGetOrgSlugReportsTransactions<
-  TData = Awaited<ReturnType<typeof getOrgSlugReportsTransactions>>,
-  TError = GetOrgSlugReportsTransactions401 | GetOrgSlugReportsTransactions403,
->(
-  slug: string,
-  params?: GetOrgSlugReportsTransactionsParams,
-  options?: {
-    query?: Partial<
-      UseQueryOptions<
-        Awaited<ReturnType<typeof getOrgSlugReportsTransactions>>,
-        TError,
-        TData
-      >
-    >;
-    request?: SecondParameter<typeof http>;
-  },
-  queryClient?: QueryClient,
-): UseQueryResult<TData, TError> & {
-  queryKey: DataTag<QueryKey, TData, TError>;
-};
-/**
- * @summary Retorna dados consolidados para o dashboard da organização
- */
-
-export function useGetOrgSlugReportsTransactions<
-  TData = Awaited<ReturnType<typeof getOrgSlugReportsTransactions>>,
-  TError = GetOrgSlugReportsTransactions401 | GetOrgSlugReportsTransactions403,
->(
-  slug: string,
-  params?: GetOrgSlugReportsTransactionsParams,
-  options?: {
-    query?: Partial<
-      UseQueryOptions<
-        Awaited<ReturnType<typeof getOrgSlugReportsTransactions>>,
-        TError,
-        TData
-      >
-    >;
-    request?: SecondParameter<typeof http>;
-  },
-  queryClient?: QueryClient,
-): UseQueryResult<TData, TError> & {
-  queryKey: DataTag<QueryKey, TData, TError>;
-} {
-  const queryOptions = getGetOrgSlugReportsTransactionsQueryOptions(
-    slug,
-    params,
-    options,
-  );
-
-  const query = useQuery(queryOptions, queryClient) as UseQueryResult<
-    TData,
-    TError
-  > & { queryKey: DataTag<QueryKey, TData, TError> };
-
-  query.queryKey = queryOptions.queryKey;
-
-  return query;
-}
-
-/**
  * @summary Envia resumo mensal via WhatsApp para um usuário da organização
  */
 export const getPostOrgSlugJobsSendMonthlySummaryUrl = (slug: string) => {
@@ -5109,6 +4900,215 @@ export const useCreateChatMessage = <
 
   return useMutation(mutationOptions, queryClient);
 };
+
+/**
+ * @summary Retorna dados consolidados para o dashboard da organização
+ */
+export const getGetOrgSlugReportsTransactionsUrl = (
+  slug: string,
+  params?: GetOrgSlugReportsTransactionsParams,
+) => {
+  const normalizedParams = new URLSearchParams();
+
+  Object.entries(params || {}).forEach(([key, value]) => {
+    if (value !== undefined) {
+      normalizedParams.append(key, value === null ? "null" : value.toString());
+    }
+  });
+
+  const stringifiedParams = normalizedParams.toString();
+
+  return stringifiedParams.length > 0
+    ? `/org/${slug}/reports/transactions?${stringifiedParams}`
+    : `/org/${slug}/reports/transactions`;
+};
+
+export const getOrgSlugReportsTransactions = async (
+  slug: string,
+  params?: GetOrgSlugReportsTransactionsParams,
+  options?: RequestInit,
+): Promise<GetOrgSlugReportsTransactions200> => {
+  return http<GetOrgSlugReportsTransactions200>(
+    getGetOrgSlugReportsTransactionsUrl(slug, params),
+    {
+      ...options,
+      method: "GET",
+    },
+  );
+};
+
+export const getGetOrgSlugReportsTransactionsQueryKey = (
+  slug?: string,
+  params?: GetOrgSlugReportsTransactionsParams,
+) => {
+  return [
+    `/org/${slug}/reports/transactions`,
+    ...(params ? [params] : []),
+  ] as const;
+};
+
+export const getGetOrgSlugReportsTransactionsQueryOptions = <
+  TData = Awaited<ReturnType<typeof getOrgSlugReportsTransactions>>,
+  TError = GetOrgSlugReportsTransactions401 | GetOrgSlugReportsTransactions403,
+>(
+  slug: string,
+  params?: GetOrgSlugReportsTransactionsParams,
+  options?: {
+    query?: Partial<
+      UseQueryOptions<
+        Awaited<ReturnType<typeof getOrgSlugReportsTransactions>>,
+        TError,
+        TData
+      >
+    >;
+    request?: SecondParameter<typeof http>;
+  },
+) => {
+  const { query: queryOptions, request: requestOptions } = options ?? {};
+
+  const queryKey =
+    queryOptions?.queryKey ??
+    getGetOrgSlugReportsTransactionsQueryKey(slug, params);
+
+  const queryFn: QueryFunction<
+    Awaited<ReturnType<typeof getOrgSlugReportsTransactions>>
+  > = ({ signal }) =>
+    getOrgSlugReportsTransactions(slug, params, { signal, ...requestOptions });
+
+  return {
+    queryKey,
+    queryFn,
+    enabled: !!slug,
+    ...queryOptions,
+  } as UseQueryOptions<
+    Awaited<ReturnType<typeof getOrgSlugReportsTransactions>>,
+    TError,
+    TData
+  > & { queryKey: DataTag<QueryKey, TData, TError> };
+};
+
+export type GetOrgSlugReportsTransactionsQueryResult = NonNullable<
+  Awaited<ReturnType<typeof getOrgSlugReportsTransactions>>
+>;
+export type GetOrgSlugReportsTransactionsQueryError =
+  | GetOrgSlugReportsTransactions401
+  | GetOrgSlugReportsTransactions403;
+
+export function useGetOrgSlugReportsTransactions<
+  TData = Awaited<ReturnType<typeof getOrgSlugReportsTransactions>>,
+  TError = GetOrgSlugReportsTransactions401 | GetOrgSlugReportsTransactions403,
+>(
+  slug: string,
+  params: undefined | GetOrgSlugReportsTransactionsParams,
+  options: {
+    query: Partial<
+      UseQueryOptions<
+        Awaited<ReturnType<typeof getOrgSlugReportsTransactions>>,
+        TError,
+        TData
+      >
+    > &
+      Pick<
+        DefinedInitialDataOptions<
+          Awaited<ReturnType<typeof getOrgSlugReportsTransactions>>,
+          TError,
+          Awaited<ReturnType<typeof getOrgSlugReportsTransactions>>
+        >,
+        "initialData"
+      >;
+    request?: SecondParameter<typeof http>;
+  },
+  queryClient?: QueryClient,
+): DefinedUseQueryResult<TData, TError> & {
+  queryKey: DataTag<QueryKey, TData, TError>;
+};
+export function useGetOrgSlugReportsTransactions<
+  TData = Awaited<ReturnType<typeof getOrgSlugReportsTransactions>>,
+  TError = GetOrgSlugReportsTransactions401 | GetOrgSlugReportsTransactions403,
+>(
+  slug: string,
+  params?: GetOrgSlugReportsTransactionsParams,
+  options?: {
+    query?: Partial<
+      UseQueryOptions<
+        Awaited<ReturnType<typeof getOrgSlugReportsTransactions>>,
+        TError,
+        TData
+      >
+    > &
+      Pick<
+        UndefinedInitialDataOptions<
+          Awaited<ReturnType<typeof getOrgSlugReportsTransactions>>,
+          TError,
+          Awaited<ReturnType<typeof getOrgSlugReportsTransactions>>
+        >,
+        "initialData"
+      >;
+    request?: SecondParameter<typeof http>;
+  },
+  queryClient?: QueryClient,
+): UseQueryResult<TData, TError> & {
+  queryKey: DataTag<QueryKey, TData, TError>;
+};
+export function useGetOrgSlugReportsTransactions<
+  TData = Awaited<ReturnType<typeof getOrgSlugReportsTransactions>>,
+  TError = GetOrgSlugReportsTransactions401 | GetOrgSlugReportsTransactions403,
+>(
+  slug: string,
+  params?: GetOrgSlugReportsTransactionsParams,
+  options?: {
+    query?: Partial<
+      UseQueryOptions<
+        Awaited<ReturnType<typeof getOrgSlugReportsTransactions>>,
+        TError,
+        TData
+      >
+    >;
+    request?: SecondParameter<typeof http>;
+  },
+  queryClient?: QueryClient,
+): UseQueryResult<TData, TError> & {
+  queryKey: DataTag<QueryKey, TData, TError>;
+};
+/**
+ * @summary Retorna dados consolidados para o dashboard da organização
+ */
+
+export function useGetOrgSlugReportsTransactions<
+  TData = Awaited<ReturnType<typeof getOrgSlugReportsTransactions>>,
+  TError = GetOrgSlugReportsTransactions401 | GetOrgSlugReportsTransactions403,
+>(
+  slug: string,
+  params?: GetOrgSlugReportsTransactionsParams,
+  options?: {
+    query?: Partial<
+      UseQueryOptions<
+        Awaited<ReturnType<typeof getOrgSlugReportsTransactions>>,
+        TError,
+        TData
+      >
+    >;
+    request?: SecondParameter<typeof http>;
+  },
+  queryClient?: QueryClient,
+): UseQueryResult<TData, TError> & {
+  queryKey: DataTag<QueryKey, TData, TError>;
+} {
+  const queryOptions = getGetOrgSlugReportsTransactionsQueryOptions(
+    slug,
+    params,
+    options,
+  );
+
+  const query = useQuery(queryOptions, queryClient) as UseQueryResult<
+    TData,
+    TError
+  > & { queryKey: DataTag<QueryKey, TData, TError> };
+
+  query.queryKey = queryOptions.queryKey;
+
+  return query;
+}
 
 /**
  * List tags for organization

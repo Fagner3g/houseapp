@@ -4,8 +4,8 @@ import type {
   GetOrgSlugReportsTransactions200ReportsPaidThisMonth,
   ListTransactions200TransactionsItem,
 } from '@/api/generated/model'
+import { mapPaidThisMonthToListItem } from '@/components/drawer-transaction/row-mapper'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
-import { mapPaidThisMonthToListItem } from '../../../../../components/drawer-transaction/row-mapper'
 
 type Props = {
   data?: GetOrgSlugReportsTransactions200ReportsPaidThisMonth

@@ -6,21 +6,25 @@
  * OpenAPI spec version: 1.0.1
  */
 import type { GetOrgSlugReportsTransactions200ReportsUpcomingAlertsTransactionsItemAlertType } from "./getOrgSlugReportsTransactions200ReportsUpcomingAlertsTransactionsItemAlertType";
+import type { GetOrgSlugReportsTransactions200ReportsUpcomingAlertsTransactionsItemStatus } from "./getOrgSlugReportsTransactions200ReportsUpcomingAlertsTransactionsItemStatus";
 import type { GetOrgSlugReportsTransactions200ReportsUpcomingAlertsTransactionsItemType } from "./getOrgSlugReportsTransactions200ReportsUpcomingAlertsTransactionsItemType";
 
 export type GetOrgSlugReportsTransactions200ReportsUpcomingAlertsTransactionsItem =
   {
     id: string;
+    seriesId?: string;
     title: string;
     amount: number;
     dueDate: string;
-    daysUntilDue: number;
-    alertType: GetOrgSlugReportsTransactions200ReportsUpcomingAlertsTransactionsItemAlertType;
+    daysUntilDue?: number;
+    alertType?: GetOrgSlugReportsTransactions200ReportsUpcomingAlertsTransactionsItemAlertType;
     ownerName: string;
-    ownerPhone: string;
+    ownerPhone?: string;
     /** @nullable */
-    payToName: string | null;
+    payToName?: string | null;
     /** @nullable */
-    payToPhone: string | null;
+    payToPhone?: string | null;
+    payToEmail?: string;
+    status?: GetOrgSlugReportsTransactions200ReportsUpcomingAlertsTransactionsItemStatus;
     type?: GetOrgSlugReportsTransactions200ReportsUpcomingAlertsTransactionsItemType;
   };
