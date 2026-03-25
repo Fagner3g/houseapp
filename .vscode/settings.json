@@ -4,6 +4,18 @@
   "[javascript]": { "editor.defaultFormatter": "biomejs.biome" },
   "[typescript]": { "editor.defaultFormatter": "biomejs.biome" },
   "[typescriptreact]": { "editor.defaultFormatter": "biomejs.biome" },
+  "files.watcherExclude": {
+    "**/.git/**": true,
+    "**/node_modules/**": true,
+    "**/api/dist/**": true,
+    "**/web/dist/**": true,
+    "**/web/src/api/generated/**": true
+  },
+  "search.exclude": {
+    "**/api/dist": true,
+    "**/web/dist": true,
+    "**/web/src/api/generated": true
+  },
   "editor.codeActionsOnSave": {
     "source.fixAll.biome": "explicit",
     "source.organizeImports.biome": "explicit"
