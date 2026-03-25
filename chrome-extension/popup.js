@@ -297,6 +297,42 @@ function updateBadge(overdueCount, upcomingCount) {
 }
 
 /**
+ * Fetches fresh reports for every org and recalculates the badge.
+ * Called once on popup open (after orgs are known) so the badge is always accurate.
+ */
+async function refreshBadgeAllOrgs() {
+  if (!state.orgs?.length) return
+
+  const now = new Date()
+  const year = now.getFullYear()
+  const month = now.getMonth() + 1
+
+  const results = await Promise.all(
+    state.orgs.map(org =>
+      apiFetch(`/org/${org.slug}/reports/transactions?year=${year}&month=${month}`)
+        .then(data => ({ slug: org.slug, reports: data.reports || data }))
+        .catch(() => null)
+    )
+  )
+
+  let totalOverdue = 0
+  let totalUpcoming = 0
+  const newCache = {}
+
+  for (const orgData of results.filter(Boolean)) {
+    totalOverdue  += (orgData.reports.overdueTransactions?.transactions || []).filter(t => t.status === 'pending').length
+    totalUpcoming += (orgData.reports.upcomingAlerts?.transactions      || []).filter(t => t.status === 'pending').length
+    newCache[orgData.slug] = orgData.reports
+  }
+
+  updateBadge(totalOverdue, totalUpcoming)
+  await chrome.storage.local.set({
+    cachedReportsByOrg: newCache,
+    badgeTotals: { overdue: totalOverdue, upcoming: totalUpcoming },
+  })
+}
+
+/**
  * Recalculates badge across ALL orgs using the per-org cache.
  * Updates the current org's data before recalculating so the count is fresh.
  */
@@ -525,6 +561,9 @@ async function init() {
   }
 
   await loadData()
+
+  // Refresh badge with fresh data from ALL orgs (runs in background after popup renders)
+  refreshBadgeAllOrgs().catch(() => {})
 }
 
 // ── Event listeners ───────────────────────────────────────────────────────────
