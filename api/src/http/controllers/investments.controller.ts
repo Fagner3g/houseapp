@@ -9,10 +9,10 @@ export async function listInvestmentAssetsController(req: FastifyRequest, reply:
 }
 
 export async function getInvestmentQuotePreviewController(
-  req: FastifyRequest<{ Querystring: { symbol: string } }>,
+  req: FastifyRequest<{ Querystring: { symbol: string; assetClass?: string } }>,
   reply: FastifyReply
 ) {
-  const preview = await investmentService.previewQuote(req.query.symbol)
+  const preview = await investmentService.previewQuote(req.query.symbol, req.query.assetClass)
   reply.status(StatusCodes.OK).send({ preview })
 }
 

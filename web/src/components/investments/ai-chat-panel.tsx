@@ -55,6 +55,10 @@ export function AiChatPanel() {
     bottomRef.current?.scrollIntoView({ behavior: 'smooth' })
   })
 
+  useEffect(() => {
+    if (!isStreaming) textareaRef.current?.focus()
+  }, [isStreaming])
+
   async function handleSend() {
     const text = input.trim() || (pendingImage ? 'O que você vê nesta imagem? Relacione com minha carteira se possível.' : '')
     if (!text || isStreaming) return
@@ -62,6 +66,7 @@ export function AiChatPanel() {
     if (textareaRef.current) textareaRef.current.style.height = 'auto'
     const img = pendingImage ?? undefined
     setPendingImage(null)
+    setTimeout(() => textareaRef.current?.focus(), 0)
     await sendMessage(text, img)
   }
 
@@ -305,7 +310,8 @@ export function AiChatPanel() {
                 onPaste={handlePaste}
                 placeholder={pendingImage ? 'Comente sobre a imagem…' : 'Pergunte sobre sua carteira…'}
                 rows={1}
-                disabled={isStreaming || providers.length === 0}
+                readOnly={isStreaming}
+                disabled={providers.length === 0}
                 className="flex-1 resize-none bg-transparent py-1.5 text-sm leading-relaxed outline-none placeholder:text-muted-foreground/50 disabled:opacity-50"
                 style={{ maxHeight: '120px', overflowY: 'auto' }}
               />

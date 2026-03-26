@@ -6,6 +6,7 @@ export const getInvestmentQuotePreviewSchema = {
   operationId: 'getInvestmentQuotePreview',
   querystring: z.object({
     symbol: z.string().trim().min(1),
+    assetClass: z.string().optional(),
   }),
   response: {
     200: z.object({

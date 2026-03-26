@@ -297,6 +297,7 @@ function InvestmentsPage() {
   const deepLinkHandledRef = useRef(false)
   const { data: quotePreview, isFetching: isCheckingQuote } = useInvestmentQuotePreview(
     quotePreviewSymbol,
+    assetForm.assetClass || undefined,
     assetDialogOpen || onboardingDialogOpen
   )
 
@@ -481,6 +482,81 @@ function InvestmentsPage() {
       setPlanDialogOpen(false)
     } catch {
       toast.error('Erro ao salvar plano')
+    }
+  }
+
+  async function handleFinishWizard(save: 'asset' | 'asset_plan' | 'asset_plan_execution') {
+    if (hasDuplicateAssetSymbol(assetForm.symbol)) {
+      toast.error('Já existe um ativo com esse ticker na sua carteira')
+      return
+    }
+
+    try {
+      const assetResponse = await createAsset.mutateAsync(assetForm) as { asset?: { id?: string } }
+      const createdAssetId = assetResponse?.asset?.id
+      if (!createdAssetId) throw new Error('Asset creation failed')
+
+      if (save === 'asset') {
+        toast.success('Ativo criado')
+        setOnboardingDialogOpen(false)
+        setWizardStep(1)
+        setAssetForm(defaultAssetForm())
+        setPlanForm(defaultPlanForm())
+        setExecutionForm(defaultExecutionForm())
+        return
+      }
+
+      const planPayload =
+        planForm.mode === 'amount'
+          ? {
+              assetId: createdAssetId,
+              mode: planForm.mode,
+              progressionType: planForm.progressionType,
+              initialAmount: planForm.initialValue,
+              stepAmount: planForm.progressionType === 'linear_step' ? planForm.stepValue : '0',
+              startDate: planForm.startDate,
+              endDate: planForm.endDate || undefined,
+            }
+          : {
+              assetId: createdAssetId,
+              mode: planForm.mode,
+              progressionType: planForm.progressionType,
+              initialQuantity: Number(planForm.initialValue),
+              stepQuantity: planForm.progressionType === 'linear_step' ? Number(planForm.stepValue) : 0,
+              startDate: planForm.startDate,
+              endDate: planForm.endDate || undefined,
+            }
+
+      const planResponse = await createPlan.mutateAsync(planPayload) as { plan?: { id?: string } }
+      const createdPlanId = planResponse?.plan?.id
+
+      if (save === 'asset_plan') {
+        toast.success('Ativo e plano criados')
+        setOnboardingDialogOpen(false)
+        setWizardStep(1)
+        setAssetForm(defaultAssetForm())
+        setPlanForm(defaultPlanForm())
+        setExecutionForm(defaultExecutionForm())
+        return
+      }
+
+      await createExecution.mutateAsync({
+        assetId: createdAssetId,
+        planId: createdPlanId || undefined,
+        referenceMonth: executionForm.referenceMonth,
+        investedAmount: executionForm.investedAmount,
+        executedQuantity: Number(executionForm.executedQuantity),
+        executedUnitPrice: executionForm.executedUnitPrice,
+        executedAt: executionForm.executedAt,
+      })
+      toast.success('Carteira inicial criada')
+      setOnboardingDialogOpen(false)
+      setWizardStep(1)
+      setAssetForm(defaultAssetForm())
+      setPlanForm(defaultPlanForm())
+      setExecutionForm(defaultExecutionForm())
+    } catch {
+      toast.error('Erro ao finalizar cadastro guiado')
     }
   }
 
@@ -1083,6 +1159,27 @@ function InvestmentsPage() {
           <div className="space-y-4">
             <div className="space-y-2">
               <FieldHelp
+                label="Classe do ativo"
+                help="Categoria usada para organizar a carteira, como Ação, FII, ETF ou Renda fixa."
+              />
+              <Select
+                value={assetForm.assetClass}
+                onValueChange={value => setAssetForm(prev => ({ ...prev, assetClass: value }))}
+              >
+                <SelectTrigger>
+                  <SelectValue placeholder="Classe do ativo" />
+                </SelectTrigger>
+                <SelectContent>
+                  {assetClassOptions.map(option => (
+                    <SelectItem key={option} value={option}>
+                      {option}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+            <div className="space-y-2">
+              <FieldHelp
                 label="Ticker"
                 help="Código do ativo, como VALE3, PETR4 ou MXRF11."
               />
@@ -1132,27 +1229,6 @@ function InvestmentsPage() {
               value={assetForm.displayName}
               onChange={e => setAssetForm(prev => ({ ...prev, displayName: e.target.value }))}
             />
-            <div className="space-y-2">
-              <FieldHelp
-                label="Classe do ativo"
-                help="Categoria usada para organizar a carteira, como Ação, FII, ETF ou Renda fixa."
-              />
-              <Select
-                value={assetForm.assetClass}
-                onValueChange={value => setAssetForm(prev => ({ ...prev, assetClass: value }))}
-              >
-                <SelectTrigger>
-                  <SelectValue placeholder="Classe do ativo" />
-                </SelectTrigger>
-                <SelectContent>
-                  {assetClassOptions.map(option => (
-                    <SelectItem key={option} value={option}>
-                      {option}
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-            </div>
             <div className="space-y-2">
               <FieldHelp
                 label="Tipo de cotação"
@@ -1343,46 +1419,19 @@ function InvestmentsPage() {
             <div className="grid gap-4 md:grid-cols-2">
               <div className="space-y-2">
                 <FieldHelp label="Início" help="Data a partir da qual o plano começa a gerar aportes mensais." />
-                <Popover>
-                  <PopoverTrigger asChild>
-                    <Button variant="outline" className="w-full justify-between font-normal">
-                      <span>{planForm.startDate ? formatDate(planForm.startDate) : 'Selecione a data'}</span>
-                      <Calendar className="size-4 text-muted-foreground" />
-                    </Button>
-                  </PopoverTrigger>
-                  <PopoverContent className="z-[10010] w-auto overflow-hidden p-0 pointer-events-auto">
-                    <CalendarPicker
-                      mode="single"
-                      selected={planForm.startDate ? new Date(`${planForm.startDate}T00:00:00`) : undefined}
-                      captionLayout="dropdown"
-                      onSelect={date => {
-                        if (!date) return
-                        setPlanForm(prev => ({ ...prev, startDate: date.toISOString().slice(0, 10) }))
-                      }}
-                    />
-                  </PopoverContent>
-                </Popover>
+                <DatePopover
+                  value={planForm.startDate}
+                  onChange={date => setPlanForm(prev => ({ ...prev, startDate: date }))}
+                />
               </div>
               <div className="space-y-2">
                 <FieldHelp label="Encerramento" help="Data final do plano. Deixe em branco para continuar indefinidamente." />
-                <Popover>
-                  <PopoverTrigger asChild>
-                    <Button variant="outline" className="w-full justify-between font-normal">
-                      <span>{planForm.endDate ? formatDate(planForm.endDate) : 'Sem data de encerramento'}</span>
-                      <Calendar className="size-4 text-muted-foreground" />
-                    </Button>
-                  </PopoverTrigger>
-                  <PopoverContent className="z-[10010] w-auto overflow-hidden p-0 pointer-events-auto">
-                    <CalendarPicker
-                      mode="single"
-                      selected={planForm.endDate ? new Date(`${planForm.endDate}T00:00:00`) : undefined}
-                      captionLayout="dropdown"
-                      onSelect={date => {
-                        setPlanForm(prev => ({ ...prev, endDate: date ? date.toISOString().slice(0, 10) : '' }))
-                      }}
-                    />
-                  </PopoverContent>
-                </Popover>
+                <DatePopover
+                  value={planForm.endDate}
+                  placeholder="Sem data de encerramento"
+                  clearLabel="Remover data final"
+                  onChange={date => setPlanForm(prev => ({ ...prev, endDate: date }))}
+                />
               </div>
             </div>
           </div>
@@ -1512,25 +1561,10 @@ function InvestmentsPage() {
                   label="Data da compra"
                   help="Dia em que a compra foi executada de fato."
                 />
-                <Popover>
-                  <PopoverTrigger asChild>
-                    <Button variant="outline" className="w-full justify-between font-normal">
-                      <span>{formatDate(executionForm.executedAt) || 'Selecione a data'}</span>
-                      <Calendar className="size-4 text-muted-foreground" />
-                    </Button>
-                  </PopoverTrigger>
-                  <PopoverContent className="z-[10010] w-auto overflow-hidden p-0 pointer-events-auto">
-                    <CalendarPicker
-                      mode="single"
-                      selected={executionForm.executedAt ? new Date(`${executionForm.executedAt}T00:00:00`) : undefined}
-                      captionLayout="dropdown"
-                      onSelect={date => {
-                        if (!date) return
-                        setExecutionForm(prev => ({ ...prev, executedAt: date.toISOString().slice(0, 10) }))
-                      }}
-                    />
-                  </PopoverContent>
-                </Popover>
+                <DatePopover
+                  value={executionForm.executedAt}
+                  onChange={date => setExecutionForm(prev => ({ ...prev, executedAt: date }))}
+                />
               </div>
             </div>
             <div className="grid gap-4 md:grid-cols-3">
@@ -1701,6 +1735,27 @@ function InvestmentsPage() {
                   Preencha o ativo que você quer acompanhar. Você pode voltar depois para editar antes de finalizar.
                 </p>
                 <div className="space-y-2">
+                  <FieldHelp
+                    label="Classe do ativo"
+                    help="Categoria usada para organizar a carteira, como Ação, FII, ETF ou Renda fixa."
+                  />
+                  <Select
+                    value={assetForm.assetClass}
+                    onValueChange={value => setAssetForm(prev => ({ ...prev, assetClass: value }))}
+                  >
+                    <SelectTrigger>
+                      <SelectValue placeholder="Classe do ativo" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {assetClassOptions.map(option => (
+                        <SelectItem key={option} value={option}>
+                          {option}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                </div>
+                <div className="space-y-2">
                   <FieldHelp label="Ticker" help="Código do ativo, como VALE3, PETR4 ou MXRF11." />
                   <Input
                     placeholder="Ticker"
@@ -1740,27 +1795,6 @@ function InvestmentsPage() {
                   value={assetForm.displayName}
                   onChange={e => setAssetForm(prev => ({ ...prev, displayName: e.target.value }))}
                 />
-                <div className="space-y-2">
-                  <FieldHelp
-                    label="Classe do ativo"
-                    help="Categoria usada para organizar a carteira, como Ação, FII, ETF ou Renda fixa."
-                  />
-                  <Select
-                    value={assetForm.assetClass}
-                    onValueChange={value => setAssetForm(prev => ({ ...prev, assetClass: value }))}
-                  >
-                    <SelectTrigger>
-                      <SelectValue placeholder="Classe do ativo" />
-                    </SelectTrigger>
-                    <SelectContent>
-                      {assetClassOptions.map(option => (
-                        <SelectItem key={option} value={option}>
-                          {option}
-                        </SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
-                </div>
                 <div className="space-y-2">
                   <FieldHelp
                     label="Tipo de cotação"
@@ -1918,60 +1952,22 @@ function InvestmentsPage() {
                       label="Data inicial"
                       help="Dia em que a recorrência começa. O sistema usa esse mês como base para gerar as próximas pendências."
                     />
-                    <Popover>
-                      <PopoverTrigger asChild>
-                        <Button variant="outline" className="w-full justify-between font-normal">
-                          <span>{formatDate(planForm.startDate) || 'Selecione a data'}</span>
-                          <Calendar className="size-4 text-muted-foreground" />
-                        </Button>
-                      </PopoverTrigger>
-                      <PopoverContent className="z-[10010] w-auto overflow-hidden p-0 pointer-events-auto">
-                        <CalendarPicker
-                          mode="single"
-                          selected={planForm.startDate ? new Date(`${planForm.startDate}T00:00:00`) : undefined}
-                          captionLayout="dropdown"
-                          onSelect={date => {
-                            if (!date) return
-                            setPlanForm(prev => ({ ...prev, startDate: date.toISOString().slice(0, 10) }))
-                          }}
-                        />
-                      </PopoverContent>
-                    </Popover>
+                    <DatePopover
+                      value={planForm.startDate}
+                      onChange={date => setPlanForm(prev => ({ ...prev, startDate: date }))}
+                    />
                   </div>
                   <div className="space-y-2">
                     <FieldHelp
                       label="Data final"
                       help="Opcional. Se preenchida, encerra a recorrência nessa data e para de gerar novos meses planejados."
                     />
-                    <Popover>
-                      <PopoverTrigger asChild>
-                        <Button variant="outline" className="w-full justify-between font-normal">
-                          <span>{formatDate(planForm.endDate) || 'Sem data final'}</span>
-                          <Calendar className="size-4 text-muted-foreground" />
-                        </Button>
-                      </PopoverTrigger>
-                      <PopoverContent className="z-[10010] w-auto overflow-hidden p-0 pointer-events-auto">
-                        <div className="border-b p-3">
-                          <Button
-                            variant="ghost"
-                            size="sm"
-                            className="w-full justify-start"
-                            onClick={() => setPlanForm(prev => ({ ...prev, endDate: '' }))}
-                          >
-                            Remover data final
-                          </Button>
-                        </div>
-                        <CalendarPicker
-                          mode="single"
-                          selected={planForm.endDate ? new Date(`${planForm.endDate}T00:00:00`) : undefined}
-                          captionLayout="dropdown"
-                          onSelect={date => {
-                            if (!date) return
-                            setPlanForm(prev => ({ ...prev, endDate: date.toISOString().slice(0, 10) }))
-                          }}
-                        />
-                      </PopoverContent>
-                    </Popover>
+                    <DatePopover
+                      value={planForm.endDate}
+                      placeholder="Sem data final"
+                      clearLabel="Remover data final"
+                      onChange={date => setPlanForm(prev => ({ ...prev, endDate: date }))}
+                    />
                   </div>
                 </div>
               </div>
@@ -2046,26 +2042,10 @@ function InvestmentsPage() {
                       label="Data da compra"
                       help="Dia em que a compra foi executada de fato."
                     />
-                    <Popover>
-                      <PopoverTrigger asChild>
-                        <Button variant="outline" className="w-full justify-between font-normal">
-                          <span>{formatDate(executionForm.executedAt) || 'Selecione a data'}</span>
-                          <Calendar className="size-4 text-muted-foreground" />
-                        </Button>
-                      </PopoverTrigger>
-                      <PopoverContent className="z-[10010] w-auto overflow-hidden p-0 pointer-events-auto">
-                        <CalendarPicker
-                          mode="single"
-                          selected={executionForm.executedAt ? new Date(`${executionForm.executedAt}T00:00:00`) : undefined}
-                          captionLayout="dropdown"
-                          onSelect={date => {
-                            if (!date) return
-                            const nextValue = date.toISOString().slice(0, 10)
-                            setExecutionForm(prev => ({ ...prev, executedAt: nextValue }))
-                          }}
-                        />
-                      </PopoverContent>
-                    </Popover>
+                    <DatePopover
+                      value={executionForm.executedAt}
+                      onChange={date => setExecutionForm(prev => ({ ...prev, executedAt: date }))}
+                    />
                   </div>
                 </div>
                 <div className="grid gap-4 md:grid-cols-3">
@@ -2159,100 +2139,76 @@ function InvestmentsPage() {
             )}
 
             {wizardStep === 1 ? (
-              <Button
-                disabled={
-                  !assetForm.symbol.trim() ||
-                  !assetForm.displayName.trim() ||
-                  !assetForm.assetClass.trim() ||
-                  duplicateAssetSymbol
-                }
-                onClick={() => goToWizardStep(2)}
-              >
-                Próximo
-              </Button>
+              <>
+                <Button
+                  variant="ghost"
+                  isLoading={createAsset.isPending}
+                  disabled={
+                    !assetForm.symbol.trim() ||
+                    !assetForm.displayName.trim() ||
+                    !assetForm.assetClass.trim() ||
+                    duplicateAssetSymbol
+                  }
+                  onClick={() => handleFinishWizard('asset')}
+                >
+                  Finalizar
+                </Button>
+                <Button
+                  disabled={
+                    !assetForm.symbol.trim() ||
+                    !assetForm.displayName.trim() ||
+                    !assetForm.assetClass.trim() ||
+                    duplicateAssetSymbol
+                  }
+                  onClick={() => goToWizardStep(2)}
+                >
+                  Criar planejamento →
+                </Button>
+              </>
             ) : null}
 
             {wizardStep === 2 ? (
-              <Button
-                disabled={
-                  !planForm.initialValue.trim() ||
-                  !planForm.startDate.trim() ||
-                  (planForm.progressionType === 'linear_step' && !planForm.stepValue.trim())
-                }
-                onClick={() => {
-                  setExecutionForm(prev => ({
-                    ...prev,
-                    referenceMonth: planForm.startDate.slice(0, 7),
-                    executedUnitPrice:
-                      prev.executedUnitPrice ||
-                      (quotePreview?.supported && quotePreview.price != null
-                        ? quotePreview.price.toFixed(2)
-                        : prev.executedUnitPrice),
-                  }))
-                  goToWizardStep(3)
-                }}
-              >
-                Próximo
-              </Button>
+              <>
+                <Button
+                  variant="ghost"
+                  isLoading={createAsset.isPending || createPlan.isPending}
+                  disabled={
+                    !planForm.initialValue.trim() ||
+                    !planForm.startDate.trim() ||
+                    (planForm.progressionType === 'linear_step' && !planForm.stepValue.trim())
+                  }
+                  onClick={() => handleFinishWizard('asset_plan')}
+                >
+                  Finalizar
+                </Button>
+                <Button
+                  disabled={
+                    !planForm.initialValue.trim() ||
+                    !planForm.startDate.trim() ||
+                    (planForm.progressionType === 'linear_step' && !planForm.stepValue.trim())
+                  }
+                  onClick={() => {
+                    setExecutionForm(prev => ({
+                      ...prev,
+                      referenceMonth: planForm.startDate.slice(0, 7),
+                      executedUnitPrice:
+                        prev.executedUnitPrice ||
+                        (quotePreview?.supported && quotePreview.price != null
+                          ? quotePreview.price.toFixed(2)
+                          : prev.executedUnitPrice),
+                    }))
+                    goToWizardStep(3)
+                  }}
+                >
+                  Criar aporte →
+                </Button>
+              </>
             ) : null}
 
             {wizardStep === 3 ? (
               <Button
                 isLoading={createAsset.isPending || createPlan.isPending || createExecution.isPending}
-                onClick={async () => {
-                  if (hasDuplicateAssetSymbol(assetForm.symbol)) {
-                    toast.error('Já existe um ativo com esse ticker na sua carteira')
-                    return
-                  }
-
-                  try {
-                    const assetResponse = await createAsset.mutateAsync(assetForm) as { asset?: { id?: string } }
-                    const createdAssetId = assetResponse?.asset?.id
-                    if (!createdAssetId) throw new Error('Asset creation failed')
-
-                    const planPayload =
-                      planForm.mode === 'amount'
-                        ? {
-                            assetId: createdAssetId,
-                            mode: planForm.mode,
-                            progressionType: planForm.progressionType,
-                            initialAmount: planForm.initialValue,
-                            stepAmount: planForm.progressionType === 'linear_step' ? planForm.stepValue : '0',
-                            startDate: planForm.startDate,
-                            endDate: planForm.endDate || undefined,
-                          }
-                        : {
-                            assetId: createdAssetId,
-                            mode: planForm.mode,
-                            progressionType: planForm.progressionType,
-                            initialQuantity: Number(planForm.initialValue),
-                            stepQuantity: planForm.progressionType === 'linear_step' ? Number(planForm.stepValue) : 0,
-                            startDate: planForm.startDate,
-                            endDate: planForm.endDate || undefined,
-                          }
-
-                    const planResponse = await createPlan.mutateAsync(planPayload) as { plan?: { id?: string } }
-                    const createdPlanId = planResponse?.plan?.id
-
-                    await createExecution.mutateAsync({
-                      assetId: createdAssetId,
-                      planId: createdPlanId || undefined,
-                      referenceMonth: executionForm.referenceMonth,
-                      investedAmount: executionForm.investedAmount,
-                      executedQuantity: Number(executionForm.executedQuantity),
-                      executedUnitPrice: executionForm.executedUnitPrice,
-                      executedAt: executionForm.executedAt,
-                    })
-                    toast.success('Carteira inicial criada')
-                    setOnboardingDialogOpen(false)
-                    setWizardStep(1)
-                    setAssetForm(defaultAssetForm())
-                    setPlanForm(defaultPlanForm())
-                    setExecutionForm(defaultExecutionForm())
-                  } catch {
-                    toast.error('Erro ao finalizar cadastro guiado')
-                  }
-                }}
+                onClick={() => handleFinishWizard('asset_plan_execution')}
                 disabled={
                   duplicateAssetSymbol ||
                   !executionForm.investedAmount.trim() ||
@@ -2420,6 +2376,53 @@ function MiniMetric({
   )
 }
 
+function DatePopover({
+  value,
+  onChange,
+  placeholder = 'Selecione a data',
+  clearLabel,
+}: {
+  value: string
+  onChange: (date: string) => void
+  placeholder?: string
+  clearLabel?: string
+}) {
+  const [open, setOpen] = useState(false)
+  return (
+    <Popover open={open} onOpenChange={setOpen}>
+      <PopoverTrigger asChild>
+        <Button variant="outline" className="w-full justify-between font-normal">
+          <span>{value ? formatDate(value) : placeholder}</span>
+          <Calendar className="size-4 text-muted-foreground" />
+        </Button>
+      </PopoverTrigger>
+      <PopoverContent className="z-[10010] w-auto overflow-hidden p-0 pointer-events-auto">
+        {clearLabel && (
+          <div className="border-b p-3">
+            <Button
+              variant="ghost"
+              size="sm"
+              className="w-full justify-start"
+              onClick={() => { onChange(''); setOpen(false) }}
+            >
+              {clearLabel}
+            </Button>
+          </div>
+        )}
+        <CalendarPicker
+          mode="single"
+          selected={value ? new Date(`${value}T00:00:00`) : undefined}
+          captionLayout="dropdown"
+          onSelect={date => {
+            onChange(date ? date.toISOString().slice(0, 10) : '')
+            if (date) setOpen(false)
+          }}
+        />
+      </PopoverContent>
+    </Popover>
+  )
+}
+
 function FieldHelp({ label, help }: { label: string; help: string }) {
   return (
     <div className="flex items-center gap-2 text-sm text-muted-foreground">
@@ -2428,6 +2431,7 @@ function FieldHelp({ label, help }: { label: string; help: string }) {
         <TooltipTrigger asChild>
           <button
             type="button"
+            tabIndex={-1}
             className="inline-flex h-4 min-w-4 items-center justify-center rounded-full text-[10px] font-semibold text-muted-foreground/70 underline decoration-dotted underline-offset-2 transition hover:text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring/50"
             aria-label={`Ajuda sobre ${label}`}
           >

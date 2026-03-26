@@ -11,4 +11,5 @@ export type GetInvestmentQuotePreviewParams = {
    * @minLength 1
    */
   symbol: string;
+  assetClass?: string;
 };

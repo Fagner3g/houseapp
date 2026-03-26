@@ -137,7 +137,7 @@ const investmentKeys = {
   plans: ['investments', 'plans'] as const,
   reminders: ['investments', 'reminders'] as const,
   dashboard: ['investments', 'dashboard'] as const,
-  quotePreview: (symbol: string) => ['investments', 'quote-preview', symbol] as const,
+  quotePreview: (symbol: string, assetClass?: string) => ['investments', 'quote-preview', symbol, assetClass] as const,
 }
 
 async function getAssets() {
@@ -172,8 +172,9 @@ async function getDashboard() {
   return response.dashboard
 }
 
-async function getQuotePreview(symbol: string) {
+async function getQuotePreview(symbol: string, assetClass?: string) {
   const params = new URLSearchParams({ symbol })
+  if (assetClass) params.set('assetClass', assetClass)
   const response = await http<{ preview: InvestmentQuotePreview }>(
     `/me/investments/quote-preview?${params.toString()}`,
     { method: 'GET' }
@@ -220,10 +221,10 @@ export function useInvestmentDashboard() {
   })
 }
 
-export function useInvestmentQuotePreview(symbol: string, enabled = true) {
+export function useInvestmentQuotePreview(symbol: string, assetClass?: string, enabled = true) {
   return useQuery({
-    queryKey: investmentKeys.quotePreview(symbol),
-    queryFn: () => getQuotePreview(symbol),
+    queryKey: investmentKeys.quotePreview(symbol, assetClass),
+    queryFn: () => getQuotePreview(symbol, assetClass),
     enabled: enabled && symbol.trim().length > 0,
     retry: false,
   })
