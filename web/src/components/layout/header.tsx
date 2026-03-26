@@ -1,3 +1,4 @@
+import { useRouterState } from '@tanstack/react-router'
 import { Bell } from 'lucide-react'
 
 import {
@@ -7,6 +8,7 @@ import {
 } from '@/components/ui/dropdown-menu'
 import { Separator } from '@/components/ui/separator'
 import { SidebarTrigger } from '@/components/ui/sidebar'
+import { useInvestmentReminders } from '@/features/investments/api'
 import { useActiveOrganization } from '@/hooks/use-active-organization'
 import { useSidebar } from '@/hooks/use-sidebar'
 import { useGetInvite } from '@/api/generated/api'
@@ -16,7 +18,11 @@ import { Button } from '../ui/button'
 export function Header() {
   const { route } = useSidebar()
   const { slug } = useActiveOrganization()
-  const { data } = useGetInvite(slug)
+  const pathname = useRouterState({ select: s => s.location.pathname })
+  const isInvestmentsRoute = pathname.startsWith('/investments')
+  const { data } = useGetInvite(slug, { query: { enabled: !isInvestmentsRoute && !!slug } })
+  const { data: reminders } = useInvestmentReminders(isInvestmentsRoute)
+  const count = isInvestmentsRoute ? reminders?.summary.total ?? 0 : data?.invites.length ?? 0
 
   return (
     <header className="bg-background sticky top-0 flex shrink-0 items-center gap-2 border-b p-1 z-50">
@@ -29,11 +35,25 @@ export function Header() {
         <DropdownMenuTrigger asChild>
           <Button variant="ghost" className="p-2" aria-label="Notificações">
             <Bell className="size-5" />
-            {data?.invites.length}
+            {count}
           </Button>
         </DropdownMenuTrigger>
         <DropdownMenuContent className="p-2 text-sm">
-          <p>Nenhuma notificação</p>
+          {isInvestmentsRoute ? (
+            reminders?.items?.length ? (
+              <div className="space-y-2">
+                {reminders.items.slice(0, 5).map(item => (
+                  <p key={`${item.planId}-${item.referenceMonth}`}>
+                    {item.assetSymbol}: {item.plannedAmount ? `R$ ${item.plannedAmount.toFixed(2)}` : `${item.plannedQuantity} un.`}
+                  </p>
+                ))}
+              </div>
+            ) : (
+              <p>Nenhum aporte pendente</p>
+            )
+          ) : (
+            <p>Nenhuma notificação</p>
+          )}
         </DropdownMenuContent>
       </DropdownMenu>
       <ModeToggle />

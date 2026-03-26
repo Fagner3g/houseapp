@@ -75,6 +75,12 @@ async function fetchReports(apiUrl, token, slug, year, month) {
   return res.json()
 }
 
+async function fetchInvestmentReminders(apiUrl, token) {
+  const res = await fetch(`${apiUrl}/me/investments/reminders`, { headers: authHeaders(token) })
+  if (!res.ok) throw new Error('investment reminders fetch failed')
+  return res.json()
+}
+
 async function payTransaction(orgSlug, transactionId) {
   const { apiUrl } = await chrome.storage.local.get('apiUrl')
   const token = await getToken()
@@ -90,15 +96,17 @@ async function payTransaction(orgSlug, transactionId) {
 
 // ── Badge ────────────────────────────────────────────────────────────────────
 
-function setBadge(overdueCount, upcomingCount) {
-  const total = overdueCount + upcomingCount
+function setBadge(overdueCount, upcomingCount, investmentCount = 0) {
+  const total = overdueCount + upcomingCount + investmentCount
   if (total === 0) {
     chrome.action.setBadgeText({ text: '' })
     return
   }
   chrome.action.setBadgeText({ text: String(total) })
   chrome.action.setBadgeTextColor({ color: '#ffffff' })
-  chrome.action.setBadgeBackgroundColor({ color: overdueCount > 0 ? '#ef4444' : '#f59e0b' })
+  chrome.action.setBadgeBackgroundColor({
+    color: overdueCount > 0 ? '#ef4444' : investmentCount > 0 ? '#2563eb' : '#f59e0b',
+  })
 }
 
 // ── Notifications ────────────────────────────────────────────────────────────
@@ -130,6 +138,20 @@ function notifyUpcoming(tx, orgName) {
   })
 }
 
+function notifyInvestment(reminder) {
+  const amountLabel = reminder.plannedAmount
+    ? `R$ ${formatAmount(reminder.plannedAmount)}`
+    : `${reminder.plannedQuantity} unidade(s)`
+
+  chrome.notifications.create(`investment-${reminder.planId}-${reminder.referenceMonth}`, {
+    type: 'basic',
+    iconUrl: 'icons/icon48.png',
+    title: reminder.status === 'overdue' ? 'Aporte em atraso' : 'Aporte do mês pendente',
+    message: `${reminder.assetSymbol} — ${amountLabel}`,
+    requireInteraction: false,
+  })
+}
+
 function formatAmount(amount) {
   const num = typeof amount === 'number' ? amount : parseFloat(amount)
   return num.toLocaleString('pt-BR', { minimumFractionDigits: 2 })
@@ -140,33 +162,35 @@ function formatAmount(amount) {
 async function poll() {
   try {
     const token = await getToken()
-    if (!token) { setBadge(0, 0); return }
+      if (!token) { setBadge(0, 0, 0); return }
 
     const { apiUrl } = await chrome.storage.local.get('apiUrl')
-    if (!apiUrl) { setBadge(0, 0); return }
+    if (!apiUrl) { setBadge(0, 0, 0); return }
 
     // Validate token
     try {
       await fetchProfile(apiUrl, token)
     } catch (_) {
       await chrome.storage.local.remove('token')
-      setBadge(0, 0)
+      setBadge(0, 0, 0)
       return
     }
 
     // Fetch all orgs
     const orgsData = await fetchOrgs(apiUrl, token)
     const orgs = orgsData.organizations || orgsData.orgs || orgsData
-    if (!orgs?.length) { setBadge(0, 0); return }
+    if (!orgs?.length) { setBadge(0, 0, 0); return }
 
     const now = new Date()
     const year = now.getFullYear()
     const month = now.getMonth() + 1
 
     // Load previous cache to detect new items
-    const { cachedReportsByOrg: prevCache } = await chrome.storage.local.get('cachedReportsByOrg')
+    const { cachedReportsByOrg: prevCache, cachedInvestmentReminders: prevInvestmentReminders } =
+      await chrome.storage.local.get(['cachedReportsByOrg', 'cachedInvestmentReminders'])
     const prevOverdueIds = new Set()
     const prevUpcomingIds = new Set()
+    const prevInvestmentIds = new Set((prevInvestmentReminders?.items || []).map(item => `${item.planId}-${item.referenceMonth}`))
     for (const reports of Object.values(prevCache || {})) {
       for (const t of reports.overdueTransactions?.transactions || []) prevOverdueIds.add(t.id)
       for (const t of reports.upcomingAlerts?.transactions    || []) prevUpcomingIds.add(t.id)
@@ -183,6 +207,7 @@ async function poll() {
 
     let totalOverdue = 0
     let totalUpcoming = 0
+    let totalInvestments = 0
     const newCache = {}
 
     for (const orgData of results.filter(Boolean)) {
@@ -200,11 +225,26 @@ async function poll() {
       newCache[orgData.slug] = orgData.reports
     }
 
-    setBadge(totalOverdue, totalUpcoming)
+    let investmentReminders = null
+    try {
+      investmentReminders = await fetchInvestmentReminders(apiUrl, token)
+      const reminders = investmentReminders.reminders || investmentReminders
+      totalInvestments = reminders.summary?.total || reminders.items?.length || 0
+
+      for (const item of reminders.items || []) {
+        const key = `${item.planId}-${item.referenceMonth}`
+        if (!prevInvestmentIds.has(key)) notifyInvestment(item)
+      }
+    } catch (_) {
+      totalInvestments = 0
+    }
+
+    setBadge(totalOverdue, totalUpcoming, totalInvestments)
 
     await chrome.storage.local.set({
       cachedReportsByOrg: newCache,
-      badgeTotals: { overdue: totalOverdue, upcoming: totalUpcoming },
+      cachedInvestmentReminders: investmentReminders?.reminders || investmentReminders || null,
+      badgeTotals: { overdue: totalOverdue, upcoming: totalUpcoming, investments: totalInvestments },
       cachedYear: year,
       cachedMonth: month,
     })

@@ -57,6 +57,7 @@ const state = {
   month: new Date().getMonth() + 1,
   reports: null,
   orgs: [],
+  investments: null,
 }
 
 // ── Auth ──────────────────────────────────────────────────────────────────────
@@ -96,6 +97,12 @@ async function apiFetch(path, opts = {}) {
   if (res.status === 204 || res.headers.get('content-length') === '0') return null
   const ct = res.headers.get('content-type') || ''
   return ct.includes('application/json') ? res.json() : null
+}
+
+async function fetchInvestmentReminders() {
+  const data = await apiFetch('/me/investments/reminders')
+  state.investments = data.reminders || data
+  return state.investments
 }
 
 // ── Render helpers ────────────────────────────────────────────────────────────
@@ -266,6 +273,50 @@ function renderAllTransactions(allTransactions, context) {
   }
 }
 
+function renderInvestments(reminders) {
+  const list = document.getElementById('list-investments')
+  const title = document.getElementById('investments-title')
+
+  list.innerHTML = ''
+  const items = reminders?.items || []
+  title.textContent = `Aportes do mês (${items.length})`
+
+  if (!items.length) {
+    show('investments-empty')
+    return
+  }
+  hide('investments-empty')
+
+  for (const item of items) {
+    const li = document.createElement('li')
+    li.className = 'tx-item clickable'
+    const amount = item.plannedAmount ? fmt(item.plannedAmount) : `${item.plannedQuantity} un.`
+    li.innerHTML = `
+      <span class="type-dot income">◆</span>
+      <span class="tx-title" title="${item.assetName}">${item.assetSymbol}</span>
+      <span class="tx-meta">${item.referenceMonth}</span>
+      <span class="tx-amount">${amount}</span>
+      <span class="badge ${item.status === 'overdue' ? 'badge-overdue' : 'badge-invest'}">
+        ${item.status === 'overdue' ? 'Atrasado' : 'Pendente'}
+      </span>
+    `
+
+    li.addEventListener('click', () => {
+      chrome.storage.local.get('webUrl').then(({ webUrl }) => {
+        const base = webUrl || 'https://houseapp.com.br'
+        const url = new URL('/investments', base)
+        url.searchParams.set('action', 'register')
+        url.searchParams.set('assetId', item.assetId)
+        url.searchParams.set('planId', item.planId)
+        url.searchParams.set('referenceMonth', item.referenceMonth)
+        chrome.tabs.create({ url: url.toString() })
+      })
+    })
+
+    list.appendChild(li)
+  }
+}
+
 function renderMonthLabel() {
   document.getElementById('month-label').textContent =
     `${MONTHS[state.month - 1]} de ${state.year}`
@@ -288,12 +339,12 @@ function renderOrgSelect() {
 
 // ── Badge ─────────────────────────────────────────────────────────────────────
 
-function updateBadge(overdueCount, upcomingCount) {
-  const total = overdueCount + upcomingCount
+function updateBadge(overdueCount, upcomingCount, investmentCount = 0) {
+  const total = overdueCount + upcomingCount + investmentCount
   if (total === 0) { chrome.action.setBadgeText({ text: '' }); return }
   chrome.action.setBadgeText({ text: String(total) })
   chrome.action.setBadgeTextColor({ color: '#ffffff' })
-  chrome.action.setBadgeBackgroundColor({ color: overdueCount > 0 ? '#ef4444' : '#f59e0b' })
+  chrome.action.setBadgeBackgroundColor({ color: overdueCount > 0 ? '#ef4444' : investmentCount > 0 ? '#2563eb' : '#f59e0b' })
 }
 
 /**
@@ -317,6 +368,7 @@ async function refreshBadgeAllOrgs() {
 
   let totalOverdue = 0
   let totalUpcoming = 0
+  let totalInvestments = 0
   const newCache = {}
 
   for (const orgData of results.filter(Boolean)) {
@@ -325,10 +377,12 @@ async function refreshBadgeAllOrgs() {
     newCache[orgData.slug] = orgData.reports
   }
 
-  updateBadge(totalOverdue, totalUpcoming)
+  totalInvestments = state.investments?.summary?.total || state.investments?.items?.length || 0
+
+  updateBadge(totalOverdue, totalUpcoming, totalInvestments)
   await chrome.storage.local.set({
     cachedReportsByOrg: newCache,
-    badgeTotals: { overdue: totalOverdue, upcoming: totalUpcoming },
+    badgeTotals: { overdue: totalOverdue, upcoming: totalUpcoming, investments: totalInvestments },
   })
 }
 
@@ -487,11 +541,13 @@ async function loadData() {
       `/org/${state.orgSlug}/reports/transactions?year=${state.year}&month=${state.month}`
     )
     state.reports = data.reports || data
+    await fetchInvestmentReminders()
 
     const context = getViewingContext(state.year, state.month)
 
     renderMonthLabel()
     renderKpis(state.reports, context)
+    renderInvestments(state.investments)
     renderOverdue(
       state.reports.overdueTransactions?.transactions,
       state.reports.upcomingAlerts?.transactions,

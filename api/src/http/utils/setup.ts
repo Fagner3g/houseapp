@@ -34,8 +34,9 @@ export async function buildServer() {
               },
             },
           },
+          bodyLimit: 10 * 1024 * 1024, // 10MB (imagens base64)
         }
-      : {}
+      : { bodyLimit: 10 * 1024 * 1024 }
   ).withTypeProvider<ZodTypeProvider>()
 
   // add reply serializer (BigInt -> string). For monetary fields (amount), serialize as decimal with 2 casas.
@@ -78,7 +79,7 @@ export async function buildServer() {
         }
       }
 
-      if (origin && origin.startsWith('chrome-extension://')) return cb(null, true)
+      if (origin?.startsWith('chrome-extension://')) return cb(null, true)
       if (!origin || allowed.includes(origin)) return cb(null, true)
       return cb(new Error('Not allowed by CORS'), false)
     },

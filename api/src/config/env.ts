@@ -39,6 +39,11 @@ const envSchema = z.object({
   BREVO_API_KEY: z.string().optional(),
   MAIL_FROM_EMAIL: z.string().optional(),
   MAIL_FROM_NAME: z.string().optional(),
+  BRAPI_TOKEN: z.string().optional(),
+  // LLM AI providers
+  GROQ_API_KEY: z.string().optional(),
+  GEMINI_API_KEY: z.string().optional(),
+  DEEPSEEK_API_KEY: z.string().optional(),
 })
 
 export const env = envSchema.parse(process.env)
