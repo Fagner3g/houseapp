@@ -401,10 +401,12 @@ async function updateBadgeFromReports(reports) {
     totalUpcoming += (r.upcomingAlerts?.transactions      || []).filter(t => t.status === 'pending').length
   }
 
-  updateBadge(totalOverdue, totalUpcoming)
+  const totalInvestments = state.investments?.summary?.total ?? state.investments?.items?.length ?? 0
+
+  updateBadge(totalOverdue, totalUpcoming, totalInvestments)
   await chrome.storage.local.set({
     cachedReportsByOrg: allOrgs,
-    badgeTotals: { overdue: totalOverdue, upcoming: totalUpcoming },
+    badgeTotals: { overdue: totalOverdue, upcoming: totalUpcoming, investments: totalInvestments },
   })
 }
 
