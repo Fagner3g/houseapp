@@ -17,6 +17,7 @@ import { Route as AuthSignUpRouteImport } from './pages/_auth/sign-up'
 import { Route as AuthSignInRouteImport } from './pages/_auth/sign-in'
 import { Route as AuthInviteRouteImport } from './pages/_auth/invite'
 import { Route as AppNewOrgRouteImport } from './pages/_app/new-org'
+import { Route as AppInvestmentsRouteImport } from './pages/_app/investments'
 import { Route as AppOrgsettingsLayoutRouteImport } from './pages/_app/$org/(settings)/layout'
 import { Route as AppOrguserUsersRouteImport } from './pages/_app/$org/(user)/users'
 import { Route as AppOrgtransactionsTransactionsRouteImport } from './pages/_app/$org/(transactions)/transactions'
@@ -63,6 +64,11 @@ const AppNewOrgRoute = AppNewOrgRouteImport.update({
   path: '/new-org',
   getParentRoute: () => AppLayoutRoute,
 } as any)
+const AppInvestmentsRoute = AppInvestmentsRouteImport.update({
+  id: '/investments',
+  path: '/investments',
+  getParentRoute: () => AppLayoutRoute,
+} as any)
 const AppOrgsettingsLayoutRoute = AppOrgsettingsLayoutRouteImport.update({
   id: '/$org/(settings)',
   path: '/$org/',
@@ -103,6 +109,7 @@ const AppOrgadminJobsRoute = AppOrgadminJobsRouteImport.update({
 
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
+  '/investments': typeof AppInvestmentsRoute
   '/new-org': typeof AppNewOrgRoute
   '/invite': typeof AuthInviteRoute
   '/sign-in': typeof AuthSignInRoute
@@ -118,6 +125,7 @@ export interface FileRoutesByFullPath {
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
+  '/investments': typeof AppInvestmentsRoute
   '/new-org': typeof AppNewOrgRoute
   '/invite': typeof AuthInviteRoute
   '/sign-in': typeof AuthSignInRoute
@@ -136,6 +144,7 @@ export interface FileRoutesById {
   '/': typeof IndexRoute
   '/_app': typeof AppLayoutRouteWithChildren
   '/_auth': typeof AuthLayoutRouteWithChildren
+  '/_app/investments': typeof AppInvestmentsRoute
   '/_app/new-org': typeof AppNewOrgRoute
   '/_auth/invite': typeof AuthInviteRoute
   '/_auth/sign-in': typeof AuthSignInRoute
@@ -153,6 +162,7 @@ export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
   fullPaths:
     | '/'
+    | '/investments'
     | '/new-org'
     | '/invite'
     | '/sign-in'
@@ -168,6 +178,7 @@ export interface FileRouteTypes {
   fileRoutesByTo: FileRoutesByTo
   to:
     | '/'
+    | '/investments'
     | '/new-org'
     | '/invite'
     | '/sign-in'
@@ -185,6 +196,7 @@ export interface FileRouteTypes {
     | '/'
     | '/_app'
     | '/_auth'
+    | '/_app/investments'
     | '/_app/new-org'
     | '/_auth/invite'
     | '/_auth/sign-in'
@@ -263,6 +275,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AppNewOrgRouteImport
       parentRoute: typeof AppLayoutRoute
     }
+    '/_app/investments': {
+      id: '/_app/investments'
+      path: '/investments'
+      fullPath: '/investments'
+      preLoaderRoute: typeof AppInvestmentsRouteImport
+      parentRoute: typeof AppLayoutRoute
+    }
     '/_app/$org/(settings)': {
       id: '/_app/$org/(settings)'
       path: '/$org'
@@ -327,6 +346,7 @@ const AppOrgsettingsLayoutRouteWithChildren =
   AppOrgsettingsLayoutRoute._addFileChildren(AppOrgsettingsLayoutRouteChildren)
 
 interface AppLayoutRouteChildren {
+  AppInvestmentsRoute: typeof AppInvestmentsRoute
   AppNewOrgRoute: typeof AppNewOrgRoute
   AppOrgsettingsLayoutRoute: typeof AppOrgsettingsLayoutRouteWithChildren
   AppOrgadminJobsRoute: typeof AppOrgadminJobsRoute
@@ -337,6 +357,7 @@ interface AppLayoutRouteChildren {
 }
 
 const AppLayoutRouteChildren: AppLayoutRouteChildren = {
+  AppInvestmentsRoute: AppInvestmentsRoute,
   AppNewOrgRoute: AppNewOrgRoute,
   AppOrgsettingsLayoutRoute: AppOrgsettingsLayoutRouteWithChildren,
   AppOrgadminJobsRoute: AppOrgadminJobsRoute,

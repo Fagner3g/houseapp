@@ -28,6 +28,12 @@ import type {
   CreateChatMessage404,
   CreateChatMessageBody,
   CreateGoalBody,
+  CreateInvestmentAsset201,
+  CreateInvestmentAssetBody,
+  CreateInvestmentExecution201,
+  CreateInvestmentExecutionBody,
+  CreateInvestmentPlan201,
+  CreateInvestmentPlanBody,
   CreateInviteBody,
   CreateOrganization201,
   CreateOrganizationBody,
@@ -36,6 +42,10 @@ import type {
   CreateTransactionBody,
   CreateUserWithInviteBody,
   DeleteTransactionsBody,
+  GetInvestmentDashboard200,
+  GetInvestmentQuotePreview200,
+  GetInvestmentQuotePreviewParams,
+  GetInvestmentReminders200,
   GetInvite200,
   GetJobs200,
   GetJobsJobKey200,
@@ -57,6 +67,8 @@ import type {
   ListChatMessages200,
   ListChatMessages404,
   ListChatMessagesParams,
+  ListInvestmentAssets200,
+  ListInvestmentPlans200,
   ListOrganizations200,
   ListTags200,
   ListTransactions200,
@@ -77,14 +89,23 @@ import type {
   PostJobsJobKeyStop404,
   PostJobsStartAll200,
   PostJobsStopAll200,
+  PostMeInvestmentsAiChatBody,
   PostOrgSlugJobsSendMonthlySummary200,
   PostOrgSlugJobsSendMonthlySummary400,
   PostOrgSlugJobsSendMonthlySummaryBody,
   RenameOrg200,
   RenameOrgBody,
+  SetInvestmentQuote200,
+  SetInvestmentQuoteBody,
   SignIn200,
   SignInBody,
   SignUpBody,
+  UpdateInvestmentAsset200,
+  UpdateInvestmentAssetBody,
+  UpdateInvestmentExecution200,
+  UpdateInvestmentExecutionBody,
+  UpdateInvestmentPlan200,
+  UpdateInvestmentPlanBody,
   UpdateTag200,
   UpdateTagBody,
   UpdateTransactionBody,
@@ -2463,6 +2484,1913 @@ export const usePatchOrgSlugUsersNotifications = <
 > => {
   const mutationOptions =
     getPatchOrgSlugUsersNotificationsMutationOptions(options);
+
+  return useMutation(mutationOptions, queryClient);
+};
+
+/**
+ * Preview automatic quote support for a ticker
+ */
+export const getGetInvestmentQuotePreviewUrl = (
+  params: GetInvestmentQuotePreviewParams,
+) => {
+  const normalizedParams = new URLSearchParams();
+
+  Object.entries(params || {}).forEach(([key, value]) => {
+    if (value !== undefined) {
+      normalizedParams.append(key, value === null ? "null" : value.toString());
+    }
+  });
+
+  const stringifiedParams = normalizedParams.toString();
+
+  return stringifiedParams.length > 0
+    ? `/me/investments/quote-preview?${stringifiedParams}`
+    : `/me/investments/quote-preview`;
+};
+
+export const getInvestmentQuotePreview = async (
+  params: GetInvestmentQuotePreviewParams,
+  options?: RequestInit,
+): Promise<GetInvestmentQuotePreview200> => {
+  return http<GetInvestmentQuotePreview200>(
+    getGetInvestmentQuotePreviewUrl(params),
+    {
+      ...options,
+      method: "GET",
+    },
+  );
+};
+
+export const getGetInvestmentQuotePreviewQueryKey = (
+  params?: GetInvestmentQuotePreviewParams,
+) => {
+  return [
+    `/me/investments/quote-preview`,
+    ...(params ? [params] : []),
+  ] as const;
+};
+
+export const getGetInvestmentQuotePreviewQueryOptions = <
+  TData = Awaited<ReturnType<typeof getInvestmentQuotePreview>>,
+  TError = unknown,
+>(
+  params: GetInvestmentQuotePreviewParams,
+  options?: {
+    query?: Partial<
+      UseQueryOptions<
+        Awaited<ReturnType<typeof getInvestmentQuotePreview>>,
+        TError,
+        TData
+      >
+    >;
+    request?: SecondParameter<typeof http>;
+  },
+) => {
+  const { query: queryOptions, request: requestOptions } = options ?? {};
+
+  const queryKey =
+    queryOptions?.queryKey ?? getGetInvestmentQuotePreviewQueryKey(params);
+
+  const queryFn: QueryFunction<
+    Awaited<ReturnType<typeof getInvestmentQuotePreview>>
+  > = ({ signal }) =>
+    getInvestmentQuotePreview(params, { signal, ...requestOptions });
+
+  return { queryKey, queryFn, ...queryOptions } as UseQueryOptions<
+    Awaited<ReturnType<typeof getInvestmentQuotePreview>>,
+    TError,
+    TData
+  > & { queryKey: DataTag<QueryKey, TData, TError> };
+};
+
+export type GetInvestmentQuotePreviewQueryResult = NonNullable<
+  Awaited<ReturnType<typeof getInvestmentQuotePreview>>
+>;
+export type GetInvestmentQuotePreviewQueryError = unknown;
+
+export function useGetInvestmentQuotePreview<
+  TData = Awaited<ReturnType<typeof getInvestmentQuotePreview>>,
+  TError = unknown,
+>(
+  params: GetInvestmentQuotePreviewParams,
+  options: {
+    query: Partial<
+      UseQueryOptions<
+        Awaited<ReturnType<typeof getInvestmentQuotePreview>>,
+        TError,
+        TData
+      >
+    > &
+      Pick<
+        DefinedInitialDataOptions<
+          Awaited<ReturnType<typeof getInvestmentQuotePreview>>,
+          TError,
+          Awaited<ReturnType<typeof getInvestmentQuotePreview>>
+        >,
+        "initialData"
+      >;
+    request?: SecondParameter<typeof http>;
+  },
+  queryClient?: QueryClient,
+): DefinedUseQueryResult<TData, TError> & {
+  queryKey: DataTag<QueryKey, TData, TError>;
+};
+export function useGetInvestmentQuotePreview<
+  TData = Awaited<ReturnType<typeof getInvestmentQuotePreview>>,
+  TError = unknown,
+>(
+  params: GetInvestmentQuotePreviewParams,
+  options?: {
+    query?: Partial<
+      UseQueryOptions<
+        Awaited<ReturnType<typeof getInvestmentQuotePreview>>,
+        TError,
+        TData
+      >
+    > &
+      Pick<
+        UndefinedInitialDataOptions<
+          Awaited<ReturnType<typeof getInvestmentQuotePreview>>,
+          TError,
+          Awaited<ReturnType<typeof getInvestmentQuotePreview>>
+        >,
+        "initialData"
+      >;
+    request?: SecondParameter<typeof http>;
+  },
+  queryClient?: QueryClient,
+): UseQueryResult<TData, TError> & {
+  queryKey: DataTag<QueryKey, TData, TError>;
+};
+export function useGetInvestmentQuotePreview<
+  TData = Awaited<ReturnType<typeof getInvestmentQuotePreview>>,
+  TError = unknown,
+>(
+  params: GetInvestmentQuotePreviewParams,
+  options?: {
+    query?: Partial<
+      UseQueryOptions<
+        Awaited<ReturnType<typeof getInvestmentQuotePreview>>,
+        TError,
+        TData
+      >
+    >;
+    request?: SecondParameter<typeof http>;
+  },
+  queryClient?: QueryClient,
+): UseQueryResult<TData, TError> & {
+  queryKey: DataTag<QueryKey, TData, TError>;
+};
+
+export function useGetInvestmentQuotePreview<
+  TData = Awaited<ReturnType<typeof getInvestmentQuotePreview>>,
+  TError = unknown,
+>(
+  params: GetInvestmentQuotePreviewParams,
+  options?: {
+    query?: Partial<
+      UseQueryOptions<
+        Awaited<ReturnType<typeof getInvestmentQuotePreview>>,
+        TError,
+        TData
+      >
+    >;
+    request?: SecondParameter<typeof http>;
+  },
+  queryClient?: QueryClient,
+): UseQueryResult<TData, TError> & {
+  queryKey: DataTag<QueryKey, TData, TError>;
+} {
+  const queryOptions = getGetInvestmentQuotePreviewQueryOptions(
+    params,
+    options,
+  );
+
+  const query = useQuery(queryOptions, queryClient) as UseQueryResult<
+    TData,
+    TError
+  > & { queryKey: DataTag<QueryKey, TData, TError> };
+
+  query.queryKey = queryOptions.queryKey;
+
+  return query;
+}
+
+/**
+ * List personal investment assets
+ */
+export const getListInvestmentAssetsUrl = () => {
+  return `/me/investments/assets`;
+};
+
+export const listInvestmentAssets = async (
+  options?: RequestInit,
+): Promise<ListInvestmentAssets200> => {
+  return http<ListInvestmentAssets200>(getListInvestmentAssetsUrl(), {
+    ...options,
+    method: "GET",
+  });
+};
+
+export const getListInvestmentAssetsQueryKey = () => {
+  return [`/me/investments/assets`] as const;
+};
+
+export const getListInvestmentAssetsQueryOptions = <
+  TData = Awaited<ReturnType<typeof listInvestmentAssets>>,
+  TError = unknown,
+>(options?: {
+  query?: Partial<
+    UseQueryOptions<
+      Awaited<ReturnType<typeof listInvestmentAssets>>,
+      TError,
+      TData
+    >
+  >;
+  request?: SecondParameter<typeof http>;
+}) => {
+  const { query: queryOptions, request: requestOptions } = options ?? {};
+
+  const queryKey = queryOptions?.queryKey ?? getListInvestmentAssetsQueryKey();
+
+  const queryFn: QueryFunction<
+    Awaited<ReturnType<typeof listInvestmentAssets>>
+  > = ({ signal }) => listInvestmentAssets({ signal, ...requestOptions });
+
+  return { queryKey, queryFn, ...queryOptions } as UseQueryOptions<
+    Awaited<ReturnType<typeof listInvestmentAssets>>,
+    TError,
+    TData
+  > & { queryKey: DataTag<QueryKey, TData, TError> };
+};
+
+export type ListInvestmentAssetsQueryResult = NonNullable<
+  Awaited<ReturnType<typeof listInvestmentAssets>>
+>;
+export type ListInvestmentAssetsQueryError = unknown;
+
+export function useListInvestmentAssets<
+  TData = Awaited<ReturnType<typeof listInvestmentAssets>>,
+  TError = unknown,
+>(
+  options: {
+    query: Partial<
+      UseQueryOptions<
+        Awaited<ReturnType<typeof listInvestmentAssets>>,
+        TError,
+        TData
+      >
+    > &
+      Pick<
+        DefinedInitialDataOptions<
+          Awaited<ReturnType<typeof listInvestmentAssets>>,
+          TError,
+          Awaited<ReturnType<typeof listInvestmentAssets>>
+        >,
+        "initialData"
+      >;
+    request?: SecondParameter<typeof http>;
+  },
+  queryClient?: QueryClient,
+): DefinedUseQueryResult<TData, TError> & {
+  queryKey: DataTag<QueryKey, TData, TError>;
+};
+export function useListInvestmentAssets<
+  TData = Awaited<ReturnType<typeof listInvestmentAssets>>,
+  TError = unknown,
+>(
+  options?: {
+    query?: Partial<
+      UseQueryOptions<
+        Awaited<ReturnType<typeof listInvestmentAssets>>,
+        TError,
+        TData
+      >
+    > &
+      Pick<
+        UndefinedInitialDataOptions<
+          Awaited<ReturnType<typeof listInvestmentAssets>>,
+          TError,
+          Awaited<ReturnType<typeof listInvestmentAssets>>
+        >,
+        "initialData"
+      >;
+    request?: SecondParameter<typeof http>;
+  },
+  queryClient?: QueryClient,
+): UseQueryResult<TData, TError> & {
+  queryKey: DataTag<QueryKey, TData, TError>;
+};
+export function useListInvestmentAssets<
+  TData = Awaited<ReturnType<typeof listInvestmentAssets>>,
+  TError = unknown,
+>(
+  options?: {
+    query?: Partial<
+      UseQueryOptions<
+        Awaited<ReturnType<typeof listInvestmentAssets>>,
+        TError,
+        TData
+      >
+    >;
+    request?: SecondParameter<typeof http>;
+  },
+  queryClient?: QueryClient,
+): UseQueryResult<TData, TError> & {
+  queryKey: DataTag<QueryKey, TData, TError>;
+};
+
+export function useListInvestmentAssets<
+  TData = Awaited<ReturnType<typeof listInvestmentAssets>>,
+  TError = unknown,
+>(
+  options?: {
+    query?: Partial<
+      UseQueryOptions<
+        Awaited<ReturnType<typeof listInvestmentAssets>>,
+        TError,
+        TData
+      >
+    >;
+    request?: SecondParameter<typeof http>;
+  },
+  queryClient?: QueryClient,
+): UseQueryResult<TData, TError> & {
+  queryKey: DataTag<QueryKey, TData, TError>;
+} {
+  const queryOptions = getListInvestmentAssetsQueryOptions(options);
+
+  const query = useQuery(queryOptions, queryClient) as UseQueryResult<
+    TData,
+    TError
+  > & { queryKey: DataTag<QueryKey, TData, TError> };
+
+  query.queryKey = queryOptions.queryKey;
+
+  return query;
+}
+
+/**
+ * Create personal investment asset
+ */
+export const getCreateInvestmentAssetUrl = () => {
+  return `/me/investments/assets`;
+};
+
+export const createInvestmentAsset = async (
+  createInvestmentAssetBody: CreateInvestmentAssetBody,
+  options?: RequestInit,
+): Promise<CreateInvestmentAsset201> => {
+  return http<CreateInvestmentAsset201>(getCreateInvestmentAssetUrl(), {
+    ...options,
+    method: "POST",
+    headers: { "Content-Type": "application/json", ...options?.headers },
+    body: JSON.stringify(createInvestmentAssetBody),
+  });
+};
+
+export const getCreateInvestmentAssetMutationOptions = <
+  TError = unknown,
+  TContext = unknown,
+>(options?: {
+  mutation?: UseMutationOptions<
+    Awaited<ReturnType<typeof createInvestmentAsset>>,
+    TError,
+    { data: CreateInvestmentAssetBody },
+    TContext
+  >;
+  request?: SecondParameter<typeof http>;
+}): UseMutationOptions<
+  Awaited<ReturnType<typeof createInvestmentAsset>>,
+  TError,
+  { data: CreateInvestmentAssetBody },
+  TContext
+> => {
+  const mutationKey = ["createInvestmentAsset"];
+  const { mutation: mutationOptions, request: requestOptions } = options
+    ? options.mutation &&
+      "mutationKey" in options.mutation &&
+      options.mutation.mutationKey
+      ? options
+      : { ...options, mutation: { ...options.mutation, mutationKey } }
+    : { mutation: { mutationKey }, request: undefined };
+
+  const mutationFn: MutationFunction<
+    Awaited<ReturnType<typeof createInvestmentAsset>>,
+    { data: CreateInvestmentAssetBody }
+  > = (props) => {
+    const { data } = props ?? {};
+
+    return createInvestmentAsset(data, requestOptions);
+  };
+
+  return { mutationFn, ...mutationOptions };
+};
+
+export type CreateInvestmentAssetMutationResult = NonNullable<
+  Awaited<ReturnType<typeof createInvestmentAsset>>
+>;
+export type CreateInvestmentAssetMutationBody = CreateInvestmentAssetBody;
+export type CreateInvestmentAssetMutationError = unknown;
+
+export const useCreateInvestmentAsset = <TError = unknown, TContext = unknown>(
+  options?: {
+    mutation?: UseMutationOptions<
+      Awaited<ReturnType<typeof createInvestmentAsset>>,
+      TError,
+      { data: CreateInvestmentAssetBody },
+      TContext
+    >;
+    request?: SecondParameter<typeof http>;
+  },
+  queryClient?: QueryClient,
+): UseMutationResult<
+  Awaited<ReturnType<typeof createInvestmentAsset>>,
+  TError,
+  { data: CreateInvestmentAssetBody },
+  TContext
+> => {
+  const mutationOptions = getCreateInvestmentAssetMutationOptions(options);
+
+  return useMutation(mutationOptions, queryClient);
+};
+
+/**
+ * Update personal investment asset
+ */
+export const getUpdateInvestmentAssetUrl = (assetId: string) => {
+  return `/me/investments/assets/${assetId}`;
+};
+
+export const updateInvestmentAsset = async (
+  assetId: string,
+  updateInvestmentAssetBody: UpdateInvestmentAssetBody,
+  options?: RequestInit,
+): Promise<UpdateInvestmentAsset200> => {
+  return http<UpdateInvestmentAsset200>(getUpdateInvestmentAssetUrl(assetId), {
+    ...options,
+    method: "PATCH",
+    headers: { "Content-Type": "application/json", ...options?.headers },
+    body: JSON.stringify(updateInvestmentAssetBody),
+  });
+};
+
+export const getUpdateInvestmentAssetMutationOptions = <
+  TError = unknown,
+  TContext = unknown,
+>(options?: {
+  mutation?: UseMutationOptions<
+    Awaited<ReturnType<typeof updateInvestmentAsset>>,
+    TError,
+    { assetId: string; data: UpdateInvestmentAssetBody },
+    TContext
+  >;
+  request?: SecondParameter<typeof http>;
+}): UseMutationOptions<
+  Awaited<ReturnType<typeof updateInvestmentAsset>>,
+  TError,
+  { assetId: string; data: UpdateInvestmentAssetBody },
+  TContext
+> => {
+  const mutationKey = ["updateInvestmentAsset"];
+  const { mutation: mutationOptions, request: requestOptions } = options
+    ? options.mutation &&
+      "mutationKey" in options.mutation &&
+      options.mutation.mutationKey
+      ? options
+      : { ...options, mutation: { ...options.mutation, mutationKey } }
+    : { mutation: { mutationKey }, request: undefined };
+
+  const mutationFn: MutationFunction<
+    Awaited<ReturnType<typeof updateInvestmentAsset>>,
+    { assetId: string; data: UpdateInvestmentAssetBody }
+  > = (props) => {
+    const { assetId, data } = props ?? {};
+
+    return updateInvestmentAsset(assetId, data, requestOptions);
+  };
+
+  return { mutationFn, ...mutationOptions };
+};
+
+export type UpdateInvestmentAssetMutationResult = NonNullable<
+  Awaited<ReturnType<typeof updateInvestmentAsset>>
+>;
+export type UpdateInvestmentAssetMutationBody = UpdateInvestmentAssetBody;
+export type UpdateInvestmentAssetMutationError = unknown;
+
+export const useUpdateInvestmentAsset = <TError = unknown, TContext = unknown>(
+  options?: {
+    mutation?: UseMutationOptions<
+      Awaited<ReturnType<typeof updateInvestmentAsset>>,
+      TError,
+      { assetId: string; data: UpdateInvestmentAssetBody },
+      TContext
+    >;
+    request?: SecondParameter<typeof http>;
+  },
+  queryClient?: QueryClient,
+): UseMutationResult<
+  Awaited<ReturnType<typeof updateInvestmentAsset>>,
+  TError,
+  { assetId: string; data: UpdateInvestmentAssetBody },
+  TContext
+> => {
+  const mutationOptions = getUpdateInvestmentAssetMutationOptions(options);
+
+  return useMutation(mutationOptions, queryClient);
+};
+
+/**
+ * Delete personal investment asset
+ */
+export const getDeleteInvestmentAssetUrl = (assetId: string) => {
+  return `/me/investments/assets/${assetId}`;
+};
+
+export const deleteInvestmentAsset = async (
+  assetId: string,
+  options?: RequestInit,
+): Promise<null> => {
+  return http<null>(getDeleteInvestmentAssetUrl(assetId), {
+    ...options,
+    method: "DELETE",
+  });
+};
+
+export const getDeleteInvestmentAssetMutationOptions = <
+  TError = unknown,
+  TContext = unknown,
+>(options?: {
+  mutation?: UseMutationOptions<
+    Awaited<ReturnType<typeof deleteInvestmentAsset>>,
+    TError,
+    { assetId: string },
+    TContext
+  >;
+  request?: SecondParameter<typeof http>;
+}): UseMutationOptions<
+  Awaited<ReturnType<typeof deleteInvestmentAsset>>,
+  TError,
+  { assetId: string },
+  TContext
+> => {
+  const mutationKey = ["deleteInvestmentAsset"];
+  const { mutation: mutationOptions, request: requestOptions } = options
+    ? options.mutation &&
+      "mutationKey" in options.mutation &&
+      options.mutation.mutationKey
+      ? options
+      : { ...options, mutation: { ...options.mutation, mutationKey } }
+    : { mutation: { mutationKey }, request: undefined };
+
+  const mutationFn: MutationFunction<
+    Awaited<ReturnType<typeof deleteInvestmentAsset>>,
+    { assetId: string }
+  > = (props) => {
+    const { assetId } = props ?? {};
+
+    return deleteInvestmentAsset(assetId, requestOptions);
+  };
+
+  return { mutationFn, ...mutationOptions };
+};
+
+export type DeleteInvestmentAssetMutationResult = NonNullable<
+  Awaited<ReturnType<typeof deleteInvestmentAsset>>
+>;
+
+export type DeleteInvestmentAssetMutationError = unknown;
+
+export const useDeleteInvestmentAsset = <TError = unknown, TContext = unknown>(
+  options?: {
+    mutation?: UseMutationOptions<
+      Awaited<ReturnType<typeof deleteInvestmentAsset>>,
+      TError,
+      { assetId: string },
+      TContext
+    >;
+    request?: SecondParameter<typeof http>;
+  },
+  queryClient?: QueryClient,
+): UseMutationResult<
+  Awaited<ReturnType<typeof deleteInvestmentAsset>>,
+  TError,
+  { assetId: string },
+  TContext
+> => {
+  const mutationOptions = getDeleteInvestmentAssetMutationOptions(options);
+
+  return useMutation(mutationOptions, queryClient);
+};
+
+/**
+ * Set manual quote for an asset
+ */
+export const getSetInvestmentQuoteUrl = (assetId: string) => {
+  return `/me/investments/assets/${assetId}/quote`;
+};
+
+export const setInvestmentQuote = async (
+  assetId: string,
+  setInvestmentQuoteBody: SetInvestmentQuoteBody,
+  options?: RequestInit,
+): Promise<SetInvestmentQuote200> => {
+  return http<SetInvestmentQuote200>(getSetInvestmentQuoteUrl(assetId), {
+    ...options,
+    method: "PATCH",
+    headers: { "Content-Type": "application/json", ...options?.headers },
+    body: JSON.stringify(setInvestmentQuoteBody),
+  });
+};
+
+export const getSetInvestmentQuoteMutationOptions = <
+  TError = unknown,
+  TContext = unknown,
+>(options?: {
+  mutation?: UseMutationOptions<
+    Awaited<ReturnType<typeof setInvestmentQuote>>,
+    TError,
+    { assetId: string; data: SetInvestmentQuoteBody },
+    TContext
+  >;
+  request?: SecondParameter<typeof http>;
+}): UseMutationOptions<
+  Awaited<ReturnType<typeof setInvestmentQuote>>,
+  TError,
+  { assetId: string; data: SetInvestmentQuoteBody },
+  TContext
+> => {
+  const mutationKey = ["setInvestmentQuote"];
+  const { mutation: mutationOptions, request: requestOptions } = options
+    ? options.mutation &&
+      "mutationKey" in options.mutation &&
+      options.mutation.mutationKey
+      ? options
+      : { ...options, mutation: { ...options.mutation, mutationKey } }
+    : { mutation: { mutationKey }, request: undefined };
+
+  const mutationFn: MutationFunction<
+    Awaited<ReturnType<typeof setInvestmentQuote>>,
+    { assetId: string; data: SetInvestmentQuoteBody }
+  > = (props) => {
+    const { assetId, data } = props ?? {};
+
+    return setInvestmentQuote(assetId, data, requestOptions);
+  };
+
+  return { mutationFn, ...mutationOptions };
+};
+
+export type SetInvestmentQuoteMutationResult = NonNullable<
+  Awaited<ReturnType<typeof setInvestmentQuote>>
+>;
+export type SetInvestmentQuoteMutationBody = SetInvestmentQuoteBody;
+export type SetInvestmentQuoteMutationError = unknown;
+
+export const useSetInvestmentQuote = <TError = unknown, TContext = unknown>(
+  options?: {
+    mutation?: UseMutationOptions<
+      Awaited<ReturnType<typeof setInvestmentQuote>>,
+      TError,
+      { assetId: string; data: SetInvestmentQuoteBody },
+      TContext
+    >;
+    request?: SecondParameter<typeof http>;
+  },
+  queryClient?: QueryClient,
+): UseMutationResult<
+  Awaited<ReturnType<typeof setInvestmentQuote>>,
+  TError,
+  { assetId: string; data: SetInvestmentQuoteBody },
+  TContext
+> => {
+  const mutationOptions = getSetInvestmentQuoteMutationOptions(options);
+
+  return useMutation(mutationOptions, queryClient);
+};
+
+/**
+ * List personal investment plans
+ */
+export const getListInvestmentPlansUrl = () => {
+  return `/me/investments/plans`;
+};
+
+export const listInvestmentPlans = async (
+  options?: RequestInit,
+): Promise<ListInvestmentPlans200> => {
+  return http<ListInvestmentPlans200>(getListInvestmentPlansUrl(), {
+    ...options,
+    method: "GET",
+  });
+};
+
+export const getListInvestmentPlansQueryKey = () => {
+  return [`/me/investments/plans`] as const;
+};
+
+export const getListInvestmentPlansQueryOptions = <
+  TData = Awaited<ReturnType<typeof listInvestmentPlans>>,
+  TError = unknown,
+>(options?: {
+  query?: Partial<
+    UseQueryOptions<
+      Awaited<ReturnType<typeof listInvestmentPlans>>,
+      TError,
+      TData
+    >
+  >;
+  request?: SecondParameter<typeof http>;
+}) => {
+  const { query: queryOptions, request: requestOptions } = options ?? {};
+
+  const queryKey = queryOptions?.queryKey ?? getListInvestmentPlansQueryKey();
+
+  const queryFn: QueryFunction<
+    Awaited<ReturnType<typeof listInvestmentPlans>>
+  > = ({ signal }) => listInvestmentPlans({ signal, ...requestOptions });
+
+  return { queryKey, queryFn, ...queryOptions } as UseQueryOptions<
+    Awaited<ReturnType<typeof listInvestmentPlans>>,
+    TError,
+    TData
+  > & { queryKey: DataTag<QueryKey, TData, TError> };
+};
+
+export type ListInvestmentPlansQueryResult = NonNullable<
+  Awaited<ReturnType<typeof listInvestmentPlans>>
+>;
+export type ListInvestmentPlansQueryError = unknown;
+
+export function useListInvestmentPlans<
+  TData = Awaited<ReturnType<typeof listInvestmentPlans>>,
+  TError = unknown,
+>(
+  options: {
+    query: Partial<
+      UseQueryOptions<
+        Awaited<ReturnType<typeof listInvestmentPlans>>,
+        TError,
+        TData
+      >
+    > &
+      Pick<
+        DefinedInitialDataOptions<
+          Awaited<ReturnType<typeof listInvestmentPlans>>,
+          TError,
+          Awaited<ReturnType<typeof listInvestmentPlans>>
+        >,
+        "initialData"
+      >;
+    request?: SecondParameter<typeof http>;
+  },
+  queryClient?: QueryClient,
+): DefinedUseQueryResult<TData, TError> & {
+  queryKey: DataTag<QueryKey, TData, TError>;
+};
+export function useListInvestmentPlans<
+  TData = Awaited<ReturnType<typeof listInvestmentPlans>>,
+  TError = unknown,
+>(
+  options?: {
+    query?: Partial<
+      UseQueryOptions<
+        Awaited<ReturnType<typeof listInvestmentPlans>>,
+        TError,
+        TData
+      >
+    > &
+      Pick<
+        UndefinedInitialDataOptions<
+          Awaited<ReturnType<typeof listInvestmentPlans>>,
+          TError,
+          Awaited<ReturnType<typeof listInvestmentPlans>>
+        >,
+        "initialData"
+      >;
+    request?: SecondParameter<typeof http>;
+  },
+  queryClient?: QueryClient,
+): UseQueryResult<TData, TError> & {
+  queryKey: DataTag<QueryKey, TData, TError>;
+};
+export function useListInvestmentPlans<
+  TData = Awaited<ReturnType<typeof listInvestmentPlans>>,
+  TError = unknown,
+>(
+  options?: {
+    query?: Partial<
+      UseQueryOptions<
+        Awaited<ReturnType<typeof listInvestmentPlans>>,
+        TError,
+        TData
+      >
+    >;
+    request?: SecondParameter<typeof http>;
+  },
+  queryClient?: QueryClient,
+): UseQueryResult<TData, TError> & {
+  queryKey: DataTag<QueryKey, TData, TError>;
+};
+
+export function useListInvestmentPlans<
+  TData = Awaited<ReturnType<typeof listInvestmentPlans>>,
+  TError = unknown,
+>(
+  options?: {
+    query?: Partial<
+      UseQueryOptions<
+        Awaited<ReturnType<typeof listInvestmentPlans>>,
+        TError,
+        TData
+      >
+    >;
+    request?: SecondParameter<typeof http>;
+  },
+  queryClient?: QueryClient,
+): UseQueryResult<TData, TError> & {
+  queryKey: DataTag<QueryKey, TData, TError>;
+} {
+  const queryOptions = getListInvestmentPlansQueryOptions(options);
+
+  const query = useQuery(queryOptions, queryClient) as UseQueryResult<
+    TData,
+    TError
+  > & { queryKey: DataTag<QueryKey, TData, TError> };
+
+  query.queryKey = queryOptions.queryKey;
+
+  return query;
+}
+
+/**
+ * Create personal investment plan
+ */
+export const getCreateInvestmentPlanUrl = () => {
+  return `/me/investments/plans`;
+};
+
+export const createInvestmentPlan = async (
+  createInvestmentPlanBody: CreateInvestmentPlanBody,
+  options?: RequestInit,
+): Promise<CreateInvestmentPlan201> => {
+  return http<CreateInvestmentPlan201>(getCreateInvestmentPlanUrl(), {
+    ...options,
+    method: "POST",
+    headers: { "Content-Type": "application/json", ...options?.headers },
+    body: JSON.stringify(createInvestmentPlanBody),
+  });
+};
+
+export const getCreateInvestmentPlanMutationOptions = <
+  TError = unknown,
+  TContext = unknown,
+>(options?: {
+  mutation?: UseMutationOptions<
+    Awaited<ReturnType<typeof createInvestmentPlan>>,
+    TError,
+    { data: CreateInvestmentPlanBody },
+    TContext
+  >;
+  request?: SecondParameter<typeof http>;
+}): UseMutationOptions<
+  Awaited<ReturnType<typeof createInvestmentPlan>>,
+  TError,
+  { data: CreateInvestmentPlanBody },
+  TContext
+> => {
+  const mutationKey = ["createInvestmentPlan"];
+  const { mutation: mutationOptions, request: requestOptions } = options
+    ? options.mutation &&
+      "mutationKey" in options.mutation &&
+      options.mutation.mutationKey
+      ? options
+      : { ...options, mutation: { ...options.mutation, mutationKey } }
+    : { mutation: { mutationKey }, request: undefined };
+
+  const mutationFn: MutationFunction<
+    Awaited<ReturnType<typeof createInvestmentPlan>>,
+    { data: CreateInvestmentPlanBody }
+  > = (props) => {
+    const { data } = props ?? {};
+
+    return createInvestmentPlan(data, requestOptions);
+  };
+
+  return { mutationFn, ...mutationOptions };
+};
+
+export type CreateInvestmentPlanMutationResult = NonNullable<
+  Awaited<ReturnType<typeof createInvestmentPlan>>
+>;
+export type CreateInvestmentPlanMutationBody = CreateInvestmentPlanBody;
+export type CreateInvestmentPlanMutationError = unknown;
+
+export const useCreateInvestmentPlan = <TError = unknown, TContext = unknown>(
+  options?: {
+    mutation?: UseMutationOptions<
+      Awaited<ReturnType<typeof createInvestmentPlan>>,
+      TError,
+      { data: CreateInvestmentPlanBody },
+      TContext
+    >;
+    request?: SecondParameter<typeof http>;
+  },
+  queryClient?: QueryClient,
+): UseMutationResult<
+  Awaited<ReturnType<typeof createInvestmentPlan>>,
+  TError,
+  { data: CreateInvestmentPlanBody },
+  TContext
+> => {
+  const mutationOptions = getCreateInvestmentPlanMutationOptions(options);
+
+  return useMutation(mutationOptions, queryClient);
+};
+
+/**
+ * Update personal investment plan
+ */
+export const getUpdateInvestmentPlanUrl = (planId: string) => {
+  return `/me/investments/plans/${planId}`;
+};
+
+export const updateInvestmentPlan = async (
+  planId: string,
+  updateInvestmentPlanBody: UpdateInvestmentPlanBody,
+  options?: RequestInit,
+): Promise<UpdateInvestmentPlan200> => {
+  return http<UpdateInvestmentPlan200>(getUpdateInvestmentPlanUrl(planId), {
+    ...options,
+    method: "PATCH",
+    headers: { "Content-Type": "application/json", ...options?.headers },
+    body: JSON.stringify(updateInvestmentPlanBody),
+  });
+};
+
+export const getUpdateInvestmentPlanMutationOptions = <
+  TError = unknown,
+  TContext = unknown,
+>(options?: {
+  mutation?: UseMutationOptions<
+    Awaited<ReturnType<typeof updateInvestmentPlan>>,
+    TError,
+    { planId: string; data: UpdateInvestmentPlanBody },
+    TContext
+  >;
+  request?: SecondParameter<typeof http>;
+}): UseMutationOptions<
+  Awaited<ReturnType<typeof updateInvestmentPlan>>,
+  TError,
+  { planId: string; data: UpdateInvestmentPlanBody },
+  TContext
+> => {
+  const mutationKey = ["updateInvestmentPlan"];
+  const { mutation: mutationOptions, request: requestOptions } = options
+    ? options.mutation &&
+      "mutationKey" in options.mutation &&
+      options.mutation.mutationKey
+      ? options
+      : { ...options, mutation: { ...options.mutation, mutationKey } }
+    : { mutation: { mutationKey }, request: undefined };
+
+  const mutationFn: MutationFunction<
+    Awaited<ReturnType<typeof updateInvestmentPlan>>,
+    { planId: string; data: UpdateInvestmentPlanBody }
+  > = (props) => {
+    const { planId, data } = props ?? {};
+
+    return updateInvestmentPlan(planId, data, requestOptions);
+  };
+
+  return { mutationFn, ...mutationOptions };
+};
+
+export type UpdateInvestmentPlanMutationResult = NonNullable<
+  Awaited<ReturnType<typeof updateInvestmentPlan>>
+>;
+export type UpdateInvestmentPlanMutationBody = UpdateInvestmentPlanBody;
+export type UpdateInvestmentPlanMutationError = unknown;
+
+export const useUpdateInvestmentPlan = <TError = unknown, TContext = unknown>(
+  options?: {
+    mutation?: UseMutationOptions<
+      Awaited<ReturnType<typeof updateInvestmentPlan>>,
+      TError,
+      { planId: string; data: UpdateInvestmentPlanBody },
+      TContext
+    >;
+    request?: SecondParameter<typeof http>;
+  },
+  queryClient?: QueryClient,
+): UseMutationResult<
+  Awaited<ReturnType<typeof updateInvestmentPlan>>,
+  TError,
+  { planId: string; data: UpdateInvestmentPlanBody },
+  TContext
+> => {
+  const mutationOptions = getUpdateInvestmentPlanMutationOptions(options);
+
+  return useMutation(mutationOptions, queryClient);
+};
+
+/**
+ * Delete personal investment plan
+ */
+export const getDeleteInvestmentPlanUrl = (planId: string) => {
+  return `/me/investments/plans/${planId}`;
+};
+
+export const deleteInvestmentPlan = async (
+  planId: string,
+  options?: RequestInit,
+): Promise<null> => {
+  return http<null>(getDeleteInvestmentPlanUrl(planId), {
+    ...options,
+    method: "DELETE",
+  });
+};
+
+export const getDeleteInvestmentPlanMutationOptions = <
+  TError = unknown,
+  TContext = unknown,
+>(options?: {
+  mutation?: UseMutationOptions<
+    Awaited<ReturnType<typeof deleteInvestmentPlan>>,
+    TError,
+    { planId: string },
+    TContext
+  >;
+  request?: SecondParameter<typeof http>;
+}): UseMutationOptions<
+  Awaited<ReturnType<typeof deleteInvestmentPlan>>,
+  TError,
+  { planId: string },
+  TContext
+> => {
+  const mutationKey = ["deleteInvestmentPlan"];
+  const { mutation: mutationOptions, request: requestOptions } = options
+    ? options.mutation &&
+      "mutationKey" in options.mutation &&
+      options.mutation.mutationKey
+      ? options
+      : { ...options, mutation: { ...options.mutation, mutationKey } }
+    : { mutation: { mutationKey }, request: undefined };
+
+  const mutationFn: MutationFunction<
+    Awaited<ReturnType<typeof deleteInvestmentPlan>>,
+    { planId: string }
+  > = (props) => {
+    const { planId } = props ?? {};
+
+    return deleteInvestmentPlan(planId, requestOptions);
+  };
+
+  return { mutationFn, ...mutationOptions };
+};
+
+export type DeleteInvestmentPlanMutationResult = NonNullable<
+  Awaited<ReturnType<typeof deleteInvestmentPlan>>
+>;
+
+export type DeleteInvestmentPlanMutationError = unknown;
+
+export const useDeleteInvestmentPlan = <TError = unknown, TContext = unknown>(
+  options?: {
+    mutation?: UseMutationOptions<
+      Awaited<ReturnType<typeof deleteInvestmentPlan>>,
+      TError,
+      { planId: string },
+      TContext
+    >;
+    request?: SecondParameter<typeof http>;
+  },
+  queryClient?: QueryClient,
+): UseMutationResult<
+  Awaited<ReturnType<typeof deleteInvestmentPlan>>,
+  TError,
+  { planId: string },
+  TContext
+> => {
+  const mutationOptions = getDeleteInvestmentPlanMutationOptions(options);
+
+  return useMutation(mutationOptions, queryClient);
+};
+
+/**
+ * Create or update a personal investment execution
+ */
+export const getCreateInvestmentExecutionUrl = () => {
+  return `/me/investments/executions`;
+};
+
+export const createInvestmentExecution = async (
+  createInvestmentExecutionBody: CreateInvestmentExecutionBody,
+  options?: RequestInit,
+): Promise<CreateInvestmentExecution201> => {
+  return http<CreateInvestmentExecution201>(getCreateInvestmentExecutionUrl(), {
+    ...options,
+    method: "POST",
+    headers: { "Content-Type": "application/json", ...options?.headers },
+    body: JSON.stringify(createInvestmentExecutionBody),
+  });
+};
+
+export const getCreateInvestmentExecutionMutationOptions = <
+  TError = unknown,
+  TContext = unknown,
+>(options?: {
+  mutation?: UseMutationOptions<
+    Awaited<ReturnType<typeof createInvestmentExecution>>,
+    TError,
+    { data: CreateInvestmentExecutionBody },
+    TContext
+  >;
+  request?: SecondParameter<typeof http>;
+}): UseMutationOptions<
+  Awaited<ReturnType<typeof createInvestmentExecution>>,
+  TError,
+  { data: CreateInvestmentExecutionBody },
+  TContext
+> => {
+  const mutationKey = ["createInvestmentExecution"];
+  const { mutation: mutationOptions, request: requestOptions } = options
+    ? options.mutation &&
+      "mutationKey" in options.mutation &&
+      options.mutation.mutationKey
+      ? options
+      : { ...options, mutation: { ...options.mutation, mutationKey } }
+    : { mutation: { mutationKey }, request: undefined };
+
+  const mutationFn: MutationFunction<
+    Awaited<ReturnType<typeof createInvestmentExecution>>,
+    { data: CreateInvestmentExecutionBody }
+  > = (props) => {
+    const { data } = props ?? {};
+
+    return createInvestmentExecution(data, requestOptions);
+  };
+
+  return { mutationFn, ...mutationOptions };
+};
+
+export type CreateInvestmentExecutionMutationResult = NonNullable<
+  Awaited<ReturnType<typeof createInvestmentExecution>>
+>;
+export type CreateInvestmentExecutionMutationBody =
+  CreateInvestmentExecutionBody;
+export type CreateInvestmentExecutionMutationError = unknown;
+
+export const useCreateInvestmentExecution = <
+  TError = unknown,
+  TContext = unknown,
+>(
+  options?: {
+    mutation?: UseMutationOptions<
+      Awaited<ReturnType<typeof createInvestmentExecution>>,
+      TError,
+      { data: CreateInvestmentExecutionBody },
+      TContext
+    >;
+    request?: SecondParameter<typeof http>;
+  },
+  queryClient?: QueryClient,
+): UseMutationResult<
+  Awaited<ReturnType<typeof createInvestmentExecution>>,
+  TError,
+  { data: CreateInvestmentExecutionBody },
+  TContext
+> => {
+  const mutationOptions = getCreateInvestmentExecutionMutationOptions(options);
+
+  return useMutation(mutationOptions, queryClient);
+};
+
+/**
+ * Update a personal investment execution
+ */
+export const getUpdateInvestmentExecutionUrl = (executionId: string) => {
+  return `/me/investments/executions/${executionId}`;
+};
+
+export const updateInvestmentExecution = async (
+  executionId: string,
+  updateInvestmentExecutionBody: UpdateInvestmentExecutionBody,
+  options?: RequestInit,
+): Promise<UpdateInvestmentExecution200> => {
+  return http<UpdateInvestmentExecution200>(
+    getUpdateInvestmentExecutionUrl(executionId),
+    {
+      ...options,
+      method: "PATCH",
+      headers: { "Content-Type": "application/json", ...options?.headers },
+      body: JSON.stringify(updateInvestmentExecutionBody),
+    },
+  );
+};
+
+export const getUpdateInvestmentExecutionMutationOptions = <
+  TError = unknown,
+  TContext = unknown,
+>(options?: {
+  mutation?: UseMutationOptions<
+    Awaited<ReturnType<typeof updateInvestmentExecution>>,
+    TError,
+    { executionId: string; data: UpdateInvestmentExecutionBody },
+    TContext
+  >;
+  request?: SecondParameter<typeof http>;
+}): UseMutationOptions<
+  Awaited<ReturnType<typeof updateInvestmentExecution>>,
+  TError,
+  { executionId: string; data: UpdateInvestmentExecutionBody },
+  TContext
+> => {
+  const mutationKey = ["updateInvestmentExecution"];
+  const { mutation: mutationOptions, request: requestOptions } = options
+    ? options.mutation &&
+      "mutationKey" in options.mutation &&
+      options.mutation.mutationKey
+      ? options
+      : { ...options, mutation: { ...options.mutation, mutationKey } }
+    : { mutation: { mutationKey }, request: undefined };
+
+  const mutationFn: MutationFunction<
+    Awaited<ReturnType<typeof updateInvestmentExecution>>,
+    { executionId: string; data: UpdateInvestmentExecutionBody }
+  > = (props) => {
+    const { executionId, data } = props ?? {};
+
+    return updateInvestmentExecution(executionId, data, requestOptions);
+  };
+
+  return { mutationFn, ...mutationOptions };
+};
+
+export type UpdateInvestmentExecutionMutationResult = NonNullable<
+  Awaited<ReturnType<typeof updateInvestmentExecution>>
+>;
+export type UpdateInvestmentExecutionMutationBody =
+  UpdateInvestmentExecutionBody;
+export type UpdateInvestmentExecutionMutationError = unknown;
+
+export const useUpdateInvestmentExecution = <
+  TError = unknown,
+  TContext = unknown,
+>(
+  options?: {
+    mutation?: UseMutationOptions<
+      Awaited<ReturnType<typeof updateInvestmentExecution>>,
+      TError,
+      { executionId: string; data: UpdateInvestmentExecutionBody },
+      TContext
+    >;
+    request?: SecondParameter<typeof http>;
+  },
+  queryClient?: QueryClient,
+): UseMutationResult<
+  Awaited<ReturnType<typeof updateInvestmentExecution>>,
+  TError,
+  { executionId: string; data: UpdateInvestmentExecutionBody },
+  TContext
+> => {
+  const mutationOptions = getUpdateInvestmentExecutionMutationOptions(options);
+
+  return useMutation(mutationOptions, queryClient);
+};
+
+/**
+ * Delete a personal investment execution
+ */
+export const getDeleteInvestmentExecutionUrl = (executionId: string) => {
+  return `/me/investments/executions/${executionId}`;
+};
+
+export const deleteInvestmentExecution = async (
+  executionId: string,
+  options?: RequestInit,
+): Promise<null> => {
+  return http<null>(getDeleteInvestmentExecutionUrl(executionId), {
+    ...options,
+    method: "DELETE",
+  });
+};
+
+export const getDeleteInvestmentExecutionMutationOptions = <
+  TError = unknown,
+  TContext = unknown,
+>(options?: {
+  mutation?: UseMutationOptions<
+    Awaited<ReturnType<typeof deleteInvestmentExecution>>,
+    TError,
+    { executionId: string },
+    TContext
+  >;
+  request?: SecondParameter<typeof http>;
+}): UseMutationOptions<
+  Awaited<ReturnType<typeof deleteInvestmentExecution>>,
+  TError,
+  { executionId: string },
+  TContext
+> => {
+  const mutationKey = ["deleteInvestmentExecution"];
+  const { mutation: mutationOptions, request: requestOptions } = options
+    ? options.mutation &&
+      "mutationKey" in options.mutation &&
+      options.mutation.mutationKey
+      ? options
+      : { ...options, mutation: { ...options.mutation, mutationKey } }
+    : { mutation: { mutationKey }, request: undefined };
+
+  const mutationFn: MutationFunction<
+    Awaited<ReturnType<typeof deleteInvestmentExecution>>,
+    { executionId: string }
+  > = (props) => {
+    const { executionId } = props ?? {};
+
+    return deleteInvestmentExecution(executionId, requestOptions);
+  };
+
+  return { mutationFn, ...mutationOptions };
+};
+
+export type DeleteInvestmentExecutionMutationResult = NonNullable<
+  Awaited<ReturnType<typeof deleteInvestmentExecution>>
+>;
+
+export type DeleteInvestmentExecutionMutationError = unknown;
+
+export const useDeleteInvestmentExecution = <
+  TError = unknown,
+  TContext = unknown,
+>(
+  options?: {
+    mutation?: UseMutationOptions<
+      Awaited<ReturnType<typeof deleteInvestmentExecution>>,
+      TError,
+      { executionId: string },
+      TContext
+    >;
+    request?: SecondParameter<typeof http>;
+  },
+  queryClient?: QueryClient,
+): UseMutationResult<
+  Awaited<ReturnType<typeof deleteInvestmentExecution>>,
+  TError,
+  { executionId: string },
+  TContext
+> => {
+  const mutationOptions = getDeleteInvestmentExecutionMutationOptions(options);
+
+  return useMutation(mutationOptions, queryClient);
+};
+
+/**
+ * Get current month investment reminders
+ */
+export const getGetInvestmentRemindersUrl = () => {
+  return `/me/investments/reminders`;
+};
+
+export const getInvestmentReminders = async (
+  options?: RequestInit,
+): Promise<GetInvestmentReminders200> => {
+  return http<GetInvestmentReminders200>(getGetInvestmentRemindersUrl(), {
+    ...options,
+    method: "GET",
+  });
+};
+
+export const getGetInvestmentRemindersQueryKey = () => {
+  return [`/me/investments/reminders`] as const;
+};
+
+export const getGetInvestmentRemindersQueryOptions = <
+  TData = Awaited<ReturnType<typeof getInvestmentReminders>>,
+  TError = unknown,
+>(options?: {
+  query?: Partial<
+    UseQueryOptions<
+      Awaited<ReturnType<typeof getInvestmentReminders>>,
+      TError,
+      TData
+    >
+  >;
+  request?: SecondParameter<typeof http>;
+}) => {
+  const { query: queryOptions, request: requestOptions } = options ?? {};
+
+  const queryKey =
+    queryOptions?.queryKey ?? getGetInvestmentRemindersQueryKey();
+
+  const queryFn: QueryFunction<
+    Awaited<ReturnType<typeof getInvestmentReminders>>
+  > = ({ signal }) => getInvestmentReminders({ signal, ...requestOptions });
+
+  return { queryKey, queryFn, ...queryOptions } as UseQueryOptions<
+    Awaited<ReturnType<typeof getInvestmentReminders>>,
+    TError,
+    TData
+  > & { queryKey: DataTag<QueryKey, TData, TError> };
+};
+
+export type GetInvestmentRemindersQueryResult = NonNullable<
+  Awaited<ReturnType<typeof getInvestmentReminders>>
+>;
+export type GetInvestmentRemindersQueryError = unknown;
+
+export function useGetInvestmentReminders<
+  TData = Awaited<ReturnType<typeof getInvestmentReminders>>,
+  TError = unknown,
+>(
+  options: {
+    query: Partial<
+      UseQueryOptions<
+        Awaited<ReturnType<typeof getInvestmentReminders>>,
+        TError,
+        TData
+      >
+    > &
+      Pick<
+        DefinedInitialDataOptions<
+          Awaited<ReturnType<typeof getInvestmentReminders>>,
+          TError,
+          Awaited<ReturnType<typeof getInvestmentReminders>>
+        >,
+        "initialData"
+      >;
+    request?: SecondParameter<typeof http>;
+  },
+  queryClient?: QueryClient,
+): DefinedUseQueryResult<TData, TError> & {
+  queryKey: DataTag<QueryKey, TData, TError>;
+};
+export function useGetInvestmentReminders<
+  TData = Awaited<ReturnType<typeof getInvestmentReminders>>,
+  TError = unknown,
+>(
+  options?: {
+    query?: Partial<
+      UseQueryOptions<
+        Awaited<ReturnType<typeof getInvestmentReminders>>,
+        TError,
+        TData
+      >
+    > &
+      Pick<
+        UndefinedInitialDataOptions<
+          Awaited<ReturnType<typeof getInvestmentReminders>>,
+          TError,
+          Awaited<ReturnType<typeof getInvestmentReminders>>
+        >,
+        "initialData"
+      >;
+    request?: SecondParameter<typeof http>;
+  },
+  queryClient?: QueryClient,
+): UseQueryResult<TData, TError> & {
+  queryKey: DataTag<QueryKey, TData, TError>;
+};
+export function useGetInvestmentReminders<
+  TData = Awaited<ReturnType<typeof getInvestmentReminders>>,
+  TError = unknown,
+>(
+  options?: {
+    query?: Partial<
+      UseQueryOptions<
+        Awaited<ReturnType<typeof getInvestmentReminders>>,
+        TError,
+        TData
+      >
+    >;
+    request?: SecondParameter<typeof http>;
+  },
+  queryClient?: QueryClient,
+): UseQueryResult<TData, TError> & {
+  queryKey: DataTag<QueryKey, TData, TError>;
+};
+
+export function useGetInvestmentReminders<
+  TData = Awaited<ReturnType<typeof getInvestmentReminders>>,
+  TError = unknown,
+>(
+  options?: {
+    query?: Partial<
+      UseQueryOptions<
+        Awaited<ReturnType<typeof getInvestmentReminders>>,
+        TError,
+        TData
+      >
+    >;
+    request?: SecondParameter<typeof http>;
+  },
+  queryClient?: QueryClient,
+): UseQueryResult<TData, TError> & {
+  queryKey: DataTag<QueryKey, TData, TError>;
+} {
+  const queryOptions = getGetInvestmentRemindersQueryOptions(options);
+
+  const query = useQuery(queryOptions, queryClient) as UseQueryResult<
+    TData,
+    TError
+  > & { queryKey: DataTag<QueryKey, TData, TError> };
+
+  query.queryKey = queryOptions.queryKey;
+
+  return query;
+}
+
+/**
+ * Get personal investment dashboard
+ */
+export const getGetInvestmentDashboardUrl = () => {
+  return `/me/investments/dashboard`;
+};
+
+export const getInvestmentDashboard = async (
+  options?: RequestInit,
+): Promise<GetInvestmentDashboard200> => {
+  return http<GetInvestmentDashboard200>(getGetInvestmentDashboardUrl(), {
+    ...options,
+    method: "GET",
+  });
+};
+
+export const getGetInvestmentDashboardQueryKey = () => {
+  return [`/me/investments/dashboard`] as const;
+};
+
+export const getGetInvestmentDashboardQueryOptions = <
+  TData = Awaited<ReturnType<typeof getInvestmentDashboard>>,
+  TError = unknown,
+>(options?: {
+  query?: Partial<
+    UseQueryOptions<
+      Awaited<ReturnType<typeof getInvestmentDashboard>>,
+      TError,
+      TData
+    >
+  >;
+  request?: SecondParameter<typeof http>;
+}) => {
+  const { query: queryOptions, request: requestOptions } = options ?? {};
+
+  const queryKey =
+    queryOptions?.queryKey ?? getGetInvestmentDashboardQueryKey();
+
+  const queryFn: QueryFunction<
+    Awaited<ReturnType<typeof getInvestmentDashboard>>
+  > = ({ signal }) => getInvestmentDashboard({ signal, ...requestOptions });
+
+  return { queryKey, queryFn, ...queryOptions } as UseQueryOptions<
+    Awaited<ReturnType<typeof getInvestmentDashboard>>,
+    TError,
+    TData
+  > & { queryKey: DataTag<QueryKey, TData, TError> };
+};
+
+export type GetInvestmentDashboardQueryResult = NonNullable<
+  Awaited<ReturnType<typeof getInvestmentDashboard>>
+>;
+export type GetInvestmentDashboardQueryError = unknown;
+
+export function useGetInvestmentDashboard<
+  TData = Awaited<ReturnType<typeof getInvestmentDashboard>>,
+  TError = unknown,
+>(
+  options: {
+    query: Partial<
+      UseQueryOptions<
+        Awaited<ReturnType<typeof getInvestmentDashboard>>,
+        TError,
+        TData
+      >
+    > &
+      Pick<
+        DefinedInitialDataOptions<
+          Awaited<ReturnType<typeof getInvestmentDashboard>>,
+          TError,
+          Awaited<ReturnType<typeof getInvestmentDashboard>>
+        >,
+        "initialData"
+      >;
+    request?: SecondParameter<typeof http>;
+  },
+  queryClient?: QueryClient,
+): DefinedUseQueryResult<TData, TError> & {
+  queryKey: DataTag<QueryKey, TData, TError>;
+};
+export function useGetInvestmentDashboard<
+  TData = Awaited<ReturnType<typeof getInvestmentDashboard>>,
+  TError = unknown,
+>(
+  options?: {
+    query?: Partial<
+      UseQueryOptions<
+        Awaited<ReturnType<typeof getInvestmentDashboard>>,
+        TError,
+        TData
+      >
+    > &
+      Pick<
+        UndefinedInitialDataOptions<
+          Awaited<ReturnType<typeof getInvestmentDashboard>>,
+          TError,
+          Awaited<ReturnType<typeof getInvestmentDashboard>>
+        >,
+        "initialData"
+      >;
+    request?: SecondParameter<typeof http>;
+  },
+  queryClient?: QueryClient,
+): UseQueryResult<TData, TError> & {
+  queryKey: DataTag<QueryKey, TData, TError>;
+};
+export function useGetInvestmentDashboard<
+  TData = Awaited<ReturnType<typeof getInvestmentDashboard>>,
+  TError = unknown,
+>(
+  options?: {
+    query?: Partial<
+      UseQueryOptions<
+        Awaited<ReturnType<typeof getInvestmentDashboard>>,
+        TError,
+        TData
+      >
+    >;
+    request?: SecondParameter<typeof http>;
+  },
+  queryClient?: QueryClient,
+): UseQueryResult<TData, TError> & {
+  queryKey: DataTag<QueryKey, TData, TError>;
+};
+
+export function useGetInvestmentDashboard<
+  TData = Awaited<ReturnType<typeof getInvestmentDashboard>>,
+  TError = unknown,
+>(
+  options?: {
+    query?: Partial<
+      UseQueryOptions<
+        Awaited<ReturnType<typeof getInvestmentDashboard>>,
+        TError,
+        TData
+      >
+    >;
+    request?: SecondParameter<typeof http>;
+  },
+  queryClient?: QueryClient,
+): UseQueryResult<TData, TError> & {
+  queryKey: DataTag<QueryKey, TData, TError>;
+} {
+  const queryOptions = getGetInvestmentDashboardQueryOptions(options);
+
+  const query = useQuery(queryOptions, queryClient) as UseQueryResult<
+    TData,
+    TError
+  > & { queryKey: DataTag<QueryKey, TData, TError> };
+
+  query.queryKey = queryOptions.queryKey;
+
+  return query;
+}
+
+export const getGetMeInvestmentsAiProvidersUrl = () => {
+  return `/me/investments/ai/providers`;
+};
+
+export const getMeInvestmentsAiProviders = async (
+  options?: RequestInit,
+): Promise<null> => {
+  return http<null>(getGetMeInvestmentsAiProvidersUrl(), {
+    ...options,
+    method: "GET",
+  });
+};
+
+export const getGetMeInvestmentsAiProvidersQueryKey = () => {
+  return [`/me/investments/ai/providers`] as const;
+};
+
+export const getGetMeInvestmentsAiProvidersQueryOptions = <
+  TData = Awaited<ReturnType<typeof getMeInvestmentsAiProviders>>,
+  TError = unknown,
+>(options?: {
+  query?: Partial<
+    UseQueryOptions<
+      Awaited<ReturnType<typeof getMeInvestmentsAiProviders>>,
+      TError,
+      TData
+    >
+  >;
+  request?: SecondParameter<typeof http>;
+}) => {
+  const { query: queryOptions, request: requestOptions } = options ?? {};
+
+  const queryKey =
+    queryOptions?.queryKey ?? getGetMeInvestmentsAiProvidersQueryKey();
+
+  const queryFn: QueryFunction<
+    Awaited<ReturnType<typeof getMeInvestmentsAiProviders>>
+  > = ({ signal }) =>
+    getMeInvestmentsAiProviders({ signal, ...requestOptions });
+
+  return { queryKey, queryFn, ...queryOptions } as UseQueryOptions<
+    Awaited<ReturnType<typeof getMeInvestmentsAiProviders>>,
+    TError,
+    TData
+  > & { queryKey: DataTag<QueryKey, TData, TError> };
+};
+
+export type GetMeInvestmentsAiProvidersQueryResult = NonNullable<
+  Awaited<ReturnType<typeof getMeInvestmentsAiProviders>>
+>;
+export type GetMeInvestmentsAiProvidersQueryError = unknown;
+
+export function useGetMeInvestmentsAiProviders<
+  TData = Awaited<ReturnType<typeof getMeInvestmentsAiProviders>>,
+  TError = unknown,
+>(
+  options: {
+    query: Partial<
+      UseQueryOptions<
+        Awaited<ReturnType<typeof getMeInvestmentsAiProviders>>,
+        TError,
+        TData
+      >
+    > &
+      Pick<
+        DefinedInitialDataOptions<
+          Awaited<ReturnType<typeof getMeInvestmentsAiProviders>>,
+          TError,
+          Awaited<ReturnType<typeof getMeInvestmentsAiProviders>>
+        >,
+        "initialData"
+      >;
+    request?: SecondParameter<typeof http>;
+  },
+  queryClient?: QueryClient,
+): DefinedUseQueryResult<TData, TError> & {
+  queryKey: DataTag<QueryKey, TData, TError>;
+};
+export function useGetMeInvestmentsAiProviders<
+  TData = Awaited<ReturnType<typeof getMeInvestmentsAiProviders>>,
+  TError = unknown,
+>(
+  options?: {
+    query?: Partial<
+      UseQueryOptions<
+        Awaited<ReturnType<typeof getMeInvestmentsAiProviders>>,
+        TError,
+        TData
+      >
+    > &
+      Pick<
+        UndefinedInitialDataOptions<
+          Awaited<ReturnType<typeof getMeInvestmentsAiProviders>>,
+          TError,
+          Awaited<ReturnType<typeof getMeInvestmentsAiProviders>>
+        >,
+        "initialData"
+      >;
+    request?: SecondParameter<typeof http>;
+  },
+  queryClient?: QueryClient,
+): UseQueryResult<TData, TError> & {
+  queryKey: DataTag<QueryKey, TData, TError>;
+};
+export function useGetMeInvestmentsAiProviders<
+  TData = Awaited<ReturnType<typeof getMeInvestmentsAiProviders>>,
+  TError = unknown,
+>(
+  options?: {
+    query?: Partial<
+      UseQueryOptions<
+        Awaited<ReturnType<typeof getMeInvestmentsAiProviders>>,
+        TError,
+        TData
+      >
+    >;
+    request?: SecondParameter<typeof http>;
+  },
+  queryClient?: QueryClient,
+): UseQueryResult<TData, TError> & {
+  queryKey: DataTag<QueryKey, TData, TError>;
+};
+
+export function useGetMeInvestmentsAiProviders<
+  TData = Awaited<ReturnType<typeof getMeInvestmentsAiProviders>>,
+  TError = unknown,
+>(
+  options?: {
+    query?: Partial<
+      UseQueryOptions<
+        Awaited<ReturnType<typeof getMeInvestmentsAiProviders>>,
+        TError,
+        TData
+      >
+    >;
+    request?: SecondParameter<typeof http>;
+  },
+  queryClient?: QueryClient,
+): UseQueryResult<TData, TError> & {
+  queryKey: DataTag<QueryKey, TData, TError>;
+} {
+  const queryOptions = getGetMeInvestmentsAiProvidersQueryOptions(options);
+
+  const query = useQuery(queryOptions, queryClient) as UseQueryResult<
+    TData,
+    TError
+  > & { queryKey: DataTag<QueryKey, TData, TError> };
+
+  query.queryKey = queryOptions.queryKey;
+
+  return query;
+}
+
+export const getPostMeInvestmentsAiChatUrl = () => {
+  return `/me/investments/ai/chat`;
+};
+
+export const postMeInvestmentsAiChat = async (
+  postMeInvestmentsAiChatBody: PostMeInvestmentsAiChatBody,
+  options?: RequestInit,
+): Promise<null> => {
+  return http<null>(getPostMeInvestmentsAiChatUrl(), {
+    ...options,
+    method: "POST",
+    headers: { "Content-Type": "application/json", ...options?.headers },
+    body: JSON.stringify(postMeInvestmentsAiChatBody),
+  });
+};
+
+export const getPostMeInvestmentsAiChatMutationOptions = <
+  TError = unknown,
+  TContext = unknown,
+>(options?: {
+  mutation?: UseMutationOptions<
+    Awaited<ReturnType<typeof postMeInvestmentsAiChat>>,
+    TError,
+    { data: PostMeInvestmentsAiChatBody },
+    TContext
+  >;
+  request?: SecondParameter<typeof http>;
+}): UseMutationOptions<
+  Awaited<ReturnType<typeof postMeInvestmentsAiChat>>,
+  TError,
+  { data: PostMeInvestmentsAiChatBody },
+  TContext
+> => {
+  const mutationKey = ["postMeInvestmentsAiChat"];
+  const { mutation: mutationOptions, request: requestOptions } = options
+    ? options.mutation &&
+      "mutationKey" in options.mutation &&
+      options.mutation.mutationKey
+      ? options
+      : { ...options, mutation: { ...options.mutation, mutationKey } }
+    : { mutation: { mutationKey }, request: undefined };
+
+  const mutationFn: MutationFunction<
+    Awaited<ReturnType<typeof postMeInvestmentsAiChat>>,
+    { data: PostMeInvestmentsAiChatBody }
+  > = (props) => {
+    const { data } = props ?? {};
+
+    return postMeInvestmentsAiChat(data, requestOptions);
+  };
+
+  return { mutationFn, ...mutationOptions };
+};
+
+export type PostMeInvestmentsAiChatMutationResult = NonNullable<
+  Awaited<ReturnType<typeof postMeInvestmentsAiChat>>
+>;
+export type PostMeInvestmentsAiChatMutationBody = PostMeInvestmentsAiChatBody;
+export type PostMeInvestmentsAiChatMutationError = unknown;
+
+export const usePostMeInvestmentsAiChat = <
+  TError = unknown,
+  TContext = unknown,
+>(
+  options?: {
+    mutation?: UseMutationOptions<
+      Awaited<ReturnType<typeof postMeInvestmentsAiChat>>,
+      TError,
+      { data: PostMeInvestmentsAiChatBody },
+      TContext
+    >;
+    request?: SecondParameter<typeof http>;
+  },
+  queryClient?: QueryClient,
+): UseMutationResult<
+  Awaited<ReturnType<typeof postMeInvestmentsAiChat>>,
+  TError,
+  { data: PostMeInvestmentsAiChatBody },
+  TContext
+> => {
+  const mutationOptions = getPostMeInvestmentsAiChatMutationOptions(options);
 
   return useMutation(mutationOptions, queryClient);
 };

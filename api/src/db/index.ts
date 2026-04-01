@@ -4,6 +4,10 @@ import postgres from 'postgres'
 import { env } from '@/config/env'
 import { goalCompletions } from './schemas/goalCompletions'
 import { goals } from './schemas/goals'
+import { investmentAssets } from './schemas/investmentAssets'
+import { investmentExecutions } from './schemas/investmentExecutions'
+import { investmentPlans } from './schemas/investmentPlans'
+import { investmentQuotes } from './schemas/investmentQuotes'
 import { invites } from './schemas/invites'
 import { organizations } from './schemas/organization'
 import { transactionChatMessages } from './schemas/transactionChatMessages'
@@ -21,6 +25,10 @@ const schema = {
   userOrganizations,
   goals,
   goalCompletions,
+  investmentAssets,
+  investmentPlans,
+  investmentExecutions,
+  investmentQuotes,
   transactionTags,
   transactionSeries,
   transactionOccurrences,

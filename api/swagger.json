@@ -1443,6 +1443,1420 @@
         }
       }
     },
+    "/me/investments/quote-preview": {
+      "get": {
+        "operationId": "getInvestmentQuotePreview",
+        "tags": [
+          "Investments"
+        ],
+        "description": "Preview automatic quote support for a ticker",
+        "parameters": [
+          {
+            "schema": {
+              "type": "string",
+              "minLength": 1
+            },
+            "in": "query",
+            "name": "symbol",
+            "required": true
+          },
+          {
+            "schema": {
+              "type": "string"
+            },
+            "in": "query",
+            "name": "assetClass",
+            "required": false
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Default Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "preview": {
+                      "type": "object",
+                      "properties": {
+                        "supported": {
+                          "type": "boolean"
+                        },
+                        "symbol": {
+                          "type": "string"
+                        },
+                        "price": {
+                          "type": "number",
+                          "nullable": true
+                        },
+                        "source": {
+                          "type": "string",
+                          "enum": [
+                            "auto"
+                          ]
+                        },
+                        "message": {
+                          "type": "string"
+                        }
+                      },
+                      "required": [
+                        "supported",
+                        "symbol",
+                        "price",
+                        "source",
+                        "message"
+                      ],
+                      "additionalProperties": false
+                    }
+                  },
+                  "required": [
+                    "preview"
+                  ],
+                  "additionalProperties": false
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/me/investments/assets": {
+      "get": {
+        "operationId": "listInvestmentAssets",
+        "tags": [
+          "Investments"
+        ],
+        "description": "List personal investment assets",
+        "responses": {
+          "200": {
+            "description": "Default Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "assets": {
+                      "type": "array",
+                      "items": {
+                        "type": "object",
+                        "properties": {
+                          "id": {
+                            "type": "string"
+                          },
+                          "symbol": {
+                            "type": "string"
+                          },
+                          "displayName": {
+                            "type": "string"
+                          },
+                          "assetClass": {
+                            "type": "string"
+                          },
+                          "quotePreference": {
+                            "type": "string",
+                            "enum": [
+                              "auto",
+                              "manual",
+                              "auto_with_manual_fallback"
+                            ]
+                          },
+                          "notes": {
+                            "type": "string"
+                          },
+                          "quantity": {
+                            "type": "number"
+                          },
+                          "totalInvested": {
+                            "type": "number"
+                          },
+                          "averagePrice": {
+                            "type": "number"
+                          },
+                          "currentPrice": {
+                            "type": "number"
+                          },
+                          "currentPriceSource": {
+                            "type": "string",
+                            "enum": [
+                              "auto",
+                              "manual"
+                            ]
+                          },
+                          "currentPriceCapturedAt": {
+                            "type": "string",
+                            "nullable": true
+                          },
+                          "marketValue": {
+                            "type": "number"
+                          },
+                          "yieldAmount": {
+                            "type": "number"
+                          },
+                          "yieldPercent": {
+                            "type": "number"
+                          },
+                          "isActive": {
+                            "type": "boolean"
+                          }
+                        },
+                        "required": [
+                          "id",
+                          "symbol",
+                          "displayName",
+                          "assetClass",
+                          "quotePreference",
+                          "notes",
+                          "quantity",
+                          "totalInvested",
+                          "averagePrice",
+                          "currentPrice",
+                          "currentPriceSource",
+                          "currentPriceCapturedAt",
+                          "marketValue",
+                          "yieldAmount",
+                          "yieldPercent",
+                          "isActive"
+                        ],
+                        "additionalProperties": false
+                      }
+                    }
+                  },
+                  "required": [
+                    "assets"
+                  ],
+                  "additionalProperties": false
+                }
+              }
+            }
+          }
+        }
+      },
+      "post": {
+        "operationId": "createInvestmentAsset",
+        "tags": [
+          "Investments"
+        ],
+        "description": "Create personal investment asset",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "symbol": {
+                    "type": "string",
+                    "minLength": 1,
+                    "maxLength": 20
+                  },
+                  "displayName": {
+                    "type": "string",
+                    "minLength": 1,
+                    "maxLength": 80
+                  },
+                  "assetClass": {
+                    "type": "string",
+                    "minLength": 1,
+                    "maxLength": 40
+                  },
+                  "quotePreference": {
+                    "default": "auto_with_manual_fallback",
+                    "type": "string",
+                    "enum": [
+                      "auto",
+                      "manual",
+                      "auto_with_manual_fallback"
+                    ]
+                  },
+                  "notes": {
+                    "type": "string",
+                    "maxLength": 500
+                  }
+                },
+                "required": [
+                  "symbol",
+                  "displayName",
+                  "assetClass"
+                ]
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "201": {
+            "description": "Default Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "asset": {
+                      "type": "object",
+                      "properties": {
+                        "id": {
+                          "type": "string"
+                        }
+                      },
+                      "required": [
+                        "id"
+                      ],
+                      "additionalProperties": false
+                    }
+                  },
+                  "required": [
+                    "asset"
+                  ],
+                  "additionalProperties": false
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/me/investments/assets/{assetId}": {
+      "patch": {
+        "operationId": "updateInvestmentAsset",
+        "tags": [
+          "Investments"
+        ],
+        "description": "Update personal investment asset",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "symbol": {
+                    "type": "string",
+                    "minLength": 1,
+                    "maxLength": 20
+                  },
+                  "displayName": {
+                    "type": "string",
+                    "minLength": 1,
+                    "maxLength": 80
+                  },
+                  "assetClass": {
+                    "type": "string",
+                    "minLength": 1,
+                    "maxLength": 40
+                  },
+                  "quotePreference": {
+                    "type": "string",
+                    "enum": [
+                      "auto",
+                      "manual",
+                      "auto_with_manual_fallback"
+                    ]
+                  },
+                  "notes": {
+                    "type": "string",
+                    "maxLength": 500
+                  },
+                  "isActive": {
+                    "type": "boolean"
+                  }
+                }
+              }
+            }
+          }
+        },
+        "parameters": [
+          {
+            "schema": {
+              "type": "string"
+            },
+            "in": "path",
+            "name": "assetId",
+            "required": true
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Default Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "asset": {
+                      "type": "object",
+                      "properties": {
+                        "id": {
+                          "type": "string"
+                        }
+                      },
+                      "required": [
+                        "id"
+                      ],
+                      "additionalProperties": false
+                    }
+                  },
+                  "required": [
+                    "asset"
+                  ],
+                  "additionalProperties": false
+                }
+              }
+            }
+          }
+        }
+      },
+      "delete": {
+        "operationId": "deleteInvestmentAsset",
+        "tags": [
+          "Investments"
+        ],
+        "description": "Delete personal investment asset",
+        "parameters": [
+          {
+            "schema": {
+              "type": "string"
+            },
+            "in": "path",
+            "name": "assetId",
+            "required": true
+          }
+        ],
+        "responses": {
+          "204": {
+            "description": "Default Response"
+          }
+        }
+      }
+    },
+    "/me/investments/assets/{assetId}/quote": {
+      "patch": {
+        "operationId": "setInvestmentQuote",
+        "tags": [
+          "Investments"
+        ],
+        "description": "Set manual quote for an asset",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "price": {
+                    "type": "string",
+                    "pattern": "^-?\\d+(\\.\\d{1,2})?$"
+                  }
+                },
+                "required": [
+                  "price"
+                ]
+              }
+            }
+          },
+          "required": true
+        },
+        "parameters": [
+          {
+            "schema": {
+              "type": "string"
+            },
+            "in": "path",
+            "name": "assetId",
+            "required": true
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Default Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "quote": {
+                      "type": "object",
+                      "properties": {
+                        "id": {
+                          "type": "string"
+                        }
+                      },
+                      "required": [
+                        "id"
+                      ],
+                      "additionalProperties": false
+                    }
+                  },
+                  "required": [
+                    "quote"
+                  ],
+                  "additionalProperties": false
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/me/investments/plans": {
+      "get": {
+        "operationId": "listInvestmentPlans",
+        "tags": [
+          "Investments"
+        ],
+        "description": "List personal investment plans",
+        "responses": {
+          "200": {
+            "description": "Default Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "plans": {
+                      "type": "array",
+                      "items": {
+                        "type": "object",
+                        "properties": {
+                          "id": {
+                            "type": "string"
+                          },
+                          "assetId": {
+                            "type": "string"
+                          },
+                          "assetSymbol": {
+                            "type": "string"
+                          },
+                          "assetName": {
+                            "type": "string"
+                          },
+                          "frequency": {
+                            "type": "string",
+                            "enum": [
+                              "monthly"
+                            ]
+                          },
+                          "mode": {
+                            "type": "string",
+                            "enum": [
+                              "amount",
+                              "quantity"
+                            ]
+                          },
+                          "progressionType": {
+                            "type": "string",
+                            "enum": [
+                              "fixed",
+                              "linear_step"
+                            ]
+                          },
+                          "initialAmount": {
+                            "type": "number",
+                            "nullable": true
+                          },
+                          "initialQuantity": {
+                            "type": "number",
+                            "nullable": true
+                          },
+                          "stepAmount": {
+                            "type": "number",
+                            "nullable": true
+                          },
+                          "stepQuantity": {
+                            "type": "number",
+                            "nullable": true
+                          },
+                          "startDate": {
+                            "type": "string"
+                          },
+                          "endDate": {
+                            "type": "string",
+                            "nullable": true
+                          },
+                          "active": {
+                            "type": "boolean"
+                          }
+                        },
+                        "required": [
+                          "id",
+                          "assetId",
+                          "assetSymbol",
+                          "assetName",
+                          "frequency",
+                          "mode",
+                          "progressionType",
+                          "initialAmount",
+                          "initialQuantity",
+                          "stepAmount",
+                          "stepQuantity",
+                          "startDate",
+                          "endDate",
+                          "active"
+                        ],
+                        "additionalProperties": false
+                      }
+                    }
+                  },
+                  "required": [
+                    "plans"
+                  ],
+                  "additionalProperties": false
+                }
+              }
+            }
+          }
+        }
+      },
+      "post": {
+        "operationId": "createInvestmentPlan",
+        "tags": [
+          "Investments"
+        ],
+        "description": "Create personal investment plan",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "assetId": {
+                    "type": "string"
+                  },
+                  "mode": {
+                    "type": "string",
+                    "enum": [
+                      "amount",
+                      "quantity"
+                    ]
+                  },
+                  "progressionType": {
+                    "type": "string",
+                    "enum": [
+                      "fixed",
+                      "linear_step"
+                    ]
+                  },
+                  "initialAmount": {
+                    "type": "string",
+                    "pattern": "^-?\\d+(\\.\\d{1,2})?$"
+                  },
+                  "initialQuantity": {
+                    "type": "number",
+                    "exclusiveMinimum": 0
+                  },
+                  "stepAmount": {
+                    "type": "string",
+                    "pattern": "^-?\\d+(\\.\\d{1,2})?$"
+                  },
+                  "stepQuantity": {
+                    "type": "number",
+                    "minimum": 0
+                  },
+                  "startDate": {},
+                  "endDate": {},
+                  "active": {
+                    "type": "boolean"
+                  }
+                },
+                "required": [
+                  "assetId",
+                  "mode",
+                  "progressionType",
+                  "startDate"
+                ]
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "201": {
+            "description": "Default Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "plan": {
+                      "type": "object",
+                      "properties": {
+                        "id": {
+                          "type": "string"
+                        }
+                      },
+                      "required": [
+                        "id"
+                      ],
+                      "additionalProperties": false
+                    }
+                  },
+                  "required": [
+                    "plan"
+                  ],
+                  "additionalProperties": false
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/me/investments/plans/{planId}": {
+      "patch": {
+        "operationId": "updateInvestmentPlan",
+        "tags": [
+          "Investments"
+        ],
+        "description": "Update personal investment plan",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "assetId": {
+                    "type": "string"
+                  },
+                  "mode": {
+                    "type": "string",
+                    "enum": [
+                      "amount",
+                      "quantity"
+                    ]
+                  },
+                  "progressionType": {
+                    "type": "string",
+                    "enum": [
+                      "fixed",
+                      "linear_step"
+                    ]
+                  },
+                  "initialAmount": {
+                    "type": "string",
+                    "pattern": "^-?\\d+(\\.\\d{1,2})?$"
+                  },
+                  "initialQuantity": {
+                    "type": "number",
+                    "exclusiveMinimum": 0
+                  },
+                  "stepAmount": {
+                    "type": "string",
+                    "pattern": "^-?\\d+(\\.\\d{1,2})?$"
+                  },
+                  "stepQuantity": {
+                    "type": "number",
+                    "minimum": 0
+                  },
+                  "startDate": {},
+                  "endDate": {},
+                  "active": {
+                    "type": "boolean"
+                  }
+                }
+              }
+            }
+          }
+        },
+        "parameters": [
+          {
+            "schema": {
+              "type": "string"
+            },
+            "in": "path",
+            "name": "planId",
+            "required": true
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Default Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "plan": {
+                      "type": "object",
+                      "properties": {
+                        "id": {
+                          "type": "string"
+                        }
+                      },
+                      "required": [
+                        "id"
+                      ],
+                      "additionalProperties": false
+                    }
+                  },
+                  "required": [
+                    "plan"
+                  ],
+                  "additionalProperties": false
+                }
+              }
+            }
+          }
+        }
+      },
+      "delete": {
+        "operationId": "deleteInvestmentPlan",
+        "tags": [
+          "Investments"
+        ],
+        "description": "Delete personal investment plan",
+        "parameters": [
+          {
+            "schema": {
+              "type": "string"
+            },
+            "in": "path",
+            "name": "planId",
+            "required": true
+          }
+        ],
+        "responses": {
+          "204": {
+            "description": "Default Response"
+          }
+        }
+      }
+    },
+    "/me/investments/executions": {
+      "post": {
+        "operationId": "createInvestmentExecution",
+        "tags": [
+          "Investments"
+        ],
+        "description": "Create or update a personal investment execution",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "assetId": {
+                    "type": "string"
+                  },
+                  "planId": {
+                    "type": "string"
+                  },
+                  "referenceMonth": {
+                    "type": "string",
+                    "pattern": "^\\d{4}-(0[1-9]|1[0-2])$"
+                  },
+                  "investedAmount": {
+                    "type": "string",
+                    "pattern": "^-?\\d+(\\.\\d{1,2})?$"
+                  },
+                  "executedQuantity": {
+                    "type": "number",
+                    "exclusiveMinimum": 0
+                  },
+                  "executedUnitPrice": {
+                    "type": "string",
+                    "pattern": "^-?\\d+(\\.\\d{1,2})?$"
+                  },
+                  "executedAt": {}
+                },
+                "required": [
+                  "assetId",
+                  "referenceMonth",
+                  "investedAmount",
+                  "executedQuantity",
+                  "executedUnitPrice"
+                ]
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "201": {
+            "description": "Default Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "execution": {
+                      "type": "object",
+                      "properties": {
+                        "id": {
+                          "type": "string"
+                        }
+                      },
+                      "required": [
+                        "id"
+                      ],
+                      "additionalProperties": false
+                    }
+                  },
+                  "required": [
+                    "execution"
+                  ],
+                  "additionalProperties": false
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/me/investments/executions/{executionId}": {
+      "patch": {
+        "operationId": "updateInvestmentExecution",
+        "tags": [
+          "Investments"
+        ],
+        "description": "Update a personal investment execution",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "assetId": {
+                    "type": "string"
+                  },
+                  "planId": {
+                    "type": "string"
+                  },
+                  "referenceMonth": {
+                    "type": "string",
+                    "pattern": "^\\d{4}-(0[1-9]|1[0-2])$"
+                  },
+                  "investedAmount": {
+                    "type": "string",
+                    "pattern": "^-?\\d+(\\.\\d{1,2})?$"
+                  },
+                  "executedQuantity": {
+                    "type": "number",
+                    "exclusiveMinimum": 0
+                  },
+                  "executedUnitPrice": {
+                    "type": "string",
+                    "pattern": "^-?\\d+(\\.\\d{1,2})?$"
+                  },
+                  "executedAt": {}
+                },
+                "required": [
+                  "assetId",
+                  "referenceMonth",
+                  "investedAmount",
+                  "executedQuantity",
+                  "executedUnitPrice"
+                ]
+              }
+            }
+          },
+          "required": true
+        },
+        "parameters": [
+          {
+            "schema": {
+              "type": "string"
+            },
+            "in": "path",
+            "name": "executionId",
+            "required": true
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Default Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "execution": {
+                      "type": "object",
+                      "properties": {
+                        "id": {
+                          "type": "string"
+                        }
+                      },
+                      "required": [
+                        "id"
+                      ],
+                      "additionalProperties": false
+                    }
+                  },
+                  "required": [
+                    "execution"
+                  ],
+                  "additionalProperties": false
+                }
+              }
+            }
+          }
+        }
+      },
+      "delete": {
+        "operationId": "deleteInvestmentExecution",
+        "tags": [
+          "Investments"
+        ],
+        "description": "Delete a personal investment execution",
+        "parameters": [
+          {
+            "schema": {
+              "type": "string"
+            },
+            "in": "path",
+            "name": "executionId",
+            "required": true
+          }
+        ],
+        "responses": {
+          "204": {
+            "description": "Default Response"
+          }
+        }
+      }
+    },
+    "/me/investments/reminders": {
+      "get": {
+        "operationId": "getInvestmentReminders",
+        "tags": [
+          "Investments"
+        ],
+        "description": "Get current month investment reminders",
+        "responses": {
+          "200": {
+            "description": "Default Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "reminders": {
+                      "type": "object",
+                      "properties": {
+                        "summary": {
+                          "type": "object",
+                          "properties": {
+                            "total": {
+                              "type": "number"
+                            },
+                            "overdue": {
+                              "type": "number"
+                            },
+                            "pending": {
+                              "type": "number"
+                            }
+                          },
+                          "required": [
+                            "total",
+                            "overdue",
+                            "pending"
+                          ],
+                          "additionalProperties": false
+                        },
+                        "items": {
+                          "type": "array",
+                          "items": {
+                            "type": "object",
+                            "properties": {
+                              "assetId": {
+                                "type": "string"
+                              },
+                              "assetSymbol": {
+                                "type": "string"
+                              },
+                              "assetName": {
+                                "type": "string"
+                              },
+                              "planId": {
+                                "type": "string"
+                              },
+                              "referenceMonth": {
+                                "type": "string",
+                                "pattern": "^\\d{4}-(0[1-9]|1[0-2])$"
+                              },
+                              "dueDate": {
+                                "type": "string"
+                              },
+                              "plannedAmount": {
+                                "type": "number",
+                                "nullable": true
+                              },
+                              "plannedQuantity": {
+                                "type": "number",
+                                "nullable": true
+                              },
+                              "status": {
+                                "type": "string",
+                                "enum": [
+                                  "pending",
+                                  "overdue"
+                                ]
+                              }
+                            },
+                            "required": [
+                              "assetId",
+                              "assetSymbol",
+                              "assetName",
+                              "planId",
+                              "referenceMonth",
+                              "dueDate",
+                              "plannedAmount",
+                              "plannedQuantity",
+                              "status"
+                            ],
+                            "additionalProperties": false
+                          }
+                        }
+                      },
+                      "required": [
+                        "summary",
+                        "items"
+                      ],
+                      "additionalProperties": false
+                    }
+                  },
+                  "required": [
+                    "reminders"
+                  ],
+                  "additionalProperties": false
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/me/investments/dashboard": {
+      "get": {
+        "operationId": "getInvestmentDashboard",
+        "tags": [
+          "Investments"
+        ],
+        "description": "Get personal investment dashboard",
+        "responses": {
+          "200": {
+            "description": "Default Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "dashboard": {
+                      "type": "object",
+                      "properties": {
+                        "summary": {
+                          "type": "object",
+                          "properties": {
+                            "totalInvested": {
+                              "type": "number"
+                            },
+                            "currentValue": {
+                              "type": "number"
+                            },
+                            "yieldAmount": {
+                              "type": "number"
+                            },
+                            "yieldPercent": {
+                              "type": "number"
+                            },
+                            "investedThisMonth": {
+                              "type": "number"
+                            },
+                            "pendingThisMonth": {
+                              "type": "number"
+                            }
+                          },
+                          "required": [
+                            "totalInvested",
+                            "currentValue",
+                            "yieldAmount",
+                            "yieldPercent",
+                            "investedThisMonth",
+                            "pendingThisMonth"
+                          ],
+                          "additionalProperties": false
+                        },
+                        "assets": {
+                          "type": "array",
+                          "items": {
+                            "type": "object",
+                            "properties": {
+                              "id": {
+                                "type": "string"
+                              },
+                              "symbol": {
+                                "type": "string"
+                              },
+                              "displayName": {
+                                "type": "string"
+                              },
+                              "assetClass": {
+                                "type": "string"
+                              },
+                              "quantity": {
+                                "type": "number"
+                              },
+                              "averagePrice": {
+                                "type": "number"
+                              },
+                              "currentPrice": {
+                                "type": "number"
+                              },
+                              "currentPriceSource": {
+                                "type": "string",
+                                "enum": [
+                                  "auto",
+                                  "manual"
+                                ]
+                              },
+                              "totalInvested": {
+                                "type": "number"
+                              },
+                              "currentValue": {
+                                "type": "number"
+                              },
+                              "yieldAmount": {
+                                "type": "number"
+                              },
+                              "yieldPercent": {
+                                "type": "number"
+                              }
+                            },
+                            "required": [
+                              "id",
+                              "symbol",
+                              "displayName",
+                              "assetClass",
+                              "quantity",
+                              "averagePrice",
+                              "currentPrice",
+                              "currentPriceSource",
+                              "totalInvested",
+                              "currentValue",
+                              "yieldAmount",
+                              "yieldPercent"
+                            ],
+                            "additionalProperties": false
+                          }
+                        },
+                        "pending": {
+                          "type": "array",
+                          "items": {
+                            "type": "object",
+                            "properties": {
+                              "assetId": {
+                                "type": "string"
+                              },
+                              "assetSymbol": {
+                                "type": "string"
+                              },
+                              "assetName": {
+                                "type": "string"
+                              },
+                              "planId": {
+                                "type": "string"
+                              },
+                              "referenceMonth": {
+                                "type": "string",
+                                "pattern": "^\\d{4}-(0[1-9]|1[0-2])$"
+                              },
+                              "dueDate": {
+                                "type": "string"
+                              },
+                              "plannedAmount": {
+                                "type": "number",
+                                "nullable": true
+                              },
+                              "plannedQuantity": {
+                                "type": "number",
+                                "nullable": true
+                              },
+                              "status": {
+                                "type": "string",
+                                "enum": [
+                                  "pending",
+                                  "overdue"
+                                ]
+                              }
+                            },
+                            "required": [
+                              "assetId",
+                              "assetSymbol",
+                              "assetName",
+                              "planId",
+                              "referenceMonth",
+                              "dueDate",
+                              "plannedAmount",
+                              "plannedQuantity",
+                              "status"
+                            ],
+                            "additionalProperties": false
+                          }
+                        },
+                        "projection": {
+                          "type": "array",
+                          "items": {
+                            "type": "object",
+                            "properties": {
+                              "month": {
+                                "type": "string"
+                              },
+                              "plannedAmount": {
+                                "type": "number"
+                              },
+                              "cumulativeAmount": {
+                                "type": "number"
+                              },
+                              "projectedMarketValue": {
+                                "type": "number"
+                              }
+                            },
+                            "required": [
+                              "month",
+                              "plannedAmount",
+                              "cumulativeAmount",
+                              "projectedMarketValue"
+                            ],
+                            "additionalProperties": false
+                          }
+                        },
+                        "recentExecutions": {
+                          "type": "array",
+                          "items": {
+                            "type": "object",
+                            "properties": {
+                              "id": {
+                                "type": "string"
+                              },
+                              "assetId": {
+                                "type": "string"
+                              },
+                              "planId": {
+                                "type": "string",
+                                "nullable": true
+                              },
+                              "referenceMonth": {
+                                "type": "string"
+                              },
+                              "investedAmount": {
+                                "type": "number"
+                              },
+                              "executedQuantity": {
+                                "type": "number"
+                              },
+                              "executedUnitPrice": {
+                                "type": "number"
+                              },
+                              "executedAt": {
+                                "type": "string"
+                              }
+                            },
+                            "required": [
+                              "id",
+                              "assetId",
+                              "planId",
+                              "referenceMonth",
+                              "investedAmount",
+                              "executedQuantity",
+                              "executedUnitPrice",
+                              "executedAt"
+                            ],
+                            "additionalProperties": false
+                          }
+                        }
+                      },
+                      "required": [
+                        "summary",
+                        "assets",
+                        "pending",
+                        "projection",
+                        "recentExecutions"
+                      ],
+                      "additionalProperties": false
+                    }
+                  },
+                  "required": [
+                    "dashboard"
+                  ],
+                  "additionalProperties": false
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/me/investments/ai/providers": {
+      "get": {
+        "responses": {
+          "200": {
+            "description": "Default Response"
+          }
+        }
+      }
+    },
+    "/me/investments/ai/chat": {
+      "post": {
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "message": {
+                    "type": "string",
+                    "minLength": 1,
+                    "maxLength": 2000
+                  },
+                  "provider": {
+                    "type": "string",
+                    "enum": [
+                      "groq",
+                      "gemini",
+                      "deepseek"
+                    ]
+                  },
+                  "history": {
+                    "default": [],
+                    "maxItems": 20,
+                    "type": "array",
+                    "items": {
+                      "type": "object",
+                      "properties": {
+                        "role": {
+                          "type": "string",
+                          "enum": [
+                            "user",
+                            "assistant"
+                          ]
+                        },
+                        "content": {
+                          "type": "string"
+                        }
+                      },
+                      "required": [
+                        "role",
+                        "content"
+                      ]
+                    }
+                  },
+                  "image": {
+                    "type": "string"
+                  }
+                },
+                "required": [
+                  "message",
+                  "provider"
+                ]
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "Default Response"
+          }
+        }
+      }
+    },
     "/org": {
       "post": {
         "operationId": "createOrganization",
@@ -3382,7 +4796,10 @@
                                   },
                                   "status": {
                                     "type": "string",
-                                    "enum": ["paid", "pending"]
+                                    "enum": [
+                                      "paid",
+                                      "pending"
+                                    ]
                                   },
                                   "type": {
                                     "type": "string",

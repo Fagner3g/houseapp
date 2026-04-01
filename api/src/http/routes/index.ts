@@ -8,6 +8,7 @@ import {
   getWeekSummaryRoute,
 } from './goals.routes'
 import { healthRoute } from './health.routes'
+import { investmentRoutes } from './investments.routes'
 import { acceptInviteRoute, createInviteRoute, getInvitesRoute } from './invite.routes'
 import { jobsRoutes } from './jobs.routes'
 import {
@@ -55,6 +56,9 @@ export function createRoutes(app: FastifyInstance) {
   app.register(createUserWithInviteRoute)
   app.register(updateUserRoute)
   app.register(updateUserNotificationsRoute)
+
+  // Investments
+  app.register(investmentRoutes)
 
   // Organization
   app.register(createOrgRoute)
