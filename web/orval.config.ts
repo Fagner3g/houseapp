@@ -2,7 +2,10 @@ import { defineConfig } from 'orval'
 
 export default defineConfig({
   api: {
-    input: '../api/swagger.json',
+    input: {
+      target: '../api/swagger.json',
+      parserOptions: { validate: false },
+    },
     output: {
       mode: 'split',
       target: './src/api/generated/api.ts',

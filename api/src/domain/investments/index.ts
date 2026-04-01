@@ -1,0 +1,1 @@
+export { investmentService } from './service'

@@ -39,6 +39,7 @@ export function NavUser({ user }: NavUserProps) {
   const logout = useAuthStore(s => s.logout)
   const { mutateAsync: signOutRequest } = useSignOut()
   const { slug } = useActiveOrganization()
+  const canOpenSettings = Boolean(slug)
 
   const handleLogout = async () => {
     await signOutRequest()
@@ -98,7 +99,13 @@ export function NavUser({ user }: NavUserProps) {
                 <IconNotification />
                 Notifications
               </DropdownMenuItem>
-              <DropdownMenuItem onClick={() => navigate({ to: `/${slug}/settings` })}>
+              <DropdownMenuItem
+                disabled={!canOpenSettings}
+                onClick={() => {
+                  if (!canOpenSettings) return
+                  navigate({ to: `/${slug}/settings` })
+                }}
+              >
                 <IconSettings />
                 Configurações
               </DropdownMenuItem>
