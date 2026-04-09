@@ -215,8 +215,8 @@ function renderOverdue(overdueTransactions, upcomingAlerts, context) {
   const all = [...overdue, ...uniqueAlsoOverdue]
   title.textContent = `Vencidas (${all.length})`
 
-  if (!all.length) { show('overdue-empty'); return }
-  hide('overdue-empty')
+  if (!all.length) { section.classList.add('hidden'); return }
+  section.classList.remove('hidden')
 
   for (const tx of all) {
     const days = tx._days
@@ -246,8 +246,8 @@ function renderUpcoming(upcomingAlerts, context) {
   const upcoming = (upcomingAlerts || []).filter(tx => new Date(tx.dueDate) >= todayMidnight)
   title.textContent = `Próximas (${upcoming.length})`
 
-  if (!upcoming.length) { show('upcoming-empty'); return }
-  hide('upcoming-empty')
+  if (!upcoming.length) { section.classList.add('hidden'); return }
+  section.classList.remove('hidden')
 
   for (const tx of upcoming) {
     const d = tx.daysUntilDue
@@ -257,6 +257,7 @@ function renderUpcoming(upcomingAlerts, context) {
 }
 
 function renderAllTransactions(allTransactions, context) {
+  const section = document.getElementById('section-all')
   const list  = document.getElementById('list-all')
   const title = document.getElementById('all-title')
 
@@ -265,8 +266,8 @@ function renderAllTransactions(allTransactions, context) {
   const txs = allTransactions || []
   title.textContent = `Todas do mês (${txs.length})`
 
-  if (!txs.length) { show('all-empty'); return }
-  hide('all-empty')
+  if (!txs.length) { section.classList.add('hidden'); return }
+  section.classList.remove('hidden')
 
   for (const tx of txs) {
     list.appendChild(renderTransactionItem(tx, context, fmtDate(tx.dueDate)))
@@ -274,6 +275,7 @@ function renderAllTransactions(allTransactions, context) {
 }
 
 function renderInvestments(reminders) {
+  const section = document.getElementById('section-investments')
   const list = document.getElementById('list-investments')
   const title = document.getElementById('investments-title')
 
@@ -282,10 +284,10 @@ function renderInvestments(reminders) {
   title.textContent = `Aportes do mês (${items.length})`
 
   if (!items.length) {
-    show('investments-empty')
+    section.classList.add('hidden')
     return
   }
-  hide('investments-empty')
+  section.classList.remove('hidden')
 
   for (const item of items) {
     const li = document.createElement('li')
