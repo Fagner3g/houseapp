@@ -4052,20 +4052,18 @@
             "required": false
           },
           {
-            "schema": {
-              "default": "2026-03-01T03:00:00.000Z"
-            },
+            "schema": {},
             "in": "query",
             "name": "dateFrom",
-            "required": false
+            "required": false,
+            "description": "Defaults to the current month start when omitted."
           },
           {
-            "schema": {
-              "default": "2026-04-01T02:59:59.999Z"
-            },
+            "schema": {},
             "in": "query",
             "name": "dateTo",
-            "required": false
+            "required": false,
+            "description": "Defaults to the current month end when omitted."
           },
           {
             "schema": {

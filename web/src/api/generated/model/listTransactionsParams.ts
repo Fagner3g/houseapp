@@ -12,7 +12,13 @@ export type ListTransactionsParams = {
   tags?: string[];
   tagFilterMode?: ListTransactionsTagFilterMode;
   type?: ListTransactionsType;
+  /**
+   * Defaults to the current month start when omitted.
+   */
   dateFrom?: unknown;
+  /**
+   * Defaults to the current month end when omitted.
+   */
   dateTo?: unknown;
   /**
    * @minimum -9007199254740991
