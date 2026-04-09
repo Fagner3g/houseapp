@@ -1,3 +1,4 @@
+import dayjs from 'dayjs'
 import type { FastifyReply, FastifyRequest } from 'fastify'
 
 import { listTransactionsService } from '@/domain/transactions/list-transactions'
@@ -21,14 +22,17 @@ export async function listTransactionsController(request: Req, reply: FastifyRep
     tags,
     tagFilterMode,
     type,
-    dateFrom,
-    dateTo,
+    dateFrom: rawDateFrom,
+    dateTo: rawDateTo,
     page,
     perPage,
     responsibleUserId,
     payToId,
     onlyMarked,
   } = request.query
+
+  const dateFrom = rawDateFrom ?? dayjs().startOf('month').toDate()
+  const dateTo = rawDateTo ?? dayjs().endOf('month').toDate()
 
   try {
     const payload = await listTransactionsService({

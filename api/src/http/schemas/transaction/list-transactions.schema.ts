@@ -1,4 +1,3 @@
-import dayjs from 'dayjs'
 import z from 'zod'
 
 import { transactionResponseSchema } from './shared/transaction-response'
@@ -12,8 +11,14 @@ export const listTransactionSchema = {
     tags: z.array(z.string()).optional(),
     tagFilterMode: z.enum(['any', 'all']).default('any'),
     type: z.enum(['all', 'income', 'expense']).default('all'),
-    dateFrom: z.coerce.date().default(dayjs().startOf('month').toDate()),
-    dateTo: z.coerce.date().default(dayjs().endOf('month').toDate()),
+    dateFrom: z.coerce
+      .date()
+      .optional()
+      .describe('Defaults to the current month start when omitted.'),
+    dateTo: z.coerce
+      .date()
+      .optional()
+      .describe('Defaults to the current month end when omitted.'),
     page: z.coerce.number().int().default(1),
     perPage: z.coerce.number().int().default(10),
     responsibleUserId: z.string().optional(),

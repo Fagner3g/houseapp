@@ -304,7 +304,11 @@ export async function getTransactionReports(orgId: string, userId: string, refer
       payToEmail: r.payToEmail,
       installmentsTotal: r.installmentsTotal ?? null,
       status: r.status as 'paid' | 'pending',
-      daysUntilDue: Math.ceil((+r.dueDate - +today) / (1000 * 60 * 60 * 24)),
+      daysUntilDue: (() => {
+        const d = new Date(r.dueDate)
+        d.setUTCHours(0, 0, 0, 0)
+        return Math.ceil((+d - +today) / (1000 * 60 * 60 * 24))
+      })(),
       alertType: 'warning' as 'warning',
       type: getContextualizedTransactionType(r.type as 'income' | 'expense', r.ownerId, userId),
     }))
