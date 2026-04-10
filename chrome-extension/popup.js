@@ -250,7 +250,9 @@ function renderUpcoming(upcomingAlerts, context) {
   section.classList.remove('hidden')
 
   for (const tx of upcoming) {
-    const d = tx.daysUntilDue
+    const due = new Date(tx.dueDate)
+    due.setHours(0, 0, 0, 0)
+    const d = Math.round((+due - +todayMidnight) / (1000 * 60 * 60 * 24))
     const meta = d === 0 ? 'hoje' : d === 1 ? 'amanhã' : `${d} dias`
     list.appendChild(renderTransactionItem(tx, context, meta))
   }
