@@ -38,12 +38,16 @@ export async function materializeOccurrences(
 
   const existingSet = new Set(existing.map(o => +o.dueDate))
 
-  let next = new Date(rule.startDate)
-  let index = 1
+  let next: Date
+  let index: number
+
   if (existing.length > 0) {
     index = existing.length + 1
     const last = existing[existing.length - 1].dueDate
     next = addPeriod(last, rule.recurrenceType, rule.recurrenceInterval ?? 1)
+  } else {
+    index = 1
+    next = addPeriod(new Date(rule.startDate), rule.recurrenceType, rule.recurrenceInterval ?? 1)
   }
 
   const toInsert: (typeof transactionOccurrences.$inferInsert)[] = []

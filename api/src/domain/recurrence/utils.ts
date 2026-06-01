@@ -19,6 +19,25 @@ export function addPeriod(d: Date, type: RecurrenceType, interval: number): Date
   return date
 }
 
+export function subPeriod(d: Date, type: RecurrenceType, interval: number): Date {
+  const date = new Date(d)
+  switch (type) {
+    case 'weekly':
+      date.setDate(date.getDate() - 7 * interval)
+      break
+    case 'monthly':
+      date.setMonth(date.getMonth() - interval)
+      break
+    case 'yearly':
+      date.setFullYear(date.getFullYear() - interval)
+      break
+    default:
+      date.setDate(date.getDate() - interval)
+      break
+  }
+  return date
+}
+
 export function occurrencesBetween(
   start: Date,
   end: Date,
