@@ -10,8 +10,9 @@ export type AlertTransaction = {
   seriesId: string
   title: string
   amountCents: number
+  valuePaidCents: number | null
   dueDate: Date
-  status: 'paid' | 'pending'
+  status: 'paid' | 'pending' | 'partial'
   installmentIndex: number | null
   installmentsTotal: number | null
   organizationSlug: string
@@ -43,6 +44,7 @@ export async function fetchUpcomingTransactionsForAlerts(
       seriesId: transactionOccurrences.seriesId,
       title: transactionSeries.title,
       amount: transactionOccurrences.amount,
+      valuePaid: transactionOccurrences.valuePaid,
       dueDate: transactionOccurrences.dueDate,
       status: transactionOccurrences.status,
       installmentIndex: transactionOccurrences.installmentIndex,
@@ -78,7 +80,10 @@ export async function fetchUpcomingTransactionsForAlerts(
             ? inArray(transactionSeries.organizationId, orgIds)
             : sql`true`
           : eq(transactionSeries.organizationId, orgIds),
-        eq(transactionOccurrences.status, 'pending'),
+        or(
+          eq(transactionOccurrences.status, 'pending'),
+          eq(transactionOccurrences.status, 'partial')
+        ),
         gte(transactionOccurrences.dueDate, today),
         lte(transactionOccurrences.dueDate, fourDaysFromNow),
         eq(userOrganizations.notificationsEnabled, true), // Só usuários com notificações habilitadas
@@ -101,8 +106,9 @@ export async function fetchUpcomingTransactionsForAlerts(
     seriesId: r.seriesId,
     title: r.title,
     amountCents: Number(r.amount),
+    valuePaidCents: r.valuePaid ? Number(r.valuePaid) : null,
     dueDate: r.dueDate,
-    status: r.status as 'paid' | 'pending',
+    status: r.status as 'paid' | 'pending' | 'partial',
     installmentIndex: r.installmentIndex ?? null,
     installmentsTotal: r.installmentsTotal ?? null,
     organizationSlug: r.organizationSlug,

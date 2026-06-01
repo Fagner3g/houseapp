@@ -62,32 +62,37 @@ Comece sempre com saudação: "Olá, *nome*! Aqui é o HouseBot. 🏠" (ou sem n
 Use os dados fornecidos. Não invente nada. Seja visual e organizado.`
 
 export function buildTransactionAlertsPrompt(data: TransactionAlertsData): string {
+  const formatItem = (t: TransactionItem) => {
+    const parcel = t.installmentInfo ? ` (${t.installmentInfo})` : ''
+    const partial = t.isPartial
+      ? ` [parcial — restante: ${formatBRL(t.amount)}${t.originalAmount ? ` de ${formatBRL(t.originalAmount)}` : ''}]`
+      : ''
+    return `• *${t.title}*${parcel}${partial}\n  ${formatBRL(t.amount)}`
+  }
+
   const criticalList = data.critical
     .map(t => {
-      const parcel = t.installmentInfo ? ` (${t.installmentInfo})` : ''
       const label = t.daysUntilDue === 0 ? 'HOJE' : 'AMANHÃ'
-      return `• *${t.title}*${parcel}\n  ${formatBRL(t.amount)} — ${label} (${t.dueDate})`
+      return `${formatItem(t)} — ${label} (${t.dueDate})`
     })
     .join('\n\n')
 
   const reminderList = data.reminders
-    .map(t => {
-      const parcel = t.installmentInfo ? ` (${t.installmentInfo})` : ''
-      return `• *${t.title}*${parcel}\n  ${formatBRL(t.amount)} — em ${t.daysUntilDue} dias (${t.dueDate})`
-    })
+    .map(t => `${formatItem(t)} — em ${t.daysUntilDue} dias (${t.dueDate})`)
     .join('\n\n')
 
   const totalAmount = [...data.critical, ...data.reminders].reduce((sum, t) => sum + t.amount, 0)
+  const partialCount = [...data.critical, ...data.reminders].filter(t => t.isPartial).length
 
   return `${BASE_INSTRUCTIONS}
 
 Relatório: *Alertas de vencimento* — transações nos próximos 4 dias.
 ${data.personName ? `\nDestinatário: *${data.personName}*` : ''}
-${data.critical.length + data.reminders.length} transações — Total: ${formatBRL(totalAmount)}
+${data.critical.length + data.reminders.length} transações — Total: ${formatBRL(totalAmount)}${partialCount > 0 ? ` — ${partialCount} parcial(is)` : ''}
 
 ${data.critical.length > 0 ? 'CRÍTICOS (HOJE/AMANHÃ)\n' + criticalList + '\n\n' : ''}${data.reminders.length > 0 ? 'PRÓXIMOS (2-4 dias)\n' + reminderList + '\n' : ''}${data.critical.length === 0 && data.reminders.length === 0 ? 'Nenhum vencimento nos próximos 4 dias.' : ''}
 
-Formato para celular: cada item em 2 linhas (título em negrito, depois valor/data). Itens separados por linha em branco. Resumo final curto com recomendação.`
+Formato para celular: cada item em 2 linhas (título em negrito, depois valor/data). Itens separados por linha em branco. Resumo final curto com recomendação. Destacar transações marcadas como "[parcial]" pois já tiveram algum pagamento. O valor mostrado é sempre o restante a pagar.`
 }
 
 export function buildOverdueAlertsPrompt(data: OverdueAlertsData): string {
