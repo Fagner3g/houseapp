@@ -39,11 +39,11 @@ function getViewingContext(year, month) {
 }
 
 /**
- * A transaction can only be paid in past or current context, and only if pending.
+ * A transaction can only be paid in past or current context, and only if pending or partial.
  */
 function canPayTransaction(tx, context) {
   if (context === 'future') return false
-  return tx.status === 'pending'
+  return tx.status === 'pending' || tx.status === 'partial'
 }
 
 // ── State ─────────────────────────────────────────────────────────────────────
@@ -125,16 +125,20 @@ function renderTransactionItem(tx, context, metaLabel) {
   li.dataset.id = tx.id
 
   if (tx.status === 'paid') li.classList.add('paid')
+  if (tx.status === 'partial') li.classList.add('partial')
 
   const canPay = canPayTransaction(tx, context)
 
   let actionHtml = ''
   if (canPay) {
-    actionHtml = `<button class="btn-pay" data-id="${tx.id}">Pagar</button>`
+    const label = tx.status === 'partial' ? 'Pagar resto' : 'Pagar'
+    actionHtml = `<button class="btn-pay" data-id="${tx.id}">${label}</button>`
   } else if (context === 'future') {
     actionHtml = '<span class="badge badge-future">Prevista</span>'
   } else if (tx.status === 'paid') {
     actionHtml = '<span class="badge badge-paid">Paga</span>'
+  } else if (tx.status === 'partial') {
+    actionHtml = '<span class="badge badge-partial">Parcial</span>'
   }
 
   li.innerHTML = `
@@ -376,8 +380,8 @@ async function refreshBadgeAllOrgs() {
   const newCache = {}
 
   for (const orgData of results.filter(Boolean)) {
-    totalOverdue  += (orgData.reports.overdueTransactions?.transactions || []).filter(t => t.status === 'pending').length
-    totalUpcoming += (orgData.reports.upcomingAlerts?.transactions      || []).filter(t => t.status === 'pending').length
+    totalOverdue  += (orgData.reports.overdueTransactions?.transactions || []).filter(t => t.status === 'pending' || t.status === 'partial').length
+    totalUpcoming += (orgData.reports.upcomingAlerts?.transactions      || []).filter(t => t.status === 'pending' || t.status === 'partial').length
     newCache[orgData.slug] = orgData.reports
   }
 
@@ -401,8 +405,8 @@ async function updateBadgeFromReports(reports) {
   let totalOverdue = 0
   let totalUpcoming = 0
   for (const r of Object.values(allOrgs)) {
-    totalOverdue  += (r.overdueTransactions?.transactions || []).filter(t => t.status === 'pending').length
-    totalUpcoming += (r.upcomingAlerts?.transactions      || []).filter(t => t.status === 'pending').length
+    totalOverdue  += (r.overdueTransactions?.transactions || []).filter(t => t.status === 'pending' || t.status === 'partial').length
+    totalUpcoming += (r.upcomingAlerts?.transactions      || []).filter(t => t.status === 'pending' || t.status === 'partial').length
   }
 
   const totalInvestments = state.investments?.summary?.total ?? state.investments?.items?.length ?? 0
@@ -438,11 +442,16 @@ _amountInput.addEventListener('input', (e) => {
 let _payResolve = null
 
 function openPayModal(tx) {
-  // Default date = due date; user can switch to today via button
   const dueDateStr = tx.dueDate ? tx.dueDate.split('T')[0] : new Date().toISOString().split('T')[0]
   document.getElementById('pay-date').value = dueDateStr
-  // Pre-fill amount with currency mask
-  const centavos = Math.round(tx.amount * 100)
+
+  // For partial transactions, pre-fill with remaining amount
+  let amountToFill = tx.amount
+  if (tx.status === 'partial' && tx.valuePaid != null) {
+    const remaining = tx.amount - tx.valuePaid / 100
+    amountToFill = remaining > 0 ? remaining : tx.amount
+  }
+  const centavos = Math.round(amountToFill * 100)
   document.getElementById('pay-amount').value = maskCurrency(String(centavos))
   document.getElementById('pay-modal').classList.remove('hidden')
 
@@ -476,56 +485,57 @@ async function handlePay(txId, liEl, tx) {
   btn.textContent = '...'
 
   try {
-    // If amount changed, update the transaction first before marking as paid
-    const amountChanged = Math.abs(result.paidAmount - tx.amount) >= 0.01
-    if (amountChanged && tx.seriesId) {
-      await apiFetch(`/org/${state.orgSlug}/transaction/${txId}`, {
-        method: 'PATCH',
-        body: JSON.stringify({
-          type: tx.type,
-          title: tx.title,
-          amount: result.paidAmount.toFixed(2),
-          serieId: tx.seriesId,
-          dueDate: tx.dueDate,
-          payToEmail: tx.payToEmail || undefined,
-          updateSeries: false,
-        }),
-      })
+    // If amount changed from original and it's not partial (partial amount is always the remaining)
+    const referenceAmount = tx.status === 'partial' && tx.valuePaid != null
+      ? tx.amount - tx.valuePaid / 100
+      : tx.amount
+    const amountChanged = Math.abs(result.paidAmount - referenceAmount) >= 0.01
+
+    // Always send paidAmount for partial transactions (the additional amount)
+    const body = {
+      paidAt: result.paidAt,
+    }
+    if (tx.status === 'partial' || amountChanged) {
+      body.paidAmount = result.paidAmount
     }
 
     await apiFetch(`/org/${state.orgSlug}/transaction/${txId}/pay`, {
       method: 'PATCH',
-      body: JSON.stringify(result),
+      body: JSON.stringify(body),
     })
+
     liEl.classList.add('paid')
     btn.remove()
 
-    // If amount changed, update the displayed value in this item
-    if (amountChanged) {
-      const amountEl = liEl.querySelector('.tx-amount')
-      if (amountEl) amountEl.textContent = fmt(result.paidAmount)
-    }
+    // Determine new amount to display
+    const totalAmount = tx.amount
+    const wasPartial = tx.status === 'partial'
+    const previousPaid = wasPartial && tx.valuePaid != null ? tx.valuePaid / 100 : 0
+    const newPaidTotal = previousPaid + result.paidAmount
 
-    // Update this tx as paid in the in-memory state so badge recalc is correct
+    // Update in-memory state
     for (const list of [
       state.reports?.overdueTransactions?.transactions,
       state.reports?.upcomingAlerts?.transactions,
       state.reports?.allTransactions,
     ]) {
       const found = (list || []).find(t => t.id === txId)
-      if (found) found.status = 'paid'
+      if (found) {
+        if (Math.abs(newPaidTotal - totalAmount) < 0.01) {
+          found.status = 'paid'
+        } else {
+          found.status = 'partial'
+          found.valuePaid = Math.round(newPaidTotal * 100)
+        }
+      }
     }
 
     await updateBadgeFromReports(state.reports)
 
-    // Mirror the paid state (and new amount) in "Todas do mês" if the same tx is there
+    // Mirror in "Todas do mês" list
     const twin = document.querySelector(`#list-all [data-id="${txId}"]`)
     if (twin) {
       twin.classList.add('paid')
-      if (amountChanged) {
-        const twinAmount = twin.querySelector('.tx-amount')
-        if (twinAmount) twinAmount.textContent = fmt(result.paidAmount)
-      }
       const twinBtn = twin.querySelector('.btn-pay')
       if (twinBtn) twinBtn.replaceWith(Object.assign(document.createElement('span'), {
         className: 'badge badge-paid',
@@ -535,7 +545,8 @@ async function handlePay(txId, liEl, tx) {
   } catch (err) {
     console.error('[HouseApp] pay error:', err, err.body)
     btn.disabled = false
-    btn.textContent = 'Pagar'
+    const label = tx.status === 'partial' ? 'Pagar resto' : 'Pagar'
+    btn.textContent = label
     alert(`Erro ${err.status || ''}: ${err.body || err.message}`)
   }
 }

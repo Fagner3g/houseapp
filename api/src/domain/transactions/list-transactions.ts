@@ -62,7 +62,10 @@ export async function listTransactionsService({
     lte(transactionOccurrences.dueDate, dateTo)
   )
   const overdueAndUnpaid = and(
-    eq(transactionOccurrences.status, 'pending'),
+    or(
+      eq(transactionOccurrences.status, 'pending'),
+      eq(transactionOccurrences.status, 'partial')
+    ),
     lt(transactionOccurrences.dueDate, new Date())
   )
 

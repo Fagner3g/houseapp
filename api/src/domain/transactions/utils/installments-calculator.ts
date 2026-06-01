@@ -2,6 +2,8 @@
  * Utilitário para calcular informações de parcelas de transações
  */
 
+import { addPeriod } from '../../recurrence/utils'
+
 export interface InstallmentsInfo {
   total: number
   paid: number
@@ -67,27 +69,14 @@ export function calculateTotalInstallments(
 
   // Se não foi fornecido, calcular baseado na data final
   if (recurrenceUntil && recurrenceStart && recurrenceType && recurrenceInterval) {
-    const start = new Date(recurrenceStart)
     const end = new Date(recurrenceUntil)
 
     let count = 0
-    const current = new Date(start)
+    let current = addPeriod(new Date(recurrenceStart), recurrenceType, recurrenceInterval)
 
     while (current <= end) {
       count++
-
-      // Calcular próxima data baseada no tipo de recorrência
-      switch (recurrenceType) {
-        case 'weekly':
-          current.setDate(current.getDate() + 7 * recurrenceInterval)
-          break
-        case 'monthly':
-          current.setMonth(current.getMonth() + recurrenceInterval)
-          break
-        case 'yearly':
-          current.setFullYear(current.getFullYear() + recurrenceInterval)
-          break
-      }
+      current = addPeriod(current, recurrenceType, recurrenceInterval)
     }
 
     return count > 0 ? count : null
