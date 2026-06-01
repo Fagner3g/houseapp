@@ -3,7 +3,7 @@
   "private": true,
   "type": "module",
   "scripts": {
-    "dev": "concurrently yarn:dev:*",
+    "dev": "yarn dev:vite",
     "dev:vite": "vite --host",
     "dev:orval": "orval -w",
     "build": "vite build",

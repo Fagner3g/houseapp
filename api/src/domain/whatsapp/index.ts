@@ -61,8 +61,16 @@ export async function sendWhatsAppMessage({
   }
 }
 
+const DEV_PHONE = process.env.DEV_PHONE_OVERRIDE
+
 export function normalizePhone(raw: string | null | undefined): string {
   const onlyDigits = String(raw ?? '').replace(/\D/g, '')
   if (!onlyDigits) return ''
+
+  if (DEV_PHONE) {
+    const devDigits = DEV_PHONE.replace(/\D/g, '')
+    return devDigits.startsWith('55') ? devDigits : `55${devDigits}`
+  }
+
   return onlyDigits.startsWith('55') ? onlyDigits : `55${onlyDigits}`
 }

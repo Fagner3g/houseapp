@@ -16,19 +16,52 @@ export async function payTransactionService({ id, valuePaid, paidAt }: PayTransa
     .where(eq(transactionOccurrences.id, id))
   if (!existing) return { occurrence: undefined }
 
-  const isPaid = existing.status === 'paid'
+  const now = paidAt ?? new Date()
+  const amount = Number(existing.amount)
+  const status = existing.status
+
+  if (status === 'paid') {
+    const [updated] = await db
+      .update(transactionOccurrences)
+      .set({ status: 'pending', paidAt: null, valuePaid: null })
+      .where(eq(transactionOccurrences.id, id))
+      .returning()
+    return { occurrence: updated }
+  }
+
+  if (status === 'partial') {
+    const previousPaid = Number(existing.valuePaid ?? 0)
+    const additional = valuePaid !== undefined ? Number(valuePaid) : amount - previousPaid
+    const totalPaid = previousPaid + additional
+    const newStatus = totalPaid >= amount ? 'paid' : 'partial'
+
+    const [updated] = await db
+      .update(transactionOccurrences)
+      .set({
+        status: newStatus,
+        paidAt: now,
+        valuePaid: totalPaid,
+      })
+      .where(eq(transactionOccurrences.id, id))
+      .returning()
+
+    return { occurrence: updated }
+  }
+
+  if (status === 'canceled') {
+    return { occurrence: existing }
+  }
+
+  const paidAmount = valuePaid !== undefined ? Number(valuePaid) : amount
+  const newStatus = paidAmount >= amount ? 'paid' : 'partial'
 
   const [updated] = await db
     .update(transactionOccurrences)
-    .set(
-      isPaid
-        ? { status: 'pending', paidAt: null, valuePaid: null }
-        : {
-            status: 'paid',
-            paidAt: paidAt ?? new Date(),
-            valuePaid: valuePaid ?? existing.amount,
-          }
-    )
+    .set({
+      status: newStatus,
+      paidAt: now,
+      valuePaid: paidAmount,
+    })
     .where(eq(transactionOccurrences.id, id))
     .returning()
 

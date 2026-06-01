@@ -2,7 +2,7 @@ import z from 'zod'
 
 export const payTransactionSchema = {
   tags: ['Transaction'],
-  description: 'Mark current installment as paid',
+  description: 'Mark current installment as paid, with optional partial payment amount',
   operationId: 'payTransaction',
   params: z.object({ slug: z.string(), id: z.string() }),
   body: z

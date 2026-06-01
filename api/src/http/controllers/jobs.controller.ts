@@ -14,6 +14,11 @@ import {
   startJob,
   stopAllJobs,
   stopJob,
+  getExecutionHistory,
+  getLastExecution,
+  computeNextRun,
+  humanizeSchedule,
+  JOB_CONFIGS,
 } from '@/jobs'
 import { logger } from '@/lib/logger'
 
@@ -286,38 +291,36 @@ export const sendMonthlySummaryController: RouteHandler<SendMonthlySummaryRoute>
       return reply.status(400).send({ error: 'Bad Request', message: 'Telefone do usuário vazio' })
     }
 
-    // Montar mensagem de resumo com KPIs e principais categorias
+    // Formatar relatório com IA
+    const { formatReport } = await import('@/domain/ai/report-formatter')
     const k = reports.reports.kpis
-    const formatBRL = (value?: number): string => {
-      if (typeof value !== 'number') return '—'
-      return value.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' })
-    }
 
     const now = new Date()
     const headerMonth = now.toLocaleDateString('pt-BR', { month: 'long', year: 'numeric' })
 
-    const lines: string[] = []
-    lines.push(`📊 Resumo de ${headerMonth}`)
-    lines.push('')
-
-    const receitasPagas = k?.receivedTotal ?? 0
-    const receitasAReceber = k?.toReceiveTotal ?? 0
-    const receitasRegistradas = k?.incomeRegistered ?? 0
-    const despesasRegistradas = k?.expenseRegistered ?? 0
-    const despesasEmAberto = k?.toSpendTotal ?? 0
-    const saldoMes = receitasRegistradas - despesasRegistradas
-
-    lines.push(
-      `• Receitas: ${formatBRL(receitasRegistradas)} (pagas ${formatBRL(
-        receitasPagas
-      )} | em aberto ${formatBRL(receitasAReceber)})`
+    const overdueSummary = reports.reports.overdueTransactions
+    const overdueTotal = overdueSummary.transactions.reduce(
+      (sum: number, t: { amount: number }) => sum + t.amount,
+      0
     )
-    lines.push(
-      `• Despesas: ${formatBRL(despesasRegistradas)} (em aberto ${formatBRL(despesasEmAberto)})`
-    )
-    lines.push(`• Saldo do mês (Receitas − Despesas): ${formatBRL(saldoMes)}`)
 
-    const message = lines.join('\n')
+    const message = await formatReport('monthly-summary', {
+      personName: userRow?.name ?? undefined,
+      headerMonth,
+      kpis: {
+        incomeRegistered: k?.incomeRegistered ?? 0,
+        expenseRegistered: k?.expenseRegistered ?? 0,
+        receivedTotal: k?.receivedTotal ?? 0,
+        toReceiveTotal: k?.toReceiveTotal ?? 0,
+        toSpendTotal: k?.toSpendTotal ?? 0,
+      },
+      balance: (k?.incomeRegistered ?? 0) - (k?.expenseRegistered ?? 0),
+      topExpenses: reports.reports.counterparties.toPay.slice(0, 5),
+      topReceivables: reports.reports.counterparties.toReceive.slice(0, 5),
+      overdueCount: overdueSummary.summary.total,
+      overdueTotal,
+    })
+
     const result = await sendWhatsAppMessage({ phone, message })
 
     if (result.status === 'error') {
@@ -354,5 +357,52 @@ export async function previewOverdueAlertsController(request: FastifyRequest, re
       details: error instanceof Error ? error.message : String(error),
       timestamp: new Date().toISOString(),
     })
+  }
+}
+
+export async function getJobHistoryController(request: FastifyRequest, reply: FastifyReply) {
+  try {
+    const { jobKey } = request.params as { jobKey: string }
+
+    if (!jobExists(jobKey)) {
+      return reply.status(404).send({ error: 'Job não encontrado', message: `Job '${jobKey}' não existe` })
+    }
+
+    const history = getExecutionHistory(jobKey, 10)
+    const lastRun = getLastExecution(jobKey)
+
+    return reply.status(200).send({
+      jobKey,
+      lastRun: lastRun ? { ...lastRun, timestamp: lastRun.timestamp.toISOString() } : null,
+      history: history.map(h => ({ ...h, timestamp: h.timestamp.toISOString() })),
+    })
+  } catch (error) {
+    logger.error({ error }, 'Erro ao obter histórico do job')
+    return reply.status(500).send({ error: 'Internal Server Error', message: 'Failed to get job history' })
+  }
+}
+
+export async function getJobNextRunController(request: FastifyRequest, reply: FastifyReply) {
+  try {
+    const { jobKey } = request.params as { jobKey: string }
+
+    if (!jobExists(jobKey)) {
+      return reply.status(404).send({ error: 'Job não encontrado', message: `Job '${jobKey}' não existe` })
+    }
+
+    const config = Object.values(JOB_CONFIGS).find(c => c.key === jobKey)
+    const nextRun = config ? computeNextRun(config.schedule, config.timezone) : 'Indisponível'
+    const scheduleHuman = config ? humanizeSchedule(config.schedule) : jobKey
+
+    return reply.status(200).send({
+      jobKey,
+      nextRun,
+      schedule: config?.schedule ?? '',
+      scheduleHuman,
+      timezone: config?.timezone ?? '',
+    })
+  } catch (error) {
+    logger.error({ error }, 'Erro ao obter próxima execução')
+    return reply.status(500).send({ error: 'Internal Server Error', message: 'Failed to get next run' })
   }
 }

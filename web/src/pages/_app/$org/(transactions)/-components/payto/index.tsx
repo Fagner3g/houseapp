@@ -67,8 +67,8 @@ export function PayToTransactions({ transactions, onTransactionClick }: Props) {
   }
 
   const getActualStatus = (status: string, dueDate: string) => {
-    // Se já está pago ou cancelado, mantém o status
-    if (status === 'paid' || status === 'canceled') {
+    // Se já está pago, parcial ou cancelado, mantém o status
+    if (status === 'paid' || status === 'partial' || status === 'canceled') {
       return status
     }
 
@@ -91,6 +91,8 @@ export function PayToTransactions({ transactions, onTransactionClick }: Props) {
     switch (actualStatus) {
       case 'paid':
         return 'bg-green-100 text-green-800 border-green-200'
+      case 'partial':
+        return 'bg-amber-100 text-amber-800 border-amber-200'
       case 'pending':
         return 'bg-yellow-100 text-yellow-800 border-yellow-200'
       case 'overdue':
@@ -108,6 +110,8 @@ export function PayToTransactions({ transactions, onTransactionClick }: Props) {
     switch (actualStatus) {
       case 'paid':
         return 'Pago'
+      case 'partial':
+        return 'Parcial'
       case 'pending':
         return 'Pendente'
       case 'overdue':

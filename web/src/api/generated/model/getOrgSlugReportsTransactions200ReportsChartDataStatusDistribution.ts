@@ -3,12 +3,13 @@
  * Do not edit manually.
  * HouseApp API
  * API for HouseApp
- * OpenAPI spec version: 1.0.1
+ * OpenAPI spec version: 1.0.2
  */
 
 export type GetOrgSlugReportsTransactions200ReportsChartDataStatusDistribution =
   {
     paid: number;
     pending: number;
+    partial: number;
     overdue: number;
   };

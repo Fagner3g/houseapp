@@ -3,7 +3,7 @@
  * Do not edit manually.
  * HouseApp API
  * API for HouseApp
- * OpenAPI spec version: 1.0.1
+ * OpenAPI spec version: 1.0.2
  */
 
 export type ListTransactions200TransactionsItemStatus =
@@ -13,5 +13,6 @@ export type ListTransactions200TransactionsItemStatus =
 export const ListTransactions200TransactionsItemStatus = {
   pending: "pending",
   paid: "paid",
+  partial: "partial",
   canceled: "canceled",
 } as const;

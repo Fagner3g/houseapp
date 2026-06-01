@@ -47,8 +47,9 @@ export function mapOverdueToListItem(
     amount: String(t.amount),
     dueDate: t.dueDate,
     paidAt: null,
-    status: 'pending',
+    status: (t as any).status || 'pending',
     overdueDays: (t as any).overdueDays ?? 0,
+    valuePaid: (t as any).valuePaid ?? null,
     tags: [],
     installmentsTotal: null,
     installmentsPaid: null,
@@ -105,7 +106,8 @@ export function getDrawerContext(
 ): SerializedTransactionData {
   const isEditMode = !!transaction
   const isOwner = transaction?.ownerId === currentUserId
-  const isPaid = transaction?.status === 'paid'
+  const isPaid = transaction?.status === 'paid' || transaction?.status === 'partial'
+  const isPartial = transaction?.status === 'partial'
   const isReadOnly = isEditMode && !isOwner
 
   // Títulos e descrições baseados no estado
@@ -113,7 +115,10 @@ export function getDrawerContext(
   let description: string
 
   if (isEditMode) {
-    if (isPaid) {
+    if (isPartial) {
+      title = 'Pagamento parcial'
+      description = 'Parte do valor já foi pago. Continue o pagamento ou cancele.'
+    } else if (transaction?.status === 'paid') {
       title = 'Transação paga'
       description = 'Transações pagas não podem ser editadas, mas o status pode ser alterado.'
     } else {

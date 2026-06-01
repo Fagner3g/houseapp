@@ -13,6 +13,8 @@ import {
   startJobController,
   stopAllJobsController,
   stopJobController,
+  getJobHistoryController,
+  getJobNextRunController,
 } from '../controllers/jobs.controller'
 import { authenticateUserHook } from '../hooks/authenticate-user'
 import { verifyOrgAccessHook } from '../hooks/verify-user-belongs-to-org'
@@ -346,5 +348,65 @@ export async function jobsRoutes(app: FastifyInstance) {
       },
     },
     sendMonthlySummaryController
+  )
+
+  // Histórico de execuções de um job
+  app.get(
+    '/jobs/:jobKey/history',
+    {
+      onRequest: [authenticateUserHook],
+      schema: {
+        tags: ['Jobs'],
+        summary: 'Retorna o histórico de execuções de um job',
+        security: [{ bearerAuth: [] }],
+        params: z.object({ jobKey: z.string() }),
+        response: {
+          200: z.object({
+            jobKey: z.string(),
+            lastRun: z.object({
+              timestamp: z.string(),
+              success: z.boolean(),
+              processed: z.number(),
+              errors: z.number(),
+              duration: z.number(),
+            }).nullable(),
+            history: z.array(z.object({
+              timestamp: z.string(),
+              success: z.boolean(),
+              processed: z.number(),
+              errors: z.number(),
+              duration: z.number(),
+            })),
+          }),
+          404: ErrorResponseSchema,
+        },
+      },
+    },
+    getJobHistoryController
+  )
+
+  // Próxima execução de um job
+  app.get(
+    '/jobs/:jobKey/next-run',
+    {
+      onRequest: [authenticateUserHook],
+      schema: {
+        tags: ['Jobs'],
+        summary: 'Retorna a próxima execução de um job',
+        security: [{ bearerAuth: [] }],
+        params: z.object({ jobKey: z.string() }),
+        response: {
+          200: z.object({
+            jobKey: z.string(),
+            nextRun: z.string(),
+            schedule: z.string(),
+            scheduleHuman: z.string(),
+            timezone: z.string(),
+          }),
+          404: ErrorResponseSchema,
+        },
+      },
+    },
+    getJobNextRunController
   )
 }

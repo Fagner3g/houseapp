@@ -17,7 +17,9 @@ export function PaySelected({ table }: Props) {
 
   if (selected === 0) return null
 
-  const allPaid = rows.every(row => row.original.status === 'paid')
+  const allPaid = rows.every(
+    row => row.original.status === 'paid' || row.original.status === 'partial'
+  )
   const selectedTransactions = rows.map(row => row.original)
 
   return (

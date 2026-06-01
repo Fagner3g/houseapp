@@ -3,6 +3,7 @@ import { Cell, Pie, PieChart, ResponsiveContainer, Tooltip } from 'recharts'
 interface StatusDistribution {
   paid: number
   pending: number
+  partial: number
   overdue: number
 }
 
@@ -12,12 +13,14 @@ interface StatusDistributionChartProps {
 
 const STATUS_COLORS = {
   paid: '#10b981', // emerald
-  pending: '#f59e0b', // amber
+  partial: '#f59e0b', // amber
+  pending: '#fbbf24', // yellow
   overdue: '#ef4444', // red
 }
 
 const STATUS_LABELS = {
   paid: 'Pago',
+  partial: 'Parcial',
   pending: 'Pendente',
   overdue: 'Vencido',
 }
@@ -25,6 +28,7 @@ const STATUS_LABELS = {
 export function StatusDistributionChart({ data }: StatusDistributionChartProps) {
   const chartData = [
     { name: 'paid', value: data.paid, label: STATUS_LABELS.paid },
+    { name: 'partial', value: data.partial, label: STATUS_LABELS.partial },
     { name: 'pending', value: data.pending, label: STATUS_LABELS.pending },
     { name: 'overdue', value: data.overdue, label: STATUS_LABELS.overdue },
   ].filter(item => item.value > 0)

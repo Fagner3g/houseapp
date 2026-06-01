@@ -51,23 +51,28 @@ export function UpcomingAlerts({ upcoming, onEdit }: Props) {
               {upcoming.transactions.map(transaction => {
                 const normalized: ListTransactions200TransactionsItem =
                   mapUpcomingAlertToListItem(transaction)
+                const isPartial = transaction.status === 'partial' || transaction.alertType === 'partial'
                 return (
                   <DashboardTransactionItem
                     key={transaction.id}
                     transaction={normalized}
                     onEdit={onEdit}
-                    variant="upcoming"
-                    leftIcon={<Calendar className="h-4 w-4 text-blue-500" />}
-                    title={transaction.title}
+                    variant={isPartial ? 'partial' : 'upcoming'}
+                    leftIcon={<Calendar className={`h-4 w-4 ${isPartial ? 'text-amber-500' : 'text-blue-500'}`} />}
+                    title={`${transaction.title}${isPartial ? ' (parcial)' : ''}`}
                     ownerName={transaction.ownerName}
                     amount={transaction.amount}
-                    rightIcon={<Clock className="h-3 w-3 text-blue-500" />}
+                    rightIcon={<Clock className={`h-3 w-3 ${isPartial ? 'text-amber-500' : 'text-blue-500'}`} />}
                     rightPrimaryText={
                       transaction.daysUntilDue === 0
                         ? 'Vence hoje'
-                        : `Em ${transaction.daysUntilDue} dia${transaction.daysUntilDue > 1 ? 's' : ''}`
+                        : `Em ${transaction.daysUntilDue} dia${transaction.daysUntilDue && transaction.daysUntilDue > 1 ? 's' : ''}`
                     }
-                    rightSecondaryText={`Vencimento: ${new Date(transaction.dueDate).toLocaleDateString('pt-BR')}`}
+                    rightSecondaryText={
+                      isPartial
+                        ? `Parcial — Venc: ${new Date(transaction.dueDate).toLocaleDateString('pt-BR')}`
+                        : `Vencimento: ${new Date(transaction.dueDate).toLocaleDateString('pt-BR')}`
+                    }
                   />
                 )
               })}

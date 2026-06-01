@@ -23,12 +23,12 @@ export function PayRowAction({ id, status, table }: Props) {
     setOpen(true)
   }
 
-  const isPaid = status === 'paid'
+  const isPaidOrPartial = status === 'paid' || status === 'partial'
 
   return (
     <>
       <DropdownMenuItem onClick={handleClick}>
-        {isPaid ? 'Cancelar pagamento' : 'Pagar'}
+        {isPaidOrPartial ? 'Cancelar pagamento' : 'Pagar'}
       </DropdownMenuItem>
 
       <PaymentDateDialog

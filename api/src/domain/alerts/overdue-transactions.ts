@@ -10,6 +10,8 @@ export interface OverdueAlertTransaction {
   seriesId: string
   title: string
   amountCents: number
+  valuePaidCents: number | null
+  status: 'pending' | 'partial'
   dueDate: Date
   overdueDays: number
   installmentIndex: number | null
@@ -38,6 +40,8 @@ export async function fetchOverdueTransactionsForAlerts(
       seriesId: transactionOccurrences.seriesId,
       title: transactionSeries.title,
       amount: transactionOccurrences.amount,
+      valuePaid: transactionOccurrences.valuePaid,
+      status: transactionOccurrences.status,
       dueDate: transactionOccurrences.dueDate,
       installmentIndex: transactionOccurrences.installmentIndex,
       installmentsTotal: transactionSeries.installmentsTotal,
@@ -64,7 +68,10 @@ export async function fetchOverdueTransactionsForAlerts(
     .where(
       and(
         eq(sql`org.slug`, orgSlug),
-        eq(transactionOccurrences.status, 'pending'),
+        or(
+          eq(transactionOccurrences.status, 'pending'),
+          eq(transactionOccurrences.status, 'partial')
+        ),
         lt(transactionOccurrences.dueDate, today),
         eq(userOrganizations.notificationsEnabled, true), // Só usuários com notificações habilitadas
         userId
@@ -87,6 +94,8 @@ export async function fetchOverdueTransactionsForAlerts(
     seriesId: r.seriesId,
     title: r.title,
     amountCents: Number(r.amount),
+    valuePaidCents: r.valuePaid ? Number(r.valuePaid) : null,
+    status: r.status as 'pending' | 'partial',
     dueDate: r.dueDate,
     overdueDays: Math.max(0, Math.ceil((+today - +r.dueDate) / (1000 * 60 * 60 * 24))),
     installmentIndex: r.installmentIndex ?? null,

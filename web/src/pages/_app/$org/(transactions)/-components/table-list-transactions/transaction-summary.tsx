@@ -195,6 +195,28 @@ export function TransactionSummary({ transaction, onDelete }: Props) {
         </div>
       )}
 
+      {transaction.status === 'partial' && (
+        <div className="pt-2 border-t">
+          <div className="text-center">
+            <p className="text-sm text-muted-foreground">Pagamento parcial</p>
+            <p className="font-semibold text-amber-600 dark:text-amber-400">
+              R$ {((transaction.valuePaid ?? 0) / 100).toFixed(2)} de R${' '}
+              {Number(transaction.amount).toFixed(2)}
+            </p>
+            <div className="mt-2 h-2 w-full rounded-full bg-muted">
+              <div
+                className="h-2 rounded-full bg-amber-500 transition-all duration-300"
+                style={{
+                  width: `${Math.min(
+                    100,
+                    ((transaction.valuePaid ?? 0) / 100 / Number(transaction.amount)) * 100
+                  )}%`,
+                }}
+              />
+            </div>
+          </div>
+        </div>
+      )}
       {transaction.status === 'paid' && transaction.paidAt && (
         <div className="pt-2 border-t">
           <div className="text-center">
@@ -202,6 +224,12 @@ export function TransactionSummary({ transaction, onDelete }: Props) {
             <p className="font-semibold text-green-600 dark:text-green-400">
               {dayjs(transaction.paidAt).format('DD/MM/YYYY')}
             </p>
+            {transaction.valuePaid != null &&
+              Number(transaction.amount) !== (transaction.valuePaid ?? 0) / 100 && (
+                <p className="text-xs text-muted-foreground mt-1">
+                  Valor: R$ {((transaction.valuePaid ?? 0) / 100).toFixed(2)}
+                </p>
+              )}
             {(() => {
               const dueDate = dayjs(transaction.dueDate)
               const paidDate = dayjs(transaction.paidAt)

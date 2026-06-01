@@ -3,7 +3,7 @@
  * Do not edit manually.
  * HouseApp API
  * API for HouseApp
- * OpenAPI spec version: 1.0.1
+ * OpenAPI spec version: 1.0.2
  */
 
 export type GetOrgSlugReportsTransactions200ReportsUpcomingAlertsTransactionsItemStatus =
@@ -14,4 +14,5 @@ export const GetOrgSlugReportsTransactions200ReportsUpcomingAlertsTransactionsIt
   {
     paid: "paid",
     pending: "pending",
+    partial: "partial",
   } as const;

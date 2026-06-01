@@ -1,7 +1,7 @@
 {
   "manifest_version": 3,
   "name": "HouseApp",
-  "version": "1.0.2",
+  "version": "1.0.3",
   "description": "Notificações e resumo financeiro do HouseApp",
   "permissions": ["alarms", "notifications", "storage", "cookies"],
   "host_permissions": ["*://*/"],

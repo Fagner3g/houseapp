@@ -41,11 +41,11 @@ function generatePaymentTimelineData(transaction: ListTransactions200Transaction
 
   // Se é uma transação única, retorna apenas um item
   if (installmentsTotal === 1) {
-    const isPaid = transaction.status === 'paid'
+    const status = transaction.status as 'paid' | 'pending' | 'partial'
 
-    // Sempre mostrar a data de pagamento se estiver paga e tiver paidAt
+    // Sempre mostrar a data de pagamento se estiver paga/parcial e tiver paidAt
     const displayDate =
-      isPaid && transaction.paidAt
+      status !== 'pending' && transaction.paidAt
         ? dayjs(transaction.paidAt).format('DD/MM/YYYY')
         : dueDate.format('DD/MM/YYYY')
 
@@ -53,7 +53,7 @@ function generatePaymentTimelineData(transaction: ListTransactions200Transaction
       {
         month: dueDate.format('MMM/YY'),
         fullDate: displayDate,
-        status: isPaid ? 'paid' : 'pending',
+        status,
         installment: 1,
         total: 1,
         paidDate: transaction.paidAt ? dayjs(transaction.paidAt).format('DD/MM/YYYY') : null,
@@ -97,10 +97,12 @@ export function PaymentTimelineChart({ transaction }: Props) {
   const timelineData = generatePaymentTimelineData(transaction)
   const [isExpanded, setIsExpanded] = useState(false)
 
-  // Encontrar o índice do último pagamento
+  // Encontrar o índice do último pagamento (inclui parcial)
   const lastPaidIndex =
     timelineData
-      .map((entry, index) => (entry.status === 'paid' ? index : -1))
+      .map((entry, index) =>
+        entry.status === 'paid' || entry.status === 'partial' ? index : -1
+      )
       .filter(i => i !== -1)
       .pop() ?? -1
 
@@ -125,15 +127,21 @@ export function PaymentTimelineChart({ transaction }: Props) {
           <div className="flex items-center justify-between text-xs">
             <span className="text-muted-foreground">Progresso:</span>
             <span className="font-medium">
-              {timelineData.filter(entry => entry.status === 'paid').length} de{' '}
-              {timelineData.length} parcelas
+              {timelineData.filter(
+                entry => entry.status === 'paid' || entry.status === 'partial'
+              ).length}{' '}
+              de {timelineData.length} parcelas
             </span>
           </div>
           <div className="mt-1 h-1 w-full rounded-full bg-muted">
             <div
               className="h-1 rounded-full bg-green-500 transition-all duration-300"
               style={{
-                width: `${(timelineData.filter(entry => entry.status === 'paid').length / timelineData.length) * 100}%`,
+                width: `${(timelineData.filter(
+                  entry => entry.status === 'paid' || entry.status === 'partial'
+                ).length /
+                  timelineData.length) *
+                  100}%`,
               }}
             />
           </div>
@@ -147,7 +155,9 @@ export function PaymentTimelineChart({ transaction }: Props) {
               className={`flex items-center justify-between rounded border p-2 transition-all duration-300 ease-in-out ${
                 entry.status === 'paid'
                   ? 'border-green-200 bg-green-50 dark:border-green-800 dark:bg-green-900/20'
-                  : 'border-red-200 bg-red-50 dark:border-red-800 dark:bg-red-900/20'
+                  : entry.status === 'partial'
+                    ? 'border-amber-200 bg-amber-50 dark:border-amber-800 dark:bg-amber-900/20'
+                    : 'border-red-200 bg-red-50 dark:border-red-800 dark:bg-red-900/20'
               }`}
               style={{
                 animationDelay: `${index * 50}ms`,
@@ -159,7 +169,11 @@ export function PaymentTimelineChart({ transaction }: Props) {
                 {/* Indicador de status */}
                 <div
                   className={`h-2 w-2 rounded-full ${
-                    entry.status === 'paid' ? 'bg-green-500' : 'bg-red-500'
+                    entry.status === 'paid'
+                      ? 'bg-green-500'
+                      : entry.status === 'partial'
+                        ? 'bg-amber-500'
+                        : 'bg-red-500'
                   }`}
                 />
 
@@ -176,10 +190,20 @@ export function PaymentTimelineChart({ transaction }: Props) {
 
               {/* Lado direito - Status */}
               <Badge
-                variant={entry.status === 'paid' ? 'default' : 'destructive'}
-                className="text-xs"
+                variant={
+                  entry.status === 'paid'
+                    ? 'default'
+                    : entry.status === 'partial'
+                      ? 'default'
+                      : 'destructive'
+                }
+                className={`text-xs ${entry.status === 'partial' ? 'bg-amber-500 hover:bg-amber-600' : ''}`}
               >
-                {entry.status === 'paid' ? 'Pago' : 'Pendente'}
+                {entry.status === 'paid'
+                  ? 'Pago'
+                  : entry.status === 'partial'
+                    ? 'Parcial'
+                    : 'Pendente'}
               </Badge>
             </div>
           ))}
