@@ -19,9 +19,9 @@ export const JOB_CONFIGS: Record<string, JobConfig> = {
 
   OVERDUE_ALERTS: {
     key: 'transactions:overdue-alerts',
-    schedule: '0 10 28-31 * *', // Último dia do mês (roda dias 28-31 e filtra no código)
+    schedule: '0 10 * * 1', // Toda segunda-feira às 10:00
     timezone: 'America/Sao_Paulo',
-    description: 'Relatório de pendências vencidas (último dia do mês)',
+    description: 'Relatório de todas as pendências vencidas (roda toda segunda)',
   },
 
   MONTHLY_SUMMARY: {

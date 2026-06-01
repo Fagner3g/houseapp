@@ -61,12 +61,19 @@ Use os dados fornecidos. Não invente nada. Seja visual e organizado.`
 
 export function buildTransactionAlertsPrompt(data: TransactionAlertsData): string {
   const criticalList = data.critical
-    .map(t => `• ${t.title}${t.installmentInfo ? ` (${t.installmentInfo})` : ''} | ${formatBRL(t.amount)} | ${t.daysUntilDue === 0 ? 'Vence HOJE' : 'Vence AMANHÃ'} (${t.dueDate})`)
-    .join('\n')
+    .map(t => {
+      const parcel = t.installmentInfo ? ` (${t.installmentInfo})` : ''
+      const label = t.daysUntilDue === 0 ? 'HOJE' : 'AMANHÃ'
+      return `• *${t.title}*${parcel}\n  ${formatBRL(t.amount)} — ${label} (${t.dueDate})`
+    })
+    .join('\n\n')
 
   const reminderList = data.reminders
-    .map(t => `• ${t.title}${t.installmentInfo ? ` (${t.installmentInfo})` : ''} | ${formatBRL(t.amount)} | Vence em ${t.daysUntilDue} dias (${t.dueDate})`)
-    .join('\n')
+    .map(t => {
+      const parcel = t.installmentInfo ? ` (${t.installmentInfo})` : ''
+      return `• *${t.title}*${parcel}\n  ${formatBRL(t.amount)} — em ${t.daysUntilDue} dias (${t.dueDate})`
+    })
+    .join('\n\n')
 
   const totalAmount = [...data.critical, ...data.reminders].reduce((sum, t) => sum + t.amount, 0)
 
@@ -74,17 +81,20 @@ export function buildTransactionAlertsPrompt(data: TransactionAlertsData): strin
 
 Relatório: *Alertas de vencimento* — transações nos próximos 4 dias.
 ${data.personName ? `\nDestinatário: *${data.personName}*` : ''}
-${data.critical.length + data.reminders.length} transações, total de ${formatBRL(totalAmount)}.
+${data.critical.length + data.reminders.length} transações — Total: ${formatBRL(totalAmount)}
 
-${data.critical.length > 0 ? 'CRÍTICOS (HOJE/AMANHÃ)\n' + criticalList + '\n' : ''}${data.reminders.length > 0 ? reminderList + '\n' : ''}${data.critical.length === 0 && data.reminders.length === 0 ? 'Nenhum vencimento nos próximos 4 dias.' : ''}
+${data.critical.length > 0 ? 'CRÍTICOS (HOJE/AMANHÃ)\n' + criticalList + '\n\n' : ''}${data.reminders.length > 0 ? 'PRÓXIMOS (2-4 dias)\n' + reminderList + '\n' : ''}${data.critical.length === 0 && data.reminders.length === 0 ? 'Nenhum vencimento nos próximos 4 dias.' : ''}
 
-Monte uma mensagem WhatsApp clara, visual e bem espaçada.`
+Formato para celular: cada item em 2 linhas (título em negrito, depois valor/data). Itens separados por linha em branco. Resumo final curto com recomendação.`
 }
 
 export function buildOverdueAlertsPrompt(data: OverdueAlertsData): string {
   const overdueList = data.overdue
-    .map(t => `• ${t.title}${t.installmentInfo ? ` (${t.installmentInfo})` : ''} | ${formatBRL(t.amount)} | Vencida em ${t.dueDate} (há ${t.overdueDays} dias)`)
-    .join('\n')
+    .map(t => {
+      const parcel = t.installmentInfo ? ` (${t.installmentInfo})` : ''
+      return `• *${t.title}*${parcel}\n  ${formatBRL(t.amount)} — ${t.dueDate} — ${t.overdueDays} dias atrás`
+    })
+    .join('\n\n')
 
   const total = data.overdue.reduce((sum, t) => sum + t.amount, 0)
   const oldest = data.overdue.length > 0
@@ -93,13 +103,14 @@ export function buildOverdueAlertsPrompt(data: OverdueAlertsData): string {
 
   return `${BASE_INSTRUCTIONS}
 
-Relatório: *Transações vencidas* — fechamento do mês.
+Relatório: *Transações vencidas* — todas as pendências.
 ${data.personName ? `\nDestinatário: *${data.personName}*` : ''}
-${data.overdue.length} vencidas, total de ${formatBRL(total)}${oldest > 0 ? ` — a mais antiga: ${oldest} dias` : ''}.
 
-${data.overdue.length > 0 ? overdueList : 'Nenhuma transação vencida. Parabéns!'}
+${data.overdue.length} vencidas — Total: ${formatBRL(total)}${oldest > 0 ? ` — mais antiga: ${oldest} dias` : ''}
 
-Monte uma mensagem WhatsApp clara, visual e bem espaçada. Destaque os valores mais altos e a mais antiga.`
+${data.overdue.length > 0 ? overdueList : 'Nenhuma transação vencida.'}
+
+Formato para celular: cada item em 2 linhas (título em negrito, depois valor/data). Itens separados por linha em branco. Ao final, um resumo curto com recomendação.`
 }
 
 export function buildMonthlySummaryPrompt(data: MonthlySummaryData): string {
