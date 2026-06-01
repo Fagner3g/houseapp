@@ -32,19 +32,19 @@ async function seedReset() {
         name: 'Fagner Gomes',
         avatarUrl: 'https://github.com/fagner3g.png',
         email: 'fagner.egomes@gmail.com',
-        phone: '5531971697646',
+        phone: process.env.DEV_PHONE_OVERRIDE || process.env.DEV_PHONE || '',
       },
       {
         name: 'Diego Fernandes',
         avatarUrl: 'https://github.com/diego3g.png',
         email: 'diego@gmail.com',
-        phone: '5511999999999',
+        phone: process.env.DEV_PHONE_OVERRIDE || process.env.DEV_PHONE || '',
       },
       {
         name: 'Ana Souza',
         avatarUrl: 'https://example.com/ana.png',
         email: 'ana@gmail.com',
-        phone: '5511988888888',
+        phone: process.env.DEV_PHONE_OVERRIDE || process.env.DEV_PHONE || '',
       },
     ])
     .returning()

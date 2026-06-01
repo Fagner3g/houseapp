@@ -1,5 +1,5 @@
-// import { buildAlertMessage } from '@/domain/alerts/message-builder'
-import { fetchOverdueTransactionsForAlerts } from '@/domain/alerts/overdue-transactions'
+import { formatReport } from '@/domain/ai/report-formatter'
+import type { TransactionAlertsData } from '@/domain/ai/report-context'
 import { fetchUpcomingTransactionsForAlerts } from '@/domain/alerts/upcoming-transactions'
 import { sendWhatsAppMessage } from '@/domain/whatsapp'
 import { logger } from '@/lib/logger'
@@ -7,9 +7,6 @@ import { JOB_CONFIGS } from './config'
 import { jobManager } from './job-manager'
 import type { JobResult } from './types'
 
-/**
- * Envia alertas para transações vencidas ou prestes a vencer
- */
 async function sendTransactionAlerts(userId?: string): Promise<JobResult> {
   const startTime = Date.now()
   let processed = 0
@@ -18,7 +15,6 @@ async function sendTransactionAlerts(userId?: string): Promise<JobResult> {
   try {
     logger.info('🚀 Iniciando job de alertas de transações...')
 
-    // Buscar transações que vencem em até 4 dias via domínio
     const upcomingTransactions = await fetchUpcomingTransactionsForAlerts([], userId)
 
     if (upcomingTransactions.length === 0) {
@@ -31,11 +27,9 @@ async function sendTransactionAlerts(userId?: string): Promise<JobResult> {
       }
     }
 
-    // Normalizar data de hoje para comparação
     const today = new Date()
     today.setHours(0, 0, 0, 0)
 
-    // Agrupar por telefone (evita duplicar quando owner e payTo são a mesma pessoa)
     const groups = new Map<
       string,
       {
@@ -59,99 +53,59 @@ async function sendTransactionAlerts(userId?: string): Promise<JobResult> {
     for (const [, group] of groups) {
       const { transactions, userInfo } = group
 
-      // ordenar por dueDate asc para uma ordem consistente
       transactions.sort((a, b) => +new Date(a.dueDate) - +new Date(b.dueDate))
 
-      // evitar itens duplicados (pode vir duplicado quando owner/payTo são a mesma pessoa
       const seenIds = new Set<string>()
-
-      const criticalMessages: string[] = []
-      const reminderMessages: string[] = []
-      let overdueBlock: string | null = null
+      const critical: TransactionAlertsData['critical'] = []
+      const reminders: TransactionAlertsData['reminders'] = []
 
       for (const t of transactions) {
         if (seenIds.has(t.id)) continue
         seenIds.add(t.id)
-        try {
-          const dueDate = new Date(t.dueDate)
-          dueDate.setHours(0, 0, 0, 0)
-          const daysUntilDue = Math.ceil(
-            (dueDate.getTime() - today.getTime()) / (24 * 60 * 60 * 1000)
-          )
 
-          // Buscar TODAS as transações vencidas do usuário (não apenas da mesma série)
-          if (overdueBlock === null && t.organizationSlug) {
-            // Se userId foi passado, usar ele; caso contrário, identificar baseado no telefone
-            const targetUserId = userId ?? (userInfo.phone === t.ownerPhone ? t.ownerId : t.payToId)
-            const overdueListRaw = await fetchOverdueTransactionsForAlerts(
-              t.organizationSlug,
-              targetUserId ?? undefined
-            )
-            // Deduplicar por ocorrência (pode haver duplicidade pelo join de userOrganizations)
-            const overdueList = Array.from(new Map(overdueListRaw.map(ov => [ov.id, ov])).values())
+        const dueDate = new Date(t.dueDate)
+        dueDate.setHours(0, 0, 0, 0)
+        const daysUntilDue = Math.ceil(
+          (dueDate.getTime() - today.getTime()) / (24 * 60 * 60 * 1000)
+        )
 
-            overdueBlock = overdueList.length
-              ? [
-                  '🔻 Transações Vencidas',
-                  ...overdueList
-                    .sort((a, b) => {
-                      if (a.overdueDays !== b.overdueDays) return b.overdueDays - a.overdueDays
-                      return new Date(a.dueDate).getTime() - new Date(b.dueDate).getTime()
-                    })
-                    .slice(0, 5)
-                    .map(ov => {
-                      const amount = (ov.amountCents / 100).toFixed(2)
-                      const parcela =
-                        ov.installmentIndex != null && ov.installmentsTotal != null
-                          ? ` (Parcela ${ov.installmentIndex}/${ov.installmentsTotal})`
-                          : ''
-                      const dueDateFormatted = new Date(ov.dueDate).toLocaleDateString('pt-BR', {
-                        day: '2-digit',
-                        month: '2-digit',
-                      })
-                      return `   \n✧ *${ov.title}${parcela}*\n✧ Valor: ${amount}\n✧ Vencida em ${dueDateFormatted} (há ${ov.overdueDays} dias)`
-                    }),
-                  overdueList.length > 5 ? `… e mais ${overdueList.length - 5}` : undefined,
-                ]
-                  .filter(Boolean)
-                  .join('\n')
-              : null
-          }
+        const amount = t.amountCents / 100
+        const dueDateFormatted = new Date(t.dueDate).toLocaleDateString('pt-BR', {
+          day: '2-digit',
+          month: '2-digit',
+        })
 
-          // Montar linha compacta por transação (sem repetir cabeçalhos)
-          const amount = (t.amountCents / 100).toLocaleString('pt-BR', {
-            style: 'currency',
-            currency: 'BRL',
-          })
-          const parcela =
+        const item = {
+          title: t.title,
+          amount,
+          dueDate: dueDateFormatted,
+          daysUntilDue,
+          installmentInfo:
             t.installmentIndex != null && t.installmentsTotal != null
-              ? ` (Parcela ${t.installmentIndex}/${t.installmentsTotal})`
-              : ''
-          const dateFormatted = new Date(t.dueDate).toLocaleDateString('pt-BR', {
-            day: '2-digit',
-            month: '2-digit',
-          })
-          const dateLabel =
-            daysUntilDue === 0
-              ? `Vence HOJE (${dateFormatted})`
-              : daysUntilDue === 1
-                ? `Vence AMANHÃ (${dateFormatted})`
-                : `Vence em ${dateFormatted} (em ${daysUntilDue} dias)`
-          const line = `✧ *${t.title}${parcela}*\n✧ Valor: ${amount}\n✧ ${dateLabel}`
-
-          if (daysUntilDue <= 1) criticalMessages.push(line)
-          else reminderMessages.push(line)
-
-          processed++
-        } catch (error) {
-          logger.error(`Erro ao processar transação ${t.id}: ${String(error)}`)
-          errors++
+              ? `Parcela ${t.installmentIndex}/${t.installmentsTotal}`
+              : null,
         }
+
+        if (daysUntilDue <= 1) critical.push(item)
+        else reminders.push(item)
+
+        processed++
       }
 
-      // Enviar mensagens agrupadas por usuário
-      const sendBatch = async (text: string | null) => {
-        if (!text || !userInfo.phone) return
+      if (critical.length === 0 && reminders.length === 0) continue
+
+      const orgSlug = transactions[0]?.organizationSlug ?? undefined
+
+      const data: TransactionAlertsData = {
+        personName: userInfo.name ?? undefined,
+        critical,
+        reminders,
+        organizationSlug: orgSlug,
+      }
+
+      const text = await formatReport('transaction-alerts', data)
+
+      if (userInfo.phone) {
         const result = await sendWhatsAppMessage({ phone: userInfo.phone, message: text })
         if (result.status !== 'sent') {
           logger.error(
@@ -161,24 +115,6 @@ async function sendTransactionAlerts(userId?: string): Promise<JobResult> {
         } else {
           logger.info(`✅ WhatsApp enviado com sucesso para: ${userInfo.phone} (${userInfo.name})`)
         }
-      }
-
-      if (criticalMessages.length > 0) {
-        const text = [
-          '🚨🚨 ALERTAS CRÍTICOS DE VENCIMENTO 🚨🚨',
-          '',
-          criticalMessages.join('\n\n'),
-        ].join('\n')
-        await sendBatch(text)
-      }
-
-      if (reminderMessages.length > 0) {
-        const text = ['⏰ Lembretes de vencimento', '', reminderMessages.join('\n\n')].join('\n')
-        await sendBatch(text)
-      }
-
-      if (overdueBlock) {
-        await sendBatch(overdueBlock)
       }
     }
 
@@ -199,17 +135,8 @@ async function sendTransactionAlerts(userId?: string): Promise<JobResult> {
   }
 }
 
-/**
- * Personaliza a mensagem com o nome da pessoa e adiciona o footer
- */
-// Registrar o job e utilitários
-
-// Registrar o job
 jobManager.registerJob(JOB_CONFIGS.TRANSACTION_ALERTS, sendTransactionAlerts)
 
-/**
- * Preview das transações que seriam processadas pelo job de alertas (sem enviar mensagens)
- */
 export async function previewTransactionAlerts(userId?: string): Promise<{
   summary: {
     total: number
@@ -232,7 +159,6 @@ export async function previewTransactionAlerts(userId?: string): Promise<{
   }>
 }> {
   try {
-    // Buscar transações que vencem em até 4 dias via domínio
     const upcomingTransactions = await fetchUpcomingTransactionsForAlerts([], userId)
 
     if (upcomingTransactions.length === 0) {
@@ -242,14 +168,12 @@ export async function previewTransactionAlerts(userId?: string): Promise<{
       }
     }
 
-    // Deduplicate transactions by ID
     const uniqueTransactions = new Map<string, (typeof upcomingTransactions)[number]>()
     for (const t of upcomingTransactions) {
       uniqueTransactions.set(t.id, t)
     }
     const deduplicatedTransactions = Array.from(uniqueTransactions.values())
 
-    // Normalizar data de hoje para comparação
     const today = new Date()
     today.setHours(0, 0, 0, 0)
 
@@ -265,12 +189,11 @@ export async function previewTransactionAlerts(userId?: string): Promise<{
       dueDate.setHours(0, 0, 0, 0)
       const daysUntilDue = Math.ceil((dueDate.getTime() - today.getTime()) / (24 * 60 * 60 * 1000))
 
-      // Contar por categoria
       if (daysUntilDue === 0) todayCount++
       else if (daysUntilDue === 1) tomorrowCount++
       else if (daysUntilDue <= 7) thisWeekCount++
 
-      // Buscar transações vencidas da mesma série
+      const { fetchOverdueTransactionsForAlerts } = await import('@/domain/alerts/overdue-transactions')
       const overdueList = t.organizationSlug
         ? await fetchOverdueTransactionsForAlerts(
             t.organizationSlug,
@@ -281,11 +204,6 @@ export async function previewTransactionAlerts(userId?: string): Promise<{
 
       overdueCount += overdueList.length
 
-      const installmentInfo =
-        t.installmentIndex != null && t.installmentsTotal != null
-          ? `Parcela ${t.installmentIndex}/${t.installmentsTotal}`
-          : null
-
       transactions.push({
         id: t.id,
         title: t.title,
@@ -295,7 +213,10 @@ export async function previewTransactionAlerts(userId?: string): Promise<{
         payToName: t.payToName,
         payToPhone: t.payToPhone,
         organizationSlug: t.organizationSlug,
-        installmentInfo,
+        installmentInfo:
+          t.installmentIndex != null && t.installmentsTotal != null
+            ? `Parcela ${t.installmentIndex}/${t.installmentsTotal}`
+            : null,
         overdueCount: overdueList.length,
       })
     }
@@ -316,7 +237,6 @@ export async function previewTransactionAlerts(userId?: string): Promise<{
   }
 }
 
-// Export para execução manual
 export async function runTransactionAlertsNow(): Promise<JobResult | null> {
   return await jobManager.runJobNow(JOB_CONFIGS.TRANSACTION_ALERTS.key)
 }

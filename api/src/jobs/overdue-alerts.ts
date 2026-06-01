@@ -1,4 +1,5 @@
-import { buildAlertMessage } from '@/domain/alerts/message-builder'
+import { formatReport } from '@/domain/ai/report-formatter'
+import type { OverdueAlertsData } from '@/domain/ai/report-context'
 import { fetchOverdueTransactionsForAlerts } from '@/domain/alerts/overdue-transactions'
 import { sendWhatsAppMessage } from '@/domain/whatsapp'
 import { logger } from '@/lib/logger'
@@ -6,42 +7,32 @@ import { JOB_CONFIGS } from './config'
 import { jobManager } from './job-manager'
 import type { JobResult } from './types'
 
-/**
- * Envia alertas especificamente para transações vencidas
- * Processa uma organização por vez para evitar problemas de contexto
- */
 async function sendOverdueAlerts(userId?: string): Promise<JobResult> {
   const startTime = Date.now()
   let processed = 0
   let errors = 0
 
   try {
-    logger.info('🚀 Iniciando job de alertas de transações vencidas...')
+    logger.info('🚀 Iniciando job semanal de transações vencidas...')
 
-    // Buscar todas as organizações
     const { db } = await import('@/db')
     const { organizations } = await import('@/db/schemas/organization')
 
     const orgs = await db.select({ slug: organizations.slug }).from(organizations)
 
-    // Processar cada organização individualmente
     for (const org of orgs) {
       try {
         logger.info(`📋 Processando organização: ${org.slug}`)
 
-        // Buscar transações vencidas apenas desta organização
         const overdueTransactions = await fetchOverdueTransactionsForAlerts(org.slug, userId)
 
         if (overdueTransactions.length === 0) {
-          logger.info(`ℹ️ Nenhuma transação vencida encontrada para organização: ${org.slug}`)
-          continue // Pular para próxima organização
+          logger.info(`ℹ️ Nenhuma transação vencida para ${org.slug}`)
+          continue
         }
 
-        logger.info(
-          `📊 Encontradas ${overdueTransactions.length} transações vencidas para ${org.slug}`
-        )
+        logger.info(`📊 ${overdueTransactions.length} transações vencidas para ${org.slug}`)
 
-        // Agrupar por telefone do usuário (evita duplicidade)
         const groups = new Map<
           string,
           {
@@ -51,9 +42,8 @@ async function sendOverdueAlerts(userId?: string): Promise<JobResult> {
         >()
 
         for (const t of overdueTransactions) {
-          // Verificar se o usuário tem notificações habilitadas
           if (!t.notificationsEnabled) {
-            logger.info(`⚠️ Pulando usuário ${t.payToName} - notificações desabilitadas`)
+            logger.info(`⚠️ Pulando ${t.payToName} - notificações desabilitadas`)
             continue
           }
 
@@ -71,55 +61,53 @@ async function sendOverdueAlerts(userId?: string): Promise<JobResult> {
         for (const [, group] of groups) {
           const { transactions, userInfo } = group
 
-          // Ordenar por dias vencidos (mais vencidas primeiro) e deduplicar por id
           transactions.sort((a, b) => b.overdueDays - a.overdueDays)
           const unique = Array.from(new Map(transactions.map(t => [t.id, t])).values())
 
-          for (let idx = 0; idx < unique.length; idx++) {
-            const t = unique[idx]
-            try {
-              const { message } = buildAlertMessage(
-                t.title,
-                t.amountCents,
-                -t.overdueDays, // Dias negativos para indicar vencida
-                t.installmentIndex,
-                t.installmentsTotal ?? null,
-                t.organizationSlug,
-                userInfo.name,
-                null, // Não incluir bloco de vencidas pois já estamos processando vencidas
-                new Date(t.dueDate),
-                { includeGreeting: idx === 0, includeFooter: idx === unique.length - 1 }
+          const items: OverdueAlertsData['overdue'] = unique.map(t => {
+            const dueDateFormatted = new Date(t.dueDate).toLocaleDateString('pt-BR', {
+              day: '2-digit',
+              month: '2-digit',
+            })
+
+            return {
+              title: t.title,
+              amount: t.amountCents / 100,
+              dueDate: dueDateFormatted,
+              overdueDays: t.overdueDays,
+              installmentInfo:
+                t.installmentIndex != null && t.installmentsTotal != null
+                  ? `Parcela ${t.installmentIndex}/${t.installmentsTotal}`
+                  : null,
+            }
+          })
+
+          const data: OverdueAlertsData = {
+            personName: userInfo.name ?? undefined,
+            overdue: items,
+            organizationSlug: org.slug,
+          }
+
+          const text = await formatReport('overdue-alerts', data)
+
+          if (userInfo.phone) {
+            const result = await sendWhatsAppMessage({ phone: userInfo.phone, message: text })
+            if (result.status === 'sent') {
+              logger.info(
+                `✅ WhatsApp de vencidas enviado para: ${userInfo.phone} (${userInfo.name}) - Org: ${org.slug}`
               )
-
-              if (userInfo.phone) {
-                const result = await sendWhatsAppMessage({ phone: userInfo.phone, message })
-                if (result.status === 'sent') {
-                  logger.info(
-                    `✅ WhatsApp de transação vencida enviado com sucesso para: ${userInfo.phone} (${userInfo.name}) - Org: ${org.slug}`
-                  )
-                } else {
-                  logger.error(
-                    `❌ Erro ao enviar WhatsApp de transação vencida para ${userInfo.phone} (${userInfo.name}) - Org: ${org.slug}: ${result.error}`
-                  )
-                  errors++
-                }
-              } else {
-                logger.info(
-                  `⚠️ Pulando envio - telefone vazio para usuário ${userInfo.name} da transação vencida ${t.id} - Org: ${org.slug}`
-                )
-              }
-
-              processed++
-            } catch (error) {
+            } else {
               logger.error(
-                `Erro ao processar transação vencida ${t.id} - Org: ${org.slug}: ${String(error)}`
+                `❌ Erro ao enviar WhatsApp de vencidas para ${userInfo.phone} - Org: ${org.slug}: ${result.error}`
               )
               errors++
             }
           }
+
+          processed += items.length
         }
 
-        logger.info(`✅ Organização ${org.slug} processada com sucesso`)
+        logger.info(`✅ Organização ${org.slug} processada`)
       } catch (orgError) {
         logger.error(`❌ Erro ao processar organização ${org.slug}: ${String(orgError)}`)
         errors++
@@ -133,7 +121,7 @@ async function sendOverdueAlerts(userId?: string): Promise<JobResult> {
       duration: Date.now() - startTime,
     }
   } catch (error) {
-    logger.error(`Erro no job de alertas de transações vencidas: ${String(error)}`)
+    logger.error(`Erro no job de transações vencidas: ${String(error)}`)
     return {
       success: false,
       processed,
@@ -143,12 +131,8 @@ async function sendOverdueAlerts(userId?: string): Promise<JobResult> {
   }
 }
 
-// Registrar o job
 jobManager.registerJob(JOB_CONFIGS.OVERDUE_ALERTS, sendOverdueAlerts)
 
-/**
- * Preview das transações vencidas que seriam processadas pelo job (sem enviar mensagens)
- */
 export async function previewOverdueAlerts(userId?: string): Promise<{
   summary: {
     total: number
@@ -167,13 +151,11 @@ export async function previewOverdueAlerts(userId?: string): Promise<{
   }>
 }> {
   try {
-    // Buscar todas as transações vencidas de todas as organizações
     const { db } = await import('@/db')
     const { organizations } = await import('@/db/schemas/organization')
 
     const orgs = await db.select({ slug: organizations.slug }).from(organizations)
 
-    // Buscar transações vencidas de todas as organizações
     const allOverdueTransactions = []
     for (const org of orgs) {
       const orgOverdue = await fetchOverdueTransactionsForAlerts(org.slug, userId)
@@ -189,24 +171,20 @@ export async function previewOverdueAlerts(userId?: string): Promise<{
       }
     }
 
-    const transactions = overdueTransactions.map(t => {
-      const installmentInfo =
+    const transactions = overdueTransactions.map(t => ({
+      id: t.id,
+      title: t.title,
+      amount: t.amountCents / 100,
+      dueDate: t.dueDate.toISOString(),
+      overdueDays: t.overdueDays,
+      payToName: t.payToName,
+      payToPhone: t.payToPhone,
+      organizationSlug: t.organizationSlug,
+      installmentInfo:
         t.installmentIndex != null && t.installmentsTotal != null
           ? `Parcela ${t.installmentIndex}/${t.installmentsTotal}`
-          : null
-
-      return {
-        id: t.id,
-        title: t.title,
-        amount: t.amountCents / 100,
-        dueDate: t.dueDate.toISOString(),
-        overdueDays: t.overdueDays,
-        payToName: t.payToName,
-        payToPhone: t.payToPhone,
-        organizationSlug: t.organizationSlug,
-        installmentInfo,
-      }
-    })
+          : null,
+    }))
 
     return {
       summary: {
@@ -221,7 +199,6 @@ export async function previewOverdueAlerts(userId?: string): Promise<{
   }
 }
 
-// Export para execução manual
 export async function runOverdueAlertsNow(): Promise<JobResult | null> {
   return await jobManager.runJobNow(JOB_CONFIGS.OVERDUE_ALERTS.key)
 }

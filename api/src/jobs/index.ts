@@ -10,6 +10,8 @@ import { jobRegistry } from './registry'
 export { JOB_CONFIGS } from './config'
 export { jobManager } from './job-manager'
 export { jobRegistry } from './registry'
+export { getExecutionHistory, getLastExecution } from './execution-log'
+export { computeNextRun, humanizeSchedule } from './next-run'
 export type { JobConfig, JobFunction, JobResult } from './types'
 
 /**

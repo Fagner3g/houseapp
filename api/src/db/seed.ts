@@ -12,7 +12,8 @@ import { userOrganizations } from './schemas/userOrganization'
 import { users } from './schemas/users'
 
 const TEST_USER_EMAIL = 'fagner.egomes@gmail.com'
-const TEST_USER_PHONE = '5531971697646'
+const TEST_USER_PHONE =
+  process.env.DEV_PHONE_OVERRIDE || process.env.DEV_PHONE || ''
 const TEST_ORG_SLUG = slugify('My House', { lower: true })
 const TEST_SYMBOLS = ['MXRF11', 'PETR4', 'TESOURO-IPCA-2035']
 

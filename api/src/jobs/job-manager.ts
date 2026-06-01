@@ -1,7 +1,52 @@
 import * as cron from 'node-cron'
 
 import { logger } from '@/lib/logger'
+import { logExecution } from './execution-log'
 import type { JobConfig, JobFunction, JobResult } from './types'
+
+function runAndLog(
+  config: JobConfig,
+  jobFunction: JobFunction,
+  trigger: 'cron' | 'manual'
+): () => Promise<void> {
+  return async () => {
+    const startTime = Date.now()
+    const logInfo = (msg: string) =>
+      logger.info({ jobKey: config.key }, msg)
+
+    logInfo(`${trigger === 'cron' ? '⏰' : '🚀'} Iniciando job: ${config.description}`)
+
+    try {
+      const result = await jobFunction()
+      const duration = Date.now() - startTime
+
+      logExecution(config.key, {
+        success: result.success,
+        processed: result.processed,
+        errors: result.errors,
+        duration,
+      })
+
+      logger.info(
+        { jobKey: config.key, duration, processed: result.processed, errors: result.errors },
+        `✅ Job concluído: ${config.description}`
+      )
+    } catch (error) {
+      const duration = Date.now() - startTime
+      logExecution(config.key, {
+        success: false,
+        processed: 0,
+        errors: 1,
+        duration,
+      })
+
+      logger.error(
+        { jobKey: config.key, error, duration },
+        `❌ Erro no job: ${config.description}`
+      )
+    }
+  }
+}
 
 export class JobManager {
   private static instance: JobManager
@@ -28,35 +73,7 @@ export class JobManager {
 
     const task = cron.schedule(
       config.schedule,
-      async () => {
-        const startTime = Date.now()
-        logger.info({ jobKey: config.key }, `⏰ Iniciando job: ${config.description}`)
-
-        try {
-          const result = await jobFunction()
-          const duration = Date.now() - startTime
-
-          logger.info(
-            {
-              jobKey: config.key,
-              duration,
-              processed: result.processed,
-              errors: result.errors,
-            },
-            `✅ Job concluído: ${config.description}`
-          )
-        } catch (error) {
-          const duration = Date.now() - startTime
-          logger.error(
-            {
-              jobKey: config.key,
-              error,
-              duration,
-            },
-            `❌ Erro no job: ${config.description}`
-          )
-        }
-      },
+      runAndLog(config, jobFunction, 'cron'),
       { timezone: config.timezone }
     )
 
@@ -65,11 +82,7 @@ export class JobManager {
     task.start()
 
     logger.info(
-      {
-        jobKey: config.key,
-        schedule: config.schedule,
-        timezone: config.timezone,
-      },
+      { jobKey: config.key, schedule: config.schedule, timezone: config.timezone },
       `📅 Job agendado: ${config.description}`
     )
   }
@@ -82,7 +95,21 @@ export class JobManager {
     }
 
     logger.info({ jobKey, userId }, '🚀 Executando job manualmente')
-    return await jobFunction(userId)
+
+    const startTime = Date.now()
+    const result = await jobFunction(userId)
+    const duration = Date.now() - startTime
+
+    if (result) {
+      logExecution(jobKey, {
+        success: result.success,
+        processed: result.processed,
+        errors: result.errors,
+        duration,
+      })
+    }
+
+    return result
   }
 
   stopJob(jobKey: string): void {

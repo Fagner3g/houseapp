@@ -19,9 +19,9 @@ export const JOB_CONFIGS: Record<string, JobConfig> = {
 
   OVERDUE_ALERTS: {
     key: 'transactions:overdue-alerts',
-    schedule: '0 10 1 * *', // Todo dia 1º do mês às 10:00
+    schedule: '0 10 * * 1', // Toda segunda-feira às 10:00
     timezone: 'America/Sao_Paulo',
-    description: 'Alertas específicos para transações vencidas',
+    description: 'Relatório semanal de transações vencidas via WhatsApp',
   },
 }
 

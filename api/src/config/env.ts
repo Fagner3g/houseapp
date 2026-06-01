@@ -44,6 +44,7 @@ const envSchema = z.object({
   GROQ_API_KEY: z.string().optional(),
   GEMINI_API_KEY: z.string().optional(),
   DEEPSEEK_API_KEY: z.string().optional(),
+  AI_REPORT_PROVIDER: z.enum(['groq', 'gemini', 'deepseek']).default('groq'),
 })
 
 export const env = envSchema.parse(process.env)
