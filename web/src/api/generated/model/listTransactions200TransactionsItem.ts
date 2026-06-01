@@ -3,7 +3,7 @@
  * Do not edit manually.
  * HouseApp API
  * API for HouseApp
- * OpenAPI spec version: 1.0.1
+ * OpenAPI spec version: 1.0.2
  */
 import type { ListTransactions200TransactionsItemType } from "./listTransactions200TransactionsItemType";
 import type { ListTransactions200TransactionsItemContextualizedType } from "./listTransactions200TransactionsItemContextualizedType";

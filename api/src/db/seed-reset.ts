@@ -32,7 +32,7 @@ async function seedReset() {
         name: 'Fagner Gomes',
         avatarUrl: 'https://github.com/fagner3g.png',
         email: 'fagner.egomes@gmail.com',
-        phone: '5511999999999',
+        phone: '5531971697646',
       },
       {
         name: 'Diego Fernandes',

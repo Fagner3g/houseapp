@@ -5,7 +5,8 @@
   "scripts": {
     "prepare": "husky install",
     "test": "npm test --prefix api",
-    "precommit": "lint-staged"
+    "precommit": "lint-staged",
+    "dev": "./web/node_modules/.bin/concurrently -n api,web -c blue,green \"cd api && npx tsx watch --env-file ./.env src/http/server.ts\" \"cd web && yarn dev\""
   },
   "devDependencies": {
     "@biomejs/biome": "^2.1.2",
