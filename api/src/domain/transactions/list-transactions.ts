@@ -119,6 +119,7 @@ export async function listTransactionsService({
           )
         `,
         status: transactionOccurrences.status,
+        valuePaid: transactionOccurrences.valuePaid,
         overdueDays: sql<number>`
           CASE
             WHEN ${transactionOccurrences.status} = 'pending' AND ${transactionOccurrences.dueDate}::date < CURRENT_DATE THEN GREATEST(0, (CURRENT_DATE - ${transactionOccurrences.dueDate}::date))

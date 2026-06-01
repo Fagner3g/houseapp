@@ -94,9 +94,14 @@ function fallbackOverdueAlerts(data: OverdueAlertsData): string {
   if (data.overdue.length === 0) {
     lines.push('✅ Nenhuma transação vencida. Parabéns!')
   } else {
+    const fullOverdue = data.overdue.filter(t => !t.isPartial)
+    const partialOverdue = data.overdue.filter(t => t.isPartial)
     const total = data.overdue.reduce((sum, t) => sum + t.amount, 0)
     lines.push(`🔻 *${data.overdue.length} transações vencidas*`)
     lines.push(`   Total: ${formatBRL(total)}`)
+    if (partialOverdue.length > 0) {
+      lines.push(`   (${partialOverdue.length} com pagamento parcial)`)
+    }
     lines.push('')
     const sorted = [...data.overdue].sort((a, b) => (b.overdueDays ?? 0) - (a.overdueDays ?? 0))
     const shown = sorted.slice(0, 5)
@@ -106,7 +111,11 @@ function fallbackOverdueAlerts(data: OverdueAlertsData): string {
       lines.push(
         `• *${t.title}*${t.installmentInfo ? ` (${t.installmentInfo})` : ''}`
       )
-      lines.push(`  ${formatBRL(t.amount)} — ${t.dueDate}`)
+      if (t.isPartial && t.originalAmount) {
+        lines.push(`  *${formatBRL(t.amount)}* (restante de ${formatBRL(t.originalAmount)}) — ${t.dueDate}`)
+      } else {
+        lines.push(`  ${formatBRL(t.amount)} — ${t.dueDate}`)
+      }
       if (t.overdueDays) {
         lines.push(`  há ${t.overdueDays} dias`)
       }

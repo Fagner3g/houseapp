@@ -55,6 +55,10 @@ export function MobileCards({
       return <IconCircleCheckFilled className="h-4 w-4 fill-green-500 dark:fill-green-400" />
     }
 
+    if (transaction.status === 'partial') {
+      return <IconCircleCheckFilled className="h-4 w-4 fill-amber-500 dark:fill-amber-400" />
+    }
+
     if (transaction.status === 'pending') {
       if (transaction.overdueDays > 0 && transaction.overdueDays <= 5) {
         return <AlertOctagon className="h-4 w-4 text-red-400" />
@@ -159,7 +163,9 @@ export function MobileCards({
                     <>
                       <DropdownMenuSeparator />
                       <DropdownMenuItem onClick={() => onPay(transaction.id)}>
-                        {transaction.status === 'paid' ? 'Cancelar Pagamento' : 'Marcar como Pago'}
+                        {transaction.status === 'paid' || transaction.status === 'partial'
+                          ? 'Cancelar Pagamento'
+                          : 'Marcar como Pago'}
                       </DropdownMenuItem>
                       <DropdownMenuItem
                         onClick={() => onDelete(transaction.id)}
@@ -184,6 +190,12 @@ export function MobileCards({
                 <span className="text-lg font-bold">
                   {formatCurrency(Number(transaction.amount))}
                 </span>
+                {transaction.status === 'partial' && transaction.valuePaid != null && (
+                  <span className="text-xs text-amber-600 ml-2">
+                    (pago:{' '}
+                    {formatCurrency((transaction.valuePaid ?? 0) / 100)})
+                  </span>
+                )}
               </div>
 
               {transaction.tags && transaction.tags.length > 0 && (

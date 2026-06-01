@@ -756,11 +756,13 @@ function DrawerTransactionContent({ transaction, open, onOpenChange, onExternalS
                       : isEditMode
                         ? transaction?.status === 'paid'
                           ? 'Cancelar Pagamento'
-                          : transaction?.status === 'canceled'
-                            ? 'Reativar Transação'
-                            : isDirty && activeTab === 'form'
-                              ? 'Salvar edição'
-                              : 'Marcar como Pago'
+                          : transaction?.status === 'partial'
+                            ? 'Continuar pagamento'
+                            : transaction?.status === 'canceled'
+                              ? 'Reativar Transação'
+                              : isDirty && activeTab === 'form'
+                                ? 'Salvar edição'
+                                : 'Marcar como Pago'
                         : 'Cadastrar'}
                   </Button>
                 )}

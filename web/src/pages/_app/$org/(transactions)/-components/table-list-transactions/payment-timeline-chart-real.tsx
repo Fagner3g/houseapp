@@ -146,11 +146,11 @@ export function PaymentTimelineChartReal({ transaction }: Props) {
     )
   }
 
-  // Encontrar o índice do último pagamento
+  // Encontrar o índice do último pagamento (inclui parcial)
   const lastPaidIndex = displayInstallments
     .slice()
     .reverse()
-    .findIndex(entry => entry.status === 'paid')
+    .findIndex(entry => entry.status === 'paid' || entry.status === 'partial')
   const actualLastPaidIndex =
     lastPaidIndex >= 0 ? displayInstallments.length - 1 - lastPaidIndex : -1
 
@@ -185,8 +185,10 @@ export function PaymentTimelineChartReal({ transaction }: Props) {
           <div className="flex items-center justify-between text-xs">
             <span className="text-muted-foreground">Progresso:</span>
             <span className="font-medium">
-              {displayInstallments.filter(entry => entry.status === 'paid').length} de{' '}
-              {isUnlimited ? '∞' : isLimited ? '36' : displayInstallments.length} parcelas
+              {displayInstallments.filter(
+                entry => entry.status === 'paid' || entry.status === 'partial'
+              ).length}{' '}
+              de {isUnlimited ? '∞' : isLimited ? '36' : displayInstallments.length} parcelas
               {isLimited && ` (de ${installmentsTotalRaw} total)`}
             </span>
           </div>
@@ -194,7 +196,11 @@ export function PaymentTimelineChartReal({ transaction }: Props) {
             <div
               className="h-1 rounded-full bg-green-500 transition-all duration-300"
               style={{
-                width: `${(displayInstallments.filter(entry => entry.status === 'paid').length / displayInstallments.length) * 100}%`,
+                width: `${(displayInstallments.filter(
+                  entry => entry.status === 'paid' || entry.status === 'partial'
+                ).length /
+                  displayInstallments.length) *
+                  100}%`,
               }}
             />
           </div>
@@ -208,7 +214,9 @@ export function PaymentTimelineChartReal({ transaction }: Props) {
               className={`flex items-center justify-between rounded border p-2 transition-all duration-300 ease-in-out ${
                 entry.status === 'paid'
                   ? 'border-green-200 bg-green-50 dark:border-green-800 dark:bg-green-900/20'
-                  : 'border-red-200 bg-red-50 dark:border-red-800 dark:bg-red-900/20'
+                  : entry.status === 'partial'
+                    ? 'border-amber-200 bg-amber-50 dark:border-amber-800 dark:bg-amber-900/20'
+                    : 'border-red-200 bg-red-50 dark:border-red-800 dark:bg-red-900/20'
               }`}
               style={{
                 animationDelay: `${index * 50}ms`,
@@ -220,7 +228,11 @@ export function PaymentTimelineChartReal({ transaction }: Props) {
                 {/* Indicador de status */}
                 <div
                   className={`h-2 w-2 rounded-full ${
-                    entry.status === 'paid' ? 'bg-green-500' : 'bg-red-500'
+                    entry.status === 'paid'
+                      ? 'bg-green-500'
+                      : entry.status === 'partial'
+                        ? 'bg-amber-500'
+                        : 'bg-red-500'
                   }`}
                 />
 
@@ -241,12 +253,32 @@ export function PaymentTimelineChartReal({ transaction }: Props) {
               </div>
 
               {/* Lado direito - Status */}
-              <Badge
-                variant={entry.status === 'paid' ? 'default' : 'destructive'}
-                className="text-xs"
-              >
-                {entry.status === 'paid' ? 'Pago' : 'Pendente'}
-              </Badge>
+              <div className="flex flex-col items-end gap-1">
+                {entry.status === 'partial' && entry.valuePaid != null && (
+                  <span className="text-xs text-amber-600 font-medium">
+                    R$ {(Number(entry.valuePaid) / 100).toFixed(2)} de{' '}
+                    {typeof entry.amount === 'string'
+                      ? Number(entry.amount).toFixed(2)
+                      : entry.amount}
+                  </span>
+                )}
+                <Badge
+                  variant={
+                    entry.status === 'paid'
+                      ? 'default'
+                      : entry.status === 'partial'
+                        ? 'default'
+                        : 'destructive'
+                  }
+                  className={`text-xs ${entry.status === 'partial' ? 'bg-amber-500 hover:bg-amber-600' : ''}`}
+                >
+                  {entry.status === 'paid'
+                    ? 'Pago'
+                    : entry.status === 'partial'
+                      ? 'Parcial'
+                      : 'Pendente'}
+                </Badge>
+              </div>
             </div>
           ))}
         </div>

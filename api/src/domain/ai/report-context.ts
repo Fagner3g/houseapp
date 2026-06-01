@@ -1,6 +1,8 @@
 export interface TransactionItem {
   title: string
   amount: number
+  originalAmount?: number
+  isPartial?: boolean
   dueDate: string
   daysUntilDue?: number
   overdueDays?: number
@@ -92,7 +94,10 @@ export function buildOverdueAlertsPrompt(data: OverdueAlertsData): string {
   const overdueList = data.overdue
     .map(t => {
       const parcel = t.installmentInfo ? ` (${t.installmentInfo})` : ''
-      return `• *${t.title}*${parcel}\n  ${formatBRL(t.amount)} — ${t.dueDate} — ${t.overdueDays} dias atrás`
+      const partial = t.isPartial
+        ? ` [parcial — restante: ${formatBRL(t.amount)}${t.originalAmount ? ` de ${formatBRL(t.originalAmount)}` : ''}]`
+        : ''
+      return `• *${t.title}*${parcel}${partial}\n  ${formatBRL(t.amount)} — ${t.dueDate} — ${t.overdueDays} dias atrás`
     })
     .join('\n\n')
 
@@ -100,17 +105,18 @@ export function buildOverdueAlertsPrompt(data: OverdueAlertsData): string {
   const oldest = data.overdue.length > 0
     ? Math.max(...data.overdue.map(t => t.overdueDays ?? 0))
     : 0
+  const partialCount = data.overdue.filter(t => t.isPartial).length
 
   return `${BASE_INSTRUCTIONS}
 
 Relatório: *Transações vencidas* — todas as pendências.
 ${data.personName ? `\nDestinatário: *${data.personName}*` : ''}
 
-${data.overdue.length} vencidas — Total: ${formatBRL(total)}${oldest > 0 ? ` — mais antiga: ${oldest} dias` : ''}
+${data.overdue.length} vencidas — Total: ${formatBRL(total)}${oldest > 0 ? ` — mais antiga: ${oldest} dias` : ''}${partialCount > 0 ? ` — ${partialCount} parcial(is)` : ''}
 
 ${data.overdue.length > 0 ? overdueList : 'Nenhuma transação vencida.'}
 
-Formato para celular: cada item em 2 linhas (título em negrito, depois valor/data). Itens separados por linha em branco. Ao final, um resumo curto com recomendação.`
+Formato para celular: cada item em 2 linhas (título em negrito, depois valor/data). Itens separados por linha em branco. Ao final, um resumo curto com recomendação. Destacar transações marcadas como "[parcial]" pois já tiveram algum pagamento.`
 }
 
 export function buildMonthlySummaryPrompt(data: MonthlySummaryData): string {

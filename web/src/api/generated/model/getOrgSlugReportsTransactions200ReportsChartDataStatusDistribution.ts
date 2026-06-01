@@ -10,5 +10,6 @@ export type GetOrgSlugReportsTransactions200ReportsChartDataStatusDistribution =
   {
     paid: number;
     pending: number;
+    partial: number;
     overdue: number;
   };

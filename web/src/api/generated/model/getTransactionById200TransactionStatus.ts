@@ -13,5 +13,6 @@ export type GetTransactionById200TransactionStatus =
 export const GetTransactionById200TransactionStatus = {
   pending: "pending",
   paid: "paid",
+  partial: "partial",
   canceled: "canceled",
 } as const;

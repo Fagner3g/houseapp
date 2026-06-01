@@ -15,4 +15,5 @@ export const GetOrgSlugReportsTransactions200ReportsUpcomingAlertsTransactionsIt
     warning: "warning",
     urgent: "urgent",
     overdue: "overdue",
+    partial: "partial",
   } as const;

@@ -70,9 +70,17 @@ async function sendOverdueAlerts(userId?: string): Promise<JobResult> {
               month: '2-digit',
             })
 
+            const isPartial = t.status === 'partial'
+            const amount = isPartial && t.valuePaidCents != null
+              ? (t.amountCents - t.valuePaidCents) / 100
+              : t.amountCents / 100
+            const originalAmount = t.amountCents / 100
+
             return {
               title: t.title,
-              amount: t.amountCents / 100,
+              amount,
+              originalAmount: isPartial ? originalAmount : undefined,
+              isPartial,
               dueDate: dueDateFormatted,
               overdueDays: t.overdueDays,
               installmentInfo:
@@ -174,12 +182,17 @@ export async function previewOverdueAlerts(userId?: string): Promise<{
     const transactions = overdueTransactions.map(t => ({
       id: t.id,
       title: t.title,
-      amount: t.amountCents / 100,
+      amount: t.status === 'partial' && t.valuePaidCents != null
+        ? (t.amountCents - t.valuePaidCents) / 100
+        : t.amountCents / 100,
       dueDate: t.dueDate.toISOString(),
       overdueDays: t.overdueDays,
       payToName: t.payToName,
       payToPhone: t.payToPhone,
       organizationSlug: t.organizationSlug,
+      status: t.status,
+      valuePaid: t.valuePaidCents ? t.valuePaidCents / 100 : null,
+      originalAmount: t.amountCents / 100,
       installmentInfo:
         t.installmentIndex != null && t.installmentsTotal != null
           ? `Parcela ${t.installmentIndex}/${t.installmentsTotal}`

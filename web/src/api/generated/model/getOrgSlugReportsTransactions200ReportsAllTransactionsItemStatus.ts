@@ -14,4 +14,5 @@ export const GetOrgSlugReportsTransactions200ReportsAllTransactionsItemStatus =
   {
     paid: "paid",
     pending: "pending",
+    partial: "partial",
   } as const;

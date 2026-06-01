@@ -29,49 +29,64 @@ export function OverdueTransactionsCard({ data, onEdit }: Props) {
         </CardHeader>
         <CardContent>
           <div className="space-y-3">
-            {data.transactions.map(transaction => (
-              <button
-                key={transaction.id}
-                type="button"
-                className="flex items-center justify-between p-4 border rounded-lg transition-all duration-200 hover:bg-red-100/30 w-full text-left"
-                onClick={() => onEdit(mapOverdueToListItem(transaction))}
-              >
-                <div className="flex-1">
-                  <div className="flex items-center gap-2 mb-1">
-                    <AlertTriangle className="h-4 w-4 text-red-500" />
-                    <h4 className="font-medium text-foreground">{transaction.title}</h4>
-                  </div>
-                  <div className="flex items-center gap-4 text-sm text-muted-foreground">
-                    <div className="flex items-center gap-1">
-                      <User className="h-3 w-3" />
-                      <span>{transaction.ownerName}</span>
+            {data.transactions.map(transaction => {
+              const isPartial = transaction.status === 'partial'
+              return (
+                <button
+                  key={transaction.id}
+                  type="button"
+                  className={`flex items-center justify-between p-4 border rounded-lg transition-all duration-200 w-full text-left ${
+                    isPartial
+                      ? 'border-amber-200 bg-amber-50/50 hover:bg-amber-100/30 dark:border-amber-800 dark:bg-amber-950/20'
+                      : 'hover:bg-red-100/30'
+                  }`}
+                  onClick={() => onEdit(mapOverdueToListItem(transaction))}
+                >
+                  <div className="flex-1">
+                    <div className="flex items-center gap-2 mb-1">
+                      <AlertTriangle className={`h-4 w-4 ${isPartial ? 'text-amber-500' : 'text-red-500'}`} />
+                      <h4 className="font-medium text-foreground">
+                        {transaction.title}
+                        {isPartial && <span className="text-amber-600 text-xs ml-1">(parcial)</span>}
+                      </h4>
                     </div>
-                    <div className="flex items-center gap-1">
-                      <DollarSign className="h-3 w-3" />
-                      <span className="font-medium">
-                        R${' '}
-                        {Number(transaction.amount).toLocaleString('pt-BR', {
-                          minimumFractionDigits: 2,
-                        })}
+                    <div className="flex items-center gap-4 text-sm text-muted-foreground">
+                      <div className="flex items-center gap-1">
+                        <User className="h-3 w-3" />
+                        <span>{transaction.ownerName}</span>
+                      </div>
+                      <div className="flex items-center gap-1">
+                        <DollarSign className="h-3 w-3" />
+                        <span className="font-medium">
+                          R${' '}
+                          {Number(transaction.amount).toLocaleString('pt-BR', {
+                            minimumFractionDigits: 2,
+                          })}
+                        </span>
+                        {isPartial && (
+                          <span className="text-xs text-muted-foreground">
+                            (restante)
+                          </span>
+                        )}
+                      </div>
+                    </div>
+                  </div>
+                  <div className="text-right">
+                    <div className="flex items-center gap-1 justify-end mb-1">
+                      <Clock className={`h-3 w-3 ${isPartial ? 'text-amber-500' : 'text-red-500'}`} />
+                      <span className={`text-sm font-medium ${isPartial ? 'text-amber-600 dark:text-amber-400' : 'text-red-600 dark:text-red-400'}`}>
+                        {transaction.overdueDays === 1
+                          ? '1 dia vencido'
+                          : `${transaction.overdueDays} dias vencidos`}
                       </span>
                     </div>
+                    <p className="text-xs text-muted-foreground">
+                      Venceu em {new Date(transaction.dueDate).toLocaleDateString('pt-BR')}
+                    </p>
                   </div>
-                </div>
-                <div className="text-right">
-                  <div className="flex items-center gap-1 justify-end mb-1">
-                    <Clock className="h-3 w-3 text-red-500" />
-                    <span className="text-sm font-medium text-red-600 dark:text-red-400">
-                      {transaction.overdueDays === 1
-                        ? '1 dia vencido'
-                        : `${transaction.overdueDays} dias vencidos`}
-                    </span>
-                  </div>
-                  <p className="text-xs text-muted-foreground">
-                    Venceu em {new Date(transaction.dueDate).toLocaleDateString('pt-BR')}
-                  </p>
-                </div>
-              </button>
-            ))}
+                </button>
+              )
+            })}
           </div>
         </CardContent>
       </Card>

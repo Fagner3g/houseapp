@@ -3912,11 +3912,16 @@
                           "type": "string",
                           "nullable": true
                         },
+                        "valuePaid": {
+                          "type": "number",
+                          "nullable": true
+                        },
                         "status": {
                           "type": "string",
                           "enum": [
                             "pending",
                             "paid",
+                            "partial",
                             "canceled"
                           ]
                         },
@@ -3972,6 +3977,7 @@
                         "amount",
                         "dueDate",
                         "paidAt",
+                        "valuePaid",
                         "status",
                         "overdueDays",
                         "tags",
@@ -4151,6 +4157,7 @@
                             "enum": [
                               "pending",
                               "paid",
+                              "partial",
                               "canceled"
                             ]
                           },
@@ -4380,11 +4387,16 @@
                             "type": "string",
                             "nullable": true
                           },
+                          "valuePaid": {
+                            "type": "number",
+                            "nullable": true
+                          },
                           "status": {
                             "type": "string",
                             "enum": [
                               "pending",
                               "paid",
+                              "partial",
                               "canceled"
                             ]
                           },
@@ -4440,6 +4452,7 @@
                           "amount",
                           "dueDate",
                           "paidAt",
+                          "valuePaid",
                           "status",
                           "overdueDays",
                           "tags",
@@ -4533,7 +4546,7 @@
         "tags": [
           "Transaction"
         ],
-        "description": "Mark current installment as paid",
+        "description": "Mark current installment as paid, with optional partial payment amount",
         "requestBody": {
           "content": {
             "application/json": {

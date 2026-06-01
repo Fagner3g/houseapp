@@ -13,7 +13,7 @@ export const transactionOccurrences = pgTable('transactions_occurrences', {
   dueDate: timestamp('due_date', { withTimezone: true }).notNull(),
   amount: bigint('amount', { mode: 'bigint' }).notNull(),
   installmentIndex: integer('installment_index').notNull(),
-  status: text('status').$type<'pending' | 'paid' | 'canceled'>().notNull().default('pending'),
+  status: text('status').$type<'pending' | 'paid' | 'partial' | 'canceled'>().notNull().default('pending'),
   paidAt: timestamp('paid_at', { withTimezone: true }),
   valuePaid: integer('value_paid'),
   description: text('description'),

@@ -13,5 +13,6 @@ export type ListTransactions200TransactionsItemStatus =
 export const ListTransactions200TransactionsItemStatus = {
   pending: "pending",
   paid: "paid",
+  partial: "partial",
   canceled: "canceled",
 } as const;

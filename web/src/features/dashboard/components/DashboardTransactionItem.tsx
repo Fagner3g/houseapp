@@ -3,7 +3,7 @@ import type { ListTransactions200TransactionsItem } from '@/api/generated/model'
 type Props = {
   transaction: ListTransactions200TransactionsItem
   onEdit: (t: ListTransactions200TransactionsItem) => void
-  variant?: 'default' | 'overdue' | 'upcoming'
+  variant?: 'default' | 'overdue' | 'upcoming' | 'partial'
   leftIcon: React.ReactNode
   title: string
   ownerName: string
@@ -32,6 +32,8 @@ export function DashboardTransactionItem({
     overdue:
       'border-red-200 bg-red-50/50 hover:bg-red-100/50 dark:border-red-800 dark:bg-red-950/20 dark:hover:bg-red-950/30',
     upcoming: 'hover:bg-muted/50',
+    partial:
+      'border-amber-200 bg-amber-50/50 hover:bg-amber-100/50 dark:border-amber-800 dark:bg-amber-950/20 dark:hover:bg-amber-950/30',
   }
 
   return (

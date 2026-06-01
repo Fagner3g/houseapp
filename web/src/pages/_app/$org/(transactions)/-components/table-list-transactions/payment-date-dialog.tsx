@@ -1,13 +1,18 @@
 import { useQueryClient } from '@tanstack/react-query'
 import dayjs from 'dayjs'
 import { ChevronDownIcon } from 'lucide-react'
-import { useEffect, useState } from 'react'
+import { useEffect, useMemo, useState } from 'react'
 import { toast } from 'sonner'
 
-import { getListTransactionsQueryKey, usePayTransaction } from '@/api/generated/api'
+import {
+  getGetTransactionInstallmentsQueryKey,
+  getListTransactionsQueryKey,
+  usePayTransaction,
+} from '@/api/generated/api'
 import type { ListTransactions200TransactionsItem } from '@/api/generated/model'
 import { Button } from '@/components/ui/button'
 import { Calendar } from '@/components/ui/calendar'
+import { CurrencyInput } from '@/components/ui/currency-input'
 import {
   Dialog,
   DialogContent,
@@ -33,17 +38,40 @@ export function PaymentDateDialog({ transaction, open, onOpenChange, onSuccess }
   const [calendarOpen, setCalendarOpen] = useState(false)
   const [paymentDate, setPaymentDate] = useState<Date>(new Date())
   const [calendarMonth, setCalendarMonth] = useState<Date>(new Date())
+  const [paymentAmount, setPaymentAmount] = useState<number>(0)
 
-  // Resetar o mês do calendário e a data de pagamento quando o modal abrir ou a transação mudar
+  const totalAmount = useMemo(
+    () => (transaction ? Number(transaction.amount) : 0),
+    [transaction]
+  )
+
+  const alreadyPaid = useMemo(
+    () => (transaction?.status === 'partial' ? (transaction.valuePaid ?? 0) / 100 : 0),
+    [transaction]
+  )
+
+  const remainingAmount = useMemo(
+    () => totalAmount - alreadyPaid,
+    [totalAmount, alreadyPaid]
+  )
+
+  const isPaid = transaction?.status === 'paid'
+  const isPartial = transaction?.status === 'partial'
+
+  // Resetar o mês do calendário, data de pagamento e valor quando o modal abrir ou a transação mudar
   useEffect(() => {
     if (open && transaction) {
       const dueDate = dayjs(transaction.dueDate).toDate()
       setCalendarMonth(dueDate)
       setPaymentDate(dueDate)
+      if (isPartial) {
+        setPaymentAmount(remainingAmount)
+      } else {
+        setPaymentAmount(totalAmount)
+      }
     }
-  }, [open, transaction])
+  }, [open, transaction, totalAmount, remainingAmount, isPartial])
 
-  // Wrapper para controlar o fechamento do modal
   const handleOpenChange = (newOpen: boolean) => {
     onOpenChange(newOpen)
   }
@@ -51,82 +79,98 @@ export function PaymentDateDialog({ transaction, open, onOpenChange, onSuccess }
   const { mutate: payTransaction, isPending } = usePayTransaction({
     mutation: {
       onSuccess: () => {
-        const isPaid = transaction?.status === 'paid'
+        const dueDate = dayjs(transaction?.dueDate)
+        const paidDate = dayjs(paymentDate)
+        const daysDiff = paidDate.diff(dueDate, 'day')
 
-        if (isPaid) {
-          toast.success('Pagamento cancelado com sucesso!')
+        let paymentStatus = ''
+        let statusIcon = ''
+
+        if (daysDiff > 0) {
+          paymentStatus = `Pago com ${daysDiff} dia${daysDiff > 1 ? 's' : ''} de atraso`
+          statusIcon = '⚠️'
+        } else if (daysDiff < 0) {
+          paymentStatus = `Pago ${Math.abs(daysDiff)} dia${Math.abs(daysDiff) > 1 ? 's' : ''} antes do vencimento`
+          statusIcon = '✅'
         } else {
-          // Calcular se foi pago no dia, com atraso ou antecipado
-          const dueDate = dayjs(transaction?.dueDate)
-          const paidDate = dayjs(paymentDate)
-          const daysDiff = paidDate.diff(dueDate, 'day')
+          paymentStatus = 'Pago no dia do vencimento'
+          statusIcon = '🎯'
+        }
 
-          let paymentStatus = ''
-          let statusIcon = ''
+        const fullPaid = isPartial
+          ? Math.abs(paymentAmount - remainingAmount) < 0.001
+          : Math.abs(paymentAmount - totalAmount) < 0.001
 
-          if (daysDiff > 0) {
-            paymentStatus = `Pago com ${daysDiff} dia${daysDiff > 1 ? 's' : ''} de atraso`
-            statusIcon = '⚠️'
-          } else if (daysDiff < 0) {
-            paymentStatus = `Pago ${Math.abs(daysDiff)} dia${Math.abs(daysDiff) > 1 ? 's' : ''} antes do vencimento`
-            statusIcon = '✅'
-          } else {
-            paymentStatus = 'Pago no dia do vencimento'
-            statusIcon = '🎯'
-          }
-
+        if (fullPaid) {
           toast.success('Transação paga com sucesso!', {
             description: `${statusIcon} ${paymentStatus}`,
             duration: 4000,
           })
+        } else {
+          toast.success(
+            isPartial ? 'Pagamento adicional registrado!' : 'Pagamento parcial registrado!',
+            {
+              description: `${statusIcon} Pago R$ ${paymentAmount.toFixed(2)} de R$ ${maxAmount.toFixed(2)}`,
+              duration: 4000,
+            }
+          )
         }
 
-        // Invalidar cache das transações
         queryClient.invalidateQueries({
           queryKey: getListTransactionsQueryKey(slug),
         })
 
-        // Sempre fechar o modal após sucesso
-        onOpenChange(false)
+        if (transaction?.serieId) {
+          queryClient.invalidateQueries({
+            queryKey: getGetTransactionInstallmentsQueryKey(slug, transaction.serieId),
+          })
+        }
 
-        // Chamar callback de sucesso (que pode fechar o drawer se for pagamento)
+        onOpenChange(false)
         onSuccess?.()
       },
       onError: () => {
-        const isPaid = transaction?.status === 'paid'
-        toast.error(isPaid ? 'Erro ao cancelar pagamento' : 'Erro ao pagar transação')
+        toast.error('Erro ao processar pagamento')
       },
     },
   })
 
+  const handleCancelPayment = () => {
+    if (!transaction) return
+    payTransaction({
+      slug,
+      id: transaction.id,
+      data: {},
+    })
+  }
+
   const handlePayment = () => {
     if (!transaction) return
 
-    const isPaid = transaction.status === 'paid'
-
     if (isPaid) {
-      // Cancelar pagamento - não precisa de data
-      payTransaction({
-        slug,
-        id: transaction.id,
-        data: {},
-      })
-    } else {
-      // Marcar como pago
-      // Se o usuário escolheu uma data, usa ela; caso contrário, usa hoje
-      const finalPaymentDate = paymentDate ?? new Date()
-
-      payTransaction({
-        slug,
-        id: transaction.id,
-        data: {
-          paidAt: dayjs(finalPaymentDate).toISOString(),
-        },
-      })
+      payTransaction({ slug, id: transaction.id, data: {} })
+      return
     }
+
+    const finalPaymentDate = paymentDate ?? new Date()
+    const data: { paidAt: string; paidAmount?: number } = {
+      paidAt: dayjs(finalPaymentDate).toISOString(),
+    }
+
+    const fullPaid = isPartial
+      ? Math.abs(paymentAmount - remainingAmount) < 0.001
+      : Math.abs(paymentAmount - totalAmount) < 0.001
+
+    if (!fullPaid) {
+      data.paidAmount = isPartial ? paymentAmount : paymentAmount
+    }
+
+    payTransaction({ slug, id: transaction.id, data })
   }
 
-  const isPaid = transaction?.status === 'paid'
+  const maxAmount = isPartial ? remainingAmount : totalAmount
+  const amountInputDisabled = isPartial && Math.abs(remainingAmount) < 0.001
+  const canConfirm = paymentAmount > 0 && paymentAmount <= maxAmount && !amountInputDisabled
 
   return (
     <Dialog open={open} onOpenChange={handleOpenChange}>
@@ -137,11 +181,19 @@ export function PaymentDateDialog({ transaction, open, onOpenChange, onSuccess }
         onPointerUp={e => e.stopPropagation()}
       >
         <DialogHeader>
-          <DialogTitle>{isPaid ? 'Cancelar pagamento' : 'Marcar como pago'}</DialogTitle>
+          <DialogTitle>
+            {isPaid
+              ? 'Cancelar pagamento'
+              : isPartial
+                ? 'Continuar pagamento'
+                : 'Marcar como pago'}
+          </DialogTitle>
           <DialogDescription>
             {isPaid
               ? 'Tem certeza que deseja cancelar o pagamento desta transação?'
-              : 'Selecione a data em que a transação foi paga.'}
+              : isPartial
+                ? `Já foi pago R$ ${alreadyPaid.toFixed(2)} de R$ ${totalAmount.toFixed(2)}. Adicione mais um valor ou cancele.`
+                : 'Selecione a data e o valor do pagamento.'}
           </DialogDescription>
         </DialogHeader>
 
@@ -153,11 +205,27 @@ export function PaymentDateDialog({ transaction, open, onOpenChange, onSuccess }
               <span className="text-sm">{transaction.title}</span>
             </div>
             <div className="flex justify-between items-center">
-              <span className="text-sm font-medium">Valor:</span>
+              <span className="text-sm font-medium">Valor total:</span>
               <span className="text-sm font-semibold">
-                R$ {(Number(transaction.amount) / 100).toFixed(2)}
+                R$ {totalAmount.toFixed(2)}
               </span>
             </div>
+            {isPartial && (
+              <div className="flex justify-between items-center">
+                <span className="text-sm font-medium">Já pago:</span>
+                <span className="text-sm font-semibold text-amber-600">
+                  R$ {alreadyPaid.toFixed(2)}
+                </span>
+              </div>
+            )}
+            {isPartial && (
+              <div className="flex justify-between items-center">
+                <span className="text-sm font-medium">Restante:</span>
+                <span className="text-sm font-semibold text-orange-600">
+                  R$ {remainingAmount.toFixed(2)}
+                </span>
+              </div>
+            )}
             <div className="flex justify-between items-center">
               <span className="text-sm font-medium">Vencimento:</span>
               <span className="text-sm">{dayjs(transaction.dueDate).format('DD/MM/YYYY')}</span>
@@ -208,6 +276,31 @@ export function PaymentDateDialog({ transaction, open, onOpenChange, onSuccess }
                   </PopoverContent>
                 </Popover>
               </div>
+            </div>
+
+            <div className="grid gap-2">
+              <span className="text-sm font-medium">
+                {isPartial ? 'Valor a adicionar' : 'Valor do pagamento'}
+              </span>
+              <CurrencyInput
+                value={paymentAmount}
+                onValueChange={setPaymentAmount}
+                className="w-full"
+                placeholder="R$ 0,00"
+              />
+              {isPartial && (
+                <p className="text-xs text-muted-foreground">
+                  Restante: R$ {remainingAmount.toFixed(2)}
+                </p>
+              )}
+              {paymentAmount > maxAmount && (
+                <p className="text-xs text-red-500">
+                  Valor não pode ser maior que R$ {maxAmount.toFixed(2)}
+                </p>
+              )}
+              {paymentAmount <= 0 && (
+                <p className="text-xs text-red-500">Valor deve ser maior que zero</p>
+              )}
             </div>
 
             {/* Informação sobre dias de atraso/adiantamento */}
@@ -276,21 +369,69 @@ export function PaymentDateDialog({ transaction, open, onOpenChange, onSuccess }
         )}
 
         <DialogFooter className="flex flex-row gap-3">
-          <Button
-            variant="outline"
-            onClick={() => handleOpenChange(false)}
-            disabled={isPending}
-            className="flex-1"
-          >
-            Cancelar
-          </Button>
-          <Button
-            onClick={handlePayment}
-            disabled={isPending}
-            className={`flex-1 ${isPaid ? 'bg-red-600 hover:bg-red-700' : 'bg-green-600 hover:bg-green-700'}`}
-          >
-            {isPending ? 'Processando...' : isPaid ? 'Cancelar pagamento' : 'Marcar como pago'}
-          </Button>
+          {!isPaid && !isPartial ? (
+            <>
+              <Button
+                variant="outline"
+                onClick={() => handleOpenChange(false)}
+                disabled={isPending}
+                className="flex-1"
+              >
+                Cancelar
+              </Button>
+              <Button
+                onClick={handlePayment}
+                disabled={isPending || !canConfirm}
+                className="flex-1 bg-green-600 hover:bg-green-700"
+              >
+                {isPending
+                  ? 'Processando...'
+                  : paymentAmount > 0 && paymentAmount < totalAmount
+                    ? `Pagar R$ ${paymentAmount.toFixed(2)}`
+                    : 'Pagar valor total'}
+              </Button>
+            </>
+          ) : isPartial ? (
+            <>
+              <Button
+                variant="outline"
+                onClick={handleCancelPayment}
+                disabled={isPending}
+                className="flex-1 border-red-300 text-red-600 hover:bg-red-50"
+              >
+                Cancelar pagamento parcial
+              </Button>
+              <Button
+                onClick={handlePayment}
+                disabled={isPending || !canConfirm}
+                className="flex-1 bg-green-600 hover:bg-green-700"
+              >
+                {isPending
+                  ? 'Processando...'
+                  : Math.abs(paymentAmount - remainingAmount) < 0.001
+                    ? 'Pagar restante'
+                    : `Adicionar R$ ${paymentAmount.toFixed(2)}`}
+              </Button>
+            </>
+          ) : (
+            <>
+              <Button
+                variant="outline"
+                onClick={() => handleOpenChange(false)}
+                disabled={isPending}
+                className="flex-1"
+              >
+                Cancelar
+              </Button>
+              <Button
+                onClick={handlePayment}
+                disabled={isPending}
+                className="flex-1 bg-red-600 hover:bg-red-700"
+              >
+                {isPending ? 'Processando...' : 'Cancelar pagamento'}
+              </Button>
+            </>
+          )}
         </DialogFooter>
       </DialogContent>
     </Dialog>

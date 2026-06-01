@@ -275,6 +275,18 @@ export const useTable = (
                 </Tooltip>
               </TooltipProvider>
             )}
+            {row.original.status === 'partial' && (
+              <TooltipProvider>
+                <Tooltip>
+                  <TooltipTrigger asChild>
+                    <IconCircleCheckFilled className="fill-amber-500 dark:fill-amber-400 cursor-help" />
+                  </TooltipTrigger>
+                  <TooltipContent>
+                    <p>Pagamento parcial</p>
+                  </TooltipContent>
+                </Tooltip>
+              </TooltipProvider>
+            )}
             {row.original.status === 'pending' &&
               row.original.overdueDays > 0 &&
               row.original.overdueDays <= 5 && (
@@ -359,12 +371,35 @@ export const useTable = (
       enableSorting: true,
       sortingFn: 'basic',
       cell: ({ row }) => (
-        <Label className="text-muted-foreground px-1.5">
-          {Number(row.original.amount).toLocaleString('pt-BR', {
-            style: 'currency',
-            currency: 'BRL',
-          })}
-        </Label>
+        <div className="px-1.5">
+          <Label className="text-muted-foreground">
+            {Number(row.original.amount).toLocaleString('pt-BR', {
+              style: 'currency',
+              currency: 'BRL',
+            })}
+          </Label>
+          {row.original.status === 'partial' && row.original.valuePaid != null && (
+            <div className="flex items-center gap-1 mt-0.5">
+              <div className="h-1.5 flex-1 rounded-full bg-muted">
+                <div
+                  className="h-1.5 rounded-full bg-amber-500"
+                  style={{
+                    width: `${Math.min(
+                      100,
+                      ((row.original.valuePaid ?? 0) / 100 / Number(row.original.amount)) * 100
+                    )}%`,
+                  }}
+                />
+              </div>
+              <span className="text-[10px] text-amber-600 whitespace-nowrap">
+                {((row.original.valuePaid ?? 0) / 100).toLocaleString('pt-BR', {
+                  style: 'currency',
+                  currency: 'BRL',
+                })}
+              </span>
+            </div>
+          )}
+        </div>
       ),
     },
     {
@@ -525,21 +560,21 @@ export const useTable = (
       },
       payRows: async (ids: string[]) => {
         const items = data.filter(t => ids.includes(t.id))
-        const allPaid = items.every(t => t.status === 'paid')
+        const allPaidOrPartial = items.every(t => t.status === 'paid' || t.status === 'partial')
 
         try {
           await Promise.all(ids.map(id => payTransaction({ slug, id, data: {} })))
           toast.success(
             ids.length > 1
-              ? allPaid
+              ? allPaidOrPartial
                 ? 'Pagamentos cancelados com sucesso!'
                 : 'Transações pagas com sucesso!'
-              : allPaid
+              : allPaidOrPartial
                 ? 'Pagamento cancelado com sucesso!'
                 : 'Transação paga com sucesso!'
           )
         } catch {
-          toast.error(allPaid ? 'Erro ao cancelar pagamento' : 'Erro ao pagar transações')
+          toast.error(allPaidOrPartial ? 'Erro ao cancelar pagamento' : 'Erro ao pagar transações')
         } finally {
           // Pequeno delay para garantir que todas as transações foram processadas
           setTimeout(async () => {

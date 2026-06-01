@@ -15,6 +15,9 @@ export type GetOrgSlugReportsTransactions200ReportsUpcomingAlertsTransactionsIte
     seriesId?: string;
     title: string;
     amount: number;
+    /** @nullable */
+    valuePaid?: number | null;
+    originalAmount?: number;
     dueDate: string;
     daysUntilDue?: number;
     alertType?: GetOrgSlugReportsTransactions200ReportsUpcomingAlertsTransactionsItemAlertType;

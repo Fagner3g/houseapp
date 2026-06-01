@@ -16,7 +16,7 @@ export const getTransactionInstallmentsSchema = {
           installmentIndex: z.number(),
           dueDate: z.date(),
           amount: z.string(),
-          status: z.enum(['pending', 'paid', 'canceled']),
+          status: z.enum(['pending', 'paid', 'partial', 'canceled']),
           paidAt: z.date().nullable(),
           valuePaid: z.number().nullable(),
           description: z.string().nullable(),

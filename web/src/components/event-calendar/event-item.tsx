@@ -58,7 +58,7 @@ function EventWrapper({
   onMouseDown,
   onTouchStart,
 }: EventWrapperProps) {
-  const isPaid = event.status === "paid"
+  const isPaid = event.status === "paid" || event.status === "partial"
 
   return (
     <button
@@ -117,7 +117,7 @@ export function EventItem({
   const eventColor = event.color
 
   const overdueBadge =
-    event.status !== "paid" && event.overdueDays && event.overdueDays > 0 ? (
+    event.status !== "paid" && event.status !== "partial" && event.overdueDays && event.overdueDays > 0 ? (
       <Tooltip>
         <TooltipTrigger asChild>
           <span className="ml-1 size-2 rounded-full bg-destructive" />
@@ -266,7 +266,7 @@ export function EventItem({
         className
       )}
       data-past-event={isPast(new Date(event.end)) || undefined}
-      data-paid={event.status === "paid" || undefined}
+      data-paid={isPaid || undefined}
       onClick={onClick}
       onMouseDown={onMouseDown}
       onTouchStart={onTouchStart}

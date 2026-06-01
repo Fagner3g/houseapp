@@ -27,7 +27,11 @@ export function RecentActivity({ items }: Props) {
                     <p className="font-medium">
                       {activity.title}{' '}
                       <span className="text-xs text-muted-foreground">
-                        • {activity.status === 'paid' ? 'Pago' : 'Pendente'}
+                        • {activity.status === 'paid'
+                          ? 'Pago'
+                          : activity.status === 'partial'
+                            ? 'Parcial'
+                            : 'Pendente'}
                       </span>
                     </p>
                     <p className="text-xs text-muted-foreground">

@@ -19,7 +19,7 @@ export async function payTransactionController(
   await payTransactionService({
     id,
     paidAt: paidAt ? new Date(paidAt) : undefined,
-    valuePaid: paidAmount ? BigInt(Math.round(paidAmount * 100)) : undefined,
+    valuePaid: paidAmount ? Math.round(paidAmount * 100) : undefined,
   })
   return reply.status(204).send()
 }

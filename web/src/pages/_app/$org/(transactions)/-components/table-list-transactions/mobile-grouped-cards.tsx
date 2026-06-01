@@ -111,6 +111,7 @@ export function MobileGroupedCards({
 
   const getActualStatus = (status: string, dueDate: string) => {
     if (status === 'paid') return 'paid'
+    if (status === 'partial') return 'partial'
     if (status === 'canceled') return 'canceled'
 
     const today = new Date()

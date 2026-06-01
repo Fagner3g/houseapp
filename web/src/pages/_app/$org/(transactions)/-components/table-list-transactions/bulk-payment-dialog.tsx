@@ -45,7 +45,9 @@ export function BulkPaymentDialog({ transactions, open, onOpenChange, onSuccess 
     if (transactions.length === 0) return
 
     setIsProcessing(true)
-    const allPaid = transactions.every(t => t.status === 'paid')
+    const allPaid = transactions.every(
+      t => t.status === 'paid' || t.status === 'partial'
+    )
 
     try {
       // Processar todas as transações
@@ -102,7 +104,9 @@ export function BulkPaymentDialog({ transactions, open, onOpenChange, onSuccess 
     }
   }
 
-  const allPaid = transactions.every(t => t.status === 'paid')
+  const allPaid = transactions.every(
+    t => t.status === 'paid' || t.status === 'partial'
+  )
   const selected = transactions.length
 
   return (

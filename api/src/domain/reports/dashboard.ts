@@ -26,6 +26,7 @@ export async function getTransactionReports(orgId: string, userId: string, refer
       status: transactionOccurrences.status,
       dueDate: transactionOccurrences.dueDate,
       paidAt: transactionOccurrences.paidAt,
+      valuePaid: transactionOccurrences.valuePaid,
       ownerId: transactionSeries.ownerId,
       payToId: transactionSeries.payToId,
       type: transactionSeries.type,
@@ -52,7 +53,10 @@ export async function getTransactionReports(orgId: string, userId: string, refer
             lte(transactionOccurrences.dueDate, endOfMonth)
           ),
           and(
-            eq(transactionOccurrences.status, 'pending'),
+            or(
+              eq(transactionOccurrences.status, 'pending'),
+              eq(transactionOccurrences.status, 'partial')
+            ),
             lte(transactionOccurrences.dueDate, now)
           )
         )
@@ -80,35 +84,43 @@ export async function getTransactionReports(orgId: string, userId: string, refer
     )
     // para cálculos específicos abaixo, recalculamos o contraparte conforme a regra
 
+    const valuePaidNum = r.valuePaid ? Number(r.valuePaid) / 100 : 0
+
     if (ctxType === 'income') {
       incomeRegistered += amountNum
-      if (r.paidAt) receivedTotal += amountNum
+      if (r.paidAt) {
+        receivedTotal += r.status === 'partial' ? valuePaidNum : amountNum
+      }
 
       const isHistorical = endOfMonth < new Date()
-      const shouldCountAsToReceive = isHistorical ? true : r.status === 'pending'
+      const shouldCountAsToReceive =
+        isHistorical ? !r.paidAt : r.status === 'pending' || r.status === 'partial'
 
-      if (shouldCountAsToReceive && !r.paidAt) {
-        toReceiveTotal += amountNum
+      if (shouldCountAsToReceive) {
+        const remaining = r.status === 'partial' ? amountNum - valuePaidNum : amountNum
+        toReceiveTotal += remaining
         const counterparty =
           r.ownerId === userId ? r.payToName || r.payToEmail || 'Desconhecido' : r.ownerName
-        toReceiveBy.set(counterparty, (toReceiveBy.get(counterparty) ?? 0) + amountNum)
+        toReceiveBy.set(counterparty, (toReceiveBy.get(counterparty) ?? 0) + remaining)
         const arr = toReceiveItems.get(counterparty) ?? []
-        arr.push({ title: r.title, amount: amountNum })
+        arr.push({ title: r.title, amount: remaining })
         toReceiveItems.set(counterparty, arr)
       }
     } else {
       expenseRegistered += amountNum
 
       const isHistorical = endOfMonth < new Date()
-      const shouldCountAsToPay = isHistorical ? true : r.status === 'pending'
+      const shouldCountAsToPay =
+        isHistorical ? !r.paidAt : r.status === 'pending' || r.status === 'partial'
 
-      if (shouldCountAsToPay && !r.paidAt) {
-        toSpendTotal += amountNum
+      if (shouldCountAsToPay) {
+        const remaining = r.status === 'partial' ? amountNum - valuePaidNum : amountNum
+        toSpendTotal += remaining
         const counterparty =
           r.payToId === userId ? r.ownerName : r.payToName || r.payToEmail || 'Desconhecido'
-        toPayBy.set(counterparty, (toPayBy.get(counterparty) ?? 0) + amountNum)
+        toPayBy.set(counterparty, (toPayBy.get(counterparty) ?? 0) + remaining)
         const arr = toPayItems.get(counterparty) ?? []
-        arr.push({ title: r.title, amount: amountNum })
+        arr.push({ title: r.title, amount: remaining })
         toPayItems.set(counterparty, arr)
       }
     }
@@ -119,8 +131,11 @@ export async function getTransactionReports(orgId: string, userId: string, refer
     totalTransactions: rows.length,
     totalAmount: rows.reduce((acc, r) => acc + Number(r.amount) / 100, 0),
     paidTransactions: rows.filter(r => r.paidAt).length,
-    pendingTransactions: rows.filter(r => r.status === 'pending').length,
-    overdueTransactions: rows.filter(r => r.status === 'pending' && r.dueDate < today).length,
+    partialTransactions: rows.filter(r => r.status === 'partial').length,
+    pendingTransactions: rows.filter(r => r.status === 'pending' || r.status === 'partial').length,
+    overdueTransactions: rows.filter(
+      r => r.status === 'pending' && r.dueDate < today
+    ).length,
   }
 
   // simple daily chart (paid/pending/total sums per day)
@@ -131,8 +146,12 @@ export async function getTransactionReports(orgId: string, userId: string, refer
     const amountNum = Number(r.amount) / 100
     const d = dailyMap.get(k)
     if (d) {
-      if (r.paidAt) d.paid += amountNum
-      else d.pending += amountNum
+      if (r.paidAt) {
+        d.paid += r.status === 'partial' ? Number(r.valuePaid ?? 0) / 100 : amountNum
+        d.pending += r.status === 'partial' ? amountNum - Number(r.valuePaid ?? 0) / 100 : 0
+      } else {
+        d.pending += amountNum
+      }
       d.total += amountNum
     }
   }
@@ -255,18 +274,21 @@ export async function getTransactionReports(orgId: string, userId: string, refer
   const statusDistribution = {
     paid: dailyTransactions.reduce((acc, d) => acc + d.paid, 0),
     pending: dailyTransactions.reduce((acc, d) => acc + d.pending, 0),
+    partial: rows
+      .filter(r => r.status === 'partial')
+      .reduce((acc, r) => acc + Number(r.valuePaid ?? 0) / 100, 0),
     // Para meses históricos, overdue são transações que venceram no mês e não foram pagas
     // Para mês atual, overdue são transações vencidas até hoje
     overdue: rows
       .filter(r => {
-        if (r.status !== 'pending' && !r.paidAt) return false
+        if (r.status !== 'pending') return false
         const isHistorical = endOfMonth < today
         if (isHistorical) {
           // Mês passado: transações do mês que não foram pagas
           return !r.paidAt
         }
         // Mês atual: transações vencidas (antes da meia-noite de hoje)
-        return r.status === 'pending' && r.dueDate < today
+        return r.dueDate < today
       })
       .reduce((acc, r) => acc + Number(r.amount) / 100, 0),
   }
@@ -276,7 +298,10 @@ export async function getTransactionReports(orgId: string, userId: string, refer
   fourDaysFromNow.setHours(23, 59, 59, 999)
 
   const upcomingRows = rows.filter(
-    r => r.status === 'pending' && r.dueDate >= today && r.dueDate <= fourDaysFromNow
+    r =>
+      (r.status === 'pending' || r.status === 'partial') &&
+      r.dueDate >= today &&
+      r.dueDate <= fourDaysFromNow
   )
   const upcomingSummary = {
     total: upcomingRows.length,
@@ -296,39 +321,53 @@ export async function getTransactionReports(orgId: string, userId: string, refer
       ownerId: r.ownerId,
       payToId: r.payToId,
       title: r.title,
-      amount: Number(r.amount) / 100,
+      amount:
+        r.status === 'partial'
+          ? (Number(r.amount) - Number(r.valuePaid ?? 0)) / 100
+          : Number(r.amount) / 100,
+      valuePaid: r.status === 'partial' ? Number(r.valuePaid ?? 0) / 100 : null,
+      originalAmount: Number(r.amount) / 100,
       dueDate: r.dueDate.toISOString(),
       ownerName: r.ownerName,
-      payTo: r.payToEmail, // Enviar email em vez de nome
+      payTo: r.payToEmail,
       payToName: r.payToName,
       payToEmail: r.payToEmail,
       installmentsTotal: r.installmentsTotal ?? null,
-      status: r.status as 'paid' | 'pending',
+      status: r.status as 'paid' | 'pending' | 'partial',
       daysUntilDue: (() => {
         const d = new Date(r.dueDate)
         d.setUTCHours(0, 0, 0, 0)
         return Math.ceil((+d - +today) / (1000 * 60 * 60 * 24))
       })(),
-      alertType: 'warning' as 'warning',
+      alertType: (r.status === 'partial' ? 'partial' : 'warning') as
+        | 'warning'
+        | 'urgent'
+        | 'overdue'
+        | 'partial',
       type: getContextualizedTransactionType(r.type as 'income' | 'expense', r.ownerId, userId),
     }))
 
   // Overdue list and summary — transactions due before today midnight (not today itself)
   const overdueList = rows
-    .filter(r => r.status === 'pending' && r.dueDate < today)
+    .filter(r => (r.status === 'pending' || r.status === 'partial') && r.dueDate < today)
     .map(r => ({
       id: r.id,
       seriesId: r.seriesId,
       title: r.title,
-      amount: Number(r.amount) / 100,
+      amount:
+        r.status === 'partial'
+          ? (Number(r.amount) - Number(r.valuePaid ?? 0)) / 100
+          : Number(r.amount) / 100,
+      valuePaid: r.status === 'partial' ? Number(r.valuePaid ?? 0) / 100 : null,
+      originalAmount: Number(r.amount) / 100,
       dueDate: r.dueDate.toISOString(),
       ownerName: r.ownerName,
       ownerId: r.ownerId,
       payToId: r.payToId,
-      payTo: r.payToEmail, // Enviar email em vez de nome
+      payTo: r.payToEmail,
       payToName: r.payToName,
       payToEmail: r.payToEmail,
-      status: r.status as 'paid' | 'pending',
+      status: r.status as 'paid' | 'pending' | 'partial',
       overdueDays: Math.ceil((+today - +r.dueDate) / (1000 * 60 * 60 * 24)),
       type: getContextualizedTransactionType(r.type as 'income' | 'expense', r.ownerId, userId),
     }))
@@ -348,7 +387,7 @@ export async function getTransactionReports(orgId: string, userId: string, refer
       payTo: r.payToEmail, // Enviar email em vez de nome
       payToName: r.payToName,
       payToEmail: r.payToEmail,
-      status: r.status as 'paid' | 'pending',
+      status: r.status as 'paid' | 'pending' | 'partial',
     }))
   const paidThisMonthSummary = {
     total: paidThisMonthList.length,
@@ -364,7 +403,7 @@ export async function getTransactionReports(orgId: string, userId: string, refer
       title: r.title,
       amount: Number(r.amount) / 100,
       dueDate: r.dueDate.toISOString(),
-      status: r.status as 'paid' | 'pending',
+      status: r.status as 'paid' | 'pending' | 'partial',
       paidAt: r.paidAt?.toISOString() ?? null,
       type: getContextualizedTransactionType(r.type as 'income' | 'expense', r.ownerId, userId),
     }))

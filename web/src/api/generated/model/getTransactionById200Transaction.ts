@@ -35,5 +35,7 @@ export type GetTransactionById200Transaction = {
   /** @nullable */
   installmentIndex: number | null;
   /** @nullable */
+  valuePaid: number | null;
+  /** @nullable */
   description: string | null;
 };
