@@ -52,9 +52,13 @@ function fallbackTransactionAlerts(data: TransactionAlertsData): string {
       if (i > 0) lines.push('')
       const label = t.daysUntilDue === 0 ? 'HOJE' : 'AMANHÃ'
       lines.push(
-        `• *${t.title}*${t.installmentInfo ? ` (${t.installmentInfo})` : ''}`
+        `• *${t.title}*${t.installmentInfo ? ` (${t.installmentInfo})` : ''}${t.isPartial ? ' *(parcial)*' : ''}`
       )
-      lines.push(`  ${formatBRL(t.amount)} — ${label}`)
+      if (t.isPartial && t.originalAmount) {
+        lines.push(`  *${formatBRL(t.amount)}* (restante de ${formatBRL(t.originalAmount)}) — ${label}`)
+      } else {
+        lines.push(`  ${formatBRL(t.amount)} — ${label}`)
+      }
     }
     lines.push('')
   }
@@ -66,9 +70,13 @@ function fallbackTransactionAlerts(data: TransactionAlertsData): string {
       const t = data.reminders[i]
       if (i > 0) lines.push('')
       lines.push(
-        `• *${t.title}*${t.installmentInfo ? ` (${t.installmentInfo})` : ''}`
+        `• *${t.title}*${t.installmentInfo ? ` (${t.installmentInfo})` : ''}${t.isPartial ? ' *(parcial)*' : ''}`
       )
-      lines.push(`  ${formatBRL(t.amount)} — em ${t.daysUntilDue} dias`)
+      if (t.isPartial && t.originalAmount) {
+        lines.push(`  *${formatBRL(t.amount)}* (restante de ${formatBRL(t.originalAmount)}) — em ${t.daysUntilDue} dias`)
+      } else {
+        lines.push(`  ${formatBRL(t.amount)} — em ${t.daysUntilDue} dias`)
+      }
     }
   }
 

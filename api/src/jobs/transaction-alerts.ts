@@ -1,5 +1,5 @@
 import { formatReport } from '@/domain/ai/report-formatter'
-import type { TransactionAlertsData } from '@/domain/ai/report-context'
+import type { TransactionAlertsData, TransactionItem } from '@/domain/ai/report-context'
 import { fetchUpcomingTransactionsForAlerts } from '@/domain/alerts/upcoming-transactions'
 import { sendWhatsAppMessage } from '@/domain/whatsapp'
 import { logger } from '@/lib/logger'
@@ -69,15 +69,21 @@ async function sendTransactionAlerts(userId?: string): Promise<JobResult> {
           (dueDate.getTime() - today.getTime()) / (24 * 60 * 60 * 1000)
         )
 
-        const amount = t.amountCents / 100
+        const isPartial = t.status === 'partial'
+        const amount = isPartial && t.valuePaidCents != null
+          ? (t.amountCents - t.valuePaidCents) / 100
+          : t.amountCents / 100
+
         const dueDateFormatted = new Date(t.dueDate).toLocaleDateString('pt-BR', {
           day: '2-digit',
           month: '2-digit',
         })
 
-        const item = {
+        const item: TransactionItem = {
           title: t.title,
           amount,
+          isPartial,
+          originalAmount: isPartial ? t.amountCents / 100 : undefined,
           dueDate: dueDateFormatted,
           daysUntilDue,
           installmentInfo:
