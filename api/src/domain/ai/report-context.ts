@@ -46,33 +46,18 @@ function formatBRL(value: number): string {
   return value.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' })
 }
 
-const BASE_INSTRUCTIONS = `Você é o HouseBot, assistente financeiro do HouseApp. Suas respostas vão para WhatsApp em celular.
+const BASE_INSTRUCTIONS = `Você é o HouseBot, assistente financeiro do HouseApp.
+Suas respostas são enviadas por WhatsApp. O layout é livre — você decide a melhor forma de apresentar.
 
-## Formatação para celular
-A tela do celular é estreita (~35 caracteres por linha). Siga estas regras:
-- Cada item em UMA linha separada, curta e direta
-- Pule UMA linha em branco entre seções diferentes
-- Use emojis no INÍCIO da linha como âncora visual (ex: 📊 Receitas, 💸 Despesas, ⚠️ Atenção)
-- NUNCA escreva parágrafos longos — máximo 2 frases por bloco
-- Valores monetários sempre na mesma linha do rótulo
+Formatação disponível no WhatsApp:
+- *negrito* com 1 asterisco
+- _itálico_ com 1 underscore
+- ~tachado~ com 1 til
+- Emojis e quebras de linha são bem-vindos
 
-## Formatação de texto
-1. NEGRITO = \`*texto*\` (UM asterisco antes e depois)
-2. ITÁLICO = \`_texto_\` (UM underscore antes e depois)
-3. TACHADO = \`~texto~\` (UM til antes e depois)
-4. \`**dois asteriscos**\` NÃO funciona, nunca use
+Comece sempre com saudação: "Olá, *nome*! Aqui é o HouseBot. 🏠" (ou sem nome: "Olá! Aqui é o HouseBot. 🏠")
 
-## Regras de apresentação
-1. Comece com: "Olá, *nome*! Aqui é o HouseBot. 🏠" (ou sem nome: "Olá! Aqui é o HouseBot. 🏠")
-2. Pule uma linha e comece o resumo
-
-## Regras de conteúdo
-3. Use \`*negrito*\` nos valores e títulos principais
-4. Emojis no início de cada seção como ícone visual
-5. NUNCA invente dados
-6. Resumo final de 1-2 frases curtas com o principal ponto de atenção
-7. Formato de transação: "*Título* — Valor — Data"
-8. Máximo 1200 caracteres (WhatsApp + celular)`
+Use os dados fornecidos. Não invente nada. Seja visual e organizado.`
 
 export function buildTransactionAlertsPrompt(data: TransactionAlertsData): string {
   const criticalList = data.critical
@@ -83,33 +68,17 @@ export function buildTransactionAlertsPrompt(data: TransactionAlertsData): strin
     .map(t => `• ${t.title}${t.installmentInfo ? ` (${t.installmentInfo})` : ''} | ${formatBRL(t.amount)} | Vence em ${t.daysUntilDue} dias (${t.dueDate})`)
     .join('\n')
 
+  const totalAmount = [...data.critical, ...data.reminders].reduce((sum, t) => sum + t.amount, 0)
+
   return `${BASE_INSTRUCTIONS}
 
-## Tipo de relatório: Alertas de vencimento
-Contexto: ${data.personName ? `Mensagem para ${data.personName}. ` : ''}Transações que vencem em até 4 dias.
+Relatório: *Alertas de vencimento* — transações nos próximos 4 dias.
+${data.personName ? `\nDestinatário: *${data.personName}*` : ''}
+${data.critical.length + data.reminders.length} transações, total de ${formatBRL(totalAmount)}.
 
-Exemplo do formato esperado (siga este estilo visual):
-\`\`\`
-🚨 *Vencem HOJE ou AMANHÃ*
-• *Aluguel* (Parcela 1/12)
-  R$ 1.200,00 — HOJE
-• *Internet*
-  R$ 99,90 — AMANHÃ
+${data.critical.length > 0 ? 'CRÍTICOS (HOJE/AMANHÃ)\n' + criticalList + '\n' : ''}${data.reminders.length > 0 ? reminderList + '\n' : ''}${data.critical.length === 0 && data.reminders.length === 0 ? 'Nenhum vencimento nos próximos 4 dias.' : ''}
 
-⏰ *Próximos vencimentos*
-• *Luz*
-  R$ 150,00 — em 3 dias
-
-⚠️ Atenção: 3 transações somam R$ 1.449,90 nos próximos 4 dias.
-\`\`\`
-
-## Transações críticas (HOJE / AMANHÃ)
-${criticalList || '(nenhuma)'}
-
-## Lembretes (2-4 dias)
-${reminderList || '(nenhum)'}
-
-Formate a mensagem WhatsApp seguindo o estilo do exemplo acima. Título em negrito na primeira linha, valor e data na linha abaixo.`
+Monte uma mensagem WhatsApp clara, visual e bem espaçada.`
 }
 
 export function buildOverdueAlertsPrompt(data: OverdueAlertsData): string {
@@ -117,30 +86,20 @@ export function buildOverdueAlertsPrompt(data: OverdueAlertsData): string {
     .map(t => `• ${t.title}${t.installmentInfo ? ` (${t.installmentInfo})` : ''} | ${formatBRL(t.amount)} | Vencida em ${t.dueDate} (há ${t.overdueDays} dias)`)
     .join('\n')
 
+  const total = data.overdue.reduce((sum, t) => sum + t.amount, 0)
+  const oldest = data.overdue.length > 0
+    ? Math.max(...data.overdue.map(t => t.overdueDays ?? 0))
+    : 0
+
   return `${BASE_INSTRUCTIONS}
 
-## Tipo de relatório: Transações vencidas
-Contexto: ${data.personName ? `Mensagem para ${data.personName}. ` : ''}Relatório semanal de pendências.
+Relatório: *Transações vencidas* — fechamento do mês.
+${data.personName ? `\nDestinatário: *${data.personName}*` : ''}
+${data.overdue.length} vencidas, total de ${formatBRL(total)}${oldest > 0 ? ` — a mais antiga: ${oldest} dias` : ''}.
 
-Exemplo do formato esperado:
-\`\`\`
-🔻 *3 transações vencidas*
-   Total: R$ 2.500,00
+${data.overdue.length > 0 ? overdueList : 'Nenhuma transação vencida. Parabéns!'}
 
-• *Aluguel* (Parcela 1/12)
-  R$ 1.200,00 — venceu 15/05
-• *Cartão de crédito*
-  R$ 800,00 — venceu 20/05
-• *Seguro*
-  R$ 500,00 — venceu 01/04
-
-⚠️ A mais antiga está há 60 dias. Regularize para evitar juros.
-\`\`\`
-
-## Transações vencidas
-${overdueList || '(nenhuma)'}
-
-Formate seguindo o estilo do exemplo. Título em negrito, valor e data na linha abaixo. Resumo final com recomendação.`
+Monte uma mensagem WhatsApp clara, visual e bem espaçada. Destaque os valores mais altos e a mais antiga.`
 }
 
 export function buildMonthlySummaryPrompt(data: MonthlySummaryData): string {
@@ -153,45 +112,18 @@ export function buildMonthlySummaryPrompt(data: MonthlySummaryData): string {
 
   return `${BASE_INSTRUCTIONS}
 
-## Tipo de relatório: Resumo mensal
-Contexto: ${data.personName ? `Mensagem para ${data.personName}. ` : ''}Resumo financeiro de ${data.headerMonth}.
+Relatório: *Resumo mensal* — ${data.headerMonth}.
+${data.personName ? `\nDestinatário: *${data.personName}*` : ''}
 
-Exemplo do formato esperado (siga este estilo visual com emojis como âncoras):
-\`\`\`
-📊 *Resumo de junho de 2026*
+Receitas registradas: ${formatBRL(data.kpis.incomeRegistered)}
+Receitas recebidas: ${formatBRL(data.kpis.receivedTotal)}
+Receitas a receber: ${formatBRL(data.kpis.toReceiveTotal)}
+Despesas registradas: ${formatBRL(data.kpis.expenseRegistered)}
+Despesas em aberto: ${formatBRL(data.kpis.toSpendTotal)}
+Saldo: ${formatBRL(data.balance)}
+Vencidas: ${data.overdueCount} transações (${formatBRL(data.overdueTotal)})
+Maiores despesas em aberto: ${expensesStr || 'nenhuma'}
+Maiores receitas a receber: ${receivablesStr || 'nenhuma'}
 
-📥 *Receitas*
-   Registradas: R$ 5.000,00
-   Pagas: R$ 4.200,00
-   Em aberto: R$ 800,00
-
-📤 *Despesas*
-   Registradas: R$ 4.000,00
-   Em aberto: R$ 1.500,00
-
-💰 *Saldo do mês:* R$ 1.000,00
-
-⚠️ *2 transações vencidas* — R$ 350,00
-
-💡 O saldo está positivo, mas atente-se às despesas em aberto para manter o controle.
-\`\`\`
-
-## KPIs
-- Receitas registradas: ${formatBRL(data.kpis.incomeRegistered)}
-- Despesas registradas: ${formatBRL(data.kpis.expenseRegistered)}
-- Receitas pagas: ${formatBRL(data.kpis.receivedTotal)}
-- Receitas em aberto: ${formatBRL(data.kpis.toReceiveTotal)}
-- Despesas em aberto: ${formatBRL(data.kpis.toSpendTotal)}
-- Saldo do mês (Receitas - Despesas): ${formatBRL(data.balance)}
-
-## Principais despesas em aberto
-${expensesStr || '(nenhuma)'}
-
-## Principais receitas a receber
-${receivablesStr || '(nenhuma)'}
-
-## Resumo de vencidas
-${data.overdueCount} transações vencidas totalizando ${formatBRL(data.overdueTotal)}
-
-Formate seguindo o estilo do exemplo. Cada seção com emoji âncora e título em negrito na mesma linha. Valores indentados na linha abaixo. Bloco final com recomendação.`
+Monte uma mensagem WhatsApp visual, bem organizada e com espaçamento. Dê sua opinião sobre a saúde financeira baseada nos números.`
 }

@@ -46,7 +46,10 @@ function fallbackTransactionAlerts(data: TransactionAlertsData): string {
 
   if (data.critical.length > 0) {
     lines.push('🚨 *Vencem HOJE ou AMANHÃ*')
-    for (const t of data.critical) {
+    lines.push('')
+    for (let i = 0; i < data.critical.length; i++) {
+      const t = data.critical[i]
+      if (i > 0) lines.push('')
       const label = t.daysUntilDue === 0 ? 'HOJE' : 'AMANHÃ'
       lines.push(
         `• *${t.title}*${t.installmentInfo ? ` (${t.installmentInfo})` : ''}`
@@ -58,7 +61,10 @@ function fallbackTransactionAlerts(data: TransactionAlertsData): string {
 
   if (data.reminders.length > 0) {
     lines.push('⏰ *Próximos vencimentos*')
-    for (const t of data.reminders) {
+    lines.push('')
+    for (let i = 0; i < data.reminders.length; i++) {
+      const t = data.reminders[i]
+      if (i > 0) lines.push('')
       lines.push(
         `• *${t.title}*${t.installmentInfo ? ` (${t.installmentInfo})` : ''}`
       )
@@ -94,11 +100,16 @@ function fallbackOverdueAlerts(data: OverdueAlertsData): string {
     lines.push('')
     const sorted = [...data.overdue].sort((a, b) => (b.overdueDays ?? 0) - (a.overdueDays ?? 0))
     const shown = sorted.slice(0, 5)
-    for (const t of shown) {
+    for (let i = 0; i < shown.length; i++) {
+      const t = shown[i]
+      if (i > 0) lines.push('')
       lines.push(
         `• *${t.title}*${t.installmentInfo ? ` (${t.installmentInfo})` : ''}`
       )
       lines.push(`  ${formatBRL(t.amount)} — ${t.dueDate}`)
+      if (t.overdueDays) {
+        lines.push(`  há ${t.overdueDays} dias`)
+      }
     }
     if (sorted.length > 5) {
       lines.push(`  ... e mais ${sorted.length - 5} itens`)

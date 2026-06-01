@@ -339,12 +339,12 @@ function JobCard({
               </Button>
             </div>
 
-            <div className="grid grid-cols-3 gap-2 text-center text-xs">
+            <div className="grid grid-cols-5 gap-2 text-center text-xs">
               <div className="bg-muted rounded p-1.5">
                 <span className="font-bold">{previewData.summary.total}</span>
                 <p className="text-muted-foreground">Total</p>
               </div>
-              {previewData.type === 'alerts' && (
+              {previewData.type === 'alerts' ? (
                 <>
                   <div className="bg-red-100 dark:bg-red-950/30 rounded p-1.5">
                     <span className="font-bold text-red-600">{previewData.summary.today}</span>
@@ -353,6 +353,21 @@ function JobCard({
                   <div className="bg-orange-100 dark:bg-orange-950/30 rounded p-1.5">
                     <span className="font-bold text-orange-600">{previewData.summary.tomorrow}</span>
                     <p className="text-muted-foreground">Amanhã</p>
+                  </div>
+                  <div className="bg-yellow-100 dark:bg-yellow-950/30 rounded p-1.5">
+                    <span className="font-bold text-yellow-600">{previewData.summary.twoDays}</span>
+                    <p className="text-muted-foreground">2 dias</p>
+                  </div>
+                  <div className="bg-gray-100 dark:bg-gray-950/30 rounded p-1.5">
+                    <span className="font-bold text-gray-600">{previewData.summary.threeToFourDays}</span>
+                    <p className="text-muted-foreground">3-4 dias</p>
+                  </div>
+                </>
+              ) : (
+                <>
+                  <div className="bg-red-100 dark:bg-red-950/30 rounded p-1.5 col-span-4">
+                    <span className="font-bold text-red-600">{previewData.summary.total}</span>
+                    <p className="text-muted-foreground">vencidas</p>
                   </div>
                 </>
               )}
@@ -426,13 +441,28 @@ function JobsPage() {
 
   const users = usersData?.users ?? []
 
+  const SYSTEM_JOBS = ['transactions:materialize']
+  const visibleJobs = jobs?.jobs.filter(j => !SYSTEM_JOBS.includes(j.key)) ?? []
+  const activeJobs = visibleJobs.filter(j => j.isRunning).length
+  const totalJobs = visibleJobs.length
+
+  const handleSendMonthly = async () => {
+    if (!slug || !selectedMonthlyUser) return
+    setSendingMonthly(true)
+    try {
+      await sendMonthlySummary.mutateAsync({ slug, data: { userId: selectedMonthlyUser } })
+      toast.success('Resumo do mês anterior enviado!')
+    } catch {
+      toast.error('Erro ao enviar resumo')
+    } finally {
+      setSendingMonthly(false)
+    }
+  }
+
   const handleRun = async (jobKey: string, userId?: string) => {
     setLoadingKey(jobKey)
     try {
-      const result = await runJobMutation.mutateAsync({
-        jobKey,
-        data: userId ? { userId } : {},
-      })
+      const result = await runJobMutation.mutateAsync({ jobKey, data: userId ? { userId } : {} })
       if (result.result?.success) {
         toast.success(`Executado! ${result.result.processed} processados`)
       } else {
@@ -472,22 +502,6 @@ function JobsPage() {
     }
   }
 
-  const handleSendMonthly = async () => {
-    if (!slug || !selectedMonthlyUser) return
-    setSendingMonthly(true)
-    try {
-      await sendMonthlySummary.mutateAsync({ slug, data: { userId: selectedMonthlyUser } })
-      toast.success('Resumo mensal enviado!')
-    } catch {
-      toast.error('Erro ao enviar resumo')
-    } finally {
-      setSendingMonthly(false)
-    }
-  }
-
-  const activeJobs = jobs?.jobs.filter(j => j.isRunning).length ?? 0
-  const totalJobs = jobs?.jobs.length ?? 0
-
   return (
     <LoadingErrorState
       isLoading={isLoading}
@@ -513,7 +527,7 @@ function JobsPage() {
             <div className="grid gap-4 md:grid-cols-2">
               <Card>
                 <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                  <CardTitle className="text-sm font-medium">Jobs</CardTitle>
+                  <CardTitle className="text-sm font-medium">Jobs ativos</CardTitle>
                 </CardHeader>
                 <CardContent>
                   <div className="text-2xl font-bold">
@@ -524,13 +538,13 @@ function JobsPage() {
                 </CardContent>
               </Card>
 
-              {jobs?.jobs[0] && (
+              {visibleJobs[0] && (
                 <Card>
                   <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
                     <CardTitle className="text-sm font-medium">Próxima execução</CardTitle>
                   </CardHeader>
                   <CardContent>
-                    <JobNextRunInline jobKey={jobs.jobs[0].key} fallback="—" />
+                    <JobNextRunInline jobKey={visibleJobs[0].key} fallback="—" />
                   </CardContent>
                 </Card>
               )}
@@ -541,7 +555,7 @@ function JobsPage() {
           <div className="px-4 lg:px-6">
             <Card>
               <CardHeader className="pb-3">
-                <CardTitle className="text-base">Enviar resumo mensal</CardTitle>
+                <CardTitle className="text-base">Enviar resumo do mês anterior</CardTitle>
               </CardHeader>
               <CardContent>
                 <div className="flex flex-wrap items-center gap-2">
@@ -578,7 +592,7 @@ function JobsPage() {
           {/* Job Cards */}
           <div className="px-4 lg:px-6">
             <div className="grid gap-4">
-              {jobs?.jobs.map(job => (
+              {visibleJobs.map(job => (
                 <JobCard
                   key={job.key}
                   job={job}

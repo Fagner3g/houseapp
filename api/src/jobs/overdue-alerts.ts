@@ -13,7 +13,15 @@ async function sendOverdueAlerts(userId?: string): Promise<JobResult> {
   let errors = 0
 
   try {
-    logger.info('🚀 Iniciando job semanal de transações vencidas...')
+    // Só executa se hoje for o último dia do mês
+    const today = new Date()
+    const lastDay = new Date(today.getFullYear(), today.getMonth() + 1, 0).getDate()
+    if (today.getDate() !== lastDay) {
+      logger.info('ℹ️ Hoje não é o último dia do mês — job de vencidas ignorado')
+      return { success: true, processed: 0, errors: 0, duration: Date.now() - startTime }
+    }
+
+    logger.info('🚀 Iniciando job de transações vencidas (fechamento do mês)...')
 
     const { db } = await import('@/db')
     const { organizations } = await import('@/db/schemas/organization')

@@ -2,6 +2,7 @@
 import './materialize-occurrences'
 import './transaction-alerts'
 import './overdue-alerts'
+import './monthly-summary'
 
 // Importar o registry
 import { jobRegistry } from './registry'
