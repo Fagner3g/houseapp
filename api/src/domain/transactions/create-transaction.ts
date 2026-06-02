@@ -31,6 +31,7 @@ export async function createTransactionService({
   recurrenceUntil,
   recurrenceStart,
   installmentsTotal,
+  alertFrequency,
 }: CreateTransaction) {
   const startDate = (() => {
     if (recurrenceStart) return recurrenceStart
@@ -62,6 +63,7 @@ export async function createTransactionService({
       recurrenceInterval: recurrenceInterval ?? 1,
       recurrenceUntil,
       installmentsTotal: calculatedInstallmentsTotal,
+      overdueAlertFrequency: alertFrequency ?? 'weekly',
     })
     .returning()
 

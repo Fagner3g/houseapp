@@ -3672,6 +3672,16 @@
                           ]
                         }
                       },
+                      "alertFrequency": {
+                        "default": "weekly",
+                        "type": "string",
+                        "enum": [
+                          "never",
+                          "daily",
+                          "weekly",
+                          "monthly"
+                        ]
+                      },
                       "isRecurring": {
                         "type": "boolean",
                         "enum": [
@@ -3771,6 +3781,16 @@
                             "color"
                           ]
                         }
+                      },
+                      "alertFrequency": {
+                        "default": "weekly",
+                        "type": "string",
+                        "enum": [
+                          "never",
+                          "daily",
+                          "weekly",
+                          "monthly"
+                        ]
                       },
                       "isRecurring": {
                         "type": "boolean",

@@ -13,6 +13,7 @@ const base = z.object({
   payToEmail: z.string().email('Informe um e-mail válido'),
   tags: z.array(z.object({ name: z.string(), color: z.string() })).optional(),
   description: z.string().optional(),
+  alertFrequency: z.enum(['never', 'daily', 'weekly', 'monthly']).default('weekly'),
 })
 
 const recurring = base.extend({

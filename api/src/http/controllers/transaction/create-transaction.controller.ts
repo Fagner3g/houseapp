@@ -32,6 +32,7 @@ export async function createTransactionController(request: Req, reply: FastifyRe
     dueDate,
     description,
     tags,
+    alertFrequency,
   } = request.body
 
   const ownerId = request.user.sub
@@ -61,6 +62,7 @@ export async function createTransactionController(request: Req, reply: FastifyRe
       recurrenceStart,
       installmentsTotal,
       installmentsPaid,
+      alertFrequency,
     })
     logger.debug('Transaction created successfully')
   } catch (error) {
