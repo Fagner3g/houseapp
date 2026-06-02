@@ -2,6 +2,7 @@ export interface TransactionItem {
   title: string
   amount: number
   originalAmount?: number
+  valuePaid?: number
   isPartial?: boolean
   dueDate: string
   daysUntilDue?: number
@@ -64,10 +65,12 @@ Use os dados fornecidos. Não invente nada. Seja visual e organizado.`
 export function buildTransactionAlertsPrompt(data: TransactionAlertsData): string {
   const formatItem = (t: TransactionItem) => {
     const parcel = t.installmentInfo ? ` (${t.installmentInfo})` : ''
-    const partial = t.isPartial
-      ? ` [parcial — restante: ${formatBRL(t.amount)}${t.originalAmount ? ` de ${formatBRL(t.originalAmount)}` : ''}]`
-      : ''
-    return `• *${t.title}*${parcel}${partial}\n  ${formatBRL(t.amount)}`
+    let partialLine = ''
+    if (t.isPartial) {
+      const paid = t.valuePaid != null ? `Pago: ${formatBRL(t.valuePaid)} | ` : ''
+      partialLine = `\n  ${paid}Restante: ${formatBRL(t.amount)}${t.originalAmount ? ` de ${formatBRL(t.originalAmount)}` : ''} [parcial]`
+    }
+    return `• *${t.title.trim()}*${parcel}${partialLine}\n  ${formatBRL(t.amount)}`
   }
 
   const criticalList = data.critical
@@ -92,17 +95,19 @@ ${data.critical.length + data.reminders.length} transações — Total: ${format
 
 ${data.critical.length > 0 ? 'CRÍTICOS (HOJE/AMANHÃ)\n' + criticalList + '\n\n' : ''}${data.reminders.length > 0 ? 'PRÓXIMOS (2-4 dias)\n' + reminderList + '\n' : ''}${data.critical.length === 0 && data.reminders.length === 0 ? 'Nenhum vencimento nos próximos 4 dias.' : ''}
 
-Formato para celular: cada item em 2 linhas (título em negrito, depois valor/data). Itens separados por linha em branco. Resumo final curto com recomendação. Destacar transações marcadas como "[parcial]" pois já tiveram algum pagamento. O valor mostrado é sempre o restante a pagar.`
+Formato para celular: cada item em 2-3 linhas (título em negrito, depois valor/data). Itens separados por linha em branco. Resumo final curto com recomendação. Para transações marcadas com "[parcial]", deixe claro: quanto já foi pago, quanto ainda resta, e o valor total original. O valor "Restante" é o que ainda falta pagar.`
 }
 
 export function buildOverdueAlertsPrompt(data: OverdueAlertsData): string {
   const overdueList = data.overdue
     .map(t => {
       const parcel = t.installmentInfo ? ` (${t.installmentInfo})` : ''
-      const partial = t.isPartial
-        ? ` [parcial — restante: ${formatBRL(t.amount)}${t.originalAmount ? ` de ${formatBRL(t.originalAmount)}` : ''}]`
-        : ''
-      return `• *${t.title}*${parcel}${partial}\n  ${formatBRL(t.amount)} — ${t.dueDate} — ${t.overdueDays} dias atrás`
+      let partialLine = ''
+      if (t.isPartial) {
+        const paid = t.valuePaid != null ? `Pago: ${formatBRL(t.valuePaid)} | ` : ''
+        partialLine = `\n  ${paid}Restante: ${formatBRL(t.amount)}${t.originalAmount ? ` de ${formatBRL(t.originalAmount)}` : ''} [parcial]`
+      }
+      return `• *${t.title.trim()}*${parcel}${partialLine}\n  ${formatBRL(t.amount)} — ${t.dueDate} — ${t.overdueDays} dias atrás`
     })
     .join('\n\n')
 
@@ -121,7 +126,7 @@ ${data.overdue.length} vencidas — Total: ${formatBRL(total)}${oldest > 0 ? ` �
 
 ${data.overdue.length > 0 ? overdueList : 'Nenhuma transação vencida.'}
 
-Formato para celular: cada item em 2 linhas (título em negrito, depois valor/data). Itens separados por linha em branco. Ao final, um resumo curto com recomendação. Destacar transações marcadas como "[parcial]" pois já tiveram algum pagamento.`
+Formato para celular: cada item em 2-3 linhas. Itens separados por linha em branco. Ao final, um resumo curto com recomendação. Para transações marcadas com "[parcial]", deixe claro: quanto já foi pago, quanto ainda resta, e o valor total original. O valor "Restante" é o que ainda falta pagar.`
 }
 
 export function buildMonthlySummaryPrompt(data: MonthlySummaryData): string {

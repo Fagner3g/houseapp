@@ -31,8 +31,10 @@ export interface OverdueAlertTransaction {
 export async function fetchOverdueTransactionsForAlerts(
   orgSlug: string,
   userId?: string,
-  seriesId?: string
+  seriesId?: string,
+  opts?: { skipFrequencyFilter?: boolean }
 ): Promise<OverdueAlertTransaction[]> {
+  const skipFrequencyFilter = opts?.skipFrequencyFilter === true
   const today = new Date()
   today.setHours(0, 0, 0, 0)
 
@@ -80,7 +82,10 @@ export async function fetchOverdueTransactionsForAlerts(
         eq(userOrganizations.notificationsEnabled, true), // Só usuários com notificações habilitadas
         sql`${transactionSeries.overdueAlertFrequency} != 'never'`,
         // Frequência: só alertar se passou o intervalo desde o último alerta
-        sql`(
+        // Em chamadas manuais (preview/run now), ignoramos o filtro de frequência
+        skipFrequencyFilter
+          ? sql`true`
+          : sql`(
           ${transactionOccurrences.lastOverdueAlertAt} IS NULL
           OR (
             ${transactionSeries.overdueAlertFrequency} = 'daily'   AND ${transactionOccurrences.lastOverdueAlertAt} < now() - INTERVAL '1 day'
