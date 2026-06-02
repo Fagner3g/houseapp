@@ -52,10 +52,14 @@ function fallbackTransactionAlerts(data: TransactionAlertsData): string {
       if (i > 0) lines.push('')
       const label = t.daysUntilDue === 0 ? 'HOJE' : 'AMANHÃ'
       lines.push(
-        `• *${t.title}*${t.installmentInfo ? ` (${t.installmentInfo})` : ''}${t.isPartial ? ' *(parcial)*' : ''}`
+        `• *${t.title.trim()}*${t.installmentInfo ? ` (${t.installmentInfo})` : ''}${t.isPartial ? ' *(parcial)*' : ''}`
       )
       if (t.isPartial && t.originalAmount) {
-        lines.push(`  *${formatBRL(t.amount)}* (restante de ${formatBRL(t.originalAmount)}) — ${label}`)
+        lines.push(`  Restante: *${formatBRL(t.amount)}* de ${formatBRL(t.originalAmount)}`)
+        if (t.valuePaid != null) {
+          lines.push(`  Pago: ${formatBRL(t.valuePaid)}`)
+        }
+        lines.push(`  Vence: ${label}`)
       } else {
         lines.push(`  ${formatBRL(t.amount)} — ${label}`)
       }
@@ -70,10 +74,14 @@ function fallbackTransactionAlerts(data: TransactionAlertsData): string {
       const t = data.reminders[i]
       if (i > 0) lines.push('')
       lines.push(
-        `• *${t.title}*${t.installmentInfo ? ` (${t.installmentInfo})` : ''}${t.isPartial ? ' *(parcial)*' : ''}`
+        `• *${t.title.trim()}*${t.installmentInfo ? ` (${t.installmentInfo})` : ''}${t.isPartial ? ' *(parcial)*' : ''}`
       )
       if (t.isPartial && t.originalAmount) {
-        lines.push(`  *${formatBRL(t.amount)}* (restante de ${formatBRL(t.originalAmount)}) — em ${t.daysUntilDue} dias`)
+        lines.push(`  Restante: *${formatBRL(t.amount)}* de ${formatBRL(t.originalAmount)}`)
+        if (t.valuePaid != null) {
+          lines.push(`  Pago: ${formatBRL(t.valuePaid)}`)
+        }
+        lines.push(`  Vence: em ${t.daysUntilDue} dias`)
       } else {
         lines.push(`  ${formatBRL(t.amount)} — em ${t.daysUntilDue} dias`)
       }
@@ -117,10 +125,14 @@ function fallbackOverdueAlerts(data: OverdueAlertsData): string {
       const t = shown[i]
       if (i > 0) lines.push('')
       lines.push(
-        `• *${t.title}*${t.installmentInfo ? ` (${t.installmentInfo})` : ''}`
+        `• *${t.title.trim()}*${t.installmentInfo ? ` (${t.installmentInfo})` : ''}`
       )
       if (t.isPartial && t.originalAmount) {
-        lines.push(`  *${formatBRL(t.amount)}* (restante de ${formatBRL(t.originalAmount)}) — ${t.dueDate}`)
+        lines.push(`  Restante: *${formatBRL(t.amount)}* de ${formatBRL(t.originalAmount)}`)
+        if (t.valuePaid != null) {
+          lines.push(`  Pago: ${formatBRL(t.valuePaid)}`)
+        }
+        lines.push(`  Vencimento: ${t.dueDate}`)
       } else {
         lines.push(`  ${formatBRL(t.amount)} — ${t.dueDate}`)
       }

@@ -80,10 +80,11 @@ async function sendTransactionAlerts(userId?: string): Promise<JobResult> {
         })
 
         const item: TransactionItem = {
-          title: t.title,
+          title: t.title.trim(),
           amount,
           isPartial,
           originalAmount: isPartial ? t.amountCents / 100 : undefined,
+          valuePaid: isPartial && t.valuePaidCents != null ? t.valuePaidCents / 100 : undefined,
           dueDate: dueDateFormatted,
           daysUntilDue,
           installmentInfo:
@@ -212,7 +213,7 @@ export async function previewTransactionAlerts(userId?: string): Promise<{
 
       transactions.push({
         id: t.id,
-        title: t.title,
+        title: t.title.trim(),
         amount: t.amountCents / 100,
         dueDate: t.dueDate.toISOString(),
         daysUntilDue,

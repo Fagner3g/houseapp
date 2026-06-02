@@ -8,7 +8,7 @@ import { jobManager } from './job-manager'
 import type { JobResult } from './types'
 import { sql } from 'drizzle-orm'
 
-async function sendOverdueAlerts(userId?: string): Promise<JobResult> {
+export async function sendOverdueAlerts(userId?: string): Promise<JobResult> {
   const startTime = Date.now()
   let processed = 0
   let errors = 0
@@ -25,7 +25,7 @@ async function sendOverdueAlerts(userId?: string): Promise<JobResult> {
       try {
         logger.info(`📋 Processando organização: ${org.slug}`)
 
-        const overdueTransactions = await fetchOverdueTransactionsForAlerts(org.slug, userId)
+        const overdueTransactions = await fetchOverdueTransactionsForAlerts(org.slug, userId, undefined, { skipFrequencyFilter: !!userId })
 
         if (overdueTransactions.length === 0) {
           logger.info(`ℹ️ Nenhuma transação vencida para ${org.slug}`)
@@ -78,9 +78,10 @@ async function sendOverdueAlerts(userId?: string): Promise<JobResult> {
             const originalAmount = t.amountCents / 100
 
             return {
-              title: t.title,
+              title: t.title.trim(),
               amount,
               originalAmount: isPartial ? originalAmount : undefined,
+              valuePaid: isPartial && t.valuePaidCents != null ? t.valuePaidCents / 100 : undefined,
               isPartial,
               dueDate: dueDateFormatted,
               overdueDays: t.overdueDays,
@@ -177,7 +178,7 @@ export async function previewOverdueAlerts(userId?: string): Promise<{
 
     const allOverdueTransactions = []
     for (const org of orgs) {
-      const orgOverdue = await fetchOverdueTransactionsForAlerts(org.slug, userId)
+      const orgOverdue = await fetchOverdueTransactionsForAlerts(org.slug, userId, undefined, { skipFrequencyFilter: true })
       allOverdueTransactions.push(...orgOverdue)
     }
 
@@ -192,7 +193,7 @@ export async function previewOverdueAlerts(userId?: string): Promise<{
 
     const transactions = overdueTransactions.map(t => ({
       id: t.id,
-      title: t.title,
+      title: t.title.trim(),
       amount: t.status === 'partial' && t.valuePaidCents != null
         ? (t.amountCents - t.valuePaidCents) / 100
         : t.amountCents / 100,
