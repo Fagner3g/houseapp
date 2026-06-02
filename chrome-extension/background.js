@@ -48,6 +48,20 @@ async function getToken() {
   return null
 }
 
+async function refreshToken() {
+  const { webUrl } = await chrome.storage.local.get('webUrl')
+  if (!webUrl) return null
+
+  try {
+    const cookie = await chrome.cookies.get({ url: webUrl, name: 'houseapp' })
+    if (cookie?.value) {
+      await chrome.storage.local.set({ token: cookie.value })
+      return cookie.value
+    }
+  } catch (_) {}
+  return null
+}
+
 function authHeaders(token) {
   return { Authorization: `Bearer ${token}`, 'Content-Type': 'application/json' }
 }
@@ -171,9 +185,21 @@ async function poll() {
     try {
       await fetchProfile(apiUrl, token)
     } catch (_) {
-      await chrome.storage.local.remove('token')
-      setBadge(0, 0, 0)
-      return
+      // Token expired, try reading fresh cookie from web app
+      const newToken = await refreshToken()
+      if (newToken) {
+        try {
+          await fetchProfile(apiUrl, newToken)
+        } catch (_) {
+          await chrome.storage.local.remove('token')
+          setBadge(0, 0, 0)
+          return
+        }
+      } else {
+        await chrome.storage.local.remove('token')
+        setBadge(0, 0, 0)
+        return
+      }
     }
 
     // Fetch all orgs
@@ -219,8 +245,8 @@ async function poll() {
       for (const tx of overdue)  { if (!prevOverdueIds.has(tx.id))  notifyOverdue(tx,  orgData.name) }
       for (const tx of upcoming) { if (!prevUpcomingIds.has(tx.id)) notifyUpcoming(tx, orgData.name) }
 
-      totalOverdue  += overdue.filter(t => t.status === 'pending').length
-      totalUpcoming += upcoming.filter(t => t.status === 'pending').length
+      totalOverdue  += overdue.filter(t => t.status === 'pending' || t.status === 'partial').length
+      totalUpcoming += upcoming.filter(t => t.status === 'pending' || t.status === 'partial').length
 
       newCache[orgData.slug] = orgData.reports
     }

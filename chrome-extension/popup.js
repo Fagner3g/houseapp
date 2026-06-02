@@ -64,7 +64,30 @@ const state = {
 
 async function resolveToken() {
   const stored = await chrome.storage.local.get(['token', 'webUrl'])
-  if (stored.token) return stored.token
+
+  if (stored.token) {
+    // Verify cached token is still valid
+    try {
+      await apiFetchWithToken(stored.token, '/profile')
+      return stored.token
+    } catch (e) {
+      if (e.status === 401) {
+        // Token expired, try reading cookie from web app
+        await chrome.storage.local.remove('token')
+        if (stored.webUrl) {
+          try {
+            const cookie = await chrome.cookies.get({ url: stored.webUrl, name: 'houseapp' })
+            if (cookie?.value) {
+              await chrome.storage.local.set({ token: cookie.value })
+              return cookie.value
+            }
+          } catch (_) {}
+        }
+        return null
+      }
+      throw e
+    }
+  }
 
   if (stored.webUrl) {
     try {
@@ -76,6 +99,15 @@ async function resolveToken() {
     } catch (_) {}
   }
   return null
+}
+
+async function apiFetchWithToken(token, path, opts = {}) {
+  const res = await fetch(`${state.apiUrl}${path}`, {
+    ...opts,
+    headers: { Authorization: `Bearer ${token}`, 'Content-Type': 'application/json', ...(opts.headers || {}) },
+  })
+  if (res.status === 401) throw Object.assign(new Error('unauthorized'), { status: 401 })
+  return res
 }
 
 // ── API ───────────────────────────────────────────────────────────────────────

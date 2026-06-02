@@ -2,7 +2,7 @@ import Cookies from 'universal-cookie'
 
 const TOKEN_KEY = 'houseapp'
 
-export function setAuthToken(token: string, days = 1) {
+export function setAuthToken(token: string, days = 30) {
   const cookies = new Cookies()
   cookies.set(TOKEN_KEY, token, { path: '/', maxAge: 60 * 60 * 24 * days })
 }
