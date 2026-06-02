@@ -21,6 +21,8 @@ export interface OverdueAlertTransaction {
   payToName: string | null
   payToPhone: string | null
   notificationsEnabled: boolean
+  overdueAlertFrequency: 'never' | 'daily' | 'weekly' | 'monthly'
+  lastOverdueAlertAt: Date | null
 }
 
 /**
@@ -50,6 +52,8 @@ export async function fetchOverdueTransactionsForAlerts(
       payToName: sql<string>`pay_to.name`,
       payToPhone: sql<string>`pay_to.phone`,
       notificationsEnabled: userOrganizations.notificationsEnabled,
+      overdueAlertFrequency: transactionSeries.overdueAlertFrequency,
+      lastOverdueAlertAt: transactionOccurrences.lastOverdueAlertAt,
     })
     .from(transactionOccurrences)
     .innerJoin(transactionSeries, eq(transactionOccurrences.seriesId, transactionSeries.id))
@@ -74,6 +78,20 @@ export async function fetchOverdueTransactionsForAlerts(
         ),
         lt(transactionOccurrences.dueDate, today),
         eq(userOrganizations.notificationsEnabled, true), // Só usuários com notificações habilitadas
+        sql`${transactionSeries.overdueAlertFrequency} != 'never'`,
+        // Frequência: só alertar se passou o intervalo desde o último alerta
+        sql`(
+          ${transactionOccurrences.lastOverdueAlertAt} IS NULL
+          OR (
+            ${transactionSeries.overdueAlertFrequency} = 'daily'   AND ${transactionOccurrences.lastOverdueAlertAt} < now() - INTERVAL '1 day'
+          )
+          OR (
+            ${transactionSeries.overdueAlertFrequency} = 'weekly'  AND ${transactionOccurrences.lastOverdueAlertAt} < now() - INTERVAL '7 days'
+          )
+          OR (
+            ${transactionSeries.overdueAlertFrequency} = 'monthly' AND ${transactionOccurrences.lastOverdueAlertAt} < now() - INTERVAL '30 days'
+          )
+        )`,
         userId
           ? or(eq(transactionSeries.ownerId, userId), eq(transactionSeries.payToId, userId))
           : sql`true`,
@@ -105,5 +123,7 @@ export async function fetchOverdueTransactionsForAlerts(
     payToName: r.payToName ?? null,
     payToPhone: r.payToPhone ?? null,
     notificationsEnabled: r.notificationsEnabled,
+    overdueAlertFrequency: r.overdueAlertFrequency as 'never' | 'daily' | 'weekly' | 'monthly',
+    lastOverdueAlertAt: r.lastOverdueAlertAt ?? null,
   }))
 }

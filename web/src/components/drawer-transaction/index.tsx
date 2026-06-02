@@ -40,6 +40,7 @@ import { PaymentDateDialog } from '../../pages/_app/$org/(transactions)/-compone
 import { TransactionSummary } from '../../pages/_app/$org/(transactions)/-components/table-list-transactions/transaction-summary'
 import { AmountField } from './amount-field'
 import { ChatSection } from './chat-section'
+import { AlertFrequencyField } from './alert-frequency-field'
 import { DescriptionField } from './description-field'
 import { CalendarField } from './due-date-field'
 import { InstallmentsTotalField } from './installments-total-field'
@@ -679,6 +680,7 @@ function DrawerTransactionContent({ transaction, open, onOpenChange, onExternalS
 
                         <div className="space-y-4">
                           <TagField form={form} disabled={isReadOnly || isPaid} />
+                          <AlertFrequencyField form={form} disabled={isReadOnly || isPaid} />
                           <DescriptionField form={form} disabled={isReadOnly || isPaid} />
                         </div>
 

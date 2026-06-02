@@ -3,7 +3,7 @@
   "info": {
     "title": "HouseApp API",
     "description": "API for HouseApp",
-    "version": "1.0.25"
+    "version": "1.1.0"
   },
   "components": {
     "securitySchemes": {
@@ -3672,6 +3672,16 @@
                           ]
                         }
                       },
+                      "alertFrequency": {
+                        "default": "weekly",
+                        "type": "string",
+                        "enum": [
+                          "never",
+                          "daily",
+                          "weekly",
+                          "monthly"
+                        ]
+                      },
                       "isRecurring": {
                         "type": "boolean",
                         "enum": [
@@ -3771,6 +3781,16 @@
                             "color"
                           ]
                         }
+                      },
+                      "alertFrequency": {
+                        "default": "weekly",
+                        "type": "string",
+                        "enum": [
+                          "never",
+                          "daily",
+                          "weekly",
+                          "monthly"
+                        ]
                       },
                       "isRecurring": {
                         "type": "boolean",

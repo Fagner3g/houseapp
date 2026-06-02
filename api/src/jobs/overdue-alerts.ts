@@ -6,6 +6,7 @@ import { logger } from '@/lib/logger'
 import { JOB_CONFIGS } from './config'
 import { jobManager } from './job-manager'
 import type { JobResult } from './types'
+import { sql } from 'drizzle-orm'
 
 async function sendOverdueAlerts(userId?: string): Promise<JobResult> {
   const startTime = Date.now()
@@ -104,6 +105,16 @@ async function sendOverdueAlerts(userId?: string): Promise<JobResult> {
               logger.info(
                 `✅ WhatsApp de vencidas enviado para: ${userInfo.phone} (${userInfo.name}) - Org: ${org.slug}`
               )
+              // Atualizar lastOverdueAlertAt de todas as ocorrências alertadas
+              const { db: alertDb } = await import('@/db')
+              const { transactionOccurrences: occTable } = await import('@/db/schemas/transactionOccurrences')
+              const { inArray: inArr } = await import('drizzle-orm')
+              const occurrenceIds = unique.map(t => t.id)
+              await alertDb
+                .update(occTable)
+                .set({ lastOverdueAlertAt: sql`now()` })
+                .where(inArr(occTable.id, occurrenceIds))
+              logger.info(`⏰ Atualizado lastOverdueAlertAt para ${occurrenceIds.length} ocorrências`)
             } else {
               logger.error(
                 `❌ Erro ao enviar WhatsApp de vencidas para ${userInfo.phone} - Org: ${org.slug}: ${result.error}`

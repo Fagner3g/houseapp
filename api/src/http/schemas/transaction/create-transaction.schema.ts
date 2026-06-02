@@ -28,6 +28,7 @@ const base = z.object({
       })
     )
     .optional(),
+  alertFrequency: z.enum(['never', 'daily', 'weekly', 'monthly']).default('weekly'),
 })
 
 const recurring = base.extend({
