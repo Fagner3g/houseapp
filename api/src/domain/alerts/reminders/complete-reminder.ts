@@ -3,8 +3,6 @@ import { and, eq } from 'drizzle-orm'
 import { db } from '@/db'
 import { customReminders } from '@/db/schemas/customReminders'
 import { users } from '@/db/schemas/users'
-import { addPeriod } from '@/domain/recurrence/utils'
-import type { RecurrenceType } from '@/domain/recurrence/utils'
 import { BadRequestError } from '@/http/utils/error'
 import { serializeReminder } from '../utils'
 
@@ -25,51 +23,16 @@ export async function completeReminderService({ id, orgId }: CompleteReminderReq
   }
 
   const now = new Date()
-  let reminder = existing
 
-  if (existing.isRecurring && existing.recurrenceType) {
-    const nextDueDate = addPeriod(
-      existing.dueDate,
-      existing.recurrenceType as RecurrenceType,
-      existing.recurrenceInterval
-    )
-
-    if (existing.recurrenceUntil && nextDueDate > existing.recurrenceUntil) {
-      const [updated] = await db
-        .update(customReminders)
-        .set({
-          completedAt: now,
-          active: false,
-          updatedAt: now,
-        })
-        .where(and(eq(customReminders.id, id), eq(customReminders.organizationId, orgId)))
-        .returning()
-      reminder = updated
-    } else {
-      const [updated] = await db
-        .update(customReminders)
-        .set({
-          dueDate: nextDueDate,
-          completedAt: null,
-          active: true,
-          updatedAt: now,
-        })
-        .where(and(eq(customReminders.id, id), eq(customReminders.organizationId, orgId)))
-        .returning()
-      reminder = updated
-    }
-  } else {
-    const [updated] = await db
-      .update(customReminders)
-      .set({
-        completedAt: now,
-        active: false,
-        updatedAt: now,
-      })
-      .where(and(eq(customReminders.id, id), eq(customReminders.organizationId, orgId)))
-      .returning()
-    reminder = updated
-  }
+  const [reminder] = await db
+    .update(customReminders)
+    .set({
+      completedAt: now,
+      active: false,
+      updatedAt: now,
+    })
+    .where(and(eq(customReminders.id, id), eq(customReminders.organizationId, orgId)))
+    .returning()
 
   const [recipient] = await db
     .select({ name: users.name })

@@ -1,4 +1,5 @@
 import dayjs from 'dayjs'
+import { Link } from '@tanstack/react-router'
 import { useEffect, useState } from 'react'
 
 import { useListUsersByOrg } from '@/api/generated/api'
@@ -37,7 +38,6 @@ import {
   type ReminderRecurrenceType,
 } from '../api'
 
-const DAY_OPTIONS = [30, 7, 3, 1, 0] as const
 const CHANNEL_OPTIONS: { value: ReminderChannel; label: string }[] = [
   { value: 'in_app', label: 'No app' },
   { value: 'whatsapp', label: 'WhatsApp' },
@@ -77,7 +77,6 @@ export function ReminderForm({
   const [notes, setNotes] = useState('')
   const [dueDate, setDueDate] = useState<Date | undefined>()
   const [amount, setAmount] = useState<number | null>(null)
-  const [daysBefore, setDaysBefore] = useState<number[]>([1, 0])
   const [channels, setChannels] = useState<ReminderChannel[]>([
     'in_app',
     'whatsapp',
@@ -97,7 +96,6 @@ export function ReminderForm({
       setNotes(reminder.notes ?? '')
       setDueDate(parseDateFromIso(reminder.dueDate))
       setAmount(reminder.amountCents != null ? centsToNumber(reminder.amountCents) : null)
-      setDaysBefore(reminder.daysBefore)
       setChannels(reminder.channels)
       setRecipientUserId(reminder.recipientUserId)
       setIsRecurring(reminder.isRecurring)
@@ -116,7 +114,6 @@ export function ReminderForm({
       setNotes('')
       setDueDate(dayjs().startOf('day').toDate())
       setAmount(null)
-      setDaysBefore([1, 0])
       setChannels(['in_app', 'whatsapp', 'extension'])
       setRecipientUserId(users[0]?.id ?? '')
       setIsRecurring(false)
@@ -126,12 +123,6 @@ export function ReminderForm({
       setNotifyTime('default')
     }
   }, [open, reminder, users])
-
-  const toggleDay = (day: number) => {
-    setDaysBefore(prev =>
-      prev.includes(day) ? prev.filter(d => d !== day) : [...prev, day].sort((a, b) => b - a)
-    )
-  }
 
   const toggleChannel = (channel: ReminderChannel) => {
     setChannels(prev =>
@@ -145,7 +136,6 @@ export function ReminderForm({
       !title.trim() ||
       !dueDate ||
       !recipientUserId ||
-      daysBefore.length === 0 ||
       channels.length === 0 ||
       (isRecurring && !recurrenceType)
     ) {
@@ -157,7 +147,7 @@ export function ReminderForm({
       notes: notes.trim() || null,
       dueDate: formatDateToIso(dueDate),
       amountCents: amount != null ? numberToCents(amount) : null,
-      daysBefore,
+      daysBefore: [1, 0],
       channels,
       recipientUserId,
       isRecurring,
@@ -319,20 +309,17 @@ export function ReminderForm({
             </div>
           )}
 
-          <div className="space-y-2">
-            <Label>Alertar com antecedência (dias)</Label>
-            <div className="flex flex-wrap gap-3">
-              {DAY_OPTIONS.map(day => (
-                <label key={day} className="flex items-center gap-2 text-sm">
-                  <Checkbox
-                    checked={daysBefore.includes(day)}
-                    onCheckedChange={() => toggleDay(day)}
-                  />
-                  {day === 0 ? 'No dia' : `${day} dia(s)`}
-                </label>
-              ))}
-            </div>
-          </div>
+          <p className="text-sm text-muted-foreground">
+            Alertas seguem as{' '}
+            <Link
+              to="/$org/alerts"
+              params={{ org: slug }}
+              className="text-primary underline-offset-4 hover:underline"
+            >
+              regras da organização
+            </Link>{' '}
+            (aba Regras automáticas).
+          </p>
 
           <div className="space-y-2">
             <Label>Canais</Label>

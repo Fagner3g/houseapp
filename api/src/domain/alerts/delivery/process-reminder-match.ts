@@ -1,21 +1,39 @@
-import { db } from '@/db'
 import type { AlertDeliveryStatus } from '@/db/schemas/alertDeliveries'
-import { alertDeliveries } from '@/db/schemas/alertDeliveries'
-import { sendWhatsAppMessage } from '@/domain/whatsapp'
+import { normalizePhone } from '@/domain/whatsapp'
 import type { ReminderMatch } from '../evaluator/evaluate-reminders'
-import { buildReminderDedupeKey, formatReminderWhatsAppMessage, isAlertChannelEnabled } from '../utils'
+import {
+  buildReminderOverdueDedupeKey,
+  buildReminderUpcomingDedupeKey,
+  formatReminderWhatsAppMessage,
+  isAlertChannelEnabled,
+} from '../utils'
+import type { DeferredWhatsAppDelivery } from './batch-whatsapp-alerts'
+import { insertAlertDelivery } from './insert-alert-delivery'
 
-export async function processReminderMatch(match: ReminderMatch) {
+export async function processReminderMatch(
+  match: ReminderMatch,
+  whatsappQueue: DeferredWhatsAppDelivery[] = []
+) {
   const results = []
+  const deliveryKind = match.kind === 'upcoming' ? 'reminder_upcoming' : 'reminder_overdue'
 
   for (const channel of match.channels) {
-    const dedupeKey = buildReminderDedupeKey(
-      match.reminder.id,
-      match.reminder.dueDate,
-      match.daysUntilDue,
-      channel,
-      match.notifyTime
-    )
+    const dedupeKey =
+      match.kind === 'upcoming'
+        ? buildReminderUpcomingDedupeKey(
+            match.reminder.id,
+            match.daysBefore ?? match.daysUntilDue,
+            match.reminder.recipientUserId,
+            channel,
+            match.notifyTime
+          )
+        : buildReminderOverdueDedupeKey(
+            match.reminder.id,
+            match.overduePeriodKey ?? 'unknown',
+            match.reminder.recipientUserId,
+            channel,
+            match.notifyTime
+          )
 
     const payload = {
       title: match.reminder.title,
@@ -24,6 +42,8 @@ export async function processReminderMatch(match: ReminderMatch) {
       amountCents:
         match.reminder.amountCents != null ? Number(match.reminder.amountCents) : null,
       daysUntilDue: match.daysUntilDue,
+      overdueDays: match.overdueDays,
+      kind: match.kind,
       orgSlug: match.orgSlug,
       reminderId: match.reminder.id,
     }
@@ -34,23 +54,37 @@ export async function processReminderMatch(match: ReminderMatch) {
     if (channel === 'whatsapp') {
       if (
         !isAlertChannelEnabled('whatsapp', match.notificationsEnabled, match.alertPreferences) ||
-        !match.recipientPhone
+        !normalizePhone(match.recipientPhone)
       ) {
         status = 'skipped'
       } else {
-        const message = formatReminderWhatsAppMessage({
-          title: match.reminder.title,
-          dueDate: match.reminder.dueDate.toISOString(),
-          daysUntilDue: match.daysUntilDue,
-          amountCents: payload.amountCents,
-          notes: match.reminder.notes,
+        whatsappQueue.push({
+          phone: normalizePhone(match.recipientPhone),
+          organizationId: match.reminder.organizationId,
+          orgName: match.orgName,
+          isOrgOwner: match.reminder.recipientUserId === match.orgOwnerId,
+          recipientName: match.recipientName,
+          body: formatReminderWhatsAppMessage({
+            title: match.reminder.title,
+            dueDate: match.reminder.dueDate.toISOString(),
+            daysUntilDue: match.daysUntilDue,
+            overdueDays: match.overdueDays,
+            amountCents: payload.amountCents,
+            notes: match.reminder.notes,
+            kind: match.kind,
+          }),
+          delivery: {
+            organizationId: match.reminder.organizationId,
+            userId: match.reminder.recipientUserId,
+            sourceType: 'reminder',
+            reminderId: match.reminder.id,
+            kind: deliveryKind,
+            channel,
+            payload,
+            dedupeKey,
+          },
         })
-        const result = await sendWhatsAppMessage({
-          phone: match.recipientPhone,
-          message,
-        })
-        status = result.status === 'sent' ? 'sent' : 'failed'
-        sentAt = result.status === 'sent' ? new Date() : null
+        continue
       }
     } else if (channel === 'in_app') {
       if (!isAlertChannelEnabled('in_app', match.notificationsEnabled, match.alertPreferences)) {
@@ -67,41 +101,37 @@ export async function processReminderMatch(match: ReminderMatch) {
       }
     }
 
-    try {
-      const [delivery] = await db
-        .insert(alertDeliveries)
-        .values({
-          organizationId: match.reminder.organizationId,
-          userId: match.reminder.recipientUserId,
-          sourceType: 'reminder',
-          reminderId: match.reminder.id,
-          kind: 'reminder_due',
-          channel,
-          status,
-          payload,
-          sentAt,
-          dedupeKey,
-        })
-        .returning()
+    const delivery = await insertAlertDelivery({
+      organizationId: match.reminder.organizationId,
+      userId: match.reminder.recipientUserId,
+      sourceType: 'reminder',
+      reminderId: match.reminder.id,
+      kind: deliveryKind,
+      channel,
+      status,
+      payload,
+      sentAt,
+      dedupeKey,
+    })
 
+    if (delivery) {
       results.push(delivery)
-    } catch (err) {
-      const cause = (err as { cause?: { code?: string } }).cause
-      if (cause?.code === '23505') continue
-      throw err
     }
   }
 
   return results
 }
 
-export async function processAllReminderMatches(matches: ReminderMatch[]) {
+export async function processAllReminderMatches(
+  matches: ReminderMatch[],
+  whatsappQueue: DeferredWhatsAppDelivery[] = []
+) {
   let processed = 0
   let errors = 0
 
   for (const match of matches) {
     try {
-      const deliveries = await processReminderMatch(match)
+      const deliveries = await processReminderMatch(match, whatsappQueue)
       processed += deliveries.length
       errors += deliveries.filter(d => d.status === 'failed').length
     } catch {

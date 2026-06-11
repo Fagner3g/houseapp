@@ -39,4 +39,6 @@ export type UpdateReminderBody = {
   recurrenceUntil?: string | null;
   /** @nullable */
   notifyHour?: number | null;
+  /** @nullable */
+  notifyMinute?: number | null;
 };

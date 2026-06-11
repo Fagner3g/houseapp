@@ -1,15 +1,18 @@
-import { db } from '@/db'
 import type { AlertDeliveryStatus } from '@/db/schemas/alertDeliveries'
-import { alertDeliveries } from '@/db/schemas/alertDeliveries'
-import { sendWhatsAppMessage } from '@/domain/whatsapp'
+import { normalizePhone } from '@/domain/whatsapp'
 import type { InvestmentMatch } from '../evaluator/evaluate-investment-reminders'
 import {
   buildInvestmentDedupeKey,
   formatInvestmentWhatsAppMessage,
   isAlertChannelEnabled,
 } from '../utils'
+import type { DeferredWhatsAppDelivery } from './batch-whatsapp-alerts'
+import { insertAlertDelivery } from './insert-alert-delivery'
 
-export async function processInvestmentMatch(match: InvestmentMatch) {
+export async function processInvestmentMatch(
+  match: InvestmentMatch,
+  whatsappQueue: DeferredWhatsAppDelivery[] = []
+) {
   const results = []
   const kind =
     match.item.status === 'overdue' ? 'investment_overdue' : 'investment_due'
@@ -18,6 +21,7 @@ export async function processInvestmentMatch(match: InvestmentMatch) {
     const dedupeKey = buildInvestmentDedupeKey(
       match.item.planId,
       match.item.referenceMonth,
+      match.userId,
       channel,
       match.notifyTime
     )
@@ -42,22 +46,34 @@ export async function processInvestmentMatch(match: InvestmentMatch) {
     if (channel === 'whatsapp') {
       if (
         !isAlertChannelEnabled('whatsapp', match.notificationsEnabled, match.alertPreferences) ||
-        !match.recipientPhone
+        !normalizePhone(match.recipientPhone)
       ) {
         status = 'skipped'
       } else {
-        const message = formatInvestmentWhatsAppMessage({
-          assetSymbol: match.item.assetSymbol,
-          plannedAmount: match.item.plannedAmount,
-          plannedQuantity: match.item.plannedQuantity,
-          referenceMonth: match.item.referenceMonth,
+        whatsappQueue.push({
+          phone: normalizePhone(match.recipientPhone),
+          organizationId: match.organizationId,
+          orgName: match.orgName,
+          isOrgOwner: match.userId === match.orgOwnerId,
+          recipientName: match.recipientName,
+          body: formatInvestmentWhatsAppMessage({
+            assetSymbol: match.item.assetSymbol,
+            plannedAmount: match.item.plannedAmount,
+            plannedQuantity: match.item.plannedQuantity,
+            referenceMonth: match.item.referenceMonth,
+            status: match.item.status,
+          }),
+          delivery: {
+            organizationId: match.organizationId,
+            userId: match.userId,
+            sourceType: 'investment',
+            kind,
+            channel,
+            payload,
+            dedupeKey,
+          },
         })
-        const result = await sendWhatsAppMessage({
-          phone: match.recipientPhone,
-          message,
-        })
-        status = result.status === 'sent' ? 'sent' : 'failed'
-        sentAt = result.status === 'sent' ? new Date() : null
+        continue
       }
     } else if (channel === 'in_app') {
       if (
@@ -78,40 +94,36 @@ export async function processInvestmentMatch(match: InvestmentMatch) {
       }
     }
 
-    try {
-      const [delivery] = await db
-        .insert(alertDeliveries)
-        .values({
-          organizationId: match.organizationId,
-          userId: match.userId,
-          sourceType: 'investment',
-          kind,
-          channel,
-          status,
-          payload,
-          sentAt,
-          dedupeKey,
-        })
-        .returning()
+    const delivery = await insertAlertDelivery({
+      organizationId: match.organizationId,
+      userId: match.userId,
+      sourceType: 'investment',
+      kind,
+      channel,
+      status,
+      payload,
+      sentAt,
+      dedupeKey,
+    })
 
+    if (delivery) {
       results.push(delivery)
-    } catch (err) {
-      const cause = (err as { cause?: { code?: string } }).cause
-      if (cause?.code === '23505') continue
-      throw err
     }
   }
 
   return results
 }
 
-export async function processAllInvestmentMatches(matches: InvestmentMatch[]) {
+export async function processAllInvestmentMatches(
+  matches: InvestmentMatch[],
+  whatsappQueue: DeferredWhatsAppDelivery[] = []
+) {
   let processed = 0
   let errors = 0
 
   for (const match of matches) {
     try {
-      const deliveries = await processInvestmentMatch(match)
+      const deliveries = await processInvestmentMatch(match, whatsappQueue)
       processed += deliveries.length
       errors += deliveries.filter(d => d.status === 'failed').length
     } catch {

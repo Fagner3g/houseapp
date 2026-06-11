@@ -70,12 +70,14 @@ export type EditableUser = {
   alertPreferences?: AlertPreferences
 }
 
+export type RemoveUserMode = 'deactivate' | 'delete'
+
 interface ModalEditUserProps {
   open: boolean
   onOpenChange: (open: boolean) => void
   user: EditableUser | null
   onSubmit: (data: EditableUser) => void
-  onDelete?: (data: EditableUser) => void
+  onDelete?: (data: EditableUser, mode: RemoveUserMode) => Promise<void> | void
   isSubmitting?: boolean
   isDeleting?: boolean
 }
@@ -90,6 +92,7 @@ export function ModalEditUser({
   isDeleting,
 }: ModalEditUserProps) {
   const [showDeleteDialog, setShowDeleteDialog] = useState(false)
+  const [removeMode, setRemoveMode] = useState<RemoveUserMode>('deactivate')
   const currentUser = useAuthStore(s => s.user)
   type FormValues = z.infer<typeof schemaEditUser>
   const form = useForm<FormValues>({ resolver: zodResolver(schemaEditUser) })
@@ -323,7 +326,13 @@ export function ModalEditUser({
         </DialogContent>
       </Dialog>
 
-      <AlertDialog open={showDeleteDialog} onOpenChange={setShowDeleteDialog}>
+      <AlertDialog
+        open={showDeleteDialog}
+        onOpenChange={open => {
+          setShowDeleteDialog(open)
+          if (!open) setRemoveMode('deactivate')
+        }}
+      >
         <AlertDialogContent className="sm:max-w-md">
           <AlertDialogHeader className="space-y-3">
             <div className="flex items-center gap-3">
@@ -331,32 +340,66 @@ export function ModalEditUser({
                 <Trash2 className="h-5 w-5 text-red-600 dark:text-red-400" />
               </div>
               <div>
-                <AlertDialogTitle className="text-xl">Excluir usuário</AlertDialogTitle>
+                <AlertDialogTitle className="text-xl">Remover usuário</AlertDialogTitle>
                 <AlertDialogDescription className="text-sm text-muted-foreground">
-                  Esta ação não pode ser desfeita
+                  Escolha como deseja remover este usuário
                 </AlertDialogDescription>
               </div>
             </div>
           </AlertDialogHeader>
 
-          <div className="py-4">
+          <div className="space-y-4 py-2">
             <p className="text-sm text-foreground">
-              Tem certeza que deseja excluir o usuário{' '}
+              O que fazer com{' '}
               <span className="font-semibold text-foreground">{user?.name}</span>?
             </p>
-            <p className="text-xs text-muted-foreground mt-2">
-              Todos os dados relacionados a este usuário serão removidos permanentemente.
-            </p>
+
+            <div className="space-y-2">
+              <label className="flex cursor-pointer items-start gap-3 rounded-lg border p-3 transition-colors has-[:checked]:border-primary has-[:checked]:bg-primary/5">
+                <input
+                  type="radio"
+                  name="removeMode"
+                  value="deactivate"
+                  checked={removeMode === 'deactivate'}
+                  onChange={() => setRemoveMode('deactivate')}
+                  className="mt-1"
+                />
+                <div className="space-y-1">
+                  <p className="text-sm font-medium">Desativar</p>
+                  <p className="text-xs text-muted-foreground">
+                    Remove o acesso à organização, mas mantém a conta e o histórico.
+                  </p>
+                </div>
+              </label>
+
+              <label className="flex cursor-pointer items-start gap-3 rounded-lg border p-3 transition-colors has-[:checked]:border-destructive has-[:checked]:bg-destructive/5">
+                <input
+                  type="radio"
+                  name="removeMode"
+                  value="delete"
+                  checked={removeMode === 'delete'}
+                  onChange={() => setRemoveMode('delete')}
+                  className="mt-1"
+                />
+                <div className="space-y-1">
+                  <p className="text-sm font-medium">Excluir permanentemente</p>
+                  <p className="text-xs text-muted-foreground">
+                    Remove a conta do sistema. Disponível apenas se o usuário não tiver transações
+                    ou vínculos em outras organizações.
+                  </p>
+                </div>
+              </label>
+            </div>
           </div>
 
           <AlertDialogFooter className="flex flex-col gap-2 sm:flex-row sm:justify-end">
             <AlertDialogCancel className="w-full sm:w-auto">Cancelar</AlertDialogCancel>
             <AlertDialogAction
-              onClick={() => {
+              onClick={async () => {
                 if (user && onDelete) {
-                  onDelete(user)
+                  await onDelete(user, removeMode)
                   setShowDeleteDialog(false)
-                  onOpenChange(false)
+                  setRemoveMode('deactivate')
                 }
               }}
               className="w-full sm:w-auto bg-red-600 hover:bg-red-700 focus:ring-red-600"
@@ -385,12 +428,12 @@ export function ModalEditUser({
                       d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"
                     ></path>
                   </svg>
-                  Excluindo...
+                  {removeMode === 'delete' ? 'Excluindo...' : 'Desativando...'}
                 </>
               ) : (
                 <>
                   <Trash2 className="mr-2 h-4 w-4" />
-                  Excluir usuário
+                  {removeMode === 'delete' ? 'Excluir permanentemente' : 'Desativar usuário'}
                 </>
               )}
             </AlertDialogAction>

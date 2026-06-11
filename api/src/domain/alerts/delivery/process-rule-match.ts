@@ -1,8 +1,7 @@
-import { db } from '@/db'
 import type { AlertDeliveryStatus } from '@/db/schemas/alertDeliveries'
-import { alertDeliveries } from '@/db/schemas/alertDeliveries'
-import { sendWhatsAppMessage } from '@/domain/whatsapp'
+import { normalizePhone } from '@/domain/whatsapp'
 import type { TransactionRuleMatch } from '../evaluator/evaluate-transaction-rules'
+import type { DeferredWhatsAppDelivery } from './batch-whatsapp-alerts'
 import {
   buildOverdueRuleDedupeKey,
   buildTransactionAlertExtraInfo,
@@ -12,8 +11,12 @@ import {
   getTransactionDisplayAmountCents,
   isAlertChannelEnabled,
 } from '../utils'
+import { insertAlertDelivery } from './insert-alert-delivery'
 
-export async function processRuleMatch(match: TransactionRuleMatch) {
+export async function processRuleMatch(
+  match: TransactionRuleMatch,
+  whatsappQueue: DeferredWhatsAppDelivery[] = []
+) {
   const recipient = match.recipient
   const results = []
   const { occurrence } = match
@@ -69,6 +72,8 @@ export async function processRuleMatch(match: TransactionRuleMatch) {
       installmentInfo,
     }
 
+    const kind = match.kind === 'upcoming' ? 'transaction_upcoming' : 'transaction_overdue'
+
     let status: AlertDeliveryStatus = 'pending'
     let sentAt: Date | null = null
 
@@ -79,25 +84,38 @@ export async function processRuleMatch(match: TransactionRuleMatch) {
           recipient.notificationsEnabled,
           recipient.alertPreferences
         ) ||
-        !recipient.phone
+        !normalizePhone(recipient.phone)
       ) {
         status = 'skipped'
       } else {
-        const message = formatTransactionWhatsAppMessage({
-          title: match.occurrence.title,
-          dueDate: match.occurrence.dueDate.toISOString(),
-          amountCents: displayAmount,
-          daysUntilDue: match.daysUntilDue,
-          overdueDays: match.overdueDays,
-          installmentInfo,
-          kind: match.kind,
+        whatsappQueue.push({
+          phone: normalizePhone(recipient.phone),
+          organizationId: match.orgId,
+          orgName: match.orgName,
+          isOrgOwner: recipient.userId === match.orgOwnerId,
+          recipientName: recipient.name,
+          body: formatTransactionWhatsAppMessage({
+            title: match.occurrence.title,
+            dueDate: match.occurrence.dueDate.toISOString(),
+            amountCents: displayAmount,
+            daysUntilDue: match.daysUntilDue,
+            overdueDays: match.overdueDays,
+            installmentInfo,
+            kind: match.kind,
+          }),
+          delivery: {
+            organizationId: match.orgId,
+            userId: recipient.userId,
+            sourceType: 'rule',
+            ruleId: match.rule.id,
+            occurrenceId: match.occurrence.id,
+            kind,
+            channel,
+            payload,
+            dedupeKey,
+          },
         })
-        const result = await sendWhatsAppMessage({
-          phone: recipient.phone,
-          message,
-        })
-        status = result.status === 'sent' ? 'sent' : 'failed'
-        sentAt = result.status === 'sent' ? new Date() : null
+        continue
       }
     } else if (channel === 'in_app') {
       if (
@@ -122,44 +140,38 @@ export async function processRuleMatch(match: TransactionRuleMatch) {
       }
     }
 
-    const kind = match.kind === 'upcoming' ? 'transaction_upcoming' : 'transaction_overdue'
+    const delivery = await insertAlertDelivery({
+      organizationId: match.orgId,
+      userId: recipient.userId,
+      sourceType: 'rule',
+      ruleId: match.rule.id,
+      occurrenceId: match.occurrence.id,
+      kind,
+      channel,
+      status,
+      payload,
+      sentAt,
+      dedupeKey,
+    })
 
-    try {
-      const [delivery] = await db
-        .insert(alertDeliveries)
-        .values({
-          organizationId: match.orgId,
-          userId: recipient.userId,
-          sourceType: 'rule',
-          ruleId: match.rule.id,
-          occurrenceId: match.occurrence.id,
-          kind,
-          channel,
-          status,
-          payload,
-          sentAt,
-          dedupeKey,
-        })
-        .returning()
-
+    if (delivery) {
       results.push(delivery)
-    } catch (err) {
-      const cause = (err as { cause?: { code?: string } }).cause
-      if (cause?.code === '23505') continue
-      throw err
     }
   }
 
   return results
 }
 
-export async function processAllRuleMatches(matches: TransactionRuleMatch[]) {
+export async function processAllRuleMatches(
+  matches: TransactionRuleMatch[],
+  whatsappQueue: DeferredWhatsAppDelivery[] = []
+) {
   let processed = 0
   let errors = 0
 
   for (const match of matches) {
     try {
-      const deliveries = await processRuleMatch(match)
+      const deliveries = await processRuleMatch(match, whatsappQueue)
       processed += deliveries.length
       errors += deliveries.filter(d => d.status === 'failed').length
     } catch {

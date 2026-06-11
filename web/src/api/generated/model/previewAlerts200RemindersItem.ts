@@ -14,6 +14,8 @@ export type PreviewAlerts200RemindersItem = {
   daysUntilDue: number;
   /** @nullable */
   amountCents: number | null;
+  notifyHour: number;
+  notifyMinute: number;
   channels: PreviewAlerts200RemindersItemChannelsItem[];
   recipientUserId: string;
   /** @nullable */

@@ -28,6 +28,7 @@ export const reminderDtoSchema = z.object({
   notifyMinute: notifyMinuteSchema,
   linkedSeriesId: z.string().nullable(),
   snoozedUntil: z.string().nullable(),
+  lastCompletedPeriodKey: z.string().nullable(),
   createdAt: z.string(),
   updatedAt: z.string(),
 })
@@ -124,11 +125,48 @@ export const updateReminderSchema = {
 
 export const completeReminderSchema = {
   tags: ['Alerts'],
-  description: 'Mark reminder as completed',
+  description: 'Permanently end reminder (deactivate)',
   operationId: 'completeReminder',
   params: z.object({
     slug: z.string().nonempty(),
     id: z.string().nonempty(),
+  }),
+  response: {
+    [StatusCodes.OK]: z.object({
+      reminder: reminderDtoSchema,
+    }),
+  },
+}
+
+export const completeReminderPeriodSchema = {
+  tags: ['Alerts'],
+  description: 'Mark reminder as done for current period and advance due date',
+  operationId: 'completeReminderPeriod',
+  params: z.object({
+    slug: z.string().nonempty(),
+    id: z.string().nonempty(),
+  }),
+  response: {
+    [StatusCodes.OK]: z.object({
+      reminder: reminderDtoSchema,
+    }),
+  },
+}
+
+export const uncompleteReminderPeriodSchema = {
+  tags: ['Alerts'],
+  description: 'Undo completion for a reminder occurrence and roll back due date',
+  operationId: 'uncompleteReminderPeriod',
+  params: z.object({
+    slug: z.string().nonempty(),
+    id: z.string().nonempty(),
+  }),
+  body: z.object({
+    occurrenceDate: z
+      .string()
+      .refine(value => !Number.isNaN(Date.parse(value)), {
+        message: 'occurrenceDate must be a valid date',
+      }),
   }),
   response: {
     [StatusCodes.OK]: z.object({
@@ -180,6 +218,15 @@ export type CreateReminderSchemaBody = z.infer<typeof createReminderSchema.body>
 export type UpdateReminderSchemaParams = z.infer<typeof updateReminderSchema.params>
 export type UpdateReminderSchemaBody = z.infer<typeof updateReminderSchema.body>
 export type CompleteReminderSchemaParams = z.infer<typeof completeReminderSchema.params>
+export type CompleteReminderPeriodSchemaParams = z.infer<
+  typeof completeReminderPeriodSchema.params
+>
+export type UncompleteReminderPeriodSchemaParams = z.infer<
+  typeof uncompleteReminderPeriodSchema.params
+>
+export type UncompleteReminderPeriodSchemaBody = z.infer<
+  typeof uncompleteReminderPeriodSchema.body
+>
 export type DeleteReminderSchemaParams = z.infer<typeof deleteReminderSchema.params>
 export type SnoozeReminderSchemaParams = z.infer<typeof snoozeReminderSchema.params>
 export type SnoozeReminderSchemaBody = z.infer<typeof snoozeReminderSchema.body>

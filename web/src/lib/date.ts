@@ -30,3 +30,34 @@ export function formatDateLabel(
 ): string {
   return date.toLocaleDateString(locale, options)
 }
+
+export function getEndOfDueMonth(date: Date): Date {
+  return dayjs(date).endOf('month').endOf('day').toDate()
+}
+
+const TIMEZONE = 'America/Sao_Paulo'
+
+function parseCalendarDateKey(dateKey: string): number {
+  const [year, month, day] = dateKey.split('-').map(Number)
+  return Date.UTC(year, month - 1, day)
+}
+
+function formatDueDateKey(dueDate: Date, timezone = TIMEZONE): string {
+  return new Intl.DateTimeFormat('en-CA', {
+    timeZone: timezone,
+    year: 'numeric',
+    month: '2-digit',
+    day: '2-digit',
+  }).format(dueDate)
+}
+
+export function computeDaysUntilDue(
+  dueDate: Date,
+  referenceDate = new Date(),
+  timezone = TIMEZONE
+): number {
+  const todayKey = formatDueDateKey(referenceDate, timezone)
+  const dueKey = formatDueDateKey(dueDate, timezone)
+  const diffMs = parseCalendarDateKey(dueKey) - parseCalendarDateKey(todayKey)
+  return Math.round(diffMs / 86400000)
+}

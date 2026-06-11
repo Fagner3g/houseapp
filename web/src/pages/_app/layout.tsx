@@ -7,6 +7,7 @@ import { AppSidebar } from '@/components/layout/sidebar'
 import { ModalNewOrganization } from '@/components/modal-new-organization'
 import { SidebarInset, SidebarProvider } from '@/components/ui/sidebar'
 import { useAuthHydration } from '@/hooks/use-is-authenticated'
+import { useOrgAccessGuard } from '@/hooks/use-org-access-guard'
 import { getAuthToken } from '@/lib/auth'
 
 export const Route = createFileRoute('/_app')({
@@ -23,6 +24,7 @@ function RouteComponent() {
   const navigate = useNavigate()
   const { createOrg = false } = useSearch({ strict: false }) as { createOrg?: boolean }
   const { isAuthed, isLoading } = useAuthHydration()
+  const { blocked: orgAccessBlocked } = useOrgAccessGuard()
 
   useEffect(() => {
     if (!isLoading && !isAuthed) {
@@ -36,7 +38,7 @@ function RouteComponent() {
         <AppSidebar variant="floating" collapsible="icon" />
         <SidebarInset>
           <Header />
-          <Outlet />
+          {orgAccessBlocked ? null : <Outlet />}
           <ModalNewOrganization open={!!createOrg} onOpenChange={() => {}} />
         </SidebarInset>
       </SidebarProvider>

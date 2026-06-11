@@ -14,4 +14,5 @@ export const UpdateAlertRule200RuleRecipients = {
   owner: "owner",
   pay_to: "pay_to",
   both: "both",
+  none: "none",
 } as const;

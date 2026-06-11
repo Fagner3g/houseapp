@@ -77,14 +77,14 @@ export function NavbarTable({
       {/* Seletor de visualização */}
       <div className="flex items-center justify-between gap-3">
         <TabsList className="h-9">
+          <TabsTrigger value="calendar" className="text-sm">
+            Calendário
+          </TabsTrigger>
           <TabsTrigger value="table" className="text-sm">
             Tabela
           </TabsTrigger>
           <TabsTrigger value="payto" className="text-sm">
             Por pessoa
-          </TabsTrigger>
-          <TabsTrigger value="calendar" className="text-sm">
-            Calendário
           </TabsTrigger>
         </TabsList>
 

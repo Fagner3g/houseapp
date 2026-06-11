@@ -1,5 +1,6 @@
 const DEFAULT_POLL_MINUTES = 15
 const ALARM_NAME = 'houseapp-poll'
+const CONFIRM_NOTIFICATION_ID = 'houseapp-confirm-action'
 
 // ── Bootstrap ────────────────────────────────────────────────────────────────
 
@@ -13,12 +14,33 @@ chrome.alarms.onAlarm.addListener(alarm => {
 })
 
 chrome.notifications.onButtonClicked.addListener(async (notificationId, buttonIndex) => {
-  if (buttonIndex !== 0) return
+  if (notificationId === CONFIRM_NOTIFICATION_ID) {
+    if (buttonIndex === 1) {
+      await clearPendingConfirmAction()
+      chrome.notifications.clear(notificationId)
+      return
+    }
+    if (buttonIndex === 0) {
+      const action = await getPendingConfirmAction()
+      await clearPendingConfirmAction()
+      chrome.notifications.clear(notificationId)
+      if (action) await executePendingConfirmAction(action)
+    }
+    return
+  }
 
   const investmentMatch = notificationId.match(/^investment-(.+?)-(.+)$/)
   if (investmentMatch) {
     const [, orgSlug, alertId] = investmentMatch
-    await ackReminderAlert(orgSlug, alertId)
+    const alert = await findCachedAlert(alertId)
+    const payload = alert?.payload || {}
+    const title = payload.assetSymbol || payload.title || 'Aporte'
+    await requestConfirmAction({
+      type: 'ack-investment',
+      orgSlug,
+      alertId,
+      title,
+    })
     chrome.notifications.clear(notificationId)
     return
   }
@@ -26,7 +48,13 @@ chrome.notifications.onButtonClicked.addListener(async (notificationId, buttonIn
   const overdueMatch = notificationId.match(/^overdue-(.+?)-(.+)$/)
   if (overdueMatch) {
     const [, orgSlug, transactionId] = overdueMatch
-    await payTransaction(orgSlug, transactionId)
+    const title = await getTransactionTitle(orgSlug, transactionId)
+    await requestConfirmAction({
+      type: 'pay-transaction',
+      orgSlug,
+      transactionId,
+      title,
+    })
     chrome.notifications.clear(notificationId)
     return
   }
@@ -34,7 +62,22 @@ chrome.notifications.onButtonClicked.addListener(async (notificationId, buttonIn
   const reminderMatch = notificationId.match(/^reminder-(.+?)-(.+)$/)
   if (reminderMatch) {
     const [, orgSlug, alertId] = reminderMatch
-    await ackReminderAlert(orgSlug, alertId)
+    const alert = await findCachedAlert(alertId)
+    const reminderId = alert?.payload?.reminderId || alert?.reminderId
+    const title = alert?.payload?.title || 'Lembrete'
+
+    if (buttonIndex === 0 && reminderId) {
+      await requestConfirmAction({
+        type: 'complete-reminder',
+        orgSlug,
+        reminderId,
+        alertId,
+        title,
+      })
+    } else if (buttonIndex === 1 && reminderId) {
+      await snoozeReminder(orgSlug, reminderId, { days: 3 })
+      await ackReminderAlert(orgSlug, alertId)
+    }
     chrome.notifications.clear(notificationId)
     return
   }
@@ -42,12 +85,23 @@ chrome.notifications.onButtonClicked.addListener(async (notificationId, buttonIn
   const ruleMatch = notificationId.match(/^rule-(.+?)-(.+)$/)
   if (ruleMatch) {
     const [, orgSlug, alertId] = ruleMatch
-    const { cachedPendingAlerts } = await chrome.storage.local.get('cachedPendingAlerts')
-    const alert = (cachedPendingAlerts?.alerts || []).find(a => a.id === alertId)
+    const alert = await findCachedAlert(alertId)
+    const title = alert?.payload?.title || 'Transação'
+
     if (alert?.occurrenceId) {
-      await payTransaction(orgSlug, alert.occurrenceId)
+      await requestConfirmAction({
+        type: 'pay-transaction',
+        orgSlug,
+        transactionId: alert.occurrenceId,
+        title,
+      })
     } else {
-      await ackReminderAlert(orgSlug, alertId)
+      await requestConfirmAction({
+        type: 'ack-alert',
+        orgSlug,
+        alertId,
+        title,
+      })
     }
     chrome.notifications.clear(notificationId)
   }
@@ -146,6 +200,33 @@ async function ackReminderAlert(orgSlug, alertId) {
   await chrome.storage.local.remove(['cachedPendingAlerts', 'cachedReportsByOrg'])
 }
 
+async function completeReminderPeriod(orgSlug, reminderId) {
+  const { apiUrl } = await chrome.storage.local.get('apiUrl')
+  const token = await getToken()
+  if (!apiUrl || !orgSlug || !token || !reminderId) return
+
+  await fetch(`${apiUrl}/org/${orgSlug}/reminders/${reminderId}/complete-period`, {
+    method: 'POST',
+    headers: authHeaders(token),
+  })
+
+  await chrome.storage.local.remove(['cachedPendingAlerts', 'cachedReportsByOrg'])
+}
+
+async function snoozeReminder(orgSlug, reminderId, body) {
+  const { apiUrl } = await chrome.storage.local.get('apiUrl')
+  const token = await getToken()
+  if (!apiUrl || !orgSlug || !token || !reminderId) return
+
+  await fetch(`${apiUrl}/org/${orgSlug}/reminders/${reminderId}/snooze`, {
+    method: 'POST',
+    headers: authHeaders(token),
+    body: JSON.stringify(body),
+  })
+
+  await chrome.storage.local.remove(['cachedPendingAlerts', 'cachedReportsByOrg'])
+}
+
 async function payTransaction(orgSlug, transactionId) {
   const { apiUrl } = await chrome.storage.local.get('apiUrl')
   const token = await getToken()
@@ -157,6 +238,81 @@ async function payTransaction(orgSlug, transactionId) {
   })
 
   await chrome.storage.local.remove('cachedReportsByOrg')
+}
+
+// ── Confirm actions (notification two-step) ───────────────────────────────────
+
+async function findCachedAlert(alertId) {
+  const { cachedPendingAlerts } = await chrome.storage.local.get('cachedPendingAlerts')
+  return (cachedPendingAlerts?.alerts || []).find(a => a.id === alertId)
+}
+
+async function getTransactionTitle(orgSlug, transactionId) {
+  const { cachedReportsByOrg } = await chrome.storage.local.get('cachedReportsByOrg')
+  const reports = cachedReportsByOrg?.[orgSlug]
+  if (!reports) return 'Transação'
+
+  const all = [
+    ...(reports.overdueTransactions?.transactions || []),
+    ...(reports.upcomingAlerts?.transactions || []),
+    ...(reports.allTransactions || []),
+  ]
+  return all.find(t => t.id === transactionId)?.title || 'Transação'
+}
+
+function confirmMessageForAction(action) {
+  switch (action.type) {
+    case 'complete-reminder':
+      return `Marcar "${action.title}" como feito neste mês?`
+    case 'pay-transaction':
+      return `Marcar "${action.title}" como paga?`
+    case 'ack-investment':
+    case 'ack-alert':
+      return `Marcar "${action.title}" como feito?`
+    default:
+      return 'Confirmar esta ação?'
+  }
+}
+
+async function getPendingConfirmAction() {
+  const { pendingConfirmAction } = await chrome.storage.session.get('pendingConfirmAction')
+  return pendingConfirmAction || null
+}
+
+async function clearPendingConfirmAction() {
+  await chrome.storage.session.remove('pendingConfirmAction')
+}
+
+async function requestConfirmAction(action) {
+  await chrome.storage.session.set({ pendingConfirmAction: action })
+  chrome.notifications.create(CONFIRM_NOTIFICATION_ID, {
+    type: 'basic',
+    iconUrl: 'icons/icon48.png',
+    title: 'Confirmar ação',
+    message: confirmMessageForAction(action),
+    buttons: [
+      { title: 'Confirmar' },
+      { title: 'Cancelar' },
+    ],
+    requireInteraction: true,
+  })
+}
+
+async function executePendingConfirmAction(action) {
+  switch (action.type) {
+    case 'complete-reminder':
+      await completeReminderPeriod(action.orgSlug, action.reminderId)
+      if (action.alertId) await ackReminderAlert(action.orgSlug, action.alertId)
+      break
+    case 'pay-transaction':
+      await payTransaction(action.orgSlug, action.transactionId)
+      break
+    case 'ack-investment':
+    case 'ack-alert':
+      await ackReminderAlert(action.orgSlug, action.alertId)
+      break
+  }
+  poll()
 }
 
 // ── Badge ────────────────────────────────────────────────────────────────────
@@ -202,19 +358,30 @@ function setBadge(overdueCount = 0) {
 function notifyReminder(alert) {
   const payload = alert.payload || {}
   const title = payload.title || 'Lembrete'
-  const daysUntilDue = payload.daysUntilDue ?? 0
-  const dueLabel = daysUntilDue === 0 ? 'hoje' : daysUntilDue === 1 ? 'amanhã' : `em ${daysUntilDue} dias`
+  const isOverdue = alert.kind === 'reminder_overdue' || payload.kind === 'overdue'
   const orgSuffix = alert.orgName ? ` [${alert.orgName}]` : ''
   const amount = payload.amountCents != null
     ? ` — R$ ${formatAmount(payload.amountCents / 100)}`
     : ''
 
+  let detail = ''
+  if (isOverdue) {
+    const days = payload.overdueDays ?? 0
+    detail = days === 1 ? '1 dia em atraso' : `${days} dias em atraso`
+  } else {
+    const daysUntilDue = payload.daysUntilDue ?? 0
+    detail = daysUntilDue === 0 ? 'vence hoje' : daysUntilDue === 1 ? 'vence amanhã' : `vence em ${daysUntilDue} dias`
+  }
+
   chrome.notifications.create(`reminder-${alert.orgSlug}-${alert.id}`, {
     type: 'basic',
     iconUrl: 'icons/icon48.png',
-    title: `Lembrete${orgSuffix}`,
-    message: `${title} — vence ${dueLabel}${amount}`,
-    buttons: [{ title: 'Marcar como feito' }],
+    title: `${isOverdue ? 'Lembrete vencido' : 'Lembrete'}${orgSuffix}`,
+    message: `${title} — ${detail}${amount}`,
+    buttons: [
+      { title: 'Marcar como feito' },
+      { title: 'Adiar 3 dias' },
+    ],
     requireInteraction: false,
   })
 }

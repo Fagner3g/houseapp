@@ -8,10 +8,11 @@ import {
   getListUsersByOrgQueryKey,
   useListUsersByOrg,
   usePatchOrgSlugUsers,
+  useRemoveUserFromOrg,
 } from '@/api/generated/api'
 import type { ListUsersByOrg200, PatchOrgSlugUsersBody } from '@/api/generated/model'
 import { LoadingErrorState } from '@/components/loading-error-state'
-import { ModalEditUser } from '@/components/modal-edit-user'
+import { ModalEditUser, type RemoveUserMode } from '@/components/modal-edit-user'
 import { ModalNewUser } from '@/components/modal-new-user'
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar'
 import { Button } from '@/components/ui/button'
@@ -43,9 +44,35 @@ function Users() {
     }
   } | null>(null)
   const [search, setSearch] = useState('')
-  const [isDeleting, setIsDeleting] = useState(false)
   type UserWithId = ListUsersByOrg200['users'][number] & { id: string }
   type PatchUserBody = PatchOrgSlugUsersBody & { userId: string }
+
+  const { mutateAsync: removeUser, isPending: isDeleting } = useRemoveUserFromOrg({
+    mutation: {
+      onSuccess: (_data, { data }) => {
+        queryClient.invalidateQueries({ queryKey: getListUsersByOrgQueryKey(slug) })
+        toast.success(
+          data.mode === 'delete'
+            ? 'Usuário excluído permanentemente'
+            : 'Usuário desativado na organização'
+        )
+        setIsEditOpen(false)
+        setEditingUser(null)
+      },
+      onError: async (error: unknown) => {
+        let message = 'Erro ao remover usuário'
+        if (error instanceof Response) {
+          try {
+            const body = (await error.json()) as { message?: string }
+            if (body.message) message = body.message
+          } catch {
+            // keep default message
+          }
+        }
+        toast.error(message)
+      },
+    },
+  })
 
   const handleToggleNotifications = async (
     userId: string,
@@ -108,16 +135,14 @@ function Users() {
     },
   })
 
-  const handleDeleteUser = async () => {
-    setIsDeleting(true)
-    try {
-      // TODO: Implementar API de exclusão quando disponível no backend
-      toast.warning('Remoção de usuário ainda não disponível no backend')
-    } catch {
-      toast.error('Erro ao excluir usuário')
-    } finally {
-      setIsDeleting(false)
-    }
+  const handleDeleteUser = async (user: { id: string }, mode: RemoveUserMode) => {
+    await removeUser({
+      slug,
+      data: {
+        userId: user.id,
+        mode,
+      },
+    })
   }
 
   const filteredUsers = useMemo(() => {

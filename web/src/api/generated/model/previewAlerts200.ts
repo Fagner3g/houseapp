@@ -6,9 +6,15 @@
  * OpenAPI spec version: 1.1.1
  */
 import type { PreviewAlerts200RemindersItem } from "./previewAlerts200RemindersItem";
+import type { PreviewAlerts200SkippedRemindersItem } from "./previewAlerts200SkippedRemindersItem";
 import type { PreviewAlerts200RulesItem } from "./previewAlerts200RulesItem";
+import type { PreviewAlerts200InvestmentsItem } from "./previewAlerts200InvestmentsItem";
 
 export type PreviewAlerts200 = {
+  defaultNotifyHour: number;
+  defaultNotifyMinute: number;
   reminders: PreviewAlerts200RemindersItem[];
+  skippedReminders: PreviewAlerts200SkippedRemindersItem[];
   rules: PreviewAlerts200RulesItem[];
+  investments: PreviewAlerts200InvestmentsItem[];
 };

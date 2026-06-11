@@ -1,7 +1,6 @@
 import { and, eq, gte, inArray, lt, lte, or, sql } from 'drizzle-orm'
 
 import { db } from '@/db'
-import { alertDeliveries } from '@/db/schemas/alertDeliveries'
 import type { AlertRuleChannel } from '@/db/schemas/alertRules'
 import { alertRules } from '@/db/schemas/alertRules'
 import { organizations } from '@/db/schemas/organization'
@@ -9,6 +8,7 @@ import { transactionOccurrences } from '@/db/schemas/transactionOccurrences'
 import { transactionSeries } from '@/db/schemas/transactionSeries'
 import type { AlertPreferences } from '@/db/schemas/userOrganization'
 import { userOrganizations } from '@/db/schemas/userOrganization'
+import { hasBlockingDedupeKey } from '../delivery/insert-alert-delivery'
 import { resolveRuleForSeries } from '../rules/resolve-rule-for-series'
 import type { RulePreviewItem } from '../types'
 import {
@@ -44,6 +44,8 @@ export type TransactionRuleMatch = {
   }
   orgId: string
   orgSlug: string
+  orgName: string
+  orgOwnerId: string
   kind: 'upcoming' | 'overdue'
   daysUntilDue?: number
   overdueDays?: number
@@ -65,6 +67,8 @@ type OccurrenceRow = {
   installmentsTotal: number | null
   organizationId: string
   orgSlug: string
+  orgName: string
+  orgOwnerId: string
   defaultNotifyHour: number
   defaultNotifyMinute: number
   ownerId: string
@@ -114,15 +118,6 @@ function resolveRecipientsFromRow(
   return Array.from(unique.values())
 }
 
-async function hasDedupeKey(dedupeKey: string): Promise<boolean> {
-  const [existing] = await db
-    .select({ id: alertDeliveries.id })
-    .from(alertDeliveries)
-    .where(eq(alertDeliveries.dedupeKey, dedupeKey))
-    .limit(1)
-  return !!existing
-}
-
 async function fetchOccurrenceRows(orgIds: string[], maxDaysAhead: number, userId?: string) {
   const today = new Date()
   today.setHours(0, 0, 0, 0)
@@ -142,6 +137,8 @@ async function fetchOccurrenceRows(orgIds: string[], maxDaysAhead: number, userI
       installmentsTotal: transactionSeries.installmentsTotal,
       organizationId: transactionSeries.organizationId,
       orgSlug: organizations.slug,
+      orgName: organizations.name,
+      orgOwnerId: organizations.ownerId,
       defaultNotifyHour: organizations.defaultNotifyHour,
       defaultNotifyMinute: organizations.defaultNotifyMinute,
       ownerId: transactionSeries.ownerId,
@@ -177,6 +174,7 @@ async function fetchOccurrenceRows(orgIds: string[], maxDaysAhead: number, userI
     .where(
       and(
         inArray(transactionSeries.organizationId, orgIds),
+        eq(transactionSeries.active, true),
         or(
           eq(transactionOccurrences.status, 'pending'),
           eq(transactionOccurrences.status, 'partial')
@@ -277,7 +275,7 @@ export async function evaluateTransactionRules(
             channel,
             resolvedTime
           )
-          if (!(await hasDedupeKey(dedupeKey))) {
+          if (!(await hasBlockingDedupeKey(dedupeKey))) {
             pendingChannels.push(channel)
           }
         }
@@ -298,6 +296,8 @@ export async function evaluateTransactionRules(
           },
           orgId: row.organizationId,
           orgSlug: row.orgSlug,
+          orgName: row.orgName,
+          orgOwnerId: row.orgOwnerId,
           kind: 'upcoming',
           daysUntilDue,
           daysBefore: matchingDay,
@@ -329,7 +329,7 @@ export async function evaluateTransactionRules(
             channel,
             resolvedTime
           )
-          if (!(await hasDedupeKey(dedupeKey))) {
+          if (!(await hasBlockingDedupeKey(dedupeKey))) {
             pendingChannels.push(channel)
           }
         }
@@ -350,6 +350,8 @@ export async function evaluateTransactionRules(
           },
           orgId: row.organizationId,
           orgSlug: row.orgSlug,
+          orgName: row.orgName,
+          orgOwnerId: row.orgOwnerId,
           kind: 'overdue',
           overdueDays,
           recipient,

@@ -31,6 +31,7 @@ export type ReminderDto = {
   notifyMinute: number | null
   linkedSeriesId: string | null
   snoozedUntil: string | null
+  lastCompletedPeriodKey: string | null
   createdAt: string
   updatedAt: string
 }
@@ -44,12 +45,14 @@ export type AlertDeliveryDto = {
   id: string
   organizationId: string
   userId: string
+  recipientName?: string | null
   sourceType: 'rule' | 'reminder' | 'investment'
   ruleId: string | null
   reminderId: string | null
   occurrenceId: string | null
   kind: string
   channel: 'in_app' | 'whatsapp' | 'extension'
+  channels?: ('in_app' | 'whatsapp' | 'extension')[]
   status: 'pending' | 'sent' | 'failed' | 'skipped'
   payload: Record<string, unknown>
   sentAt: string | null
@@ -95,7 +98,9 @@ export type ReminderPreviewItem = {
   reminderId: string
   title: string
   dueDate: string
+  kind: 'upcoming' | 'overdue'
   daysUntilDue: number
+  overdueDays?: number
   amountCents: number | null
   notifyHour: number
   notifyMinute: number
@@ -104,7 +109,7 @@ export type ReminderPreviewItem = {
   recipientName: string | null
 }
 
-export type ReminderPreviewSkipReason = 'snoozed' | 'no_matching_day'
+export type ReminderPreviewSkipReason = 'snoozed' | 'no_matching_rule' | 'period_completed'
 
 export type ReminderPreviewSkipItem = {
   reminderId: string

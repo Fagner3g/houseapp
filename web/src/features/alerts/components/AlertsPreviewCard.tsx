@@ -7,7 +7,6 @@ import { formatCurrency } from '@/lib/currency'
 import { formatNotifyTime } from '@/lib/date'
 import {
   alertStatusIconClass,
-  getAlertKindBadgeVariant,
   getRuleKindBadgeVariant,
 } from '@/lib/alert-status-colors'
 import { useAlertSettings, useAlertsPreview, type ReminderPreviewSkipItem } from '../api'
@@ -41,7 +40,10 @@ function formatSkipReason(item: ReminderPreviewSkipItem) {
   if (item.reason === 'snoozed' && item.snoozedUntil) {
     return `adiado até ${formatSkippedDate(item.snoozedUntil)}`
   }
-  if (item.reason === 'no_matching_day') {
+  if (item.reason === 'period_completed') {
+    return 'feito no mês'
+  }
+  if (item.reason === 'no_matching_rule') {
     return `sem alerta para ${formatDaysUntilDue(item.daysUntilDue)}`
   }
   return 'fora do agendamento de hoje'
@@ -98,7 +100,11 @@ export function AlertsPreviewCard({ slug }: AlertsPreviewCardProps) {
                     </div>
                   </div>
                   <Badge variant="secondary">
-                    {item.reason === 'snoozed' ? 'Adiado' : 'Sem alerta'}
+                    {item.reason === 'snoozed'
+                      ? 'Adiado'
+                      : item.reason === 'period_completed'
+                        ? 'Feito'
+                        : 'Sem alerta'}
                   </Badge>
                 </li>
               ))}
@@ -127,24 +133,38 @@ export function AlertsPreviewCard({ slug }: AlertsPreviewCardProps) {
             <ul className="space-y-2">
               {reminders.map(item => (
                 <li
-                  key={item.reminderId}
+                  key={`${item.reminderId}-${item.kind}`}
                   className="flex items-start justify-between gap-3 rounded-md border px-3 py-2 text-sm"
                 >
                   <div className="flex items-start gap-2">
-                    <Bell className={`mt-0.5 h-4 w-4 shrink-0 ${alertStatusIconClass.reminder}`} />
+                    <Bell
+                      className={`mt-0.5 h-4 w-4 shrink-0 ${
+                        item.kind === 'overdue'
+                          ? alertStatusIconClass.overdue
+                          : alertStatusIconClass.upcoming
+                      }`}
+                    />
                     <div>
                       <p className="font-medium">{item.title}</p>
                       <p className="text-muted-foreground">
-                        {item.recipientName ?? 'Usuário'} · {formatDaysUntilDue(item.daysUntilDue)}{' '}
+                        {item.recipientName ?? 'Usuário'} ·{' '}
+                        {item.kind === 'overdue' && item.overdueDays != null
+                          ? `${item.overdueDays} dia(s) em atraso`
+                          : formatDaysUntilDue(item.daysUntilDue)}{' '}
                         · {formatNotifyTime(item.notifyHour, item.notifyMinute)}
                       </p>
                     </div>
                   </div>
-                  {item.amountCents != null && (
-                    <span className="shrink-0 text-muted-foreground">
-                      {formatCurrency(item.amountCents / 100)}
-                    </span>
-                  )}
+                  <div className="flex shrink-0 flex-col items-end gap-1">
+                    {item.amountCents != null && (
+                      <span className="text-muted-foreground">
+                        {formatCurrency(item.amountCents / 100)}
+                      </span>
+                    )}
+                    <Badge variant={getRuleKindBadgeVariant(item.kind)}>
+                      {item.kind === 'upcoming' ? 'Próximo' : 'Vencido'}
+                    </Badge>
+                  </div>
                 </li>
               ))}
             </ul>
@@ -253,7 +273,11 @@ export function AlertsPreviewCard({ slug }: AlertsPreviewCardProps) {
                     </div>
                   </div>
                   <Badge variant="secondary">
-                    {item.reason === 'snoozed' ? 'Adiado' : 'Sem alerta'}
+                    {item.reason === 'snoozed'
+                      ? 'Adiado'
+                      : item.reason === 'period_completed'
+                        ? 'Feito'
+                        : 'Sem alerta'}
                   </Badge>
                 </li>
               ))}

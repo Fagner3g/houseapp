@@ -2,14 +2,24 @@ import { describe, expect, it } from 'vitest'
 
 import {
   bold,
+  buildLogicalAlertKey,
   buildReminderDedupeKey,
+  buildReminderOverdueDedupeKey,
+  buildReminderUpcomingDedupeKey,
   buildTransactionAlertExtraInfo,
   buildTransactionInstallmentInfo,
   buildTransactionPartialPaymentInfo,
+  composeWhatsAppAlertMessage,
+  joinWhatsAppAlertBodies,
+  WHATSAPP_ALERT_BODY_DIVIDER,
   computeDaysUntilDue,
+  dedupeDeliveriesByLogicalAlert,
+  formatInvestmentWhatsAppMessage,
   formatNotifyTime,
   formatReminderWhatsAppMessage,
   formatTransactionWhatsAppMessage,
+  getReminderPeriodKey,
+  getTimeBasedGreeting,
   getTransactionDisplayAmountCents,
   matchesNotifyTime,
   resolveNotifyTime,
@@ -69,17 +79,75 @@ describe('formatNotifyTime', () => {
   })
 })
 
-describe('buildReminderDedupeKey', () => {
+describe('buildReminderUpcomingDedupeKey', () => {
   it('includes notify time so rescheduling allows a new delivery', () => {
-    const dueDate = new Date('2026-06-11T15:00:00.000Z')
-    const atNine = buildReminderDedupeKey('r1', dueDate, 0, 'in_app', { hour: 11, minute: 0 })
-    const atTwentyFour = buildReminderDedupeKey('r1', dueDate, 0, 'in_app', {
+    const atNine = buildReminderUpcomingDedupeKey('r1', 0, 'u1', 'in_app', { hour: 11, minute: 0 })
+    const atTwentyFour = buildReminderUpcomingDedupeKey('r1', 0, 'u1', 'in_app', {
       hour: 11,
       minute: 24,
     })
 
     expect(atNine).not.toBe(atTwentyFour)
     expect(atTwentyFour).toContain(':at-1124:')
+    expect(atTwentyFour).toBe('reminder:r1:day-0:at-1124:u1:in_app')
+  })
+
+  it('includes user id so recipients do not block each other', () => {
+    const fagner = buildReminderUpcomingDedupeKey('r1', 3, 'fagner', 'whatsapp', {
+      hour: 11,
+      minute: 0,
+    })
+    const karoline = buildReminderUpcomingDedupeKey('r1', 3, 'karoline', 'whatsapp', {
+      hour: 11,
+      minute: 0,
+    })
+
+    expect(fagner).not.toBe(karoline)
+  })
+})
+
+describe('buildReminderOverdueDedupeKey', () => {
+  it('dedupes by period key instead of days before', () => {
+    const weekOne = buildReminderOverdueDedupeKey('r1', 'w-100', 'u1', 'in_app', {
+      hour: 11,
+      minute: 0,
+    })
+    const weekTwo = buildReminderOverdueDedupeKey('r1', 'w-101', 'u1', 'in_app', {
+      hour: 11,
+      minute: 0,
+    })
+
+    expect(weekOne).not.toBe(weekTwo)
+    expect(weekOne).toContain(':period-w-100:')
+  })
+})
+
+describe('buildReminderDedupeKey', () => {
+  it('delegates to upcoming dedupe key format', () => {
+    const dueDate = new Date('2026-06-11T15:00:00.000Z')
+    expect(buildReminderDedupeKey('r1', dueDate, 1, 'u1', 'whatsapp', { hour: 9, minute: 0 })).toBe(
+      buildReminderUpcomingDedupeKey('r1', 1, 'u1', 'whatsapp', { hour: 9, minute: 0 })
+    )
+  })
+})
+
+describe('getReminderPeriodKey', () => {
+  const dueDate = new Date('2026-06-11T15:00:00.000Z')
+
+  it('returns YYYY-MM for monthly recurrence', () => {
+    expect(getReminderPeriodKey(dueDate, 'monthly', TIMEZONE)).toBe('2026-06')
+  })
+
+  it('returns ISO week for weekly recurrence', () => {
+    expect(getReminderPeriodKey(dueDate, 'weekly', TIMEZONE)).toMatch(/^2026-W\d{2}$/)
+  })
+
+  it('returns year for yearly recurrence', () => {
+    expect(getReminderPeriodKey(dueDate, 'yearly', TIMEZONE)).toBe('2026')
+  })
+
+  it('returns YYYY-MM for one-shot reminders', () => {
+    expect(getReminderPeriodKey(dueDate, null, TIMEZONE)).toBe('2026-06')
   })
 })
 
@@ -166,22 +234,231 @@ describe('bold', () => {
   })
 })
 
+describe('getTimeBasedGreeting', () => {
+  it('returns Bom dia in the morning', () => {
+    const morning = new Date('2026-06-11T11:00:00.000Z')
+    expect(getTimeBasedGreeting(morning, TIMEZONE)).toBe('Bom dia')
+  })
+
+  it('returns Boa tarde in the afternoon', () => {
+    const afternoon = new Date('2026-06-11T16:00:00.000Z')
+    expect(getTimeBasedGreeting(afternoon, TIMEZONE)).toBe('Boa tarde')
+  })
+
+  it('returns Boa noite at night', () => {
+    const night = new Date('2026-06-11T23:00:00.000Z')
+    expect(getTimeBasedGreeting(night, TIMEZONE)).toBe('Boa noite')
+  })
+})
+
+describe('composeWhatsAppAlertMessage', () => {
+  it('includes greeting, org section, and alert bodies for org owner', () => {
+    const message = composeWhatsAppAlertMessage({
+      recipientName: 'João Silva',
+      orgName: 'Minha Casa',
+      isOrgOwner: true,
+      bodies: ['📅 *Aluguel*\n\nVence hoje · 11/06/2026\n💰 R$ 1.500,00'],
+      referenceDate: new Date('2026-06-11T11:00:00.000Z'),
+      timezone: TIMEZONE,
+    })
+
+    expect(message).toContain('Bom dia, João!')
+    expect(message).toContain('🏠 *Minha Casa*')
+    expect(message).toContain('📅 *Aluguel*')
+    expect(message).toContain('Vence hoje · 11/06/2026')
+    expect(message).toContain('💰 R$ 1.500,00')
+  })
+
+  it('omits org section for non-owner members', () => {
+    const message = composeWhatsAppAlertMessage({
+      recipientName: 'Karoline',
+      orgName: 'Casa',
+      isOrgOwner: false,
+      bodies: ['📅 *Academia 12x*\n\nVence hoje · 11/06/2026\n💰 R$ 119,90'],
+      referenceDate: new Date('2026-06-11T16:00:00.000Z'),
+      timezone: TIMEZONE,
+    })
+
+    expect(message).toBe(
+      'Boa tarde, Karoline!\n\n📅 *Academia 12x*\n\nVence hoje · 11/06/2026\n💰 R$ 119,90'
+    )
+    expect(message).not.toContain('🏠')
+  })
+
+  it('groups multiple alerts under one org header for org owner', () => {
+    const message = composeWhatsAppAlertMessage({
+      recipientName: 'Maria',
+      orgName: 'Escritório',
+      isOrgOwner: true,
+      bodies: ['📅 *Internet*', '🔔 *Renovar seguro*'],
+      referenceDate: new Date('2026-06-11T16:00:00.000Z'),
+      timezone: TIMEZONE,
+    })
+
+    expect(message).toContain('Boa tarde, Maria!')
+    expect(message).toMatch(
+      new RegExp(
+        `🏠 \\*Escritório\\*\\n\\n📅 \\*Internet\\*\\n\\n${WHATSAPP_ALERT_BODY_DIVIDER}\\n\\n🔔 \\*Renovar seguro\\*`
+      )
+    )
+  })
+
+  it('separates multiple alert bodies with a divider', () => {
+    const message = composeWhatsAppAlertMessage({
+      recipientName: 'Fagner',
+      orgName: 'Casa',
+      isOrgOwner: false,
+      bodies: [
+        '📅 *Academia 12x*\n\nVence em 4 dias · 15/06/2026\n💰 R$ 119,90\n📎 Parcela 9/12',
+        '❗ *Vivo*\n\n5 dias em atraso · venceu 06/06/2026\n💰 R$ 59,00',
+      ],
+      referenceDate: new Date('2026-06-11T16:00:00.000Z'),
+      timezone: TIMEZONE,
+    })
+
+    expect(message).toContain(
+      `📅 *Academia 12x*\n\nVence em 4 dias · 15/06/2026\n💰 R$ 119,90\n📎 Parcela 9/12\n\n${WHATSAPP_ALERT_BODY_DIVIDER}\n\n❗ *Vivo*`
+    )
+    expect(message).not.toMatch(new RegExp(`${WHATSAPP_ALERT_BODY_DIVIDER}\\n\\n$`))
+  })
+
+  it('does not prefix alerts with recipient labels', () => {
+    const message = composeWhatsAppAlertMessage({
+      recipientName: 'Fagner Gomes',
+      orgName: 'Minha Casa',
+      isOrgOwner: true,
+      bodies: ['📅 *Internet*\n\nVence hoje · 11/06/2026', '📅 *Empréstimo*\n\nVence amanhã · 12/06/2026'],
+      referenceDate: new Date('2026-06-11T11:00:00.000Z'),
+      timezone: TIMEZONE,
+    })
+
+    expect(message).toContain('Bom dia, Fagner!')
+    expect(message).not.toContain('👤')
+    expect(message).toContain('🏠 *Minha Casa*')
+    expect(message).toContain('📅 *Internet*')
+    expect(message).toContain('📅 *Empréstimo*')
+  })
+})
+
+describe('joinWhatsAppAlertBodies', () => {
+  it('returns a single body unchanged', () => {
+    expect(joinWhatsAppAlertBodies(['📅 *Aluguel*'])).toBe('📅 *Aluguel*')
+  })
+
+  it('joins multiple bodies with the divider', () => {
+    expect(joinWhatsAppAlertBodies(['📅 *Internet*', '🔔 *Seguro*'])).toBe(
+      `📅 *Internet*\n\n${WHATSAPP_ALERT_BODY_DIVIDER}\n\n🔔 *Seguro*`
+    )
+  })
+})
+
 describe('formatReminderWhatsAppMessage', () => {
-  it('trims title inside bold segment', () => {
+  it('formats upcoming reminder with bell icon', () => {
     const message = formatReminderWhatsAppMessage({
       title: 'Boleto ',
       dueDate: '2026-05-20T12:00:00.000Z',
       daysUntilDue: 0,
       amountCents: null,
       notes: null,
+      kind: 'upcoming',
     })
 
-    expect(message).toMatch(/^🔔 \*Lembrete: Boleto\*/)
-    expect(message).not.toContain('*Lembrete: Boleto *')
+    expect(message).toMatch(/^🔔 \*Boleto\*/)
+    expect(message).not.toContain('*Boleto *')
+    expect(message).toContain('Vence hoje ·')
+  })
+
+  it('formats upcoming amount and notes on separate lines', () => {
+    const message = formatReminderWhatsAppMessage({
+      title: 'Renovar seguro',
+      dueDate: '2026-06-15T12:00:00.000Z',
+      daysUntilDue: 4,
+      amountCents: 25000,
+      notes: 'Ligar para corretora',
+      kind: 'upcoming',
+    })
+
+    expect(message).toBe(
+      '🔔 *Renovar seguro*\n\nVence em 4 dias · 15/06/2026\n💰 R$ 250,00\n📝 Ligar para corretora'
+    )
+  })
+
+  it('formats overdue reminder with bell icon', () => {
+    const message = formatReminderWhatsAppMessage({
+      title: 'IPTU',
+      dueDate: '2026-06-05T12:00:00.000Z',
+      overdueDays: 6,
+      amountCents: 150000,
+      notes: null,
+      kind: 'overdue',
+    })
+
+    expect(message).toBe(
+      '🔔 *IPTU*\n\n6 dias em atraso · venceu 05/06/2026\n💰 R$ 1.500,00'
+    )
+  })
+})
+
+describe('formatInvestmentWhatsAppMessage', () => {
+  it('formats pending investment with breathing room', () => {
+    const message = formatInvestmentWhatsAppMessage({
+      assetSymbol: 'PETR4',
+      plannedAmount: 500,
+      plannedQuantity: null,
+      referenceMonth: '2026-06',
+      status: 'pending',
+    })
+
+    expect(message).toBe(
+      '📈 *Aporte pendente: PETR4*\n\nReferência · 2026-06\n💰 R$ 500,00'
+    )
+  })
+
+  it('formats overdue investment with alert icon', () => {
+    const message = formatInvestmentWhatsAppMessage({
+      assetSymbol: 'IVVB11',
+      plannedAmount: null,
+      plannedQuantity: 10,
+      referenceMonth: '2026-05',
+      status: 'overdue',
+    })
+
+    expect(message).toBe(
+      '❗ *Aporte atrasado: IVVB11*\n\nReferência · 2026-05\n💰 10 un.'
+    )
   })
 })
 
 describe('formatTransactionWhatsAppMessage', () => {
+  it('formats upcoming transaction with spaced details', () => {
+    const message = formatTransactionWhatsAppMessage({
+      title: 'Academia 12x',
+      dueDate: '2026-06-15T12:00:00.000Z',
+      amountCents: 11990,
+      daysUntilDue: 4,
+      installmentInfo: 'Parcela 9/12',
+      kind: 'upcoming',
+    })
+
+    expect(message).toBe(
+      '📅 *Academia 12x*\n\nVence em 4 dias · 15/06/2026\n💰 R$ 119,90\n📎 Parcela 9/12'
+    )
+  })
+
+  it('formats overdue transaction with spaced details', () => {
+    const message = formatTransactionWhatsAppMessage({
+      title: 'Vivo',
+      dueDate: '2026-06-06T12:00:00.000Z',
+      amountCents: 5900,
+      overdueDays: 5,
+      kind: 'overdue',
+    })
+
+    expect(message).toBe(
+      '❗ *Vivo*\n\n5 dias em atraso · venceu 06/06/2026\n💰 R$ 59,00'
+    )
+  })
+
   it('omits installment line for single-installment transactions', () => {
     const message = formatTransactionWhatsAppMessage({
       title: 'Empréstimo 4k',
@@ -206,7 +483,7 @@ describe('formatTransactionWhatsAppMessage', () => {
     })
 
     expect(message).toContain('Parcela 4/10')
-    expect(message).toContain('Pagamento parcial: R$ 500,00 de R$ 1.000,00')
+    expect(message).toContain('💳 Pagamento parcial: R$ 500,00 de R$ 1.000,00')
   })
 
   it('trims title inside bold segment for upcoming alerts', () => {
@@ -218,8 +495,9 @@ describe('formatTransactionWhatsAppMessage', () => {
       kind: 'upcoming',
     })
 
-    expect(message).toMatch(/^📅 \*Vencimento: Boleto\*/)
-    expect(message).not.toContain('*Vencimento: Boleto *')
+    expect(message).toMatch(/^📅 \*Boleto\*/)
+    expect(message).not.toContain('*Boleto *')
+    expect(message).toContain('💰 R$')
   })
 
   it('trims title inside bold segment for overdue alerts', () => {
@@ -231,8 +509,73 @@ describe('formatTransactionWhatsAppMessage', () => {
       kind: 'overdue',
     })
 
-    expect(message).toMatch(/^⚠️ \*Vencida: Boleto\*/)
-    expect(message).not.toContain('*Vencida: Boleto *')
-    expect(message).toContain('22 dias em atraso')
+    expect(message).toMatch(/^❗ \*Boleto\*/)
+    expect(message).not.toContain('*Boleto *')
+    expect(message).toContain('22 dias em atraso · venceu')
+  })
+})
+
+describe('buildLogicalAlertKey', () => {
+  it('groups rule deliveries across channels by occurrence and timing', () => {
+    const base = {
+      userId: 'user-1',
+      sourceType: 'rule' as const,
+      kind: 'transaction_upcoming',
+      occurrenceId: 'occ-1',
+      reminderId: null,
+      ruleId: 'rule-1',
+      payload: { daysUntilDue: 3 },
+    }
+
+    const whatsappKey = buildLogicalAlertKey(base)
+    const inAppKey = buildLogicalAlertKey(base)
+
+    expect(whatsappKey).toBe(inAppKey)
+    expect(whatsappKey).toBe('rule:user-1:transaction_upcoming:occ-1:rule-1:3:')
+  })
+})
+
+describe('dedupeDeliveriesByLogicalAlert', () => {
+  it('collapses whatsapp and in_app rows into one delivery with channels', () => {
+    const base = {
+      userId: 'user-1',
+      sourceType: 'rule' as const,
+      kind: 'transaction_upcoming',
+      occurrenceId: 'occ-1',
+      reminderId: null,
+      ruleId: 'rule-1',
+      payload: { title: 'Cartão Ruivas Stores', daysUntilDue: 0 },
+      sentAt: '2026-06-11T16:12:00.000Z',
+      createdAt: '2026-06-11T16:12:00.000Z',
+    }
+
+    const deduped = dedupeDeliveriesByLogicalAlert([
+      { id: 'wa-1', channel: 'whatsapp', ...base },
+      { id: 'app-1', channel: 'in_app', ...base },
+    ])
+
+    expect(deduped).toHaveLength(1)
+    expect(deduped[0].id).toBe('wa-1')
+    expect(deduped[0].channels).toEqual(['whatsapp', 'in_app'])
+  })
+
+  it('keeps distinct alerts with different occurrence ids', () => {
+    const shared = {
+      userId: 'user-1',
+      sourceType: 'rule' as const,
+      kind: 'transaction_upcoming',
+      reminderId: null,
+      ruleId: 'rule-1',
+      payload: { daysUntilDue: 0 },
+      sentAt: '2026-06-11T16:12:00.000Z',
+      createdAt: '2026-06-11T16:12:00.000Z',
+    }
+
+    const deduped = dedupeDeliveriesByLogicalAlert([
+      { id: 'wa-1', channel: 'whatsapp', occurrenceId: 'occ-1', ...shared },
+      { id: 'wa-2', channel: 'whatsapp', occurrenceId: 'occ-2', ...shared },
+    ])
+
+    expect(deduped).toHaveLength(2)
   })
 })

@@ -42,6 +42,7 @@ export const customReminders = pgTable('custom_reminders', {
     onDelete: 'set null',
   }),
   snoozedUntil: timestamp('snoozed_until', { withTimezone: true }),
+  lastCompletedPeriodKey: text('last_completed_period_key'),
   createdAt: timestamp('created_at', { withTimezone: true }).notNull().defaultNow(),
   updatedAt: timestamp('updated_at', { withTimezone: true }).notNull().defaultNow(),
 })

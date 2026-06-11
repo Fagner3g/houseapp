@@ -38,6 +38,8 @@ export type CreateReminder201Reminder = {
   /** @nullable */
   notifyHour: number | null;
   /** @nullable */
+  notifyMinute: number | null;
+  /** @nullable */
   linkedSeriesId: string | null;
   /** @nullable */
   snoozedUntil: string | null;

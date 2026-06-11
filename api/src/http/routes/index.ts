@@ -35,6 +35,7 @@ import {
 import {
   createUserWithInviteRoute,
   getProfileRoute,
+  removeUserRoute,
   updateUserNotificationsRoute,
   updateUserRoute,
 } from './user.routes'
@@ -57,6 +58,7 @@ export function createRoutes(app: FastifyInstance) {
   app.register(createUserWithInviteRoute)
   app.register(updateUserRoute)
   app.register(updateUserNotificationsRoute)
+  app.register(removeUserRoute)
 
   // Investments
   app.register(investmentRoutes)

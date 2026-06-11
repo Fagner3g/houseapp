@@ -33,8 +33,10 @@ import {
 import { Tooltip, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip'
 import { centsToNumber } from '@/lib/currency'
 import { alertStatusDotClass } from '@/lib/alert-status-colors'
+import { computeDaysUntilDue, formatDateLabel, getEndOfDueMonth } from '@/lib/date'
 import {
   useCompleteReminder,
+  useCompleteReminderPeriod,
   useCreateReminder,
   useDeleteReminder,
   useReminders,
@@ -57,11 +59,7 @@ const CHANNEL_LABELS: Record<ReminderChannel, string> = {
 }
 
 function formatDate(iso: string) {
-  return new Date(iso).toLocaleDateString('pt-BR', {
-    day: '2-digit',
-    month: '2-digit',
-    year: 'numeric',
-  })
+  return formatDateLabel(new Date(iso))
 }
 
 function formatRecurrenceShort(reminder: Reminder) {
@@ -86,11 +84,6 @@ function formatAmount(cents: number | null) {
   })
 }
 
-function formatDaysBefore(days: number[]) {
-  const sorted = [...days].sort((a, b) => b - a)
-  return sorted.map(day => (day === 0 ? 'No dia' : `${day}d`)).join(', ')
-}
-
 function formatChannels(channels: ReminderChannel[]) {
   return channels.map(channel => CHANNEL_LABELS[channel]).join(', ')
 }
@@ -98,6 +91,23 @@ function formatChannels(channels: ReminderChannel[]) {
 function isSnoozed(reminder: Reminder) {
   if (!reminder.snoozedUntil) return false
   return new Date(reminder.snoozedUntil) > new Date()
+}
+
+function getReminderStatus(reminder: Reminder): {
+  label: string
+  variant: 'destructive' | 'warning' | 'secondary' | 'outline'
+} {
+  if (isSnoozed(reminder)) {
+    return { label: 'Adiado', variant: 'secondary' }
+  }
+  const daysUntilDue = computeDaysUntilDue(new Date(reminder.dueDate))
+  if (daysUntilDue < 0) {
+    return { label: 'Vencido', variant: 'destructive' }
+  }
+  if (daysUntilDue <= 7) {
+    return { label: 'Prestes a vencer', variant: 'warning' }
+  }
+  return { label: 'Ativo', variant: 'outline' }
 }
 
 function buildTransactionPrefill(reminder: Reminder): Partial<NewTransactionSchema> {
@@ -112,27 +122,39 @@ function buildTransactionPrefill(reminder: Reminder): Partial<NewTransactionSche
 
 function ReminderActions({
   onEdit,
-  onComplete,
+  onCompletePeriod,
+  onEnd,
   onSnooze,
   onCustomSnooze,
   onCreateTransaction,
   onDelete,
+  isCompletingPeriod,
 }: {
   reminder: Reminder
   onEdit: () => void
-  onComplete: () => void
+  onCompletePeriod: () => void
+  onEnd: () => void
   onSnooze: (days: number) => void
   onCustomSnooze: () => void
   onCreateTransaction: () => void
   onDelete: () => void
+  isCompletingPeriod: boolean
 }) {
   return (
     <div className="flex items-center justify-end gap-0.5">
+      <Button
+        size="icon"
+        variant="ghost"
+        className="size-8"
+        title="Feito no mês"
+        onClick={onCompletePeriod}
+        disabled={isCompletingPeriod}
+        isLoading={isCompletingPeriod}
+      >
+        <Check className="h-4 w-4" />
+      </Button>
       <Button size="icon" variant="ghost" className="size-8" title="Editar" onClick={onEdit}>
         <Pencil className="h-4 w-4" />
-      </Button>
-      <Button size="icon" variant="ghost" className="size-8" title="Concluir" onClick={onComplete}>
-        <Check className="h-4 w-4" />
       </Button>
       <DropdownMenu>
         <DropdownMenuTrigger asChild>
@@ -141,6 +163,11 @@ function ReminderActions({
           </Button>
         </DropdownMenuTrigger>
         <DropdownMenuContent align="end">
+          <DropdownMenuItem onClick={onEnd}>
+            <Check className="mr-2 h-4 w-4" />
+            Encerrar lembrete
+          </DropdownMenuItem>
+          <DropdownMenuSeparator />
           <DropdownMenuItem onClick={() => onSnooze(1)}>
             <Clock className="mr-2 h-4 w-4" />
             Adiar 1 dia
@@ -181,6 +208,7 @@ export function ReminderList({ slug }: ReminderListProps) {
   const createMutation = useCreateReminder(slug)
   const updateMutation = useUpdateReminder(slug)
   const completeMutation = useCompleteReminder(slug)
+  const completePeriodMutation = useCompleteReminderPeriod(slug)
   const deleteMutation = useDeleteReminder(slug)
   const snoozeMutation = useSnoozeReminder(slug)
 
@@ -193,12 +221,17 @@ export function ReminderList({ slug }: ReminderListProps) {
   const [linkReminderId, setLinkReminderId] = useState<string | null>(null)
   const [customSnoozeReminder, setCustomSnoozeReminder] = useState<Reminder | null>(null)
   const [customSnoozeDate, setCustomSnoozeDate] = useState<Date | undefined>()
+  const [completingPeriodId, setCompletingPeriodId] = useState<string | null>(null)
 
   const reminders = data?.reminders ?? []
   const drawerKey = useMemo(
     () => `${transactionPrefill?.title ?? 'new'}-${transactionPrefill?.dueDate?.toISOString() ?? ''}`,
     [transactionPrefill]
   )
+
+  const customSnoozeMaxDate = customSnoozeReminder
+    ? getEndOfDueMonth(new Date(customSnoozeReminder.dueDate))
+    : undefined
 
   const handleCreate = async (input: CreateReminderInput) => {
     try {
@@ -222,12 +255,25 @@ export function ReminderList({ slug }: ReminderListProps) {
     }
   }
 
-  const handleComplete = async (id: string) => {
+  const handleCompletePeriod = async (id: string) => {
+    setCompletingPeriodId(id)
+    try {
+      await completePeriodMutation.mutateAsync(id)
+      toast.success('Lembrete marcado como feito no mês')
+    } catch {
+      toast.error('Erro ao marcar lembrete como feito')
+    } finally {
+      setCompletingPeriodId(null)
+    }
+  }
+
+  const handleEnd = async (id: string) => {
+    if (!confirm('Encerrar este lembrete definitivamente?')) return
     try {
       await completeMutation.mutateAsync(id)
-      toast.success('Lembrete concluído')
+      toast.success('Lembrete encerrado')
     } catch {
-      toast.error('Erro ao concluir lembrete')
+      toast.error('Erro ao encerrar lembrete')
     }
   }
 
@@ -326,7 +372,7 @@ export function ReminderList({ slug }: ReminderListProps) {
                   <TableHead className="hidden sm:table-cell">Vencimento</TableHead>
                   <TableHead className="hidden md:table-cell text-right">Valor</TableHead>
                   <TableHead className="hidden lg:table-cell">Recorrência</TableHead>
-                  <TableHead className="hidden md:table-cell">Alertas</TableHead>
+                  <TableHead className="hidden md:table-cell">Status</TableHead>
                   <TableHead className="hidden lg:table-cell">Canais</TableHead>
                   <TableHead className="w-[108px] text-right">Ações</TableHead>
                 </TableRow>
@@ -334,7 +380,7 @@ export function ReminderList({ slug }: ReminderListProps) {
               <TableBody>
                 {reminders.map(reminder => {
                   const snoozed = isSnoozed(reminder)
-                  const daysLabel = formatDaysBefore(reminder.daysBefore)
+                  const status = getReminderStatus(reminder)
                   const channelsLabel = formatChannels(reminder.channels)
 
                   return (
@@ -350,11 +396,9 @@ export function ReminderList({ slug }: ReminderListProps) {
                             <span className="text-xs text-muted-foreground">
                               {formatDate(reminder.dueDate)}
                             </span>
-                            {snoozed && reminder.snoozedUntil && (
-                              <Badge variant="secondary" className="h-5 px-1.5 text-[10px]">
-                                Adiado
-                              </Badge>
-                            )}
+                            <Badge variant={status.variant} className="h-5 px-1.5 text-[10px]">
+                              {status.label}
+                            </Badge>
                           </div>
                         </div>
                       </TableCell>
@@ -381,13 +425,8 @@ export function ReminderList({ slug }: ReminderListProps) {
                       <TableCell className="hidden lg:table-cell whitespace-nowrap text-muted-foreground">
                         {formatRecurrenceShort(reminder)}
                       </TableCell>
-                      <TableCell className="hidden md:table-cell max-w-[140px]">
-                        <Tooltip>
-                          <TooltipTrigger asChild>
-                            <span className="block truncate text-muted-foreground">{daysLabel}</span>
-                          </TooltipTrigger>
-                          <TooltipContent>{daysLabel}</TooltipContent>
-                        </Tooltip>
+                      <TableCell className="hidden md:table-cell">
+                        <Badge variant={status.variant}>{status.label}</Badge>
                       </TableCell>
                       <TableCell className="hidden lg:table-cell max-w-[120px]">
                         <Tooltip>
@@ -401,11 +440,13 @@ export function ReminderList({ slug }: ReminderListProps) {
                       </TableCell>
                       <TableCell>
                         <ReminderActions
+                          reminder={reminder}
                           onEdit={() => {
                             setEditing(reminder)
                             setFormOpen(true)
                           }}
-                          onComplete={() => handleComplete(reminder.id)}
+                          onCompletePeriod={() => handleCompletePeriod(reminder.id)}
+                          onEnd={() => handleEnd(reminder.id)}
                           onSnooze={days => handleSnooze(reminder.id, days)}
                           onCustomSnooze={() => {
                             setCustomSnoozeReminder(reminder)
@@ -413,6 +454,7 @@ export function ReminderList({ slug }: ReminderListProps) {
                           }}
                           onCreateTransaction={() => handleCreateTransaction(reminder)}
                           onDelete={() => handleDelete(reminder.id)}
+                          isCompletingPeriod={completingPeriodId === reminder.id}
                         />
                       </TableCell>
                     </TableRow>
@@ -474,8 +516,14 @@ export function ReminderList({ slug }: ReminderListProps) {
             value={customSnoozeDate}
             onChange={setCustomSnoozeDate}
             minDate={new Date()}
+            maxDate={customSnoozeMaxDate}
             placeholder="Selecione a data"
           />
+          {customSnoozeMaxDate && (
+            <p className="text-xs text-muted-foreground">
+              Máximo: {formatDate(customSnoozeMaxDate.toISOString())} (fim do mês do vencimento)
+            </p>
+          )}
         </DialogContent>
       </Dialog>
 

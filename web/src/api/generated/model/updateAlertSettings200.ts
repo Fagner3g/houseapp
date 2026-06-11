@@ -12,4 +12,9 @@ export type UpdateAlertSettings200 = {
    * @maximum 23
    */
   defaultNotifyHour: number;
+  /**
+   * @minimum 0
+   * @maximum 59
+   */
+  defaultNotifyMinute: number;
 };

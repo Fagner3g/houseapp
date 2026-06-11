@@ -25,7 +25,7 @@ export function TableLIstTransactions({ transactions, dateFrom, dateTo, ...props
   const [drawerOpen, setDrawerOpen] = useState(false)
 
   const navigate = useNavigate()
-  const { view = 'table' } = useSearch({ strict: false })
+  const { view = 'calendar' } = useSearch({ strict: false })
 
   const { table, editing, setEditing, globalFilter, setGlobalFilter, isMobile } = useTable(
     transactions,
@@ -99,6 +99,10 @@ export function TableLIstTransactions({ transactions, dateFrom, dateTo, ...props
             transactions={transactions}
             dateFrom={dateFrom || ''}
             dateTo={dateTo || ''}
+            onEditTransaction={tx => {
+              setCurrentTransaction(tx)
+              setDrawerOpen(true)
+            }}
           />
         </div>
       </TabsContent>

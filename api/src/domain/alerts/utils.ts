@@ -1,4 +1,6 @@
 import type { customReminders } from '@/db/schemas/customReminders'
+import { subPeriod } from '@/domain/recurrence/utils'
+import type { RecurrenceType } from '@/domain/recurrence/utils'
 import type { alertRules } from '@/db/schemas/alertRules'
 import {
   DEFAULT_ALERT_PREFERENCES,
@@ -121,26 +123,270 @@ export function formatNotifyTimeForDedupe(hour: number, minute: number): string 
   return `${String(hour).padStart(2, '0')}${String(minute).padStart(2, '0')}`
 }
 
-export function buildReminderDedupeKey(
+export type AlertChannel = 'in_app' | 'whatsapp' | 'extension'
+
+export type LogicalAlertIdentity = {
+  userId: string
+  sourceType: 'rule' | 'reminder' | 'investment'
+  kind: string
+  occurrenceId: string | null
+  reminderId: string | null
+  ruleId: string | null
+  payload: Record<string, unknown>
+}
+
+export function buildLogicalAlertKey(alert: LogicalAlertIdentity): string {
+  switch (alert.sourceType) {
+    case 'rule':
+      return [
+        'rule',
+        alert.userId,
+        alert.kind,
+        alert.occurrenceId ?? '',
+        alert.ruleId ?? '',
+        String(alert.payload.daysUntilDue ?? ''),
+        String(alert.payload.overdueDays ?? ''),
+      ].join(':')
+    case 'reminder':
+      return [
+        'reminder',
+        alert.userId,
+        alert.reminderId ?? '',
+        String(alert.payload.dueDate ?? ''),
+        String(alert.payload.daysUntilDue ?? ''),
+      ].join(':')
+    case 'investment':
+      return [
+        'investment',
+        alert.userId,
+        alert.kind,
+        String(alert.payload.planId ?? ''),
+        String(alert.payload.referenceMonth ?? ''),
+      ].join(':')
+  }
+}
+
+const CHANNEL_PRIORITY: Record<AlertChannel, number> = {
+  whatsapp: 0,
+  in_app: 1,
+  extension: 2,
+}
+
+type DeliveryWithChannel = LogicalAlertIdentity & {
+  channel: AlertChannel
+  sentAt: string | null
+  createdAt: string
+}
+
+export function dedupeDeliveriesByLogicalAlert<T extends DeliveryWithChannel>(
+  deliveries: T[]
+): (T & { channels: AlertChannel[] })[] {
+  const byKey = new Map<string, { primary: T; channels: Set<AlertChannel> }>()
+
+  for (const delivery of deliveries) {
+    const key = buildLogicalAlertKey(delivery)
+    const existing = byKey.get(key)
+    if (!existing) {
+      byKey.set(key, { primary: delivery, channels: new Set([delivery.channel]) })
+      continue
+    }
+
+    existing.channels.add(delivery.channel)
+    const currentPriority = CHANNEL_PRIORITY[delivery.channel]
+    const primaryPriority = CHANNEL_PRIORITY[existing.primary.channel]
+    if (currentPriority < primaryPriority) {
+      existing.primary = delivery
+    }
+  }
+
+  return Array.from(byKey.values()).map(({ primary, channels }) => ({
+    ...primary,
+    channels: [...channels].sort((a, b) => CHANNEL_PRIORITY[a] - CHANNEL_PRIORITY[b]),
+  }))
+}
+
+export function buildReminderUpcomingDedupeKey(
   reminderId: string,
-  dueDate: Date,
   daysBefore: number,
+  userId: string,
   channel: string,
   notifyTime: NotifyTime
 ): string {
-  const dueDateKey = formatDueDateKey(dueDate)
   const at = formatNotifyTimeForDedupe(notifyTime.hour, notifyTime.minute)
-  return `reminder:${reminderId}:${dueDateKey}:day-${daysBefore}:at-${at}:${channel}`
+  return `reminder:${reminderId}:day-${daysBefore}:at-${at}:${userId}:${channel}`
+}
+
+export function buildReminderOverdueDedupeKey(
+  reminderId: string,
+  periodKey: string,
+  userId: string,
+  channel: string,
+  notifyTime: NotifyTime
+): string {
+  const at = formatNotifyTimeForDedupe(notifyTime.hour, notifyTime.minute)
+  return `reminder:${reminderId}:period-${periodKey}:at-${at}:${userId}:${channel}`
+}
+
+/** @deprecated Use buildReminderUpcomingDedupeKey or buildReminderOverdueDedupeKey */
+export function buildReminderDedupeKey(
+  reminderId: string,
+  _dueDate: Date,
+  daysBefore: number,
+  userId: string,
+  channel: string,
+  notifyTime: NotifyTime
+): string {
+  return buildReminderUpcomingDedupeKey(reminderId, daysBefore, userId, channel, notifyTime)
+}
+
+function getIsoWeekInTimezone(date: Date, timezone = TIMEZONE): { year: number; week: number } {
+  const parts = new Intl.DateTimeFormat('en-US', {
+    timeZone: timezone,
+    year: 'numeric',
+    month: '2-digit',
+    day: '2-digit',
+  }).formatToParts(date)
+  const year = Number(parts.find(p => p.type === 'year')?.value)
+  const month = Number(parts.find(p => p.type === 'month')?.value)
+  const day = Number(parts.find(p => p.type === 'day')?.value)
+  const utcDate = new Date(Date.UTC(year, month - 1, day))
+  const dayNum = utcDate.getUTCDay() || 7
+  utcDate.setUTCDate(utcDate.getUTCDate() + 4 - dayNum)
+  const yearStart = new Date(Date.UTC(utcDate.getUTCFullYear(), 0, 1))
+  const weekNo = Math.ceil(((utcDate.getTime() - yearStart.getTime()) / 86400000 + 1) / 7)
+  return { year: utcDate.getUTCFullYear(), week: weekNo }
+}
+
+type ReminderOccurrenceState = Pick<
+  typeof customReminders.$inferSelect,
+  'dueDate' | 'completedAt' | 'isRecurring' | 'recurrenceType' | 'recurrenceInterval' | 'recurrenceUntil' | 'lastCompletedPeriodKey'
+>
+
+export function parseOccurrenceDateKey(value: string): Date {
+  if (/^\d{4}-\d{2}-\d{2}$/.test(value)) {
+    const [year, month, day] = value.split('-').map(Number)
+    return new Date(year, month - 1, day)
+  }
+  return new Date(value)
+}
+
+export function applyDateKeyToDueDate(dueDate: Date, dateKey: string): Date {
+  const [year, month, day] = dateKey.split('-').map(Number)
+  const result = new Date(dueDate)
+  result.setFullYear(year, month - 1, day)
+  return result
+}
+
+export function isReminderOccurrenceCompleted(
+  reminder: ReminderOccurrenceState,
+  occurrenceDate: Date,
+  timezone = TIMEZONE
+): boolean {
+  const occurrenceKey = formatDueDateKey(occurrenceDate, timezone)
+  const currentDueKey = formatDueDateKey(reminder.dueDate, timezone)
+
+  if (!reminder.isRecurring || !reminder.recurrenceType) {
+    return reminder.completedAt != null && occurrenceKey === currentDueKey
+  }
+
+  if (occurrenceKey < currentDueKey) return true
+  if (occurrenceKey > currentDueKey) return false
+
+  return reminder.completedAt != null || reminder.lastCompletedPeriodKey != null
+}
+
+export function isValidReminderOccurrenceDate(
+  reminder: ReminderOccurrenceState,
+  occurrenceDate: Date,
+  timezone = TIMEZONE
+): boolean {
+  const occurrenceKey = formatDueDateKey(occurrenceDate, timezone)
+
+  if (!reminder.isRecurring || !reminder.recurrenceType) {
+    return occurrenceKey === formatDueDateKey(reminder.dueDate, timezone)
+  }
+
+  const untilKey = reminder.recurrenceUntil
+    ? formatDueDateKey(reminder.recurrenceUntil, timezone)
+    : null
+  if (untilKey && occurrenceKey > untilKey) return false
+
+  const type = reminder.recurrenceType as RecurrenceType
+  const interval = reminder.recurrenceInterval || 1
+  let current = new Date(reminder.dueDate)
+
+  while (formatDueDateKey(current, timezone) >= occurrenceKey) {
+    if (formatDueDateKey(current, timezone) === occurrenceKey) return true
+    const prev = subPeriod(current, type, interval)
+    if (formatDueDateKey(prev, timezone) >= formatDueDateKey(current, timezone)) break
+    current = prev
+  }
+
+  return false
+}
+
+export function getReminderPeriodKey(
+  dueDate: Date,
+  recurrenceType?: 'weekly' | 'monthly' | 'yearly' | null,
+  timezone = TIMEZONE
+): string {
+  if (recurrenceType === 'yearly') {
+    return new Intl.DateTimeFormat('en-US', { timeZone: timezone, year: 'numeric' }).format(dueDate)
+  }
+  if (recurrenceType === 'weekly') {
+    const { year, week } = getIsoWeekInTimezone(dueDate, timezone)
+    return `${year}-W${String(week).padStart(2, '0')}`
+  }
+  const formatted = new Intl.DateTimeFormat('en-CA', {
+    timeZone: timezone,
+    year: 'numeric',
+    month: '2-digit',
+  }).format(dueDate)
+  return formatted
+}
+
+export function getEndOfDueMonth(dueDate: Date, timezone = TIMEZONE): Date {
+  const parts = new Intl.DateTimeFormat('en-US', {
+    timeZone: timezone,
+    year: 'numeric',
+    month: 'numeric',
+  }).formatToParts(dueDate)
+  const year = Number(parts.find(p => p.type === 'year')?.value)
+  const month = Number(parts.find(p => p.type === 'month')?.value)
+  const lastDay = new Date(year, month, 0).getDate()
+  const end = new Date()
+  end.setFullYear(year, month - 1, lastDay)
+  end.setHours(23, 59, 59, 999)
+  return end
+}
+
+export function isDateInDueMonth(
+  date: Date,
+  dueDate: Date,
+  timezone = TIMEZONE
+): boolean {
+  const dateKey = new Intl.DateTimeFormat('en-CA', {
+    timeZone: timezone,
+    year: 'numeric',
+    month: '2-digit',
+  }).format(date)
+  const dueKey = new Intl.DateTimeFormat('en-CA', {
+    timeZone: timezone,
+    year: 'numeric',
+    month: '2-digit',
+  }).format(dueDate)
+  return dateKey === dueKey
 }
 
 export function buildInvestmentDedupeKey(
   planId: string,
   referenceMonth: string,
+  userId: string,
   channel: string,
   notifyTime: NotifyTime
 ): string {
   const at = formatNotifyTimeForDedupe(notifyTime.hour, notifyTime.minute)
-  return `investment:${planId}:${referenceMonth}:at-${at}:${channel}`
+  return `investment:${planId}:${referenceMonth}:at-${at}:${userId}:${channel}`
 }
 
 export function getCurrentMonthKey(referenceDate = new Date()): string {
@@ -153,6 +399,88 @@ export function bold(text: string): string {
   return `*${text.trim()}*`
 }
 
+export function formatRecipientFirstName(name: string | null | undefined): string | null {
+  if (!name?.trim()) return null
+  return name.trim().split(/\s+/)[0] ?? null
+}
+
+export function getTimeBasedGreeting(
+  referenceDate = new Date(),
+  timezone = TIMEZONE
+): 'Bom dia' | 'Boa tarde' | 'Boa noite' {
+  const hour = getCurrentHourInTimezone(timezone, referenceDate)
+  if (hour >= 5 && hour < 12) return 'Bom dia'
+  if (hour >= 12 && hour < 18) return 'Boa tarde'
+  return 'Boa noite'
+}
+
+export function formatWhatsAppGreeting(
+  recipientName?: string | null,
+  referenceDate = new Date(),
+  timezone = TIMEZONE
+): string {
+  const greeting = getTimeBasedGreeting(referenceDate, timezone)
+  const firstName = formatRecipientFirstName(recipientName)
+  return firstName ? `${greeting}, ${firstName}!` : `${greeting}!`
+}
+
+export function formatWhatsAppOrgSection(orgName: string): string {
+  return `🏠 ${bold(orgName)}`
+}
+
+export const WHATSAPP_ALERT_BODY_DIVIDER = '───'
+
+function formatCentsBRL(cents: number): string {
+  return (cents / 100).toLocaleString('pt-BR', { minimumFractionDigits: 2 })
+}
+
+export function joinWhatsAppAlertBodies(bodies: string[]): string {
+  if (bodies.length <= 1) return bodies.join('')
+  return bodies.join(`\n\n${WHATSAPP_ALERT_BODY_DIVIDER}\n\n`)
+}
+
+function formatWhatsAppAmount(cents: number): string {
+  return `💰 R$ ${formatCentsBRL(cents)}`
+}
+
+function formatWhatsAppExtraInfoLine(line: string): string {
+  if (line.startsWith('Parcela ')) return `📎 ${line}`
+  if (line.startsWith('Pagamento parcial:')) return `💳 ${line}`
+  return line
+}
+
+function formatWhatsAppExtraInfo(installmentInfo: string | null | undefined): string[] {
+  if (!installmentInfo) return []
+  return installmentInfo.split('\n').map(formatWhatsAppExtraInfoLine)
+}
+
+function formatWhatsAppAlertBlock(header: string, detailLines: string[]): string {
+  return [header, '', ...detailLines].join('\n')
+}
+
+export function composeWhatsAppAlertMessage(input: {
+  recipientName?: string | null
+  orgName: string
+  isOrgOwner?: boolean
+  bodies: string[]
+  referenceDate?: Date
+  timezone?: string
+}): string {
+  const timezone = input.timezone ?? TIMEZONE
+  const referenceDate = input.referenceDate ?? new Date()
+  const greeting = formatWhatsAppGreeting(input.recipientName, referenceDate, timezone)
+
+  const sections = [greeting]
+
+  if (input.isOrgOwner) {
+    sections.push('', formatWhatsAppOrgSection(input.orgName))
+  }
+
+  sections.push('', joinWhatsAppAlertBodies(input.bodies))
+
+  return sections.join('\n')
+}
+
 export function formatDueLabel(daysUntilDue: number): string {
   if (daysUntilDue === 0) return 'hoje'
   if (daysUntilDue === 1) return 'amanhã'
@@ -163,23 +491,32 @@ export function formatDueLabel(daysUntilDue: number): string {
 export function formatReminderWhatsAppMessage(payload: {
   title: string
   dueDate: string
-  daysUntilDue: number
+  daysUntilDue?: number
+  overdueDays?: number
   amountCents: number | null
   notes: string | null
+  kind: 'upcoming' | 'overdue'
 }): string {
-  const dueLabel = formatDueLabel(payload.daysUntilDue)
   const dueFormatted = new Date(payload.dueDate).toLocaleDateString('pt-BR', {
     day: '2-digit',
     month: '2-digit',
     year: 'numeric',
   })
-  const amountLine =
-    payload.amountCents != null
-      ? `\nValor: R$ ${(payload.amountCents / 100).toLocaleString('pt-BR', { minimumFractionDigits: 2 })}`
-      : ''
-  const notesLine = payload.notes ? `\n${payload.notes}` : ''
+  const detailLines =
+    payload.kind === 'upcoming'
+      ? [`Vence ${formatDueLabel(payload.daysUntilDue ?? 0)} · ${dueFormatted}`]
+      : [
+          `${payload.overdueDays === 1 ? '1 dia em atraso' : `${payload.overdueDays ?? 0} dias em atraso`} · venceu ${dueFormatted}`,
+        ]
 
-  return `🔔 ${bold(`Lembrete: ${payload.title}`)}\nVence ${dueLabel} (${dueFormatted})${amountLine}${notesLine}`
+  if (payload.amountCents != null) {
+    detailLines.push(formatWhatsAppAmount(payload.amountCents))
+  }
+  if (payload.notes) {
+    detailLines.push(`📝 ${payload.notes}`)
+  }
+
+  return formatWhatsAppAlertBlock(`🔔 ${bold(payload.title)}`, detailLines)
 }
 
 type ReminderRow = typeof customReminders.$inferSelect & {
@@ -232,6 +569,7 @@ export function formatInvestmentWhatsAppMessage(payload: {
   plannedAmount: number | null
   plannedQuantity: number | null
   referenceMonth: string
+  status?: 'pending' | 'overdue'
 }): string {
   const amount =
     payload.plannedAmount != null
@@ -240,11 +578,14 @@ export function formatInvestmentWhatsAppMessage(payload: {
         ? `${payload.plannedQuantity} un.`
         : '—'
 
-  return `Aporte pendente: ${payload.assetSymbol} - ${amount} (${payload.referenceMonth})`
-}
+  const isOverdue = payload.status === 'overdue'
+  const icon = isOverdue ? '❗' : '📈'
+  const label = isOverdue ? 'Aporte atrasado' : 'Aporte pendente'
 
-function formatCentsBRL(cents: number): string {
-  return (cents / 100).toLocaleString('pt-BR', { minimumFractionDigits: 2 })
+  return formatWhatsAppAlertBlock(`${icon} ${bold(`${label}: ${payload.assetSymbol}`)}`, [
+    `Referência · ${payload.referenceMonth}`,
+    `💰 ${amount}`,
+  ])
 }
 
 export function buildTransactionInstallmentInfo(
@@ -305,17 +646,16 @@ export function formatTransactionWhatsAppMessage(payload: {
     month: '2-digit',
     year: 'numeric',
   })
-  const amountLine = `\nValor: R$ ${(payload.amountCents / 100).toLocaleString('pt-BR', { minimumFractionDigits: 2 })}`
-  const installmentLine = payload.installmentInfo ? `\n${payload.installmentInfo}` : ''
+  const detailLines = [
+    payload.kind === 'upcoming'
+      ? `Vence ${formatDueLabel(payload.daysUntilDue ?? 0)} · ${dueFormatted}`
+      : `${payload.overdueDays === 1 ? '1 dia em atraso' : `${payload.overdueDays ?? 0} dias em atraso`} · venceu ${dueFormatted}`,
+    formatWhatsAppAmount(payload.amountCents),
+    ...formatWhatsAppExtraInfo(payload.installmentInfo),
+  ]
 
-  if (payload.kind === 'upcoming') {
-    const dueLabel = formatDueLabel(payload.daysUntilDue ?? 0)
-    return `📅 ${bold(`Vencimento: ${payload.title}`)}\nVence ${dueLabel} (${dueFormatted})${amountLine}${installmentLine}`
-  }
-
-  const overdueLabel =
-    payload.overdueDays === 1 ? '1 dia em atraso' : `${payload.overdueDays ?? 0} dias em atraso`
-  return `⚠️ ${bold(`Vencida: ${payload.title}`)}\n${overdueLabel} (venceu ${dueFormatted})${amountLine}${installmentLine}`
+  const icon = payload.kind === 'upcoming' ? '📅' : '❗'
+  return formatWhatsAppAlertBlock(`${icon} ${bold(payload.title)}`, detailLines)
 }
 
 type AlertRuleRow = typeof alertRules.$inferSelect & { seriesTitle?: string | null }
@@ -361,6 +701,7 @@ export function serializeReminder(row: ReminderRow): ReminderDto {
     notifyMinute: row.notifyMinute,
     linkedSeriesId: row.linkedSeriesId,
     snoozedUntil: row.snoozedUntil?.toISOString() ?? null,
+    lastCompletedPeriodKey: row.lastCompletedPeriodKey ?? null,
     createdAt: row.createdAt.toISOString(),
     updatedAt: row.updatedAt.toISOString(),
   }

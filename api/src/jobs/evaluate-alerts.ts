@@ -1,3 +1,4 @@
+import { flushWhatsAppAlertQueue, type DeferredWhatsAppDelivery } from '@/domain/alerts/delivery/batch-whatsapp-alerts'
 import { processAllInvestmentMatches } from '@/domain/alerts/delivery/process-investment-match'
 import { processAllReminderMatches } from '@/domain/alerts/delivery/process-reminder-match'
 import { processAllRuleMatches } from '@/domain/alerts/delivery/process-rule-match'
@@ -46,13 +47,23 @@ async function evaluateAlerts(userId?: string, options?: JobRunOptions): Promise
       }
     }
 
-    const reminderResult = await processAllReminderMatches(reminderMatches)
-    const ruleResult = await processAllRuleMatches(ruleMatches)
-    const investmentResult = await processAllInvestmentMatches(investmentMatches)
+    const whatsappQueue: DeferredWhatsAppDelivery[] = []
+
+    const reminderResult = await processAllReminderMatches(reminderMatches, whatsappQueue)
+    const ruleResult = await processAllRuleMatches(ruleMatches, whatsappQueue)
+    const investmentResult = await processAllInvestmentMatches(investmentMatches, whatsappQueue)
+    const whatsappResult = await flushWhatsAppAlertQueue(whatsappQueue)
 
     processed =
-      reminderResult.processed + ruleResult.processed + investmentResult.processed
-    errors = reminderResult.errors + ruleResult.errors + investmentResult.errors
+      reminderResult.processed +
+      ruleResult.processed +
+      investmentResult.processed +
+      whatsappResult.processed
+    errors =
+      reminderResult.errors +
+      ruleResult.errors +
+      investmentResult.errors +
+      whatsappResult.errors
 
     return {
       success: errors === 0,

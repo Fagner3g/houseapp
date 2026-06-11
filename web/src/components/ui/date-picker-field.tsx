@@ -19,6 +19,7 @@ export type DatePickerProps = {
   onChange: (date: Date | undefined) => void
   disabled?: boolean
   minDate?: Date
+  maxDate?: Date
   placeholder?: string
   className?: string
   buttonClassName?: string
@@ -35,6 +36,7 @@ export function DatePicker({
   onChange,
   disabled,
   minDate,
+  maxDate,
   placeholder = 'Selecione a data',
   className,
   buttonClassName,
@@ -47,7 +49,14 @@ export function DatePicker({
 }: DatePickerProps) {
   const [open, setOpen] = useState(false)
 
-  const calendarDisabled = disabledDates ?? (minDate ? { before: minDate } : undefined)
+  const calendarDisabled =
+    disabledDates ??
+    (minDate || maxDate
+      ? {
+          ...(minDate ? { before: minDate } : {}),
+          ...(maxDate ? { after: maxDate } : {}),
+        }
+      : undefined)
 
   return (
     <Popover open={open} onOpenChange={setOpen} modal={false}>
@@ -76,8 +85,9 @@ export function DatePicker({
           fromYear={fromYear}
           toYear={toYear}
           fromDate={minDate}
+          toDate={maxDate}
           disabled={calendarDisabled}
-          defaultMonth={value ?? minDate}
+          defaultMonth={value ?? minDate ?? maxDate}
           onSelect={date => {
             onChange(date)
             if (date) setOpen(false)

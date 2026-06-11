@@ -83,6 +83,8 @@ import type {
   ListInvestmentPlans200,
   ListOrganizations200,
   ListPendingExtensionAlerts200,
+  ListRecentDeliveries200,
+  ListRecentDeliveriesParams,
   ListReminders200,
   ListRemindersParams,
   ListTags200,
@@ -110,6 +112,8 @@ import type {
   PostOrgSlugJobsSendMonthlySummary400,
   PostOrgSlugJobsSendMonthlySummaryBody,
   PreviewAlerts200,
+  RemoveUserFromOrg200,
+  RemoveUserFromOrgBody,
   RenameOrg200,
   RenameOrgBody,
   SetInvestmentQuote200,
@@ -2211,6 +2215,95 @@ export const usePatchOrgSlugUsers = <TError = unknown, TContext = unknown>(
   TContext
 > => {
   const mutationOptions = getPatchOrgSlugUsersMutationOptions(options);
+
+  return useMutation(mutationOptions, queryClient);
+};
+
+/**
+ * @summary Remove user from organization or delete account
+ */
+export const getRemoveUserFromOrgUrl = (slug: string) => {
+  return `/org/${slug}/users`;
+};
+
+export const removeUserFromOrg = async (
+  slug: string,
+  removeUserFromOrgBody: RemoveUserFromOrgBody,
+  options?: RequestInit,
+): Promise<RemoveUserFromOrg200> => {
+  return http<RemoveUserFromOrg200>(getRemoveUserFromOrgUrl(slug), {
+    ...options,
+    method: "DELETE",
+    headers: { "Content-Type": "application/json", ...options?.headers },
+    body: JSON.stringify(removeUserFromOrgBody),
+  });
+};
+
+export const getRemoveUserFromOrgMutationOptions = <
+  TError = unknown,
+  TContext = unknown,
+>(options?: {
+  mutation?: UseMutationOptions<
+    Awaited<ReturnType<typeof removeUserFromOrg>>,
+    TError,
+    { slug: string; data: RemoveUserFromOrgBody },
+    TContext
+  >;
+  request?: SecondParameter<typeof http>;
+}): UseMutationOptions<
+  Awaited<ReturnType<typeof removeUserFromOrg>>,
+  TError,
+  { slug: string; data: RemoveUserFromOrgBody },
+  TContext
+> => {
+  const mutationKey = ["removeUserFromOrg"];
+  const { mutation: mutationOptions, request: requestOptions } = options
+    ? options.mutation &&
+      "mutationKey" in options.mutation &&
+      options.mutation.mutationKey
+      ? options
+      : { ...options, mutation: { ...options.mutation, mutationKey } }
+    : { mutation: { mutationKey }, request: undefined };
+
+  const mutationFn: MutationFunction<
+    Awaited<ReturnType<typeof removeUserFromOrg>>,
+    { slug: string; data: RemoveUserFromOrgBody }
+  > = (props) => {
+    const { slug, data } = props ?? {};
+
+    return removeUserFromOrg(slug, data, requestOptions);
+  };
+
+  return { mutationFn, ...mutationOptions };
+};
+
+export type RemoveUserFromOrgMutationResult = NonNullable<
+  Awaited<ReturnType<typeof removeUserFromOrg>>
+>;
+export type RemoveUserFromOrgMutationBody = RemoveUserFromOrgBody;
+export type RemoveUserFromOrgMutationError = unknown;
+
+/**
+ * @summary Remove user from organization or delete account
+ */
+export const useRemoveUserFromOrg = <TError = unknown, TContext = unknown>(
+  options?: {
+    mutation?: UseMutationOptions<
+      Awaited<ReturnType<typeof removeUserFromOrg>>,
+      TError,
+      { slug: string; data: RemoveUserFromOrgBody },
+      TContext
+    >;
+    request?: SecondParameter<typeof http>;
+  },
+  queryClient?: QueryClient,
+): UseMutationResult<
+  Awaited<ReturnType<typeof removeUserFromOrg>>,
+  TError,
+  { slug: string; data: RemoveUserFromOrgBody },
+  TContext
+> => {
+  const mutationOptions = getRemoveUserFromOrgMutationOptions(options);
 
   return useMutation(mutationOptions, queryClient);
 };
@@ -8710,6 +8803,206 @@ export function useListInboxAlerts<
   queryKey: DataTag<QueryKey, TData, TError>;
 } {
   const queryOptions = getListInboxAlertsQueryOptions(slug, params, options);
+
+  const query = useQuery(queryOptions, queryClient) as UseQueryResult<
+    TData,
+    TError
+  > & { queryKey: DataTag<QueryKey, TData, TError> };
+
+  query.queryKey = queryOptions.queryKey;
+
+  return query;
+}
+
+/**
+ * List recent sent alert deliveries for organization
+ */
+export const getListRecentDeliveriesUrl = (
+  slug: string,
+  params?: ListRecentDeliveriesParams,
+) => {
+  const normalizedParams = new URLSearchParams();
+
+  Object.entries(params || {}).forEach(([key, value]) => {
+    if (value !== undefined) {
+      normalizedParams.append(key, value === null ? "null" : value.toString());
+    }
+  });
+
+  const stringifiedParams = normalizedParams.toString();
+
+  return stringifiedParams.length > 0
+    ? `/org/${slug}/alerts/recent?${stringifiedParams}`
+    : `/org/${slug}/alerts/recent`;
+};
+
+export const listRecentDeliveries = async (
+  slug: string,
+  params?: ListRecentDeliveriesParams,
+  options?: RequestInit,
+): Promise<ListRecentDeliveries200> => {
+  return http<ListRecentDeliveries200>(
+    getListRecentDeliveriesUrl(slug, params),
+    {
+      ...options,
+      method: "GET",
+    },
+  );
+};
+
+export const getListRecentDeliveriesQueryKey = (
+  slug?: string,
+  params?: ListRecentDeliveriesParams,
+) => {
+  return [`/org/${slug}/alerts/recent`, ...(params ? [params] : [])] as const;
+};
+
+export const getListRecentDeliveriesQueryOptions = <
+  TData = Awaited<ReturnType<typeof listRecentDeliveries>>,
+  TError = unknown,
+>(
+  slug: string,
+  params?: ListRecentDeliveriesParams,
+  options?: {
+    query?: Partial<
+      UseQueryOptions<
+        Awaited<ReturnType<typeof listRecentDeliveries>>,
+        TError,
+        TData
+      >
+    >;
+    request?: SecondParameter<typeof http>;
+  },
+) => {
+  const { query: queryOptions, request: requestOptions } = options ?? {};
+
+  const queryKey =
+    queryOptions?.queryKey ?? getListRecentDeliveriesQueryKey(slug, params);
+
+  const queryFn: QueryFunction<
+    Awaited<ReturnType<typeof listRecentDeliveries>>
+  > = ({ signal }) =>
+    listRecentDeliveries(slug, params, { signal, ...requestOptions });
+
+  return {
+    queryKey,
+    queryFn,
+    enabled: !!slug,
+    ...queryOptions,
+  } as UseQueryOptions<
+    Awaited<ReturnType<typeof listRecentDeliveries>>,
+    TError,
+    TData
+  > & { queryKey: DataTag<QueryKey, TData, TError> };
+};
+
+export type ListRecentDeliveriesQueryResult = NonNullable<
+  Awaited<ReturnType<typeof listRecentDeliveries>>
+>;
+export type ListRecentDeliveriesQueryError = unknown;
+
+export function useListRecentDeliveries<
+  TData = Awaited<ReturnType<typeof listRecentDeliveries>>,
+  TError = unknown,
+>(
+  slug: string,
+  params: undefined | ListRecentDeliveriesParams,
+  options: {
+    query: Partial<
+      UseQueryOptions<
+        Awaited<ReturnType<typeof listRecentDeliveries>>,
+        TError,
+        TData
+      >
+    > &
+      Pick<
+        DefinedInitialDataOptions<
+          Awaited<ReturnType<typeof listRecentDeliveries>>,
+          TError,
+          Awaited<ReturnType<typeof listRecentDeliveries>>
+        >,
+        "initialData"
+      >;
+    request?: SecondParameter<typeof http>;
+  },
+  queryClient?: QueryClient,
+): DefinedUseQueryResult<TData, TError> & {
+  queryKey: DataTag<QueryKey, TData, TError>;
+};
+export function useListRecentDeliveries<
+  TData = Awaited<ReturnType<typeof listRecentDeliveries>>,
+  TError = unknown,
+>(
+  slug: string,
+  params?: ListRecentDeliveriesParams,
+  options?: {
+    query?: Partial<
+      UseQueryOptions<
+        Awaited<ReturnType<typeof listRecentDeliveries>>,
+        TError,
+        TData
+      >
+    > &
+      Pick<
+        UndefinedInitialDataOptions<
+          Awaited<ReturnType<typeof listRecentDeliveries>>,
+          TError,
+          Awaited<ReturnType<typeof listRecentDeliveries>>
+        >,
+        "initialData"
+      >;
+    request?: SecondParameter<typeof http>;
+  },
+  queryClient?: QueryClient,
+): UseQueryResult<TData, TError> & {
+  queryKey: DataTag<QueryKey, TData, TError>;
+};
+export function useListRecentDeliveries<
+  TData = Awaited<ReturnType<typeof listRecentDeliveries>>,
+  TError = unknown,
+>(
+  slug: string,
+  params?: ListRecentDeliveriesParams,
+  options?: {
+    query?: Partial<
+      UseQueryOptions<
+        Awaited<ReturnType<typeof listRecentDeliveries>>,
+        TError,
+        TData
+      >
+    >;
+    request?: SecondParameter<typeof http>;
+  },
+  queryClient?: QueryClient,
+): UseQueryResult<TData, TError> & {
+  queryKey: DataTag<QueryKey, TData, TError>;
+};
+
+export function useListRecentDeliveries<
+  TData = Awaited<ReturnType<typeof listRecentDeliveries>>,
+  TError = unknown,
+>(
+  slug: string,
+  params?: ListRecentDeliveriesParams,
+  options?: {
+    query?: Partial<
+      UseQueryOptions<
+        Awaited<ReturnType<typeof listRecentDeliveries>>,
+        TError,
+        TData
+      >
+    >;
+    request?: SecondParameter<typeof http>;
+  },
+  queryClient?: QueryClient,
+): UseQueryResult<TData, TError> & {
+  queryKey: DataTag<QueryKey, TData, TError>;
+} {
+  const queryOptions = getListRecentDeliveriesQueryOptions(
+    slug,
+    params,
+    options,
+  );
 
   const query = useQuery(queryOptions, queryClient) as UseQueryResult<
     TData,

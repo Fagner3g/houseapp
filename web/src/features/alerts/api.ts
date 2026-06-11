@@ -27,6 +27,7 @@ export type Reminder = {
   notifyMinute: number | null
   linkedSeriesId: string | null
   snoozedUntil: string | null
+  lastCompletedPeriodKey: string | null
   createdAt: string
   updatedAt: string
 }
@@ -40,12 +41,14 @@ export type AlertDelivery = {
   id: string
   organizationId: string
   userId: string
+  recipientName?: string | null
   sourceType: 'rule' | 'reminder' | 'investment'
   ruleId: string | null
   reminderId: string | null
   occurrenceId: string | null
   kind: string
   channel: ReminderChannel
+  channels?: ReminderChannel[]
   status: 'pending' | 'sent' | 'failed' | 'skipped'
   payload: Record<string, unknown>
   sentAt: string | null
@@ -58,7 +61,9 @@ export type ReminderPreviewItem = {
   reminderId: string
   title: string
   dueDate: string
+  kind: 'upcoming' | 'overdue'
   daysUntilDue: number
+  overdueDays?: number
   amountCents: number | null
   notifyHour: number
   notifyMinute: number
@@ -67,7 +72,7 @@ export type ReminderPreviewItem = {
   recipientName: string | null
 }
 
-export type ReminderPreviewSkipReason = 'snoozed' | 'no_matching_day'
+export type ReminderPreviewSkipReason = 'snoozed' | 'no_matching_rule' | 'period_completed'
 
 export type ReminderPreviewSkipItem = {
   reminderId: string
@@ -207,10 +212,15 @@ export function useUpdateAlertSettings(slug: string) {
   })
 }
 
-export function useReminders(slug: string) {
+export function useReminders(slug: string, options?: { includeCompleted?: boolean }) {
+  const includeCompleted = options?.includeCompleted ?? false
   return useQuery({
-    queryKey: remindersKey(slug),
-    queryFn: () => http<{ reminders: Reminder[] }>(`/org/${slug}/reminders`, { method: 'GET' }),
+    queryKey: [...remindersKey(slug), includeCompleted ? 'all' : 'active'],
+    queryFn: () =>
+      http<{ reminders: Reminder[] }>(
+        `/org/${slug}/reminders${includeCompleted ? '?includeCompleted=true' : ''}`,
+        { method: 'GET' }
+      ),
     enabled: !!slug,
   })
 }
@@ -227,7 +237,7 @@ export function useRecentDeliveries(slug: string) {
   return useQuery({
     queryKey: recentDeliveriesKey(slug),
     queryFn: () =>
-      http<{ alerts: AlertDelivery[] }>(`/org/${slug}/alerts/recent?hours=24&limit=5`, {
+      http<{ alerts: AlertDelivery[] }>(`/org/${slug}/alerts/recent?hours=24&limit=20`, {
         method: 'GET',
       }),
     enabled: !!slug,
@@ -282,6 +292,38 @@ export function useCompleteReminder(slug: string) {
     mutationFn: (id: string) =>
       http<{ reminder: Reminder }>(`/org/${slug}/reminders/${id}/complete`, {
         method: 'POST',
+      }),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: remindersKey(slug) })
+      queryClient.invalidateQueries({ queryKey: inboxKey(slug) })
+      queryClient.invalidateQueries({ queryKey: previewKey(slug) })
+    },
+  })
+}
+
+export function useCompleteReminderPeriod(slug: string) {
+  const queryClient = useQueryClient()
+  return useMutation({
+    mutationFn: (id: string) =>
+      http<{ reminder: Reminder }>(`/org/${slug}/reminders/${id}/complete-period`, {
+        method: 'POST',
+      }),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: remindersKey(slug) })
+      queryClient.invalidateQueries({ queryKey: inboxKey(slug) })
+      queryClient.invalidateQueries({ queryKey: previewKey(slug) })
+    },
+  })
+}
+
+export function useUncompleteReminderPeriod(slug: string) {
+  const queryClient = useQueryClient()
+  return useMutation({
+    mutationFn: ({ id, occurrenceDate }: { id: string; occurrenceDate: string }) =>
+      http<{ reminder: Reminder }>(`/org/${slug}/reminders/${id}/uncomplete-period`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ occurrenceDate }),
       }),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: remindersKey(slug) })

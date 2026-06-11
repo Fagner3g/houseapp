@@ -10,12 +10,20 @@ import type { DraggableAttributes } from "@dnd-kit/core"
 import type { SyntheticListenerMap } from "@dnd-kit/core/dist/hooks/utilities"
 import { differenceInMinutes, format, getMinutes, isPast } from "date-fns"
 import { ptBR } from "date-fns/locale"
+import {
+  AlertCircle,
+  Bell,
+  Check,
+  CircleDashed,
+  Clock,
+} from "lucide-react"
 
 import {
   getBorderRadiusClasses,
   getEventColorClasses,
 } from "@/components/event-calendar"
 import type { CalendarEvent } from "@/components/event-calendar"
+import { alertStatusIconClass } from "@/lib/alert-status-colors"
 import { cn } from "@/lib/utils"
 
 // Using date-fns format with custom formatting:
@@ -27,6 +35,126 @@ const formatTimeWithOptionalMinutes = (date: Date) => {
     date,
     getMinutes(date) === 0 ? "H'h'" : "H'h'mm",
     { locale: ptBR }
+  )
+}
+
+function getEventTypeBorderClass(event: CalendarEvent): string {
+  if (event.eventType === "reminder" || event.color === "violet") {
+    return "border-l-violet-500/80 dark:border-l-violet-400/90"
+  }
+  if (event.color === "emerald") {
+    return "border-l-emerald-500/80 dark:border-l-emerald-400/90"
+  }
+  return "border-l-rose-500/80 dark:border-l-rose-400/90"
+}
+
+type EventVisualStatus =
+  | "paid"
+  | "partial"
+  | "overdue"
+  | "reminder"
+  | "upcoming"
+  | "default"
+
+function getEventVisualStatus(event: CalendarEvent): EventVisualStatus {
+  if (event.eventType === "reminder") {
+    return event.status === "paid" ? "paid" : "reminder"
+  }
+  if (event.status === "paid") return "paid"
+  if (event.status === "partial") return "partial"
+  if (event.overdueDays && event.overdueDays > 0) return "overdue"
+  return "upcoming"
+}
+
+function EventStatusIcon({
+  event,
+  size = "sm",
+}: {
+  event: CalendarEvent
+  size?: "sm" | "xs"
+}) {
+  const visualStatus = getEventVisualStatus(event)
+  const iconClass = cn(
+    "shrink-0",
+    size === "xs" ? "size-2.5" : "size-3"
+  )
+
+  switch (visualStatus) {
+    case "paid":
+      return (
+        <Check
+          className={cn(iconClass, "text-muted-foreground/80")}
+          aria-hidden
+        />
+      )
+    case "partial":
+      return (
+        <CircleDashed
+          className={cn(iconClass, alertStatusIconClass.partial)}
+          aria-hidden
+        />
+      )
+    case "overdue":
+      return (
+        <AlertCircle
+          className={cn(iconClass, alertStatusIconClass.overdue)}
+          aria-hidden
+        />
+      )
+    case "reminder":
+      return (
+        <Bell
+          className={cn(iconClass, alertStatusIconClass.reminder)}
+          aria-hidden
+        />
+      )
+    case "upcoming":
+      return (
+        <Clock
+          className={cn(iconClass, alertStatusIconClass.upcoming)}
+          aria-hidden
+        />
+      )
+    default:
+      return null
+  }
+}
+
+function MonthEventContent({ event }: { event: CalendarEvent }) {
+  const isPaid = event.status === "paid"
+
+  return (
+    <div className="flex w-full min-w-0 flex-col justify-center gap-px">
+      <div className="flex min-w-0 items-baseline justify-between gap-1 leading-none">
+        <div className="flex min-w-0 items-baseline gap-0.5">
+          <span
+            className={cn(
+              "truncate font-medium",
+              isPaid && "line-through opacity-70"
+            )}
+          >
+            {event.title}
+          </span>
+          {event.installmentLabel && (
+            <span className="shrink-0 text-[9px] font-medium opacity-60">
+              {event.installmentLabel}
+            </span>
+          )}
+        </div>
+        {event.amountLabel && (
+          <span className="shrink-0 text-[9px] font-semibold tabular-nums opacity-90">
+            {event.amountLabel}
+          </span>
+        )}
+      </div>
+
+      {event.statusLine && (
+        <div className="flex min-w-0 items-center gap-0.5 text-[9px] leading-none opacity-75">
+          <EventStatusIcon event={event} size="xs" />
+          <span className="truncate">{event.statusLine}</span>
+        </div>
+      )}
+    </div>
   )
 }
 
@@ -42,6 +170,7 @@ interface EventWrapperProps {
   dndAttributes?: DraggableAttributes
   onMouseDown?: (e: React.MouseEvent) => void
   onTouchStart?: (e: React.TouchEvent) => void
+  variant?: "month" | "timed"
 }
 
 // Shared wrapper component for event styling
@@ -57,19 +186,26 @@ function EventWrapper({
   dndAttributes,
   onMouseDown,
   onTouchStart,
+  variant = "timed",
 }: EventWrapperProps) {
-  const isPaid = event.status === "paid" || event.status === "partial"
+  const isPaid = event.status === "paid"
+  const isPartial = event.status === "partial"
 
   return (
     <button
       className={cn(
-        "focus-visible:border-ring focus-visible:ring-ring/50 flex size-full overflow-hidden px-1 text-left font-medium backdrop-blur-md transition outline-none select-none focus-visible:ring-[3px] data-dragging:cursor-grabbing data-dragging:shadow-lg data-paid:line-through sm:px-2",
+        "focus-visible:border-ring focus-visible:ring-ring/50 flex size-full overflow-hidden text-left font-medium backdrop-blur-md transition outline-none select-none focus-visible:ring-[3px] data-dragging:cursor-grabbing data-dragging:shadow-lg data-paid:opacity-80",
+        variant === "month"
+          ? "border-l-2 px-1 py-0.5 sm:px-1.5"
+          : "px-1 sm:px-2 data-partial:ring-1 data-partial:ring-amber-500/60",
+        getEventTypeBorderClass(event),
         getEventColorClasses(event.color),
         getBorderRadiusClasses(isFirstDay, isLastDay),
         className
       )}
       data-dragging={isDragging || undefined}
       data-paid={isPaid || undefined}
+      data-partial={isPartial || undefined}
       onClick={onClick}
       onMouseDown={onMouseDown}
       onTouchStart={onTouchStart}
@@ -116,15 +252,33 @@ export function EventItem({
 }: EventItemProps) {
   const eventColor = event.color
 
-  const overdueBadge =
-    event.status !== "paid" && event.status !== "partial" && event.overdueDays && event.overdueDays > 0 ? (
-      <Tooltip>
-        <TooltipTrigger asChild>
-          <span className="ml-1 size-2 rounded-full bg-destructive" />
-        </TooltipTrigger>
-        <TooltipContent>{`${event.overdueDays} dias em atraso`}</TooltipContent>
-      </Tooltip>
-    ) : null
+  const isPaid = event.status === "paid"
+  const isPartial = event.status === "partial"
+
+  const statusBadge = (
+    <Tooltip>
+      <TooltipTrigger asChild>
+        <span className="ml-1 inline-flex shrink-0">
+          <EventStatusIcon event={event} />
+        </span>
+      </TooltipTrigger>
+      <TooltipContent>
+        {event.statusLine ??
+          event.description ??
+          (isPartial
+            ? "Pagamento parcial"
+            : event.overdueDays
+              ? `${event.overdueDays} dias em atraso`
+              : "Evento")}
+      </TooltipContent>
+    </Tooltip>
+  )
+
+  const showStatusBadge =
+    isPaid ||
+    isPartial ||
+    (event.overdueDays != null && event.overdueDays > 0) ||
+    event.eventType === "reminder"
 
   // Use the provided currentTime (for dragging) or the event's actual time
   const displayStart = useMemo(() => {
@@ -165,8 +319,9 @@ export function EventItem({
         isLastDay={isLastDay}
         isDragging={isDragging}
         onClick={onClick}
+        variant="month"
         className={cn(
-          "mt-[var(--event-gap)] h-[var(--event-height)] items-center text-[10px] sm:text-xs",
+          "mt-[var(--event-gap)] h-[var(--event-height)] items-start text-[10px] leading-tight sm:text-[11px]",
           className
         )}
         dndListeners={dndListeners}
@@ -174,26 +329,18 @@ export function EventItem({
         onMouseDown={onMouseDown}
         onTouchStart={onTouchStart}
       >
-        {children || (
-          <div className="flex w-full items-center justify-between gap-1">
-            <span className="truncate">
-              {!event.allDay && (
-                <span className="truncate font-normal opacity-70 sm:text-[11px]">
-                  {formatTimeWithOptionalMinutes(displayStart)}{" "}
-                </span>
-              )}
-              {event.title}
-            </span>
-            {overdueBadge}
-          </div>
-        )}
+        {children || <MonthEventContent event={event} />}
       </EventWrapper>
     )
 
-    return event.description ? (
+    const tooltipText = [event.description, event.statusLine]
+      .filter(Boolean)
+      .join(" · ")
+
+    return tooltipText ? (
       <Tooltip>
         <TooltipTrigger asChild>{content}</TooltipTrigger>
-        <TooltipContent>{event.description}</TooltipContent>
+        <TooltipContent>{tooltipText}</TooltipContent>
       </Tooltip>
     ) : (
       content
@@ -221,7 +368,7 @@ export function EventItem({
       >
         {durationMinutes < 45 ? (
           <div className="flex w-full items-center justify-between truncate">
-            <span className="truncate">
+            <span className={cn("truncate", isPaid && "line-through opacity-70")}>
               {event.title}{" "}
               {showTime && (
                 <span className="opacity-70">
@@ -229,13 +376,20 @@ export function EventItem({
                 </span>
               )}
             </span>
-            {overdueBadge}
+            {showStatusBadge ? statusBadge : null}
           </div>
         ) : (
           <>
             <div className="flex w-full items-center justify-between">
-              <div className="truncate font-medium">{event.title}</div>
-              {overdueBadge}
+              <div
+                className={cn(
+                  "truncate font-medium",
+                  isPaid && "line-through opacity-70"
+                )}
+              >
+                {event.title}
+              </div>
+              {showStatusBadge ? statusBadge : null}
             </div>
             {showTime && (
               <div className="truncate font-normal opacity-70 sm:text-[11px]">
@@ -261,21 +415,32 @@ export function EventItem({
   const agendaContent = (
     <button
       className={cn(
-        "focus-visible:border-ring focus-visible:ring-ring/50 flex w-full flex-col gap-1 rounded p-2 text-left transition outline-none focus-visible:ring-[3px] data-paid:line-through data-past-event:opacity-90",
+        "focus-visible:border-ring focus-visible:ring-ring/50 flex w-full flex-col gap-1 rounded border-l-2 p-2 text-left transition outline-none focus-visible:ring-[3px] data-past-event:opacity-90 data-paid:opacity-80 data-partial:ring-1 data-partial:ring-amber-500/60",
+        getEventTypeBorderClass(event),
         getEventColorClasses(eventColor),
         className
       )}
       data-past-event={isPast(new Date(event.end)) || undefined}
       data-paid={isPaid || undefined}
+      data-partial={isPartial || undefined}
       onClick={onClick}
       onMouseDown={onMouseDown}
       onTouchStart={onTouchStart}
       {...dndListeners}
       {...dndAttributes}
     >
-      <div className="flex items-center justify-between text-sm font-medium">
-        <span>{event.title}</span>
-        {overdueBadge}
+      <div className="flex items-center justify-between gap-2 text-sm font-medium">
+        <span className={cn("min-w-0 truncate", isPaid && "line-through opacity-70")}>
+          {event.title}
+        </span>
+        <div className="flex shrink-0 items-center gap-1.5">
+          {event.amountLabel && (
+            <span className="text-xs font-semibold tabular-nums opacity-90">
+              {event.amountLabel}
+            </span>
+          )}
+          {showStatusBadge ? <EventStatusIcon event={event} /> : null}
+        </div>
       </div>
       <div className="text-xs opacity-70">
         {event.allDay ? (
@@ -293,16 +458,22 @@ export function EventItem({
           </>
         )}
       </div>
-      {event.description && (
-        <div className="my-1 text-xs opacity-90">{event.description}</div>
+      {(event.statusLine || event.description) && (
+        <div className="text-xs opacity-90">
+          {event.statusLine ?? event.description}
+        </div>
       )}
     </button>
   )
 
-  return event.description ? (
+  const agendaTooltip = [event.description, event.statusLine]
+    .filter(Boolean)
+    .join(" · ")
+
+  return agendaTooltip ? (
     <Tooltip>
       <TooltipTrigger asChild>{agendaContent}</TooltipTrigger>
-      <TooltipContent>{event.description}</TooltipContent>
+      <TooltipContent>{agendaTooltip}</TooltipContent>
     </Tooltip>
   ) : (
     agendaContent

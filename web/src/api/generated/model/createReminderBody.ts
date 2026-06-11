@@ -38,4 +38,6 @@ export type CreateReminderBody = {
   recurrenceUntil?: string | null;
   /** @nullable */
   notifyHour?: number | null;
+  /** @nullable */
+  notifyMinute?: number | null;
 };

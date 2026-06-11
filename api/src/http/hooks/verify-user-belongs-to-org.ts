@@ -15,7 +15,7 @@ export async function verifyOrgAccessHook(request: FastifyRequest) {
   const org = await verifyUserBelongsToOrg(request, slug)
 
   if (!org) {
-    logger.error({ slug }, 'Access denied to organization')
+    logger.warn({ slug }, 'Access denied to organization')
     throw new ForbiddenError('Access denied to this organization.')
   }
 

@@ -1,13 +1,13 @@
 import { eq, inArray } from 'drizzle-orm'
 
 import { db } from '@/db'
-import { alertDeliveries } from '@/db/schemas/alertDeliveries'
 import { investmentPlans } from '@/db/schemas/investmentPlans'
 import { organizations } from '@/db/schemas/organization'
 import type { AlertPreferences } from '@/db/schemas/userOrganization'
 import { userOrganizations } from '@/db/schemas/userOrganization'
 import { users } from '@/db/schemas/users'
 import { investmentService } from '@/domain/investments/service'
+import { hasBlockingDedupeKey } from '../delivery/insert-alert-delivery'
 import {
   buildInvestmentDedupeKey,
   getCurrentMonthKey,
@@ -36,6 +36,7 @@ export type InvestmentMatch = {
   organizationId: string
   orgSlug: string
   orgName: string
+  orgOwnerId: string
   item: InvestmentReminderItem
   notificationsEnabled: boolean
   alertPreferences: AlertPreferences
@@ -53,6 +54,7 @@ async function getUserAlertContext(userId: string) {
       organizationId: organizations.id,
       orgSlug: organizations.slug,
       orgName: organizations.name,
+      orgOwnerId: organizations.ownerId,
       defaultNotifyHour: organizations.defaultNotifyHour,
       defaultNotifyMinute: organizations.defaultNotifyMinute,
       notificationsEnabled: userOrganizations.notificationsEnabled,
@@ -123,16 +125,11 @@ export async function evaluateInvestmentReminders(
         const dedupeKey = buildInvestmentDedupeKey(
           item.planId,
           item.referenceMonth,
+          uid,
           channel,
           resolvedTime
         )
-        const [existing] = await db
-          .select({ id: alertDeliveries.id })
-          .from(alertDeliveries)
-          .where(eq(alertDeliveries.dedupeKey, dedupeKey))
-          .limit(1)
-
-        if (!existing) {
+        if (!(await hasBlockingDedupeKey(dedupeKey))) {
           pendingChannels.push(channel)
         }
       }
@@ -144,6 +141,7 @@ export async function evaluateInvestmentReminders(
         organizationId: context.organizationId,
         orgSlug: context.orgSlug,
         orgName: context.orgName,
+        orgOwnerId: context.orgOwnerId,
         item,
         notificationsEnabled: context.notificationsEnabled,
         alertPreferences: context.alertPreferences,

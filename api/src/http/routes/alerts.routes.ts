@@ -4,6 +4,8 @@ import { getAlertSettingsController } from '../controllers/alerts/get-alert-sett
 import { updateAlertSettingsController } from '../controllers/alerts/update-alert-settings.controller'
 import { ackAlertController } from '../controllers/alerts/ack-alert.controller'
 import { completeReminderController } from '../controllers/alerts/complete-reminder.controller'
+import { completeReminderPeriodController } from '../controllers/alerts/complete-reminder-period.controller'
+import { uncompleteReminderPeriodController } from '../controllers/alerts/uncomplete-reminder-period.controller'
 import { createReminderController } from '../controllers/alerts/create-reminder.controller'
 import { createRuleController } from '../controllers/alerts/create-rule.controller'
 import { deleteReminderController } from '../controllers/alerts/delete-reminder.controller'
@@ -35,6 +37,8 @@ import {
 } from '../schemas/alerts/settings.schema'
 import {
   completeReminderSchema,
+  completeReminderPeriodSchema,
+  uncompleteReminderPeriodSchema,
   createReminderSchema,
   deleteReminderSchema,
   listRemindersSchema,
@@ -90,6 +94,20 @@ export const alertsRoutes: FastifyPluginAsyncZod = async app => {
     preHandler: [verifyOrgAccessHook],
     schema: completeReminderSchema,
     handler: completeReminderController,
+  })
+
+  app.post('/org/:slug/reminders/:id/complete-period', {
+    onRequest: [authenticateUserHook],
+    preHandler: [verifyOrgAccessHook],
+    schema: completeReminderPeriodSchema,
+    handler: completeReminderPeriodController,
+  })
+
+  app.post('/org/:slug/reminders/:id/uncomplete-period', {
+    onRequest: [authenticateUserHook],
+    preHandler: [verifyOrgAccessHook],
+    schema: uncompleteReminderPeriodSchema,
+    handler: uncompleteReminderPeriodController,
   })
 
   app.post('/org/:slug/reminders/:id/snooze', {
