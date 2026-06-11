@@ -9,18 +9,8 @@ import { EventCalendar } from '@/components/event-calendar'
 import type { CalendarEvent } from '@/components/event-calendar'
 import { useReminders, type Reminder } from '@/features/alerts/api'
 import { useActiveOrganization } from '@/hooks/use-active-organization'
-import {
-  formatCompactCurrency,
-  formatPartialPaymentDescription,
-  formatPartialPaymentStatusCompact,
-} from '@/lib/currency'
-import { computeDaysUntilDue } from '@/lib/date'
-import {
-  getInstallmentProgress,
-  getTransactionDisplayStatus,
-  getTransactionStatusLabel,
-} from '@/lib/transaction-status'
 import { parseReminderEventId, reminderToCalendarEvents } from './reminder-events'
+import { transactionsToCalendarEvents } from './transaction-events'
 import { ReminderDialog } from './reminder-dialog'
 import { TransactionCalendarDialog } from './transaction-dialog'
 
@@ -29,76 +19,6 @@ interface Props {
   dateFrom: string
   dateTo: string
   onEditTransaction?: (transaction: ListTransactions200TransactionsItem) => void
-}
-
-function buildTransactionEventDescription(
-  transaction: ListTransactions200TransactionsItem
-): string | undefined {
-  const parts: string[] = []
-
-  if (transaction.status === 'partial' && transaction.valuePaid != null) {
-    parts.push(
-      formatPartialPaymentDescription(Number(transaction.amount), transaction.valuePaid)
-    )
-  }
-
-  if (transaction.installmentsTotal != null && transaction.installmentIndex != null) {
-    parts.push(`Parcela ${transaction.installmentIndex} de ${transaction.installmentsTotal}`)
-  }
-
-  return parts.length > 0 ? parts.join(' · ') : undefined
-}
-
-function buildPartialPaymentSummary(
-  transaction: ListTransactions200TransactionsItem
-): string | undefined {
-  if (transaction.status !== 'partial' || transaction.valuePaid == null) return undefined
-
-  return formatPartialPaymentStatusCompact(Number(transaction.amount), transaction.valuePaid)
-}
-
-function titleHasInstallmentHint(title: string, total: number): boolean {
-  return new RegExp(`\\b${total}x\\s*$`, 'i').test(title.trim())
-}
-
-function buildTransactionStatusLine(
-  transaction: ListTransactions200TransactionsItem
-): string | undefined {
-  const displayStatus = getTransactionDisplayStatus(transaction)
-
-  if (displayStatus === 'paid') return 'Pago'
-  if (displayStatus === 'canceled') return 'Cancelado'
-
-  if (displayStatus === 'overdue') {
-    const days = transaction.overdueDays
-    return days > 0 ? `${days}d · Vencido` : 'Vencido'
-  }
-
-  if (displayStatus === 'partial') {
-    const parts: string[] = []
-    const days = transaction.overdueDays
-    if (days > 0) parts.push(`${days}d`)
-    parts.push('Parcial')
-    const partialSummary = buildPartialPaymentSummary(transaction)
-    if (partialSummary) parts.push(partialSummary)
-    return parts.join(' · ')
-  }
-
-  const daysUntilDue = computeDaysUntilDue(new Date(transaction.dueDate))
-  if (daysUntilDue === 0) return 'Vence hoje'
-  if (daysUntilDue === 1) return 'Amanhã'
-  if (daysUntilDue > 1) return `${daysUntilDue}d`
-
-  return getTransactionStatusLabel(transaction)
-}
-
-function buildTransactionInstallmentLabel(
-  transaction: ListTransactions200TransactionsItem
-): string | undefined {
-  const progress = getInstallmentProgress(transaction)
-  if (!progress?.show) return undefined
-  if (titleHasInstallmentHint(transaction.title, progress.total)) return undefined
-  return `${progress.total}x`
 }
 
 export function CalendarTransactions({
@@ -123,22 +43,7 @@ export function CalendarTransactions({
   }, [remindersData?.reminders])
 
   const events = useMemo<CalendarEvent[]>(() => {
-    const transactionEvents = transactions.map(t => ({
-      id: t.id,
-      title: t.title,
-      start: new Date(t.dueDate),
-      end: new Date(t.dueDate),
-      allDay: true,
-      color: t.type === 'income' ? ('emerald' as const) : ('rose' as const),
-      status: t.status,
-      overdueDays: t.overdueDays,
-      description: buildTransactionEventDescription(t),
-      eventType: 'transaction' as const,
-      amountLabel: formatCompactCurrency(Number(t.amount)),
-      installmentLabel: buildTransactionInstallmentLabel(t),
-      statusLine: buildTransactionStatusLine(t),
-      valuePaid: t.valuePaid,
-    }))
+    const transactionEvents = transactionsToCalendarEvents(transactions, dateFrom, dateTo)
 
     const reminderEvents = (remindersData?.reminders ?? []).flatMap(reminder =>
       reminderToCalendarEvents(reminder, dateFrom, dateTo)
@@ -147,14 +52,21 @@ export function CalendarTransactions({
     return [...transactionEvents, ...reminderEvents]
   }, [transactions, remindersData?.reminders, dateFrom, dateTo])
 
-  const initialDate = useMemo(() => dayjs(dateFrom).toDate(), [dateFrom])
+  const monthRange = useMemo(() => {
+    const anchor = dayjs(dateFrom).isValid() ? dayjs(dateFrom) : dayjs()
+    return {
+      from: anchor.startOf('month').format('YYYY-MM-DD'),
+      to: anchor.endOf('month').format('YYYY-MM-DD'),
+      initialDate: anchor.startOf('month').toDate(),
+    }
+  }, [dateFrom])
 
   const handleDateChange = useCallback(
     (date: Date) => {
       const from = dayjs(date).startOf('month').format('YYYY-MM-DD')
       const to = dayjs(date).endOf('month').format('YYYY-MM-DD')
 
-      if (from === dateFrom && to === dateTo) return
+      if (from === monthRange.from && to === monthRange.to) return
 
       navigate({
         to: '.',
@@ -162,7 +74,7 @@ export function CalendarTransactions({
         replace: true,
       })
     },
-    [dateFrom, dateTo, navigate]
+    [monthRange.from, monthRange.to, navigate]
   )
 
   const handleEventClick = useCallback(
@@ -189,7 +101,7 @@ export function CalendarTransactions({
       <EventCalendar
         events={events}
         onDateChange={handleDateChange}
-        initialDate={initialDate}
+        initialDate={monthRange.initialDate}
         editable={false}
         onEventClick={handleEventClick}
       />

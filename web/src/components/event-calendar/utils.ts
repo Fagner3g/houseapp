@@ -87,7 +87,37 @@ export function sortEvents(events: CalendarEvent[]): CalendarEvent[] {
 }
 
 /**
- * Get multi-day events that span across a specific day (but don't start on that day)
+ * Sort events with transbordo first (most overdue first), then multi-day, then by start time.
+ */
+export function sortEventsWithTransbordoFirst(events: CalendarEvent[]): CalendarEvent[] {
+  const sorted = sortEvents(events)
+  const transbordo = sorted.filter(event => event.isTransbordo)
+  const doMes = sorted.filter(event => !event.isTransbordo)
+
+  transbordo.sort((a, b) => (b.overdueDays ?? 0) - (a.overdueDays ?? 0))
+
+  return [...transbordo, ...doMes]
+}
+
+export function partitionDayEvents(events: CalendarEvent[]): {
+  transbordo: CalendarEvent[]
+  doMes: CalendarEvent[]
+} {
+  const transbordo: CalendarEvent[] = []
+  const doMes: CalendarEvent[] = []
+
+  for (const event of events) {
+    if (event.isTransbordo) transbordo.push(event)
+    else doMes.push(event)
+  }
+
+  transbordo.sort((a, b) => (b.overdueDays ?? 0) - (a.overdueDays ?? 0))
+
+  return { transbordo, doMes }
+}
+
+/**
+ * Get multi-day events that span into a day but do not start on it.
  */
 export function getSpanningEventsForDay(
   events: CalendarEvent[],

@@ -256,6 +256,7 @@ async function getTransactionTitle(orgSlug, transactionId) {
     ...(reports.overdueTransactions?.transactions || []),
     ...(reports.upcomingAlerts?.transactions || []),
     ...(reports.allTransactions || []),
+    ...(reports.paidThisMonth?.transactions || []),
   ]
   return all.find(t => t.id === transactionId)?.title || 'Transação'
 }

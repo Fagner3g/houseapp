@@ -288,6 +288,7 @@ section {
 
 .dot-red    { background: #ef4444; }
 .dot-yellow { background: #f59e0b; }
+.dot-orange { background: #f97316; }
 .dot-gray   { background: #94a3b8; }
 .dot-blue    { background: #2563eb; }
 .dot-purple  { background: #8b5cf6; }
@@ -393,15 +394,84 @@ section {
 .badge-snoozed { background: #f1f5f9; color: #64748b; }
 .badge-completed { background: #dcfce7; color: #16a34a; }
 .badge-invest { background: #dbeafe; color: #1d4ed8; }
+.badge-transbordo { background: #fee2e2; color: #b91c1c; }
 
-/* ── Reminder items (stacked card layout) ────────────────────── */
+.tx-item-actions {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  flex-shrink: 0;
+  margin-left: auto;
+}
 
+/* ── Stacked card layout (transactions + reminders) ────────────── */
+
+.tx-item.tx-item-stacked,
 .tx-item.reminder-item {
   flex-direction: column;
   align-items: stretch;
   gap: 6px;
   padding: 8px;
 }
+
+.tx-row {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  min-width: 0;
+}
+
+.tx-row-top {
+  align-items: flex-start;
+}
+
+.tx-row-top .tx-title {
+  flex: 1;
+  min-width: 0;
+  white-space: normal;
+  overflow: hidden;
+  display: -webkit-box;
+  -webkit-line-clamp: 2;
+  -webkit-box-orient: vertical;
+  line-height: 1.35;
+}
+
+.tx-row-top .tx-amount {
+  flex-shrink: 0;
+  margin-left: auto;
+}
+
+.tx-row-bottom {
+  justify-content: space-between;
+  padding-left: 15px;
+  gap: 8px;
+}
+
+.tx-row-meta {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 4px;
+  min-width: 0;
+  flex: 1;
+}
+
+.tx-row-meta .tx-meta {
+  flex-shrink: 0;
+}
+
+.tx-row-meta .tx-meta-sub {
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.tx-row-meta .badge-transbordo {
+  flex-shrink: 0;
+}
+
+/* ── Reminder items ────────────────────────────────────────────── */
 
 .reminder-row {
   display: flex;
@@ -506,6 +576,40 @@ section {
 
 .tx-item.partial .tx-title {
   color: #92400e;
+}
+
+.tx-group-header {
+  list-style: none;
+  padding: 6px 0 2px;
+  font-size: 10px;
+  font-weight: 600;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  color: #64748b;
+}
+
+.tx-group-header:first-child {
+  padding-top: 0;
+}
+
+.tx-item.transbordo {
+  border-color: #fca5a5;
+  border-left: 3px solid #ef4444;
+  background: #fff5f5;
+}
+
+.tx-item.transbordo.partial {
+  border-color: #fca5a5;
+  background: #fff7ed;
+}
+
+.tx-meta-sub {
+  font-size: 10px;
+  color: #b91c1c;
+}
+
+.tx-item.transbordo .tx-meta-sub {
+  color: #b91c1c;
 }
 
 /* ── Pay modal ──────────────────────────────────────────────── */

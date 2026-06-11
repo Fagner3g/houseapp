@@ -32,8 +32,8 @@ export const useTransaction = () => {
     dateFrom: dateFrom ?? startOfMonth,
     dateTo: dateTo ?? endOfMonth,
     page,
-    // No modo "Lista" (payto), usar um perPage maior para trazer mais transações
-    perPage: view === 'payto' ? 100 : perPage,
+    // Calendar and payto need more rows than the paginated table view.
+    perPage: view === 'calendar' || view === 'payto' ? 500 : perPage,
     // Only filter by responsible user if explicitly requested and not 'me'
     responsibleUserId: responsibleUserId === 'me' ? currentUser?.id : responsibleUserId,
     payToId,
@@ -66,8 +66,8 @@ export const useTransaction = () => {
     error,
     refetch,
     type,
-    dateFrom,
-    dateTo,
+    dateFrom: dateFrom ?? startOfMonth,
+    dateTo: dateTo ?? endOfMonth,
     tags,
   }
 }

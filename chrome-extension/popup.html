@@ -100,6 +100,16 @@
         <p id="upcoming-empty" class="empty-msg hidden">Nenhum alerta próximo</p>
       </section>
 
+      <!-- Open transbordo (due before view month, still pending/partial) -->
+      <section id="section-transbordo">
+        <div class="section-header transbordo-header">
+          <span class="dot dot-orange"></span>
+          <span id="transbordo-title">Transbordo</span>
+        </div>
+        <ul id="list-transbordo" class="tx-list"></ul>
+        <p id="transbordo-empty" class="empty-msg hidden">Nenhum transbordo aberto</p>
+      </section>
+
       <!-- All transactions of the month -->
       <section id="section-all">
         <div class="section-header all-header">
@@ -147,6 +157,7 @@
     </div>
   </div>
 
+  <script src="transaction-display.js"></script>
   <script src="popup.js"></script>
 </body>
 </html>

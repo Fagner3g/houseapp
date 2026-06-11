@@ -18,6 +18,14 @@ function fmtDate(isoString) {
 function show(id) { document.getElementById(id).classList.remove('hidden') }
 function hide(id) { document.getElementById(id).classList.add('hidden') }
 
+function escapeHtml(str) {
+  return String(str)
+    .replace(/&/g, '&amp;')
+    .replace(/</g, '&lt;')
+    .replace(/>/g, '&gt;')
+    .replace(/"/g, '&quot;')
+}
+
 function showScreen(name) {
   for (const s of ['login','loading','error','main']) {
     document.getElementById(`screen-${s}`).classList.toggle('hidden', s !== name)
@@ -152,21 +160,85 @@ function typeIndicator(type) {
   return ''
 }
 
+/** metaLabel is a calendar date (DD/MM), not a relative label like "27d". */
+function isDateMetaLabel(metaLabel) {
+  return /^\d{1,2}\/\d{2}$/.test(metaLabel)
+}
+
+function stripStatusLinePrefix(line, metaLabel) {
+  let result = line.replace(/\s*·\s*Transbordo\s*$/i, '').trim()
+  if (metaLabel && result.startsWith(metaLabel)) {
+    result = result.slice(metaLabel.length).replace(/^\s*·\s*/, '').trim()
+  }
+  return result
+    .replace(/^\d+d\s*·\s*/i, '')
+    .replace(/^Vencid[oa](\s*·\s*)?/i, '')
+    .trim()
+}
+
+/**
+ * Compact subtitle — overdue days + transbordo venc. date.
+ * Overdue days go in the sub line when metaLabel is a date (Todas do mês);
+ * Vencidas keeps days in metaLabel and only shows venc. here.
+ */
+function buildMetaSubLine(metaLabel, display, tx) {
+  if (!display) return null
+
+  const parts = []
+  const showOverdueInSub = isDateMetaLabel(metaLabel)
+  const overdueDays = display.overdueDays
+
+  if (display.isPaidAtRepositioned && tx?.status === 'paid') {
+    if (showOverdueInSub && overdueDays != null && overdueDays > 0) {
+      parts.push(`${overdueDays}d venc.`)
+    }
+    if (tx.dueDate) {
+      parts.push(`venc. ${fmtDate(tx.dueDate)}`)
+    }
+    return parts.length > 0 ? parts.join(' · ') : null
+  }
+
+  if (showOverdueInSub && overdueDays != null && overdueDays > 0) {
+    parts.push(`${overdueDays}d venc.`)
+  }
+
+  if (display.isTransbordoRepositioned) {
+    const vencMatch = display.description?.match(/venc\.\s*[\d/]+/)
+    if (vencMatch) {
+      parts.push(vencMatch[0])
+    } else if (display.statusLine) {
+      const line = stripStatusLinePrefix(display.statusLine, metaLabel)
+      if (line) parts.push(line)
+    }
+  } else if (display.isTransbordo && display.statusLine) {
+    const line = stripStatusLinePrefix(display.statusLine, metaLabel)
+    if (line) parts.push(line)
+  }
+
+  return parts.length > 0 ? parts.join(' · ') : null
+}
+
 /**
  * Single reusable transaction item renderer.
  * @param {object} tx         - Transaction data
  * @param {string} context    - 'past' | 'current' | 'future'
  * @param {string} metaLabel  - Text shown in the meta column (date, days, etc.)
+ * @param {object} [display]  - Optional transbordo display metadata from TransactionDisplay
  */
-function renderTransactionItem(tx, context, metaLabel) {
+function renderTransactionItem(tx, context, metaLabel, display) {
   const li = document.createElement('li')
   li.className = 'tx-item'
   li.dataset.id = tx.id
 
   if (tx.status === 'paid') li.classList.add('paid')
   if (tx.status === 'partial') li.classList.add('partial')
+  if (display?.isTransbordo && tx.status !== 'paid') li.classList.add('transbordo')
 
   const canPay = canPayTransaction(tx, context)
+  const tooltipParts = [tx.title]
+  if (display?.description) tooltipParts.push(display.description)
+  if (display?.statusLine) tooltipParts.push(display.statusLine)
+  const titleTooltip = escapeHtml(tooltipParts.join(' · '))
 
   let actionHtml = ''
   if (canPay) {
@@ -180,13 +252,41 @@ function renderTransactionItem(tx, context, metaLabel) {
     actionHtml = '<span class="badge badge-partial">Parcial</span>'
   }
 
-  li.innerHTML = `
-    ${typeIndicator(tx.type)}
-    <span class="tx-title" title="${tx.title}">${tx.title}</span>
-    <span class="tx-meta">${metaLabel}</span>
-    <span class="tx-amount">${fmt(tx.amount)}</span>
-    ${actionHtml}
-  `
+  const metaSubLine = buildMetaSubLine(metaLabel, display, tx)
+  const metaSub = metaSubLine
+    ? `<span class="tx-meta-sub">${escapeHtml(metaSubLine)}</span>`
+    : ''
+  const transbordoBadge =
+    display?.isTransbordo && tx.status !== 'paid'
+      ? '<span class="badge badge-transbordo">Transbordo</span>'
+      : ''
+  const useStacked = Boolean(actionHtml || display?.isTransbordo || metaSubLine)
+
+  if (useStacked) {
+    li.classList.add('tx-item-stacked')
+    li.innerHTML = `
+      <div class="tx-row tx-row-top">
+        ${typeIndicator(tx.type)}
+        <span class="tx-title" title="${titleTooltip}">${escapeHtml(tx.title)}</span>
+        <span class="tx-amount">${fmt(tx.amount)}</span>
+      </div>
+      <div class="tx-row tx-row-bottom">
+        <div class="tx-row-meta">
+          <span class="tx-meta">${escapeHtml(metaLabel)}</span>
+          ${metaSub}
+          ${transbordoBadge}
+        </div>
+        ${actionHtml ? `<div class="tx-item-actions">${actionHtml}</div>` : ''}
+      </div>
+    `
+  } else {
+    li.innerHTML = `
+      ${typeIndicator(tx.type)}
+      <span class="tx-title" title="${titleTooltip}">${escapeHtml(tx.title)}</span>
+      <span class="tx-meta">${escapeHtml(metaLabel)}</span>
+      <span class="tx-amount">${fmt(tx.amount)}</span>
+    `
+  }
 
   if (canPay) {
     li.querySelector('.btn-pay').addEventListener('click', (e) => {
@@ -220,7 +320,20 @@ function renderKpis(reports, context) {
   balEl.className = `kpi-value balance${balance >= 0 ? '' : ' expense'}`
 }
 
-function renderOverdue(overdueTransactions, upcomingAlerts, context) {
+function sectionTransbordoDisplay(meta) {
+  if (!meta?.isTransbordo) return null
+  return meta
+}
+
+function isOpenTransaction(tx) {
+  return tx.status === 'pending' || tx.status === 'partial'
+}
+
+function isOpenTransbordoItem(item) {
+  return item.isTransbordo && isOpenTransaction(item.transaction)
+}
+
+function renderOverdue(reports, context, year, month) {
   const section = document.getElementById('section-overdue')
   const list    = document.getElementById('list-overdue')
   const title   = document.getElementById('overdue-title')
@@ -234,18 +347,24 @@ function renderOverdue(overdueTransactions, upcomingAlerts, context) {
   }
   section.classList.remove('hidden')
 
+  const pool = TransactionDisplay.mergeReportTransactions(reports)
+  const overdueTransactions = reports?.overdueTransactions?.transactions
+  const upcomingAlerts = reports?.upcomingAlerts?.transactions
+
   // Use client-side midnight to correctly handle server/browser timezone differences
   const todayMidnight = new Date()
   todayMidnight.setHours(0, 0, 0, 0)
 
-  const overdue = (overdueTransactions || []).map(tx => ({
-    ...tx,
-    _days: tx.overdueDays || 0,
-  }))
+  const overdue = (overdueTransactions || [])
+    .filter(isOpenTransaction)
+    .map(tx => ({
+      ...tx,
+      _days: tx.overdueDays || 0,
+    }))
 
   // Any upcoming alert whose actual dueDate is before today belongs in vencidas
   const alsoOverdue = (upcomingAlerts || [])
-    .filter(tx => new Date(tx.dueDate) < todayMidnight)
+    .filter(tx => isOpenTransaction(tx) && new Date(tx.dueDate) < todayMidnight)
     .map(tx => {
       const diffMs = todayMidnight.getTime() - new Date(tx.dueDate).getTime()
       return { ...tx, _days: Math.ceil(diffMs / (1000 * 60 * 60 * 24)) }
@@ -255,7 +374,17 @@ function renderOverdue(overdueTransactions, upcomingAlerts, context) {
   const seenIds = new Set(overdue.map(tx => tx.id))
   const uniqueAlsoOverdue = alsoOverdue.filter(tx => !seenIds.has(tx.id))
 
-  const all = [...overdue, ...uniqueAlsoOverdue]
+  const allRaw = [...overdue, ...uniqueAlsoOverdue]
+  const all = allRaw.filter(tx => {
+    const displayMeta = TransactionDisplay.getTransactionDisplayMetadata(
+      tx,
+      pool,
+      year,
+      month,
+      todayMidnight
+    )
+    return !displayMeta.isTransbordo
+  })
   const totalOverdue = all.reduce((sum, tx) => sum + (Number(tx.amount) || 0), 0)
   title.textContent = `Vencidas (${fmt(totalOverdue)})`
 
@@ -265,11 +394,18 @@ function renderOverdue(overdueTransactions, upcomingAlerts, context) {
   for (const tx of all) {
     const days = tx._days
     const meta = days === 0 ? 'hoje' : days === 1 ? '1 dia' : `${days}d`
-    list.appendChild(renderTransactionItem(tx, context, meta))
+    const displayMeta = TransactionDisplay.getTransactionDisplayMetadata(
+      tx,
+      pool,
+      year,
+      month,
+      todayMidnight
+    )
+    list.appendChild(renderTransactionItem(tx, context, meta, sectionTransbordoDisplay(displayMeta)))
   }
 }
 
-function renderUpcoming(upcomingAlerts, context) {
+function renderUpcoming(reports, context, year, month) {
   const section = document.getElementById('section-upcoming')
   const list    = document.getElementById('list-upcoming')
   const title   = document.getElementById('upcoming-title')
@@ -283,11 +419,15 @@ function renderUpcoming(upcomingAlerts, context) {
   }
   section.classList.remove('hidden')
 
+  const pool = TransactionDisplay.mergeReportTransactions(reports)
+  const upcomingAlerts = reports?.upcomingAlerts?.transactions
+
   const todayMidnight = new Date()
   todayMidnight.setHours(0, 0, 0, 0)
 
   // Only show transactions with dueDate strictly in the future (client-side check)
-  const upcoming = (upcomingAlerts || []).filter(tx => new Date(tx.dueDate) >= todayMidnight)
+  const upcoming = (upcomingAlerts || [])
+    .filter(tx => isOpenTransaction(tx) && new Date(tx.dueDate) >= todayMidnight)
   title.textContent = `Próximas (${upcoming.length})`
 
   if (!upcoming.length) { section.classList.add('hidden'); return }
@@ -298,25 +438,87 @@ function renderUpcoming(upcomingAlerts, context) {
     due.setHours(0, 0, 0, 0)
     const d = Math.round((+due - +todayMidnight) / (1000 * 60 * 60 * 24))
     const meta = d === 0 ? 'hoje' : d === 1 ? 'amanhã' : `${d} dias`
-    list.appendChild(renderTransactionItem(tx, context, meta))
+    const displayMeta = TransactionDisplay.getTransactionDisplayMetadata(
+      tx,
+      pool,
+      year,
+      month,
+      todayMidnight
+    )
+    list.appendChild(renderTransactionItem(tx, context, meta, sectionTransbordoDisplay(displayMeta)))
   }
 }
 
-function renderAllTransactions(allTransactions, context) {
+function renderTransbordo(reports, context, year, month) {
+  const section = document.getElementById('section-transbordo')
+  const list = document.getElementById('list-transbordo')
+  const title = document.getElementById('transbordo-title')
+
+  list.innerHTML = ''
+
+  const pool = TransactionDisplay.mergeReportTransactions(reports)
+  const todayMidnight = new Date()
+  todayMidnight.setHours(0, 0, 0, 0)
+  const items = TransactionDisplay.getMonthTransactionsForDisplay(
+    pool,
+    year,
+    month,
+    todayMidnight
+  )
+    .filter(isOpenTransbordoItem)
+    .sort((a, b) => (b.overdueDays ?? 0) - (a.overdueDays ?? 0))
+
+  title.textContent = `Transbordo (${items.length})`
+
+  if (!items.length) {
+    section.classList.add('hidden')
+    return
+  }
+  section.classList.remove('hidden')
+
+  for (const item of items) {
+    const [, m, d] = item.displayKey.split('-').map(Number)
+    const metaLabel = `${d}/${String(m).padStart(2, '0')}`
+    list.appendChild(renderTransactionItem(item.transaction, context, metaLabel, item))
+  }
+}
+
+function renderAllTransactions(reports, context, year, month) {
   const section = document.getElementById('section-all')
   const list  = document.getElementById('list-all')
   const title = document.getElementById('all-title')
 
   list.innerHTML = ''
 
-  const txs = allTransactions || []
-  title.textContent = `Todas do mês (${txs.length})`
+  const pool = TransactionDisplay.mergeReportTransactions(reports)
+  const todayMidnight = new Date()
+  todayMidnight.setHours(0, 0, 0, 0)
+  const items = TransactionDisplay.getMonthTransactionsForDisplay(
+    pool,
+    year,
+    month,
+    todayMidnight
+  ).filter(item => !isOpenTransbordoItem(item))
 
-  if (!txs.length) { section.classList.add('hidden'); return }
+  title.textContent = `Todas do mês (${items.length})`
+
+  if (!items.length) { section.classList.add('hidden'); return }
   section.classList.remove('hidden')
 
-  for (const tx of txs) {
-    list.appendChild(renderTransactionItem(tx, context, fmtDate(tx.dueDate)))
+  const byDate = new Map()
+  for (const item of items) {
+    if (!byDate.has(item.displayKey)) byDate.set(item.displayKey, [])
+    byDate.get(item.displayKey).push(item)
+  }
+
+  for (const displayKey of [...byDate.keys()].sort()) {
+    const dateItems = byDate.get(displayKey)
+    const [, m, d] = displayKey.split('-').map(Number)
+    const metaLabel = `${d}/${String(m).padStart(2, '0')}`
+
+    for (const item of dateItems) {
+      list.appendChild(renderTransactionItem(item.transaction, context, metaLabel, item))
+    }
   }
 }
 
@@ -825,6 +1027,26 @@ document.getElementById('pay-confirm').addEventListener('click', () => {
   closePayModal({ paidAt: new Date(dateVal).toISOString(), paidAmount: amount })
 })
 
+function updateTransactionInReports(txId, updates) {
+  for (const list of [
+    state.reports?.overdueTransactions?.transactions,
+    state.reports?.upcomingAlerts?.transactions,
+    state.reports?.allTransactions,
+    state.reports?.paidThisMonth?.transactions,
+  ]) {
+    const found = (list || []).find(t => t.id === txId)
+    if (found) Object.assign(found, updates)
+  }
+}
+
+function rerenderTransactionSections() {
+  const context = getViewingContext(state.year, state.month)
+  renderOverdue(state.reports, context, state.year, state.month)
+  renderUpcoming(state.reports, context, state.year, state.month)
+  renderTransbordo(state.reports, context, state.year, state.month)
+  renderAllTransactions(state.reports, context, state.year, state.month)
+}
+
 async function handlePay(txId, liEl, tx) {
   const result = await openPayModal(tx)
   if (!result) return  // cancelled
@@ -853,44 +1075,19 @@ async function handlePay(txId, liEl, tx) {
       body: JSON.stringify(body),
     })
 
-    liEl.classList.add('paid')
-    btn.remove()
-
-    // Determine new amount to display
     const totalAmount = tx.amount
     const wasPartial = tx.status === 'partial'
     const previousPaid = wasPartial && tx.valuePaid != null ? tx.valuePaid / 100 : 0
     const newPaidTotal = previousPaid + result.paidAmount
+    const fullyPaid = Math.abs(newPaidTotal - totalAmount) < 0.01
 
-    // Update in-memory state
-    for (const list of [
-      state.reports?.overdueTransactions?.transactions,
-      state.reports?.upcomingAlerts?.transactions,
-      state.reports?.allTransactions,
-    ]) {
-      const found = (list || []).find(t => t.id === txId)
-      if (found) {
-        if (Math.abs(newPaidTotal - totalAmount) < 0.01) {
-          found.status = 'paid'
-        } else {
-          found.status = 'partial'
-          found.valuePaid = Math.round(newPaidTotal * 100)
-        }
-      }
-    }
+    updateTransactionInReports(txId, fullyPaid
+      ? { status: 'paid', paidAt: result.paidAt, valuePaid: null }
+      : { status: 'partial', paidAt: result.paidAt, valuePaid: Math.round(newPaidTotal * 100) }
+    )
 
     await refreshBadgeAllOrgs()
-
-    // Mirror in "Todas do mês" list
-    const twin = document.querySelector(`#list-all [data-id="${txId}"]`)
-    if (twin) {
-      twin.classList.add('paid')
-      const twinBtn = twin.querySelector('.btn-pay')
-      if (twinBtn) twinBtn.replaceWith(Object.assign(document.createElement('span'), {
-        className: 'badge badge-paid',
-        textContent: 'Paga',
-      }))
-    }
+    rerenderTransactionSections()
   } catch (err) {
     console.error('[HouseApp] pay error:', err, err.body)
     btn.disabled = false
@@ -916,13 +1113,10 @@ async function loadData() {
     renderKpis(state.reports, context)
     renderInvestments(state.investments)
     renderReminders(state.reminders, state.year, state.month)
-    renderOverdue(
-      state.reports.overdueTransactions?.transactions,
-      state.reports.upcomingAlerts?.transactions,
-      context
-    )
-    renderUpcoming(state.reports.upcomingAlerts?.transactions, context)
-    renderAllTransactions(state.reports.allTransactions, context)
+    renderOverdue(state.reports, context, state.year, state.month)
+    renderUpcoming(state.reports, context, state.year, state.month)
+    renderTransbordo(state.reports, context, state.year, state.month)
+    renderAllTransactions(state.reports, context, state.year, state.month)
 
     await refreshBadgeAllOrgs()
 

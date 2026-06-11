@@ -35,10 +35,7 @@ export async function deactivateSeriesIfComplete(seriesId: string, trx: DbClient
     .select({ paid: sql<number>`count(*)::int` })
     .from(transactionOccurrences)
     .where(
-      and(
-        eq(transactionOccurrences.seriesId, seriesId),
-        eq(transactionOccurrences.status, 'paid')
-      )
+      and(eq(transactionOccurrences.seriesId, seriesId), eq(transactionOccurrences.status, 'paid'))
     )
 
   if (paid >= series.installmentsTotal) {
@@ -47,4 +44,32 @@ export async function deactivateSeriesIfComplete(seriesId: string, trx: DbClient
       .set({ active: false, updatedAt: sql`now()` })
       .where(eq(transactionSeries.id, seriesId))
   }
+}
+
+export async function reactivateSeriesIfHasOpenOccurrences(seriesId: string, trx: DbClient = db) {
+  const [series] = await trx
+    .select({ active: transactionSeries.active })
+    .from(transactionSeries)
+    .where(eq(transactionSeries.id, seriesId))
+    .limit(1)
+
+  if (!series || series.active) return
+
+  const [open] = await trx
+    .select({ id: transactionOccurrences.id })
+    .from(transactionOccurrences)
+    .where(
+      and(
+        eq(transactionOccurrences.seriesId, seriesId),
+        inArray(transactionOccurrences.status, ['pending', 'partial'])
+      )
+    )
+    .limit(1)
+
+  if (!open) return
+
+  await trx
+    .update(transactionSeries)
+    .set({ active: true, updatedAt: sql`now()` })
+    .where(eq(transactionSeries.id, seriesId))
 }
