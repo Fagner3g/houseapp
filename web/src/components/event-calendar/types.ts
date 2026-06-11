@@ -21,6 +21,8 @@ export interface CalendarEvent {
   statusLine?: string
   /** Amount paid so far in cents (partial payments). */
   valuePaid?: number | null
+  /** Overdue partial payment carried to the next installment date. */
+  isTransbordo?: boolean
   eventType?: CalendarEventType
 }
 

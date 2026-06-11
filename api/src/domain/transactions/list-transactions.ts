@@ -1,4 +1,16 @@
-import { and, desc, eq, getTableColumns, gte, inArray, lt, lte, or, sql } from 'drizzle-orm'
+import {
+  and,
+  desc,
+  eq,
+  getTableColumns,
+  gte,
+  inArray,
+  isNotNull,
+  lt,
+  lte,
+  or,
+  sql,
+} from 'drizzle-orm'
 
 import { db } from '@/db'
 import { tags as tagsTable } from '@/db/schemas/tags'
@@ -7,6 +19,7 @@ import { transactionSeries } from '@/db/schemas/transactionSeries'
 import { transactionTags } from '@/db/schemas/transactionTags'
 import { users } from '@/db/schemas/users'
 import { getContextualizedTransactionType } from './get-contextualized-type'
+import { seriesVisibleInTransactionList } from './series-visible-in-transaction-list'
 
 interface ListTransactionsRequest {
   userId: string
@@ -37,10 +50,25 @@ export async function listTransactionsService({
   payToId,
   onlyMarked = false,
 }: ListTransactionsRequest) {
+  const inSelectedRange = and(
+    gte(transactionOccurrences.dueDate, dateFrom),
+    lte(transactionOccurrences.dueDate, dateTo)
+  )
+  const paidInSelectedRange = and(
+    isNotNull(transactionOccurrences.paidAt),
+    gte(transactionOccurrences.paidAt, dateFrom),
+    lte(transactionOccurrences.paidAt, dateTo)
+  )
+  const overdueAndUnpaid = and(
+    or(eq(transactionOccurrences.status, 'pending'), eq(transactionOccurrences.status, 'partial')),
+    lt(transactionOccurrences.dueDate, new Date())
+  )
+  const seriesVisibleInList = seriesVisibleInTransactionList(dateFrom, dateTo)
+
   // Base condition: user must be either owner or responsible for the transaction
   let base = and(
     eq(transactionSeries.organizationId, orgId),
-    eq(transactionSeries.active, true),
+    seriesVisibleInList,
     or(
       eq(transactionSeries.ownerId, userId), // User is the owner
       eq(transactionSeries.payToId, userId) // User is responsible for the transaction
@@ -51,25 +79,13 @@ export async function listTransactionsService({
   if (onlyMarked) {
     base = and(
       eq(transactionSeries.organizationId, orgId),
-      eq(transactionSeries.active, true),
+      seriesVisibleInList,
       eq(transactionSeries.payToId, userId), // User is responsible
       sql`${transactionSeries.ownerId} != ${userId}` // User is NOT the owner
     )
   }
 
-  const inSelectedRange = and(
-    gte(transactionOccurrences.dueDate, dateFrom),
-    lte(transactionOccurrences.dueDate, dateTo)
-  )
-  const overdueAndUnpaid = and(
-    or(
-      eq(transactionOccurrences.status, 'pending'),
-      eq(transactionOccurrences.status, 'partial')
-    ),
-    lt(transactionOccurrences.dueDate, new Date())
-  )
-
-  let where = and(base, or(inSelectedRange, overdueAndUnpaid))
+  let where = and(base, or(inSelectedRange, overdueAndUnpaid, paidInSelectedRange))
 
   if (type !== 'all') {
     where = and(where, eq(transactionSeries.type, type))

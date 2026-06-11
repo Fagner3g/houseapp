@@ -1,4 +1,4 @@
-import { and, eq, gte, inArray, lte, or, sql } from 'drizzle-orm'
+import { and, eq, gte, inArray, isNotNull, lte, or, sql } from 'drizzle-orm'
 
 import { db } from '@/db'
 import { tags as tagsTable } from '@/db/schemas/tags'
@@ -6,6 +6,7 @@ import { transactionOccurrences } from '@/db/schemas/transactionOccurrences'
 import { transactionSeries } from '@/db/schemas/transactionSeries'
 import { transactionTags } from '@/db/schemas/transactionTags'
 import { getContextualizedTransactionType } from '@/domain/transactions/get-contextualized-type'
+import { seriesVisibleInTransactionList } from '@/domain/transactions/series-visible-in-transaction-list'
 
 export async function getTransactionReports(orgId: string, userId: string, referenceDate?: Date) {
   const now = referenceDate || new Date()
@@ -15,6 +16,11 @@ export async function getTransactionReports(orgId: string, userId: string, refer
   today.setHours(0, 0, 0, 0)
   const startOfMonth = new Date(now.getFullYear(), now.getMonth(), 1)
   const endOfMonth = new Date(now.getFullYear(), now.getMonth() + 1, 0, 23, 59, 59, 999)
+  const paidInViewMonth = and(
+    isNotNull(transactionOccurrences.paidAt),
+    gte(transactionOccurrences.paidAt, startOfMonth),
+    lte(transactionOccurrences.paidAt, endOfMonth)
+  )
 
   // Base rows for current month
   const rows = await db
@@ -42,7 +48,7 @@ export async function getTransactionReports(orgId: string, userId: string, refer
     .where(
       and(
         eq(transactionSeries.organizationId, orgId),
-        eq(transactionSeries.active, true),
+        seriesVisibleInTransactionList(startOfMonth, endOfMonth),
         or(
           eq(transactionSeries.ownerId, userId), // User is the owner
           eq(transactionSeries.payToId, userId) // User is responsible for the transaction
@@ -58,7 +64,8 @@ export async function getTransactionReports(orgId: string, userId: string, refer
               eq(transactionOccurrences.status, 'partial')
             ),
             lte(transactionOccurrences.dueDate, now)
-          )
+          ),
+          paidInViewMonth
         )
       )
     )

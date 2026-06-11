@@ -2,8 +2,11 @@ import { eq } from 'drizzle-orm'
 
 import { db } from '@/db'
 import { transactionOccurrences } from '@/db/schemas/transactionOccurrences'
-
-import { deactivateSeriesIfComplete } from './deactivate-series-if-complete'
+import {
+  deactivateSeriesIfComplete,
+  reactivateSeriesIfHasOpenOccurrences,
+} from './deactivate-series-if-complete'
+import { materializeOccurrences } from './materialize-occurrences'
 
 interface PayTransactionParams {
   id: string
@@ -28,6 +31,9 @@ export async function payTransactionService({ id, valuePaid, paidAt }: PayTransa
       .set({ status: 'pending', paidAt: null, valuePaid: null })
       .where(eq(transactionOccurrences.id, id))
       .returning()
+    if (updated) {
+      await reactivateSeriesIfHasOpenOccurrences(updated.seriesId)
+    }
     return { occurrence: updated }
   }
 
@@ -46,6 +52,10 @@ export async function payTransactionService({ id, valuePaid, paidAt }: PayTransa
       })
       .where(eq(transactionOccurrences.id, id))
       .returning()
+
+    if (updated?.status === 'partial') {
+      await materializeOccurrences(updated.seriesId)
+    }
 
     if (updated && newStatus === 'paid') {
       await deactivateSeriesIfComplete(updated.seriesId)
@@ -70,6 +80,10 @@ export async function payTransactionService({ id, valuePaid, paidAt }: PayTransa
     })
     .where(eq(transactionOccurrences.id, id))
     .returning()
+
+  if (updated?.status === 'partial') {
+    await materializeOccurrences(updated.seriesId)
+  }
 
   if (updated && newStatus === 'paid') {
     await deactivateSeriesIfComplete(updated.seriesId)

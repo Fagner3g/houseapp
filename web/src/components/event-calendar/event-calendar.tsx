@@ -72,12 +72,24 @@ export function EventCalendar({
   const [selectedEvent, setSelectedEvent] = useState<CalendarEvent | null>(null)
 
   useLayoutEffect(() => {
-    if (initialDate) setCurrentDate(initialDate)
+    if (!initialDate) return
+
+    setCurrentDate(prev => {
+      if (
+        prev.getFullYear() === initialDate.getFullYear() &&
+        prev.getMonth() === initialDate.getMonth()
+      ) {
+        return prev
+      }
+
+      return initialDate
+    })
   }, [initialDate])
 
-  useEffect(() => {
-    onDateChange?.(currentDate)
-  }, [currentDate, onDateChange])
+  const updateCurrentDate = (date: Date) => {
+    setCurrentDate(date)
+    onDateChange?.(date)
+  }
 
   // Add keyboard shortcuts for view switching
   useEffect(() => {
@@ -118,32 +130,32 @@ export function EventCalendar({
 
   const handlePrevious = () => {
     if (view === 'month') {
-      setCurrentDate(subMonths(currentDate, 1))
+      updateCurrentDate(subMonths(currentDate, 1))
     } else if (view === 'week') {
-      setCurrentDate(subWeeks(currentDate, 1))
+      updateCurrentDate(subWeeks(currentDate, 1))
     } else if (view === 'day') {
-      setCurrentDate(addDays(currentDate, -1))
+      updateCurrentDate(addDays(currentDate, -1))
     } else if (view === 'agenda') {
       // For agenda view, go back 30 days (a full month)
-      setCurrentDate(addDays(currentDate, -AgendaDaysToShow))
+      updateCurrentDate(addDays(currentDate, -AgendaDaysToShow))
     }
   }
 
   const handleNext = () => {
     if (view === 'month') {
-      setCurrentDate(addMonths(currentDate, 1))
+      updateCurrentDate(addMonths(currentDate, 1))
     } else if (view === 'week') {
-      setCurrentDate(addWeeks(currentDate, 1))
+      updateCurrentDate(addWeeks(currentDate, 1))
     } else if (view === 'day') {
-      setCurrentDate(addDays(currentDate, 1))
+      updateCurrentDate(addDays(currentDate, 1))
     } else if (view === 'agenda') {
       // For agenda view, go forward 30 days (a full month)
-      setCurrentDate(addDays(currentDate, AgendaDaysToShow))
+      updateCurrentDate(addDays(currentDate, AgendaDaysToShow))
     }
   }
 
   const handleToday = () => {
-    setCurrentDate(new Date())
+    updateCurrentDate(new Date())
   }
 
   const handleEventSelect = (event: CalendarEvent) => {

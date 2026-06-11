@@ -61,6 +61,7 @@ function getEventVisualStatus(event: CalendarEvent): EventVisualStatus {
     return event.status === "paid" ? "paid" : "reminder"
   }
   if (event.status === "paid") return "paid"
+  if (event.isTransbordo && event.overdueDays && event.overdueDays > 0) return "overdue"
   if (event.status === "partial") return "partial"
   if (event.overdueDays && event.overdueDays > 0) return "overdue"
   return "upcoming"
@@ -190,6 +191,7 @@ function EventWrapper({
 }: EventWrapperProps) {
   const isPaid = event.status === "paid"
   const isPartial = event.status === "partial"
+  const isTransbordo = event.isTransbordo === true
 
   return (
     <button
@@ -198,6 +200,7 @@ function EventWrapper({
         variant === "month"
           ? "border-l-2 px-1 py-0.5 sm:px-1.5"
           : "px-1 sm:px-2 data-partial:ring-1 data-partial:ring-amber-500/60",
+        isTransbordo && "data-transbordo:ring-1 data-transbordo:ring-destructive/50",
         getEventTypeBorderClass(event),
         getEventColorClasses(event.color),
         getBorderRadiusClasses(isFirstDay, isLastDay),
@@ -206,6 +209,7 @@ function EventWrapper({
       data-dragging={isDragging || undefined}
       data-paid={isPaid || undefined}
       data-partial={isPartial || undefined}
+      data-transbordo={isTransbordo || undefined}
       onClick={onClick}
       onMouseDown={onMouseDown}
       onTouchStart={onTouchStart}
@@ -254,6 +258,7 @@ export function EventItem({
 
   const isPaid = event.status === "paid"
   const isPartial = event.status === "partial"
+  const isTransbordo = event.isTransbordo === true
 
   const statusBadge = (
     <Tooltip>
@@ -265,11 +270,13 @@ export function EventItem({
       <TooltipContent>
         {event.statusLine ??
           event.description ??
-          (isPartial
-            ? "Pagamento parcial"
-            : event.overdueDays
-              ? `${event.overdueDays} dias em atraso`
-              : "Evento")}
+          (isTransbordo
+            ? "Vencida · Transbordo"
+            : isPartial
+              ? "Pagamento parcial"
+              : event.overdueDays
+                ? `${event.overdueDays} dias em atraso`
+                : "Evento")}
       </TooltipContent>
     </Tooltip>
   )
@@ -277,6 +284,7 @@ export function EventItem({
   const showStatusBadge =
     isPaid ||
     isPartial ||
+    isTransbordo ||
     (event.overdueDays != null && event.overdueDays > 0) ||
     event.eventType === "reminder"
 
@@ -415,7 +423,7 @@ export function EventItem({
   const agendaContent = (
     <button
       className={cn(
-        "focus-visible:border-ring focus-visible:ring-ring/50 flex w-full flex-col gap-1 rounded border-l-2 p-2 text-left transition outline-none focus-visible:ring-[3px] data-past-event:opacity-90 data-paid:opacity-80 data-partial:ring-1 data-partial:ring-amber-500/60",
+        "focus-visible:border-ring focus-visible:ring-ring/50 flex w-full flex-col gap-1 rounded border-l-2 p-2 text-left transition outline-none focus-visible:ring-[3px] data-past-event:opacity-90 data-paid:opacity-80 data-partial:ring-1 data-partial:ring-amber-500/60 data-transbordo:ring-1 data-transbordo:ring-destructive/50",
         getEventTypeBorderClass(event),
         getEventColorClasses(eventColor),
         className
@@ -423,6 +431,7 @@ export function EventItem({
       data-past-event={isPast(new Date(event.end)) || undefined}
       data-paid={isPaid || undefined}
       data-partial={isPartial || undefined}
+      data-transbordo={isTransbordo || undefined}
       onClick={onClick}
       onMouseDown={onMouseDown}
       onTouchStart={onTouchStart}

@@ -27,7 +27,8 @@ import {
   getAllEventsForDay,
   getEventsForDay,
   getSpanningEventsForDay,
-  sortEvents,
+  partitionDayEvents,
+  sortEventsWithTransbordoFirst,
   useEventVisibility,
 } from '@/components/event-calendar'
 import { DefaultStartHour } from '@/components/event-calendar/constants'
@@ -140,7 +141,7 @@ export function MonthView({ currentDate, events, onEventSelect, onEventCreate }:
                       ref={isReferenceCell ? contentRef : null}
                       className="min-h-[calc((var(--event-height)+var(--event-gap))*1)] sm:min-h-[calc((var(--event-height)+var(--event-gap))*2)] lg:min-h-[calc((var(--event-height)+var(--event-gap))*3)]"
                     >
-                      {sortEvents(allDayEvents).map((event, index) => {
+                      {sortEventsWithTransbordoFirst(allDayEvents).map((event, index) => {
                         const eventStart = new Date(event.start)
                         const eventEnd = new Date(event.end)
                         const isFirstDay = isSameDay(day, eventStart)
@@ -217,23 +218,55 @@ export function MonthView({ currentDate, events, onEventSelect, onEventCreate }:
                             <div className="space-y-2">
                               <div className="text-sm font-medium">{format(day, 'EEE d')}</div>
                               <div className="space-y-1">
-                                {sortEvents(allEvents).map(event => {
-                                  const eventStart = new Date(event.start)
-                                  const eventEnd = new Date(event.end)
-                                  const isFirstDay = isSameDay(day, eventStart)
-                                  const isLastDay = isSameDay(day, eventEnd)
+                                {(() => {
+                                  const { transbordo, doMes } = partitionDayEvents(
+                                    sortEventsWithTransbordoFirst(allEvents)
+                                  )
+                                  const showHeaders = transbordo.length > 0 && doMes.length > 0
+
+                                  const renderEvent = (event: CalendarEvent) => {
+                                    const eventStart = new Date(event.start)
+                                    const eventEnd = new Date(event.end)
+                                    const isFirstDay = isSameDay(day, eventStart)
+                                    const isLastDay = isSameDay(day, eventEnd)
+
+                                    return (
+                                      <EventItem
+                                        key={event.id}
+                                        onClick={e => handleEventClick(event, e)}
+                                        event={event}
+                                        view="month"
+                                        isFirstDay={isFirstDay}
+                                        isLastDay={isLastDay}
+                                      />
+                                    )
+                                  }
 
                                   return (
-                                    <EventItem
-                                      key={event.id}
-                                      onClick={e => handleEventClick(event, e)}
-                                      event={event}
-                                      view="month"
-                                      isFirstDay={isFirstDay}
-                                      isLastDay={isLastDay}
-                                    />
+                                    <>
+                                      {transbordo.length > 0 && (
+                                        <div className="space-y-1">
+                                          {showHeaders && (
+                                            <div className="text-muted-foreground pt-0.5 text-[10px] font-semibold uppercase tracking-wide">
+                                              Transbordo ({transbordo.length})
+                                            </div>
+                                          )}
+                                          {transbordo.map(renderEvent)}
+                                        </div>
+                                      )}
+                                      {doMes.length > 0 && (
+                                        <div className="space-y-1">
+                                          {showHeaders && (
+                                            <div className="text-muted-foreground pt-0.5 text-[10px] font-semibold uppercase tracking-wide">
+                                              Do mês ({doMes.length})
+                                            </div>
+                                          )}
+                                          {doMes.map(renderEvent)}
+                                        </div>
+                                      )}
+                                    </>
                                   )
-                                })}
+                                })()}
                               </div>
                             </div>
                           </PopoverContent>
