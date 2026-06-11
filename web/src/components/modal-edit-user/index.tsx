@@ -28,6 +28,12 @@ import {
 import { Form, FormControl, FormField, FormItem, FormLabel } from '@/components/ui/form'
 import { Input } from '@/components/ui/input'
 
+const alertPreferencesSchema = z.object({
+  whatsapp: z.boolean(),
+  inApp: z.boolean(),
+  extension: z.boolean(),
+})
+
 const schemaEditUser = z.object({
   name: z.string('O nome é obrigatório').min(1).max(50),
   email: z.email('E-mail inválido'),
@@ -38,9 +44,22 @@ const schemaEditUser = z.object({
       error: 'Informe um telefone válido com DDD',
     }),
   notificationsEnabled: z.boolean().default(true),
+  alertPreferences: alertPreferencesSchema.default({
+    whatsapp: true,
+    inApp: true,
+    extension: true,
+  }),
 })
 
 import { useAuthStore } from '@/stores/auth'
+
+export type AlertPreferences = z.infer<typeof alertPreferencesSchema>
+
+export const DEFAULT_ALERT_PREFERENCES: AlertPreferences = {
+  whatsapp: true,
+  inApp: true,
+  extension: true,
+}
 
 export type EditableUser = {
   id: string
@@ -48,6 +67,7 @@ export type EditableUser = {
   email: string
   phone?: string | null
   notificationsEnabled?: boolean
+  alertPreferences?: AlertPreferences
 }
 
 interface ModalEditUserProps {
@@ -75,7 +95,6 @@ export function ModalEditUser({
   const form = useForm<FormValues>({ resolver: zodResolver(schemaEditUser) })
   const registerWithMask = useHookFormMask(form.register)
 
-  // Verificar se o usuário atual é o dono e está tentando excluir a si mesmo
   const isCurrentUserOwner = currentUser?.email === user?.email
 
   useEffect(() => {
@@ -85,9 +104,16 @@ export function ModalEditUser({
         email: user.email ?? '',
         phone: user.phone ?? '',
         notificationsEnabled: user.notificationsEnabled ?? true,
+        alertPreferences: user.alertPreferences ?? DEFAULT_ALERT_PREFERENCES,
       })
     } else {
-      form.reset({ name: '', email: '', phone: '', notificationsEnabled: true })
+      form.reset({
+        name: '',
+        email: '',
+        phone: '',
+        notificationsEnabled: true,
+        alertPreferences: DEFAULT_ALERT_PREFERENCES,
+      })
     }
   }, [user, form])
 
@@ -133,6 +159,7 @@ export function ModalEditUser({
                     email: values.email,
                     phone: values.phone,
                     notificationsEnabled: values.notificationsEnabled,
+                    alertPreferences: values.alertPreferences,
                   })
                 }
               })}
@@ -209,12 +236,52 @@ export function ModalEditUser({
                       <div className="space-y-1 leading-none">
                         <FormLabel className="text-sm font-medium">Receber notificações</FormLabel>
                         <p className="text-xs text-muted-foreground">
-                          Habilitar notificações via WhatsApp para lembretes de pagamento
+                          Interruptor principal para alertas via WhatsApp
                         </p>
                       </div>
                     </FormItem>
                   )}
                 />
+
+                <div className="space-y-3 rounded-lg border p-3">
+                  <p className="text-sm font-medium">Canais de alerta</p>
+                  <FormField
+                    control={form.control}
+                    name="alertPreferences.whatsapp"
+                    render={({ field }) => (
+                      <FormItem className="flex flex-row items-start space-x-3 space-y-0">
+                        <FormControl>
+                          <Checkbox checked={field.value} onCheckedChange={field.onChange} />
+                        </FormControl>
+                        <FormLabel className="text-sm font-normal">WhatsApp</FormLabel>
+                      </FormItem>
+                    )}
+                  />
+                  <FormField
+                    control={form.control}
+                    name="alertPreferences.inApp"
+                    render={({ field }) => (
+                      <FormItem className="flex flex-row items-start space-x-3 space-y-0">
+                        <FormControl>
+                          <Checkbox checked={field.value} onCheckedChange={field.onChange} />
+                        </FormControl>
+                        <FormLabel className="text-sm font-normal">App</FormLabel>
+                      </FormItem>
+                    )}
+                  />
+                  <FormField
+                    control={form.control}
+                    name="alertPreferences.extension"
+                    render={({ field }) => (
+                      <FormItem className="flex flex-row items-start space-x-3 space-y-0">
+                        <FormControl>
+                          <Checkbox checked={field.value} onCheckedChange={field.onChange} />
+                        </FormControl>
+                        <FormLabel className="text-sm font-normal">Extensão</FormLabel>
+                      </FormItem>
+                    )}
+                  />
+                </div>
               </div>
 
               <DialogFooter className="flex flex-col gap-3 sm:flex-row sm:justify-between pt-4 border-t">
@@ -256,7 +323,6 @@ export function ModalEditUser({
         </DialogContent>
       </Dialog>
 
-      {/* Dialog de confirmação de exclusão */}
       <AlertDialog open={showDeleteDialog} onOpenChange={setShowDeleteDialog}>
         <AlertDialogContent className="sm:max-w-md">
           <AlertDialogHeader className="space-y-3">

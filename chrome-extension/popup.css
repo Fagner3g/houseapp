@@ -289,7 +289,8 @@ section {
 .dot-red    { background: #ef4444; }
 .dot-yellow { background: #f59e0b; }
 .dot-gray   { background: #94a3b8; }
-.dot-blue   { background: #2563eb; }
+.dot-blue    { background: #2563eb; }
+.dot-purple  { background: #8b5cf6; }
 
 /* ── Transaction list ────────────────────────────────────────── */
 
@@ -328,6 +329,7 @@ section {
 
 .type-dot.income  { color: #10b981; }
 .type-dot.expense { color: #ef4444; }
+.type-dot.reminder { color: #8b5cf6; }
 
 .tx-title {
   flex: 1;
@@ -386,6 +388,8 @@ section {
 .badge-partial { background: #fef3c7; color: #d97706; }
 .badge-future { background: #f1f5f9; color: #64748b; }
 .badge-overdue { background: #fee2e2; color: #b91c1c; }
+.badge-upcoming { background: #fef3c7; color: #d97706; }
+.badge-reminder { background: #ede9fe; color: #6d28d9; }
 .badge-invest { background: #dbeafe; color: #1d4ed8; }
 
 /* ── Paid state ──────────────────────────────────────────────── */

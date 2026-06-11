@@ -2,6 +2,9 @@ import { drizzle } from 'drizzle-orm/postgres-js'
 import postgres from 'postgres'
 
 import { env } from '@/config/env'
+import { alertDeliveries } from './schemas/alertDeliveries'
+import { alertRules } from './schemas/alertRules'
+import { customReminders } from './schemas/customReminders'
 import { goalCompletions } from './schemas/goalCompletions'
 import { goals } from './schemas/goals'
 import { investmentAssets } from './schemas/investmentAssets'
@@ -23,6 +26,9 @@ const schema = {
   users,
   organizations,
   userOrganizations,
+  customReminders,
+  alertDeliveries,
+  alertRules,
   goals,
   goalCompletions,
   investmentAssets,

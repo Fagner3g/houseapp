@@ -3,7 +3,7 @@
  * Do not edit manually.
  * HouseApp API
  * API for HouseApp
- * OpenAPI spec version: 1.0.2
+ * OpenAPI spec version: 1.1.1
  */
 import type { GetOrgSlugReportsTransactions200ReportsOverdueTransactionsSummary } from "./getOrgSlugReportsTransactions200ReportsOverdueTransactionsSummary";
 import type { GetOrgSlugReportsTransactions200ReportsOverdueTransactionsTransactionsItem } from "./getOrgSlugReportsTransactions200ReportsOverdueTransactionsTransactionsItem";

@@ -9,6 +9,7 @@ import {
 } from './goals.routes'
 import { healthRoute } from './health.routes'
 import { investmentRoutes } from './investments.routes'
+import { alertsRoutes } from './alerts.routes'
 import { acceptInviteRoute, createInviteRoute, getInvitesRoute } from './invite.routes'
 import { jobsRoutes } from './jobs.routes'
 import {
@@ -93,6 +94,9 @@ export function createRoutes(app: FastifyInstance) {
 
   // Reports
   app.register(transactionReportsRoute)
+
+  // Alerts
+  app.register(alertsRoutes)
 
   // Tag
   app.register(listTagsRoute)

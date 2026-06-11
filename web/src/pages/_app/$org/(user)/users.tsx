@@ -36,6 +36,11 @@ function Users() {
     email: string
     phone?: string | null
     notificationsEnabled?: boolean
+    alertPreferences?: {
+      whatsapp: boolean
+      inApp: boolean
+      extension: boolean
+    }
   } | null>(null)
   const [search, setSearch] = useState('')
   const [isDeleting, setIsDeleting] = useState(false)
@@ -205,6 +210,11 @@ function Users() {
                       email: user.email,
                       phone: user.phone,
                       notificationsEnabled: user.notificationsEnabled,
+                      alertPreferences: user.alertPreferences ?? {
+                        whatsapp: true,
+                        inApp: true,
+                        extension: true,
+                      },
                     })
                     setIsEditOpen(true)
                   }}
@@ -349,12 +359,23 @@ function Users() {
               })
 
               // Atualizar preferências de notificação se mudou
-              if (values.notificationsEnabled !== editingUser?.notificationsEnabled) {
+              const notificationsChanged =
+                values.notificationsEnabled !== editingUser?.notificationsEnabled
+              const alertPreferencesChanged =
+                JSON.stringify(values.alertPreferences) !==
+                JSON.stringify(editingUser?.alertPreferences)
+
+              if (notificationsChanged || alertPreferencesChanged) {
                 await updateNotificationsMutation.mutateAsync({
                   slug,
                   data: {
                     userId: values.id,
-                    notificationsEnabled: values.notificationsEnabled ?? true,
+                    ...(notificationsChanged
+                      ? { notificationsEnabled: values.notificationsEnabled ?? true }
+                      : {}),
+                    ...(alertPreferencesChanged && values.alertPreferences
+                      ? { alertPreferences: values.alertPreferences }
+                      : {}),
                   },
                 })
               }

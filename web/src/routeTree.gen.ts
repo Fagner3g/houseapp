@@ -24,7 +24,7 @@ import { Route as AppOrgtransactionsTransactionsRouteImport } from './pages/_app
 import { Route as AppOrgsettingsSettingsRouteImport } from './pages/_app/$org/(settings)/settings'
 import { Route as AppOrggoalGoalsRouteImport } from './pages/_app/$org/(goal)/goals'
 import { Route as AppOrgdashboardDashboardRouteImport } from './pages/_app/$org/(dashboard)/dashboard'
-import { Route as AppOrgadminJobsRouteImport } from './pages/_app/$org/(admin)/jobs'
+import { Route as AppOrgadminAlertsRouteImport } from './pages/_app/$org/(admin)/alerts'
 
 const AuthLayoutRoute = AuthLayoutRouteImport.update({
   id: '/_auth',
@@ -101,9 +101,9 @@ const AppOrgdashboardDashboardRoute =
     path: '/$org/dashboard',
     getParentRoute: () => AppLayoutRoute,
   } as any)
-const AppOrgadminJobsRoute = AppOrgadminJobsRouteImport.update({
-  id: '/$org/(admin)/jobs',
-  path: '/$org/jobs',
+const AppOrgadminAlertsRoute = AppOrgadminAlertsRouteImport.update({
+  id: '/$org/(admin)/alerts',
+  path: '/$org/alerts',
   getParentRoute: () => AppLayoutRoute,
 } as any)
 
@@ -116,7 +116,7 @@ export interface FileRoutesByFullPath {
   '/sign-up': typeof AuthSignUpRoute
   '/validate': typeof AuthValidateRoute
   '/$org': typeof AppOrgsettingsLayoutRouteWithChildren
-  '/$org/jobs': typeof AppOrgadminJobsRoute
+  '/$org/alerts': typeof AppOrgadminAlertsRoute
   '/$org/dashboard': typeof AppOrgdashboardDashboardRoute
   '/$org/goals': typeof AppOrggoalGoalsRoute
   '/$org/settings': typeof AppOrgsettingsSettingsRoute
@@ -132,7 +132,7 @@ export interface FileRoutesByTo {
   '/sign-up': typeof AuthSignUpRoute
   '/validate': typeof AuthValidateRoute
   '/$org': typeof AppOrgsettingsLayoutRouteWithChildren
-  '/$org/jobs': typeof AppOrgadminJobsRoute
+  '/$org/alerts': typeof AppOrgadminAlertsRoute
   '/$org/dashboard': typeof AppOrgdashboardDashboardRoute
   '/$org/goals': typeof AppOrggoalGoalsRoute
   '/$org/settings': typeof AppOrgsettingsSettingsRoute
@@ -151,7 +151,7 @@ export interface FileRoutesById {
   '/_auth/sign-up': typeof AuthSignUpRoute
   '/_auth/validate': typeof AuthValidateRoute
   '/_app/$org/(settings)': typeof AppOrgsettingsLayoutRouteWithChildren
-  '/_app/$org/(admin)/jobs': typeof AppOrgadminJobsRoute
+  '/_app/$org/(admin)/alerts': typeof AppOrgadminAlertsRoute
   '/_app/$org/(dashboard)/dashboard': typeof AppOrgdashboardDashboardRoute
   '/_app/$org/(goal)/goals': typeof AppOrggoalGoalsRoute
   '/_app/$org/(settings)/settings': typeof AppOrgsettingsSettingsRoute
@@ -169,7 +169,7 @@ export interface FileRouteTypes {
     | '/sign-up'
     | '/validate'
     | '/$org'
-    | '/$org/jobs'
+    | '/$org/alerts'
     | '/$org/dashboard'
     | '/$org/goals'
     | '/$org/settings'
@@ -185,7 +185,7 @@ export interface FileRouteTypes {
     | '/sign-up'
     | '/validate'
     | '/$org'
-    | '/$org/jobs'
+    | '/$org/alerts'
     | '/$org/dashboard'
     | '/$org/goals'
     | '/$org/settings'
@@ -203,7 +203,7 @@ export interface FileRouteTypes {
     | '/_auth/sign-up'
     | '/_auth/validate'
     | '/_app/$org/(settings)'
-    | '/_app/$org/(admin)/jobs'
+    | '/_app/$org/(admin)/alerts'
     | '/_app/$org/(dashboard)/dashboard'
     | '/_app/$org/(goal)/goals'
     | '/_app/$org/(settings)/settings'
@@ -324,11 +324,11 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AppOrgdashboardDashboardRouteImport
       parentRoute: typeof AppLayoutRoute
     }
-    '/_app/$org/(admin)/jobs': {
-      id: '/_app/$org/(admin)/jobs'
-      path: '/$org/jobs'
-      fullPath: '/$org/jobs'
-      preLoaderRoute: typeof AppOrgadminJobsRouteImport
+    '/_app/$org/(admin)/alerts': {
+      id: '/_app/$org/(admin)/alerts'
+      path: '/$org/alerts'
+      fullPath: '/$org/alerts'
+      preLoaderRoute: typeof AppOrgadminAlertsRouteImport
       parentRoute: typeof AppLayoutRoute
     }
   }
@@ -349,7 +349,7 @@ interface AppLayoutRouteChildren {
   AppInvestmentsRoute: typeof AppInvestmentsRoute
   AppNewOrgRoute: typeof AppNewOrgRoute
   AppOrgsettingsLayoutRoute: typeof AppOrgsettingsLayoutRouteWithChildren
-  AppOrgadminJobsRoute: typeof AppOrgadminJobsRoute
+  AppOrgadminAlertsRoute: typeof AppOrgadminAlertsRoute
   AppOrgdashboardDashboardRoute: typeof AppOrgdashboardDashboardRoute
   AppOrggoalGoalsRoute: typeof AppOrggoalGoalsRoute
   AppOrgtransactionsTransactionsRoute: typeof AppOrgtransactionsTransactionsRoute
@@ -360,7 +360,7 @@ const AppLayoutRouteChildren: AppLayoutRouteChildren = {
   AppInvestmentsRoute: AppInvestmentsRoute,
   AppNewOrgRoute: AppNewOrgRoute,
   AppOrgsettingsLayoutRoute: AppOrgsettingsLayoutRouteWithChildren,
-  AppOrgadminJobsRoute: AppOrgadminJobsRoute,
+  AppOrgadminAlertsRoute: AppOrgadminAlertsRoute,
   AppOrgdashboardDashboardRoute: AppOrgdashboardDashboardRoute,
   AppOrggoalGoalsRoute: AppOrggoalGoalsRoute,
   AppOrgtransactionsTransactionsRoute: AppOrgtransactionsTransactionsRoute,

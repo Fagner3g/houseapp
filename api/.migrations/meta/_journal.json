@@ -57,6 +57,13 @@
       "when": 1781000000000,
       "tag": "0007_overdue_alert_frequency",
       "breakpoints": true
+    },
+    {
+      "idx": 8,
+      "version": "7",
+      "when": 1782000000000,
+      "tag": "0008_custom_reminders_and_alert_deliveries",
+      "breakpoints": true
     }
   ]
 }

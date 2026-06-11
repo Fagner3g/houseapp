@@ -30,6 +30,7 @@ import {
 } from '@/components/ui/drawer'
 import { Form } from '@/components/ui/form'
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs'
+import { http } from '@/lib/http'
 import { useActiveOrganization } from '@/hooks/use-active-organization'
 import { useIsMobile } from '@/hooks/use-mobile'
 import { useScrollToActiveField } from '@/hooks/use-scroll-to-active-field'
@@ -40,7 +41,12 @@ import { PaymentDateDialog } from '../../pages/_app/$org/(transactions)/-compone
 import { TransactionSummary } from '../../pages/_app/$org/(transactions)/-components/table-list-transactions/transaction-summary'
 import { AmountField } from './amount-field'
 import { ChatSection } from './chat-section'
-import { AlertFrequencyField } from './alert-frequency-field'
+import {
+  AlertFrequencyField,
+  buildUpsertPayload,
+  isTransactionAlertCustomized,
+  type TransactionAlertConfig,
+} from './alert-frequency-field'
 import { DescriptionField } from './description-field'
 import { CalendarField } from './due-date-field'
 import { InstallmentsTotalField } from './installments-total-field'
@@ -61,6 +67,8 @@ interface Props {
   transaction: ListTransactions200TransactionsItem | null
   open: boolean
   onOpenChange: (open: boolean) => void
+  createPrefill?: Partial<NewTransactionSchema>
+  onCreateSuccess?: (result: { seriesId: string }) => void
   onExternalSubmit?: (args: {
     slug: string
     id: string
@@ -68,7 +76,7 @@ interface Props {
   }) => Promise<void> | void
 }
 
-function DrawerTransactionContent({ transaction, open, onOpenChange, onExternalSubmit }: Props) {
+function DrawerTransactionContent({ transaction, open, onOpenChange, createPrefill, onCreateSuccess, onExternalSubmit }: Props) {
   const queryClient = useQueryClient()
   const currentUser = useAuthStore(s => s.user)
   const isMobile = useIsMobile()
@@ -98,6 +106,7 @@ function DrawerTransactionContent({ transaction, open, onOpenChange, onExternalS
   const [paymentDialogOpen, setPaymentDialogOpen] = useState(false)
   const initializedTransactionRef = useRef<string | null>(null)
   const hadUnsavedChanges = useRef(false)
+  const pendingAlertConfigRef = useRef<TransactionAlertConfig | null>(null)
 
   // Criar form local (não compartilhado)
   const localForm = useForm<NewTransactionSchema>({
@@ -143,6 +152,33 @@ function DrawerTransactionContent({ transaction, open, onOpenChange, onExternalS
     }),
     []
   )
+
+  const getCreateModeDefaults = useCallback((): NewTransactionSchema => {
+    const base: NewTransactionSchema = {
+      type: RegisterType.EXPENSE,
+      title: '',
+      amount: '',
+      dueDate: new Date(),
+      payToEmail: currentUser?.email ?? '',
+      tags: [],
+      description: '',
+      isRecurring: false,
+      recurrenceSelector: undefined,
+      recurrenceType: undefined,
+      recurrenceUntil: undefined,
+      recurrenceInterval: undefined,
+      installmentsTotal: undefined,
+      recurrenceStart: undefined,
+    }
+
+    if (!createPrefill) return base
+
+    return {
+      ...base,
+      ...createPrefill,
+      isRecurring: createPrefill.isRecurring ?? false,
+    } as NewTransactionSchema
+  }, [createPrefill, currentUser?.email])
 
   // Serializar dados da transação com cálculos derivados
   const labels = getDrawerContext(transaction, currentUser?.id)
@@ -197,7 +233,7 @@ function DrawerTransactionContent({ transaction, open, onOpenChange, onExternalS
       return
     }
 
-    const currentTransactionId = transaction?.id || 'new'
+    const currentTransactionId = transaction?.id || (createPrefill ? 'new-prefill' : 'new')
 
     // Só resetar se a transação mudou
     if (initializedTransactionRef.current !== currentTransactionId) {
@@ -210,27 +246,11 @@ function DrawerTransactionContent({ transaction, open, onOpenChange, onExternalS
       if (transaction) {
         setIsResetting(true)
       } else {
-        // Reset para modo criação
-        form.reset({
-          type: RegisterType.EXPENSE,
-          title: '',
-          amount: '',
-          dueDate: new Date(),
-          payToEmail: '',
-          tags: [],
-          description: '',
-          isRecurring: false,
-          recurrenceSelector: undefined,
-          recurrenceType: undefined,
-          recurrenceUntil: undefined,
-          recurrenceInterval: undefined,
-          installmentsTotal: undefined,
-          recurrenceStart: undefined,
-        })
+        form.reset(getCreateModeDefaults())
       }
       initializedTransactionRef.current = currentTransactionId
     }
-  }, [open, transaction, form, setIsDirty, setIsResetting, setActiveTab, queryClient, slug])
+  }, [open, transaction, createPrefill, form, setIsDirty, setIsResetting, setActiveTab, queryClient, slug, getCreateModeDefaults])
 
   // Resetar form quando isResetting é marcado
   useEffect(() => {
@@ -344,11 +364,33 @@ function DrawerTransactionContent({ transaction, open, onOpenChange, onExternalS
         const toastCtx = toast.loading('Criando transação...')
         return { previous, slug, toastCtx }
       },
-      onSuccess: (_, _vars, ctx) => {
+      onSuccess: async (data, _vars, ctx) => {
         if (ctx) {
           toast.dismiss(ctx.toastCtx)
         }
         toast.success('Transação criada com sucesso!')
+
+        const pendingAlert = pendingAlertConfigRef.current
+        if (
+          data?.seriesId &&
+          pendingAlert &&
+          isTransactionAlertCustomized(pendingAlert)
+        ) {
+          try {
+            await http(`/org/${slug}/transactions/${data.seriesId}/alert-rule`, {
+              method: 'PUT',
+              headers: { 'Content-Type': 'application/json' },
+              body: JSON.stringify(buildUpsertPayload(pendingAlert)),
+            })
+          } catch {
+            toast.error('Transação criada, mas falhou ao salvar alertas')
+          }
+        }
+
+        pendingAlertConfigRef.current = null
+        if (data?.seriesId) {
+          onCreateSuccess?.({ seriesId: data.seriesId })
+        }
         onOpenChange(false)
       },
       onError: (_err, _vars, ctx) => {
@@ -680,7 +722,17 @@ function DrawerTransactionContent({ transaction, open, onOpenChange, onExternalS
 
                         <div className="space-y-4">
                           <TagField form={form} disabled={isReadOnly || isPaid} />
-                          <AlertFrequencyField form={form} disabled={isReadOnly || isPaid} />
+                          <AlertFrequencyField
+                            seriesId={serieId || undefined}
+                            disabled={isReadOnly || isPaid}
+                            payToEmail={form.watch('payToEmail')}
+                            currentUserEmail={currentUser?.email}
+                            ownerName={transaction?.ownerName ?? undefined}
+                            users={userData}
+                            onConfigChange={config => {
+                              pendingAlertConfigRef.current = config
+                            }}
+                          />
                           <DescriptionField form={form} disabled={isReadOnly || isPaid} />
                         </div>
 
@@ -793,12 +845,13 @@ function DrawerTransactionContent({ transaction, open, onOpenChange, onExternalS
   )
 }
 
-export function DrawerTransaction({ transaction, open, onOpenChange, onExternalSubmit }: Props) {
+export function DrawerTransaction({ transaction, open, onOpenChange, createPrefill, onExternalSubmit }: Props) {
   return (
     <DrawerTransactionContent
       transaction={transaction}
       open={open}
       onOpenChange={onOpenChange}
+      createPrefill={createPrefill}
       onExternalSubmit={onExternalSubmit}
     />
   )

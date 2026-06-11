@@ -14,11 +14,43 @@ chrome.alarms.onAlarm.addListener(alarm => {
 
 chrome.notifications.onButtonClicked.addListener(async (notificationId, buttonIndex) => {
   if (buttonIndex !== 0) return
-  const match = notificationId.match(/^overdue-(.+?)-(.+)$/)
-  if (!match) return
-  const [, orgSlug, transactionId] = match
-  await payTransaction(orgSlug, transactionId)
-  chrome.notifications.clear(notificationId)
+
+  const investmentMatch = notificationId.match(/^investment-(.+?)-(.+)$/)
+  if (investmentMatch) {
+    const [, orgSlug, alertId] = investmentMatch
+    await ackReminderAlert(orgSlug, alertId)
+    chrome.notifications.clear(notificationId)
+    return
+  }
+
+  const overdueMatch = notificationId.match(/^overdue-(.+?)-(.+)$/)
+  if (overdueMatch) {
+    const [, orgSlug, transactionId] = overdueMatch
+    await payTransaction(orgSlug, transactionId)
+    chrome.notifications.clear(notificationId)
+    return
+  }
+
+  const reminderMatch = notificationId.match(/^reminder-(.+?)-(.+)$/)
+  if (reminderMatch) {
+    const [, orgSlug, alertId] = reminderMatch
+    await ackReminderAlert(orgSlug, alertId)
+    chrome.notifications.clear(notificationId)
+    return
+  }
+
+  const ruleMatch = notificationId.match(/^rule-(.+?)-(.+)$/)
+  if (ruleMatch) {
+    const [, orgSlug, alertId] = ruleMatch
+    const { cachedPendingAlerts } = await chrome.storage.local.get('cachedPendingAlerts')
+    const alert = (cachedPendingAlerts?.alerts || []).find(a => a.id === alertId)
+    if (alert?.occurrenceId) {
+      await payTransaction(orgSlug, alert.occurrenceId)
+    } else {
+      await ackReminderAlert(orgSlug, alertId)
+    }
+    chrome.notifications.clear(notificationId)
+  }
 })
 
 // ── Alarm ────────────────────────────────────────────────────────────────────
@@ -89,10 +121,29 @@ async function fetchReports(apiUrl, token, slug, year, month) {
   return res.json()
 }
 
-async function fetchInvestmentReminders(apiUrl, token) {
-  const res = await fetch(`${apiUrl}/me/investments/reminders`, { headers: authHeaders(token) })
-  if (!res.ok) throw new Error('investment reminders fetch failed')
+async function fetchPendingAlerts(apiUrl, token) {
+  const res = await fetch(`${apiUrl}/me/alerts/pending`, { headers: authHeaders(token) })
+  if (!res.ok) throw new Error('pending alerts fetch failed')
   return res.json()
+}
+
+async function fetchReminders(apiUrl, token, slug) {
+  const res = await fetch(`${apiUrl}/org/${slug}/reminders`, { headers: authHeaders(token) })
+  if (!res.ok) throw new Error('reminders fetch failed')
+  return res.json()
+}
+
+async function ackReminderAlert(orgSlug, alertId) {
+  const { apiUrl } = await chrome.storage.local.get('apiUrl')
+  const token = await getToken()
+  if (!apiUrl || !orgSlug || !token) return
+
+  await fetch(`${apiUrl}/org/${orgSlug}/alerts/${alertId}/ack`, {
+    method: 'POST',
+    headers: authHeaders(token),
+  })
+
+  await chrome.storage.local.remove(['cachedPendingAlerts', 'cachedReportsByOrg'])
 }
 
 async function payTransaction(orgSlug, transactionId) {
@@ -110,58 +161,109 @@ async function payTransaction(orgSlug, transactionId) {
 
 // ── Badge ────────────────────────────────────────────────────────────────────
 
-function setBadge(overdueCount, upcomingCount, investmentCount = 0) {
-  const total = overdueCount + upcomingCount + investmentCount
-  if (total === 0) {
+function todayMidnight() {
+  const d = new Date()
+  d.setHours(0, 0, 0, 0)
+  return d
+}
+
+function countOverdueTransactions(reports) {
+  const today = todayMidnight()
+  const overdue = (reports.overdueTransactions?.transactions || [])
+    .filter(t => t.status === 'pending' || t.status === 'partial')
+  const alsoOverdue = (reports.upcomingAlerts?.transactions || [])
+    .filter(t => (t.status === 'pending' || t.status === 'partial') && new Date(t.dueDate) < today)
+  const seenIds = new Set(overdue.map(t => t.id))
+  return overdue.length + alsoOverdue.filter(t => !seenIds.has(t.id)).length
+}
+
+function countOverdueReminders(reminders) {
+  const today = todayMidnight()
+  return (reminders || []).filter(r => {
+    if (r.completedAt) return false
+    const due = new Date(r.dueDate)
+    due.setHours(0, 0, 0, 0)
+    return due < today
+  }).length
+}
+
+function setBadge(overdueCount = 0) {
+  if (overdueCount === 0) {
     chrome.action.setBadgeText({ text: '' })
     return
   }
-  chrome.action.setBadgeText({ text: String(total) })
+  chrome.action.setBadgeText({ text: String(overdueCount) })
   chrome.action.setBadgeTextColor({ color: '#ffffff' })
-  chrome.action.setBadgeBackgroundColor({
-    color: overdueCount > 0 ? '#ef4444' : investmentCount > 0 ? '#2563eb' : '#f59e0b',
-  })
+  chrome.action.setBadgeBackgroundColor({ color: '#ef4444' })
 }
 
 // ── Notifications ────────────────────────────────────────────────────────────
 
-function notifyOverdue(tx, orgName) {
-  const days = tx.overdueDays || 0
-  const dayLabel = days === 1 ? '1 dia' : `${days} dias`
-  const orgSuffix = orgName ? ` [${orgName}]` : ''
-  chrome.notifications.create(`overdue-${tx.orgSlug}-${tx.id}`, {
+function notifyReminder(alert) {
+  const payload = alert.payload || {}
+  const title = payload.title || 'Lembrete'
+  const daysUntilDue = payload.daysUntilDue ?? 0
+  const dueLabel = daysUntilDue === 0 ? 'hoje' : daysUntilDue === 1 ? 'amanhã' : `em ${daysUntilDue} dias`
+  const orgSuffix = alert.orgName ? ` [${alert.orgName}]` : ''
+  const amount = payload.amountCents != null
+    ? ` — R$ ${formatAmount(payload.amountCents / 100)}`
+    : ''
+
+  chrome.notifications.create(`reminder-${alert.orgSlug}-${alert.id}`, {
     type: 'basic',
     iconUrl: 'icons/icon48.png',
-    title: `Transação vencida${orgSuffix}`,
-    message: `${tx.title} — R$ ${formatAmount(tx.amount)} (${dayLabel} em atraso)`,
-    buttons: [{ title: 'Marcar como paga' }],
+    title: `Lembrete${orgSuffix}`,
+    message: `${title} — vence ${dueLabel}${amount}`,
+    buttons: [{ title: 'Marcar como feito' }],
     requireInteraction: false,
   })
 }
 
-function notifyUpcoming(tx, orgName) {
-  const days = tx.daysUntilDue
-  const dueLabel = days === 0 ? 'hoje' : days === 1 ? 'amanhã' : `em ${days} dias`
-  const orgSuffix = orgName ? ` [${orgName}]` : ''
-  chrome.notifications.create(`upcoming-${tx.orgSlug}-${tx.id}`, {
+function notifyRuleAlert(alert) {
+  const payload = alert.payload || {}
+  const title = payload.title || 'Transação'
+  const orgSuffix = alert.orgName ? ` [${alert.orgName}]` : ''
+  const amount = payload.amountCents != null
+    ? ` — R$ ${formatAmount(payload.amountCents / 100)}`
+    : ''
+  const isOverdue = alert.kind === 'transaction_overdue' || payload.kind === 'overdue'
+  let detail = ''
+
+  if (isOverdue) {
+    const days = payload.overdueDays ?? 0
+    const dayLabel = days === 1 ? '1 dia' : `${days} dias`
+    detail = `${dayLabel} em atraso`
+  } else {
+    const days = payload.daysUntilDue ?? 0
+    detail = days === 0 ? 'vence hoje' : days === 1 ? 'vence amanhã' : `vence em ${days} dias`
+  }
+
+  const buttonTitle = alert.occurrenceId ? 'Marcar como paga' : 'Marcar como feito'
+
+  chrome.notifications.create(`rule-${alert.orgSlug}-${alert.id}`, {
     type: 'basic',
     iconUrl: 'icons/icon48.png',
-    title: `Vence em breve${orgSuffix}`,
-    message: `${tx.title} — vence ${dueLabel} (R$ ${formatAmount(tx.amount)})`,
+    title: `${isOverdue ? 'Transação vencida' : 'Vence em breve'}${orgSuffix}`,
+    message: `${title} — ${detail}${amount}`,
+    buttons: [{ title: buttonTitle }],
     requireInteraction: false,
   })
 }
 
-function notifyInvestment(reminder) {
-  const amountLabel = reminder.plannedAmount
-    ? `R$ ${formatAmount(reminder.plannedAmount)}`
-    : `${reminder.plannedQuantity} unidade(s)`
+function notifyInvestmentAlert(alert) {
+  const payload = alert.payload || {}
+  const amountLabel = payload.plannedAmount
+    ? `R$ ${formatAmount(payload.plannedAmount)}`
+    : `${payload.plannedQuantity} unidade(s)`
+  const isOverdue = alert.kind === 'investment_overdue' || payload.status === 'overdue'
+  const orgSuffix = alert.orgName ? ` [${alert.orgName}]` : ''
 
-  chrome.notifications.create(`investment-${reminder.planId}-${reminder.referenceMonth}`, {
+  chrome.notifications.create(`investment-${alert.orgSlug}-${alert.id}`, {
     type: 'basic',
     iconUrl: 'icons/icon48.png',
-    title: reminder.status === 'overdue' ? 'Aporte em atraso' : 'Aporte do mês pendente',
-    message: `${reminder.assetSymbol} — ${amountLabel}`,
+    title: `${isOverdue ? 'Aporte em atraso' : 'Aporte do mês pendente'}${orgSuffix}`,
+    message: `${payload.assetSymbol || payload.title} — ${amountLabel}`,
+    buttons: [{ title: 'Marcar como feito' }],
     requireInteraction: false,
   })
 }
@@ -176,10 +278,10 @@ function formatAmount(amount) {
 async function poll() {
   try {
     const token = await getToken()
-      if (!token) { setBadge(0, 0, 0); return }
+      if (!token) { setBadge(0); return }
 
     const { apiUrl } = await chrome.storage.local.get('apiUrl')
-    if (!apiUrl) { setBadge(0, 0, 0); return }
+    if (!apiUrl) { setBadge(0); return }
 
     // Validate token
     try {
@@ -192,12 +294,12 @@ async function poll() {
           await fetchProfile(apiUrl, newToken)
         } catch (_) {
           await chrome.storage.local.remove('token')
-          setBadge(0, 0, 0)
+          setBadge(0)
           return
         }
       } else {
         await chrome.storage.local.remove('token')
-        setBadge(0, 0, 0)
+        setBadge(0)
         return
       }
     }
@@ -205,22 +307,19 @@ async function poll() {
     // Fetch all orgs
     const orgsData = await fetchOrgs(apiUrl, token)
     const orgs = orgsData.organizations || orgsData.orgs || orgsData
-    if (!orgs?.length) { setBadge(0, 0, 0); return }
+    if (!orgs?.length) { setBadge(0); return }
 
     const now = new Date()
     const year = now.getFullYear()
     const month = now.getMonth() + 1
 
     // Load previous cache to detect new items
-    const { cachedReportsByOrg: prevCache, cachedInvestmentReminders: prevInvestmentReminders } =
-      await chrome.storage.local.get(['cachedReportsByOrg', 'cachedInvestmentReminders'])
-    const prevOverdueIds = new Set()
-    const prevUpcomingIds = new Set()
-    const prevInvestmentIds = new Set((prevInvestmentReminders?.items || []).map(item => `${item.planId}-${item.referenceMonth}`))
-    for (const reports of Object.values(prevCache || {})) {
-      for (const t of reports.overdueTransactions?.transactions || []) prevOverdueIds.add(t.id)
-      for (const t of reports.upcomingAlerts?.transactions    || []) prevUpcomingIds.add(t.id)
-    }
+    const {
+      cachedPendingAlerts: prevPendingAlerts,
+    } = await chrome.storage.local.get([
+      'cachedPendingAlerts',
+    ])
+    const prevPendingAlertIds = new Set((prevPendingAlerts?.alerts || []).map(a => a.id))
 
     // Fetch reports for all orgs in parallel
     const results = await Promise.all(
@@ -232,45 +331,46 @@ async function poll() {
     )
 
     let totalOverdue = 0
-    let totalUpcoming = 0
-    let totalInvestments = 0
     const newCache = {}
 
     for (const orgData of results.filter(Boolean)) {
-      const overdue  = (orgData.reports.overdueTransactions?.transactions || [])
-        .map(tx => ({ ...tx, orgSlug: orgData.slug }))
-      const upcoming = (orgData.reports.upcomingAlerts?.transactions || [])
-        .map(tx => ({ ...tx, orgSlug: orgData.slug }))
-
-      for (const tx of overdue)  { if (!prevOverdueIds.has(tx.id))  notifyOverdue(tx,  orgData.name) }
-      for (const tx of upcoming) { if (!prevUpcomingIds.has(tx.id)) notifyUpcoming(tx, orgData.name) }
-
-      totalOverdue  += overdue.filter(t => t.status === 'pending' || t.status === 'partial').length
-      totalUpcoming += upcoming.filter(t => t.status === 'pending' || t.status === 'partial').length
-
+      totalOverdue += countOverdueTransactions(orgData.reports)
       newCache[orgData.slug] = orgData.reports
     }
 
-    let investmentReminders = null
-    try {
-      investmentReminders = await fetchInvestmentReminders(apiUrl, token)
-      const reminders = investmentReminders.reminders || investmentReminders
-      totalInvestments = reminders.summary?.total || reminders.items?.length || 0
-
-      for (const item of reminders.items || []) {
-        const key = `${item.planId}-${item.referenceMonth}`
-        if (!prevInvestmentIds.has(key)) notifyInvestment(item)
-      }
-    } catch (_) {
-      totalInvestments = 0
+    const reminderResults = await Promise.all(
+      orgs.map(org =>
+        fetchReminders(apiUrl, token, org.slug)
+          .then(data => data.reminders || data)
+          .catch(() => [])
+      )
+    )
+    for (const reminders of reminderResults) {
+      totalOverdue += countOverdueReminders(reminders)
     }
 
-    setBadge(totalOverdue, totalUpcoming, totalInvestments)
+    let pendingAlerts = null
+    try {
+      pendingAlerts = await fetchPendingAlerts(apiUrl, token)
+      const alerts = pendingAlerts.alerts || []
+
+      for (const alert of alerts) {
+        if (!prevPendingAlertIds.has(alert.id)) {
+          if (alert.sourceType === 'rule') notifyRuleAlert(alert)
+          else if (alert.sourceType === 'investment') notifyInvestmentAlert(alert)
+          else notifyReminder(alert)
+        }
+      }
+    } catch (_) {}
+
+    setBadge(totalOverdue)
 
     await chrome.storage.local.set({
       cachedReportsByOrg: newCache,
-      cachedInvestmentReminders: investmentReminders?.reminders || investmentReminders || null,
-      badgeTotals: { overdue: totalOverdue, upcoming: totalUpcoming, investments: totalInvestments },
+      cachedPendingAlerts: pendingAlerts || null,
+      badgeTotals: {
+        overdue: totalOverdue,
+      },
       cachedYear: year,
       cachedMonth: month,
     })

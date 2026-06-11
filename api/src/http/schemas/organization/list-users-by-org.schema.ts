@@ -15,6 +15,11 @@ export const listUsersByOrgSchema = {
           phone: z.string(),
           avatarUrl: z.string(),
           notificationsEnabled: z.boolean(),
+          alertPreferences: z.object({
+            whatsapp: z.boolean(),
+            inApp: z.boolean(),
+            extension: z.boolean(),
+          }),
           isOwner: z.boolean(),
         })
       ),

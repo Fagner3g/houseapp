@@ -235,34 +235,6 @@ export async function startAllJobsController(_request: FastifyRequest, reply: Fa
 }
 
 /**
- * Preview das transações que seriam processadas pelo job de alertas
- */
-export async function previewTransactionAlertsController(
-  request: FastifyRequest,
-  reply: FastifyReply
-) {
-  try {
-    // Usar a função de preview que não envia mensagens
-    const { previewTransactionAlerts } = await import('@/jobs/transaction-alerts')
-    const userId = (request.query as { userId?: string } | undefined)?.userId
-    const previewData = await previewTransactionAlerts(userId)
-
-    return reply.status(200).send({
-      preview: previewData,
-      timestamp: new Date().toISOString(),
-    })
-  } catch (error) {
-    logger.error({ error }, 'Erro ao fazer preview dos alertas de transação')
-    return reply.status(500).send({
-      error: 'Internal Server Error',
-      message: 'Failed to preview transaction alerts',
-      details: error instanceof Error ? error.message : String(error),
-      timestamp: new Date().toISOString(),
-    })
-  }
-}
-
-/**
  * Envia resumo mensal completo via WhatsApp para um usuário específico
  */
 type SendMonthlySummaryRoute = {
@@ -333,30 +305,6 @@ export const sendMonthlySummaryController: RouteHandler<SendMonthlySummaryRoute>
     return reply
       .status(500)
       .send({ error: 'Internal Server Error', message: 'Falha ao enviar resumo mensal' })
-  }
-}
-
-/**
- * Preview dos alertas de transações vencidas
- */
-export async function previewOverdueAlertsController(request: FastifyRequest, reply: FastifyReply) {
-  try {
-    const { previewOverdueAlerts } = await import('@/jobs/overdue-alerts')
-    const userId = (request.query as { userId?: string } | undefined)?.userId
-    const preview = await previewOverdueAlerts(userId)
-
-    return reply.status(200).send({
-      preview,
-      timestamp: new Date().toISOString(),
-    })
-  } catch (error) {
-    logger.error({ error }, 'Erro ao obter preview dos alertas vencidas')
-    return reply.status(500).send({
-      error: 'Internal Server Error',
-      message: 'Failed to get overdue alerts preview',
-      details: error instanceof Error ? error.message : String(error),
-      timestamp: new Date().toISOString(),
-    })
   }
 }
 

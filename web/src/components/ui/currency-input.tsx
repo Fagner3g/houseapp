@@ -1,35 +1,37 @@
 import { forwardRef } from 'react'
 
-import { Input } from './input'
+import { formatCurrency, parseCurrencyInput } from '@/lib/currency'
 
-const brFormatter = new Intl.NumberFormat('pt-BR', {
-  style: 'currency',
-  currency: 'BRL',
-})
+import { Input } from './input'
 
 export interface CurrencyInputProps
   extends Omit<React.ComponentProps<'input'>, 'onChange' | 'value'> {
-  value?: number
-  onValueChange?: (value: number) => void
+  value?: number | null
+  onValueChange?: (value: number | null) => void
   onChange?: (e: React.ChangeEvent<HTMLInputElement>) => void
+  /** When true, an empty input yields `null` instead of `0`. */
+  allowEmpty?: boolean
 }
 
 export const CurrencyInput = forwardRef<HTMLInputElement, CurrencyInputProps>(
-  ({ value = 0, onValueChange, onChange, ...props }, ref) => {
+  ({ value, onValueChange, onChange, allowEmpty = false, placeholder = 'R$ 0,00', ...props }, ref) => {
     function handleChange(e: React.ChangeEvent<HTMLInputElement>) {
       const raw = e.target.value.replace(/\D/g, '')
-      const numeric = Number(raw) / 100
+      const numeric = raw ? parseCurrencyInput(e.target.value) : allowEmpty ? null : 0
       onValueChange?.(numeric)
-      onChange?.(e) // Call the external onChange if provided
+      onChange?.(e)
     }
+
+    const displayValue = allowEmpty && value == null ? '' : formatCurrency(value ?? 0)
 
     return (
       <Input
         {...props}
         ref={ref}
-        value={brFormatter.format(value)}
+        value={displayValue}
         onChange={handleChange}
         inputMode="numeric"
+        placeholder={placeholder}
       />
     )
   }

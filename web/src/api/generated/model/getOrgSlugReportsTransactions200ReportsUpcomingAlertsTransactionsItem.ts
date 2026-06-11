@@ -3,7 +3,7 @@
  * Do not edit manually.
  * HouseApp API
  * API for HouseApp
- * OpenAPI spec version: 1.0.2
+ * OpenAPI spec version: 1.1.1
  */
 import type { GetOrgSlugReportsTransactions200ReportsUpcomingAlertsTransactionsItemAlertType } from "./getOrgSlugReportsTransactions200ReportsUpcomingAlertsTransactionsItemAlertType";
 import type { GetOrgSlugReportsTransactions200ReportsUpcomingAlertsTransactionsItemStatus } from "./getOrgSlugReportsTransactions200ReportsUpcomingAlertsTransactionsItemStatus";
@@ -15,9 +15,6 @@ export type GetOrgSlugReportsTransactions200ReportsUpcomingAlertsTransactionsIte
     seriesId?: string;
     title: string;
     amount: number;
-    /** @nullable */
-    valuePaid?: number | null;
-    originalAmount?: number;
     dueDate: string;
     daysUntilDue?: number;
     alertType?: GetOrgSlugReportsTransactions200ReportsUpcomingAlertsTransactionsItemAlertType;

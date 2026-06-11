@@ -2,7 +2,11 @@ import { and, eq } from 'drizzle-orm'
 import type { FastifyReply, FastifyRequest } from 'fastify'
 
 import { db } from '@/db'
-import { userOrganizations } from '@/db/schemas/userOrganization'
+import {
+  DEFAULT_ALERT_PREFERENCES,
+  userOrganizations,
+} from '@/db/schemas/userOrganization'
+import { normalizeAlertPreferences } from '@/domain/alerts/utils'
 import type { UpdateUserNotificationsInputParams } from '../../schemas/user/update-user-notifications.schema'
 
 export async function updateUserNotificationsController(
@@ -12,32 +16,45 @@ export async function updateUserNotificationsController(
   }>,
   reply: FastifyReply
 ) {
-  const { userId, notificationsEnabled } = request.body
+  const { userId, notificationsEnabled, alertPreferences } = request.body
   const org = request.organization
 
   if (!org?.id) {
     return reply.status(404).send({ message: 'Organization not found' })
   }
 
-  // Verificar se o usuário pertence à organização
-  const userOrg = await db
+  const [userOrg] = await db
     .select()
     .from(userOrganizations)
     .where(and(eq(userOrganizations.userId, userId), eq(userOrganizations.organizationId, org.id)))
     .limit(1)
 
-  if (userOrg.length === 0) {
+  if (!userOrg) {
     return reply.status(404).send({ message: 'User not found in organization' })
   }
 
-  // Atualizar preferência de notificação
-  await db
+  const updates: Partial<typeof userOrganizations.$inferInsert> = {}
+
+  if (notificationsEnabled !== undefined) {
+    updates.notificationsEnabled = notificationsEnabled
+  }
+
+  if (alertPreferences !== undefined) {
+    updates.alertPreferences = {
+      ...normalizeAlertPreferences(userOrg.alertPreferences ?? DEFAULT_ALERT_PREFERENCES),
+      ...alertPreferences,
+    }
+  }
+
+  const [updated] = await db
     .update(userOrganizations)
-    .set({ notificationsEnabled })
+    .set(updates)
     .where(and(eq(userOrganizations.userId, userId), eq(userOrganizations.organizationId, org.id)))
+    .returning()
 
   return reply.status(200).send({
     userId,
-    notificationsEnabled,
+    notificationsEnabled: updated.notificationsEnabled,
+    alertPreferences: normalizeAlertPreferences(updated.alertPreferences),
   })
 }

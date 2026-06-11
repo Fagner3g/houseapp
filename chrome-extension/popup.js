@@ -58,6 +58,7 @@ const state = {
   reports: null,
   orgs: [],
   investments: null,
+  reminders: null,
 }
 
 // ── Auth ──────────────────────────────────────────────────────────────────────
@@ -135,6 +136,12 @@ async function fetchInvestmentReminders() {
   const data = await apiFetch('/me/investments/reminders')
   state.investments = data.reminders || data
   return state.investments
+}
+
+async function fetchReminders() {
+  const data = await apiFetch(`/org/${state.orgSlug}/reminders`)
+  state.reminders = data.reminders || data
+  return state.reminders
 }
 
 // ── Render helpers ────────────────────────────────────────────────────────────
@@ -249,7 +256,8 @@ function renderOverdue(overdueTransactions, upcomingAlerts, context) {
   const uniqueAlsoOverdue = alsoOverdue.filter(tx => !seenIds.has(tx.id))
 
   const all = [...overdue, ...uniqueAlsoOverdue]
-  title.textContent = `Vencidas (${all.length})`
+  const totalOverdue = all.reduce((sum, tx) => sum + (Number(tx.amount) || 0), 0)
+  title.textContent = `Vencidas (${fmt(totalOverdue)})`
 
   if (!all.length) { section.classList.add('hidden'); return }
   section.classList.remove('hidden')
@@ -309,6 +317,44 @@ function renderAllTransactions(allTransactions, context) {
 
   for (const tx of txs) {
     list.appendChild(renderTransactionItem(tx, context, fmtDate(tx.dueDate)))
+  }
+}
+
+function renderReminders(reminders) {
+  const section = document.getElementById('section-reminders')
+  const list = document.getElementById('list-reminders')
+  const title = document.getElementById('reminders-title')
+
+  list.innerHTML = ''
+  const items = reminders || []
+  title.textContent = `Lembretes (${items.length})`
+
+  if (!items.length) {
+    section.classList.add('hidden')
+    return
+  }
+  section.classList.remove('hidden')
+
+  const todayMidnight = new Date()
+  todayMidnight.setHours(0, 0, 0, 0)
+
+  for (const item of items) {
+    const li = document.createElement('li')
+    li.className = 'tx-item'
+    const due = new Date(item.dueDate)
+    due.setHours(0, 0, 0, 0)
+    const d = Math.round((+due - +todayMidnight) / (1000 * 60 * 60 * 24))
+    const meta = d < 0 ? `${Math.abs(d)}d atraso` : d === 0 ? 'hoje' : d === 1 ? 'amanhã' : `${d} dias`
+    const amount = item.amountCents != null ? fmt(item.amountCents / 100) : '—'
+
+    li.innerHTML = `
+      <span class="type-dot reminder">◆</span>
+      <span class="tx-title" title="${item.title}">${item.title}</span>
+      <span class="tx-meta">${meta}</span>
+      <span class="tx-amount">${amount}</span>
+      <span class="badge badge-reminder">Lembrete</span>
+    `
+    list.appendChild(li)
   }
 }
 
@@ -379,18 +425,39 @@ function renderOrgSelect() {
 
 // ── Badge ─────────────────────────────────────────────────────────────────────
 
-function updateBadge(overdueCount, upcomingCount, investmentCount = 0) {
-  const total = overdueCount + upcomingCount + investmentCount
-  if (total === 0) { chrome.action.setBadgeText({ text: '' }); return }
-  chrome.action.setBadgeText({ text: String(total) })
-  chrome.action.setBadgeTextColor({ color: '#ffffff' })
-  chrome.action.setBadgeBackgroundColor({ color: overdueCount > 0 ? '#ef4444' : investmentCount > 0 ? '#2563eb' : '#f59e0b' })
+function todayMidnight() {
+  const d = new Date()
+  d.setHours(0, 0, 0, 0)
+  return d
 }
 
-/**
- * Fetches fresh reports for every org and recalculates the badge.
- * Called once on popup open (after orgs are known) so the badge is always accurate.
- */
+function countOverdueTransactions(reports) {
+  const today = todayMidnight()
+  const overdue = (reports.overdueTransactions?.transactions || [])
+    .filter(t => t.status === 'pending' || t.status === 'partial')
+  const alsoOverdue = (reports.upcomingAlerts?.transactions || [])
+    .filter(t => (t.status === 'pending' || t.status === 'partial') && new Date(t.dueDate) < today)
+  const seenIds = new Set(overdue.map(t => t.id))
+  return overdue.length + alsoOverdue.filter(t => !seenIds.has(t.id)).length
+}
+
+function countOverdueReminders(reminders) {
+  const today = todayMidnight()
+  return (reminders || []).filter(r => {
+    if (r.completedAt) return false
+    const due = new Date(r.dueDate)
+    due.setHours(0, 0, 0, 0)
+    return due < today
+  }).length
+}
+
+function updateBadge(overdueCount = 0) {
+  if (overdueCount === 0) { chrome.action.setBadgeText({ text: '' }); return }
+  chrome.action.setBadgeText({ text: String(overdueCount) })
+  chrome.action.setBadgeTextColor({ color: '#ffffff' })
+  chrome.action.setBadgeBackgroundColor({ color: '#ef4444' })
+}
+
 async function refreshBadgeAllOrgs() {
   if (!state.orgs?.length) return
 
@@ -406,47 +473,29 @@ async function refreshBadgeAllOrgs() {
     )
   )
 
+  const reminderResults = await Promise.all(
+    state.orgs.map(org =>
+      apiFetch(`/org/${org.slug}/reminders`)
+        .then(data => data.reminders || data)
+        .catch(() => [])
+    )
+  )
+
   let totalOverdue = 0
-  let totalUpcoming = 0
-  let totalInvestments = 0
   const newCache = {}
 
   for (const orgData of results.filter(Boolean)) {
-    totalOverdue  += (orgData.reports.overdueTransactions?.transactions || []).filter(t => t.status === 'pending' || t.status === 'partial').length
-    totalUpcoming += (orgData.reports.upcomingAlerts?.transactions      || []).filter(t => t.status === 'pending' || t.status === 'partial').length
+    totalOverdue += countOverdueTransactions(orgData.reports)
     newCache[orgData.slug] = orgData.reports
   }
-
-  totalInvestments = state.investments?.summary?.total || state.investments?.items?.length || 0
-
-  updateBadge(totalOverdue, totalUpcoming, totalInvestments)
-  await chrome.storage.local.set({
-    cachedReportsByOrg: newCache,
-    badgeTotals: { overdue: totalOverdue, upcoming: totalUpcoming, investments: totalInvestments },
-  })
-}
-
-/**
- * Recalculates badge across ALL orgs using the per-org cache.
- * Updates the current org's data before recalculating so the count is fresh.
- */
-async function updateBadgeFromReports(reports) {
-  const { cachedReportsByOrg } = await chrome.storage.local.get('cachedReportsByOrg')
-  const allOrgs = { ...(cachedReportsByOrg || {}), [state.orgSlug]: reports }
-
-  let totalOverdue = 0
-  let totalUpcoming = 0
-  for (const r of Object.values(allOrgs)) {
-    totalOverdue  += (r.overdueTransactions?.transactions || []).filter(t => t.status === 'pending' || t.status === 'partial').length
-    totalUpcoming += (r.upcomingAlerts?.transactions      || []).filter(t => t.status === 'pending' || t.status === 'partial').length
+  for (const reminders of reminderResults) {
+    totalOverdue += countOverdueReminders(reminders)
   }
 
-  const totalInvestments = state.investments?.summary?.total ?? state.investments?.items?.length ?? 0
-
-  updateBadge(totalOverdue, totalUpcoming, totalInvestments)
+  updateBadge(totalOverdue)
   await chrome.storage.local.set({
-    cachedReportsByOrg: allOrgs,
-    badgeTotals: { overdue: totalOverdue, upcoming: totalUpcoming, investments: totalInvestments },
+    cachedReportsByOrg: newCache,
+    badgeTotals: { overdue: totalOverdue },
   })
 }
 
@@ -562,7 +611,7 @@ async function handlePay(txId, liEl, tx) {
       }
     }
 
-    await updateBadgeFromReports(state.reports)
+    await refreshBadgeAllOrgs()
 
     // Mirror in "Todas do mês" list
     const twin = document.querySelector(`#list-all [data-id="${txId}"]`)
@@ -591,12 +640,14 @@ async function loadData() {
     )
     state.reports = data.reports || data
     await fetchInvestmentReminders()
+    await fetchReminders()
 
     const context = getViewingContext(state.year, state.month)
 
     renderMonthLabel()
     renderKpis(state.reports, context)
     renderInvestments(state.investments)
+    renderReminders(state.reminders)
     renderOverdue(
       state.reports.overdueTransactions?.transactions,
       state.reports.upcomingAlerts?.transactions,
@@ -605,7 +656,7 @@ async function loadData() {
     renderUpcoming(state.reports.upcomingAlerts?.transactions, context)
     renderAllTransactions(state.reports.allTransactions, context)
 
-    await updateBadgeFromReports(state.reports)
+    await refreshBadgeAllOrgs()
 
     await chrome.storage.local.set({
       cachedReport: state.reports,
@@ -666,9 +717,6 @@ async function init() {
   }
 
   await loadData()
-
-  // Refresh badge with fresh data from ALL orgs (runs in background after popup renders)
-  refreshBadgeAllOrgs().catch(() => {})
 }
 
 // ── Event listeners ───────────────────────────────────────────────────────────

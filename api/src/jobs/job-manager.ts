@@ -97,7 +97,7 @@ export class JobManager {
     logger.info({ jobKey, userId }, '🚀 Executando job manualmente')
 
     const startTime = Date.now()
-    const result = await jobFunction(userId)
+    const result = await jobFunction(userId, { skipTimeCheck: true })
     const duration = Date.now() - startTime
 
     if (result) {
