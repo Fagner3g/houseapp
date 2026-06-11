@@ -6,6 +6,7 @@ import type {
 } from '@/api/generated/model'
 import { mapUpcomingAlertToListItem } from '@/components/drawer-transaction/row-mapper'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
+import { alertStatusIconClass } from '@/lib/alert-status-colors'
 import { DashboardTransactionItem } from './DashboardTransactionItem'
 
 type Props = {
@@ -27,19 +28,19 @@ export function UpcomingAlerts({ upcoming, onEdit }: Props) {
         <CardContent>
           <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4 mb-6">
             <div className="text-center">
-              <div className="text-2xl font-bold text-red-600">{upcoming.summary.today}</div>
+              <div className="text-2xl font-bold text-amber-600">{upcoming.summary.today}</div>
               <p className="text-sm text-muted-foreground">Hoje</p>
             </div>
             <div className="text-center">
-              <div className="text-2xl font-bold text-orange-600">{upcoming.summary.tomorrow}</div>
+              <div className="text-2xl font-bold text-amber-600">{upcoming.summary.tomorrow}</div>
               <p className="text-sm text-muted-foreground">Amanhã</p>
             </div>
             <div className="text-center">
-              <div className="text-2xl font-bold text-yellow-600">{upcoming.summary.twoDays}</div>
+              <div className="text-2xl font-bold text-amber-500">{upcoming.summary.twoDays}</div>
               <p className="text-sm text-muted-foreground">Em 2 dias</p>
             </div>
             <div className="text-center">
-              <div className="text-2xl font-bold text-blue-600">
+              <div className="text-2xl font-bold text-amber-500">
                 {upcoming.summary.threeToFourDays}
               </div>
               <p className="text-sm text-muted-foreground">Em 3-4 dias</p>
@@ -58,11 +59,19 @@ export function UpcomingAlerts({ upcoming, onEdit }: Props) {
                     transaction={normalized}
                     onEdit={onEdit}
                     variant={isPartial ? 'partial' : 'upcoming'}
-                    leftIcon={<Calendar className={`h-4 w-4 ${isPartial ? 'text-amber-500' : 'text-blue-500'}`} />}
+                    leftIcon={
+                      <Calendar
+                        className={`h-4 w-4 ${isPartial ? alertStatusIconClass.partial : alertStatusIconClass.upcoming}`}
+                      />
+                    }
                     title={`${transaction.title}${isPartial ? ' (parcial)' : ''}`}
                     ownerName={transaction.ownerName}
                     amount={transaction.amount}
-                    rightIcon={<Clock className={`h-3 w-3 ${isPartial ? 'text-amber-500' : 'text-blue-500'}`} />}
+                    rightIcon={
+                      <Clock
+                        className={`h-3 w-3 ${isPartial ? alertStatusIconClass.partial : alertStatusIconClass.upcoming}`}
+                      />
+                    }
                     rightPrimaryText={
                       transaction.daysUntilDue === 0
                         ? 'Vence hoje'

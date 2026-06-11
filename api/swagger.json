@@ -3,7 +3,7 @@
   "info": {
     "title": "HouseApp API",
     "description": "API for HouseApp",
-    "version": "1.1.1"
+    "version": "1.1.2"
   },
   "components": {
     "securitySchemes": {
@@ -551,283 +551,6 @@
                   "required": [
                     "success",
                     "message",
-                    "timestamp"
-                  ],
-                  "additionalProperties": false
-                }
-              }
-            }
-          }
-        }
-      }
-    },
-    "/jobs/transactions{alerts}/preview": {
-      "get": {
-        "summary": "Preview das transações que seriam processadas pelo job de alertas",
-        "tags": [
-          "Jobs"
-        ],
-        "parameters": [
-          {
-            "schema": {
-              "type": "string"
-            },
-            "in": "query",
-            "name": "userId",
-            "required": false
-          },
-          {
-            "schema": {
-              "type": "string"
-            },
-            "in": "path",
-            "name": "alerts",
-            "required": true
-          }
-        ],
-        "security": [
-          {
-            "bearerAuth": []
-          }
-        ],
-        "responses": {
-          "200": {
-            "description": "Default Response",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "type": "object",
-                  "properties": {
-                    "preview": {
-                      "type": "object",
-                      "properties": {
-                        "transactions": {
-                          "type": "array",
-                          "items": {
-                            "type": "object",
-                            "properties": {
-                              "id": {
-                                "type": "string"
-                              },
-                              "title": {
-                                "type": "string"
-                              },
-                              "amount": {
-                                "type": "number"
-                              },
-                              "dueDate": {
-                                "type": "string"
-                              },
-                              "daysUntilDue": {
-                                "type": "number"
-                              },
-                              "alertType": {
-                                "type": "string",
-                                "enum": [
-                                  "warning",
-                                  "urgent",
-                                  "overdue"
-                                ]
-                              },
-                              "ownerName": {
-                                "type": "string"
-                              },
-                              "ownerPhone": {
-                                "type": "string"
-                              },
-                              "payToName": {
-                                "type": "string",
-                                "nullable": true
-                              },
-                              "payToPhone": {
-                                "type": "string",
-                                "nullable": true
-                              },
-                              "type": {
-                                "type": "string",
-                                "enum": [
-                                  "income",
-                                  "expense"
-                                ]
-                              }
-                            },
-                            "required": [
-                              "id",
-                              "title",
-                              "amount",
-                              "dueDate",
-                              "daysUntilDue",
-                              "alertType",
-                              "ownerName",
-                              "ownerPhone",
-                              "payToName",
-                              "payToPhone"
-                            ],
-                            "additionalProperties": false
-                          }
-                        },
-                        "summary": {
-                          "type": "object",
-                          "properties": {
-                            "total": {
-                              "type": "number"
-                            },
-                            "today": {
-                              "type": "number"
-                            },
-                            "tomorrow": {
-                              "type": "number"
-                            },
-                            "twoDays": {
-                              "type": "number"
-                            },
-                            "threeToFourDays": {
-                              "type": "number"
-                            }
-                          },
-                          "required": [
-                            "total",
-                            "today",
-                            "tomorrow",
-                            "twoDays",
-                            "threeToFourDays"
-                          ],
-                          "additionalProperties": false
-                        }
-                      },
-                      "required": [
-                        "transactions",
-                        "summary"
-                      ],
-                      "additionalProperties": false
-                    },
-                    "timestamp": {
-                      "type": "string"
-                    }
-                  },
-                  "required": [
-                    "preview",
-                    "timestamp"
-                  ],
-                  "additionalProperties": false
-                }
-              }
-            }
-          }
-        }
-      }
-    },
-    "/jobs/overdue-alerts/preview": {
-      "get": {
-        "summary": "Preview das transações vencidas que seriam processadas pelo job de alertas vencidas",
-        "tags": [
-          "Jobs"
-        ],
-        "parameters": [
-          {
-            "schema": {
-              "type": "string"
-            },
-            "in": "query",
-            "name": "userId",
-            "required": false
-          }
-        ],
-        "security": [
-          {
-            "bearerAuth": []
-          }
-        ],
-        "responses": {
-          "200": {
-            "description": "Default Response",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "type": "object",
-                  "properties": {
-                    "preview": {
-                      "type": "object",
-                      "properties": {
-                        "summary": {
-                          "type": "object",
-                          "properties": {
-                            "total": {
-                              "type": "number"
-                            },
-                            "overdue": {
-                              "type": "number"
-                            }
-                          },
-                          "required": [
-                            "total",
-                            "overdue"
-                          ],
-                          "additionalProperties": false
-                        },
-                        "transactions": {
-                          "type": "array",
-                          "items": {
-                            "type": "object",
-                            "properties": {
-                              "id": {
-                                "type": "string"
-                              },
-                              "title": {
-                                "type": "string"
-                              },
-                              "amount": {
-                                "type": "number"
-                              },
-                              "dueDate": {
-                                "type": "string"
-                              },
-                              "overdueDays": {
-                                "type": "number"
-                              },
-                              "payToName": {
-                                "type": "string",
-                                "nullable": true
-                              },
-                              "payToPhone": {
-                                "type": "string",
-                                "nullable": true
-                              },
-                              "organizationSlug": {
-                                "type": "string"
-                              },
-                              "installmentInfo": {
-                                "type": "string",
-                                "nullable": true
-                              }
-                            },
-                            "required": [
-                              "id",
-                              "title",
-                              "amount",
-                              "dueDate",
-                              "overdueDays",
-                              "payToName",
-                              "payToPhone",
-                              "organizationSlug",
-                              "installmentInfo"
-                            ],
-                            "additionalProperties": false
-                          }
-                        }
-                      },
-                      "required": [
-                        "summary",
-                        "transactions"
-                      ],
-                      "additionalProperties": false
-                    },
-                    "timestamp": {
-                      "type": "string"
-                    }
-                  },
-                  "required": [
-                    "preview",
                     "timestamp"
                   ],
                   "additionalProperties": false
@@ -1471,6 +1194,74 @@
           }
         }
       },
+      "delete": {
+        "operationId": "removeUserFromOrg",
+        "summary": "Remove user from organization or delete account",
+        "tags": [
+          "user"
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "userId": {
+                    "type": "string"
+                  },
+                  "mode": {
+                    "type": "string",
+                    "enum": [
+                      "deactivate",
+                      "delete"
+                    ]
+                  }
+                },
+                "required": [
+                  "userId",
+                  "mode"
+                ]
+              }
+            }
+          },
+          "required": true
+        },
+        "parameters": [
+          {
+            "schema": {
+              "type": "string"
+            },
+            "in": "path",
+            "name": "slug",
+            "required": true
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Default Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "mode": {
+                      "type": "string",
+                      "enum": [
+                        "deactivate",
+                        "delete"
+                      ]
+                    }
+                  },
+                  "required": [
+                    "mode"
+                  ],
+                  "additionalProperties": false
+                }
+              }
+            }
+          }
+        }
+      },
       "get": {
         "operationId": "listUsersByOrg",
         "tags": [
@@ -1518,6 +1309,26 @@
                           "notificationsEnabled": {
                             "type": "boolean"
                           },
+                          "alertPreferences": {
+                            "type": "object",
+                            "properties": {
+                              "whatsapp": {
+                                "type": "boolean"
+                              },
+                              "inApp": {
+                                "type": "boolean"
+                              },
+                              "extension": {
+                                "type": "boolean"
+                              }
+                            },
+                            "required": [
+                              "whatsapp",
+                              "inApp",
+                              "extension"
+                            ],
+                            "additionalProperties": false
+                          },
                           "isOwner": {
                             "type": "boolean"
                           }
@@ -1529,6 +1340,7 @@
                           "phone",
                           "avatarUrl",
                           "notificationsEnabled",
+                          "alertPreferences",
                           "isOwner"
                         ],
                         "additionalProperties": false
@@ -1563,11 +1375,24 @@
                   },
                   "notificationsEnabled": {
                     "type": "boolean"
+                  },
+                  "alertPreferences": {
+                    "type": "object",
+                    "properties": {
+                      "whatsapp": {
+                        "type": "boolean"
+                      },
+                      "inApp": {
+                        "type": "boolean"
+                      },
+                      "extension": {
+                        "type": "boolean"
+                      }
+                    }
                   }
                 },
                 "required": [
-                  "userId",
-                  "notificationsEnabled"
+                  "userId"
                 ]
               }
             }
@@ -1597,11 +1422,32 @@
                     },
                     "notificationsEnabled": {
                       "type": "boolean"
+                    },
+                    "alertPreferences": {
+                      "type": "object",
+                      "properties": {
+                        "whatsapp": {
+                          "type": "boolean"
+                        },
+                        "inApp": {
+                          "type": "boolean"
+                        },
+                        "extension": {
+                          "type": "boolean"
+                        }
+                      },
+                      "required": [
+                        "whatsapp",
+                        "inApp",
+                        "extension"
+                      ],
+                      "additionalProperties": false
                     }
                   },
                   "required": [
                     "userId",
-                    "notificationsEnabled"
+                    "notificationsEnabled",
+                    "alertPreferences"
                   ],
                   "additionalProperties": false
                 }
@@ -3672,16 +3518,6 @@
                           ]
                         }
                       },
-                      "alertFrequency": {
-                        "default": "weekly",
-                        "type": "string",
-                        "enum": [
-                          "never",
-                          "daily",
-                          "weekly",
-                          "monthly"
-                        ]
-                      },
                       "isRecurring": {
                         "type": "boolean",
                         "enum": [
@@ -3782,16 +3618,6 @@
                           ]
                         }
                       },
-                      "alertFrequency": {
-                        "default": "weekly",
-                        "type": "string",
-                        "enum": [
-                          "never",
-                          "daily",
-                          "weekly",
-                          "monthly"
-                        ]
-                      },
                       "isRecurring": {
                         "type": "boolean",
                         "enum": [
@@ -3832,7 +3658,23 @@
         ],
         "responses": {
           "201": {
-            "description": "Default Response"
+            "description": "Default Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "seriesId": {
+                      "type": "string"
+                    }
+                  },
+                  "required": [
+                    "seriesId"
+                  ],
+                  "additionalProperties": false
+                }
+              }
+            }
           }
         }
       }
@@ -5638,6 +5480,3467 @@
                   "required": [
                     "error",
                     "message"
+                  ],
+                  "additionalProperties": false
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/org/{slug}/settings/alerts": {
+      "get": {
+        "operationId": "getAlertSettings",
+        "tags": [
+          "Alerts"
+        ],
+        "description": "Get organization alert settings",
+        "parameters": [
+          {
+            "schema": {
+              "type": "string",
+              "minLength": 1
+            },
+            "in": "path",
+            "name": "slug",
+            "required": true
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Default Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "defaultNotifyHour": {
+                      "type": "integer",
+                      "minimum": 0,
+                      "maximum": 23
+                    },
+                    "defaultNotifyMinute": {
+                      "type": "integer",
+                      "minimum": 0,
+                      "maximum": 59
+                    }
+                  },
+                  "required": [
+                    "defaultNotifyHour",
+                    "defaultNotifyMinute"
+                  ],
+                  "additionalProperties": false
+                }
+              }
+            }
+          }
+        }
+      },
+      "patch": {
+        "operationId": "updateAlertSettings",
+        "tags": [
+          "Alerts"
+        ],
+        "description": "Update organization alert settings",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "defaultNotifyHour": {
+                    "type": "integer",
+                    "minimum": 0,
+                    "maximum": 23
+                  },
+                  "defaultNotifyMinute": {
+                    "type": "integer",
+                    "minimum": 0,
+                    "maximum": 59
+                  }
+                },
+                "required": [
+                  "defaultNotifyHour",
+                  "defaultNotifyMinute"
+                ]
+              }
+            }
+          },
+          "required": true
+        },
+        "parameters": [
+          {
+            "schema": {
+              "type": "string",
+              "minLength": 1
+            },
+            "in": "path",
+            "name": "slug",
+            "required": true
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Default Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "defaultNotifyHour": {
+                      "type": "integer",
+                      "minimum": 0,
+                      "maximum": 23
+                    },
+                    "defaultNotifyMinute": {
+                      "type": "integer",
+                      "minimum": 0,
+                      "maximum": 59
+                    }
+                  },
+                  "required": [
+                    "defaultNotifyHour",
+                    "defaultNotifyMinute"
+                  ],
+                  "additionalProperties": false
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/org/{slug}/reminders": {
+      "get": {
+        "operationId": "listReminders",
+        "tags": [
+          "Alerts"
+        ],
+        "description": "List custom reminders for organization",
+        "parameters": [
+          {
+            "schema": {
+              "type": "boolean"
+            },
+            "in": "query",
+            "name": "includeCompleted",
+            "required": false
+          },
+          {
+            "schema": {
+              "type": "string",
+              "minLength": 1
+            },
+            "in": "path",
+            "name": "slug",
+            "required": true
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Default Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "reminders": {
+                      "type": "array",
+                      "items": {
+                        "type": "object",
+                        "properties": {
+                          "id": {
+                            "type": "string"
+                          },
+                          "organizationId": {
+                            "type": "string"
+                          },
+                          "createdBy": {
+                            "type": "string"
+                          },
+                          "title": {
+                            "type": "string"
+                          },
+                          "notes": {
+                            "type": "string",
+                            "nullable": true
+                          },
+                          "dueDate": {
+                            "type": "string"
+                          },
+                          "amountCents": {
+                            "type": "number",
+                            "nullable": true
+                          },
+                          "daysBefore": {
+                            "type": "array",
+                            "items": {
+                              "type": "number"
+                            }
+                          },
+                          "channels": {
+                            "type": "array",
+                            "items": {
+                              "type": "string",
+                              "enum": [
+                                "in_app",
+                                "whatsapp",
+                                "extension"
+                              ]
+                            }
+                          },
+                          "recipientUserId": {
+                            "type": "string"
+                          },
+                          "recipientName": {
+                            "type": "string",
+                            "nullable": true
+                          },
+                          "active": {
+                            "type": "boolean"
+                          },
+                          "completedAt": {
+                            "type": "string",
+                            "nullable": true
+                          },
+                          "isRecurring": {
+                            "type": "boolean"
+                          },
+                          "recurrenceType": {
+                            "type": "string",
+                            "nullable": true
+                          },
+                          "recurrenceInterval": {
+                            "type": "integer",
+                            "minimum": 1,
+                            "maximum": 9007199254740991
+                          },
+                          "recurrenceUntil": {
+                            "type": "string",
+                            "nullable": true
+                          },
+                          "notifyHour": {
+                            "type": "integer",
+                            "nullable": true
+                          },
+                          "notifyMinute": {
+                            "type": "integer",
+                            "nullable": true
+                          },
+                          "linkedSeriesId": {
+                            "type": "string",
+                            "nullable": true
+                          },
+                          "snoozedUntil": {
+                            "type": "string",
+                            "nullable": true
+                          },
+                          "lastCompletedPeriodKey": {
+                            "type": "string",
+                            "nullable": true
+                          },
+                          "createdAt": {
+                            "type": "string"
+                          },
+                          "updatedAt": {
+                            "type": "string"
+                          }
+                        },
+                        "required": [
+                          "id",
+                          "organizationId",
+                          "createdBy",
+                          "title",
+                          "notes",
+                          "dueDate",
+                          "amountCents",
+                          "daysBefore",
+                          "channels",
+                          "recipientUserId",
+                          "recipientName",
+                          "active",
+                          "completedAt",
+                          "isRecurring",
+                          "recurrenceType",
+                          "recurrenceInterval",
+                          "recurrenceUntil",
+                          "notifyHour",
+                          "notifyMinute",
+                          "linkedSeriesId",
+                          "snoozedUntil",
+                          "lastCompletedPeriodKey",
+                          "createdAt",
+                          "updatedAt"
+                        ],
+                        "additionalProperties": false
+                      }
+                    }
+                  },
+                  "required": [
+                    "reminders"
+                  ],
+                  "additionalProperties": false
+                }
+              }
+            }
+          }
+        }
+      },
+      "post": {
+        "operationId": "createReminder",
+        "tags": [
+          "Alerts"
+        ],
+        "description": "Create custom reminder",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "title": {
+                    "type": "string",
+                    "minLength": 1,
+                    "maxLength": 200
+                  },
+                  "notes": {
+                    "type": "string",
+                    "nullable": true
+                  },
+                  "dueDate": {
+                    "type": "string",
+                    "format": "date-time",
+                    "pattern": "^(?:(?:\\d\\d[2468][048]|\\d\\d[13579][26]|\\d\\d0[48]|[02468][048]00|[13579][26]00)-02-29|\\d{4}-(?:(?:0[13578]|1[02])-(?:0[1-9]|[12]\\d|3[01])|(?:0[469]|11)-(?:0[1-9]|[12]\\d|30)|(?:02)-(?:0[1-9]|1\\d|2[0-8])))T(?:(?:[01]\\d|2[0-3]):[0-5]\\d(?::[0-5]\\d(?:\\.\\d+)?)?(?:Z))$"
+                  },
+                  "amountCents": {
+                    "type": "integer",
+                    "nullable": true
+                  },
+                  "daysBefore": {
+                    "default": [
+                      1,
+                      0
+                    ],
+                    "minItems": 1,
+                    "type": "array",
+                    "items": {
+                      "type": "integer",
+                      "minimum": 0,
+                      "maximum": 365
+                    }
+                  },
+                  "channels": {
+                    "default": [
+                      "in_app",
+                      "whatsapp",
+                      "extension"
+                    ],
+                    "minItems": 1,
+                    "type": "array",
+                    "items": {
+                      "type": "string",
+                      "enum": [
+                        "in_app",
+                        "whatsapp",
+                        "extension"
+                      ]
+                    }
+                  },
+                  "recipientUserId": {
+                    "type": "string"
+                  },
+                  "linkedSeriesId": {
+                    "type": "string",
+                    "nullable": true
+                  },
+                  "isRecurring": {
+                    "default": false,
+                    "type": "boolean"
+                  },
+                  "recurrenceType": {
+                    "type": "string",
+                    "nullable": true
+                  },
+                  "recurrenceInterval": {
+                    "default": 1,
+                    "type": "integer",
+                    "minimum": 1,
+                    "maximum": 9007199254740991
+                  },
+                  "recurrenceUntil": {
+                    "type": "string",
+                    "nullable": true
+                  },
+                  "notifyHour": {
+                    "type": "integer",
+                    "nullable": true
+                  },
+                  "notifyMinute": {
+                    "type": "integer",
+                    "nullable": true
+                  }
+                },
+                "required": [
+                  "title",
+                  "dueDate",
+                  "recipientUserId"
+                ]
+              }
+            }
+          },
+          "required": true
+        },
+        "parameters": [
+          {
+            "schema": {
+              "type": "string",
+              "minLength": 1
+            },
+            "in": "path",
+            "name": "slug",
+            "required": true
+          }
+        ],
+        "responses": {
+          "201": {
+            "description": "Default Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "reminder": {
+                      "type": "object",
+                      "properties": {
+                        "id": {
+                          "type": "string"
+                        },
+                        "organizationId": {
+                          "type": "string"
+                        },
+                        "createdBy": {
+                          "type": "string"
+                        },
+                        "title": {
+                          "type": "string"
+                        },
+                        "notes": {
+                          "type": "string",
+                          "nullable": true
+                        },
+                        "dueDate": {
+                          "type": "string"
+                        },
+                        "amountCents": {
+                          "type": "number",
+                          "nullable": true
+                        },
+                        "daysBefore": {
+                          "type": "array",
+                          "items": {
+                            "type": "number"
+                          }
+                        },
+                        "channels": {
+                          "type": "array",
+                          "items": {
+                            "type": "string",
+                            "enum": [
+                              "in_app",
+                              "whatsapp",
+                              "extension"
+                            ]
+                          }
+                        },
+                        "recipientUserId": {
+                          "type": "string"
+                        },
+                        "recipientName": {
+                          "type": "string",
+                          "nullable": true
+                        },
+                        "active": {
+                          "type": "boolean"
+                        },
+                        "completedAt": {
+                          "type": "string",
+                          "nullable": true
+                        },
+                        "isRecurring": {
+                          "type": "boolean"
+                        },
+                        "recurrenceType": {
+                          "type": "string",
+                          "nullable": true
+                        },
+                        "recurrenceInterval": {
+                          "type": "integer",
+                          "minimum": 1,
+                          "maximum": 9007199254740991
+                        },
+                        "recurrenceUntil": {
+                          "type": "string",
+                          "nullable": true
+                        },
+                        "notifyHour": {
+                          "type": "integer",
+                          "nullable": true
+                        },
+                        "notifyMinute": {
+                          "type": "integer",
+                          "nullable": true
+                        },
+                        "linkedSeriesId": {
+                          "type": "string",
+                          "nullable": true
+                        },
+                        "snoozedUntil": {
+                          "type": "string",
+                          "nullable": true
+                        },
+                        "lastCompletedPeriodKey": {
+                          "type": "string",
+                          "nullable": true
+                        },
+                        "createdAt": {
+                          "type": "string"
+                        },
+                        "updatedAt": {
+                          "type": "string"
+                        }
+                      },
+                      "required": [
+                        "id",
+                        "organizationId",
+                        "createdBy",
+                        "title",
+                        "notes",
+                        "dueDate",
+                        "amountCents",
+                        "daysBefore",
+                        "channels",
+                        "recipientUserId",
+                        "recipientName",
+                        "active",
+                        "completedAt",
+                        "isRecurring",
+                        "recurrenceType",
+                        "recurrenceInterval",
+                        "recurrenceUntil",
+                        "notifyHour",
+                        "notifyMinute",
+                        "linkedSeriesId",
+                        "snoozedUntil",
+                        "lastCompletedPeriodKey",
+                        "createdAt",
+                        "updatedAt"
+                      ],
+                      "additionalProperties": false
+                    }
+                  },
+                  "required": [
+                    "reminder"
+                  ],
+                  "additionalProperties": false
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/org/{slug}/reminders/{id}": {
+      "patch": {
+        "operationId": "updateReminder",
+        "tags": [
+          "Alerts"
+        ],
+        "description": "Update custom reminder",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "title": {
+                    "type": "string",
+                    "minLength": 1,
+                    "maxLength": 200
+                  },
+                  "notes": {
+                    "type": "string",
+                    "nullable": true
+                  },
+                  "dueDate": {
+                    "type": "string",
+                    "format": "date-time",
+                    "pattern": "^(?:(?:\\d\\d[2468][048]|\\d\\d[13579][26]|\\d\\d0[48]|[02468][048]00|[13579][26]00)-02-29|\\d{4}-(?:(?:0[13578]|1[02])-(?:0[1-9]|[12]\\d|3[01])|(?:0[469]|11)-(?:0[1-9]|[12]\\d|30)|(?:02)-(?:0[1-9]|1\\d|2[0-8])))T(?:(?:[01]\\d|2[0-3]):[0-5]\\d(?::[0-5]\\d(?:\\.\\d+)?)?(?:Z))$"
+                  },
+                  "amountCents": {
+                    "type": "integer",
+                    "nullable": true
+                  },
+                  "daysBefore": {
+                    "minItems": 1,
+                    "type": "array",
+                    "items": {
+                      "type": "integer",
+                      "minimum": 0,
+                      "maximum": 365
+                    }
+                  },
+                  "channels": {
+                    "minItems": 1,
+                    "type": "array",
+                    "items": {
+                      "type": "string",
+                      "enum": [
+                        "in_app",
+                        "whatsapp",
+                        "extension"
+                      ]
+                    }
+                  },
+                  "recipientUserId": {
+                    "type": "string"
+                  },
+                  "active": {
+                    "type": "boolean"
+                  },
+                  "linkedSeriesId": {
+                    "type": "string",
+                    "nullable": true
+                  },
+                  "isRecurring": {
+                    "type": "boolean"
+                  },
+                  "recurrenceType": {
+                    "type": "string",
+                    "nullable": true
+                  },
+                  "recurrenceInterval": {
+                    "type": "integer",
+                    "minimum": 1,
+                    "maximum": 9007199254740991
+                  },
+                  "recurrenceUntil": {
+                    "type": "string",
+                    "nullable": true
+                  },
+                  "notifyHour": {
+                    "type": "integer",
+                    "nullable": true
+                  },
+                  "notifyMinute": {
+                    "type": "integer",
+                    "nullable": true
+                  }
+                }
+              }
+            }
+          }
+        },
+        "parameters": [
+          {
+            "schema": {
+              "type": "string",
+              "minLength": 1
+            },
+            "in": "path",
+            "name": "slug",
+            "required": true
+          },
+          {
+            "schema": {
+              "type": "string",
+              "minLength": 1
+            },
+            "in": "path",
+            "name": "id",
+            "required": true
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Default Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "reminder": {
+                      "type": "object",
+                      "properties": {
+                        "id": {
+                          "type": "string"
+                        },
+                        "organizationId": {
+                          "type": "string"
+                        },
+                        "createdBy": {
+                          "type": "string"
+                        },
+                        "title": {
+                          "type": "string"
+                        },
+                        "notes": {
+                          "type": "string",
+                          "nullable": true
+                        },
+                        "dueDate": {
+                          "type": "string"
+                        },
+                        "amountCents": {
+                          "type": "number",
+                          "nullable": true
+                        },
+                        "daysBefore": {
+                          "type": "array",
+                          "items": {
+                            "type": "number"
+                          }
+                        },
+                        "channels": {
+                          "type": "array",
+                          "items": {
+                            "type": "string",
+                            "enum": [
+                              "in_app",
+                              "whatsapp",
+                              "extension"
+                            ]
+                          }
+                        },
+                        "recipientUserId": {
+                          "type": "string"
+                        },
+                        "recipientName": {
+                          "type": "string",
+                          "nullable": true
+                        },
+                        "active": {
+                          "type": "boolean"
+                        },
+                        "completedAt": {
+                          "type": "string",
+                          "nullable": true
+                        },
+                        "isRecurring": {
+                          "type": "boolean"
+                        },
+                        "recurrenceType": {
+                          "type": "string",
+                          "nullable": true
+                        },
+                        "recurrenceInterval": {
+                          "type": "integer",
+                          "minimum": 1,
+                          "maximum": 9007199254740991
+                        },
+                        "recurrenceUntil": {
+                          "type": "string",
+                          "nullable": true
+                        },
+                        "notifyHour": {
+                          "type": "integer",
+                          "nullable": true
+                        },
+                        "notifyMinute": {
+                          "type": "integer",
+                          "nullable": true
+                        },
+                        "linkedSeriesId": {
+                          "type": "string",
+                          "nullable": true
+                        },
+                        "snoozedUntil": {
+                          "type": "string",
+                          "nullable": true
+                        },
+                        "lastCompletedPeriodKey": {
+                          "type": "string",
+                          "nullable": true
+                        },
+                        "createdAt": {
+                          "type": "string"
+                        },
+                        "updatedAt": {
+                          "type": "string"
+                        }
+                      },
+                      "required": [
+                        "id",
+                        "organizationId",
+                        "createdBy",
+                        "title",
+                        "notes",
+                        "dueDate",
+                        "amountCents",
+                        "daysBefore",
+                        "channels",
+                        "recipientUserId",
+                        "recipientName",
+                        "active",
+                        "completedAt",
+                        "isRecurring",
+                        "recurrenceType",
+                        "recurrenceInterval",
+                        "recurrenceUntil",
+                        "notifyHour",
+                        "notifyMinute",
+                        "linkedSeriesId",
+                        "snoozedUntil",
+                        "lastCompletedPeriodKey",
+                        "createdAt",
+                        "updatedAt"
+                      ],
+                      "additionalProperties": false
+                    }
+                  },
+                  "required": [
+                    "reminder"
+                  ],
+                  "additionalProperties": false
+                }
+              }
+            }
+          }
+        }
+      },
+      "delete": {
+        "operationId": "deleteReminder",
+        "tags": [
+          "Alerts"
+        ],
+        "description": "Delete custom reminder",
+        "parameters": [
+          {
+            "schema": {
+              "type": "string",
+              "minLength": 1
+            },
+            "in": "path",
+            "name": "slug",
+            "required": true
+          },
+          {
+            "schema": {
+              "type": "string",
+              "minLength": 1
+            },
+            "in": "path",
+            "name": "id",
+            "required": true
+          }
+        ],
+        "responses": {
+          "204": {
+            "description": "Default Response"
+          }
+        }
+      }
+    },
+    "/org/{slug}/reminders/{id}/complete": {
+      "post": {
+        "operationId": "completeReminder",
+        "tags": [
+          "Alerts"
+        ],
+        "description": "Permanently end reminder (deactivate)",
+        "parameters": [
+          {
+            "schema": {
+              "type": "string",
+              "minLength": 1
+            },
+            "in": "path",
+            "name": "slug",
+            "required": true
+          },
+          {
+            "schema": {
+              "type": "string",
+              "minLength": 1
+            },
+            "in": "path",
+            "name": "id",
+            "required": true
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Default Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "reminder": {
+                      "type": "object",
+                      "properties": {
+                        "id": {
+                          "type": "string"
+                        },
+                        "organizationId": {
+                          "type": "string"
+                        },
+                        "createdBy": {
+                          "type": "string"
+                        },
+                        "title": {
+                          "type": "string"
+                        },
+                        "notes": {
+                          "type": "string",
+                          "nullable": true
+                        },
+                        "dueDate": {
+                          "type": "string"
+                        },
+                        "amountCents": {
+                          "type": "number",
+                          "nullable": true
+                        },
+                        "daysBefore": {
+                          "type": "array",
+                          "items": {
+                            "type": "number"
+                          }
+                        },
+                        "channels": {
+                          "type": "array",
+                          "items": {
+                            "type": "string",
+                            "enum": [
+                              "in_app",
+                              "whatsapp",
+                              "extension"
+                            ]
+                          }
+                        },
+                        "recipientUserId": {
+                          "type": "string"
+                        },
+                        "recipientName": {
+                          "type": "string",
+                          "nullable": true
+                        },
+                        "active": {
+                          "type": "boolean"
+                        },
+                        "completedAt": {
+                          "type": "string",
+                          "nullable": true
+                        },
+                        "isRecurring": {
+                          "type": "boolean"
+                        },
+                        "recurrenceType": {
+                          "type": "string",
+                          "nullable": true
+                        },
+                        "recurrenceInterval": {
+                          "type": "integer",
+                          "minimum": 1,
+                          "maximum": 9007199254740991
+                        },
+                        "recurrenceUntil": {
+                          "type": "string",
+                          "nullable": true
+                        },
+                        "notifyHour": {
+                          "type": "integer",
+                          "nullable": true
+                        },
+                        "notifyMinute": {
+                          "type": "integer",
+                          "nullable": true
+                        },
+                        "linkedSeriesId": {
+                          "type": "string",
+                          "nullable": true
+                        },
+                        "snoozedUntil": {
+                          "type": "string",
+                          "nullable": true
+                        },
+                        "lastCompletedPeriodKey": {
+                          "type": "string",
+                          "nullable": true
+                        },
+                        "createdAt": {
+                          "type": "string"
+                        },
+                        "updatedAt": {
+                          "type": "string"
+                        }
+                      },
+                      "required": [
+                        "id",
+                        "organizationId",
+                        "createdBy",
+                        "title",
+                        "notes",
+                        "dueDate",
+                        "amountCents",
+                        "daysBefore",
+                        "channels",
+                        "recipientUserId",
+                        "recipientName",
+                        "active",
+                        "completedAt",
+                        "isRecurring",
+                        "recurrenceType",
+                        "recurrenceInterval",
+                        "recurrenceUntil",
+                        "notifyHour",
+                        "notifyMinute",
+                        "linkedSeriesId",
+                        "snoozedUntil",
+                        "lastCompletedPeriodKey",
+                        "createdAt",
+                        "updatedAt"
+                      ],
+                      "additionalProperties": false
+                    }
+                  },
+                  "required": [
+                    "reminder"
+                  ],
+                  "additionalProperties": false
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/org/{slug}/reminders/{id}/complete-period": {
+      "post": {
+        "operationId": "completeReminderPeriod",
+        "tags": [
+          "Alerts"
+        ],
+        "description": "Mark reminder as done for current period and advance due date",
+        "parameters": [
+          {
+            "schema": {
+              "type": "string",
+              "minLength": 1
+            },
+            "in": "path",
+            "name": "slug",
+            "required": true
+          },
+          {
+            "schema": {
+              "type": "string",
+              "minLength": 1
+            },
+            "in": "path",
+            "name": "id",
+            "required": true
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Default Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "reminder": {
+                      "type": "object",
+                      "properties": {
+                        "id": {
+                          "type": "string"
+                        },
+                        "organizationId": {
+                          "type": "string"
+                        },
+                        "createdBy": {
+                          "type": "string"
+                        },
+                        "title": {
+                          "type": "string"
+                        },
+                        "notes": {
+                          "type": "string",
+                          "nullable": true
+                        },
+                        "dueDate": {
+                          "type": "string"
+                        },
+                        "amountCents": {
+                          "type": "number",
+                          "nullable": true
+                        },
+                        "daysBefore": {
+                          "type": "array",
+                          "items": {
+                            "type": "number"
+                          }
+                        },
+                        "channels": {
+                          "type": "array",
+                          "items": {
+                            "type": "string",
+                            "enum": [
+                              "in_app",
+                              "whatsapp",
+                              "extension"
+                            ]
+                          }
+                        },
+                        "recipientUserId": {
+                          "type": "string"
+                        },
+                        "recipientName": {
+                          "type": "string",
+                          "nullable": true
+                        },
+                        "active": {
+                          "type": "boolean"
+                        },
+                        "completedAt": {
+                          "type": "string",
+                          "nullable": true
+                        },
+                        "isRecurring": {
+                          "type": "boolean"
+                        },
+                        "recurrenceType": {
+                          "type": "string",
+                          "nullable": true
+                        },
+                        "recurrenceInterval": {
+                          "type": "integer",
+                          "minimum": 1,
+                          "maximum": 9007199254740991
+                        },
+                        "recurrenceUntil": {
+                          "type": "string",
+                          "nullable": true
+                        },
+                        "notifyHour": {
+                          "type": "integer",
+                          "nullable": true
+                        },
+                        "notifyMinute": {
+                          "type": "integer",
+                          "nullable": true
+                        },
+                        "linkedSeriesId": {
+                          "type": "string",
+                          "nullable": true
+                        },
+                        "snoozedUntil": {
+                          "type": "string",
+                          "nullable": true
+                        },
+                        "lastCompletedPeriodKey": {
+                          "type": "string",
+                          "nullable": true
+                        },
+                        "createdAt": {
+                          "type": "string"
+                        },
+                        "updatedAt": {
+                          "type": "string"
+                        }
+                      },
+                      "required": [
+                        "id",
+                        "organizationId",
+                        "createdBy",
+                        "title",
+                        "notes",
+                        "dueDate",
+                        "amountCents",
+                        "daysBefore",
+                        "channels",
+                        "recipientUserId",
+                        "recipientName",
+                        "active",
+                        "completedAt",
+                        "isRecurring",
+                        "recurrenceType",
+                        "recurrenceInterval",
+                        "recurrenceUntil",
+                        "notifyHour",
+                        "notifyMinute",
+                        "linkedSeriesId",
+                        "snoozedUntil",
+                        "lastCompletedPeriodKey",
+                        "createdAt",
+                        "updatedAt"
+                      ],
+                      "additionalProperties": false
+                    }
+                  },
+                  "required": [
+                    "reminder"
+                  ],
+                  "additionalProperties": false
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/org/{slug}/reminders/{id}/uncomplete-period": {
+      "post": {
+        "operationId": "uncompleteReminderPeriod",
+        "tags": [
+          "Alerts"
+        ],
+        "description": "Undo completion for a reminder occurrence and roll back due date",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "occurrenceDate": {
+                    "type": "string"
+                  }
+                },
+                "required": [
+                  "occurrenceDate"
+                ]
+              }
+            }
+          },
+          "required": true
+        },
+        "parameters": [
+          {
+            "schema": {
+              "type": "string",
+              "minLength": 1
+            },
+            "in": "path",
+            "name": "slug",
+            "required": true
+          },
+          {
+            "schema": {
+              "type": "string",
+              "minLength": 1
+            },
+            "in": "path",
+            "name": "id",
+            "required": true
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Default Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "reminder": {
+                      "type": "object",
+                      "properties": {
+                        "id": {
+                          "type": "string"
+                        },
+                        "organizationId": {
+                          "type": "string"
+                        },
+                        "createdBy": {
+                          "type": "string"
+                        },
+                        "title": {
+                          "type": "string"
+                        },
+                        "notes": {
+                          "type": "string",
+                          "nullable": true
+                        },
+                        "dueDate": {
+                          "type": "string"
+                        },
+                        "amountCents": {
+                          "type": "number",
+                          "nullable": true
+                        },
+                        "daysBefore": {
+                          "type": "array",
+                          "items": {
+                            "type": "number"
+                          }
+                        },
+                        "channels": {
+                          "type": "array",
+                          "items": {
+                            "type": "string",
+                            "enum": [
+                              "in_app",
+                              "whatsapp",
+                              "extension"
+                            ]
+                          }
+                        },
+                        "recipientUserId": {
+                          "type": "string"
+                        },
+                        "recipientName": {
+                          "type": "string",
+                          "nullable": true
+                        },
+                        "active": {
+                          "type": "boolean"
+                        },
+                        "completedAt": {
+                          "type": "string",
+                          "nullable": true
+                        },
+                        "isRecurring": {
+                          "type": "boolean"
+                        },
+                        "recurrenceType": {
+                          "type": "string",
+                          "nullable": true
+                        },
+                        "recurrenceInterval": {
+                          "type": "integer",
+                          "minimum": 1,
+                          "maximum": 9007199254740991
+                        },
+                        "recurrenceUntil": {
+                          "type": "string",
+                          "nullable": true
+                        },
+                        "notifyHour": {
+                          "type": "integer",
+                          "nullable": true
+                        },
+                        "notifyMinute": {
+                          "type": "integer",
+                          "nullable": true
+                        },
+                        "linkedSeriesId": {
+                          "type": "string",
+                          "nullable": true
+                        },
+                        "snoozedUntil": {
+                          "type": "string",
+                          "nullable": true
+                        },
+                        "lastCompletedPeriodKey": {
+                          "type": "string",
+                          "nullable": true
+                        },
+                        "createdAt": {
+                          "type": "string"
+                        },
+                        "updatedAt": {
+                          "type": "string"
+                        }
+                      },
+                      "required": [
+                        "id",
+                        "organizationId",
+                        "createdBy",
+                        "title",
+                        "notes",
+                        "dueDate",
+                        "amountCents",
+                        "daysBefore",
+                        "channels",
+                        "recipientUserId",
+                        "recipientName",
+                        "active",
+                        "completedAt",
+                        "isRecurring",
+                        "recurrenceType",
+                        "recurrenceInterval",
+                        "recurrenceUntil",
+                        "notifyHour",
+                        "notifyMinute",
+                        "linkedSeriesId",
+                        "snoozedUntil",
+                        "lastCompletedPeriodKey",
+                        "createdAt",
+                        "updatedAt"
+                      ],
+                      "additionalProperties": false
+                    }
+                  },
+                  "required": [
+                    "reminder"
+                  ],
+                  "additionalProperties": false
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/org/{slug}/reminders/{id}/snooze": {
+      "post": {
+        "operationId": "snoozeReminder",
+        "tags": [
+          "Alerts"
+        ],
+        "description": "Snooze custom reminder",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "days": {
+                    "type": "integer",
+                    "minimum": 1,
+                    "maximum": 365
+                  },
+                  "until": {
+                    "type": "string",
+                    "format": "date-time",
+                    "pattern": "^(?:(?:\\d\\d[2468][048]|\\d\\d[13579][26]|\\d\\d0[48]|[02468][048]00|[13579][26]00)-02-29|\\d{4}-(?:(?:0[13578]|1[02])-(?:0[1-9]|[12]\\d|3[01])|(?:0[469]|11)-(?:0[1-9]|[12]\\d|30)|(?:02)-(?:0[1-9]|1\\d|2[0-8])))T(?:(?:[01]\\d|2[0-3]):[0-5]\\d(?::[0-5]\\d(?:\\.\\d+)?)?(?:Z))$"
+                  }
+                }
+              }
+            }
+          }
+        },
+        "parameters": [
+          {
+            "schema": {
+              "type": "string",
+              "minLength": 1
+            },
+            "in": "path",
+            "name": "slug",
+            "required": true
+          },
+          {
+            "schema": {
+              "type": "string",
+              "minLength": 1
+            },
+            "in": "path",
+            "name": "id",
+            "required": true
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Default Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "reminder": {
+                      "type": "object",
+                      "properties": {
+                        "id": {
+                          "type": "string"
+                        },
+                        "organizationId": {
+                          "type": "string"
+                        },
+                        "createdBy": {
+                          "type": "string"
+                        },
+                        "title": {
+                          "type": "string"
+                        },
+                        "notes": {
+                          "type": "string",
+                          "nullable": true
+                        },
+                        "dueDate": {
+                          "type": "string"
+                        },
+                        "amountCents": {
+                          "type": "number",
+                          "nullable": true
+                        },
+                        "daysBefore": {
+                          "type": "array",
+                          "items": {
+                            "type": "number"
+                          }
+                        },
+                        "channels": {
+                          "type": "array",
+                          "items": {
+                            "type": "string",
+                            "enum": [
+                              "in_app",
+                              "whatsapp",
+                              "extension"
+                            ]
+                          }
+                        },
+                        "recipientUserId": {
+                          "type": "string"
+                        },
+                        "recipientName": {
+                          "type": "string",
+                          "nullable": true
+                        },
+                        "active": {
+                          "type": "boolean"
+                        },
+                        "completedAt": {
+                          "type": "string",
+                          "nullable": true
+                        },
+                        "isRecurring": {
+                          "type": "boolean"
+                        },
+                        "recurrenceType": {
+                          "type": "string",
+                          "nullable": true
+                        },
+                        "recurrenceInterval": {
+                          "type": "integer",
+                          "minimum": 1,
+                          "maximum": 9007199254740991
+                        },
+                        "recurrenceUntil": {
+                          "type": "string",
+                          "nullable": true
+                        },
+                        "notifyHour": {
+                          "type": "integer",
+                          "nullable": true
+                        },
+                        "notifyMinute": {
+                          "type": "integer",
+                          "nullable": true
+                        },
+                        "linkedSeriesId": {
+                          "type": "string",
+                          "nullable": true
+                        },
+                        "snoozedUntil": {
+                          "type": "string",
+                          "nullable": true
+                        },
+                        "lastCompletedPeriodKey": {
+                          "type": "string",
+                          "nullable": true
+                        },
+                        "createdAt": {
+                          "type": "string"
+                        },
+                        "updatedAt": {
+                          "type": "string"
+                        }
+                      },
+                      "required": [
+                        "id",
+                        "organizationId",
+                        "createdBy",
+                        "title",
+                        "notes",
+                        "dueDate",
+                        "amountCents",
+                        "daysBefore",
+                        "channels",
+                        "recipientUserId",
+                        "recipientName",
+                        "active",
+                        "completedAt",
+                        "isRecurring",
+                        "recurrenceType",
+                        "recurrenceInterval",
+                        "recurrenceUntil",
+                        "notifyHour",
+                        "notifyMinute",
+                        "linkedSeriesId",
+                        "snoozedUntil",
+                        "lastCompletedPeriodKey",
+                        "createdAt",
+                        "updatedAt"
+                      ],
+                      "additionalProperties": false
+                    }
+                  },
+                  "required": [
+                    "reminder"
+                  ],
+                  "additionalProperties": false
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/org/{slug}/alert-rules": {
+      "get": {
+        "operationId": "listAlertRules",
+        "tags": [
+          "Alerts"
+        ],
+        "description": "List alert rules for organization",
+        "parameters": [
+          {
+            "schema": {
+              "type": "string",
+              "enum": [
+                "organization",
+                "series"
+              ]
+            },
+            "in": "query",
+            "name": "scope",
+            "required": false
+          },
+          {
+            "schema": {
+              "type": "string",
+              "minLength": 1
+            },
+            "in": "path",
+            "name": "slug",
+            "required": true
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Default Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "rules": {
+                      "type": "array",
+                      "items": {
+                        "type": "object",
+                        "properties": {
+                          "id": {
+                            "type": "string"
+                          },
+                          "organizationId": {
+                            "type": "string"
+                          },
+                          "scope": {
+                            "type": "string",
+                            "enum": [
+                              "organization",
+                              "series"
+                            ]
+                          },
+                          "seriesId": {
+                            "type": "string",
+                            "nullable": true
+                          },
+                          "kind": {
+                            "type": "string",
+                            "enum": [
+                              "upcoming",
+                              "overdue"
+                            ]
+                          },
+                          "config": {
+                            "anyOf": [
+                              {
+                                "type": "object",
+                                "properties": {
+                                  "daysBefore": {
+                                    "minItems": 1,
+                                    "type": "array",
+                                    "items": {
+                                      "type": "integer",
+                                      "minimum": 0,
+                                      "maximum": 365
+                                    }
+                                  }
+                                },
+                                "required": [
+                                  "daysBefore"
+                                ],
+                                "additionalProperties": false
+                              },
+                              {
+                                "type": "object",
+                                "properties": {
+                                  "frequency": {
+                                    "type": "string",
+                                    "enum": [
+                                      "daily",
+                                      "weekly",
+                                      "monthly"
+                                    ]
+                                  },
+                                  "interval": {
+                                    "default": 1,
+                                    "type": "integer",
+                                    "minimum": 1,
+                                    "maximum": 365
+                                  }
+                                },
+                                "required": [
+                                  "frequency",
+                                  "interval"
+                                ],
+                                "additionalProperties": false
+                              }
+                            ]
+                          },
+                          "channels": {
+                            "type": "array",
+                            "items": {
+                              "type": "string",
+                              "enum": [
+                                "in_app",
+                                "whatsapp",
+                                "extension"
+                              ]
+                            }
+                          },
+                          "recipients": {
+                            "type": "string",
+                            "enum": [
+                              "owner",
+                              "pay_to",
+                              "both",
+                              "none"
+                            ]
+                          },
+                          "active": {
+                            "type": "boolean"
+                          },
+                          "createdBy": {
+                            "type": "string"
+                          },
+                          "createdAt": {
+                            "type": "string"
+                          },
+                          "updatedAt": {
+                            "type": "string"
+                          },
+                          "seriesTitle": {
+                            "type": "string",
+                            "nullable": true
+                          }
+                        },
+                        "required": [
+                          "id",
+                          "organizationId",
+                          "scope",
+                          "seriesId",
+                          "kind",
+                          "config",
+                          "channels",
+                          "recipients",
+                          "active",
+                          "createdBy",
+                          "createdAt",
+                          "updatedAt"
+                        ],
+                        "additionalProperties": false
+                      }
+                    }
+                  },
+                  "required": [
+                    "rules"
+                  ],
+                  "additionalProperties": false
+                }
+              }
+            }
+          }
+        }
+      },
+      "post": {
+        "operationId": "createAlertRule",
+        "tags": [
+          "Alerts"
+        ],
+        "description": "Create alert rule",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "scope": {
+                    "type": "string",
+                    "enum": [
+                      "organization",
+                      "series"
+                    ]
+                  },
+                  "seriesId": {
+                    "type": "string",
+                    "nullable": true
+                  },
+                  "kind": {
+                    "type": "string",
+                    "enum": [
+                      "upcoming",
+                      "overdue"
+                    ]
+                  },
+                  "config": {
+                    "anyOf": [
+                      {
+                        "type": "object",
+                        "properties": {
+                          "daysBefore": {
+                            "minItems": 1,
+                            "type": "array",
+                            "items": {
+                              "type": "integer",
+                              "minimum": 0,
+                              "maximum": 365
+                            }
+                          }
+                        },
+                        "required": [
+                          "daysBefore"
+                        ]
+                      },
+                      {
+                        "type": "object",
+                        "properties": {
+                          "frequency": {
+                            "type": "string",
+                            "enum": [
+                              "daily",
+                              "weekly",
+                              "monthly"
+                            ]
+                          },
+                          "interval": {
+                            "default": 1,
+                            "type": "integer",
+                            "minimum": 1,
+                            "maximum": 365
+                          }
+                        },
+                        "required": [
+                          "frequency"
+                        ]
+                      }
+                    ]
+                  },
+                  "channels": {
+                    "default": [
+                      "in_app",
+                      "whatsapp",
+                      "extension"
+                    ],
+                    "minItems": 1,
+                    "type": "array",
+                    "items": {
+                      "type": "string",
+                      "enum": [
+                        "in_app",
+                        "whatsapp",
+                        "extension"
+                      ]
+                    }
+                  },
+                  "recipients": {
+                    "default": "pay_to",
+                    "type": "string",
+                    "enum": [
+                      "owner",
+                      "pay_to",
+                      "both",
+                      "none"
+                    ]
+                  }
+                },
+                "required": [
+                  "scope",
+                  "kind",
+                  "config"
+                ]
+              }
+            }
+          },
+          "required": true
+        },
+        "parameters": [
+          {
+            "schema": {
+              "type": "string",
+              "minLength": 1
+            },
+            "in": "path",
+            "name": "slug",
+            "required": true
+          }
+        ],
+        "responses": {
+          "201": {
+            "description": "Default Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "rule": {
+                      "type": "object",
+                      "properties": {
+                        "id": {
+                          "type": "string"
+                        },
+                        "organizationId": {
+                          "type": "string"
+                        },
+                        "scope": {
+                          "type": "string",
+                          "enum": [
+                            "organization",
+                            "series"
+                          ]
+                        },
+                        "seriesId": {
+                          "type": "string",
+                          "nullable": true
+                        },
+                        "kind": {
+                          "type": "string",
+                          "enum": [
+                            "upcoming",
+                            "overdue"
+                          ]
+                        },
+                        "config": {
+                          "anyOf": [
+                            {
+                              "type": "object",
+                              "properties": {
+                                "daysBefore": {
+                                  "minItems": 1,
+                                  "type": "array",
+                                  "items": {
+                                    "type": "integer",
+                                    "minimum": 0,
+                                    "maximum": 365
+                                  }
+                                }
+                              },
+                              "required": [
+                                "daysBefore"
+                              ],
+                              "additionalProperties": false
+                            },
+                            {
+                              "type": "object",
+                              "properties": {
+                                "frequency": {
+                                  "type": "string",
+                                  "enum": [
+                                    "daily",
+                                    "weekly",
+                                    "monthly"
+                                  ]
+                                },
+                                "interval": {
+                                  "default": 1,
+                                  "type": "integer",
+                                  "minimum": 1,
+                                  "maximum": 365
+                                }
+                              },
+                              "required": [
+                                "frequency",
+                                "interval"
+                              ],
+                              "additionalProperties": false
+                            }
+                          ]
+                        },
+                        "channels": {
+                          "type": "array",
+                          "items": {
+                            "type": "string",
+                            "enum": [
+                              "in_app",
+                              "whatsapp",
+                              "extension"
+                            ]
+                          }
+                        },
+                        "recipients": {
+                          "type": "string",
+                          "enum": [
+                            "owner",
+                            "pay_to",
+                            "both",
+                            "none"
+                          ]
+                        },
+                        "active": {
+                          "type": "boolean"
+                        },
+                        "createdBy": {
+                          "type": "string"
+                        },
+                        "createdAt": {
+                          "type": "string"
+                        },
+                        "updatedAt": {
+                          "type": "string"
+                        },
+                        "seriesTitle": {
+                          "type": "string",
+                          "nullable": true
+                        }
+                      },
+                      "required": [
+                        "id",
+                        "organizationId",
+                        "scope",
+                        "seriesId",
+                        "kind",
+                        "config",
+                        "channels",
+                        "recipients",
+                        "active",
+                        "createdBy",
+                        "createdAt",
+                        "updatedAt"
+                      ],
+                      "additionalProperties": false
+                    }
+                  },
+                  "required": [
+                    "rule"
+                  ],
+                  "additionalProperties": false
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/org/{slug}/alert-rules/{id}": {
+      "patch": {
+        "operationId": "updateAlertRule",
+        "tags": [
+          "Alerts"
+        ],
+        "description": "Update alert rule",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "config": {
+                    "anyOf": [
+                      {
+                        "type": "object",
+                        "properties": {
+                          "daysBefore": {
+                            "minItems": 1,
+                            "type": "array",
+                            "items": {
+                              "type": "integer",
+                              "minimum": 0,
+                              "maximum": 365
+                            }
+                          }
+                        },
+                        "required": [
+                          "daysBefore"
+                        ]
+                      },
+                      {
+                        "type": "object",
+                        "properties": {
+                          "frequency": {
+                            "type": "string",
+                            "enum": [
+                              "daily",
+                              "weekly",
+                              "monthly"
+                            ]
+                          },
+                          "interval": {
+                            "default": 1,
+                            "type": "integer",
+                            "minimum": 1,
+                            "maximum": 365
+                          }
+                        },
+                        "required": [
+                          "frequency"
+                        ]
+                      }
+                    ]
+                  },
+                  "channels": {
+                    "minItems": 1,
+                    "type": "array",
+                    "items": {
+                      "type": "string",
+                      "enum": [
+                        "in_app",
+                        "whatsapp",
+                        "extension"
+                      ]
+                    }
+                  },
+                  "recipients": {
+                    "type": "string",
+                    "enum": [
+                      "owner",
+                      "pay_to",
+                      "both",
+                      "none"
+                    ]
+                  },
+                  "active": {
+                    "type": "boolean"
+                  }
+                }
+              }
+            }
+          }
+        },
+        "parameters": [
+          {
+            "schema": {
+              "type": "string",
+              "minLength": 1
+            },
+            "in": "path",
+            "name": "slug",
+            "required": true
+          },
+          {
+            "schema": {
+              "type": "string",
+              "minLength": 1
+            },
+            "in": "path",
+            "name": "id",
+            "required": true
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Default Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "rule": {
+                      "type": "object",
+                      "properties": {
+                        "id": {
+                          "type": "string"
+                        },
+                        "organizationId": {
+                          "type": "string"
+                        },
+                        "scope": {
+                          "type": "string",
+                          "enum": [
+                            "organization",
+                            "series"
+                          ]
+                        },
+                        "seriesId": {
+                          "type": "string",
+                          "nullable": true
+                        },
+                        "kind": {
+                          "type": "string",
+                          "enum": [
+                            "upcoming",
+                            "overdue"
+                          ]
+                        },
+                        "config": {
+                          "anyOf": [
+                            {
+                              "type": "object",
+                              "properties": {
+                                "daysBefore": {
+                                  "minItems": 1,
+                                  "type": "array",
+                                  "items": {
+                                    "type": "integer",
+                                    "minimum": 0,
+                                    "maximum": 365
+                                  }
+                                }
+                              },
+                              "required": [
+                                "daysBefore"
+                              ],
+                              "additionalProperties": false
+                            },
+                            {
+                              "type": "object",
+                              "properties": {
+                                "frequency": {
+                                  "type": "string",
+                                  "enum": [
+                                    "daily",
+                                    "weekly",
+                                    "monthly"
+                                  ]
+                                },
+                                "interval": {
+                                  "default": 1,
+                                  "type": "integer",
+                                  "minimum": 1,
+                                  "maximum": 365
+                                }
+                              },
+                              "required": [
+                                "frequency",
+                                "interval"
+                              ],
+                              "additionalProperties": false
+                            }
+                          ]
+                        },
+                        "channels": {
+                          "type": "array",
+                          "items": {
+                            "type": "string",
+                            "enum": [
+                              "in_app",
+                              "whatsapp",
+                              "extension"
+                            ]
+                          }
+                        },
+                        "recipients": {
+                          "type": "string",
+                          "enum": [
+                            "owner",
+                            "pay_to",
+                            "both",
+                            "none"
+                          ]
+                        },
+                        "active": {
+                          "type": "boolean"
+                        },
+                        "createdBy": {
+                          "type": "string"
+                        },
+                        "createdAt": {
+                          "type": "string"
+                        },
+                        "updatedAt": {
+                          "type": "string"
+                        },
+                        "seriesTitle": {
+                          "type": "string",
+                          "nullable": true
+                        }
+                      },
+                      "required": [
+                        "id",
+                        "organizationId",
+                        "scope",
+                        "seriesId",
+                        "kind",
+                        "config",
+                        "channels",
+                        "recipients",
+                        "active",
+                        "createdBy",
+                        "createdAt",
+                        "updatedAt"
+                      ],
+                      "additionalProperties": false
+                    }
+                  },
+                  "required": [
+                    "rule"
+                  ],
+                  "additionalProperties": false
+                }
+              }
+            }
+          }
+        }
+      },
+      "delete": {
+        "operationId": "deleteAlertRule",
+        "tags": [
+          "Alerts"
+        ],
+        "description": "Delete alert rule",
+        "parameters": [
+          {
+            "schema": {
+              "type": "string",
+              "minLength": 1
+            },
+            "in": "path",
+            "name": "slug",
+            "required": true
+          },
+          {
+            "schema": {
+              "type": "string",
+              "minLength": 1
+            },
+            "in": "path",
+            "name": "id",
+            "required": true
+          }
+        ],
+        "responses": {
+          "204": {
+            "description": "Default Response"
+          }
+        }
+      }
+    },
+    "/org/{slug}/transactions/{seriesId}/alert-rule": {
+      "put": {
+        "operationId": "upsertSeriesAlertRule",
+        "tags": [
+          "Alerts"
+        ],
+        "description": "Upsert series alert rule override",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "useOrgDefaults": {
+                    "type": "boolean"
+                  },
+                  "upcoming": {
+                    "type": "object",
+                    "nullable": true
+                  },
+                  "overdue": {
+                    "type": "object",
+                    "nullable": true
+                  },
+                  "channels": {
+                    "minItems": 1,
+                    "type": "array",
+                    "items": {
+                      "type": "string",
+                      "enum": [
+                        "in_app",
+                        "whatsapp",
+                        "extension"
+                      ]
+                    }
+                  },
+                  "recipients": {
+                    "type": "string",
+                    "enum": [
+                      "owner",
+                      "pay_to",
+                      "both",
+                      "none"
+                    ]
+                  }
+                },
+                "required": [
+                  "useOrgDefaults"
+                ]
+              }
+            }
+          },
+          "required": true
+        },
+        "parameters": [
+          {
+            "schema": {
+              "type": "string",
+              "minLength": 1
+            },
+            "in": "path",
+            "name": "slug",
+            "required": true
+          },
+          {
+            "schema": {
+              "type": "string",
+              "minLength": 1
+            },
+            "in": "path",
+            "name": "seriesId",
+            "required": true
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Default Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "rules": {
+                      "type": "array",
+                      "items": {
+                        "type": "object",
+                        "properties": {
+                          "id": {
+                            "type": "string"
+                          },
+                          "organizationId": {
+                            "type": "string"
+                          },
+                          "scope": {
+                            "type": "string",
+                            "enum": [
+                              "organization",
+                              "series"
+                            ]
+                          },
+                          "seriesId": {
+                            "type": "string",
+                            "nullable": true
+                          },
+                          "kind": {
+                            "type": "string",
+                            "enum": [
+                              "upcoming",
+                              "overdue"
+                            ]
+                          },
+                          "config": {
+                            "anyOf": [
+                              {
+                                "type": "object",
+                                "properties": {
+                                  "daysBefore": {
+                                    "minItems": 1,
+                                    "type": "array",
+                                    "items": {
+                                      "type": "integer",
+                                      "minimum": 0,
+                                      "maximum": 365
+                                    }
+                                  }
+                                },
+                                "required": [
+                                  "daysBefore"
+                                ],
+                                "additionalProperties": false
+                              },
+                              {
+                                "type": "object",
+                                "properties": {
+                                  "frequency": {
+                                    "type": "string",
+                                    "enum": [
+                                      "daily",
+                                      "weekly",
+                                      "monthly"
+                                    ]
+                                  },
+                                  "interval": {
+                                    "default": 1,
+                                    "type": "integer",
+                                    "minimum": 1,
+                                    "maximum": 365
+                                  }
+                                },
+                                "required": [
+                                  "frequency",
+                                  "interval"
+                                ],
+                                "additionalProperties": false
+                              }
+                            ]
+                          },
+                          "channels": {
+                            "type": "array",
+                            "items": {
+                              "type": "string",
+                              "enum": [
+                                "in_app",
+                                "whatsapp",
+                                "extension"
+                              ]
+                            }
+                          },
+                          "recipients": {
+                            "type": "string",
+                            "enum": [
+                              "owner",
+                              "pay_to",
+                              "both",
+                              "none"
+                            ]
+                          },
+                          "active": {
+                            "type": "boolean"
+                          },
+                          "createdBy": {
+                            "type": "string"
+                          },
+                          "createdAt": {
+                            "type": "string"
+                          },
+                          "updatedAt": {
+                            "type": "string"
+                          },
+                          "seriesTitle": {
+                            "type": "string",
+                            "nullable": true
+                          }
+                        },
+                        "required": [
+                          "id",
+                          "organizationId",
+                          "scope",
+                          "seriesId",
+                          "kind",
+                          "config",
+                          "channels",
+                          "recipients",
+                          "active",
+                          "createdBy",
+                          "createdAt",
+                          "updatedAt"
+                        ],
+                        "additionalProperties": false
+                      }
+                    },
+                    "useOrgDefaults": {
+                      "type": "boolean"
+                    }
+                  },
+                  "required": [
+                    "rules",
+                    "useOrgDefaults"
+                  ],
+                  "additionalProperties": false
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/org/{slug}/alerts/preview": {
+      "get": {
+        "operationId": "previewAlerts",
+        "tags": [
+          "Alerts"
+        ],
+        "description": "Preview upcoming alerts without sending",
+        "parameters": [
+          {
+            "schema": {
+              "type": "string",
+              "minLength": 1
+            },
+            "in": "path",
+            "name": "slug",
+            "required": true
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Default Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "defaultNotifyHour": {
+                      "type": "number"
+                    },
+                    "defaultNotifyMinute": {
+                      "type": "number"
+                    },
+                    "reminders": {
+                      "type": "array",
+                      "items": {
+                        "type": "object",
+                        "properties": {
+                          "reminderId": {
+                            "type": "string"
+                          },
+                          "title": {
+                            "type": "string"
+                          },
+                          "dueDate": {
+                            "type": "string"
+                          },
+                          "kind": {
+                            "type": "string",
+                            "enum": [
+                              "upcoming",
+                              "overdue"
+                            ]
+                          },
+                          "daysUntilDue": {
+                            "type": "number"
+                          },
+                          "overdueDays": {
+                            "type": "number"
+                          },
+                          "amountCents": {
+                            "type": "number",
+                            "nullable": true
+                          },
+                          "notifyHour": {
+                            "type": "number"
+                          },
+                          "notifyMinute": {
+                            "type": "number"
+                          },
+                          "channels": {
+                            "type": "array",
+                            "items": {
+                              "type": "string",
+                              "enum": [
+                                "in_app",
+                                "whatsapp",
+                                "extension"
+                              ]
+                            }
+                          },
+                          "recipientUserId": {
+                            "type": "string"
+                          },
+                          "recipientName": {
+                            "type": "string",
+                            "nullable": true
+                          }
+                        },
+                        "required": [
+                          "reminderId",
+                          "title",
+                          "dueDate",
+                          "kind",
+                          "daysUntilDue",
+                          "amountCents",
+                          "notifyHour",
+                          "notifyMinute",
+                          "channels",
+                          "recipientUserId",
+                          "recipientName"
+                        ],
+                        "additionalProperties": false
+                      }
+                    },
+                    "skippedReminders": {
+                      "type": "array",
+                      "items": {
+                        "type": "object",
+                        "properties": {
+                          "reminderId": {
+                            "type": "string"
+                          },
+                          "title": {
+                            "type": "string"
+                          },
+                          "reason": {
+                            "type": "string",
+                            "enum": [
+                              "snoozed",
+                              "no_matching_rule",
+                              "period_completed"
+                            ]
+                          },
+                          "daysUntilDue": {
+                            "type": "number"
+                          },
+                          "notifyHour": {
+                            "type": "number"
+                          },
+                          "notifyMinute": {
+                            "type": "number"
+                          },
+                          "snoozedUntil": {
+                            "type": "string"
+                          }
+                        },
+                        "required": [
+                          "reminderId",
+                          "title",
+                          "reason",
+                          "daysUntilDue",
+                          "notifyHour",
+                          "notifyMinute"
+                        ],
+                        "additionalProperties": false
+                      }
+                    },
+                    "rules": {
+                      "type": "array",
+                      "items": {
+                        "type": "object",
+                        "properties": {
+                          "ruleId": {
+                            "type": "string"
+                          },
+                          "kind": {
+                            "type": "string",
+                            "enum": [
+                              "upcoming",
+                              "overdue"
+                            ]
+                          },
+                          "occurrenceId": {
+                            "type": "string"
+                          },
+                          "seriesId": {
+                            "type": "string"
+                          },
+                          "title": {
+                            "type": "string"
+                          },
+                          "dueDate": {
+                            "type": "string"
+                          },
+                          "daysUntilDue": {
+                            "type": "number"
+                          },
+                          "overdueDays": {
+                            "type": "number"
+                          },
+                          "amountCents": {
+                            "type": "number"
+                          },
+                          "channels": {
+                            "type": "array",
+                            "items": {
+                              "type": "string",
+                              "enum": [
+                                "in_app",
+                                "whatsapp",
+                                "extension"
+                              ]
+                            }
+                          },
+                          "recipientUserId": {
+                            "type": "string"
+                          },
+                          "recipientName": {
+                            "type": "string",
+                            "nullable": true
+                          }
+                        },
+                        "required": [
+                          "ruleId",
+                          "kind",
+                          "occurrenceId",
+                          "seriesId",
+                          "title",
+                          "dueDate",
+                          "amountCents",
+                          "channels",
+                          "recipientUserId",
+                          "recipientName"
+                        ],
+                        "additionalProperties": false
+                      }
+                    },
+                    "investments": {
+                      "type": "array",
+                      "items": {
+                        "type": "object",
+                        "properties": {
+                          "assetId": {
+                            "type": "string"
+                          },
+                          "planId": {
+                            "type": "string"
+                          },
+                          "referenceMonth": {
+                            "type": "string"
+                          },
+                          "assetSymbol": {
+                            "type": "string"
+                          },
+                          "assetName": {
+                            "type": "string"
+                          },
+                          "dueDate": {
+                            "type": "string"
+                          },
+                          "plannedAmount": {
+                            "type": "number",
+                            "nullable": true
+                          },
+                          "plannedQuantity": {
+                            "type": "number",
+                            "nullable": true
+                          },
+                          "status": {
+                            "type": "string",
+                            "enum": [
+                              "pending",
+                              "overdue"
+                            ]
+                          },
+                          "recipientUserId": {
+                            "type": "string"
+                          },
+                          "recipientName": {
+                            "type": "string",
+                            "nullable": true
+                          }
+                        },
+                        "required": [
+                          "assetId",
+                          "planId",
+                          "referenceMonth",
+                          "assetSymbol",
+                          "assetName",
+                          "dueDate",
+                          "plannedAmount",
+                          "plannedQuantity",
+                          "status",
+                          "recipientUserId",
+                          "recipientName"
+                        ],
+                        "additionalProperties": false
+                      }
+                    }
+                  },
+                  "required": [
+                    "defaultNotifyHour",
+                    "defaultNotifyMinute",
+                    "reminders",
+                    "skippedReminders",
+                    "rules",
+                    "investments"
+                  ],
+                  "additionalProperties": false
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/org/{slug}/alerts": {
+      "get": {
+        "operationId": "listInboxAlerts",
+        "tags": [
+          "Alerts"
+        ],
+        "description": "List in-app alert deliveries for current user",
+        "parameters": [
+          {
+            "schema": {
+              "type": "string",
+              "enum": [
+                "true",
+                "false"
+              ]
+            },
+            "in": "query",
+            "name": "unread",
+            "required": false
+          },
+          {
+            "schema": {
+              "type": "string",
+              "minLength": 1
+            },
+            "in": "path",
+            "name": "slug",
+            "required": true
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Default Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "alerts": {
+                      "type": "array",
+                      "items": {
+                        "type": "object",
+                        "properties": {
+                          "id": {
+                            "type": "string"
+                          },
+                          "organizationId": {
+                            "type": "string"
+                          },
+                          "userId": {
+                            "type": "string"
+                          },
+                          "recipientName": {
+                            "type": "string",
+                            "nullable": true
+                          },
+                          "sourceType": {
+                            "type": "string",
+                            "enum": [
+                              "rule",
+                              "reminder",
+                              "investment"
+                            ]
+                          },
+                          "ruleId": {
+                            "type": "string",
+                            "nullable": true
+                          },
+                          "reminderId": {
+                            "type": "string",
+                            "nullable": true
+                          },
+                          "occurrenceId": {
+                            "type": "string",
+                            "nullable": true
+                          },
+                          "kind": {
+                            "type": "string"
+                          },
+                          "channel": {
+                            "type": "string",
+                            "enum": [
+                              "in_app",
+                              "whatsapp",
+                              "extension"
+                            ]
+                          },
+                          "channels": {
+                            "type": "array",
+                            "items": {
+                              "type": "string",
+                              "enum": [
+                                "in_app",
+                                "whatsapp",
+                                "extension"
+                              ]
+                            }
+                          },
+                          "status": {
+                            "type": "string",
+                            "enum": [
+                              "pending",
+                              "sent",
+                              "failed",
+                              "skipped"
+                            ]
+                          },
+                          "payload": {
+                            "type": "object",
+                            "additionalProperties": {}
+                          },
+                          "sentAt": {
+                            "type": "string",
+                            "nullable": true
+                          },
+                          "readAt": {
+                            "type": "string",
+                            "nullable": true
+                          },
+                          "ackedAt": {
+                            "type": "string",
+                            "nullable": true
+                          },
+                          "createdAt": {
+                            "type": "string"
+                          },
+                          "orgSlug": {
+                            "type": "string"
+                          },
+                          "orgName": {
+                            "type": "string"
+                          }
+                        },
+                        "required": [
+                          "id",
+                          "organizationId",
+                          "userId",
+                          "sourceType",
+                          "ruleId",
+                          "reminderId",
+                          "occurrenceId",
+                          "kind",
+                          "channel",
+                          "status",
+                          "payload",
+                          "sentAt",
+                          "readAt",
+                          "ackedAt",
+                          "createdAt"
+                        ],
+                        "additionalProperties": false
+                      }
+                    }
+                  },
+                  "required": [
+                    "alerts"
+                  ],
+                  "additionalProperties": false
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/org/{slug}/alerts/recent": {
+      "get": {
+        "operationId": "listRecentDeliveries",
+        "tags": [
+          "Alerts"
+        ],
+        "description": "List recent sent alert deliveries for organization",
+        "parameters": [
+          {
+            "schema": {
+              "type": "integer",
+              "minimum": 1,
+              "maximum": 168
+            },
+            "in": "query",
+            "name": "hours",
+            "required": false
+          },
+          {
+            "schema": {
+              "type": "integer",
+              "minimum": 1,
+              "maximum": 100
+            },
+            "in": "query",
+            "name": "limit",
+            "required": false
+          },
+          {
+            "schema": {
+              "type": "string",
+              "minLength": 1
+            },
+            "in": "path",
+            "name": "slug",
+            "required": true
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Default Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "alerts": {
+                      "type": "array",
+                      "items": {
+                        "type": "object",
+                        "properties": {
+                          "id": {
+                            "type": "string"
+                          },
+                          "organizationId": {
+                            "type": "string"
+                          },
+                          "userId": {
+                            "type": "string"
+                          },
+                          "recipientName": {
+                            "type": "string",
+                            "nullable": true
+                          },
+                          "sourceType": {
+                            "type": "string",
+                            "enum": [
+                              "rule",
+                              "reminder",
+                              "investment"
+                            ]
+                          },
+                          "ruleId": {
+                            "type": "string",
+                            "nullable": true
+                          },
+                          "reminderId": {
+                            "type": "string",
+                            "nullable": true
+                          },
+                          "occurrenceId": {
+                            "type": "string",
+                            "nullable": true
+                          },
+                          "kind": {
+                            "type": "string"
+                          },
+                          "channel": {
+                            "type": "string",
+                            "enum": [
+                              "in_app",
+                              "whatsapp",
+                              "extension"
+                            ]
+                          },
+                          "channels": {
+                            "type": "array",
+                            "items": {
+                              "type": "string",
+                              "enum": [
+                                "in_app",
+                                "whatsapp",
+                                "extension"
+                              ]
+                            }
+                          },
+                          "status": {
+                            "type": "string",
+                            "enum": [
+                              "pending",
+                              "sent",
+                              "failed",
+                              "skipped"
+                            ]
+                          },
+                          "payload": {
+                            "type": "object",
+                            "additionalProperties": {}
+                          },
+                          "sentAt": {
+                            "type": "string",
+                            "nullable": true
+                          },
+                          "readAt": {
+                            "type": "string",
+                            "nullable": true
+                          },
+                          "ackedAt": {
+                            "type": "string",
+                            "nullable": true
+                          },
+                          "createdAt": {
+                            "type": "string"
+                          },
+                          "orgSlug": {
+                            "type": "string"
+                          },
+                          "orgName": {
+                            "type": "string"
+                          }
+                        },
+                        "required": [
+                          "id",
+                          "organizationId",
+                          "userId",
+                          "sourceType",
+                          "ruleId",
+                          "reminderId",
+                          "occurrenceId",
+                          "kind",
+                          "channel",
+                          "status",
+                          "payload",
+                          "sentAt",
+                          "readAt",
+                          "ackedAt",
+                          "createdAt"
+                        ],
+                        "additionalProperties": false
+                      }
+                    }
+                  },
+                  "required": [
+                    "alerts"
+                  ],
+                  "additionalProperties": false
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/org/{slug}/alerts/{id}/read": {
+      "patch": {
+        "operationId": "markAlertRead",
+        "tags": [
+          "Alerts"
+        ],
+        "description": "Mark in-app alert as read",
+        "parameters": [
+          {
+            "schema": {
+              "type": "string",
+              "minLength": 1
+            },
+            "in": "path",
+            "name": "slug",
+            "required": true
+          },
+          {
+            "schema": {
+              "type": "string",
+              "minLength": 1
+            },
+            "in": "path",
+            "name": "id",
+            "required": true
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Default Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "alert": {
+                      "type": "object",
+                      "properties": {
+                        "id": {
+                          "type": "string"
+                        },
+                        "readAt": {
+                          "type": "string",
+                          "nullable": true
+                        }
+                      },
+                      "required": [
+                        "id",
+                        "readAt"
+                      ],
+                      "additionalProperties": false
+                    }
+                  },
+                  "required": [
+                    "alert"
+                  ],
+                  "additionalProperties": false
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/me/alerts/pending": {
+      "get": {
+        "operationId": "listPendingExtensionAlerts",
+        "tags": [
+          "Alerts"
+        ],
+        "description": "List pending extension alerts for current user across all orgs",
+        "responses": {
+          "200": {
+            "description": "Default Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "alerts": {
+                      "type": "array",
+                      "items": {
+                        "type": "object",
+                        "properties": {
+                          "id": {
+                            "type": "string"
+                          },
+                          "organizationId": {
+                            "type": "string"
+                          },
+                          "userId": {
+                            "type": "string"
+                          },
+                          "recipientName": {
+                            "type": "string",
+                            "nullable": true
+                          },
+                          "sourceType": {
+                            "type": "string",
+                            "enum": [
+                              "rule",
+                              "reminder",
+                              "investment"
+                            ]
+                          },
+                          "ruleId": {
+                            "type": "string",
+                            "nullable": true
+                          },
+                          "reminderId": {
+                            "type": "string",
+                            "nullable": true
+                          },
+                          "occurrenceId": {
+                            "type": "string",
+                            "nullable": true
+                          },
+                          "kind": {
+                            "type": "string"
+                          },
+                          "channel": {
+                            "type": "string",
+                            "enum": [
+                              "in_app",
+                              "whatsapp",
+                              "extension"
+                            ]
+                          },
+                          "channels": {
+                            "type": "array",
+                            "items": {
+                              "type": "string",
+                              "enum": [
+                                "in_app",
+                                "whatsapp",
+                                "extension"
+                              ]
+                            }
+                          },
+                          "status": {
+                            "type": "string",
+                            "enum": [
+                              "pending",
+                              "sent",
+                              "failed",
+                              "skipped"
+                            ]
+                          },
+                          "payload": {
+                            "type": "object",
+                            "additionalProperties": {}
+                          },
+                          "sentAt": {
+                            "type": "string",
+                            "nullable": true
+                          },
+                          "readAt": {
+                            "type": "string",
+                            "nullable": true
+                          },
+                          "ackedAt": {
+                            "type": "string",
+                            "nullable": true
+                          },
+                          "createdAt": {
+                            "type": "string"
+                          },
+                          "orgSlug": {
+                            "type": "string"
+                          },
+                          "orgName": {
+                            "type": "string"
+                          }
+                        },
+                        "required": [
+                          "id",
+                          "organizationId",
+                          "userId",
+                          "sourceType",
+                          "ruleId",
+                          "reminderId",
+                          "occurrenceId",
+                          "kind",
+                          "channel",
+                          "status",
+                          "payload",
+                          "sentAt",
+                          "readAt",
+                          "ackedAt",
+                          "createdAt"
+                        ],
+                        "additionalProperties": false
+                      }
+                    }
+                  },
+                  "required": [
+                    "alerts"
+                  ],
+                  "additionalProperties": false
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/org/{slug}/alerts/{id}/ack": {
+      "post": {
+        "operationId": "ackAlert",
+        "tags": [
+          "Alerts"
+        ],
+        "description": "Acknowledge extension alert delivery",
+        "parameters": [
+          {
+            "schema": {
+              "type": "string",
+              "minLength": 1
+            },
+            "in": "path",
+            "name": "slug",
+            "required": true
+          },
+          {
+            "schema": {
+              "type": "string",
+              "minLength": 1
+            },
+            "in": "path",
+            "name": "id",
+            "required": true
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Default Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "alert": {
+                      "type": "object",
+                      "properties": {
+                        "id": {
+                          "type": "string"
+                        },
+                        "ackedAt": {
+                          "type": "string",
+                          "nullable": true
+                        },
+                        "status": {
+                          "type": "string",
+                          "enum": [
+                            "pending",
+                            "sent",
+                            "failed",
+                            "skipped"
+                          ]
+                        }
+                      },
+                      "required": [
+                        "id",
+                        "ackedAt",
+                        "status"
+                      ],
+                      "additionalProperties": false
+                    }
+                  },
+                  "required": [
+                    "alert"
                   ],
                   "additionalProperties": false
                 }

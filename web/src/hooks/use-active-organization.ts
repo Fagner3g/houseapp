@@ -3,7 +3,7 @@ import { useEffect } from 'react'
 
 import { useOrgStore } from '../stores/org'
 
-function getOrgFromMatches(
+export function getOrgFromMatches(
   matches: Array<{
     params: Record<string, unknown>
   }>

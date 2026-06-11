@@ -26,10 +26,6 @@ export const transactionSeries = pgTable('transactions_series', {
     .notNull()
     .references(() => organizations.id, { onDelete: 'cascade' }),
   active: boolean('active').notNull().default(true),
-  overdueAlertFrequency: text('overdue_alert_frequency')
-    .$type<'never' | 'daily' | 'weekly' | 'monthly'>()
-    .notNull()
-    .default('weekly'),
   createdAt: timestamp('created_at', { withTimezone: true }).notNull().defaultNow(),
   updatedAt: timestamp('updated_at', { withTimezone: true }).notNull().defaultNow(),
 })

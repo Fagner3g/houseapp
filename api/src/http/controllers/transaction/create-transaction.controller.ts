@@ -32,7 +32,6 @@ export async function createTransactionController(request: Req, reply: FastifyRe
     dueDate,
     description,
     tags,
-    alertFrequency,
   } = request.body
 
   const ownerId = request.user.sub
@@ -44,7 +43,7 @@ export async function createTransactionController(request: Req, reply: FastifyRe
   }
 
   try {
-    await createTransactionService({
+    const { series } = await createTransactionService({
       type,
       title,
       ownerId,
@@ -62,13 +61,11 @@ export async function createTransactionController(request: Req, reply: FastifyRe
       recurrenceStart,
       installmentsTotal,
       installmentsPaid,
-      alertFrequency,
     })
     logger.debug('Transaction created successfully')
+    return reply.status(201).send({ seriesId: series.id })
   } catch (error) {
     logger.error(error)
     throw new BadRequestError('Error creating transaction')
   }
-
-  return reply.status(201).send(null)
 }

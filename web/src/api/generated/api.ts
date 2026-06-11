@@ -3,7 +3,7 @@
  * Do not edit manually.
  * HouseApp API
  * API for HouseApp
- * OpenAPI spec version: 1.0.2
+ * OpenAPI spec version: 1.1.1
  */
 import { useMutation, useQuery } from "@tanstack/react-query";
 import type {
@@ -22,7 +22,11 @@ import type {
 } from "@tanstack/react-query";
 
 import type {
+  AckAlert200,
   CompleteGoalBody,
+  CompleteReminder200,
+  CreateAlertRule201,
+  CreateAlertRuleBody,
   CreateChatMessage201,
   CreateChatMessage400,
   CreateChatMessage404,
@@ -37,11 +41,15 @@ import type {
   CreateInviteBody,
   CreateOrganization201,
   CreateOrganizationBody,
+  CreateReminder201,
+  CreateReminderBody,
   CreateTag201,
   CreateTagBody,
+  CreateTransaction201,
   CreateTransactionBody,
   CreateUserWithInviteBody,
   DeleteTransactionsBody,
+  GetAlertSettings200,
   GetInvestmentDashboard200,
   GetInvestmentQuotePreview200,
   GetInvestmentQuotePreviewParams,
@@ -50,11 +58,11 @@ import type {
   GetJobs200,
   GetJobsJobKey200,
   GetJobsJobKey404,
-  GetJobsOverdueAlertsPreview200,
-  GetJobsOverdueAlertsPreviewParams,
+  GetJobsJobKeyHistory200,
+  GetJobsJobKeyHistory404,
+  GetJobsJobKeyNextRun200,
+  GetJobsJobKeyNextRun404,
   GetJobsStats200,
-  GetJobsTransactionsalertsPreview200,
-  GetJobsTransactionsalertsPreviewParams,
   GetOrgSlugReportsTransactions200,
   GetOrgSlugReportsTransactions401,
   GetOrgSlugReportsTransactions403,
@@ -64,16 +72,26 @@ import type {
   GetTransactionById200,
   GetTransactionInstallments200,
   GetWeekSummary200,
+  ListAlertRules200,
+  ListAlertRulesParams,
   ListChatMessages200,
   ListChatMessages404,
   ListChatMessagesParams,
+  ListInboxAlerts200,
+  ListInboxAlertsParams,
   ListInvestmentAssets200,
   ListInvestmentPlans200,
   ListOrganizations200,
+  ListPendingExtensionAlerts200,
+  ListRecentDeliveries200,
+  ListRecentDeliveriesParams,
+  ListReminders200,
+  ListRemindersParams,
   ListTags200,
   ListTransactions200,
   ListTransactionsParams,
   ListUsersByOrg200,
+  MarkAlertRead200,
   PatchOrgSlugUsers200,
   PatchOrgSlugUsersBody,
   PatchOrgSlugUsersNotifications200,
@@ -93,6 +111,9 @@ import type {
   PostOrgSlugJobsSendMonthlySummary200,
   PostOrgSlugJobsSendMonthlySummary400,
   PostOrgSlugJobsSendMonthlySummaryBody,
+  PreviewAlerts200,
+  RemoveUserFromOrg200,
+  RemoveUserFromOrgBody,
   RenameOrg200,
   RenameOrgBody,
   SetInvestmentQuote200,
@@ -100,15 +121,25 @@ import type {
   SignIn200,
   SignInBody,
   SignUpBody,
+  SnoozeReminder200,
+  SnoozeReminderBody,
+  UpdateAlertRule200,
+  UpdateAlertRuleBody,
+  UpdateAlertSettings200,
+  UpdateAlertSettingsBody,
   UpdateInvestmentAsset200,
   UpdateInvestmentAssetBody,
   UpdateInvestmentExecution200,
   UpdateInvestmentExecutionBody,
   UpdateInvestmentPlan200,
   UpdateInvestmentPlanBody,
+  UpdateReminder200,
+  UpdateReminderBody,
   UpdateTag200,
   UpdateTagBody,
   UpdateTransactionBody,
+  UpsertSeriesAlertRule200,
+  UpsertSeriesAlertRuleBody,
   ValidateToken200,
   ValidateTokenBody,
 } from "./model";
@@ -1105,405 +1136,6 @@ export const usePostJobsStartAll = <TError = unknown, TContext = unknown>(
 };
 
 /**
- * @summary Preview das transações que seriam processadas pelo job de alertas
- */
-export const getGetJobsTransactionsalertsPreviewUrl = (
-  alerts: string,
-  params?: GetJobsTransactionsalertsPreviewParams,
-) => {
-  const normalizedParams = new URLSearchParams();
-
-  Object.entries(params || {}).forEach(([key, value]) => {
-    if (value !== undefined) {
-      normalizedParams.append(key, value === null ? "null" : value.toString());
-    }
-  });
-
-  const stringifiedParams = normalizedParams.toString();
-
-  return stringifiedParams.length > 0
-    ? `/jobs/transactions${alerts}/preview?${stringifiedParams}`
-    : `/jobs/transactions${alerts}/preview`;
-};
-
-export const getJobsTransactionsalertsPreview = async (
-  alerts: string,
-  params?: GetJobsTransactionsalertsPreviewParams,
-  options?: RequestInit,
-): Promise<GetJobsTransactionsalertsPreview200> => {
-  return http<GetJobsTransactionsalertsPreview200>(
-    getGetJobsTransactionsalertsPreviewUrl(alerts, params),
-    {
-      ...options,
-      method: "GET",
-    },
-  );
-};
-
-export const getGetJobsTransactionsalertsPreviewQueryKey = (
-  alerts?: string,
-  params?: GetJobsTransactionsalertsPreviewParams,
-) => {
-  return [
-    `/jobs/transactions${alerts}/preview`,
-    ...(params ? [params] : []),
-  ] as const;
-};
-
-export const getGetJobsTransactionsalertsPreviewQueryOptions = <
-  TData = Awaited<ReturnType<typeof getJobsTransactionsalertsPreview>>,
-  TError = unknown,
->(
-  alerts: string,
-  params?: GetJobsTransactionsalertsPreviewParams,
-  options?: {
-    query?: Partial<
-      UseQueryOptions<
-        Awaited<ReturnType<typeof getJobsTransactionsalertsPreview>>,
-        TError,
-        TData
-      >
-    >;
-    request?: SecondParameter<typeof http>;
-  },
-) => {
-  const { query: queryOptions, request: requestOptions } = options ?? {};
-
-  const queryKey =
-    queryOptions?.queryKey ??
-    getGetJobsTransactionsalertsPreviewQueryKey(alerts, params);
-
-  const queryFn: QueryFunction<
-    Awaited<ReturnType<typeof getJobsTransactionsalertsPreview>>
-  > = ({ signal }) =>
-    getJobsTransactionsalertsPreview(alerts, params, {
-      signal,
-      ...requestOptions,
-    });
-
-  return {
-    queryKey,
-    queryFn,
-    enabled: !!alerts,
-    ...queryOptions,
-  } as UseQueryOptions<
-    Awaited<ReturnType<typeof getJobsTransactionsalertsPreview>>,
-    TError,
-    TData
-  > & { queryKey: DataTag<QueryKey, TData, TError> };
-};
-
-export type GetJobsTransactionsalertsPreviewQueryResult = NonNullable<
-  Awaited<ReturnType<typeof getJobsTransactionsalertsPreview>>
->;
-export type GetJobsTransactionsalertsPreviewQueryError = unknown;
-
-export function useGetJobsTransactionsalertsPreview<
-  TData = Awaited<ReturnType<typeof getJobsTransactionsalertsPreview>>,
-  TError = unknown,
->(
-  alerts: string,
-  params: undefined | GetJobsTransactionsalertsPreviewParams,
-  options: {
-    query: Partial<
-      UseQueryOptions<
-        Awaited<ReturnType<typeof getJobsTransactionsalertsPreview>>,
-        TError,
-        TData
-      >
-    > &
-      Pick<
-        DefinedInitialDataOptions<
-          Awaited<ReturnType<typeof getJobsTransactionsalertsPreview>>,
-          TError,
-          Awaited<ReturnType<typeof getJobsTransactionsalertsPreview>>
-        >,
-        "initialData"
-      >;
-    request?: SecondParameter<typeof http>;
-  },
-  queryClient?: QueryClient,
-): DefinedUseQueryResult<TData, TError> & {
-  queryKey: DataTag<QueryKey, TData, TError>;
-};
-export function useGetJobsTransactionsalertsPreview<
-  TData = Awaited<ReturnType<typeof getJobsTransactionsalertsPreview>>,
-  TError = unknown,
->(
-  alerts: string,
-  params?: GetJobsTransactionsalertsPreviewParams,
-  options?: {
-    query?: Partial<
-      UseQueryOptions<
-        Awaited<ReturnType<typeof getJobsTransactionsalertsPreview>>,
-        TError,
-        TData
-      >
-    > &
-      Pick<
-        UndefinedInitialDataOptions<
-          Awaited<ReturnType<typeof getJobsTransactionsalertsPreview>>,
-          TError,
-          Awaited<ReturnType<typeof getJobsTransactionsalertsPreview>>
-        >,
-        "initialData"
-      >;
-    request?: SecondParameter<typeof http>;
-  },
-  queryClient?: QueryClient,
-): UseQueryResult<TData, TError> & {
-  queryKey: DataTag<QueryKey, TData, TError>;
-};
-export function useGetJobsTransactionsalertsPreview<
-  TData = Awaited<ReturnType<typeof getJobsTransactionsalertsPreview>>,
-  TError = unknown,
->(
-  alerts: string,
-  params?: GetJobsTransactionsalertsPreviewParams,
-  options?: {
-    query?: Partial<
-      UseQueryOptions<
-        Awaited<ReturnType<typeof getJobsTransactionsalertsPreview>>,
-        TError,
-        TData
-      >
-    >;
-    request?: SecondParameter<typeof http>;
-  },
-  queryClient?: QueryClient,
-): UseQueryResult<TData, TError> & {
-  queryKey: DataTag<QueryKey, TData, TError>;
-};
-/**
- * @summary Preview das transações que seriam processadas pelo job de alertas
- */
-
-export function useGetJobsTransactionsalertsPreview<
-  TData = Awaited<ReturnType<typeof getJobsTransactionsalertsPreview>>,
-  TError = unknown,
->(
-  alerts: string,
-  params?: GetJobsTransactionsalertsPreviewParams,
-  options?: {
-    query?: Partial<
-      UseQueryOptions<
-        Awaited<ReturnType<typeof getJobsTransactionsalertsPreview>>,
-        TError,
-        TData
-      >
-    >;
-    request?: SecondParameter<typeof http>;
-  },
-  queryClient?: QueryClient,
-): UseQueryResult<TData, TError> & {
-  queryKey: DataTag<QueryKey, TData, TError>;
-} {
-  const queryOptions = getGetJobsTransactionsalertsPreviewQueryOptions(
-    alerts,
-    params,
-    options,
-  );
-
-  const query = useQuery(queryOptions, queryClient) as UseQueryResult<
-    TData,
-    TError
-  > & { queryKey: DataTag<QueryKey, TData, TError> };
-
-  query.queryKey = queryOptions.queryKey;
-
-  return query;
-}
-
-/**
- * @summary Preview das transações vencidas que seriam processadas pelo job de alertas vencidas
- */
-export const getGetJobsOverdueAlertsPreviewUrl = (
-  params?: GetJobsOverdueAlertsPreviewParams,
-) => {
-  const normalizedParams = new URLSearchParams();
-
-  Object.entries(params || {}).forEach(([key, value]) => {
-    if (value !== undefined) {
-      normalizedParams.append(key, value === null ? "null" : value.toString());
-    }
-  });
-
-  const stringifiedParams = normalizedParams.toString();
-
-  return stringifiedParams.length > 0
-    ? `/jobs/overdue-alerts/preview?${stringifiedParams}`
-    : `/jobs/overdue-alerts/preview`;
-};
-
-export const getJobsOverdueAlertsPreview = async (
-  params?: GetJobsOverdueAlertsPreviewParams,
-  options?: RequestInit,
-): Promise<GetJobsOverdueAlertsPreview200> => {
-  return http<GetJobsOverdueAlertsPreview200>(
-    getGetJobsOverdueAlertsPreviewUrl(params),
-    {
-      ...options,
-      method: "GET",
-    },
-  );
-};
-
-export const getGetJobsOverdueAlertsPreviewQueryKey = (
-  params?: GetJobsOverdueAlertsPreviewParams,
-) => {
-  return [`/jobs/overdue-alerts/preview`, ...(params ? [params] : [])] as const;
-};
-
-export const getGetJobsOverdueAlertsPreviewQueryOptions = <
-  TData = Awaited<ReturnType<typeof getJobsOverdueAlertsPreview>>,
-  TError = unknown,
->(
-  params?: GetJobsOverdueAlertsPreviewParams,
-  options?: {
-    query?: Partial<
-      UseQueryOptions<
-        Awaited<ReturnType<typeof getJobsOverdueAlertsPreview>>,
-        TError,
-        TData
-      >
-    >;
-    request?: SecondParameter<typeof http>;
-  },
-) => {
-  const { query: queryOptions, request: requestOptions } = options ?? {};
-
-  const queryKey =
-    queryOptions?.queryKey ?? getGetJobsOverdueAlertsPreviewQueryKey(params);
-
-  const queryFn: QueryFunction<
-    Awaited<ReturnType<typeof getJobsOverdueAlertsPreview>>
-  > = ({ signal }) =>
-    getJobsOverdueAlertsPreview(params, { signal, ...requestOptions });
-
-  return { queryKey, queryFn, ...queryOptions } as UseQueryOptions<
-    Awaited<ReturnType<typeof getJobsOverdueAlertsPreview>>,
-    TError,
-    TData
-  > & { queryKey: DataTag<QueryKey, TData, TError> };
-};
-
-export type GetJobsOverdueAlertsPreviewQueryResult = NonNullable<
-  Awaited<ReturnType<typeof getJobsOverdueAlertsPreview>>
->;
-export type GetJobsOverdueAlertsPreviewQueryError = unknown;
-
-export function useGetJobsOverdueAlertsPreview<
-  TData = Awaited<ReturnType<typeof getJobsOverdueAlertsPreview>>,
-  TError = unknown,
->(
-  params: undefined | GetJobsOverdueAlertsPreviewParams,
-  options: {
-    query: Partial<
-      UseQueryOptions<
-        Awaited<ReturnType<typeof getJobsOverdueAlertsPreview>>,
-        TError,
-        TData
-      >
-    > &
-      Pick<
-        DefinedInitialDataOptions<
-          Awaited<ReturnType<typeof getJobsOverdueAlertsPreview>>,
-          TError,
-          Awaited<ReturnType<typeof getJobsOverdueAlertsPreview>>
-        >,
-        "initialData"
-      >;
-    request?: SecondParameter<typeof http>;
-  },
-  queryClient?: QueryClient,
-): DefinedUseQueryResult<TData, TError> & {
-  queryKey: DataTag<QueryKey, TData, TError>;
-};
-export function useGetJobsOverdueAlertsPreview<
-  TData = Awaited<ReturnType<typeof getJobsOverdueAlertsPreview>>,
-  TError = unknown,
->(
-  params?: GetJobsOverdueAlertsPreviewParams,
-  options?: {
-    query?: Partial<
-      UseQueryOptions<
-        Awaited<ReturnType<typeof getJobsOverdueAlertsPreview>>,
-        TError,
-        TData
-      >
-    > &
-      Pick<
-        UndefinedInitialDataOptions<
-          Awaited<ReturnType<typeof getJobsOverdueAlertsPreview>>,
-          TError,
-          Awaited<ReturnType<typeof getJobsOverdueAlertsPreview>>
-        >,
-        "initialData"
-      >;
-    request?: SecondParameter<typeof http>;
-  },
-  queryClient?: QueryClient,
-): UseQueryResult<TData, TError> & {
-  queryKey: DataTag<QueryKey, TData, TError>;
-};
-export function useGetJobsOverdueAlertsPreview<
-  TData = Awaited<ReturnType<typeof getJobsOverdueAlertsPreview>>,
-  TError = unknown,
->(
-  params?: GetJobsOverdueAlertsPreviewParams,
-  options?: {
-    query?: Partial<
-      UseQueryOptions<
-        Awaited<ReturnType<typeof getJobsOverdueAlertsPreview>>,
-        TError,
-        TData
-      >
-    >;
-    request?: SecondParameter<typeof http>;
-  },
-  queryClient?: QueryClient,
-): UseQueryResult<TData, TError> & {
-  queryKey: DataTag<QueryKey, TData, TError>;
-};
-/**
- * @summary Preview das transações vencidas que seriam processadas pelo job de alertas vencidas
- */
-
-export function useGetJobsOverdueAlertsPreview<
-  TData = Awaited<ReturnType<typeof getJobsOverdueAlertsPreview>>,
-  TError = unknown,
->(
-  params?: GetJobsOverdueAlertsPreviewParams,
-  options?: {
-    query?: Partial<
-      UseQueryOptions<
-        Awaited<ReturnType<typeof getJobsOverdueAlertsPreview>>,
-        TError,
-        TData
-      >
-    >;
-    request?: SecondParameter<typeof http>;
-  },
-  queryClient?: QueryClient,
-): UseQueryResult<TData, TError> & {
-  queryKey: DataTag<QueryKey, TData, TError>;
-} {
-  const queryOptions = getGetJobsOverdueAlertsPreviewQueryOptions(
-    params,
-    options,
-  );
-
-  const query = useQuery(queryOptions, queryClient) as UseQueryResult<
-    TData,
-    TError
-  > & { queryKey: DataTag<QueryKey, TData, TError> };
-
-  query.queryKey = queryOptions.queryKey;
-
-  return query;
-}
-
-/**
  * @summary Envia resumo mensal via WhatsApp para um usuário da organização
  */
 export const getPostOrgSlugJobsSendMonthlySummaryUrl = (slug: string) => {
@@ -1600,6 +1232,350 @@ export const usePostOrgSlugJobsSendMonthlySummary = <
 
   return useMutation(mutationOptions, queryClient);
 };
+
+/**
+ * @summary Retorna o histórico de execuções de um job
+ */
+export const getGetJobsJobKeyHistoryUrl = (jobKey: string) => {
+  return `/jobs/${jobKey}/history`;
+};
+
+export const getJobsJobKeyHistory = async (
+  jobKey: string,
+  options?: RequestInit,
+): Promise<GetJobsJobKeyHistory200> => {
+  return http<GetJobsJobKeyHistory200>(getGetJobsJobKeyHistoryUrl(jobKey), {
+    ...options,
+    method: "GET",
+  });
+};
+
+export const getGetJobsJobKeyHistoryQueryKey = (jobKey?: string) => {
+  return [`/jobs/${jobKey}/history`] as const;
+};
+
+export const getGetJobsJobKeyHistoryQueryOptions = <
+  TData = Awaited<ReturnType<typeof getJobsJobKeyHistory>>,
+  TError = GetJobsJobKeyHistory404,
+>(
+  jobKey: string,
+  options?: {
+    query?: Partial<
+      UseQueryOptions<
+        Awaited<ReturnType<typeof getJobsJobKeyHistory>>,
+        TError,
+        TData
+      >
+    >;
+    request?: SecondParameter<typeof http>;
+  },
+) => {
+  const { query: queryOptions, request: requestOptions } = options ?? {};
+
+  const queryKey =
+    queryOptions?.queryKey ?? getGetJobsJobKeyHistoryQueryKey(jobKey);
+
+  const queryFn: QueryFunction<
+    Awaited<ReturnType<typeof getJobsJobKeyHistory>>
+  > = ({ signal }) =>
+    getJobsJobKeyHistory(jobKey, { signal, ...requestOptions });
+
+  return {
+    queryKey,
+    queryFn,
+    enabled: !!jobKey,
+    ...queryOptions,
+  } as UseQueryOptions<
+    Awaited<ReturnType<typeof getJobsJobKeyHistory>>,
+    TError,
+    TData
+  > & { queryKey: DataTag<QueryKey, TData, TError> };
+};
+
+export type GetJobsJobKeyHistoryQueryResult = NonNullable<
+  Awaited<ReturnType<typeof getJobsJobKeyHistory>>
+>;
+export type GetJobsJobKeyHistoryQueryError = GetJobsJobKeyHistory404;
+
+export function useGetJobsJobKeyHistory<
+  TData = Awaited<ReturnType<typeof getJobsJobKeyHistory>>,
+  TError = GetJobsJobKeyHistory404,
+>(
+  jobKey: string,
+  options: {
+    query: Partial<
+      UseQueryOptions<
+        Awaited<ReturnType<typeof getJobsJobKeyHistory>>,
+        TError,
+        TData
+      >
+    > &
+      Pick<
+        DefinedInitialDataOptions<
+          Awaited<ReturnType<typeof getJobsJobKeyHistory>>,
+          TError,
+          Awaited<ReturnType<typeof getJobsJobKeyHistory>>
+        >,
+        "initialData"
+      >;
+    request?: SecondParameter<typeof http>;
+  },
+  queryClient?: QueryClient,
+): DefinedUseQueryResult<TData, TError> & {
+  queryKey: DataTag<QueryKey, TData, TError>;
+};
+export function useGetJobsJobKeyHistory<
+  TData = Awaited<ReturnType<typeof getJobsJobKeyHistory>>,
+  TError = GetJobsJobKeyHistory404,
+>(
+  jobKey: string,
+  options?: {
+    query?: Partial<
+      UseQueryOptions<
+        Awaited<ReturnType<typeof getJobsJobKeyHistory>>,
+        TError,
+        TData
+      >
+    > &
+      Pick<
+        UndefinedInitialDataOptions<
+          Awaited<ReturnType<typeof getJobsJobKeyHistory>>,
+          TError,
+          Awaited<ReturnType<typeof getJobsJobKeyHistory>>
+        >,
+        "initialData"
+      >;
+    request?: SecondParameter<typeof http>;
+  },
+  queryClient?: QueryClient,
+): UseQueryResult<TData, TError> & {
+  queryKey: DataTag<QueryKey, TData, TError>;
+};
+export function useGetJobsJobKeyHistory<
+  TData = Awaited<ReturnType<typeof getJobsJobKeyHistory>>,
+  TError = GetJobsJobKeyHistory404,
+>(
+  jobKey: string,
+  options?: {
+    query?: Partial<
+      UseQueryOptions<
+        Awaited<ReturnType<typeof getJobsJobKeyHistory>>,
+        TError,
+        TData
+      >
+    >;
+    request?: SecondParameter<typeof http>;
+  },
+  queryClient?: QueryClient,
+): UseQueryResult<TData, TError> & {
+  queryKey: DataTag<QueryKey, TData, TError>;
+};
+/**
+ * @summary Retorna o histórico de execuções de um job
+ */
+
+export function useGetJobsJobKeyHistory<
+  TData = Awaited<ReturnType<typeof getJobsJobKeyHistory>>,
+  TError = GetJobsJobKeyHistory404,
+>(
+  jobKey: string,
+  options?: {
+    query?: Partial<
+      UseQueryOptions<
+        Awaited<ReturnType<typeof getJobsJobKeyHistory>>,
+        TError,
+        TData
+      >
+    >;
+    request?: SecondParameter<typeof http>;
+  },
+  queryClient?: QueryClient,
+): UseQueryResult<TData, TError> & {
+  queryKey: DataTag<QueryKey, TData, TError>;
+} {
+  const queryOptions = getGetJobsJobKeyHistoryQueryOptions(jobKey, options);
+
+  const query = useQuery(queryOptions, queryClient) as UseQueryResult<
+    TData,
+    TError
+  > & { queryKey: DataTag<QueryKey, TData, TError> };
+
+  query.queryKey = queryOptions.queryKey;
+
+  return query;
+}
+
+/**
+ * @summary Retorna a próxima execução de um job
+ */
+export const getGetJobsJobKeyNextRunUrl = (jobKey: string) => {
+  return `/jobs/${jobKey}/next-run`;
+};
+
+export const getJobsJobKeyNextRun = async (
+  jobKey: string,
+  options?: RequestInit,
+): Promise<GetJobsJobKeyNextRun200> => {
+  return http<GetJobsJobKeyNextRun200>(getGetJobsJobKeyNextRunUrl(jobKey), {
+    ...options,
+    method: "GET",
+  });
+};
+
+export const getGetJobsJobKeyNextRunQueryKey = (jobKey?: string) => {
+  return [`/jobs/${jobKey}/next-run`] as const;
+};
+
+export const getGetJobsJobKeyNextRunQueryOptions = <
+  TData = Awaited<ReturnType<typeof getJobsJobKeyNextRun>>,
+  TError = GetJobsJobKeyNextRun404,
+>(
+  jobKey: string,
+  options?: {
+    query?: Partial<
+      UseQueryOptions<
+        Awaited<ReturnType<typeof getJobsJobKeyNextRun>>,
+        TError,
+        TData
+      >
+    >;
+    request?: SecondParameter<typeof http>;
+  },
+) => {
+  const { query: queryOptions, request: requestOptions } = options ?? {};
+
+  const queryKey =
+    queryOptions?.queryKey ?? getGetJobsJobKeyNextRunQueryKey(jobKey);
+
+  const queryFn: QueryFunction<
+    Awaited<ReturnType<typeof getJobsJobKeyNextRun>>
+  > = ({ signal }) =>
+    getJobsJobKeyNextRun(jobKey, { signal, ...requestOptions });
+
+  return {
+    queryKey,
+    queryFn,
+    enabled: !!jobKey,
+    ...queryOptions,
+  } as UseQueryOptions<
+    Awaited<ReturnType<typeof getJobsJobKeyNextRun>>,
+    TError,
+    TData
+  > & { queryKey: DataTag<QueryKey, TData, TError> };
+};
+
+export type GetJobsJobKeyNextRunQueryResult = NonNullable<
+  Awaited<ReturnType<typeof getJobsJobKeyNextRun>>
+>;
+export type GetJobsJobKeyNextRunQueryError = GetJobsJobKeyNextRun404;
+
+export function useGetJobsJobKeyNextRun<
+  TData = Awaited<ReturnType<typeof getJobsJobKeyNextRun>>,
+  TError = GetJobsJobKeyNextRun404,
+>(
+  jobKey: string,
+  options: {
+    query: Partial<
+      UseQueryOptions<
+        Awaited<ReturnType<typeof getJobsJobKeyNextRun>>,
+        TError,
+        TData
+      >
+    > &
+      Pick<
+        DefinedInitialDataOptions<
+          Awaited<ReturnType<typeof getJobsJobKeyNextRun>>,
+          TError,
+          Awaited<ReturnType<typeof getJobsJobKeyNextRun>>
+        >,
+        "initialData"
+      >;
+    request?: SecondParameter<typeof http>;
+  },
+  queryClient?: QueryClient,
+): DefinedUseQueryResult<TData, TError> & {
+  queryKey: DataTag<QueryKey, TData, TError>;
+};
+export function useGetJobsJobKeyNextRun<
+  TData = Awaited<ReturnType<typeof getJobsJobKeyNextRun>>,
+  TError = GetJobsJobKeyNextRun404,
+>(
+  jobKey: string,
+  options?: {
+    query?: Partial<
+      UseQueryOptions<
+        Awaited<ReturnType<typeof getJobsJobKeyNextRun>>,
+        TError,
+        TData
+      >
+    > &
+      Pick<
+        UndefinedInitialDataOptions<
+          Awaited<ReturnType<typeof getJobsJobKeyNextRun>>,
+          TError,
+          Awaited<ReturnType<typeof getJobsJobKeyNextRun>>
+        >,
+        "initialData"
+      >;
+    request?: SecondParameter<typeof http>;
+  },
+  queryClient?: QueryClient,
+): UseQueryResult<TData, TError> & {
+  queryKey: DataTag<QueryKey, TData, TError>;
+};
+export function useGetJobsJobKeyNextRun<
+  TData = Awaited<ReturnType<typeof getJobsJobKeyNextRun>>,
+  TError = GetJobsJobKeyNextRun404,
+>(
+  jobKey: string,
+  options?: {
+    query?: Partial<
+      UseQueryOptions<
+        Awaited<ReturnType<typeof getJobsJobKeyNextRun>>,
+        TError,
+        TData
+      >
+    >;
+    request?: SecondParameter<typeof http>;
+  },
+  queryClient?: QueryClient,
+): UseQueryResult<TData, TError> & {
+  queryKey: DataTag<QueryKey, TData, TError>;
+};
+/**
+ * @summary Retorna a próxima execução de um job
+ */
+
+export function useGetJobsJobKeyNextRun<
+  TData = Awaited<ReturnType<typeof getJobsJobKeyNextRun>>,
+  TError = GetJobsJobKeyNextRun404,
+>(
+  jobKey: string,
+  options?: {
+    query?: Partial<
+      UseQueryOptions<
+        Awaited<ReturnType<typeof getJobsJobKeyNextRun>>,
+        TError,
+        TData
+      >
+    >;
+    request?: SecondParameter<typeof http>;
+  },
+  queryClient?: QueryClient,
+): UseQueryResult<TData, TError> & {
+  queryKey: DataTag<QueryKey, TData, TError>;
+} {
+  const queryOptions = getGetJobsJobKeyNextRunQueryOptions(jobKey, options);
+
+  const query = useQuery(queryOptions, queryClient) as UseQueryResult<
+    TData,
+    TError
+  > & { queryKey: DataTag<QueryKey, TData, TError> };
+
+  query.queryKey = queryOptions.queryKey;
+
+  return query;
+}
 
 /**
  * Sigin In (email or whatsapp)
@@ -2239,6 +2215,95 @@ export const usePatchOrgSlugUsers = <TError = unknown, TContext = unknown>(
   TContext
 > => {
   const mutationOptions = getPatchOrgSlugUsersMutationOptions(options);
+
+  return useMutation(mutationOptions, queryClient);
+};
+
+/**
+ * @summary Remove user from organization or delete account
+ */
+export const getRemoveUserFromOrgUrl = (slug: string) => {
+  return `/org/${slug}/users`;
+};
+
+export const removeUserFromOrg = async (
+  slug: string,
+  removeUserFromOrgBody: RemoveUserFromOrgBody,
+  options?: RequestInit,
+): Promise<RemoveUserFromOrg200> => {
+  return http<RemoveUserFromOrg200>(getRemoveUserFromOrgUrl(slug), {
+    ...options,
+    method: "DELETE",
+    headers: { "Content-Type": "application/json", ...options?.headers },
+    body: JSON.stringify(removeUserFromOrgBody),
+  });
+};
+
+export const getRemoveUserFromOrgMutationOptions = <
+  TError = unknown,
+  TContext = unknown,
+>(options?: {
+  mutation?: UseMutationOptions<
+    Awaited<ReturnType<typeof removeUserFromOrg>>,
+    TError,
+    { slug: string; data: RemoveUserFromOrgBody },
+    TContext
+  >;
+  request?: SecondParameter<typeof http>;
+}): UseMutationOptions<
+  Awaited<ReturnType<typeof removeUserFromOrg>>,
+  TError,
+  { slug: string; data: RemoveUserFromOrgBody },
+  TContext
+> => {
+  const mutationKey = ["removeUserFromOrg"];
+  const { mutation: mutationOptions, request: requestOptions } = options
+    ? options.mutation &&
+      "mutationKey" in options.mutation &&
+      options.mutation.mutationKey
+      ? options
+      : { ...options, mutation: { ...options.mutation, mutationKey } }
+    : { mutation: { mutationKey }, request: undefined };
+
+  const mutationFn: MutationFunction<
+    Awaited<ReturnType<typeof removeUserFromOrg>>,
+    { slug: string; data: RemoveUserFromOrgBody }
+  > = (props) => {
+    const { slug, data } = props ?? {};
+
+    return removeUserFromOrg(slug, data, requestOptions);
+  };
+
+  return { mutationFn, ...mutationOptions };
+};
+
+export type RemoveUserFromOrgMutationResult = NonNullable<
+  Awaited<ReturnType<typeof removeUserFromOrg>>
+>;
+export type RemoveUserFromOrgMutationBody = RemoveUserFromOrgBody;
+export type RemoveUserFromOrgMutationError = unknown;
+
+/**
+ * @summary Remove user from organization or delete account
+ */
+export const useRemoveUserFromOrg = <TError = unknown, TContext = unknown>(
+  options?: {
+    mutation?: UseMutationOptions<
+      Awaited<ReturnType<typeof removeUserFromOrg>>,
+      TError,
+      { slug: string; data: RemoveUserFromOrgBody },
+      TContext
+    >;
+    request?: SecondParameter<typeof http>;
+  },
+  queryClient?: QueryClient,
+): UseMutationResult<
+  Awaited<ReturnType<typeof removeUserFromOrg>>,
+  TError,
+  { slug: string; data: RemoveUserFromOrgBody },
+  TContext
+> => {
+  const mutationOptions = getRemoveUserFromOrgMutationOptions(options);
 
   return useMutation(mutationOptions, queryClient);
 };
@@ -5614,8 +5679,8 @@ export const createTransaction = async (
   slug: string,
   createTransactionBody: CreateTransactionBody,
   options?: RequestInit,
-): Promise<null> => {
-  return http<null>(getCreateTransactionUrl(slug), {
+): Promise<CreateTransaction201> => {
+  return http<CreateTransaction201>(getCreateTransactionUrl(slug), {
     ...options,
     method: "POST",
     headers: { "Content-Type": "application/json", ...options?.headers },
@@ -6429,7 +6494,7 @@ export const useDeleteTransactions = <TError = unknown, TContext = unknown>(
 };
 
 /**
- * Mark current installment as paid
+ * Mark current installment as paid, with optional partial payment amount
  */
 export const getPayTransactionUrl = (slug: string, id: string) => {
   return `/org/${slug}/transaction/${id}/pay`;
@@ -7037,6 +7102,2243 @@ export function useGetOrgSlugReportsTransactions<
 
   return query;
 }
+
+/**
+ * Get organization alert settings
+ */
+export const getGetAlertSettingsUrl = (slug: string) => {
+  return `/org/${slug}/settings/alerts`;
+};
+
+export const getAlertSettings = async (
+  slug: string,
+  options?: RequestInit,
+): Promise<GetAlertSettings200> => {
+  return http<GetAlertSettings200>(getGetAlertSettingsUrl(slug), {
+    ...options,
+    method: "GET",
+  });
+};
+
+export const getGetAlertSettingsQueryKey = (slug?: string) => {
+  return [`/org/${slug}/settings/alerts`] as const;
+};
+
+export const getGetAlertSettingsQueryOptions = <
+  TData = Awaited<ReturnType<typeof getAlertSettings>>,
+  TError = unknown,
+>(
+  slug: string,
+  options?: {
+    query?: Partial<
+      UseQueryOptions<
+        Awaited<ReturnType<typeof getAlertSettings>>,
+        TError,
+        TData
+      >
+    >;
+    request?: SecondParameter<typeof http>;
+  },
+) => {
+  const { query: queryOptions, request: requestOptions } = options ?? {};
+
+  const queryKey = queryOptions?.queryKey ?? getGetAlertSettingsQueryKey(slug);
+
+  const queryFn: QueryFunction<
+    Awaited<ReturnType<typeof getAlertSettings>>
+  > = ({ signal }) => getAlertSettings(slug, { signal, ...requestOptions });
+
+  return {
+    queryKey,
+    queryFn,
+    enabled: !!slug,
+    ...queryOptions,
+  } as UseQueryOptions<
+    Awaited<ReturnType<typeof getAlertSettings>>,
+    TError,
+    TData
+  > & { queryKey: DataTag<QueryKey, TData, TError> };
+};
+
+export type GetAlertSettingsQueryResult = NonNullable<
+  Awaited<ReturnType<typeof getAlertSettings>>
+>;
+export type GetAlertSettingsQueryError = unknown;
+
+export function useGetAlertSettings<
+  TData = Awaited<ReturnType<typeof getAlertSettings>>,
+  TError = unknown,
+>(
+  slug: string,
+  options: {
+    query: Partial<
+      UseQueryOptions<
+        Awaited<ReturnType<typeof getAlertSettings>>,
+        TError,
+        TData
+      >
+    > &
+      Pick<
+        DefinedInitialDataOptions<
+          Awaited<ReturnType<typeof getAlertSettings>>,
+          TError,
+          Awaited<ReturnType<typeof getAlertSettings>>
+        >,
+        "initialData"
+      >;
+    request?: SecondParameter<typeof http>;
+  },
+  queryClient?: QueryClient,
+): DefinedUseQueryResult<TData, TError> & {
+  queryKey: DataTag<QueryKey, TData, TError>;
+};
+export function useGetAlertSettings<
+  TData = Awaited<ReturnType<typeof getAlertSettings>>,
+  TError = unknown,
+>(
+  slug: string,
+  options?: {
+    query?: Partial<
+      UseQueryOptions<
+        Awaited<ReturnType<typeof getAlertSettings>>,
+        TError,
+        TData
+      >
+    > &
+      Pick<
+        UndefinedInitialDataOptions<
+          Awaited<ReturnType<typeof getAlertSettings>>,
+          TError,
+          Awaited<ReturnType<typeof getAlertSettings>>
+        >,
+        "initialData"
+      >;
+    request?: SecondParameter<typeof http>;
+  },
+  queryClient?: QueryClient,
+): UseQueryResult<TData, TError> & {
+  queryKey: DataTag<QueryKey, TData, TError>;
+};
+export function useGetAlertSettings<
+  TData = Awaited<ReturnType<typeof getAlertSettings>>,
+  TError = unknown,
+>(
+  slug: string,
+  options?: {
+    query?: Partial<
+      UseQueryOptions<
+        Awaited<ReturnType<typeof getAlertSettings>>,
+        TError,
+        TData
+      >
+    >;
+    request?: SecondParameter<typeof http>;
+  },
+  queryClient?: QueryClient,
+): UseQueryResult<TData, TError> & {
+  queryKey: DataTag<QueryKey, TData, TError>;
+};
+
+export function useGetAlertSettings<
+  TData = Awaited<ReturnType<typeof getAlertSettings>>,
+  TError = unknown,
+>(
+  slug: string,
+  options?: {
+    query?: Partial<
+      UseQueryOptions<
+        Awaited<ReturnType<typeof getAlertSettings>>,
+        TError,
+        TData
+      >
+    >;
+    request?: SecondParameter<typeof http>;
+  },
+  queryClient?: QueryClient,
+): UseQueryResult<TData, TError> & {
+  queryKey: DataTag<QueryKey, TData, TError>;
+} {
+  const queryOptions = getGetAlertSettingsQueryOptions(slug, options);
+
+  const query = useQuery(queryOptions, queryClient) as UseQueryResult<
+    TData,
+    TError
+  > & { queryKey: DataTag<QueryKey, TData, TError> };
+
+  query.queryKey = queryOptions.queryKey;
+
+  return query;
+}
+
+/**
+ * Update organization alert settings
+ */
+export const getUpdateAlertSettingsUrl = (slug: string) => {
+  return `/org/${slug}/settings/alerts`;
+};
+
+export const updateAlertSettings = async (
+  slug: string,
+  updateAlertSettingsBody: UpdateAlertSettingsBody,
+  options?: RequestInit,
+): Promise<UpdateAlertSettings200> => {
+  return http<UpdateAlertSettings200>(getUpdateAlertSettingsUrl(slug), {
+    ...options,
+    method: "PATCH",
+    headers: { "Content-Type": "application/json", ...options?.headers },
+    body: JSON.stringify(updateAlertSettingsBody),
+  });
+};
+
+export const getUpdateAlertSettingsMutationOptions = <
+  TError = unknown,
+  TContext = unknown,
+>(options?: {
+  mutation?: UseMutationOptions<
+    Awaited<ReturnType<typeof updateAlertSettings>>,
+    TError,
+    { slug: string; data: UpdateAlertSettingsBody },
+    TContext
+  >;
+  request?: SecondParameter<typeof http>;
+}): UseMutationOptions<
+  Awaited<ReturnType<typeof updateAlertSettings>>,
+  TError,
+  { slug: string; data: UpdateAlertSettingsBody },
+  TContext
+> => {
+  const mutationKey = ["updateAlertSettings"];
+  const { mutation: mutationOptions, request: requestOptions } = options
+    ? options.mutation &&
+      "mutationKey" in options.mutation &&
+      options.mutation.mutationKey
+      ? options
+      : { ...options, mutation: { ...options.mutation, mutationKey } }
+    : { mutation: { mutationKey }, request: undefined };
+
+  const mutationFn: MutationFunction<
+    Awaited<ReturnType<typeof updateAlertSettings>>,
+    { slug: string; data: UpdateAlertSettingsBody }
+  > = (props) => {
+    const { slug, data } = props ?? {};
+
+    return updateAlertSettings(slug, data, requestOptions);
+  };
+
+  return { mutationFn, ...mutationOptions };
+};
+
+export type UpdateAlertSettingsMutationResult = NonNullable<
+  Awaited<ReturnType<typeof updateAlertSettings>>
+>;
+export type UpdateAlertSettingsMutationBody = UpdateAlertSettingsBody;
+export type UpdateAlertSettingsMutationError = unknown;
+
+export const useUpdateAlertSettings = <TError = unknown, TContext = unknown>(
+  options?: {
+    mutation?: UseMutationOptions<
+      Awaited<ReturnType<typeof updateAlertSettings>>,
+      TError,
+      { slug: string; data: UpdateAlertSettingsBody },
+      TContext
+    >;
+    request?: SecondParameter<typeof http>;
+  },
+  queryClient?: QueryClient,
+): UseMutationResult<
+  Awaited<ReturnType<typeof updateAlertSettings>>,
+  TError,
+  { slug: string; data: UpdateAlertSettingsBody },
+  TContext
+> => {
+  const mutationOptions = getUpdateAlertSettingsMutationOptions(options);
+
+  return useMutation(mutationOptions, queryClient);
+};
+
+/**
+ * List custom reminders for organization
+ */
+export const getListRemindersUrl = (
+  slug: string,
+  params?: ListRemindersParams,
+) => {
+  const normalizedParams = new URLSearchParams();
+
+  Object.entries(params || {}).forEach(([key, value]) => {
+    if (value !== undefined) {
+      normalizedParams.append(key, value === null ? "null" : value.toString());
+    }
+  });
+
+  const stringifiedParams = normalizedParams.toString();
+
+  return stringifiedParams.length > 0
+    ? `/org/${slug}/reminders?${stringifiedParams}`
+    : `/org/${slug}/reminders`;
+};
+
+export const listReminders = async (
+  slug: string,
+  params?: ListRemindersParams,
+  options?: RequestInit,
+): Promise<ListReminders200> => {
+  return http<ListReminders200>(getListRemindersUrl(slug, params), {
+    ...options,
+    method: "GET",
+  });
+};
+
+export const getListRemindersQueryKey = (
+  slug?: string,
+  params?: ListRemindersParams,
+) => {
+  return [`/org/${slug}/reminders`, ...(params ? [params] : [])] as const;
+};
+
+export const getListRemindersQueryOptions = <
+  TData = Awaited<ReturnType<typeof listReminders>>,
+  TError = unknown,
+>(
+  slug: string,
+  params?: ListRemindersParams,
+  options?: {
+    query?: Partial<
+      UseQueryOptions<Awaited<ReturnType<typeof listReminders>>, TError, TData>
+    >;
+    request?: SecondParameter<typeof http>;
+  },
+) => {
+  const { query: queryOptions, request: requestOptions } = options ?? {};
+
+  const queryKey =
+    queryOptions?.queryKey ?? getListRemindersQueryKey(slug, params);
+
+  const queryFn: QueryFunction<Awaited<ReturnType<typeof listReminders>>> = ({
+    signal,
+  }) => listReminders(slug, params, { signal, ...requestOptions });
+
+  return {
+    queryKey,
+    queryFn,
+    enabled: !!slug,
+    ...queryOptions,
+  } as UseQueryOptions<
+    Awaited<ReturnType<typeof listReminders>>,
+    TError,
+    TData
+  > & { queryKey: DataTag<QueryKey, TData, TError> };
+};
+
+export type ListRemindersQueryResult = NonNullable<
+  Awaited<ReturnType<typeof listReminders>>
+>;
+export type ListRemindersQueryError = unknown;
+
+export function useListReminders<
+  TData = Awaited<ReturnType<typeof listReminders>>,
+  TError = unknown,
+>(
+  slug: string,
+  params: undefined | ListRemindersParams,
+  options: {
+    query: Partial<
+      UseQueryOptions<Awaited<ReturnType<typeof listReminders>>, TError, TData>
+    > &
+      Pick<
+        DefinedInitialDataOptions<
+          Awaited<ReturnType<typeof listReminders>>,
+          TError,
+          Awaited<ReturnType<typeof listReminders>>
+        >,
+        "initialData"
+      >;
+    request?: SecondParameter<typeof http>;
+  },
+  queryClient?: QueryClient,
+): DefinedUseQueryResult<TData, TError> & {
+  queryKey: DataTag<QueryKey, TData, TError>;
+};
+export function useListReminders<
+  TData = Awaited<ReturnType<typeof listReminders>>,
+  TError = unknown,
+>(
+  slug: string,
+  params?: ListRemindersParams,
+  options?: {
+    query?: Partial<
+      UseQueryOptions<Awaited<ReturnType<typeof listReminders>>, TError, TData>
+    > &
+      Pick<
+        UndefinedInitialDataOptions<
+          Awaited<ReturnType<typeof listReminders>>,
+          TError,
+          Awaited<ReturnType<typeof listReminders>>
+        >,
+        "initialData"
+      >;
+    request?: SecondParameter<typeof http>;
+  },
+  queryClient?: QueryClient,
+): UseQueryResult<TData, TError> & {
+  queryKey: DataTag<QueryKey, TData, TError>;
+};
+export function useListReminders<
+  TData = Awaited<ReturnType<typeof listReminders>>,
+  TError = unknown,
+>(
+  slug: string,
+  params?: ListRemindersParams,
+  options?: {
+    query?: Partial<
+      UseQueryOptions<Awaited<ReturnType<typeof listReminders>>, TError, TData>
+    >;
+    request?: SecondParameter<typeof http>;
+  },
+  queryClient?: QueryClient,
+): UseQueryResult<TData, TError> & {
+  queryKey: DataTag<QueryKey, TData, TError>;
+};
+
+export function useListReminders<
+  TData = Awaited<ReturnType<typeof listReminders>>,
+  TError = unknown,
+>(
+  slug: string,
+  params?: ListRemindersParams,
+  options?: {
+    query?: Partial<
+      UseQueryOptions<Awaited<ReturnType<typeof listReminders>>, TError, TData>
+    >;
+    request?: SecondParameter<typeof http>;
+  },
+  queryClient?: QueryClient,
+): UseQueryResult<TData, TError> & {
+  queryKey: DataTag<QueryKey, TData, TError>;
+} {
+  const queryOptions = getListRemindersQueryOptions(slug, params, options);
+
+  const query = useQuery(queryOptions, queryClient) as UseQueryResult<
+    TData,
+    TError
+  > & { queryKey: DataTag<QueryKey, TData, TError> };
+
+  query.queryKey = queryOptions.queryKey;
+
+  return query;
+}
+
+/**
+ * Create custom reminder
+ */
+export const getCreateReminderUrl = (slug: string) => {
+  return `/org/${slug}/reminders`;
+};
+
+export const createReminder = async (
+  slug: string,
+  createReminderBody: CreateReminderBody,
+  options?: RequestInit,
+): Promise<CreateReminder201> => {
+  return http<CreateReminder201>(getCreateReminderUrl(slug), {
+    ...options,
+    method: "POST",
+    headers: { "Content-Type": "application/json", ...options?.headers },
+    body: JSON.stringify(createReminderBody),
+  });
+};
+
+export const getCreateReminderMutationOptions = <
+  TError = unknown,
+  TContext = unknown,
+>(options?: {
+  mutation?: UseMutationOptions<
+    Awaited<ReturnType<typeof createReminder>>,
+    TError,
+    { slug: string; data: CreateReminderBody },
+    TContext
+  >;
+  request?: SecondParameter<typeof http>;
+}): UseMutationOptions<
+  Awaited<ReturnType<typeof createReminder>>,
+  TError,
+  { slug: string; data: CreateReminderBody },
+  TContext
+> => {
+  const mutationKey = ["createReminder"];
+  const { mutation: mutationOptions, request: requestOptions } = options
+    ? options.mutation &&
+      "mutationKey" in options.mutation &&
+      options.mutation.mutationKey
+      ? options
+      : { ...options, mutation: { ...options.mutation, mutationKey } }
+    : { mutation: { mutationKey }, request: undefined };
+
+  const mutationFn: MutationFunction<
+    Awaited<ReturnType<typeof createReminder>>,
+    { slug: string; data: CreateReminderBody }
+  > = (props) => {
+    const { slug, data } = props ?? {};
+
+    return createReminder(slug, data, requestOptions);
+  };
+
+  return { mutationFn, ...mutationOptions };
+};
+
+export type CreateReminderMutationResult = NonNullable<
+  Awaited<ReturnType<typeof createReminder>>
+>;
+export type CreateReminderMutationBody = CreateReminderBody;
+export type CreateReminderMutationError = unknown;
+
+export const useCreateReminder = <TError = unknown, TContext = unknown>(
+  options?: {
+    mutation?: UseMutationOptions<
+      Awaited<ReturnType<typeof createReminder>>,
+      TError,
+      { slug: string; data: CreateReminderBody },
+      TContext
+    >;
+    request?: SecondParameter<typeof http>;
+  },
+  queryClient?: QueryClient,
+): UseMutationResult<
+  Awaited<ReturnType<typeof createReminder>>,
+  TError,
+  { slug: string; data: CreateReminderBody },
+  TContext
+> => {
+  const mutationOptions = getCreateReminderMutationOptions(options);
+
+  return useMutation(mutationOptions, queryClient);
+};
+
+/**
+ * Update custom reminder
+ */
+export const getUpdateReminderUrl = (slug: string, id: string) => {
+  return `/org/${slug}/reminders/${id}`;
+};
+
+export const updateReminder = async (
+  slug: string,
+  id: string,
+  updateReminderBody: UpdateReminderBody,
+  options?: RequestInit,
+): Promise<UpdateReminder200> => {
+  return http<UpdateReminder200>(getUpdateReminderUrl(slug, id), {
+    ...options,
+    method: "PATCH",
+    headers: { "Content-Type": "application/json", ...options?.headers },
+    body: JSON.stringify(updateReminderBody),
+  });
+};
+
+export const getUpdateReminderMutationOptions = <
+  TError = unknown,
+  TContext = unknown,
+>(options?: {
+  mutation?: UseMutationOptions<
+    Awaited<ReturnType<typeof updateReminder>>,
+    TError,
+    { slug: string; id: string; data: UpdateReminderBody },
+    TContext
+  >;
+  request?: SecondParameter<typeof http>;
+}): UseMutationOptions<
+  Awaited<ReturnType<typeof updateReminder>>,
+  TError,
+  { slug: string; id: string; data: UpdateReminderBody },
+  TContext
+> => {
+  const mutationKey = ["updateReminder"];
+  const { mutation: mutationOptions, request: requestOptions } = options
+    ? options.mutation &&
+      "mutationKey" in options.mutation &&
+      options.mutation.mutationKey
+      ? options
+      : { ...options, mutation: { ...options.mutation, mutationKey } }
+    : { mutation: { mutationKey }, request: undefined };
+
+  const mutationFn: MutationFunction<
+    Awaited<ReturnType<typeof updateReminder>>,
+    { slug: string; id: string; data: UpdateReminderBody }
+  > = (props) => {
+    const { slug, id, data } = props ?? {};
+
+    return updateReminder(slug, id, data, requestOptions);
+  };
+
+  return { mutationFn, ...mutationOptions };
+};
+
+export type UpdateReminderMutationResult = NonNullable<
+  Awaited<ReturnType<typeof updateReminder>>
+>;
+export type UpdateReminderMutationBody = UpdateReminderBody;
+export type UpdateReminderMutationError = unknown;
+
+export const useUpdateReminder = <TError = unknown, TContext = unknown>(
+  options?: {
+    mutation?: UseMutationOptions<
+      Awaited<ReturnType<typeof updateReminder>>,
+      TError,
+      { slug: string; id: string; data: UpdateReminderBody },
+      TContext
+    >;
+    request?: SecondParameter<typeof http>;
+  },
+  queryClient?: QueryClient,
+): UseMutationResult<
+  Awaited<ReturnType<typeof updateReminder>>,
+  TError,
+  { slug: string; id: string; data: UpdateReminderBody },
+  TContext
+> => {
+  const mutationOptions = getUpdateReminderMutationOptions(options);
+
+  return useMutation(mutationOptions, queryClient);
+};
+
+/**
+ * Delete custom reminder
+ */
+export const getDeleteReminderUrl = (slug: string, id: string) => {
+  return `/org/${slug}/reminders/${id}`;
+};
+
+export const deleteReminder = async (
+  slug: string,
+  id: string,
+  options?: RequestInit,
+): Promise<null> => {
+  return http<null>(getDeleteReminderUrl(slug, id), {
+    ...options,
+    method: "DELETE",
+  });
+};
+
+export const getDeleteReminderMutationOptions = <
+  TError = unknown,
+  TContext = unknown,
+>(options?: {
+  mutation?: UseMutationOptions<
+    Awaited<ReturnType<typeof deleteReminder>>,
+    TError,
+    { slug: string; id: string },
+    TContext
+  >;
+  request?: SecondParameter<typeof http>;
+}): UseMutationOptions<
+  Awaited<ReturnType<typeof deleteReminder>>,
+  TError,
+  { slug: string; id: string },
+  TContext
+> => {
+  const mutationKey = ["deleteReminder"];
+  const { mutation: mutationOptions, request: requestOptions } = options
+    ? options.mutation &&
+      "mutationKey" in options.mutation &&
+      options.mutation.mutationKey
+      ? options
+      : { ...options, mutation: { ...options.mutation, mutationKey } }
+    : { mutation: { mutationKey }, request: undefined };
+
+  const mutationFn: MutationFunction<
+    Awaited<ReturnType<typeof deleteReminder>>,
+    { slug: string; id: string }
+  > = (props) => {
+    const { slug, id } = props ?? {};
+
+    return deleteReminder(slug, id, requestOptions);
+  };
+
+  return { mutationFn, ...mutationOptions };
+};
+
+export type DeleteReminderMutationResult = NonNullable<
+  Awaited<ReturnType<typeof deleteReminder>>
+>;
+
+export type DeleteReminderMutationError = unknown;
+
+export const useDeleteReminder = <TError = unknown, TContext = unknown>(
+  options?: {
+    mutation?: UseMutationOptions<
+      Awaited<ReturnType<typeof deleteReminder>>,
+      TError,
+      { slug: string; id: string },
+      TContext
+    >;
+    request?: SecondParameter<typeof http>;
+  },
+  queryClient?: QueryClient,
+): UseMutationResult<
+  Awaited<ReturnType<typeof deleteReminder>>,
+  TError,
+  { slug: string; id: string },
+  TContext
+> => {
+  const mutationOptions = getDeleteReminderMutationOptions(options);
+
+  return useMutation(mutationOptions, queryClient);
+};
+
+/**
+ * Mark reminder as completed
+ */
+export const getCompleteReminderUrl = (slug: string, id: string) => {
+  return `/org/${slug}/reminders/${id}/complete`;
+};
+
+export const completeReminder = async (
+  slug: string,
+  id: string,
+  options?: RequestInit,
+): Promise<CompleteReminder200> => {
+  return http<CompleteReminder200>(getCompleteReminderUrl(slug, id), {
+    ...options,
+    method: "POST",
+  });
+};
+
+export const getCompleteReminderMutationOptions = <
+  TError = unknown,
+  TContext = unknown,
+>(options?: {
+  mutation?: UseMutationOptions<
+    Awaited<ReturnType<typeof completeReminder>>,
+    TError,
+    { slug: string; id: string },
+    TContext
+  >;
+  request?: SecondParameter<typeof http>;
+}): UseMutationOptions<
+  Awaited<ReturnType<typeof completeReminder>>,
+  TError,
+  { slug: string; id: string },
+  TContext
+> => {
+  const mutationKey = ["completeReminder"];
+  const { mutation: mutationOptions, request: requestOptions } = options
+    ? options.mutation &&
+      "mutationKey" in options.mutation &&
+      options.mutation.mutationKey
+      ? options
+      : { ...options, mutation: { ...options.mutation, mutationKey } }
+    : { mutation: { mutationKey }, request: undefined };
+
+  const mutationFn: MutationFunction<
+    Awaited<ReturnType<typeof completeReminder>>,
+    { slug: string; id: string }
+  > = (props) => {
+    const { slug, id } = props ?? {};
+
+    return completeReminder(slug, id, requestOptions);
+  };
+
+  return { mutationFn, ...mutationOptions };
+};
+
+export type CompleteReminderMutationResult = NonNullable<
+  Awaited<ReturnType<typeof completeReminder>>
+>;
+
+export type CompleteReminderMutationError = unknown;
+
+export const useCompleteReminder = <TError = unknown, TContext = unknown>(
+  options?: {
+    mutation?: UseMutationOptions<
+      Awaited<ReturnType<typeof completeReminder>>,
+      TError,
+      { slug: string; id: string },
+      TContext
+    >;
+    request?: SecondParameter<typeof http>;
+  },
+  queryClient?: QueryClient,
+): UseMutationResult<
+  Awaited<ReturnType<typeof completeReminder>>,
+  TError,
+  { slug: string; id: string },
+  TContext
+> => {
+  const mutationOptions = getCompleteReminderMutationOptions(options);
+
+  return useMutation(mutationOptions, queryClient);
+};
+
+/**
+ * Snooze custom reminder
+ */
+export const getSnoozeReminderUrl = (slug: string, id: string) => {
+  return `/org/${slug}/reminders/${id}/snooze`;
+};
+
+export const snoozeReminder = async (
+  slug: string,
+  id: string,
+  snoozeReminderBody: SnoozeReminderBody,
+  options?: RequestInit,
+): Promise<SnoozeReminder200> => {
+  return http<SnoozeReminder200>(getSnoozeReminderUrl(slug, id), {
+    ...options,
+    method: "POST",
+    headers: { "Content-Type": "application/json", ...options?.headers },
+    body: JSON.stringify(snoozeReminderBody),
+  });
+};
+
+export const getSnoozeReminderMutationOptions = <
+  TError = unknown,
+  TContext = unknown,
+>(options?: {
+  mutation?: UseMutationOptions<
+    Awaited<ReturnType<typeof snoozeReminder>>,
+    TError,
+    { slug: string; id: string; data: SnoozeReminderBody },
+    TContext
+  >;
+  request?: SecondParameter<typeof http>;
+}): UseMutationOptions<
+  Awaited<ReturnType<typeof snoozeReminder>>,
+  TError,
+  { slug: string; id: string; data: SnoozeReminderBody },
+  TContext
+> => {
+  const mutationKey = ["snoozeReminder"];
+  const { mutation: mutationOptions, request: requestOptions } = options
+    ? options.mutation &&
+      "mutationKey" in options.mutation &&
+      options.mutation.mutationKey
+      ? options
+      : { ...options, mutation: { ...options.mutation, mutationKey } }
+    : { mutation: { mutationKey }, request: undefined };
+
+  const mutationFn: MutationFunction<
+    Awaited<ReturnType<typeof snoozeReminder>>,
+    { slug: string; id: string; data: SnoozeReminderBody }
+  > = (props) => {
+    const { slug, id, data } = props ?? {};
+
+    return snoozeReminder(slug, id, data, requestOptions);
+  };
+
+  return { mutationFn, ...mutationOptions };
+};
+
+export type SnoozeReminderMutationResult = NonNullable<
+  Awaited<ReturnType<typeof snoozeReminder>>
+>;
+export type SnoozeReminderMutationBody = SnoozeReminderBody;
+export type SnoozeReminderMutationError = unknown;
+
+export const useSnoozeReminder = <TError = unknown, TContext = unknown>(
+  options?: {
+    mutation?: UseMutationOptions<
+      Awaited<ReturnType<typeof snoozeReminder>>,
+      TError,
+      { slug: string; id: string; data: SnoozeReminderBody },
+      TContext
+    >;
+    request?: SecondParameter<typeof http>;
+  },
+  queryClient?: QueryClient,
+): UseMutationResult<
+  Awaited<ReturnType<typeof snoozeReminder>>,
+  TError,
+  { slug: string; id: string; data: SnoozeReminderBody },
+  TContext
+> => {
+  const mutationOptions = getSnoozeReminderMutationOptions(options);
+
+  return useMutation(mutationOptions, queryClient);
+};
+
+/**
+ * List alert rules for organization
+ */
+export const getListAlertRulesUrl = (
+  slug: string,
+  params?: ListAlertRulesParams,
+) => {
+  const normalizedParams = new URLSearchParams();
+
+  Object.entries(params || {}).forEach(([key, value]) => {
+    if (value !== undefined) {
+      normalizedParams.append(key, value === null ? "null" : value.toString());
+    }
+  });
+
+  const stringifiedParams = normalizedParams.toString();
+
+  return stringifiedParams.length > 0
+    ? `/org/${slug}/alert-rules?${stringifiedParams}`
+    : `/org/${slug}/alert-rules`;
+};
+
+export const listAlertRules = async (
+  slug: string,
+  params?: ListAlertRulesParams,
+  options?: RequestInit,
+): Promise<ListAlertRules200> => {
+  return http<ListAlertRules200>(getListAlertRulesUrl(slug, params), {
+    ...options,
+    method: "GET",
+  });
+};
+
+export const getListAlertRulesQueryKey = (
+  slug?: string,
+  params?: ListAlertRulesParams,
+) => {
+  return [`/org/${slug}/alert-rules`, ...(params ? [params] : [])] as const;
+};
+
+export const getListAlertRulesQueryOptions = <
+  TData = Awaited<ReturnType<typeof listAlertRules>>,
+  TError = unknown,
+>(
+  slug: string,
+  params?: ListAlertRulesParams,
+  options?: {
+    query?: Partial<
+      UseQueryOptions<Awaited<ReturnType<typeof listAlertRules>>, TError, TData>
+    >;
+    request?: SecondParameter<typeof http>;
+  },
+) => {
+  const { query: queryOptions, request: requestOptions } = options ?? {};
+
+  const queryKey =
+    queryOptions?.queryKey ?? getListAlertRulesQueryKey(slug, params);
+
+  const queryFn: QueryFunction<Awaited<ReturnType<typeof listAlertRules>>> = ({
+    signal,
+  }) => listAlertRules(slug, params, { signal, ...requestOptions });
+
+  return {
+    queryKey,
+    queryFn,
+    enabled: !!slug,
+    ...queryOptions,
+  } as UseQueryOptions<
+    Awaited<ReturnType<typeof listAlertRules>>,
+    TError,
+    TData
+  > & { queryKey: DataTag<QueryKey, TData, TError> };
+};
+
+export type ListAlertRulesQueryResult = NonNullable<
+  Awaited<ReturnType<typeof listAlertRules>>
+>;
+export type ListAlertRulesQueryError = unknown;
+
+export function useListAlertRules<
+  TData = Awaited<ReturnType<typeof listAlertRules>>,
+  TError = unknown,
+>(
+  slug: string,
+  params: undefined | ListAlertRulesParams,
+  options: {
+    query: Partial<
+      UseQueryOptions<Awaited<ReturnType<typeof listAlertRules>>, TError, TData>
+    > &
+      Pick<
+        DefinedInitialDataOptions<
+          Awaited<ReturnType<typeof listAlertRules>>,
+          TError,
+          Awaited<ReturnType<typeof listAlertRules>>
+        >,
+        "initialData"
+      >;
+    request?: SecondParameter<typeof http>;
+  },
+  queryClient?: QueryClient,
+): DefinedUseQueryResult<TData, TError> & {
+  queryKey: DataTag<QueryKey, TData, TError>;
+};
+export function useListAlertRules<
+  TData = Awaited<ReturnType<typeof listAlertRules>>,
+  TError = unknown,
+>(
+  slug: string,
+  params?: ListAlertRulesParams,
+  options?: {
+    query?: Partial<
+      UseQueryOptions<Awaited<ReturnType<typeof listAlertRules>>, TError, TData>
+    > &
+      Pick<
+        UndefinedInitialDataOptions<
+          Awaited<ReturnType<typeof listAlertRules>>,
+          TError,
+          Awaited<ReturnType<typeof listAlertRules>>
+        >,
+        "initialData"
+      >;
+    request?: SecondParameter<typeof http>;
+  },
+  queryClient?: QueryClient,
+): UseQueryResult<TData, TError> & {
+  queryKey: DataTag<QueryKey, TData, TError>;
+};
+export function useListAlertRules<
+  TData = Awaited<ReturnType<typeof listAlertRules>>,
+  TError = unknown,
+>(
+  slug: string,
+  params?: ListAlertRulesParams,
+  options?: {
+    query?: Partial<
+      UseQueryOptions<Awaited<ReturnType<typeof listAlertRules>>, TError, TData>
+    >;
+    request?: SecondParameter<typeof http>;
+  },
+  queryClient?: QueryClient,
+): UseQueryResult<TData, TError> & {
+  queryKey: DataTag<QueryKey, TData, TError>;
+};
+
+export function useListAlertRules<
+  TData = Awaited<ReturnType<typeof listAlertRules>>,
+  TError = unknown,
+>(
+  slug: string,
+  params?: ListAlertRulesParams,
+  options?: {
+    query?: Partial<
+      UseQueryOptions<Awaited<ReturnType<typeof listAlertRules>>, TError, TData>
+    >;
+    request?: SecondParameter<typeof http>;
+  },
+  queryClient?: QueryClient,
+): UseQueryResult<TData, TError> & {
+  queryKey: DataTag<QueryKey, TData, TError>;
+} {
+  const queryOptions = getListAlertRulesQueryOptions(slug, params, options);
+
+  const query = useQuery(queryOptions, queryClient) as UseQueryResult<
+    TData,
+    TError
+  > & { queryKey: DataTag<QueryKey, TData, TError> };
+
+  query.queryKey = queryOptions.queryKey;
+
+  return query;
+}
+
+/**
+ * Create alert rule
+ */
+export const getCreateAlertRuleUrl = (slug: string) => {
+  return `/org/${slug}/alert-rules`;
+};
+
+export const createAlertRule = async (
+  slug: string,
+  createAlertRuleBody: CreateAlertRuleBody,
+  options?: RequestInit,
+): Promise<CreateAlertRule201> => {
+  return http<CreateAlertRule201>(getCreateAlertRuleUrl(slug), {
+    ...options,
+    method: "POST",
+    headers: { "Content-Type": "application/json", ...options?.headers },
+    body: JSON.stringify(createAlertRuleBody),
+  });
+};
+
+export const getCreateAlertRuleMutationOptions = <
+  TError = unknown,
+  TContext = unknown,
+>(options?: {
+  mutation?: UseMutationOptions<
+    Awaited<ReturnType<typeof createAlertRule>>,
+    TError,
+    { slug: string; data: CreateAlertRuleBody },
+    TContext
+  >;
+  request?: SecondParameter<typeof http>;
+}): UseMutationOptions<
+  Awaited<ReturnType<typeof createAlertRule>>,
+  TError,
+  { slug: string; data: CreateAlertRuleBody },
+  TContext
+> => {
+  const mutationKey = ["createAlertRule"];
+  const { mutation: mutationOptions, request: requestOptions } = options
+    ? options.mutation &&
+      "mutationKey" in options.mutation &&
+      options.mutation.mutationKey
+      ? options
+      : { ...options, mutation: { ...options.mutation, mutationKey } }
+    : { mutation: { mutationKey }, request: undefined };
+
+  const mutationFn: MutationFunction<
+    Awaited<ReturnType<typeof createAlertRule>>,
+    { slug: string; data: CreateAlertRuleBody }
+  > = (props) => {
+    const { slug, data } = props ?? {};
+
+    return createAlertRule(slug, data, requestOptions);
+  };
+
+  return { mutationFn, ...mutationOptions };
+};
+
+export type CreateAlertRuleMutationResult = NonNullable<
+  Awaited<ReturnType<typeof createAlertRule>>
+>;
+export type CreateAlertRuleMutationBody = CreateAlertRuleBody;
+export type CreateAlertRuleMutationError = unknown;
+
+export const useCreateAlertRule = <TError = unknown, TContext = unknown>(
+  options?: {
+    mutation?: UseMutationOptions<
+      Awaited<ReturnType<typeof createAlertRule>>,
+      TError,
+      { slug: string; data: CreateAlertRuleBody },
+      TContext
+    >;
+    request?: SecondParameter<typeof http>;
+  },
+  queryClient?: QueryClient,
+): UseMutationResult<
+  Awaited<ReturnType<typeof createAlertRule>>,
+  TError,
+  { slug: string; data: CreateAlertRuleBody },
+  TContext
+> => {
+  const mutationOptions = getCreateAlertRuleMutationOptions(options);
+
+  return useMutation(mutationOptions, queryClient);
+};
+
+/**
+ * Update alert rule
+ */
+export const getUpdateAlertRuleUrl = (slug: string, id: string) => {
+  return `/org/${slug}/alert-rules/${id}`;
+};
+
+export const updateAlertRule = async (
+  slug: string,
+  id: string,
+  updateAlertRuleBody: UpdateAlertRuleBody,
+  options?: RequestInit,
+): Promise<UpdateAlertRule200> => {
+  return http<UpdateAlertRule200>(getUpdateAlertRuleUrl(slug, id), {
+    ...options,
+    method: "PATCH",
+    headers: { "Content-Type": "application/json", ...options?.headers },
+    body: JSON.stringify(updateAlertRuleBody),
+  });
+};
+
+export const getUpdateAlertRuleMutationOptions = <
+  TError = unknown,
+  TContext = unknown,
+>(options?: {
+  mutation?: UseMutationOptions<
+    Awaited<ReturnType<typeof updateAlertRule>>,
+    TError,
+    { slug: string; id: string; data: UpdateAlertRuleBody },
+    TContext
+  >;
+  request?: SecondParameter<typeof http>;
+}): UseMutationOptions<
+  Awaited<ReturnType<typeof updateAlertRule>>,
+  TError,
+  { slug: string; id: string; data: UpdateAlertRuleBody },
+  TContext
+> => {
+  const mutationKey = ["updateAlertRule"];
+  const { mutation: mutationOptions, request: requestOptions } = options
+    ? options.mutation &&
+      "mutationKey" in options.mutation &&
+      options.mutation.mutationKey
+      ? options
+      : { ...options, mutation: { ...options.mutation, mutationKey } }
+    : { mutation: { mutationKey }, request: undefined };
+
+  const mutationFn: MutationFunction<
+    Awaited<ReturnType<typeof updateAlertRule>>,
+    { slug: string; id: string; data: UpdateAlertRuleBody }
+  > = (props) => {
+    const { slug, id, data } = props ?? {};
+
+    return updateAlertRule(slug, id, data, requestOptions);
+  };
+
+  return { mutationFn, ...mutationOptions };
+};
+
+export type UpdateAlertRuleMutationResult = NonNullable<
+  Awaited<ReturnType<typeof updateAlertRule>>
+>;
+export type UpdateAlertRuleMutationBody = UpdateAlertRuleBody;
+export type UpdateAlertRuleMutationError = unknown;
+
+export const useUpdateAlertRule = <TError = unknown, TContext = unknown>(
+  options?: {
+    mutation?: UseMutationOptions<
+      Awaited<ReturnType<typeof updateAlertRule>>,
+      TError,
+      { slug: string; id: string; data: UpdateAlertRuleBody },
+      TContext
+    >;
+    request?: SecondParameter<typeof http>;
+  },
+  queryClient?: QueryClient,
+): UseMutationResult<
+  Awaited<ReturnType<typeof updateAlertRule>>,
+  TError,
+  { slug: string; id: string; data: UpdateAlertRuleBody },
+  TContext
+> => {
+  const mutationOptions = getUpdateAlertRuleMutationOptions(options);
+
+  return useMutation(mutationOptions, queryClient);
+};
+
+/**
+ * Delete alert rule
+ */
+export const getDeleteAlertRuleUrl = (slug: string, id: string) => {
+  return `/org/${slug}/alert-rules/${id}`;
+};
+
+export const deleteAlertRule = async (
+  slug: string,
+  id: string,
+  options?: RequestInit,
+): Promise<null> => {
+  return http<null>(getDeleteAlertRuleUrl(slug, id), {
+    ...options,
+    method: "DELETE",
+  });
+};
+
+export const getDeleteAlertRuleMutationOptions = <
+  TError = unknown,
+  TContext = unknown,
+>(options?: {
+  mutation?: UseMutationOptions<
+    Awaited<ReturnType<typeof deleteAlertRule>>,
+    TError,
+    { slug: string; id: string },
+    TContext
+  >;
+  request?: SecondParameter<typeof http>;
+}): UseMutationOptions<
+  Awaited<ReturnType<typeof deleteAlertRule>>,
+  TError,
+  { slug: string; id: string },
+  TContext
+> => {
+  const mutationKey = ["deleteAlertRule"];
+  const { mutation: mutationOptions, request: requestOptions } = options
+    ? options.mutation &&
+      "mutationKey" in options.mutation &&
+      options.mutation.mutationKey
+      ? options
+      : { ...options, mutation: { ...options.mutation, mutationKey } }
+    : { mutation: { mutationKey }, request: undefined };
+
+  const mutationFn: MutationFunction<
+    Awaited<ReturnType<typeof deleteAlertRule>>,
+    { slug: string; id: string }
+  > = (props) => {
+    const { slug, id } = props ?? {};
+
+    return deleteAlertRule(slug, id, requestOptions);
+  };
+
+  return { mutationFn, ...mutationOptions };
+};
+
+export type DeleteAlertRuleMutationResult = NonNullable<
+  Awaited<ReturnType<typeof deleteAlertRule>>
+>;
+
+export type DeleteAlertRuleMutationError = unknown;
+
+export const useDeleteAlertRule = <TError = unknown, TContext = unknown>(
+  options?: {
+    mutation?: UseMutationOptions<
+      Awaited<ReturnType<typeof deleteAlertRule>>,
+      TError,
+      { slug: string; id: string },
+      TContext
+    >;
+    request?: SecondParameter<typeof http>;
+  },
+  queryClient?: QueryClient,
+): UseMutationResult<
+  Awaited<ReturnType<typeof deleteAlertRule>>,
+  TError,
+  { slug: string; id: string },
+  TContext
+> => {
+  const mutationOptions = getDeleteAlertRuleMutationOptions(options);
+
+  return useMutation(mutationOptions, queryClient);
+};
+
+/**
+ * Upsert series alert rule override
+ */
+export const getUpsertSeriesAlertRuleUrl = (slug: string, seriesId: string) => {
+  return `/org/${slug}/transactions/${seriesId}/alert-rule`;
+};
+
+export const upsertSeriesAlertRule = async (
+  slug: string,
+  seriesId: string,
+  upsertSeriesAlertRuleBody: UpsertSeriesAlertRuleBody,
+  options?: RequestInit,
+): Promise<UpsertSeriesAlertRule200> => {
+  return http<UpsertSeriesAlertRule200>(
+    getUpsertSeriesAlertRuleUrl(slug, seriesId),
+    {
+      ...options,
+      method: "PUT",
+      headers: { "Content-Type": "application/json", ...options?.headers },
+      body: JSON.stringify(upsertSeriesAlertRuleBody),
+    },
+  );
+};
+
+export const getUpsertSeriesAlertRuleMutationOptions = <
+  TError = unknown,
+  TContext = unknown,
+>(options?: {
+  mutation?: UseMutationOptions<
+    Awaited<ReturnType<typeof upsertSeriesAlertRule>>,
+    TError,
+    { slug: string; seriesId: string; data: UpsertSeriesAlertRuleBody },
+    TContext
+  >;
+  request?: SecondParameter<typeof http>;
+}): UseMutationOptions<
+  Awaited<ReturnType<typeof upsertSeriesAlertRule>>,
+  TError,
+  { slug: string; seriesId: string; data: UpsertSeriesAlertRuleBody },
+  TContext
+> => {
+  const mutationKey = ["upsertSeriesAlertRule"];
+  const { mutation: mutationOptions, request: requestOptions } = options
+    ? options.mutation &&
+      "mutationKey" in options.mutation &&
+      options.mutation.mutationKey
+      ? options
+      : { ...options, mutation: { ...options.mutation, mutationKey } }
+    : { mutation: { mutationKey }, request: undefined };
+
+  const mutationFn: MutationFunction<
+    Awaited<ReturnType<typeof upsertSeriesAlertRule>>,
+    { slug: string; seriesId: string; data: UpsertSeriesAlertRuleBody }
+  > = (props) => {
+    const { slug, seriesId, data } = props ?? {};
+
+    return upsertSeriesAlertRule(slug, seriesId, data, requestOptions);
+  };
+
+  return { mutationFn, ...mutationOptions };
+};
+
+export type UpsertSeriesAlertRuleMutationResult = NonNullable<
+  Awaited<ReturnType<typeof upsertSeriesAlertRule>>
+>;
+export type UpsertSeriesAlertRuleMutationBody = UpsertSeriesAlertRuleBody;
+export type UpsertSeriesAlertRuleMutationError = unknown;
+
+export const useUpsertSeriesAlertRule = <TError = unknown, TContext = unknown>(
+  options?: {
+    mutation?: UseMutationOptions<
+      Awaited<ReturnType<typeof upsertSeriesAlertRule>>,
+      TError,
+      { slug: string; seriesId: string; data: UpsertSeriesAlertRuleBody },
+      TContext
+    >;
+    request?: SecondParameter<typeof http>;
+  },
+  queryClient?: QueryClient,
+): UseMutationResult<
+  Awaited<ReturnType<typeof upsertSeriesAlertRule>>,
+  TError,
+  { slug: string; seriesId: string; data: UpsertSeriesAlertRuleBody },
+  TContext
+> => {
+  const mutationOptions = getUpsertSeriesAlertRuleMutationOptions(options);
+
+  return useMutation(mutationOptions, queryClient);
+};
+
+/**
+ * Preview upcoming alerts without sending
+ */
+export const getPreviewAlertsUrl = (slug: string) => {
+  return `/org/${slug}/alerts/preview`;
+};
+
+export const previewAlerts = async (
+  slug: string,
+  options?: RequestInit,
+): Promise<PreviewAlerts200> => {
+  return http<PreviewAlerts200>(getPreviewAlertsUrl(slug), {
+    ...options,
+    method: "GET",
+  });
+};
+
+export const getPreviewAlertsQueryKey = (slug?: string) => {
+  return [`/org/${slug}/alerts/preview`] as const;
+};
+
+export const getPreviewAlertsQueryOptions = <
+  TData = Awaited<ReturnType<typeof previewAlerts>>,
+  TError = unknown,
+>(
+  slug: string,
+  options?: {
+    query?: Partial<
+      UseQueryOptions<Awaited<ReturnType<typeof previewAlerts>>, TError, TData>
+    >;
+    request?: SecondParameter<typeof http>;
+  },
+) => {
+  const { query: queryOptions, request: requestOptions } = options ?? {};
+
+  const queryKey = queryOptions?.queryKey ?? getPreviewAlertsQueryKey(slug);
+
+  const queryFn: QueryFunction<Awaited<ReturnType<typeof previewAlerts>>> = ({
+    signal,
+  }) => previewAlerts(slug, { signal, ...requestOptions });
+
+  return {
+    queryKey,
+    queryFn,
+    enabled: !!slug,
+    ...queryOptions,
+  } as UseQueryOptions<
+    Awaited<ReturnType<typeof previewAlerts>>,
+    TError,
+    TData
+  > & { queryKey: DataTag<QueryKey, TData, TError> };
+};
+
+export type PreviewAlertsQueryResult = NonNullable<
+  Awaited<ReturnType<typeof previewAlerts>>
+>;
+export type PreviewAlertsQueryError = unknown;
+
+export function usePreviewAlerts<
+  TData = Awaited<ReturnType<typeof previewAlerts>>,
+  TError = unknown,
+>(
+  slug: string,
+  options: {
+    query: Partial<
+      UseQueryOptions<Awaited<ReturnType<typeof previewAlerts>>, TError, TData>
+    > &
+      Pick<
+        DefinedInitialDataOptions<
+          Awaited<ReturnType<typeof previewAlerts>>,
+          TError,
+          Awaited<ReturnType<typeof previewAlerts>>
+        >,
+        "initialData"
+      >;
+    request?: SecondParameter<typeof http>;
+  },
+  queryClient?: QueryClient,
+): DefinedUseQueryResult<TData, TError> & {
+  queryKey: DataTag<QueryKey, TData, TError>;
+};
+export function usePreviewAlerts<
+  TData = Awaited<ReturnType<typeof previewAlerts>>,
+  TError = unknown,
+>(
+  slug: string,
+  options?: {
+    query?: Partial<
+      UseQueryOptions<Awaited<ReturnType<typeof previewAlerts>>, TError, TData>
+    > &
+      Pick<
+        UndefinedInitialDataOptions<
+          Awaited<ReturnType<typeof previewAlerts>>,
+          TError,
+          Awaited<ReturnType<typeof previewAlerts>>
+        >,
+        "initialData"
+      >;
+    request?: SecondParameter<typeof http>;
+  },
+  queryClient?: QueryClient,
+): UseQueryResult<TData, TError> & {
+  queryKey: DataTag<QueryKey, TData, TError>;
+};
+export function usePreviewAlerts<
+  TData = Awaited<ReturnType<typeof previewAlerts>>,
+  TError = unknown,
+>(
+  slug: string,
+  options?: {
+    query?: Partial<
+      UseQueryOptions<Awaited<ReturnType<typeof previewAlerts>>, TError, TData>
+    >;
+    request?: SecondParameter<typeof http>;
+  },
+  queryClient?: QueryClient,
+): UseQueryResult<TData, TError> & {
+  queryKey: DataTag<QueryKey, TData, TError>;
+};
+
+export function usePreviewAlerts<
+  TData = Awaited<ReturnType<typeof previewAlerts>>,
+  TError = unknown,
+>(
+  slug: string,
+  options?: {
+    query?: Partial<
+      UseQueryOptions<Awaited<ReturnType<typeof previewAlerts>>, TError, TData>
+    >;
+    request?: SecondParameter<typeof http>;
+  },
+  queryClient?: QueryClient,
+): UseQueryResult<TData, TError> & {
+  queryKey: DataTag<QueryKey, TData, TError>;
+} {
+  const queryOptions = getPreviewAlertsQueryOptions(slug, options);
+
+  const query = useQuery(queryOptions, queryClient) as UseQueryResult<
+    TData,
+    TError
+  > & { queryKey: DataTag<QueryKey, TData, TError> };
+
+  query.queryKey = queryOptions.queryKey;
+
+  return query;
+}
+
+/**
+ * List in-app alert deliveries for current user
+ */
+export const getListInboxAlertsUrl = (
+  slug: string,
+  params?: ListInboxAlertsParams,
+) => {
+  const normalizedParams = new URLSearchParams();
+
+  Object.entries(params || {}).forEach(([key, value]) => {
+    if (value !== undefined) {
+      normalizedParams.append(key, value === null ? "null" : value.toString());
+    }
+  });
+
+  const stringifiedParams = normalizedParams.toString();
+
+  return stringifiedParams.length > 0
+    ? `/org/${slug}/alerts?${stringifiedParams}`
+    : `/org/${slug}/alerts`;
+};
+
+export const listInboxAlerts = async (
+  slug: string,
+  params?: ListInboxAlertsParams,
+  options?: RequestInit,
+): Promise<ListInboxAlerts200> => {
+  return http<ListInboxAlerts200>(getListInboxAlertsUrl(slug, params), {
+    ...options,
+    method: "GET",
+  });
+};
+
+export const getListInboxAlertsQueryKey = (
+  slug?: string,
+  params?: ListInboxAlertsParams,
+) => {
+  return [`/org/${slug}/alerts`, ...(params ? [params] : [])] as const;
+};
+
+export const getListInboxAlertsQueryOptions = <
+  TData = Awaited<ReturnType<typeof listInboxAlerts>>,
+  TError = unknown,
+>(
+  slug: string,
+  params?: ListInboxAlertsParams,
+  options?: {
+    query?: Partial<
+      UseQueryOptions<
+        Awaited<ReturnType<typeof listInboxAlerts>>,
+        TError,
+        TData
+      >
+    >;
+    request?: SecondParameter<typeof http>;
+  },
+) => {
+  const { query: queryOptions, request: requestOptions } = options ?? {};
+
+  const queryKey =
+    queryOptions?.queryKey ?? getListInboxAlertsQueryKey(slug, params);
+
+  const queryFn: QueryFunction<Awaited<ReturnType<typeof listInboxAlerts>>> = ({
+    signal,
+  }) => listInboxAlerts(slug, params, { signal, ...requestOptions });
+
+  return {
+    queryKey,
+    queryFn,
+    enabled: !!slug,
+    ...queryOptions,
+  } as UseQueryOptions<
+    Awaited<ReturnType<typeof listInboxAlerts>>,
+    TError,
+    TData
+  > & { queryKey: DataTag<QueryKey, TData, TError> };
+};
+
+export type ListInboxAlertsQueryResult = NonNullable<
+  Awaited<ReturnType<typeof listInboxAlerts>>
+>;
+export type ListInboxAlertsQueryError = unknown;
+
+export function useListInboxAlerts<
+  TData = Awaited<ReturnType<typeof listInboxAlerts>>,
+  TError = unknown,
+>(
+  slug: string,
+  params: undefined | ListInboxAlertsParams,
+  options: {
+    query: Partial<
+      UseQueryOptions<
+        Awaited<ReturnType<typeof listInboxAlerts>>,
+        TError,
+        TData
+      >
+    > &
+      Pick<
+        DefinedInitialDataOptions<
+          Awaited<ReturnType<typeof listInboxAlerts>>,
+          TError,
+          Awaited<ReturnType<typeof listInboxAlerts>>
+        >,
+        "initialData"
+      >;
+    request?: SecondParameter<typeof http>;
+  },
+  queryClient?: QueryClient,
+): DefinedUseQueryResult<TData, TError> & {
+  queryKey: DataTag<QueryKey, TData, TError>;
+};
+export function useListInboxAlerts<
+  TData = Awaited<ReturnType<typeof listInboxAlerts>>,
+  TError = unknown,
+>(
+  slug: string,
+  params?: ListInboxAlertsParams,
+  options?: {
+    query?: Partial<
+      UseQueryOptions<
+        Awaited<ReturnType<typeof listInboxAlerts>>,
+        TError,
+        TData
+      >
+    > &
+      Pick<
+        UndefinedInitialDataOptions<
+          Awaited<ReturnType<typeof listInboxAlerts>>,
+          TError,
+          Awaited<ReturnType<typeof listInboxAlerts>>
+        >,
+        "initialData"
+      >;
+    request?: SecondParameter<typeof http>;
+  },
+  queryClient?: QueryClient,
+): UseQueryResult<TData, TError> & {
+  queryKey: DataTag<QueryKey, TData, TError>;
+};
+export function useListInboxAlerts<
+  TData = Awaited<ReturnType<typeof listInboxAlerts>>,
+  TError = unknown,
+>(
+  slug: string,
+  params?: ListInboxAlertsParams,
+  options?: {
+    query?: Partial<
+      UseQueryOptions<
+        Awaited<ReturnType<typeof listInboxAlerts>>,
+        TError,
+        TData
+      >
+    >;
+    request?: SecondParameter<typeof http>;
+  },
+  queryClient?: QueryClient,
+): UseQueryResult<TData, TError> & {
+  queryKey: DataTag<QueryKey, TData, TError>;
+};
+
+export function useListInboxAlerts<
+  TData = Awaited<ReturnType<typeof listInboxAlerts>>,
+  TError = unknown,
+>(
+  slug: string,
+  params?: ListInboxAlertsParams,
+  options?: {
+    query?: Partial<
+      UseQueryOptions<
+        Awaited<ReturnType<typeof listInboxAlerts>>,
+        TError,
+        TData
+      >
+    >;
+    request?: SecondParameter<typeof http>;
+  },
+  queryClient?: QueryClient,
+): UseQueryResult<TData, TError> & {
+  queryKey: DataTag<QueryKey, TData, TError>;
+} {
+  const queryOptions = getListInboxAlertsQueryOptions(slug, params, options);
+
+  const query = useQuery(queryOptions, queryClient) as UseQueryResult<
+    TData,
+    TError
+  > & { queryKey: DataTag<QueryKey, TData, TError> };
+
+  query.queryKey = queryOptions.queryKey;
+
+  return query;
+}
+
+/**
+ * List recent sent alert deliveries for organization
+ */
+export const getListRecentDeliveriesUrl = (
+  slug: string,
+  params?: ListRecentDeliveriesParams,
+) => {
+  const normalizedParams = new URLSearchParams();
+
+  Object.entries(params || {}).forEach(([key, value]) => {
+    if (value !== undefined) {
+      normalizedParams.append(key, value === null ? "null" : value.toString());
+    }
+  });
+
+  const stringifiedParams = normalizedParams.toString();
+
+  return stringifiedParams.length > 0
+    ? `/org/${slug}/alerts/recent?${stringifiedParams}`
+    : `/org/${slug}/alerts/recent`;
+};
+
+export const listRecentDeliveries = async (
+  slug: string,
+  params?: ListRecentDeliveriesParams,
+  options?: RequestInit,
+): Promise<ListRecentDeliveries200> => {
+  return http<ListRecentDeliveries200>(
+    getListRecentDeliveriesUrl(slug, params),
+    {
+      ...options,
+      method: "GET",
+    },
+  );
+};
+
+export const getListRecentDeliveriesQueryKey = (
+  slug?: string,
+  params?: ListRecentDeliveriesParams,
+) => {
+  return [`/org/${slug}/alerts/recent`, ...(params ? [params] : [])] as const;
+};
+
+export const getListRecentDeliveriesQueryOptions = <
+  TData = Awaited<ReturnType<typeof listRecentDeliveries>>,
+  TError = unknown,
+>(
+  slug: string,
+  params?: ListRecentDeliveriesParams,
+  options?: {
+    query?: Partial<
+      UseQueryOptions<
+        Awaited<ReturnType<typeof listRecentDeliveries>>,
+        TError,
+        TData
+      >
+    >;
+    request?: SecondParameter<typeof http>;
+  },
+) => {
+  const { query: queryOptions, request: requestOptions } = options ?? {};
+
+  const queryKey =
+    queryOptions?.queryKey ?? getListRecentDeliveriesQueryKey(slug, params);
+
+  const queryFn: QueryFunction<
+    Awaited<ReturnType<typeof listRecentDeliveries>>
+  > = ({ signal }) =>
+    listRecentDeliveries(slug, params, { signal, ...requestOptions });
+
+  return {
+    queryKey,
+    queryFn,
+    enabled: !!slug,
+    ...queryOptions,
+  } as UseQueryOptions<
+    Awaited<ReturnType<typeof listRecentDeliveries>>,
+    TError,
+    TData
+  > & { queryKey: DataTag<QueryKey, TData, TError> };
+};
+
+export type ListRecentDeliveriesQueryResult = NonNullable<
+  Awaited<ReturnType<typeof listRecentDeliveries>>
+>;
+export type ListRecentDeliveriesQueryError = unknown;
+
+export function useListRecentDeliveries<
+  TData = Awaited<ReturnType<typeof listRecentDeliveries>>,
+  TError = unknown,
+>(
+  slug: string,
+  params: undefined | ListRecentDeliveriesParams,
+  options: {
+    query: Partial<
+      UseQueryOptions<
+        Awaited<ReturnType<typeof listRecentDeliveries>>,
+        TError,
+        TData
+      >
+    > &
+      Pick<
+        DefinedInitialDataOptions<
+          Awaited<ReturnType<typeof listRecentDeliveries>>,
+          TError,
+          Awaited<ReturnType<typeof listRecentDeliveries>>
+        >,
+        "initialData"
+      >;
+    request?: SecondParameter<typeof http>;
+  },
+  queryClient?: QueryClient,
+): DefinedUseQueryResult<TData, TError> & {
+  queryKey: DataTag<QueryKey, TData, TError>;
+};
+export function useListRecentDeliveries<
+  TData = Awaited<ReturnType<typeof listRecentDeliveries>>,
+  TError = unknown,
+>(
+  slug: string,
+  params?: ListRecentDeliveriesParams,
+  options?: {
+    query?: Partial<
+      UseQueryOptions<
+        Awaited<ReturnType<typeof listRecentDeliveries>>,
+        TError,
+        TData
+      >
+    > &
+      Pick<
+        UndefinedInitialDataOptions<
+          Awaited<ReturnType<typeof listRecentDeliveries>>,
+          TError,
+          Awaited<ReturnType<typeof listRecentDeliveries>>
+        >,
+        "initialData"
+      >;
+    request?: SecondParameter<typeof http>;
+  },
+  queryClient?: QueryClient,
+): UseQueryResult<TData, TError> & {
+  queryKey: DataTag<QueryKey, TData, TError>;
+};
+export function useListRecentDeliveries<
+  TData = Awaited<ReturnType<typeof listRecentDeliveries>>,
+  TError = unknown,
+>(
+  slug: string,
+  params?: ListRecentDeliveriesParams,
+  options?: {
+    query?: Partial<
+      UseQueryOptions<
+        Awaited<ReturnType<typeof listRecentDeliveries>>,
+        TError,
+        TData
+      >
+    >;
+    request?: SecondParameter<typeof http>;
+  },
+  queryClient?: QueryClient,
+): UseQueryResult<TData, TError> & {
+  queryKey: DataTag<QueryKey, TData, TError>;
+};
+
+export function useListRecentDeliveries<
+  TData = Awaited<ReturnType<typeof listRecentDeliveries>>,
+  TError = unknown,
+>(
+  slug: string,
+  params?: ListRecentDeliveriesParams,
+  options?: {
+    query?: Partial<
+      UseQueryOptions<
+        Awaited<ReturnType<typeof listRecentDeliveries>>,
+        TError,
+        TData
+      >
+    >;
+    request?: SecondParameter<typeof http>;
+  },
+  queryClient?: QueryClient,
+): UseQueryResult<TData, TError> & {
+  queryKey: DataTag<QueryKey, TData, TError>;
+} {
+  const queryOptions = getListRecentDeliveriesQueryOptions(
+    slug,
+    params,
+    options,
+  );
+
+  const query = useQuery(queryOptions, queryClient) as UseQueryResult<
+    TData,
+    TError
+  > & { queryKey: DataTag<QueryKey, TData, TError> };
+
+  query.queryKey = queryOptions.queryKey;
+
+  return query;
+}
+
+/**
+ * Mark in-app alert as read
+ */
+export const getMarkAlertReadUrl = (slug: string, id: string) => {
+  return `/org/${slug}/alerts/${id}/read`;
+};
+
+export const markAlertRead = async (
+  slug: string,
+  id: string,
+  options?: RequestInit,
+): Promise<MarkAlertRead200> => {
+  return http<MarkAlertRead200>(getMarkAlertReadUrl(slug, id), {
+    ...options,
+    method: "PATCH",
+  });
+};
+
+export const getMarkAlertReadMutationOptions = <
+  TError = unknown,
+  TContext = unknown,
+>(options?: {
+  mutation?: UseMutationOptions<
+    Awaited<ReturnType<typeof markAlertRead>>,
+    TError,
+    { slug: string; id: string },
+    TContext
+  >;
+  request?: SecondParameter<typeof http>;
+}): UseMutationOptions<
+  Awaited<ReturnType<typeof markAlertRead>>,
+  TError,
+  { slug: string; id: string },
+  TContext
+> => {
+  const mutationKey = ["markAlertRead"];
+  const { mutation: mutationOptions, request: requestOptions } = options
+    ? options.mutation &&
+      "mutationKey" in options.mutation &&
+      options.mutation.mutationKey
+      ? options
+      : { ...options, mutation: { ...options.mutation, mutationKey } }
+    : { mutation: { mutationKey }, request: undefined };
+
+  const mutationFn: MutationFunction<
+    Awaited<ReturnType<typeof markAlertRead>>,
+    { slug: string; id: string }
+  > = (props) => {
+    const { slug, id } = props ?? {};
+
+    return markAlertRead(slug, id, requestOptions);
+  };
+
+  return { mutationFn, ...mutationOptions };
+};
+
+export type MarkAlertReadMutationResult = NonNullable<
+  Awaited<ReturnType<typeof markAlertRead>>
+>;
+
+export type MarkAlertReadMutationError = unknown;
+
+export const useMarkAlertRead = <TError = unknown, TContext = unknown>(
+  options?: {
+    mutation?: UseMutationOptions<
+      Awaited<ReturnType<typeof markAlertRead>>,
+      TError,
+      { slug: string; id: string },
+      TContext
+    >;
+    request?: SecondParameter<typeof http>;
+  },
+  queryClient?: QueryClient,
+): UseMutationResult<
+  Awaited<ReturnType<typeof markAlertRead>>,
+  TError,
+  { slug: string; id: string },
+  TContext
+> => {
+  const mutationOptions = getMarkAlertReadMutationOptions(options);
+
+  return useMutation(mutationOptions, queryClient);
+};
+
+/**
+ * List pending extension alerts for current user across all orgs
+ */
+export const getListPendingExtensionAlertsUrl = () => {
+  return `/me/alerts/pending`;
+};
+
+export const listPendingExtensionAlerts = async (
+  options?: RequestInit,
+): Promise<ListPendingExtensionAlerts200> => {
+  return http<ListPendingExtensionAlerts200>(
+    getListPendingExtensionAlertsUrl(),
+    {
+      ...options,
+      method: "GET",
+    },
+  );
+};
+
+export const getListPendingExtensionAlertsQueryKey = () => {
+  return [`/me/alerts/pending`] as const;
+};
+
+export const getListPendingExtensionAlertsQueryOptions = <
+  TData = Awaited<ReturnType<typeof listPendingExtensionAlerts>>,
+  TError = unknown,
+>(options?: {
+  query?: Partial<
+    UseQueryOptions<
+      Awaited<ReturnType<typeof listPendingExtensionAlerts>>,
+      TError,
+      TData
+    >
+  >;
+  request?: SecondParameter<typeof http>;
+}) => {
+  const { query: queryOptions, request: requestOptions } = options ?? {};
+
+  const queryKey =
+    queryOptions?.queryKey ?? getListPendingExtensionAlertsQueryKey();
+
+  const queryFn: QueryFunction<
+    Awaited<ReturnType<typeof listPendingExtensionAlerts>>
+  > = ({ signal }) => listPendingExtensionAlerts({ signal, ...requestOptions });
+
+  return { queryKey, queryFn, ...queryOptions } as UseQueryOptions<
+    Awaited<ReturnType<typeof listPendingExtensionAlerts>>,
+    TError,
+    TData
+  > & { queryKey: DataTag<QueryKey, TData, TError> };
+};
+
+export type ListPendingExtensionAlertsQueryResult = NonNullable<
+  Awaited<ReturnType<typeof listPendingExtensionAlerts>>
+>;
+export type ListPendingExtensionAlertsQueryError = unknown;
+
+export function useListPendingExtensionAlerts<
+  TData = Awaited<ReturnType<typeof listPendingExtensionAlerts>>,
+  TError = unknown,
+>(
+  options: {
+    query: Partial<
+      UseQueryOptions<
+        Awaited<ReturnType<typeof listPendingExtensionAlerts>>,
+        TError,
+        TData
+      >
+    > &
+      Pick<
+        DefinedInitialDataOptions<
+          Awaited<ReturnType<typeof listPendingExtensionAlerts>>,
+          TError,
+          Awaited<ReturnType<typeof listPendingExtensionAlerts>>
+        >,
+        "initialData"
+      >;
+    request?: SecondParameter<typeof http>;
+  },
+  queryClient?: QueryClient,
+): DefinedUseQueryResult<TData, TError> & {
+  queryKey: DataTag<QueryKey, TData, TError>;
+};
+export function useListPendingExtensionAlerts<
+  TData = Awaited<ReturnType<typeof listPendingExtensionAlerts>>,
+  TError = unknown,
+>(
+  options?: {
+    query?: Partial<
+      UseQueryOptions<
+        Awaited<ReturnType<typeof listPendingExtensionAlerts>>,
+        TError,
+        TData
+      >
+    > &
+      Pick<
+        UndefinedInitialDataOptions<
+          Awaited<ReturnType<typeof listPendingExtensionAlerts>>,
+          TError,
+          Awaited<ReturnType<typeof listPendingExtensionAlerts>>
+        >,
+        "initialData"
+      >;
+    request?: SecondParameter<typeof http>;
+  },
+  queryClient?: QueryClient,
+): UseQueryResult<TData, TError> & {
+  queryKey: DataTag<QueryKey, TData, TError>;
+};
+export function useListPendingExtensionAlerts<
+  TData = Awaited<ReturnType<typeof listPendingExtensionAlerts>>,
+  TError = unknown,
+>(
+  options?: {
+    query?: Partial<
+      UseQueryOptions<
+        Awaited<ReturnType<typeof listPendingExtensionAlerts>>,
+        TError,
+        TData
+      >
+    >;
+    request?: SecondParameter<typeof http>;
+  },
+  queryClient?: QueryClient,
+): UseQueryResult<TData, TError> & {
+  queryKey: DataTag<QueryKey, TData, TError>;
+};
+
+export function useListPendingExtensionAlerts<
+  TData = Awaited<ReturnType<typeof listPendingExtensionAlerts>>,
+  TError = unknown,
+>(
+  options?: {
+    query?: Partial<
+      UseQueryOptions<
+        Awaited<ReturnType<typeof listPendingExtensionAlerts>>,
+        TError,
+        TData
+      >
+    >;
+    request?: SecondParameter<typeof http>;
+  },
+  queryClient?: QueryClient,
+): UseQueryResult<TData, TError> & {
+  queryKey: DataTag<QueryKey, TData, TError>;
+} {
+  const queryOptions = getListPendingExtensionAlertsQueryOptions(options);
+
+  const query = useQuery(queryOptions, queryClient) as UseQueryResult<
+    TData,
+    TError
+  > & { queryKey: DataTag<QueryKey, TData, TError> };
+
+  query.queryKey = queryOptions.queryKey;
+
+  return query;
+}
+
+/**
+ * Acknowledge extension alert delivery
+ */
+export const getAckAlertUrl = (slug: string, id: string) => {
+  return `/org/${slug}/alerts/${id}/ack`;
+};
+
+export const ackAlert = async (
+  slug: string,
+  id: string,
+  options?: RequestInit,
+): Promise<AckAlert200> => {
+  return http<AckAlert200>(getAckAlertUrl(slug, id), {
+    ...options,
+    method: "POST",
+  });
+};
+
+export const getAckAlertMutationOptions = <
+  TError = unknown,
+  TContext = unknown,
+>(options?: {
+  mutation?: UseMutationOptions<
+    Awaited<ReturnType<typeof ackAlert>>,
+    TError,
+    { slug: string; id: string },
+    TContext
+  >;
+  request?: SecondParameter<typeof http>;
+}): UseMutationOptions<
+  Awaited<ReturnType<typeof ackAlert>>,
+  TError,
+  { slug: string; id: string },
+  TContext
+> => {
+  const mutationKey = ["ackAlert"];
+  const { mutation: mutationOptions, request: requestOptions } = options
+    ? options.mutation &&
+      "mutationKey" in options.mutation &&
+      options.mutation.mutationKey
+      ? options
+      : { ...options, mutation: { ...options.mutation, mutationKey } }
+    : { mutation: { mutationKey }, request: undefined };
+
+  const mutationFn: MutationFunction<
+    Awaited<ReturnType<typeof ackAlert>>,
+    { slug: string; id: string }
+  > = (props) => {
+    const { slug, id } = props ?? {};
+
+    return ackAlert(slug, id, requestOptions);
+  };
+
+  return { mutationFn, ...mutationOptions };
+};
+
+export type AckAlertMutationResult = NonNullable<
+  Awaited<ReturnType<typeof ackAlert>>
+>;
+
+export type AckAlertMutationError = unknown;
+
+export const useAckAlert = <TError = unknown, TContext = unknown>(
+  options?: {
+    mutation?: UseMutationOptions<
+      Awaited<ReturnType<typeof ackAlert>>,
+      TError,
+      { slug: string; id: string },
+      TContext
+    >;
+    request?: SecondParameter<typeof http>;
+  },
+  queryClient?: QueryClient,
+): UseMutationResult<
+  Awaited<ReturnType<typeof ackAlert>>,
+  TError,
+  { slug: string; id: string },
+  TContext
+> => {
+  const mutationOptions = getAckAlertMutationOptions(options);
+
+  return useMutation(mutationOptions, queryClient);
+};
 
 /**
  * List tags for organization

@@ -5,8 +5,6 @@ import {
   getJobController,
   getJobsStatsController,
   listJobsController,
-  previewOverdueAlertsController,
-  previewTransactionAlertsController,
   runJobController,
   sendMonthlySummaryController,
   startAllJobsController,
@@ -90,59 +88,6 @@ const StartAllJobsResponseSchema = z.object({
 const StartJobResponseSchema = z.object({
   success: z.boolean(),
   message: z.string(),
-  timestamp: z.string(),
-})
-
-const TransactionAlertPreviewSchema = z.object({
-  id: z.string(),
-  title: z.string(),
-  amount: z.number(),
-  dueDate: z.string(),
-  daysUntilDue: z.number(),
-  alertType: z.enum(['warning', 'urgent', 'overdue']),
-  ownerName: z.string(),
-  ownerPhone: z.string(),
-  payToName: z.string().nullable(),
-  payToPhone: z.string().nullable(),
-  type: z.enum(['income', 'expense']).optional(),
-})
-
-const PreviewSummarySchema = z.object({
-  total: z.number(),
-  today: z.number(),
-  tomorrow: z.number(),
-  twoDays: z.number(),
-  threeToFourDays: z.number(),
-})
-
-const PreviewTransactionAlertsResponseSchema = z.object({
-  preview: z.object({
-    transactions: z.array(TransactionAlertPreviewSchema),
-    summary: PreviewSummarySchema,
-  }),
-  timestamp: z.string(),
-})
-
-const OverdueAlertPreviewSchema = z.object({
-  id: z.string(),
-  title: z.string(),
-  amount: z.number(),
-  dueDate: z.string(),
-  overdueDays: z.number(),
-  payToName: z.string().nullable(),
-  payToPhone: z.string().nullable(),
-  organizationSlug: z.string(),
-  installmentInfo: z.string().nullable(),
-})
-
-const PreviewOverdueAlertsResponseSchema = z.object({
-  preview: z.object({
-    summary: z.object({
-      total: z.number(),
-      overdue: z.number(),
-    }),
-    transactions: z.array(OverdueAlertPreviewSchema),
-  }),
   timestamp: z.string(),
 })
 
@@ -293,43 +238,6 @@ export async function jobsRoutes(app: FastifyInstance) {
       },
     },
     startAllJobsController
-  )
-
-  // Preview dos alertas de transação
-  app.get(
-    '/jobs/transactions:alerts/preview',
-    {
-      onRequest: [authenticateUserHook],
-      schema: {
-        tags: ['Jobs'],
-        summary: 'Preview das transações que seriam processadas pelo job de alertas',
-        security: [{ bearerAuth: [] }],
-        querystring: z.object({ userId: z.string().optional() }).optional(),
-        response: {
-          200: PreviewTransactionAlertsResponseSchema,
-        },
-      },
-    },
-    previewTransactionAlertsController
-  )
-
-  // Preview dos alertas de transações vencidas
-  app.get(
-    '/jobs/overdue-alerts/preview',
-    {
-      onRequest: [authenticateUserHook],
-      schema: {
-        tags: ['Jobs'],
-        summary:
-          'Preview das transações vencidas que seriam processadas pelo job de alertas vencidas',
-        security: [{ bearerAuth: [] }],
-        querystring: z.object({ userId: z.string().optional() }).optional(),
-        response: {
-          200: PreviewOverdueAlertsResponseSchema,
-        },
-      },
-    },
-    previewOverdueAlertsController
   )
 
   // Enviar resumo mensal via WhatsApp para um usuário específico

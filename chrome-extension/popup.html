@@ -71,6 +71,15 @@
         <p id="investments-empty" class="empty-msg hidden">Nenhum aporte pendente</p>
       </section>
 
+      <section id="section-reminders">
+        <div class="section-header reminders-header">
+          <span class="dot dot-purple"></span>
+          <span id="reminders-title">Lembretes</span>
+        </div>
+        <ul id="list-reminders" class="tx-list"></ul>
+        <p id="reminders-empty" class="empty-msg hidden">Nenhum lembrete ativo</p>
+      </section>
+
       <!-- Overdue transactions (hidden for future months) -->
       <section id="section-overdue">
         <div class="section-header overdue-header">
@@ -100,6 +109,21 @@
         <ul id="list-all" class="tx-list tx-list-scroll"></ul>
         <p id="all-empty" class="empty-msg hidden">Nenhuma transação no mês</p>
       </section>
+    </div>
+  </div>
+
+  <!-- Snooze reminder modal -->
+  <div id="snooze-modal" class="modal-backdrop hidden">
+    <div class="modal">
+      <p class="modal-title">Adiar lembrete</p>
+      <label class="modal-label">Adiar até
+        <input type="date" id="snooze-date" class="modal-input" />
+      </label>
+      <p id="snooze-hint" class="modal-hint"></p>
+      <div class="modal-actions">
+        <button id="snooze-cancel" class="btn-secondary">Cancelar</button>
+        <button id="snooze-confirm" class="btn-primary">Confirmar</button>
+      </div>
     </div>
   </div>
 

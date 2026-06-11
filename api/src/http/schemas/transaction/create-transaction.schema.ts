@@ -28,7 +28,6 @@ const base = z.object({
       })
     )
     .optional(),
-  alertFrequency: z.enum(['never', 'daily', 'weekly', 'monthly']).default('weekly'),
 })
 
 const recurring = base.extend({
@@ -123,7 +122,9 @@ export const createTransactionsSchema = {
   params: z.object({ slug: z.string() }),
   body: newTransactionSchema,
   response: {
-    201: z.null(),
+    201: z.object({
+      seriesId: z.string(),
+    }),
   },
 }
 

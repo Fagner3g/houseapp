@@ -16,7 +16,6 @@ export const transactionOccurrences = pgTable('transactions_occurrences', {
   status: text('status').$type<'pending' | 'paid' | 'partial' | 'canceled'>().notNull().default('pending'),
   paidAt: timestamp('paid_at', { withTimezone: true }),
   valuePaid: integer('value_paid'),
-  lastOverdueAlertAt: timestamp('last_overdue_alert_at', { withTimezone: true }),
   description: text('description'),
   createdAt: timestamp('created_at', { withTimezone: true }).notNull().defaultNow(),
   updatedAt: timestamp('updated_at', { withTimezone: true }).notNull().defaultNow(),

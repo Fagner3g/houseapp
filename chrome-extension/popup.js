@@ -58,6 +58,7 @@ const state = {
   reports: null,
   orgs: [],
   investments: null,
+  reminders: null,
 }
 
 // ── Auth ──────────────────────────────────────────────────────────────────────
@@ -135,6 +136,12 @@ async function fetchInvestmentReminders() {
   const data = await apiFetch('/me/investments/reminders')
   state.investments = data.reminders || data
   return state.investments
+}
+
+async function fetchReminders() {
+  const data = await apiFetch(`/org/${state.orgSlug}/reminders?includeCompleted=true`)
+  state.reminders = data.reminders || data
+  return state.reminders
 }
 
 // ── Render helpers ────────────────────────────────────────────────────────────
@@ -249,7 +256,8 @@ function renderOverdue(overdueTransactions, upcomingAlerts, context) {
   const uniqueAlsoOverdue = alsoOverdue.filter(tx => !seenIds.has(tx.id))
 
   const all = [...overdue, ...uniqueAlsoOverdue]
-  title.textContent = `Vencidas (${all.length})`
+  const totalOverdue = all.reduce((sum, tx) => sum + (Number(tx.amount) || 0), 0)
+  title.textContent = `Vencidas (${fmt(totalOverdue)})`
 
   if (!all.length) { section.classList.add('hidden'); return }
   section.classList.remove('hidden')
@@ -309,6 +317,307 @@ function renderAllTransactions(allTransactions, context) {
 
   for (const tx of txs) {
     list.appendChild(renderTransactionItem(tx, context, fmtDate(tx.dueDate)))
+  }
+}
+
+function getEndOfDueMonth(dueDate) {
+  const d = new Date(dueDate)
+  return new Date(d.getFullYear(), d.getMonth() + 1, 0, 23, 59, 59, 999)
+}
+
+function isReminderSnoozed(item) {
+  return item.snoozedUntil && new Date(item.snoozedUntil) > new Date()
+}
+
+function toDateKey(isoString) {
+  const d = new Date(isoString)
+  const y = d.getFullYear()
+  const m = String(d.getMonth() + 1).padStart(2, '0')
+  const day = String(d.getDate()).padStart(2, '0')
+  return `${y}-${m}-${day}`
+}
+
+function isInDateKeyRange(dateKey, from, to) {
+  return dateKey >= from && dateKey <= to
+}
+
+function getMonthDateKeyRange(year, month) {
+  const m = String(month).padStart(2, '0')
+  const lastDay = new Date(year, month, 0).getDate()
+  return {
+    from: `${year}-${m}-01`,
+    to: `${year}-${m}-${String(lastDay).padStart(2, '0')}`,
+  }
+}
+
+function fromDateKey(dateKey) {
+  const [y, mo, d] = dateKey.split('-').map(Number)
+  return new Date(y, mo - 1, d)
+}
+
+function addPeriod(date, type, interval) {
+  const next = new Date(date)
+  switch (type) {
+    case 'weekly':
+      next.setDate(next.getDate() + 7 * interval)
+      break
+    case 'monthly':
+      next.setMonth(next.getMonth() + interval)
+      break
+    case 'yearly':
+      next.setFullYear(next.getFullYear() + interval)
+      break
+  }
+  return next
+}
+
+function subPeriod(date, type, interval) {
+  const prev = new Date(date)
+  switch (type) {
+    case 'weekly':
+      prev.setDate(prev.getDate() - 7 * interval)
+      break
+    case 'monthly':
+      prev.setMonth(prev.getMonth() - interval)
+      break
+    case 'yearly':
+      prev.setFullYear(prev.getFullYear() - interval)
+      break
+  }
+  return prev
+}
+
+/** Mirrors web calendar getReminderOccurrenceDatesInRange. */
+function getReminderOccurrenceDatesInRange(reminder, dateFrom, dateTo) {
+  const untilKey = reminder.recurrenceUntil ? toDateKey(reminder.recurrenceUntil) : null
+
+  if (!reminder.isRecurring || !reminder.recurrenceType) {
+    const dueKey = toDateKey(reminder.dueDate)
+    return isInDateKeyRange(dueKey, dateFrom, dateTo) ? [dueKey] : []
+  }
+
+  const type = reminder.recurrenceType
+  const interval = reminder.recurrenceInterval || 1
+  let current = new Date(reminder.dueDate)
+  current.setHours(0, 0, 0, 0)
+
+  while (toDateKey(current) > dateFrom) {
+    const prev = subPeriod(current, type, interval)
+    if (toDateKey(prev) >= toDateKey(current)) break
+    current = prev
+    current.setHours(0, 0, 0, 0)
+  }
+
+  const dates = []
+  for (let i = 0; i < 500; i++) {
+    const key = toDateKey(current)
+    if (untilKey && key > untilKey) break
+    if (key > dateTo) break
+    if (isInDateKeyRange(key, dateFrom, dateTo)) {
+      dates.push(key)
+    }
+    const next = addPeriod(current, type, interval)
+    if (toDateKey(next) <= toDateKey(current)) break
+    current = next
+    current.setHours(0, 0, 0, 0)
+  }
+
+  return dates
+}
+
+/**
+ * Include every reminder occurrence in the viewing month — pending or completed
+ * (e.g. recurring reminder advanced to next month after "feito no mês").
+ */
+function filterRemindersForMonth(reminders, year, month) {
+  const { from, to } = getMonthDateKeyRange(year, month)
+  const result = []
+  for (const reminder of reminders || []) {
+    for (const occurrenceDateKey of getReminderOccurrenceDatesInRange(reminder, from, to)) {
+      result.push({ reminder, occurrenceDateKey })
+    }
+  }
+  return result
+}
+
+/** Mirrors web calendar isReminderOccurrenceCompleted. */
+function isReminderOccurrenceCompleted(item, dateKey) {
+  const currentDueKey = toDateKey(item.dueDate)
+
+  if (!item.isRecurring || !item.recurrenceType) {
+    return item.completedAt != null && currentDueKey === dateKey
+  }
+
+  if (dateKey < currentDueKey) return true
+  if (dateKey > currentDueKey) return false
+
+  return item.completedAt != null || item.lastCompletedPeriodKey != null
+}
+
+async function completeReminderPeriod(reminderId) {
+  await apiFetch(`/org/${state.orgSlug}/reminders/${reminderId}/complete-period`, {
+    method: 'POST',
+  })
+  await fetchReminders()
+  renderReminders(state.reminders, state.year, state.month)
+  await refreshBadgeAllOrgs()
+}
+
+async function snoozeReminder(reminderId, body) {
+  await apiFetch(`/org/${state.orgSlug}/reminders/${reminderId}/snooze`, {
+    method: 'POST',
+    body: JSON.stringify(body),
+  })
+  await fetchReminders()
+  renderReminders(state.reminders, state.year, state.month)
+}
+
+let _snoozeResolve = null
+let _snoozeReminderItem = null
+
+function openSnoozeModal(item) {
+  const today = new Date().toISOString().split('T')[0]
+  const maxDate = getEndOfDueMonth(item.dueDate).toISOString().split('T')[0]
+  const input = document.getElementById('snooze-date')
+  input.min = today
+  input.max = maxDate
+  input.value = today
+  document.getElementById('snooze-hint').textContent =
+    `Máximo: ${maxDate.split('-').reverse().join('/')} (fim do mês do vencimento)`
+  _snoozeReminderItem = item
+  document.getElementById('snooze-modal').classList.remove('hidden')
+  return new Promise(resolve => { _snoozeResolve = resolve })
+}
+
+function closeSnoozeModal(result) {
+  document.getElementById('snooze-modal').classList.add('hidden')
+  _snoozeReminderItem = null
+  if (_snoozeResolve) { _snoozeResolve(result); _snoozeResolve = null }
+}
+
+function renderReminders(reminders, year, month) {
+  const section = document.getElementById('section-reminders')
+  const list = document.getElementById('list-reminders')
+  const title = document.getElementById('reminders-title')
+
+  list.innerHTML = ''
+  const items = filterRemindersForMonth(reminders, year, month)
+  title.textContent = `Lembretes (${items.length})`
+
+  if (!items.length) {
+    section.classList.add('hidden')
+    return
+  }
+  section.classList.remove('hidden')
+
+  const todayMidnight = new Date()
+  todayMidnight.setHours(0, 0, 0, 0)
+
+  for (const { reminder: item, occurrenceDateKey } of items) {
+    const li = document.createElement('li')
+    li.className = 'tx-item'
+    li.dataset.id = item.id
+    const due = fromDateKey(occurrenceDateKey)
+    const d = Math.round((+due - +todayMidnight) / (1000 * 60 * 60 * 24))
+    const completed = isReminderOccurrenceCompleted(item, occurrenceDateKey)
+    const isActiveOccurrence = occurrenceDateKey === toDateKey(item.dueDate) && !completed
+    const meta = completed
+      ? fmtDate(due.toISOString())
+      : d < 0
+        ? `${Math.abs(d)}d atraso`
+        : d === 0
+          ? 'hoje'
+          : d === 1
+            ? 'amanhã'
+            : `${d} dias`
+    const amount = item.amountCents != null ? fmt(item.amountCents / 100) : '—'
+    const snoozed = isActiveOccurrence && isReminderSnoozed(item)
+    const badgeClass = completed
+      ? 'badge-completed'
+      : snoozed
+        ? 'badge-snoozed'
+        : d < 0
+          ? 'badge-overdue'
+          : 'badge-reminder'
+    const badgeLabel = completed
+      ? 'Concluído'
+      : snoozed
+        ? 'Adiado'
+        : d < 0
+          ? 'Vencido'
+          : 'Lembrete'
+    const snoozeTitle = snoozed && item.snoozedUntil
+      ? `Adiado até ${fmtDate(item.snoozedUntil)}`
+      : 'Adiar'
+
+    li.classList.add('reminder-item')
+    if (completed) li.classList.add('paid')
+    li.innerHTML = `
+      <div class="reminder-row reminder-row-top">
+        <span class="type-dot reminder">◆</span>
+        <span class="tx-title" title="${item.title}">${item.title}</span>
+        <span class="tx-amount">${amount}</span>
+      </div>
+      <div class="reminder-row reminder-row-bottom">
+        <span class="tx-meta">${meta}</span>
+        <div class="reminder-actions">
+          <button class="btn-reminder-done" title="Feito no mês">✓</button>
+          <select class="reminder-snooze-select" title="${snoozeTitle}" aria-label="Adiar lembrete">
+            <option value="">Adiar</option>
+            <option value="1">1 dia</option>
+            <option value="3">3 dias</option>
+            <option value="custom">Até data...</option>
+          </select>
+          <span class="badge ${badgeClass}" title="${snoozeTitle}">${badgeLabel}</span>
+        </div>
+      </div>
+    `
+
+    const doneBtn = li.querySelector('.btn-reminder-done')
+    const snoozeSelect = li.querySelector('.reminder-snooze-select')
+
+    if (!isActiveOccurrence) {
+      doneBtn.disabled = true
+      snoozeSelect.disabled = true
+    } else {
+      doneBtn.addEventListener('click', async (e) => {
+        e.stopPropagation()
+        if (!confirm(`Marcar "${item.title}" como feito neste mês?`)) return
+
+        const btn = e.currentTarget
+        btn.disabled = true
+        try {
+          await completeReminderPeriod(item.id)
+        } catch (err) {
+          console.error('[HouseApp] complete-period error:', err)
+          btn.disabled = false
+          alert('Erro ao marcar como feito')
+        }
+      })
+    }
+
+    snoozeSelect.addEventListener('change', async (e) => {
+      if (!isActiveOccurrence) return
+      e.stopPropagation()
+      const value = e.target.value
+      e.target.value = ''
+      if (!value) return
+
+      try {
+        if (value === 'custom') {
+          const choice = await openSnoozeModal(item)
+          if (!choice) return
+          await snoozeReminder(item.id, { until: choice.until })
+        } else {
+          await snoozeReminder(item.id, { days: Number(value) })
+        }
+      } catch (err) {
+        console.error('[HouseApp] snooze error:', err)
+        alert('Erro ao adiar lembrete')
+      }
+    })
+
+    list.appendChild(li)
   }
 }
 
@@ -379,18 +688,37 @@ function renderOrgSelect() {
 
 // ── Badge ─────────────────────────────────────────────────────────────────────
 
-function updateBadge(overdueCount, upcomingCount, investmentCount = 0) {
-  const total = overdueCount + upcomingCount + investmentCount
-  if (total === 0) { chrome.action.setBadgeText({ text: '' }); return }
-  chrome.action.setBadgeText({ text: String(total) })
-  chrome.action.setBadgeTextColor({ color: '#ffffff' })
-  chrome.action.setBadgeBackgroundColor({ color: overdueCount > 0 ? '#ef4444' : investmentCount > 0 ? '#2563eb' : '#f59e0b' })
+function todayMidnight() {
+  const d = new Date()
+  d.setHours(0, 0, 0, 0)
+  return d
 }
 
-/**
- * Fetches fresh reports for every org and recalculates the badge.
- * Called once on popup open (after orgs are known) so the badge is always accurate.
- */
+function countOverdueTransactions(reports) {
+  const today = todayMidnight()
+  const overdue = (reports.overdueTransactions?.transactions || [])
+    .filter(t => t.status === 'pending' || t.status === 'partial')
+  const alsoOverdue = (reports.upcomingAlerts?.transactions || [])
+    .filter(t => (t.status === 'pending' || t.status === 'partial') && new Date(t.dueDate) < today)
+  const seenIds = new Set(overdue.map(t => t.id))
+  return overdue.length + alsoOverdue.filter(t => !seenIds.has(t.id)).length
+}
+
+function countOverdueReminders(reminders, year, month) {
+  const today = todayMidnight()
+  return filterRemindersForMonth(reminders, year, month).filter(({ reminder: r, occurrenceDateKey }) => {
+    if (isReminderOccurrenceCompleted(r, occurrenceDateKey)) return false
+    return fromDateKey(occurrenceDateKey) < today
+  }).length
+}
+
+function updateBadge(overdueCount = 0) {
+  if (overdueCount === 0) { chrome.action.setBadgeText({ text: '' }); return }
+  chrome.action.setBadgeText({ text: String(overdueCount) })
+  chrome.action.setBadgeTextColor({ color: '#ffffff' })
+  chrome.action.setBadgeBackgroundColor({ color: '#ef4444' })
+}
+
 async function refreshBadgeAllOrgs() {
   if (!state.orgs?.length) return
 
@@ -406,47 +734,29 @@ async function refreshBadgeAllOrgs() {
     )
   )
 
+  const reminderResults = await Promise.all(
+    state.orgs.map(org =>
+      apiFetch(`/org/${org.slug}/reminders`)
+        .then(data => data.reminders || data)
+        .catch(() => [])
+    )
+  )
+
   let totalOverdue = 0
-  let totalUpcoming = 0
-  let totalInvestments = 0
   const newCache = {}
 
   for (const orgData of results.filter(Boolean)) {
-    totalOverdue  += (orgData.reports.overdueTransactions?.transactions || []).filter(t => t.status === 'pending' || t.status === 'partial').length
-    totalUpcoming += (orgData.reports.upcomingAlerts?.transactions      || []).filter(t => t.status === 'pending' || t.status === 'partial').length
+    totalOverdue += countOverdueTransactions(orgData.reports)
     newCache[orgData.slug] = orgData.reports
   }
-
-  totalInvestments = state.investments?.summary?.total || state.investments?.items?.length || 0
-
-  updateBadge(totalOverdue, totalUpcoming, totalInvestments)
-  await chrome.storage.local.set({
-    cachedReportsByOrg: newCache,
-    badgeTotals: { overdue: totalOverdue, upcoming: totalUpcoming, investments: totalInvestments },
-  })
-}
-
-/**
- * Recalculates badge across ALL orgs using the per-org cache.
- * Updates the current org's data before recalculating so the count is fresh.
- */
-async function updateBadgeFromReports(reports) {
-  const { cachedReportsByOrg } = await chrome.storage.local.get('cachedReportsByOrg')
-  const allOrgs = { ...(cachedReportsByOrg || {}), [state.orgSlug]: reports }
-
-  let totalOverdue = 0
-  let totalUpcoming = 0
-  for (const r of Object.values(allOrgs)) {
-    totalOverdue  += (r.overdueTransactions?.transactions || []).filter(t => t.status === 'pending' || t.status === 'partial').length
-    totalUpcoming += (r.upcomingAlerts?.transactions      || []).filter(t => t.status === 'pending' || t.status === 'partial').length
+  for (const reminders of reminderResults) {
+    totalOverdue += countOverdueReminders(reminders, year, month)
   }
 
-  const totalInvestments = state.investments?.summary?.total ?? state.investments?.items?.length ?? 0
-
-  updateBadge(totalOverdue, totalUpcoming, totalInvestments)
+  updateBadge(totalOverdue)
   await chrome.storage.local.set({
-    cachedReportsByOrg: allOrgs,
-    badgeTotals: { overdue: totalOverdue, upcoming: totalUpcoming, investments: totalInvestments },
+    cachedReportsByOrg: newCache,
+    badgeTotals: { overdue: totalOverdue },
   })
 }
 
@@ -497,6 +807,13 @@ function closePayModal(result) {
 
 document.getElementById('btn-today').addEventListener('click', () => {
   document.getElementById('pay-date').value = new Date().toISOString().split('T')[0]
+})
+
+document.getElementById('snooze-cancel').addEventListener('click', () => closeSnoozeModal(null))
+document.getElementById('snooze-confirm').addEventListener('click', () => {
+  const dateVal = document.getElementById('snooze-date').value
+  if (!dateVal) { alert('Informe a data'); return }
+  closeSnoozeModal({ type: 'until', until: new Date(dateVal).toISOString() })
 })
 
 document.getElementById('pay-cancel').addEventListener('click', () => closePayModal(null))
@@ -562,7 +879,7 @@ async function handlePay(txId, liEl, tx) {
       }
     }
 
-    await updateBadgeFromReports(state.reports)
+    await refreshBadgeAllOrgs()
 
     // Mirror in "Todas do mês" list
     const twin = document.querySelector(`#list-all [data-id="${txId}"]`)
@@ -591,12 +908,14 @@ async function loadData() {
     )
     state.reports = data.reports || data
     await fetchInvestmentReminders()
+    await fetchReminders()
 
     const context = getViewingContext(state.year, state.month)
 
     renderMonthLabel()
     renderKpis(state.reports, context)
     renderInvestments(state.investments)
+    renderReminders(state.reminders, state.year, state.month)
     renderOverdue(
       state.reports.overdueTransactions?.transactions,
       state.reports.upcomingAlerts?.transactions,
@@ -605,7 +924,7 @@ async function loadData() {
     renderUpcoming(state.reports.upcomingAlerts?.transactions, context)
     renderAllTransactions(state.reports.allTransactions, context)
 
-    await updateBadgeFromReports(state.reports)
+    await refreshBadgeAllOrgs()
 
     await chrome.storage.local.set({
       cachedReport: state.reports,
@@ -618,9 +937,24 @@ async function loadData() {
     if (err.status === 401) {
       await chrome.storage.local.remove('token')
       showScreen('login')
-    } else {
-      showScreen('error')
+      return
     }
+
+    if (err.status === 403) {
+      try {
+        const orgsData = await apiFetch('/orgs')
+        const orgs = orgsData.organizations || orgsData.orgs || orgsData
+        if (orgs?.length) {
+          state.orgs = orgs
+          state.orgSlug = orgs.find(o => o.slug === state.orgSlug)?.slug || orgs[0].slug
+          await chrome.storage.local.set({ orgSlug: state.orgSlug })
+          renderOrgSelect()
+          return loadData()
+        }
+      } catch (_) {}
+    }
+
+    showScreen('error')
   }
 }
 
@@ -666,9 +1000,6 @@ async function init() {
   }
 
   await loadData()
-
-  // Refresh badge with fresh data from ALL orgs (runs in background after popup renders)
-  refreshBadgeAllOrgs().catch(() => {})
 }
 
 // ── Event listeners ───────────────────────────────────────────────────────────

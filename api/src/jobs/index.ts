@@ -1,8 +1,7 @@
 // Importar todos os jobs para registrar automaticamente
 import './materialize-occurrences'
-import './transaction-alerts'
-import './overdue-alerts'
 import './monthly-summary'
+import './evaluate-alerts'
 
 // Importar o registry
 import { jobRegistry } from './registry'

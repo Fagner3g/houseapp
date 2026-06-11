@@ -19,4 +19,8 @@ export interface JobContext {
   processed: number
 }
 
-export type JobFunction = (userId?: string) => Promise<JobResult>
+export type JobRunOptions = {
+  skipTimeCheck?: boolean
+}
+
+export type JobFunction = (userId?: string, options?: JobRunOptions) => Promise<JobResult>

@@ -3,6 +3,8 @@ import { eq } from 'drizzle-orm'
 import { db } from '@/db'
 import { transactionOccurrences } from '@/db/schemas/transactionOccurrences'
 
+import { deactivateSeriesIfComplete } from './deactivate-series-if-complete'
+
 interface PayTransactionParams {
   id: string
   valuePaid?: number
@@ -45,6 +47,10 @@ export async function payTransactionService({ id, valuePaid, paidAt }: PayTransa
       .where(eq(transactionOccurrences.id, id))
       .returning()
 
+    if (updated && newStatus === 'paid') {
+      await deactivateSeriesIfComplete(updated.seriesId)
+    }
+
     return { occurrence: updated }
   }
 
@@ -64,6 +70,10 @@ export async function payTransactionService({ id, valuePaid, paidAt }: PayTransa
     })
     .where(eq(transactionOccurrences.id, id))
     .returning()
+
+  if (updated && newStatus === 'paid') {
+    await deactivateSeriesIfComplete(updated.seriesId)
+  }
 
   return { occurrence: updated }
 }

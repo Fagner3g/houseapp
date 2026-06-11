@@ -10,25 +10,18 @@ export const JOB_CONFIGS: Record<string, JobConfig> = {
     description: 'Manutenção automática de transações recorrentes',
   },
 
-  TRANSACTION_ALERTS: {
-    key: 'transactions:alerts',
-    schedule: '0 9 * * *', // Todo dia às 09:00
-    timezone: 'America/Sao_Paulo',
-    description: 'Alertas diários de vencimentos próximos (0 a 4 dias)',
-  },
-
-  OVERDUE_ALERTS: {
-    key: 'transactions:overdue-alerts',
-    schedule: '0 10 * * 1', // Toda segunda-feira às 10:00
-    timezone: 'America/Sao_Paulo',
-    description: 'Relatório de todas as pendências vencidas (roda toda segunda)',
-  },
-
   MONTHLY_SUMMARY: {
     key: 'transactions:monthly-summary',
     schedule: '0 10 1 * *', // Todo dia 1º às 10:00
     timezone: 'America/Sao_Paulo',
     description: 'Resumo do mês anterior para todos os usuários (roda dia 1º)',
+  },
+
+  EVALUATE_ALERTS: {
+    key: 'alerts:evaluate',
+    schedule: '* * * * *', // A cada minuto
+    timezone: 'America/Sao_Paulo',
+    description: 'Avalia lembretes personalizados e dispara alertas',
   },
 }
 
