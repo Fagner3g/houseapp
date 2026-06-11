@@ -139,7 +139,7 @@ async function fetchInvestmentReminders() {
 }
 
 async function fetchReminders() {
-  const data = await apiFetch(`/org/${state.orgSlug}/reminders`)
+  const data = await apiFetch(`/org/${state.orgSlug}/reminders?includeCompleted=true`)
   state.reminders = data.reminders || data
   return state.reminders
 }
@@ -329,12 +329,137 @@ function isReminderSnoozed(item) {
   return item.snoozedUntil && new Date(item.snoozedUntil) > new Date()
 }
 
+function toDateKey(isoString) {
+  const d = new Date(isoString)
+  const y = d.getFullYear()
+  const m = String(d.getMonth() + 1).padStart(2, '0')
+  const day = String(d.getDate()).padStart(2, '0')
+  return `${y}-${m}-${day}`
+}
+
+function isInDateKeyRange(dateKey, from, to) {
+  return dateKey >= from && dateKey <= to
+}
+
+function getMonthDateKeyRange(year, month) {
+  const m = String(month).padStart(2, '0')
+  const lastDay = new Date(year, month, 0).getDate()
+  return {
+    from: `${year}-${m}-01`,
+    to: `${year}-${m}-${String(lastDay).padStart(2, '0')}`,
+  }
+}
+
+function fromDateKey(dateKey) {
+  const [y, mo, d] = dateKey.split('-').map(Number)
+  return new Date(y, mo - 1, d)
+}
+
+function addPeriod(date, type, interval) {
+  const next = new Date(date)
+  switch (type) {
+    case 'weekly':
+      next.setDate(next.getDate() + 7 * interval)
+      break
+    case 'monthly':
+      next.setMonth(next.getMonth() + interval)
+      break
+    case 'yearly':
+      next.setFullYear(next.getFullYear() + interval)
+      break
+  }
+  return next
+}
+
+function subPeriod(date, type, interval) {
+  const prev = new Date(date)
+  switch (type) {
+    case 'weekly':
+      prev.setDate(prev.getDate() - 7 * interval)
+      break
+    case 'monthly':
+      prev.setMonth(prev.getMonth() - interval)
+      break
+    case 'yearly':
+      prev.setFullYear(prev.getFullYear() - interval)
+      break
+  }
+  return prev
+}
+
+/** Mirrors web calendar getReminderOccurrenceDatesInRange. */
+function getReminderOccurrenceDatesInRange(reminder, dateFrom, dateTo) {
+  const untilKey = reminder.recurrenceUntil ? toDateKey(reminder.recurrenceUntil) : null
+
+  if (!reminder.isRecurring || !reminder.recurrenceType) {
+    const dueKey = toDateKey(reminder.dueDate)
+    return isInDateKeyRange(dueKey, dateFrom, dateTo) ? [dueKey] : []
+  }
+
+  const type = reminder.recurrenceType
+  const interval = reminder.recurrenceInterval || 1
+  let current = new Date(reminder.dueDate)
+  current.setHours(0, 0, 0, 0)
+
+  while (toDateKey(current) > dateFrom) {
+    const prev = subPeriod(current, type, interval)
+    if (toDateKey(prev) >= toDateKey(current)) break
+    current = prev
+    current.setHours(0, 0, 0, 0)
+  }
+
+  const dates = []
+  for (let i = 0; i < 500; i++) {
+    const key = toDateKey(current)
+    if (untilKey && key > untilKey) break
+    if (key > dateTo) break
+    if (isInDateKeyRange(key, dateFrom, dateTo)) {
+      dates.push(key)
+    }
+    const next = addPeriod(current, type, interval)
+    if (toDateKey(next) <= toDateKey(current)) break
+    current = next
+    current.setHours(0, 0, 0, 0)
+  }
+
+  return dates
+}
+
+/**
+ * Include every reminder occurrence in the viewing month — pending or completed
+ * (e.g. recurring reminder advanced to next month after "feito no mês").
+ */
+function filterRemindersForMonth(reminders, year, month) {
+  const { from, to } = getMonthDateKeyRange(year, month)
+  const result = []
+  for (const reminder of reminders || []) {
+    for (const occurrenceDateKey of getReminderOccurrenceDatesInRange(reminder, from, to)) {
+      result.push({ reminder, occurrenceDateKey })
+    }
+  }
+  return result
+}
+
+/** Mirrors web calendar isReminderOccurrenceCompleted. */
+function isReminderOccurrenceCompleted(item, dateKey) {
+  const currentDueKey = toDateKey(item.dueDate)
+
+  if (!item.isRecurring || !item.recurrenceType) {
+    return item.completedAt != null && currentDueKey === dateKey
+  }
+
+  if (dateKey < currentDueKey) return true
+  if (dateKey > currentDueKey) return false
+
+  return item.completedAt != null || item.lastCompletedPeriodKey != null
+}
+
 async function completeReminderPeriod(reminderId) {
   await apiFetch(`/org/${state.orgSlug}/reminders/${reminderId}/complete-period`, {
     method: 'POST',
   })
   await fetchReminders()
-  renderReminders(state.reminders)
+  renderReminders(state.reminders, state.year, state.month)
   await refreshBadgeAllOrgs()
 }
 
@@ -344,7 +469,7 @@ async function snoozeReminder(reminderId, body) {
     body: JSON.stringify(body),
   })
   await fetchReminders()
-  renderReminders(state.reminders)
+  renderReminders(state.reminders, state.year, state.month)
 }
 
 let _snoozeResolve = null
@@ -370,13 +495,13 @@ function closeSnoozeModal(result) {
   if (_snoozeResolve) { _snoozeResolve(result); _snoozeResolve = null }
 }
 
-function renderReminders(reminders) {
+function renderReminders(reminders, year, month) {
   const section = document.getElementById('section-reminders')
   const list = document.getElementById('list-reminders')
   const title = document.getElementById('reminders-title')
 
   list.innerHTML = ''
-  const items = reminders || []
+  const items = filterRemindersForMonth(reminders, year, month)
   title.textContent = `Lembretes (${items.length})`
 
   if (!items.length) {
@@ -388,27 +513,45 @@ function renderReminders(reminders) {
   const todayMidnight = new Date()
   todayMidnight.setHours(0, 0, 0, 0)
 
-  for (const item of items) {
+  for (const { reminder: item, occurrenceDateKey } of items) {
     const li = document.createElement('li')
     li.className = 'tx-item'
     li.dataset.id = item.id
-    const due = new Date(item.dueDate)
-    due.setHours(0, 0, 0, 0)
+    const due = fromDateKey(occurrenceDateKey)
     const d = Math.round((+due - +todayMidnight) / (1000 * 60 * 60 * 24))
-    const meta = d < 0 ? `${Math.abs(d)}d atraso` : d === 0 ? 'hoje' : d === 1 ? 'amanhã' : `${d} dias`
-    const amount = item.amountCents != null ? fmt(item.amountCents / 100) : '—'
-    const snoozed = isReminderSnoozed(item)
-    const badgeClass = snoozed ? 'badge-snoozed' : d < 0 ? 'badge-overdue' : 'badge-reminder'
-    const badgeLabel = snoozed
-      ? 'Adiado'
+    const completed = isReminderOccurrenceCompleted(item, occurrenceDateKey)
+    const isActiveOccurrence = occurrenceDateKey === toDateKey(item.dueDate) && !completed
+    const meta = completed
+      ? fmtDate(due.toISOString())
       : d < 0
-        ? 'Vencido'
-        : 'Lembrete'
+        ? `${Math.abs(d)}d atraso`
+        : d === 0
+          ? 'hoje'
+          : d === 1
+            ? 'amanhã'
+            : `${d} dias`
+    const amount = item.amountCents != null ? fmt(item.amountCents / 100) : '—'
+    const snoozed = isActiveOccurrence && isReminderSnoozed(item)
+    const badgeClass = completed
+      ? 'badge-completed'
+      : snoozed
+        ? 'badge-snoozed'
+        : d < 0
+          ? 'badge-overdue'
+          : 'badge-reminder'
+    const badgeLabel = completed
+      ? 'Concluído'
+      : snoozed
+        ? 'Adiado'
+        : d < 0
+          ? 'Vencido'
+          : 'Lembrete'
     const snoozeTitle = snoozed && item.snoozedUntil
       ? `Adiado até ${fmtDate(item.snoozedUntil)}`
       : 'Adiar'
 
     li.classList.add('reminder-item')
+    if (completed) li.classList.add('paid')
     li.innerHTML = `
       <div class="reminder-row reminder-row-top">
         <span class="type-dot reminder">◆</span>
@@ -430,23 +573,31 @@ function renderReminders(reminders) {
       </div>
     `
 
-    li.querySelector('.btn-reminder-done').addEventListener('click', async (e) => {
-      e.stopPropagation()
-      if (!confirm(`Marcar "${item.title}" como feito neste mês?`)) return
-
-      const btn = e.currentTarget
-      btn.disabled = true
-      try {
-        await completeReminderPeriod(item.id)
-      } catch (err) {
-        console.error('[HouseApp] complete-period error:', err)
-        btn.disabled = false
-        alert('Erro ao marcar como feito')
-      }
-    })
-
+    const doneBtn = li.querySelector('.btn-reminder-done')
     const snoozeSelect = li.querySelector('.reminder-snooze-select')
+
+    if (!isActiveOccurrence) {
+      doneBtn.disabled = true
+      snoozeSelect.disabled = true
+    } else {
+      doneBtn.addEventListener('click', async (e) => {
+        e.stopPropagation()
+        if (!confirm(`Marcar "${item.title}" como feito neste mês?`)) return
+
+        const btn = e.currentTarget
+        btn.disabled = true
+        try {
+          await completeReminderPeriod(item.id)
+        } catch (err) {
+          console.error('[HouseApp] complete-period error:', err)
+          btn.disabled = false
+          alert('Erro ao marcar como feito')
+        }
+      })
+    }
+
     snoozeSelect.addEventListener('change', async (e) => {
+      if (!isActiveOccurrence) return
       e.stopPropagation()
       const value = e.target.value
       e.target.value = ''
@@ -553,13 +704,11 @@ function countOverdueTransactions(reports) {
   return overdue.length + alsoOverdue.filter(t => !seenIds.has(t.id)).length
 }
 
-function countOverdueReminders(reminders) {
+function countOverdueReminders(reminders, year, month) {
   const today = todayMidnight()
-  return (reminders || []).filter(r => {
-    if (r.completedAt) return false
-    const due = new Date(r.dueDate)
-    due.setHours(0, 0, 0, 0)
-    return due < today
+  return filterRemindersForMonth(reminders, year, month).filter(({ reminder: r, occurrenceDateKey }) => {
+    if (isReminderOccurrenceCompleted(r, occurrenceDateKey)) return false
+    return fromDateKey(occurrenceDateKey) < today
   }).length
 }
 
@@ -601,7 +750,7 @@ async function refreshBadgeAllOrgs() {
     newCache[orgData.slug] = orgData.reports
   }
   for (const reminders of reminderResults) {
-    totalOverdue += countOverdueReminders(reminders)
+    totalOverdue += countOverdueReminders(reminders, year, month)
   }
 
   updateBadge(totalOverdue)
@@ -766,7 +915,7 @@ async function loadData() {
     renderMonthLabel()
     renderKpis(state.reports, context)
     renderInvestments(state.investments)
-    renderReminders(state.reminders)
+    renderReminders(state.reminders, state.year, state.month)
     renderOverdue(
       state.reports.overdueTransactions?.transactions,
       state.reports.upcomingAlerts?.transactions,

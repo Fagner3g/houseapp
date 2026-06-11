@@ -333,9 +333,20 @@ function countOverdueTransactions(reports) {
   return overdue.length + alsoOverdue.filter(t => !seenIds.has(t.id)).length
 }
 
-function countOverdueReminders(reminders) {
+function isDueInMonth(dueDate, year, month) {
+  const start = new Date(year, month - 1, 1)
+  start.setHours(0, 0, 0, 0)
+  const end = new Date(year, month, 0)
+  end.setHours(23, 59, 59, 999)
+  const due = new Date(dueDate)
+  due.setHours(0, 0, 0, 0)
+  return due >= start && due <= end
+}
+
+function countOverdueReminders(reminders, year, month) {
   const today = todayMidnight()
   return (reminders || []).filter(r => {
+    if (!isDueInMonth(r.dueDate, year, month)) return false
     if (r.completedAt) return false
     const due = new Date(r.dueDate)
     due.setHours(0, 0, 0, 0)
@@ -513,7 +524,7 @@ async function poll() {
       )
     )
     for (const reminders of reminderResults) {
-      totalOverdue += countOverdueReminders(reminders)
+      totalOverdue += countOverdueReminders(reminders, year, month)
     }
 
     let pendingAlerts = null

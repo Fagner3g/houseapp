@@ -391,6 +391,7 @@ section {
 .badge-upcoming { background: #fef3c7; color: #d97706; }
 .badge-reminder { background: #ede9fe; color: #6d28d9; }
 .badge-snoozed { background: #f1f5f9; color: #64748b; }
+.badge-completed { background: #dcfce7; color: #16a34a; }
 .badge-invest { background: #dbeafe; color: #1d4ed8; }
 
 /* ── Reminder items (stacked card layout) ────────────────────── */
@@ -492,6 +493,10 @@ section {
 .tx-item.paid .tx-amount {
   opacity: 0.45;
   text-decoration: line-through;
+}
+
+.tx-item.reminder-item.paid .reminder-actions {
+  opacity: 0.65;
 }
 
 .tx-item.partial {
