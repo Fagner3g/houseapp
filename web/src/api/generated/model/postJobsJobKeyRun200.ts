@@ -3,7 +3,7 @@
  * Do not edit manually.
  * HouseApp API
  * API for HouseApp
- * OpenAPI spec version: 1.1.1
+ * OpenAPI spec version: 1.5.1
  */
 import type { PostJobsJobKeyRun200Result } from "./postJobsJobKeyRun200Result";
 

@@ -3,9 +3,10 @@
  * Do not edit manually.
  * HouseApp API
  * API for HouseApp
- * OpenAPI spec version: 1.1.1
+ * OpenAPI spec version: 1.5.1
  */
 import type { SnoozeReminder200ReminderChannelsItem } from "./snoozeReminder200ReminderChannelsItem";
+import type { SnoozeReminder200ReminderTransactionType } from "./snoozeReminder200ReminderTransactionType";
 
 export type SnoozeReminder200Reminder = {
   id: string;
@@ -18,6 +19,14 @@ export type SnoozeReminder200Reminder = {
   /** @nullable */
   amountCents: number | null;
   daysBefore: number[];
+  useOrgAlertDefaults: boolean;
+  /** @nullable */
+  overdueAlertFrequency: string | null;
+  /**
+   * @minimum 1
+   * @maximum 9007199254740991
+   */
+  overdueAlertInterval: number;
   channels: SnoozeReminder200ReminderChannelsItem[];
   recipientUserId: string;
   /** @nullable */
@@ -43,6 +52,12 @@ export type SnoozeReminder200Reminder = {
   linkedSeriesId: string | null;
   /** @nullable */
   snoozedUntil: string | null;
+  /** @nullable */
+  lastCompletedPeriodKey: string | null;
+  generatesTransaction: boolean;
+  /** @nullable */
+  defaultPayToId: string | null;
+  transactionType: SnoozeReminder200ReminderTransactionType;
   createdAt: string;
   updatedAt: string;
 };

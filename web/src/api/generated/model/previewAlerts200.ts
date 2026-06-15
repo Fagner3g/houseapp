@@ -3,7 +3,7 @@
  * Do not edit manually.
  * HouseApp API
  * API for HouseApp
- * OpenAPI spec version: 1.1.1
+ * OpenAPI spec version: 1.5.1
  */
 import type { PreviewAlerts200RemindersItem } from "./previewAlerts200RemindersItem";
 import type { PreviewAlerts200SkippedRemindersItem } from "./previewAlerts200SkippedRemindersItem";

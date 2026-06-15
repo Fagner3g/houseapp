@@ -3,7 +3,7 @@
  * Do not edit manually.
  * HouseApp API
  * API for HouseApp
- * OpenAPI spec version: 1.1.1
+ * OpenAPI spec version: 1.5.1
  */
 import type { GetOrgSlugReportsTransactions200ReportsUpcomingAlertsTransactionsItemAlertType } from "./getOrgSlugReportsTransactions200ReportsUpcomingAlertsTransactionsItemAlertType";
 import type { GetOrgSlugReportsTransactions200ReportsUpcomingAlertsTransactionsItemStatus } from "./getOrgSlugReportsTransactions200ReportsUpcomingAlertsTransactionsItemStatus";

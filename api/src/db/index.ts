@@ -6,8 +6,6 @@ import { alertDeliveries } from './schemas/alertDeliveries'
 import { alertRules } from './schemas/alertRules'
 import { customReminders } from './schemas/customReminders'
 import { reminderOccurrenceTransactions } from './schemas/reminderOccurrenceTransactions'
-import { goalCompletions } from './schemas/goalCompletions'
-import { goals } from './schemas/goals'
 import { investmentAssets } from './schemas/investmentAssets'
 import { investmentExecutions } from './schemas/investmentExecutions'
 import { investmentPlans } from './schemas/investmentPlans'
@@ -31,8 +29,6 @@ const schema = {
   reminderOccurrenceTransactions,
   alertDeliveries,
   alertRules,
-  goals,
-  goalCompletions,
   investmentAssets,
   investmentPlans,
   investmentExecutions,

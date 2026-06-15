@@ -3,9 +3,10 @@
  * Do not edit manually.
  * HouseApp API
  * API for HouseApp
- * OpenAPI spec version: 1.1.1
+ * OpenAPI spec version: 1.5.1
  */
 import type { CreateReminderBodyChannelsItem } from "./createReminderBodyChannelsItem";
+import type { CreateReminderBodyTransactionType } from "./createReminderBodyTransactionType";
 
 export type CreateReminderBody = {
   /**
@@ -21,6 +22,14 @@ export type CreateReminderBody = {
   amountCents?: number | null;
   /** @minItems 1 */
   daysBefore?: number[];
+  useOrgAlertDefaults?: boolean;
+  /** @nullable */
+  overdueAlertFrequency?: string | null;
+  /**
+   * @minimum 1
+   * @maximum 9007199254740991
+   */
+  overdueAlertInterval?: number;
   /** @minItems 1 */
   channels?: CreateReminderBodyChannelsItem[];
   recipientUserId: string;
@@ -40,4 +49,8 @@ export type CreateReminderBody = {
   notifyHour?: number | null;
   /** @nullable */
   notifyMinute?: number | null;
+  generatesTransaction?: boolean;
+  /** @nullable */
+  defaultPayToId?: string | null;
+  transactionType?: CreateReminderBodyTransactionType;
 };

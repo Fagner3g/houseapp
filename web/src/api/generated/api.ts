@@ -3,7 +3,7 @@
  * Do not edit manually.
  * HouseApp API
  * API for HouseApp
- * OpenAPI spec version: 1.1.1
+ * OpenAPI spec version: 1.5.1
  */
 import { useMutation, useQuery } from "@tanstack/react-query";
 import type {
@@ -23,15 +23,16 @@ import type {
 
 import type {
   AckAlert200,
-  CompleteGoalBody,
   CompleteReminder200,
+  CompleteReminderPeriod200,
+  CompleteReminderPeriodWithTransaction200,
+  CompleteReminderPeriodWithTransactionBody,
   CreateAlertRule201,
   CreateAlertRuleBody,
   CreateChatMessage201,
   CreateChatMessage400,
   CreateChatMessage404,
   CreateChatMessageBody,
-  CreateGoalBody,
   CreateInvestmentAsset201,
   CreateInvestmentAssetBody,
   CreateInvestmentExecution201,
@@ -67,11 +68,9 @@ import type {
   GetOrgSlugReportsTransactions401,
   GetOrgSlugReportsTransactions403,
   GetOrgSlugReportsTransactionsParams,
-  GetPendingGoals200,
   GetProfile200,
   GetTransactionById200,
   GetTransactionInstallments200,
-  GetWeekSummary200,
   ListAlertRules200,
   ListAlertRulesParams,
   ListChatMessages200,
@@ -123,6 +122,8 @@ import type {
   SignUpBody,
   SnoozeReminder200,
   SnoozeReminderBody,
+  UncompleteReminderPeriod200,
+  UncompleteReminderPeriodBody,
   UpdateAlertRule200,
   UpdateAlertRuleBody,
   UpdateAlertSettings200,
@@ -5184,491 +5185,6 @@ export function useGetInvite<
 }
 
 /**
- * Complete a goal
- */
-export const getCompleteGoalUrl = () => {
-  return `/complete-goal`;
-};
-
-export const completeGoal = async (
-  completeGoalBody: CompleteGoalBody,
-  options?: RequestInit,
-): Promise<null> => {
-  return http<null>(getCompleteGoalUrl(), {
-    ...options,
-    method: "POST",
-    headers: { "Content-Type": "application/json", ...options?.headers },
-    body: JSON.stringify(completeGoalBody),
-  });
-};
-
-export const getCompleteGoalMutationOptions = <
-  TError = unknown,
-  TContext = unknown,
->(options?: {
-  mutation?: UseMutationOptions<
-    Awaited<ReturnType<typeof completeGoal>>,
-    TError,
-    { data: CompleteGoalBody },
-    TContext
-  >;
-  request?: SecondParameter<typeof http>;
-}): UseMutationOptions<
-  Awaited<ReturnType<typeof completeGoal>>,
-  TError,
-  { data: CompleteGoalBody },
-  TContext
-> => {
-  const mutationKey = ["completeGoal"];
-  const { mutation: mutationOptions, request: requestOptions } = options
-    ? options.mutation &&
-      "mutationKey" in options.mutation &&
-      options.mutation.mutationKey
-      ? options
-      : { ...options, mutation: { ...options.mutation, mutationKey } }
-    : { mutation: { mutationKey }, request: undefined };
-
-  const mutationFn: MutationFunction<
-    Awaited<ReturnType<typeof completeGoal>>,
-    { data: CompleteGoalBody }
-  > = (props) => {
-    const { data } = props ?? {};
-
-    return completeGoal(data, requestOptions);
-  };
-
-  return { mutationFn, ...mutationOptions };
-};
-
-export type CompleteGoalMutationResult = NonNullable<
-  Awaited<ReturnType<typeof completeGoal>>
->;
-export type CompleteGoalMutationBody = CompleteGoalBody;
-export type CompleteGoalMutationError = unknown;
-
-export const useCompleteGoal = <TError = unknown, TContext = unknown>(
-  options?: {
-    mutation?: UseMutationOptions<
-      Awaited<ReturnType<typeof completeGoal>>,
-      TError,
-      { data: CompleteGoalBody },
-      TContext
-    >;
-    request?: SecondParameter<typeof http>;
-  },
-  queryClient?: QueryClient,
-): UseMutationResult<
-  Awaited<ReturnType<typeof completeGoal>>,
-  TError,
-  { data: CompleteGoalBody },
-  TContext
-> => {
-  const mutationOptions = getCompleteGoalMutationOptions(options);
-
-  return useMutation(mutationOptions, queryClient);
-};
-
-/**
- * Create a goal
- */
-export const getCreateGoalUrl = (slug: string) => {
-  return `/org/${slug}/goal`;
-};
-
-export const createGoal = async (
-  slug: string,
-  createGoalBody: CreateGoalBody,
-  options?: RequestInit,
-): Promise<null> => {
-  return http<null>(getCreateGoalUrl(slug), {
-    ...options,
-    method: "POST",
-    headers: { "Content-Type": "application/json", ...options?.headers },
-    body: JSON.stringify(createGoalBody),
-  });
-};
-
-export const getCreateGoalMutationOptions = <
-  TError = unknown,
-  TContext = unknown,
->(options?: {
-  mutation?: UseMutationOptions<
-    Awaited<ReturnType<typeof createGoal>>,
-    TError,
-    { slug: string; data: CreateGoalBody },
-    TContext
-  >;
-  request?: SecondParameter<typeof http>;
-}): UseMutationOptions<
-  Awaited<ReturnType<typeof createGoal>>,
-  TError,
-  { slug: string; data: CreateGoalBody },
-  TContext
-> => {
-  const mutationKey = ["createGoal"];
-  const { mutation: mutationOptions, request: requestOptions } = options
-    ? options.mutation &&
-      "mutationKey" in options.mutation &&
-      options.mutation.mutationKey
-      ? options
-      : { ...options, mutation: { ...options.mutation, mutationKey } }
-    : { mutation: { mutationKey }, request: undefined };
-
-  const mutationFn: MutationFunction<
-    Awaited<ReturnType<typeof createGoal>>,
-    { slug: string; data: CreateGoalBody }
-  > = (props) => {
-    const { slug, data } = props ?? {};
-
-    return createGoal(slug, data, requestOptions);
-  };
-
-  return { mutationFn, ...mutationOptions };
-};
-
-export type CreateGoalMutationResult = NonNullable<
-  Awaited<ReturnType<typeof createGoal>>
->;
-export type CreateGoalMutationBody = CreateGoalBody;
-export type CreateGoalMutationError = unknown;
-
-export const useCreateGoal = <TError = unknown, TContext = unknown>(
-  options?: {
-    mutation?: UseMutationOptions<
-      Awaited<ReturnType<typeof createGoal>>,
-      TError,
-      { slug: string; data: CreateGoalBody },
-      TContext
-    >;
-    request?: SecondParameter<typeof http>;
-  },
-  queryClient?: QueryClient,
-): UseMutationResult<
-  Awaited<ReturnType<typeof createGoal>>,
-  TError,
-  { slug: string; data: CreateGoalBody },
-  TContext
-> => {
-  const mutationOptions = getCreateGoalMutationOptions(options);
-
-  return useMutation(mutationOptions, queryClient);
-};
-
-/**
- * get pending goals
- */
-export const getGetPendingGoalsUrl = (slug: string) => {
-  return `/org/${slug}/pending-goals`;
-};
-
-export const getPendingGoals = async (
-  slug: string,
-  options?: RequestInit,
-): Promise<GetPendingGoals200> => {
-  return http<GetPendingGoals200>(getGetPendingGoalsUrl(slug), {
-    ...options,
-    method: "GET",
-  });
-};
-
-export const getGetPendingGoalsQueryKey = (slug?: string) => {
-  return [`/org/${slug}/pending-goals`] as const;
-};
-
-export const getGetPendingGoalsQueryOptions = <
-  TData = Awaited<ReturnType<typeof getPendingGoals>>,
-  TError = unknown,
->(
-  slug: string,
-  options?: {
-    query?: Partial<
-      UseQueryOptions<
-        Awaited<ReturnType<typeof getPendingGoals>>,
-        TError,
-        TData
-      >
-    >;
-    request?: SecondParameter<typeof http>;
-  },
-) => {
-  const { query: queryOptions, request: requestOptions } = options ?? {};
-
-  const queryKey = queryOptions?.queryKey ?? getGetPendingGoalsQueryKey(slug);
-
-  const queryFn: QueryFunction<Awaited<ReturnType<typeof getPendingGoals>>> = ({
-    signal,
-  }) => getPendingGoals(slug, { signal, ...requestOptions });
-
-  return {
-    queryKey,
-    queryFn,
-    enabled: !!slug,
-    ...queryOptions,
-  } as UseQueryOptions<
-    Awaited<ReturnType<typeof getPendingGoals>>,
-    TError,
-    TData
-  > & { queryKey: DataTag<QueryKey, TData, TError> };
-};
-
-export type GetPendingGoalsQueryResult = NonNullable<
-  Awaited<ReturnType<typeof getPendingGoals>>
->;
-export type GetPendingGoalsQueryError = unknown;
-
-export function useGetPendingGoals<
-  TData = Awaited<ReturnType<typeof getPendingGoals>>,
-  TError = unknown,
->(
-  slug: string,
-  options: {
-    query: Partial<
-      UseQueryOptions<
-        Awaited<ReturnType<typeof getPendingGoals>>,
-        TError,
-        TData
-      >
-    > &
-      Pick<
-        DefinedInitialDataOptions<
-          Awaited<ReturnType<typeof getPendingGoals>>,
-          TError,
-          Awaited<ReturnType<typeof getPendingGoals>>
-        >,
-        "initialData"
-      >;
-    request?: SecondParameter<typeof http>;
-  },
-  queryClient?: QueryClient,
-): DefinedUseQueryResult<TData, TError> & {
-  queryKey: DataTag<QueryKey, TData, TError>;
-};
-export function useGetPendingGoals<
-  TData = Awaited<ReturnType<typeof getPendingGoals>>,
-  TError = unknown,
->(
-  slug: string,
-  options?: {
-    query?: Partial<
-      UseQueryOptions<
-        Awaited<ReturnType<typeof getPendingGoals>>,
-        TError,
-        TData
-      >
-    > &
-      Pick<
-        UndefinedInitialDataOptions<
-          Awaited<ReturnType<typeof getPendingGoals>>,
-          TError,
-          Awaited<ReturnType<typeof getPendingGoals>>
-        >,
-        "initialData"
-      >;
-    request?: SecondParameter<typeof http>;
-  },
-  queryClient?: QueryClient,
-): UseQueryResult<TData, TError> & {
-  queryKey: DataTag<QueryKey, TData, TError>;
-};
-export function useGetPendingGoals<
-  TData = Awaited<ReturnType<typeof getPendingGoals>>,
-  TError = unknown,
->(
-  slug: string,
-  options?: {
-    query?: Partial<
-      UseQueryOptions<
-        Awaited<ReturnType<typeof getPendingGoals>>,
-        TError,
-        TData
-      >
-    >;
-    request?: SecondParameter<typeof http>;
-  },
-  queryClient?: QueryClient,
-): UseQueryResult<TData, TError> & {
-  queryKey: DataTag<QueryKey, TData, TError>;
-};
-
-export function useGetPendingGoals<
-  TData = Awaited<ReturnType<typeof getPendingGoals>>,
-  TError = unknown,
->(
-  slug: string,
-  options?: {
-    query?: Partial<
-      UseQueryOptions<
-        Awaited<ReturnType<typeof getPendingGoals>>,
-        TError,
-        TData
-      >
-    >;
-    request?: SecondParameter<typeof http>;
-  },
-  queryClient?: QueryClient,
-): UseQueryResult<TData, TError> & {
-  queryKey: DataTag<QueryKey, TData, TError>;
-} {
-  const queryOptions = getGetPendingGoalsQueryOptions(slug, options);
-
-  const query = useQuery(queryOptions, queryClient) as UseQueryResult<
-    TData,
-    TError
-  > & { queryKey: DataTag<QueryKey, TData, TError> };
-
-  query.queryKey = queryOptions.queryKey;
-
-  return query;
-}
-
-/**
- * Get week summary
- */
-export const getGetWeekSummaryUrl = (slug: string) => {
-  return `/org/${slug}/summary`;
-};
-
-export const getWeekSummary = async (
-  slug: string,
-  options?: RequestInit,
-): Promise<GetWeekSummary200> => {
-  return http<GetWeekSummary200>(getGetWeekSummaryUrl(slug), {
-    ...options,
-    method: "GET",
-  });
-};
-
-export const getGetWeekSummaryQueryKey = (slug?: string) => {
-  return [`/org/${slug}/summary`] as const;
-};
-
-export const getGetWeekSummaryQueryOptions = <
-  TData = Awaited<ReturnType<typeof getWeekSummary>>,
-  TError = unknown,
->(
-  slug: string,
-  options?: {
-    query?: Partial<
-      UseQueryOptions<Awaited<ReturnType<typeof getWeekSummary>>, TError, TData>
-    >;
-    request?: SecondParameter<typeof http>;
-  },
-) => {
-  const { query: queryOptions, request: requestOptions } = options ?? {};
-
-  const queryKey = queryOptions?.queryKey ?? getGetWeekSummaryQueryKey(slug);
-
-  const queryFn: QueryFunction<Awaited<ReturnType<typeof getWeekSummary>>> = ({
-    signal,
-  }) => getWeekSummary(slug, { signal, ...requestOptions });
-
-  return {
-    queryKey,
-    queryFn,
-    enabled: !!slug,
-    ...queryOptions,
-  } as UseQueryOptions<
-    Awaited<ReturnType<typeof getWeekSummary>>,
-    TError,
-    TData
-  > & { queryKey: DataTag<QueryKey, TData, TError> };
-};
-
-export type GetWeekSummaryQueryResult = NonNullable<
-  Awaited<ReturnType<typeof getWeekSummary>>
->;
-export type GetWeekSummaryQueryError = unknown;
-
-export function useGetWeekSummary<
-  TData = Awaited<ReturnType<typeof getWeekSummary>>,
-  TError = unknown,
->(
-  slug: string,
-  options: {
-    query: Partial<
-      UseQueryOptions<Awaited<ReturnType<typeof getWeekSummary>>, TError, TData>
-    > &
-      Pick<
-        DefinedInitialDataOptions<
-          Awaited<ReturnType<typeof getWeekSummary>>,
-          TError,
-          Awaited<ReturnType<typeof getWeekSummary>>
-        >,
-        "initialData"
-      >;
-    request?: SecondParameter<typeof http>;
-  },
-  queryClient?: QueryClient,
-): DefinedUseQueryResult<TData, TError> & {
-  queryKey: DataTag<QueryKey, TData, TError>;
-};
-export function useGetWeekSummary<
-  TData = Awaited<ReturnType<typeof getWeekSummary>>,
-  TError = unknown,
->(
-  slug: string,
-  options?: {
-    query?: Partial<
-      UseQueryOptions<Awaited<ReturnType<typeof getWeekSummary>>, TError, TData>
-    > &
-      Pick<
-        UndefinedInitialDataOptions<
-          Awaited<ReturnType<typeof getWeekSummary>>,
-          TError,
-          Awaited<ReturnType<typeof getWeekSummary>>
-        >,
-        "initialData"
-      >;
-    request?: SecondParameter<typeof http>;
-  },
-  queryClient?: QueryClient,
-): UseQueryResult<TData, TError> & {
-  queryKey: DataTag<QueryKey, TData, TError>;
-};
-export function useGetWeekSummary<
-  TData = Awaited<ReturnType<typeof getWeekSummary>>,
-  TError = unknown,
->(
-  slug: string,
-  options?: {
-    query?: Partial<
-      UseQueryOptions<Awaited<ReturnType<typeof getWeekSummary>>, TError, TData>
-    >;
-    request?: SecondParameter<typeof http>;
-  },
-  queryClient?: QueryClient,
-): UseQueryResult<TData, TError> & {
-  queryKey: DataTag<QueryKey, TData, TError>;
-};
-
-export function useGetWeekSummary<
-  TData = Awaited<ReturnType<typeof getWeekSummary>>,
-  TError = unknown,
->(
-  slug: string,
-  options?: {
-    query?: Partial<
-      UseQueryOptions<Awaited<ReturnType<typeof getWeekSummary>>, TError, TData>
-    >;
-    request?: SecondParameter<typeof http>;
-  },
-  queryClient?: QueryClient,
-): UseQueryResult<TData, TError> & {
-  queryKey: DataTag<QueryKey, TData, TError>;
-} {
-  const queryOptions = getGetWeekSummaryQueryOptions(slug, options);
-
-  const query = useQuery(queryOptions, queryClient) as UseQueryResult<
-    TData,
-    TError
-  > & { queryKey: DataTag<QueryKey, TData, TError> };
-
-  query.queryKey = queryOptions.queryKey;
-
-  return query;
-}
-
-/**
  * Create an transaction
  */
 export const getCreateTransactionUrl = (slug: string) => {
@@ -7786,7 +7302,7 @@ export const useDeleteReminder = <TError = unknown, TContext = unknown>(
 };
 
 /**
- * Mark reminder as completed
+ * Permanently end reminder (deactivate)
  */
 export const getCompleteReminderUrl = (slug: string, id: string) => {
   return `/org/${slug}/reminders/${id}/complete`;
@@ -7865,6 +7381,301 @@ export const useCompleteReminder = <TError = unknown, TContext = unknown>(
   TContext
 > => {
   const mutationOptions = getCompleteReminderMutationOptions(options);
+
+  return useMutation(mutationOptions, queryClient);
+};
+
+/**
+ * Mark reminder as done for current period and advance due date
+ */
+export const getCompleteReminderPeriodUrl = (slug: string, id: string) => {
+  return `/org/${slug}/reminders/${id}/complete-period`;
+};
+
+export const completeReminderPeriod = async (
+  slug: string,
+  id: string,
+  options?: RequestInit,
+): Promise<CompleteReminderPeriod200> => {
+  return http<CompleteReminderPeriod200>(
+    getCompleteReminderPeriodUrl(slug, id),
+    {
+      ...options,
+      method: "POST",
+    },
+  );
+};
+
+export const getCompleteReminderPeriodMutationOptions = <
+  TError = unknown,
+  TContext = unknown,
+>(options?: {
+  mutation?: UseMutationOptions<
+    Awaited<ReturnType<typeof completeReminderPeriod>>,
+    TError,
+    { slug: string; id: string },
+    TContext
+  >;
+  request?: SecondParameter<typeof http>;
+}): UseMutationOptions<
+  Awaited<ReturnType<typeof completeReminderPeriod>>,
+  TError,
+  { slug: string; id: string },
+  TContext
+> => {
+  const mutationKey = ["completeReminderPeriod"];
+  const { mutation: mutationOptions, request: requestOptions } = options
+    ? options.mutation &&
+      "mutationKey" in options.mutation &&
+      options.mutation.mutationKey
+      ? options
+      : { ...options, mutation: { ...options.mutation, mutationKey } }
+    : { mutation: { mutationKey }, request: undefined };
+
+  const mutationFn: MutationFunction<
+    Awaited<ReturnType<typeof completeReminderPeriod>>,
+    { slug: string; id: string }
+  > = (props) => {
+    const { slug, id } = props ?? {};
+
+    return completeReminderPeriod(slug, id, requestOptions);
+  };
+
+  return { mutationFn, ...mutationOptions };
+};
+
+export type CompleteReminderPeriodMutationResult = NonNullable<
+  Awaited<ReturnType<typeof completeReminderPeriod>>
+>;
+
+export type CompleteReminderPeriodMutationError = unknown;
+
+export const useCompleteReminderPeriod = <TError = unknown, TContext = unknown>(
+  options?: {
+    mutation?: UseMutationOptions<
+      Awaited<ReturnType<typeof completeReminderPeriod>>,
+      TError,
+      { slug: string; id: string },
+      TContext
+    >;
+    request?: SecondParameter<typeof http>;
+  },
+  queryClient?: QueryClient,
+): UseMutationResult<
+  Awaited<ReturnType<typeof completeReminderPeriod>>,
+  TError,
+  { slug: string; id: string },
+  TContext
+> => {
+  const mutationOptions = getCompleteReminderPeriodMutationOptions(options);
+
+  return useMutation(mutationOptions, queryClient);
+};
+
+/**
+ * Complete reminder period and register a one-off transaction
+ */
+export const getCompleteReminderPeriodWithTransactionUrl = (
+  slug: string,
+  id: string,
+) => {
+  return `/org/${slug}/reminders/${id}/complete-period-with-transaction`;
+};
+
+export const completeReminderPeriodWithTransaction = async (
+  slug: string,
+  id: string,
+  completeReminderPeriodWithTransactionBody: CompleteReminderPeriodWithTransactionBody,
+  options?: RequestInit,
+): Promise<CompleteReminderPeriodWithTransaction200> => {
+  return http<CompleteReminderPeriodWithTransaction200>(
+    getCompleteReminderPeriodWithTransactionUrl(slug, id),
+    {
+      ...options,
+      method: "POST",
+      headers: { "Content-Type": "application/json", ...options?.headers },
+      body: JSON.stringify(completeReminderPeriodWithTransactionBody),
+    },
+  );
+};
+
+export const getCompleteReminderPeriodWithTransactionMutationOptions = <
+  TError = unknown,
+  TContext = unknown,
+>(options?: {
+  mutation?: UseMutationOptions<
+    Awaited<ReturnType<typeof completeReminderPeriodWithTransaction>>,
+    TError,
+    {
+      slug: string;
+      id: string;
+      data: CompleteReminderPeriodWithTransactionBody;
+    },
+    TContext
+  >;
+  request?: SecondParameter<typeof http>;
+}): UseMutationOptions<
+  Awaited<ReturnType<typeof completeReminderPeriodWithTransaction>>,
+  TError,
+  { slug: string; id: string; data: CompleteReminderPeriodWithTransactionBody },
+  TContext
+> => {
+  const mutationKey = ["completeReminderPeriodWithTransaction"];
+  const { mutation: mutationOptions, request: requestOptions } = options
+    ? options.mutation &&
+      "mutationKey" in options.mutation &&
+      options.mutation.mutationKey
+      ? options
+      : { ...options, mutation: { ...options.mutation, mutationKey } }
+    : { mutation: { mutationKey }, request: undefined };
+
+  const mutationFn: MutationFunction<
+    Awaited<ReturnType<typeof completeReminderPeriodWithTransaction>>,
+    {
+      slug: string;
+      id: string;
+      data: CompleteReminderPeriodWithTransactionBody;
+    }
+  > = (props) => {
+    const { slug, id, data } = props ?? {};
+
+    return completeReminderPeriodWithTransaction(
+      slug,
+      id,
+      data,
+      requestOptions,
+    );
+  };
+
+  return { mutationFn, ...mutationOptions };
+};
+
+export type CompleteReminderPeriodWithTransactionMutationResult = NonNullable<
+  Awaited<ReturnType<typeof completeReminderPeriodWithTransaction>>
+>;
+export type CompleteReminderPeriodWithTransactionMutationBody =
+  CompleteReminderPeriodWithTransactionBody;
+export type CompleteReminderPeriodWithTransactionMutationError = unknown;
+
+export const useCompleteReminderPeriodWithTransaction = <
+  TError = unknown,
+  TContext = unknown,
+>(
+  options?: {
+    mutation?: UseMutationOptions<
+      Awaited<ReturnType<typeof completeReminderPeriodWithTransaction>>,
+      TError,
+      {
+        slug: string;
+        id: string;
+        data: CompleteReminderPeriodWithTransactionBody;
+      },
+      TContext
+    >;
+    request?: SecondParameter<typeof http>;
+  },
+  queryClient?: QueryClient,
+): UseMutationResult<
+  Awaited<ReturnType<typeof completeReminderPeriodWithTransaction>>,
+  TError,
+  { slug: string; id: string; data: CompleteReminderPeriodWithTransactionBody },
+  TContext
+> => {
+  const mutationOptions =
+    getCompleteReminderPeriodWithTransactionMutationOptions(options);
+
+  return useMutation(mutationOptions, queryClient);
+};
+
+/**
+ * Undo completion for a reminder occurrence and roll back due date
+ */
+export const getUncompleteReminderPeriodUrl = (slug: string, id: string) => {
+  return `/org/${slug}/reminders/${id}/uncomplete-period`;
+};
+
+export const uncompleteReminderPeriod = async (
+  slug: string,
+  id: string,
+  uncompleteReminderPeriodBody: UncompleteReminderPeriodBody,
+  options?: RequestInit,
+): Promise<UncompleteReminderPeriod200> => {
+  return http<UncompleteReminderPeriod200>(
+    getUncompleteReminderPeriodUrl(slug, id),
+    {
+      ...options,
+      method: "POST",
+      headers: { "Content-Type": "application/json", ...options?.headers },
+      body: JSON.stringify(uncompleteReminderPeriodBody),
+    },
+  );
+};
+
+export const getUncompleteReminderPeriodMutationOptions = <
+  TError = unknown,
+  TContext = unknown,
+>(options?: {
+  mutation?: UseMutationOptions<
+    Awaited<ReturnType<typeof uncompleteReminderPeriod>>,
+    TError,
+    { slug: string; id: string; data: UncompleteReminderPeriodBody },
+    TContext
+  >;
+  request?: SecondParameter<typeof http>;
+}): UseMutationOptions<
+  Awaited<ReturnType<typeof uncompleteReminderPeriod>>,
+  TError,
+  { slug: string; id: string; data: UncompleteReminderPeriodBody },
+  TContext
+> => {
+  const mutationKey = ["uncompleteReminderPeriod"];
+  const { mutation: mutationOptions, request: requestOptions } = options
+    ? options.mutation &&
+      "mutationKey" in options.mutation &&
+      options.mutation.mutationKey
+      ? options
+      : { ...options, mutation: { ...options.mutation, mutationKey } }
+    : { mutation: { mutationKey }, request: undefined };
+
+  const mutationFn: MutationFunction<
+    Awaited<ReturnType<typeof uncompleteReminderPeriod>>,
+    { slug: string; id: string; data: UncompleteReminderPeriodBody }
+  > = (props) => {
+    const { slug, id, data } = props ?? {};
+
+    return uncompleteReminderPeriod(slug, id, data, requestOptions);
+  };
+
+  return { mutationFn, ...mutationOptions };
+};
+
+export type UncompleteReminderPeriodMutationResult = NonNullable<
+  Awaited<ReturnType<typeof uncompleteReminderPeriod>>
+>;
+export type UncompleteReminderPeriodMutationBody = UncompleteReminderPeriodBody;
+export type UncompleteReminderPeriodMutationError = unknown;
+
+export const useUncompleteReminderPeriod = <
+  TError = unknown,
+  TContext = unknown,
+>(
+  options?: {
+    mutation?: UseMutationOptions<
+      Awaited<ReturnType<typeof uncompleteReminderPeriod>>,
+      TError,
+      { slug: string; id: string; data: UncompleteReminderPeriodBody },
+      TContext
+    >;
+    request?: SecondParameter<typeof http>;
+  },
+  queryClient?: QueryClient,
+): UseMutationResult<
+  Awaited<ReturnType<typeof uncompleteReminderPeriod>>,
+  TError,
+  { slug: string; id: string; data: UncompleteReminderPeriodBody },
+  TContext
+> => {
+  const mutationOptions = getUncompleteReminderPeriodMutationOptions(options);
 
   return useMutation(mutationOptions, queryClient);
 };
