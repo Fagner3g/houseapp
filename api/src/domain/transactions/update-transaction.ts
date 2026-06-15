@@ -6,6 +6,7 @@ import { transactionOccurrences } from '@/db/schemas/transactionOccurrences'
 import { transactionSeries } from '@/db/schemas/transactionSeries'
 import { transactionTags } from '@/db/schemas/transactionTags'
 import { getUser } from '@/domain/user/get-user'
+import { syncRemindersForOccurrenceDueDateChange } from '@/domain/alerts/reminders/sync-reminders-on-transaction-change'
 import type { UpdateTransactionSchemaBody } from '@/http/schemas/transaction/update-transaction.schema'
 
 import { resolveTransactionUpdateScope } from './update-transaction-scope'
@@ -137,6 +138,10 @@ export async function updateTransactionService({
           updatedAt: sql`now()`,
         })
         .where(and(eq(transactionOccurrences.id, occurrenceId), pendingStatus))
+
+      if (scope.currentOccurrence.dueDate && dueDate) {
+        await syncRemindersForOccurrenceDueDateChange(occurrenceId, serieId, dueDate, trx)
+      }
     }
 
     if (scope.tags && tags) {

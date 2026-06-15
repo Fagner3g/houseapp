@@ -16,6 +16,8 @@ import { FormControl, FormField, FormItem, FormLabel } from '@/components/ui/for
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover'
 import { Separator } from '@/components/ui/separator'
 import { cn } from '@/lib/utils'
+import { formatOrgUserLabelByEmail, getSelectableOrgUsers } from '@/lib/org-users'
+import { useAuthStore } from '@/stores/auth'
 import { ModalNewUser } from '../modal-new-user'
 import type { NewTransactionSchema } from './schema'
 
@@ -27,6 +29,16 @@ export interface PayToFieldProps {
 
 export function PayToField({ form, data, disabled }: PayToFieldProps) {
   const [open, setOpen] = React.useState(false)
+  const currentUser = useAuthStore(s => s.user)
+  const payToEmail = form.watch('payToEmail')
+  const selectableUsers = React.useMemo(
+    () =>
+      getSelectableOrgUsers(data?.users ?? [], {
+        keepUserIds: [data?.users?.find(user => user.email === payToEmail)?.id],
+      }),
+    [data?.users, payToEmail]
+  )
+  const selectedUser = data?.users.find(user => user.email === payToEmail)
 
   return (
     <FormField
@@ -52,8 +64,8 @@ export function PayToField({ form, data, disabled }: PayToFieldProps) {
                   aria-invalid={!!form.formState.errors.payToEmail}
                   disabled={disabled}
                 >
-                  {field.value
-                    ? data?.users.find(user => user.email === field.value)?.name
+                  {field.value && selectedUser
+                    ? formatOrgUserLabelByEmail(selectedUser, currentUser?.email)
                     : 'Selecione'}
                   <ChevronsUpDown className="opacity-50" />
                 </Button>
@@ -75,7 +87,7 @@ export function PayToField({ form, data, disabled }: PayToFieldProps) {
                       Nenhum usuário encontrado
                     </CommandEmpty>
                     <CommandGroup>
-                      {data?.users.map(user => (
+                      {selectableUsers.map(user => (
                         <CommandItem
                           key={user.email}
                           value={user.email}
@@ -90,17 +102,21 @@ export function PayToField({ form, data, disabled }: PayToFieldProps) {
                               {(user as { avatar?: string }).avatar ? (
                                 <img
                                   src={(user as { avatar?: string }).avatar as string}
-                                  alt={user.name}
+                                  alt={formatOrgUserLabelByEmail(user, currentUser?.email)}
                                   className="h-full w-full object-cover rounded-full"
                                 />
                               ) : (
                                 <span className="text-sm font-semibold text-primary">
-                                  {user.name.charAt(0).toUpperCase()}
+                                  {formatOrgUserLabelByEmail(user, currentUser?.email)
+                                    .charAt(0)
+                                    .toUpperCase()}
                                 </span>
                               )}
                             </div>
                             <div className="flex flex-col">
-                              <span className="text-sm font-medium">{user.name}</span>
+                              <span className="text-sm font-medium">
+                                {formatOrgUserLabelByEmail(user, currentUser?.email)}
+                              </span>
                               <span className="text-xs text-muted-foreground">{user.email}</span>
                             </div>
                           </div>

@@ -18,6 +18,8 @@ import {
   SelectTrigger,
   SelectValue,
 } from '@/components/ui/select'
+import { formatOrgUserLabel, getSelectableOrgUsers } from '@/lib/org-users'
+import { useAuthStore } from '@/stores/auth'
 
 const ALERTS_EVALUATE_JOB_KEY = 'alerts:evaluate'
 
@@ -32,10 +34,13 @@ export function AdminActionsCard({ slug }: AdminActionsCardProps) {
   const [sendingMonthly, setSendingMonthly] = useState(false)
 
   const { data: usersData } = useQuery(getListUsersByOrgQueryOptions(slug))
+  const currentUser = useAuthStore(s => s.user)
   const runJobMutation = usePostJobsJobKeyRun()
   const sendMonthlySummary = usePostOrgSlugJobsSendMonthlySummary()
 
-  const users = usersData?.users ?? []
+  const users = getSelectableOrgUsers(usersData?.users ?? [], {
+    keepUserIds: [selectedMonthlyUser],
+  })
 
   const handleRunAlerts = async () => {
     setRunningAlerts(true)
@@ -98,7 +103,7 @@ export function AdminActionsCard({ slug }: AdminActionsCardProps) {
             <SelectContent>
               {users.map(u => (
                 <SelectItem key={u.id} value={u.id}>
-                  {u.name} {u.phone ? `(${u.phone})` : ''}
+                  {formatOrgUserLabel(u, currentUser?.id)} {u.phone ? `(${u.phone})` : ''}
                 </SelectItem>
               ))}
             </SelectContent>
