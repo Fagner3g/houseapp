@@ -17,6 +17,8 @@ import {
   SelectValue,
 } from '@/components/ui/select'
 import { useActiveOrganization } from '@/hooks/use-active-organization'
+import { formatOrgUserLabel, getSelectableOrgUsers } from '@/lib/org-users'
+import { useAuthStore } from '@/stores/auth'
 
 export interface FilterTableProps {
   type: 'all' | 'income' | 'expense' | undefined
@@ -28,6 +30,7 @@ export default function FilterTable({ type, dateFrom, dateTo }: FilterTableProps
   const navigate = useNavigate()
   const { onlyMarked, payToId } = useSearch({ strict: false })
   const { slug } = useActiveOrganization()
+  const currentUser = useAuthStore(s => s.user)
 
   const typeFilterId = useId()
   const responsibleFilterId = useId()
@@ -50,6 +53,9 @@ export default function FilterTable({ type, dateFrom, dateTo }: FilterTableProps
       return { from: new Date(dateFrom), to: undefined }
     }
     return undefined
+  })
+  const selectableUsers = getSelectableOrgUsers(usersData?.users ?? [], {
+    keepUserIds: [localPayToId],
   })
 
   const hasFilters =
@@ -223,9 +229,9 @@ export default function FilterTable({ type, dateFrom, dateTo }: FilterTableProps
                 </SelectTrigger>
                 <SelectContent>
                   <SelectItem value="all">Todos os usuários</SelectItem>
-                  {usersData?.users?.map(user => (
+                  {selectableUsers.map(user => (
                     <SelectItem key={user.id} value={user.id}>
-                      {user.name}
+                      {formatOrgUserLabel(user, currentUser?.id)}
                     </SelectItem>
                   ))}
                 </SelectContent>

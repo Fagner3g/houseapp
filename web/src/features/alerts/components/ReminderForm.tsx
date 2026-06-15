@@ -1,5 +1,5 @@
 import dayjs from 'dayjs'
-import { useEffect, useState } from 'react'
+import { useEffect, useMemo, useState } from 'react'
 
 import { useListUsersByOrg } from '@/api/generated/api'
 import { Button } from '@/components/ui/button'
@@ -24,13 +24,9 @@ import {
 import { Switch } from '@/components/ui/switch'
 import { Textarea } from '@/components/ui/textarea'
 import { centsToNumber, numberToCents } from '@/lib/currency'
-import { AlertScheduleFields } from './AlertScheduleFields'
-import {
-  formatDateToIso,
-  formatNotifyTime,
-  parseDateFromIso,
-  parseNotifyTime,
-} from '@/lib/date'
+import { formatDateToIso, formatNotifyTime, parseDateFromIso, parseNotifyTime } from '@/lib/date'
+import { formatOrgUserLabel, getSelectableOrgUsers } from '@/lib/org-users'
+import { useAuthStore } from '@/stores/auth'
 import {
   useAlertSettings,
   type CreateReminderInput,
@@ -38,6 +34,7 @@ import {
   type ReminderChannel,
   type ReminderRecurrenceType,
 } from '../api'
+import { AlertScheduleFields } from './AlertScheduleFields'
 
 const CHANNEL_OPTIONS: { value: ReminderChannel; label: string }[] = [
   { value: 'in_app', label: 'No app' },
@@ -68,7 +65,15 @@ export function ReminderForm({
 }: ReminderFormProps) {
   const { data: usersData } = useListUsersByOrg(slug)
   const { data: alertSettings } = useAlertSettings(slug)
+  const currentUser = useAuthStore(s => s.user)
   const users = usersData?.users ?? []
+  const selectableUsers = useMemo(
+    () =>
+      getSelectableOrgUsers(users, {
+        keepUserIds: [reminder?.recipientUserId, reminder?.defaultPayToId],
+      }),
+    [users, reminder?.recipientUserId, reminder?.defaultPayToId]
+  )
   const defaultNotifyTime = formatNotifyTime(
     alertSettings?.defaultNotifyHour ?? 9,
     alertSettings?.defaultNotifyMinute ?? 0
@@ -132,7 +137,11 @@ export function ReminderForm({
       setDueDate(dayjs().startOf('day').toDate())
       setAmount(null)
       setChannels(['in_app', 'whatsapp', 'extension'])
-      setRecipientUserId(users[0]?.id ?? '')
+      setRecipientUserId(
+        currentUser?.id && selectableUsers.some(user => user.id === currentUser.id)
+          ? currentUser.id
+          : (selectableUsers[0]?.id ?? '')
+      )
       setIsRecurring(false)
       setRecurrenceType('yearly')
       setRecurrenceInterval(1)
@@ -146,7 +155,7 @@ export function ReminderForm({
       setOverdueFrequency('weekly')
       setOverdueInterval(1)
     }
-  }, [open, reminder, users])
+  }, [open, reminder, selectableUsers, currentUser?.id])
 
   const toggleChannel = (channel: ReminderChannel) => {
     setChannels(prev =>
@@ -275,9 +284,9 @@ export function ReminderForm({
                     <SelectValue placeholder="Selecione o usuário" />
                   </SelectTrigger>
                   <SelectContent>
-                    {users.map(user => (
+                    {selectableUsers.map(user => (
                       <SelectItem key={user.id} value={user.id}>
-                        {user.name}
+                        {formatOrgUserLabel(user, currentUser?.id)}
                       </SelectItem>
                     ))}
                   </SelectContent>
@@ -308,9 +317,9 @@ export function ReminderForm({
                 <SelectValue placeholder="Selecione o usuário" />
               </SelectTrigger>
               <SelectContent>
-                {users.map(user => (
+                {selectableUsers.map(user => (
                   <SelectItem key={user.id} value={user.id}>
-                    {user.name}
+                    {formatOrgUserLabel(user, currentUser?.id)}
                   </SelectItem>
                 ))}
               </SelectContent>
