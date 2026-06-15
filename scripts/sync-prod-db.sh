@@ -111,7 +111,6 @@ timestamp="$(date +%Y%m%d_%H%M%S)"
 default_dump_file="${BACKUP_DIR}/houseapp_prod_${timestamp}.sql"
 
 remote_pg_dump() {
-	echo "Exportando produção via SSH (${SSH_HOST})..."
 	ssh "$SSH_HOST" "docker exec \$(docker ps -q -f name=${REMOTE_CONTAINER_FILTER}) pg_dump -U ${REMOTE_PG_USER} -d ${REMOTE_DB} --no-owner --no-acl --clean --if-exists"
 }
 
@@ -126,6 +125,7 @@ fetch_dump() {
 	fi
 
 	DUMP_FILE="$default_dump_file"
+	echo "Exportando produção via SSH (${SSH_HOST})..."
 	echo "Salvando dump em: $DUMP_FILE"
 	remote_pg_dump >"$DUMP_FILE"
 	echo "Dump: $(du -h "$DUMP_FILE" | cut -f1), $(wc -l <"$DUMP_FILE") linhas"
