@@ -1,6 +1,5 @@
-import type { customReminders } from '@/db/schemas/customReminders'
+import type { customReminders, ReminderRecurrenceType } from '@/db/schemas/customReminders'
 import { addPeriod, subPeriod } from '@/domain/recurrence/utils'
-import type { RecurrenceType } from '@/domain/recurrence/utils'
 import type { alertRules } from '@/db/schemas/alertRules'
 import {
   DEFAULT_ALERT_PREFERENCES,
@@ -273,10 +272,13 @@ type ReminderOccurrenceState = Pick<
   'dueDate' | 'completedAt' | 'isRecurring' | 'recurrenceType' | 'recurrenceInterval' | 'recurrenceUntil' | 'lastCompletedPeriodKey'
 >
 
+/** Anchor hour for calendar date keys (15:00 UTC = 12:00 in America/Sao_Paulo). */
+const ORG_CALENDAR_DATE_UTC_HOUR = 15
+
 export function parseOccurrenceDateKey(value: string): Date {
   if (/^\d{4}-\d{2}-\d{2}$/.test(value)) {
     const [year, month, day] = value.split('-').map(Number)
-    return new Date(year, month - 1, day)
+    return new Date(Date.UTC(year, month - 1, day, ORG_CALENDAR_DATE_UTC_HOUR, 0, 0))
   }
   return new Date(value)
 }
@@ -335,7 +337,7 @@ export function isValidReminderOccurrenceDate(
     : null
   if (untilKey && occurrenceKey > untilKey) return false
 
-  const type = reminder.recurrenceType as RecurrenceType
+  const type = reminder.recurrenceType
   const interval = reminder.recurrenceInterval || 1
   let current = new Date(reminder.dueDate)
 
@@ -358,7 +360,7 @@ export function resolveReminderEvaluationDueDate(
     return reminder.dueDate
   }
 
-  const type = reminder.recurrenceType as RecurrenceType
+  const type = reminder.recurrenceType
   const interval = reminder.recurrenceInterval || 1
   let due = new Date(reminder.dueDate)
   const todayPeriodKey = getReminderPeriodKey(referenceDate, type, timezone)
@@ -382,7 +384,7 @@ export function resolveReminderEvaluationDueDate(
 
 export function getReminderPeriodKey(
   dueDate: Date,
-  recurrenceType?: 'weekly' | 'monthly' | 'yearly' | null,
+  recurrenceType?: ReminderRecurrenceType | null,
   timezone = TIMEZONE
 ): string {
   if (recurrenceType === 'yearly') {

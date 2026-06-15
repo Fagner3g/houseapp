@@ -2,19 +2,31 @@ name: house-js-server
 
 services:
   pg:
-    image: bitnami/postgresql:14
+    image: postgres:17-alpine
+    container_name: houseapp_postgres
     ports:
       - "5432:5432"
     environment:
       POSTGRES_USER: postgres
       POSTGRES_PASSWORD: postgres
       POSTGRES_DB: houseapp
+      TZ: UTC
+      PGTZ: UTC
+    volumes:
+      - houseapp_pg_data:/var/lib/postgresql/data
+      - ./docker/postgres/init:/docker-entrypoint-initdb.d:ro
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U postgres -d houseapp"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
   pgadmin:
     image: dpage/pgadmin4:latest
     environment:
       PGADMIN_DEFAULT_EMAIL: fagner.egomes@gmail.com
       PGADMIN_DEFAULT_PASSWORD: postgres
       PGADMIN_CONFIG_ENHANCED_COOKIE_PROTECTION: "False"
+      TZ: UTC
     ports:
       - "80:80"
   evolution:
@@ -24,3 +36,6 @@ services:
     environment:
       AUTHENTICATION_API_KEY: ${EVOLUTION_API_KEY}
       AUTHENTICATION_EXPOSE_IN_FETCH_INSTANCES: "true"
+
+volumes:
+  houseapp_pg_data:
