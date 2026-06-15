@@ -15,11 +15,14 @@ import {
   WHATSAPP_ALERT_BODY_DIVIDER,
   computeDaysUntilDue,
   dedupeDeliveriesByLogicalAlert,
+  formatDueDateKey,
   formatInvestmentWhatsAppMessage,
   formatNotifyTime,
   formatReminderWhatsAppMessage,
   formatTransactionWhatsAppMessage,
   getReminderPeriodKey,
+  isValidReminderOccurrenceDate,
+  parseOccurrenceDateKey,
   resolveReminderEvaluationDueDate,
   getTimeBasedGreeting,
   getTransactionDisplayAmountCents,
@@ -655,5 +658,34 @@ describe('dedupeDeliveriesByLogicalAlert', () => {
     ])
 
     expect(deduped).toHaveLength(2)
+  })
+})
+
+describe('parseOccurrenceDateKey', () => {
+  it('parses YYYY-MM-DD using org calendar anchor (stable on UTC servers)', () => {
+    const parsed = parseOccurrenceDateKey('2026-06-08')
+    expect(formatDueDateKey(parsed, TIMEZONE)).toBe('2026-06-08')
+  })
+})
+
+describe('isValidReminderOccurrenceDate', () => {
+  it('accepts prior recurring occurrence when server runs in UTC', () => {
+    const reminder = {
+      dueDate: new Date('2026-07-08T15:00:00.000Z'),
+      completedAt: null,
+      isRecurring: true,
+      recurrenceType: 'monthly',
+      recurrenceInterval: 1,
+      recurrenceUntil: null,
+      lastCompletedPeriodKey: null,
+    }
+
+    expect(
+      isValidReminderOccurrenceDate(
+        reminder,
+        parseOccurrenceDateKey('2026-06-08'),
+        TIMEZONE
+      )
+    ).toBe(true)
   })
 })
