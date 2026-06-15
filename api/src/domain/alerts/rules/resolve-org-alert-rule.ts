@@ -1,10 +1,14 @@
 import { and, eq } from 'drizzle-orm'
 
 import { db } from '@/db'
-import type { AlertRuleKind } from '@/db/schemas/alertRules'
+import type { AlertRuleKind, AlertRuleTarget } from '@/db/schemas/alertRules'
 import { alertRules } from '@/db/schemas/alertRules'
 
-export async function resolveOrgAlertRule(orgId: string, kind: AlertRuleKind) {
+export async function resolveOrgAlertRule(
+  orgId: string,
+  kind: AlertRuleKind,
+  target: AlertRuleTarget = 'transaction'
+) {
   const [orgRule] = await db
     .select()
     .from(alertRules)
@@ -12,6 +16,7 @@ export async function resolveOrgAlertRule(orgId: string, kind: AlertRuleKind) {
       and(
         eq(alertRules.organizationId, orgId),
         eq(alertRules.scope, 'organization'),
+        eq(alertRules.target, target),
         eq(alertRules.kind, kind),
         eq(alertRules.active, true)
       )

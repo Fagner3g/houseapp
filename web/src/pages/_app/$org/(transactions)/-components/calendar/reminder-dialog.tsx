@@ -17,6 +17,8 @@ import {
   useUncompleteReminderPeriod,
   type Reminder,
 } from '@/features/alerts/api'
+import { CompleteReminderTransactionDialog } from '@/features/alerts/components/CompleteReminderTransactionDialog'
+import { UncompleteReminderDialog } from '@/features/alerts/components/UncompleteReminderDialog'
 import { useActiveOrganization } from '@/hooks/use-active-organization'
 import { centsToNumber, formatCurrency } from '@/lib/currency'
 import { computeDaysUntilDue } from '@/lib/date'
@@ -66,6 +68,8 @@ export function ReminderDialog({ reminder, occurrenceDate, open, onOpenChange }:
   const completePeriodMutation = useCompleteReminderPeriod(slug)
   const uncompletePeriodMutation = useUncompleteReminderPeriod(slug)
   const [isSubmitting, setIsSubmitting] = useState(false)
+  const [transactionDialogOpen, setTransactionDialogOpen] = useState(false)
+  const [uncompleteDialogOpen, setUncompleteDialogOpen] = useState(false)
 
   if (!reminder || !occurrenceDate) return null
 
@@ -78,6 +82,11 @@ export function ReminderDialog({ reminder, occurrenceDate, open, onOpenChange }:
   const statusBadges = getReminderStatusBadges(reminder, occurrenceDate, isCompleted)
 
   const handleComplete = async () => {
+    if (reminder.generatesTransaction) {
+      setTransactionDialogOpen(true)
+      return
+    }
+
     setIsSubmitting(true)
     try {
       await completePeriodMutation.mutateAsync(reminder.id)
@@ -98,6 +107,7 @@ export function ReminderDialog({ reminder, occurrenceDate, open, onOpenChange }:
         occurrenceDate,
       })
       toast.success('Lembrete desmarcado como concluído')
+      setUncompleteDialogOpen(false)
       onOpenChange(false)
     } catch {
       toast.error('Erro ao desmarcar lembrete')
@@ -106,73 +116,104 @@ export function ReminderDialog({ reminder, occurrenceDate, open, onOpenChange }:
     }
   }
 
+  const handleUncompleteClick = () => {
+    if (reminder.generatesTransaction) {
+      setUncompleteDialogOpen(true)
+      return
+    }
+
+    void handleUncomplete()
+  }
+
   return (
-    <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="sm:max-w-md">
-        <DialogHeader>
-          <DialogTitle className="flex flex-wrap items-center gap-2">
-            <span className="min-w-0">{reminder.title}</span>
-            {statusBadges.map(badge => (
-              <Badge key={badge.label} variant={badge.variant}>
-                {badge.label}
-              </Badge>
-            ))}
-          </DialogTitle>
-        </DialogHeader>
-        <div className="grid gap-2 text-sm">
-          <p>
-            <span className="font-medium">Vencimento:</span>{' '}
-            {format(new Date(occurrenceDate), "d 'de' MMMM yyyy", { locale: ptBR })}
-          </p>
-          {reminder.amountCents != null && (
+    <>
+      <Dialog open={open} onOpenChange={onOpenChange}>
+        <DialogContent className="sm:max-w-md">
+          <DialogHeader>
+            <DialogTitle className="flex flex-wrap items-center gap-2">
+              <span className="min-w-0">{reminder.title}</span>
+              {statusBadges.map(badge => (
+                <Badge key={badge.label} variant={badge.variant}>
+                  {badge.label}
+                </Badge>
+              ))}
+            </DialogTitle>
+          </DialogHeader>
+          <div className="grid gap-2 text-sm">
             <p>
-              <span className="font-medium">Valor:</span>{' '}
-              {formatCurrency(centsToNumber(reminder.amountCents))}
+              <span className="font-medium">Vencimento:</span>{' '}
+              {format(new Date(occurrenceDate), "d 'de' MMMM yyyy", { locale: ptBR })}
             </p>
-          )}
-          {reminder.recipientName && (
-            <p>
-              <span className="font-medium">Destinatário:</span> {reminder.recipientName}
-            </p>
-          )}
-          {reminder.notes && (
-            <p>
-              <span className="font-medium">Observações:</span> {reminder.notes}
-            </p>
-          )}
-        </div>
-        <DialogFooter className="flex-col gap-2 sm:flex-col sm:space-x-0">
-          {canComplete && (
-            <Button
-              type="button"
-              onClick={handleComplete}
-              disabled={isSubmitting}
-              className="w-full"
-            >
-              Marcar como feito no mês
-            </Button>
-          )}
-          {isCompleted && (
+            {reminder.amountCents != null && (
+              <p>
+                <span className="font-medium">Valor:</span>{' '}
+                {formatCurrency(centsToNumber(reminder.amountCents))}
+              </p>
+            )}
+            {reminder.recipientName && (
+              <p>
+                <span className="font-medium">Destinatário:</span> {reminder.recipientName}
+              </p>
+            )}
+            {reminder.notes && (
+              <p>
+                <span className="font-medium">Observações:</span> {reminder.notes}
+              </p>
+            )}
+          </div>
+          <DialogFooter className="flex-col gap-2 sm:flex-col sm:space-x-0">
+            {canComplete && (
+              <Button
+                type="button"
+                onClick={handleComplete}
+                disabled={isSubmitting}
+                className="w-full"
+              >
+                {reminder.generatesTransaction
+                  ? 'Concluir e registrar transação'
+                  : 'Marcar como feito no mês'}
+              </Button>
+            )}
+            {isCompleted && (
+              <Button
+                type="button"
+                variant="outline"
+                onClick={handleUncompleteClick}
+                disabled={isSubmitting}
+                className="w-full"
+              >
+                Desmarcar como concluído
+              </Button>
+            )}
             <Button
               type="button"
               variant="outline"
-              onClick={handleUncomplete}
-              disabled={isSubmitting}
+              onClick={() => onOpenChange(false)}
               className="w-full"
             >
-              Desmarcar como concluído
+              Fechar
             </Button>
-          )}
-          <Button
-            type="button"
-            variant="outline"
-            onClick={() => onOpenChange(false)}
-            className="w-full"
-          >
-            Fechar
-          </Button>
-        </DialogFooter>
-      </DialogContent>
-    </Dialog>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+      <CompleteReminderTransactionDialog
+        slug={slug}
+        reminder={reminder}
+        occurrenceDate={occurrenceDate}
+        open={transactionDialogOpen}
+        onOpenChange={setTransactionDialogOpen}
+        onSuccess={() => {
+          toast.success('Transação registrada e lembrete concluído')
+          setTransactionDialogOpen(false)
+          onOpenChange(false)
+        }}
+      />
+      <UncompleteReminderDialog
+        open={uncompleteDialogOpen}
+        onOpenChange={setUncompleteDialogOpen}
+        onConfirm={() => void handleUncomplete()}
+        isSubmitting={isSubmitting}
+      />
+    </>
   )
 }

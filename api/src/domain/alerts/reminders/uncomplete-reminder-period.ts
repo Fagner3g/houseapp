@@ -4,9 +4,11 @@ import { db } from '@/db'
 import { customReminders } from '@/db/schemas/customReminders'
 import { users } from '@/db/schemas/users'
 import { BadRequestError } from '@/http/utils/error'
+import { cancelReminderLinkedTransactions } from './cancel-reminder-linked-transactions'
 import {
   applyDateKeyToDueDate,
   formatDueDateKey,
+  getReminderPeriodKey,
   isReminderOccurrenceCompleted,
   isValidReminderOccurrenceDate,
   parseOccurrenceDateKey,
@@ -47,30 +49,38 @@ export async function uncompleteReminderPeriodService({
   const now = new Date()
   const occurrenceKey = formatDueDateKey(parsedOccurrence)
   const rolledDueDate = applyDateKeyToDueDate(existing.dueDate, occurrenceKey)
+  const periodKey = getReminderPeriodKey(
+    rolledDueDate,
+    existing.isRecurring ? existing.recurrenceType : null
+  )
 
-  const [reminder] = await db
-    .update(customReminders)
-    .set({
-      dueDate: rolledDueDate,
-      active: true,
-      completedAt: null,
-      lastCompletedPeriodKey: null,
-      snoozedUntil: null,
-      updatedAt: now,
-    })
-    .where(and(eq(customReminders.id, id), eq(customReminders.organizationId, orgId)))
-    .returning()
+  return db.transaction(async trx => {
+    await cancelReminderLinkedTransactions(id, { periodKey, blockIfPaid: true, trx })
 
-  const [recipient] = await db
-    .select({ name: users.name })
-    .from(users)
-    .where(eq(users.id, reminder.recipientUserId))
-    .limit(1)
+    const [reminder] = await trx
+      .update(customReminders)
+      .set({
+        dueDate: rolledDueDate,
+        active: true,
+        completedAt: null,
+        lastCompletedPeriodKey: null,
+        snoozedUntil: null,
+        updatedAt: now,
+      })
+      .where(and(eq(customReminders.id, id), eq(customReminders.organizationId, orgId)))
+      .returning()
 
-  return {
-    reminder: serializeReminder({
-      ...reminder,
-      recipientName: recipient?.name ?? null,
-    }),
-  }
+    const [recipient] = await trx
+      .select({ name: users.name })
+      .from(users)
+      .where(eq(users.id, reminder.recipientUserId))
+      .limit(1)
+
+    return {
+      reminder: serializeReminder({
+        ...reminder,
+        recipientName: recipient?.name ?? null,
+      }),
+    }
+  })
 }

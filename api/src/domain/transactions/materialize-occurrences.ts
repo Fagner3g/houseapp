@@ -4,15 +4,19 @@ import { db } from '@/db'
 import { transactionOccurrences } from '@/db/schemas/transactionOccurrences'
 import { transactionSeries } from '@/db/schemas/transactionSeries'
 import { addPeriod } from '../recurrence/utils'
+import { resolveOccurrenceDescription } from './resolve-occurrence-description'
 
 const HORIZON_MONTHS = 6
+
+type DbExecutor = typeof db | Parameters<Parameters<typeof db.transaction>[0]>[0]
 
 export async function materializeOccurrences(
   seriesId: string,
   horizon = HORIZON_MONTHS,
-  description?: string
+  description?: string,
+  trx: DbExecutor = db
 ) {
-  const series = await db
+  const series = await trx
     .select()
     .from(transactionSeries)
     .where(eq(transactionSeries.id, seriesId))
@@ -25,8 +29,11 @@ export async function materializeOccurrences(
   const horizonDate = new Date(now)
   horizonDate.setMonth(horizonDate.getMonth() + horizon)
 
-  const existing = await db
-    .select({ dueDate: transactionOccurrences.dueDate })
+  const existing = await trx
+    .select({
+      dueDate: transactionOccurrences.dueDate,
+      description: transactionOccurrences.description,
+    })
     .from(transactionOccurrences)
     .where(
       and(
@@ -37,6 +44,7 @@ export async function materializeOccurrences(
     .orderBy(transactionOccurrences.dueDate)
 
   const existingSet = new Set(existing.map(o => +o.dueDate))
+  const occurrenceDescription = resolveOccurrenceDescription(description, existing)
 
   let next: Date
   let index: number
@@ -61,7 +69,7 @@ export async function materializeOccurrences(
         dueDate: next,
         amount: rule.amount,
         installmentIndex: index,
-        description,
+        description: occurrenceDescription,
       })
     }
     next = addPeriod(next, rule.recurrenceType, rule.recurrenceInterval ?? 1)
@@ -69,6 +77,6 @@ export async function materializeOccurrences(
   }
 
   if (toInsert.length > 0) {
-    await db.insert(transactionOccurrences).values(toInsert)
+    await trx.insert(transactionOccurrences).values(toInsert)
   }
 }

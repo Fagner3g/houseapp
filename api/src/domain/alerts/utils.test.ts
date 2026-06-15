@@ -4,6 +4,7 @@ import {
   bold,
   buildLogicalAlertKey,
   buildReminderDedupeKey,
+  buildReminderOverdueDayDedupeKey,
   buildReminderOverdueDedupeKey,
   buildReminderUpcomingDedupeKey,
   buildTransactionAlertExtraInfo,
@@ -19,6 +20,7 @@ import {
   formatReminderWhatsAppMessage,
   formatTransactionWhatsAppMessage,
   getReminderPeriodKey,
+  resolveReminderEvaluationDueDate,
   getTimeBasedGreeting,
   getTransactionDisplayAmountCents,
   matchesNotifyTime,
@@ -106,6 +108,22 @@ describe('buildReminderUpcomingDedupeKey', () => {
   })
 })
 
+describe('buildReminderOverdueDayDedupeKey', () => {
+  it('dedupes by overdue day milestone separately from upcoming day', () => {
+    const overdueDayOne = buildReminderOverdueDayDedupeKey('r1', 1, 'u1', 'in_app', {
+      hour: 11,
+      minute: 0,
+    })
+    const upcomingDayOne = buildReminderUpcomingDedupeKey('r1', 1, 'u1', 'in_app', {
+      hour: 11,
+      minute: 0,
+    })
+
+    expect(overdueDayOne).not.toBe(upcomingDayOne)
+    expect(overdueDayOne).toBe('reminder:r1:overdue-day-1:at-1100:u1:in_app')
+  })
+})
+
 describe('buildReminderOverdueDedupeKey', () => {
   it('dedupes by period key instead of days before', () => {
     const weekOne = buildReminderOverdueDedupeKey('r1', 'w-100', 'u1', 'in_app', {
@@ -128,6 +146,66 @@ describe('buildReminderDedupeKey', () => {
     expect(buildReminderDedupeKey('r1', dueDate, 1, 'u1', 'whatsapp', { hour: 9, minute: 0 })).toBe(
       buildReminderUpcomingDedupeKey('r1', 1, 'u1', 'whatsapp', { hour: 9, minute: 0 })
     )
+  })
+})
+
+describe('resolveReminderEvaluationDueDate', () => {
+  const baseReminder = {
+    completedAt: null,
+    isRecurring: true,
+    recurrenceType: 'monthly' as const,
+    recurrenceInterval: 1,
+    recurrenceUntil: null,
+    lastCompletedPeriodKey: null,
+  }
+
+  it('rolls forward monthly reminders from a past period to the current period', () => {
+    const referenceDate = new Date('2026-06-08T14:00:00.000Z')
+    const dueDate = new Date('2026-05-10T12:00:00.000Z')
+
+    expect(
+      resolveReminderEvaluationDueDate({ ...baseReminder, dueDate }, referenceDate, TIMEZONE)
+    ).toEqual(new Date('2026-06-10T12:00:00.000Z'))
+  })
+
+  it('keeps the due date within the same overdue period', () => {
+    const referenceDate = new Date('2026-05-15T14:00:00.000Z')
+    const dueDate = new Date('2026-05-10T12:00:00.000Z')
+
+    expect(
+      resolveReminderEvaluationDueDate({ ...baseReminder, dueDate }, referenceDate, TIMEZONE)
+    ).toEqual(dueDate)
+  })
+
+  it('does not roll forward one-shot reminders', () => {
+    const referenceDate = new Date('2026-06-08T14:00:00.000Z')
+    const dueDate = new Date('2026-05-10T12:00:00.000Z')
+
+    expect(
+      resolveReminderEvaluationDueDate(
+        {
+          ...baseReminder,
+          dueDate,
+          isRecurring: false,
+          recurrenceType: null,
+        },
+        referenceDate,
+        TIMEZONE
+      )
+    ).toEqual(dueDate)
+  })
+
+  it('rolls forward yearly reminders across years', () => {
+    const referenceDate = new Date('2026-06-08T14:00:00.000Z')
+    const dueDate = new Date('2025-03-15T12:00:00.000Z')
+
+    expect(
+      resolveReminderEvaluationDueDate(
+        { ...baseReminder, dueDate, recurrenceType: 'yearly' },
+        referenceDate,
+        TIMEZONE
+      )
+    ).toEqual(new Date('2026-03-15T12:00:00.000Z'))
   })
 })
 

@@ -8,6 +8,8 @@ import { users } from './users'
 export type ReminderChannel = 'in_app' | 'whatsapp' | 'extension'
 export type ReminderRecurrenceType = 'weekly' | 'monthly' | 'yearly'
 
+export type ReminderTransactionType = 'expense' | 'income'
+
 export const customReminders = pgTable('custom_reminders', {
   id: text('id')
     .primaryKey()
@@ -23,6 +25,11 @@ export const customReminders = pgTable('custom_reminders', {
   dueDate: timestamp('due_date', { withTimezone: true }).notNull(),
   amountCents: bigint('amount_cents', { mode: 'bigint' }),
   daysBefore: json('days_before').$type<number[]>().notNull().default([1, 0]),
+  useOrgAlertDefaults: boolean('use_org_alert_defaults').notNull().default(true),
+  overdueAlertFrequency: text('overdue_alert_frequency').$type<
+    'daily' | 'weekly' | 'monthly' | null
+  >(),
+  overdueAlertInterval: integer('overdue_alert_interval').notNull().default(1),
   channels: json('channels')
     .$type<ReminderChannel[]>()
     .notNull()
@@ -43,6 +50,12 @@ export const customReminders = pgTable('custom_reminders', {
   }),
   snoozedUntil: timestamp('snoozed_until', { withTimezone: true }),
   lastCompletedPeriodKey: text('last_completed_period_key'),
+  generatesTransaction: boolean('generates_transaction').notNull().default(false),
+  defaultPayToId: text('default_pay_to_id').references(() => users.id, { onDelete: 'set null' }),
+  transactionType: text('transaction_type')
+    .$type<ReminderTransactionType>()
+    .notNull()
+    .default('expense'),
   createdAt: timestamp('created_at', { withTimezone: true }).notNull().defaultNow(),
   updatedAt: timestamp('updated_at', { withTimezone: true }).notNull().defaultNow(),
 })

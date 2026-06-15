@@ -8,9 +8,87 @@ import type { RecurrenceType } from '@/domain/recurrence/utils'
 import { BadRequestError } from '@/http/utils/error'
 import { getReminderPeriodKey, serializeReminder } from '../utils'
 
+type DbExecutor = typeof db | Parameters<Parameters<typeof db.transaction>[0]>[0]
+
 interface CompleteReminderPeriodRequest {
   id: string
   orgId: string
+}
+
+export async function applyCompleteReminderPeriodUpdate(
+  existing: typeof customReminders.$inferSelect,
+  trx: DbExecutor = db
+) {
+  const now = new Date()
+  const periodKey = getReminderPeriodKey(
+    existing.dueDate,
+    existing.isRecurring ? existing.recurrenceType : null
+  )
+
+  if (existing.isRecurring && existing.recurrenceType) {
+    const nextDueDate = addPeriod(
+      existing.dueDate,
+      existing.recurrenceType as RecurrenceType,
+      existing.recurrenceInterval
+    )
+
+    if (existing.recurrenceUntil && nextDueDate > existing.recurrenceUntil) {
+      const [updated] = await trx
+        .update(customReminders)
+        .set({
+          lastCompletedPeriodKey: periodKey,
+          completedAt: now,
+          active: false,
+          snoozedUntil: null,
+          updatedAt: now,
+        })
+        .where(
+          and(
+            eq(customReminders.id, existing.id),
+            eq(customReminders.organizationId, existing.organizationId)
+          )
+        )
+        .returning()
+      return updated
+    }
+
+    const [updated] = await trx
+      .update(customReminders)
+      .set({
+        dueDate: nextDueDate,
+        lastCompletedPeriodKey: null,
+        completedAt: null,
+        active: true,
+        snoozedUntil: null,
+        updatedAt: now,
+      })
+      .where(
+        and(
+          eq(customReminders.id, existing.id),
+          eq(customReminders.organizationId, existing.organizationId)
+        )
+      )
+      .returning()
+    return updated
+  }
+
+  const [updated] = await trx
+    .update(customReminders)
+    .set({
+      lastCompletedPeriodKey: periodKey,
+      completedAt: now,
+      active: false,
+      snoozedUntil: null,
+      updatedAt: now,
+    })
+    .where(
+      and(
+        eq(customReminders.id, existing.id),
+        eq(customReminders.organizationId, existing.organizationId)
+      )
+    )
+    .returning()
+  return updated
 }
 
 export async function completeReminderPeriodService({ id, orgId }: CompleteReminderPeriodRequest) {
@@ -24,63 +102,7 @@ export async function completeReminderPeriodService({ id, orgId }: CompleteRemin
     throw new BadRequestError('Reminder not found')
   }
 
-  const now = new Date()
-  const periodKey = getReminderPeriodKey(
-    existing.dueDate,
-    existing.isRecurring ? existing.recurrenceType : null
-  )
-
-  let reminder = existing
-
-  if (existing.isRecurring && existing.recurrenceType) {
-    const nextDueDate = addPeriod(
-      existing.dueDate,
-      existing.recurrenceType as RecurrenceType,
-      existing.recurrenceInterval
-    )
-
-    if (existing.recurrenceUntil && nextDueDate > existing.recurrenceUntil) {
-      const [updated] = await db
-        .update(customReminders)
-        .set({
-          lastCompletedPeriodKey: periodKey,
-          completedAt: now,
-          active: false,
-          snoozedUntil: null,
-          updatedAt: now,
-        })
-        .where(and(eq(customReminders.id, id), eq(customReminders.organizationId, orgId)))
-        .returning()
-      reminder = updated
-    } else {
-      const [updated] = await db
-        .update(customReminders)
-        .set({
-          dueDate: nextDueDate,
-          lastCompletedPeriodKey: null,
-          completedAt: null,
-          active: true,
-          snoozedUntil: null,
-          updatedAt: now,
-        })
-        .where(and(eq(customReminders.id, id), eq(customReminders.organizationId, orgId)))
-        .returning()
-      reminder = updated
-    }
-  } else {
-    const [updated] = await db
-      .update(customReminders)
-      .set({
-        lastCompletedPeriodKey: periodKey,
-        completedAt: now,
-        active: false,
-        snoozedUntil: null,
-        updatedAt: now,
-      })
-      .where(and(eq(customReminders.id, id), eq(customReminders.organizationId, orgId)))
-      .returning()
-    reminder = updated
-  }
+  const reminder = await applyCompleteReminderPeriodUpdate(existing)
 
   const [recipient] = await db
     .select({ name: users.name })

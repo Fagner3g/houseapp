@@ -503,10 +503,14 @@ section {
 .reminder-row-bottom {
   justify-content: space-between;
   padding-left: 15px;
+  gap: 8px;
 }
 
 .reminder-row-bottom .tx-meta {
-  flex-shrink: 0;
+  min-width: 0;
+  flex: 1;
+  overflow: hidden;
+  text-overflow: ellipsis;
 }
 
 .btn-reminder-done {
@@ -639,6 +643,81 @@ section {
   font-weight: 600;
   font-size: 14px;
   color: #1a1a2e;
+  line-height: 1.45;
+  word-break: break-word;
+}
+
+.modal-desc {
+  font-size: 12px;
+  color: #64748b;
+  line-height: 1.45;
+  margin: -4px 0 0;
+}
+
+.modal-error {
+  font-size: 11px;
+  color: #dc2626;
+  margin: -4px 0 0;
+}
+
+.modal-input.input-error {
+  border-color: #dc2626;
+}
+
+.modal-input.input-error:focus {
+  border-color: #dc2626;
+  box-shadow: 0 0 0 2px rgba(220, 38, 38, 0.2);
+}
+
+.modal-complete-reminder {
+  width: 280px;
+  gap: 8px;
+}
+
+.complete-reminder-summary {
+  display: flex;
+  align-items: flex-start;
+  gap: 10px;
+  padding: 10px 0;
+  margin: 0;
+  border-top: 1px solid #e2e8f0;
+  border-bottom: 1px solid #e2e8f0;
+}
+
+.complete-reminder-icon {
+  flex-shrink: 0;
+  width: 28px;
+  height: 28px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 14px;
+  background: #fff;
+  border: 1px solid #e2e8f0;
+  border-radius: 6px;
+}
+
+.complete-reminder-summary-text {
+  min-width: 0;
+  flex: 1;
+}
+
+.complete-reminder-name {
+  font-size: 12px;
+  font-weight: 600;
+  color: #1e293b;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.complete-reminder-summary .modal-hint {
+  margin: 2px 0 0;
+}
+
+.btn-primary:disabled {
+  background: #94a3b8;
+  cursor: not-allowed;
 }
 
 .modal-label {

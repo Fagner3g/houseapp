@@ -22,6 +22,9 @@ export async function updateReminderController(
       recurrenceUntil?: string | null
       notifyHour?: number | null
       notifyMinute?: number | null
+      generatesTransaction?: boolean
+      defaultPayToId?: string | null
+      transactionType?: 'expense' | 'income'
     }
   }>,
   reply: FastifyReply
@@ -53,6 +56,9 @@ export async function updateReminderController(
         : undefined,
     notifyHour: body.notifyHour,
     notifyMinute: body.notifyMinute,
+    generatesTransaction: body.generatesTransaction,
+    defaultPayToId: body.defaultPayToId,
+    transactionType: body.transactionType,
   })
 
   return reply.status(200).send(result)

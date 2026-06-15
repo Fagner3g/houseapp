@@ -1,7 +1,11 @@
 import { and, eq } from 'drizzle-orm'
 
 import { db } from '@/db'
-import type { ReminderChannel, ReminderRecurrenceType } from '@/db/schemas/customReminders'
+import type {
+  ReminderChannel,
+  ReminderRecurrenceType,
+  ReminderTransactionType,
+} from '@/db/schemas/customReminders'
 import { customReminders } from '@/db/schemas/customReminders'
 import { userOrganizations } from '@/db/schemas/userOrganization'
 import { users } from '@/db/schemas/users'
@@ -16,6 +20,9 @@ interface UpdateReminderRequest {
   dueDate?: Date
   amountCents?: number | null
   daysBefore?: number[]
+  useOrgAlertDefaults?: boolean
+  overdueAlertFrequency?: 'daily' | 'weekly' | 'monthly' | null
+  overdueAlertInterval?: number
   channels?: ReminderChannel[]
   recipientUserId?: string
   active?: boolean
@@ -26,9 +33,30 @@ interface UpdateReminderRequest {
   recurrenceUntil?: Date | null
   notifyHour?: number | null
   notifyMinute?: number | null
+  generatesTransaction?: boolean
+  defaultPayToId?: string | null
+  transactionType?: ReminderTransactionType
 }
 
 export async function updateReminderService(input: UpdateReminderRequest) {
+  const [current] = await db
+    .select()
+    .from(customReminders)
+    .where(and(eq(customReminders.id, input.id), eq(customReminders.organizationId, input.orgId)))
+    .limit(1)
+
+  if (!current) {
+    throw new BadRequestError('Reminder not found')
+  }
+
+  const nextGeneratesTransaction = input.generatesTransaction ?? current.generatesTransaction
+  const nextDefaultPayToId =
+    input.defaultPayToId !== undefined ? input.defaultPayToId : current.defaultPayToId
+
+  if (nextGeneratesTransaction && !nextDefaultPayToId) {
+    throw new BadRequestError('defaultPayToId is required when generatesTransaction is true')
+  }
+
   if (input.recipientUserId) {
     const [recipientMembership] = await db
       .select({ userId: userOrganizations.userId })
@@ -43,6 +71,26 @@ export async function updateReminderService(input: UpdateReminderRequest) {
 
     if (!recipientMembership) {
       throw new BadRequestError('Recipient must belong to the organization')
+    }
+  }
+
+  const payToIdToValidate =
+    input.defaultPayToId !== undefined ? input.defaultPayToId : input.generatesTransaction ? nextDefaultPayToId : null
+
+  if (payToIdToValidate) {
+    const [payToMembership] = await db
+      .select({ userId: userOrganizations.userId })
+      .from(userOrganizations)
+      .where(
+        and(
+          eq(userOrganizations.organizationId, input.orgId),
+          eq(userOrganizations.userId, payToIdToValidate)
+        )
+      )
+      .limit(1)
+
+    if (!payToMembership) {
+      throw new BadRequestError('Pay-to user must belong to the organization')
     }
   }
 
@@ -62,6 +110,15 @@ export async function updateReminderService(input: UpdateReminderRequest) {
       input.amountCents != null ? BigInt(Math.round(input.amountCents)) : null
   }
   if (input.daysBefore !== undefined) updates.daysBefore = input.daysBefore
+  if (input.useOrgAlertDefaults !== undefined) {
+    updates.useOrgAlertDefaults = input.useOrgAlertDefaults
+  }
+  if (input.overdueAlertFrequency !== undefined) {
+    updates.overdueAlertFrequency = input.overdueAlertFrequency
+  }
+  if (input.overdueAlertInterval !== undefined) {
+    updates.overdueAlertInterval = input.overdueAlertInterval
+  }
   if (input.channels !== undefined) updates.channels = input.channels
   if (input.recipientUserId !== undefined) updates.recipientUserId = input.recipientUserId
   if (input.active !== undefined) updates.active = input.active
@@ -77,6 +134,14 @@ export async function updateReminderService(input: UpdateReminderRequest) {
   if (input.recurrenceUntil !== undefined) updates.recurrenceUntil = input.recurrenceUntil
   if (input.notifyHour !== undefined) updates.notifyHour = input.notifyHour
   if (input.notifyMinute !== undefined) updates.notifyMinute = input.notifyMinute
+  if (input.generatesTransaction !== undefined) {
+    updates.generatesTransaction = input.generatesTransaction
+    if (!input.generatesTransaction) {
+      updates.defaultPayToId = null
+    }
+  }
+  if (input.defaultPayToId !== undefined) updates.defaultPayToId = input.defaultPayToId
+  if (input.transactionType !== undefined) updates.transactionType = input.transactionType
 
   const [reminder] = await db
     .update(customReminders)

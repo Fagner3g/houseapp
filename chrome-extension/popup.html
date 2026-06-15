@@ -137,6 +137,50 @@
     </div>
   </div>
 
+  <!-- Confirm / alert modal -->
+  <div id="confirm-modal" class="modal-backdrop hidden">
+    <div class="modal">
+      <p id="confirm-message" class="modal-title"></p>
+      <div class="modal-actions">
+        <button id="confirm-cancel" class="btn-secondary">Cancelar</button>
+        <button id="confirm-ok" class="btn-primary">Confirmar</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Complete reminder with transaction modal -->
+  <div id="complete-reminder-modal" class="modal-backdrop hidden">
+    <div class="modal modal-complete-reminder">
+      <p class="modal-title">Concluir e registrar transação</p>
+      <p class="modal-desc">Informe o valor real para registrar no relatório e concluir o período.</p>
+      <div class="complete-reminder-summary">
+        <span class="complete-reminder-icon" aria-hidden="true">🧾</span>
+        <div class="complete-reminder-summary-text">
+          <p id="complete-reminder-title" class="complete-reminder-name"></p>
+          <p id="complete-reminder-amount-hint" class="modal-hint"></p>
+        </div>
+      </div>
+      <label class="modal-label">Valor
+        <input type="text" id="complete-reminder-amount" class="modal-input" inputmode="numeric" placeholder="0,00" />
+      </label>
+      <p id="complete-reminder-amount-error" class="modal-error hidden" role="alert">Informe um valor maior que zero</p>
+      <p id="complete-reminder-amount-hint-form" class="modal-hint hidden"></p>
+      <label class="modal-label">Data da transação
+        <div class="modal-date-row">
+          <input type="date" id="complete-reminder-date" class="modal-input" />
+          <button type="button" id="btn-complete-reminder-today" class="btn-today">Hoje</button>
+        </div>
+      </label>
+      <label class="modal-label">Descrição (opcional)
+        <input type="text" id="complete-reminder-description" class="modal-input" />
+      </label>
+      <div class="modal-actions">
+        <button id="complete-reminder-cancel" class="btn-secondary">Cancelar</button>
+        <button id="complete-reminder-confirm" class="btn-primary">Registrar e concluir</button>
+      </div>
+    </div>
+  </div>
+
   <!-- Pay modal -->
   <div id="pay-modal" class="modal-backdrop hidden">
     <div class="modal">
@@ -158,6 +202,7 @@
   </div>
 
   <script src="transaction-display.js"></script>
+  <script src="reminder-display.js"></script>
   <script src="popup.js"></script>
 </body>
 </html>

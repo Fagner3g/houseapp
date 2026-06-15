@@ -22,5 +22,5 @@ export async function resolveRuleForSeries(orgId: string, seriesId: string, kind
 
   if (seriesRule) return seriesRule
 
-  return resolveOrgAlertRule(orgId, kind)
+  return resolveOrgAlertRule(orgId, kind, 'transaction')
 }

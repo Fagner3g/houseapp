@@ -9,32 +9,36 @@ import { materializeOccurrences } from './materialize-occurrences'
 import { calculateTotalInstallments } from './utils/installments-calculator'
 import { subPeriod } from '../recurrence/utils'
 
+type DbExecutor = typeof db | Parameters<Parameters<typeof db.transaction>[0]>[0]
+
 type CreateTransaction = Omit<CreateTransactionsSchemaBody, 'payToEmail'> & {
   ownerId: string
   organizationId: string
   payToId: string
 }
 
-export async function createTransactionService({
-  type,
-  title,
-  ownerId,
-  payToId,
-  organizationId,
-  amount,
-  dueDate,
-  description,
-  tags = [],
-  isRecurring,
-  recurrenceInterval,
-  recurrenceType,
-  recurrenceUntil,
-  recurrenceStart,
-  installmentsTotal,
-}: CreateTransaction) {
+export async function createTransactionService(
+  {
+    type,
+    title,
+    ownerId,
+    payToId,
+    organizationId,
+    amount,
+    dueDate,
+    description,
+    tags = [],
+    isRecurring,
+    recurrenceInterval,
+    recurrenceType,
+    recurrenceUntil,
+    recurrenceStart,
+    installmentsTotal,
+  }: CreateTransaction,
+  trx: DbExecutor = db
+) {
   const startDate = (() => {
     if (recurrenceStart) return recurrenceStart
-    if (!isRecurring) return dueDate
     return subPeriod(dueDate, recurrenceType ?? 'monthly', recurrenceInterval ?? 1)
   })()
 
@@ -48,7 +52,7 @@ export async function createTransactionService({
     installmentsTotal
   )
 
-  const seriesResult = await db
+  const seriesResult = await trx
     .insert(transactionSeries)
     .values({
       type,
@@ -69,7 +73,7 @@ export async function createTransactionService({
 
   if (tags.length > 0) {
     const names = tags.map(t => t.name)
-    const existing = await db
+    const existing = await trx
       .select()
       .from(tagsTable)
       .where(and(eq(tagsTable.organizationId, organizationId), inArray(tagsTable.name, names)))
@@ -78,7 +82,7 @@ export async function createTransactionService({
     const toCreate = tags.filter(tag => !existingMap.has(tag.name))
 
     if (toCreate.length > 0) {
-      const inserted = await db
+      const inserted = await trx
         .insert(tagsTable)
         .values(
           toCreate.map(tag => ({
@@ -98,11 +102,11 @@ export async function createTransactionService({
       tagId: existingMap.get(name)!,
     }))
     if (rows.length > 0) {
-      await db.insert(transactionTags).values(rows)
+      await trx.insert(transactionTags).values(rows)
     }
   }
 
-  await materializeOccurrences(series.id, 6, description)
+  await materializeOccurrences(series.id, 6, description, trx)
 
   return { series }
 }

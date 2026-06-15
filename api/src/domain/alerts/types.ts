@@ -5,6 +5,7 @@ import type {
   AlertRuleKind,
   AlertRuleRecipient,
   AlertRuleScope,
+  AlertRuleTarget,
 } from '@/db/schemas/alertRules'
 
 export type ReminderRecurrenceType = 'weekly' | 'monthly' | 'yearly'
@@ -18,6 +19,9 @@ export type ReminderDto = {
   dueDate: string
   amountCents: number | null
   daysBefore: number[]
+  useOrgAlertDefaults: boolean
+  overdueAlertFrequency: 'daily' | 'weekly' | 'monthly' | null
+  overdueAlertInterval: number
   channels: ReminderChannel[]
   recipientUserId: string
   recipientName: string | null
@@ -32,6 +36,9 @@ export type ReminderDto = {
   linkedSeriesId: string | null
   snoozedUntil: string | null
   lastCompletedPeriodKey: string | null
+  generatesTransaction: boolean
+  defaultPayToId: string | null
+  transactionType: 'expense' | 'income'
   createdAt: string
   updatedAt: string
 }
@@ -67,6 +74,7 @@ export type AlertRuleDto = {
   id: string
   organizationId: string
   scope: AlertRuleScope
+  target: AlertRuleTarget
   seriesId: string | null
   kind: AlertRuleKind
   config: AlertRuleConfig
@@ -109,7 +117,12 @@ export type ReminderPreviewItem = {
   recipientName: string | null
 }
 
-export type ReminderPreviewSkipReason = 'snoozed' | 'no_matching_rule' | 'period_completed'
+export type ReminderPreviewSkipReason =
+  | 'snoozed'
+  | 'outside_schedule'
+  | 'already_sent'
+  | 'no_rule'
+  | 'period_completed'
 
 export type ReminderPreviewSkipItem = {
   reminderId: string

@@ -31,6 +31,7 @@ import {
 import { Form } from '@/components/ui/form'
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs'
 import { http } from '@/lib/http'
+import { isSeriesTransaction } from '@/lib/transaction-series'
 import { useActiveOrganization } from '@/hooks/use-active-organization'
 import { useIsMobile } from '@/hooks/use-mobile'
 import { useScrollToActiveField } from '@/hooks/use-scroll-to-active-field'
@@ -62,6 +63,7 @@ import { TagField } from './tag-field'
 import { TitleField } from './title-filed'
 import { useTransactionDrawer } from './transaction-drawer-context'
 import { TypeField } from './type-field'
+import { UpdateScopeDialog } from './update-scope-dialog'
 
 interface Props {
   transaction: ListTransactions200TransactionsItem | null
@@ -104,6 +106,8 @@ function DrawerTransactionContent({ transaction, open, onOpenChange, createPrefi
     },
   })
   const [paymentDialogOpen, setPaymentDialogOpen] = useState(false)
+  const [updateScopeDialogOpen, setUpdateScopeDialogOpen] = useState(false)
+  const [pendingSubmitData, setPendingSubmitData] = useState<NewTransactionSchema | null>(null)
   const initializedTransactionRef = useRef<string | null>(null)
   const hadUnsavedChanges = useRef(false)
   const pendingAlertConfigRef = useRef<TransactionAlertConfig | null>(null)
@@ -469,7 +473,7 @@ function DrawerTransactionContent({ transaction, open, onOpenChange, createPrefi
   })
 
   const handleSubmit = useCallback(
-    async (data: NewTransactionSchema) => {
+    async (data: NewTransactionSchema, updateSeries = false) => {
       if (isEditMode && transaction) {
         const normalizeAmount = (value: unknown): string => {
           if (typeof value === 'number') return value.toFixed(2)
@@ -487,7 +491,7 @@ function DrawerTransactionContent({ transaction, open, onOpenChange, createPrefi
             '0.00'
         )
         const serieId = String((transaction as ListTransactions200TransactionsItem).serieId ?? '')
-        const payload = {
+        const payload: UpdateTransactionBody = {
           type: data.type,
           title: data.title,
           amount: normalizedAmount,
@@ -495,6 +499,7 @@ function DrawerTransactionContent({ transaction, open, onOpenChange, createPrefi
           tags: data.tags,
           description: data.description,
           serieId,
+          updateSeries,
           ...(data.payToEmail ? { payToEmail: data.payToEmail } : {}),
         }
 
@@ -513,6 +518,30 @@ function DrawerTransactionContent({ transaction, open, onOpenChange, createPrefi
       }
     },
     [isEditMode, transaction, onExternalSubmit, slug, updateTransaction, createTransaction]
+  )
+
+  const requestEditSubmit = useCallback(
+    (data: NewTransactionSchema) => {
+      if (transaction && isSeriesTransaction(transaction)) {
+        setPendingSubmitData(data)
+        setUpdateScopeDialogOpen(true)
+        return
+      }
+
+      handleSubmit(data, false)
+    },
+    [transaction, handleSubmit]
+  )
+
+  const handleUpdateScopeConfirm = useCallback(
+    (updateSeries: boolean) => {
+      if (pendingSubmitData) {
+        handleSubmit(pendingSubmitData, updateSeries)
+      }
+      setPendingSubmitData(null)
+      setUpdateScopeDialogOpen(false)
+    },
+    [pendingSubmitData, handleSubmit]
   )
 
   const handleMainAction = useCallback(() => {
@@ -574,9 +603,9 @@ function DrawerTransactionContent({ transaction, open, onOpenChange, createPrefi
           installmentsTotal: formData.installmentsTotal,
           recurrenceStart: formData.recurrenceStart,
         }
-        handleSubmit(completeData as NewTransactionSchema)
+        requestEditSubmit(completeData as NewTransactionSchema)
       } else {
-        handleSubmit(formData)
+        requestEditSubmit(formData)
       }
     } else {
       // Para modo criação, usar form.watch() para obter valores em tempo real
@@ -616,7 +645,7 @@ function DrawerTransactionContent({ transaction, open, onOpenChange, createPrefi
       // Se chegou até aqui, os dados estão válidos
       form.handleSubmit(handleSubmit)()
     }
-  }, [isEditMode, isDirty, handleSubmit, form, transaction, payTransaction, slug])
+  }, [isEditMode, isDirty, handleSubmit, requestEditSubmit, form, transaction, payTransaction, slug])
 
   // Títulos dinâmicos baseados no tipo do form (apenas para modo criação)
   const title = isEditMode ? baseTitle : `Criar nova ${isExpense ? 'Despesa' : 'Receita'}`
@@ -683,9 +712,18 @@ function DrawerTransactionContent({ transaction, open, onOpenChange, createPrefi
                   >
                     <div className={isMobile ? 'max-w-2xl mx-auto' : 'w-full'}>
                       <form
-                        onSubmit={form.handleSubmit(handleSubmit, errors =>
-                          showToastOnErrorSubmit({ form, errors })
-                        )}
+                        onSubmit={form.handleSubmit(data => {
+                          if (
+                            isEditMode &&
+                            isDirty &&
+                            transaction &&
+                            isSeriesTransaction(transaction)
+                          ) {
+                            requestEditSubmit(data)
+                            return
+                          }
+                          handleSubmit(data)
+                        }, errors => showToastOnErrorSubmit({ form, errors }))}
                         className={isMobile ? 'space-y-6' : 'space-y-4'}
                       >
                         <div className="space-y-4">
@@ -839,6 +877,19 @@ function DrawerTransactionContent({ transaction, open, onOpenChange, createPrefi
             })
             onOpenChange(false)
           }}
+        />
+      )}
+
+      {isEditMode && (
+        <UpdateScopeDialog
+          open={updateScopeDialogOpen}
+          onOpenChange={open => {
+            setUpdateScopeDialogOpen(open)
+            if (!open) {
+              setPendingSubmitData(null)
+            }
+          }}
+          onConfirm={handleUpdateScopeConfirm}
         />
       )}
     </>

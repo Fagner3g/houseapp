@@ -1,5 +1,9 @@
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 
+import {
+  getGetOrgSlugReportsTransactionsQueryKey,
+  getListTransactionsQueryKey,
+} from '@/api/generated/api'
 import { http } from '@/lib/http'
 
 export type ReminderChannel = 'in_app' | 'whatsapp' | 'extension'
@@ -14,6 +18,9 @@ export type Reminder = {
   dueDate: string
   amountCents: number | null
   daysBefore: number[]
+  useOrgAlertDefaults: boolean
+  overdueAlertFrequency: 'daily' | 'weekly' | 'monthly' | null
+  overdueAlertInterval: number
   channels: ReminderChannel[]
   recipientUserId: string
   recipientName: string | null
@@ -28,6 +35,9 @@ export type Reminder = {
   linkedSeriesId: string | null
   snoozedUntil: string | null
   lastCompletedPeriodKey: string | null
+  generatesTransaction: boolean
+  defaultPayToId: string | null
+  transactionType: 'expense' | 'income'
   createdAt: string
   updatedAt: string
 }
@@ -72,7 +82,12 @@ export type ReminderPreviewItem = {
   recipientName: string | null
 }
 
-export type ReminderPreviewSkipReason = 'snoozed' | 'no_matching_rule' | 'period_completed'
+export type ReminderPreviewSkipReason =
+  | 'snoozed'
+  | 'outside_schedule'
+  | 'already_sent'
+  | 'no_rule'
+  | 'period_completed'
 
 export type ReminderPreviewSkipItem = {
   reminderId: string
@@ -127,7 +142,10 @@ export type CreateReminderInput = {
   notes?: string | null
   dueDate: string
   amountCents?: number | null
-  daysBefore: number[]
+  daysBefore?: number[]
+  useOrgAlertDefaults?: boolean
+  overdueAlertFrequency?: 'daily' | 'weekly' | 'monthly' | null
+  overdueAlertInterval?: number
   channels: ReminderChannel[]
   recipientUserId: string
   isRecurring?: boolean
@@ -136,6 +154,9 @@ export type CreateReminderInput = {
   recurrenceUntil?: string | null
   notifyHour?: number | null
   notifyMinute?: number | null
+  generatesTransaction?: boolean
+  defaultPayToId?: string | null
+  transactionType?: 'expense' | 'income'
 }
 
 export type UpdateReminderInput = Partial<CreateReminderInput> & {
@@ -145,6 +166,7 @@ export type UpdateReminderInput = Partial<CreateReminderInput> & {
 
 export type AlertRuleChannel = ReminderChannel
 export type AlertRuleKind = 'upcoming' | 'overdue'
+export type AlertRuleTarget = 'transaction' | 'reminder'
 export type AlertRuleRecipient = 'owner' | 'pay_to' | 'both' | 'none'
 
 export type UpcomingRuleConfig = { daysBefore: number[] }
@@ -157,6 +179,7 @@ export type AlertRule = {
   id: string
   organizationId: string
   scope: 'organization' | 'series'
+  target: AlertRuleTarget
   seriesId: string | null
   kind: AlertRuleKind
   config: UpcomingRuleConfig | OverdueRuleConfig
@@ -316,6 +339,37 @@ export function useCompleteReminderPeriod(slug: string) {
   })
 }
 
+export type CompleteReminderPeriodWithTransactionInput = {
+  amount: string
+  date?: string
+  payToEmail?: string
+  description?: string
+}
+
+export function useCompleteReminderPeriodWithTransaction(slug: string) {
+  const queryClient = useQueryClient()
+  return useMutation({
+    mutationFn: ({ id, data }: { id: string; data: CompleteReminderPeriodWithTransactionInput }) =>
+      http<{ reminder: Reminder; seriesId: string; occurrenceId: string }>(
+        `/org/${slug}/reminders/${id}/complete-period-with-transaction`,
+        {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(data),
+        }
+      ),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: remindersKey(slug) })
+      queryClient.invalidateQueries({ queryKey: inboxKey(slug) })
+      queryClient.invalidateQueries({ queryKey: previewKey(slug) })
+      queryClient.invalidateQueries({ queryKey: getListTransactionsQueryKey(slug) })
+      queryClient.invalidateQueries({
+        queryKey: getGetOrgSlugReportsTransactionsQueryKey(slug),
+      })
+    },
+  })
+}
+
 export function useUncompleteReminderPeriod(slug: string) {
   const queryClient = useQueryClient()
   return useMutation({
@@ -329,6 +383,10 @@ export function useUncompleteReminderPeriod(slug: string) {
       queryClient.invalidateQueries({ queryKey: remindersKey(slug) })
       queryClient.invalidateQueries({ queryKey: inboxKey(slug) })
       queryClient.invalidateQueries({ queryKey: previewKey(slug) })
+      queryClient.invalidateQueries({ queryKey: getListTransactionsQueryKey(slug) })
+      queryClient.invalidateQueries({
+        queryKey: getGetOrgSlugReportsTransactionsQueryKey(slug),
+      })
     },
   })
 }
@@ -340,6 +398,10 @@ export function useDeleteReminder(slug: string) {
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: remindersKey(slug) })
       queryClient.invalidateQueries({ queryKey: previewKey(slug) })
+      queryClient.invalidateQueries({ queryKey: getListTransactionsQueryKey(slug) })
+      queryClient.invalidateQueries({
+        queryKey: getGetOrgSlugReportsTransactionsQueryKey(slug),
+      })
     },
   })
 }

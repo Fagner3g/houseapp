@@ -15,6 +15,9 @@ export const reminderDtoSchema = z.object({
   dueDate: z.string(),
   amountCents: z.number().nullable(),
   daysBefore: z.array(z.number()),
+  useOrgAlertDefaults: z.boolean(),
+  overdueAlertFrequency: z.enum(['daily', 'weekly', 'monthly']).nullable(),
+  overdueAlertInterval: z.number().int().min(1),
   channels: z.array(reminderChannelSchema),
   recipientUserId: z.string(),
   recipientName: z.string().nullable(),
@@ -29,9 +32,14 @@ export const reminderDtoSchema = z.object({
   linkedSeriesId: z.string().nullable(),
   snoozedUntil: z.string().nullable(),
   lastCompletedPeriodKey: z.string().nullable(),
+  generatesTransaction: z.boolean(),
+  defaultPayToId: z.string().nullable(),
+  transactionType: z.enum(['expense', 'income']),
   createdAt: z.string(),
   updatedAt: z.string(),
 })
+
+const transactionTypeSchema = z.enum(['expense', 'income'])
 
 const reminderBodyFields = {
   title: z.string().min(1).max(200),
@@ -39,6 +47,9 @@ const reminderBodyFields = {
   dueDate: z.string().datetime(),
   amountCents: z.number().int().nonnegative().nullable().optional(),
   daysBefore: z.array(z.number().int().min(0).max(365)).min(1).default([1, 0]),
+  useOrgAlertDefaults: z.boolean().optional().default(true),
+  overdueAlertFrequency: z.enum(['daily', 'weekly', 'monthly']).nullable().optional(),
+  overdueAlertInterval: z.number().int().min(1).optional().default(1),
   channels: z.array(reminderChannelSchema).min(1).default(['in_app', 'whatsapp', 'extension']),
   recipientUserId: z.string(),
   linkedSeriesId: z.string().nullable().optional(),
@@ -48,7 +59,16 @@ const reminderBodyFields = {
   recurrenceUntil: z.string().datetime().nullable().optional(),
   notifyHour: notifyHourSchema.optional(),
   notifyMinute: notifyMinuteSchema.optional(),
+  generatesTransaction: z.boolean().optional().default(false),
+  defaultPayToId: z.string().nullable().optional(),
+  transactionType: transactionTypeSchema.optional().default('expense'),
 }
+
+const generatesTransactionRefinement = <
+  T extends { generatesTransaction?: boolean; defaultPayToId?: string | null },
+>(
+  data: T
+) => !data.generatesTransaction || !!data.defaultPayToId
 
 const recurringRefinement = <T extends { isRecurring?: boolean; recurrenceType?: string | null }>(
   data: T
@@ -78,6 +98,9 @@ export const createReminderSchema = {
     .object(reminderBodyFields)
     .refine(recurringRefinement, {
       message: 'recurrenceType is required when isRecurring is true',
+    })
+    .refine(generatesTransactionRefinement, {
+      message: 'defaultPayToId is required when generatesTransaction is true',
     }),
   response: {
     [StatusCodes.CREATED]: z.object({
@@ -101,6 +124,9 @@ export const updateReminderSchema = {
       dueDate: z.string().datetime().optional(),
       amountCents: z.number().int().nonnegative().nullable().optional(),
       daysBefore: z.array(z.number().int().min(0).max(365)).min(1).optional(),
+      useOrgAlertDefaults: z.boolean().optional(),
+      overdueAlertFrequency: z.enum(['daily', 'weekly', 'monthly']).nullable().optional(),
+      overdueAlertInterval: z.number().int().min(1).optional(),
       channels: z.array(reminderChannelSchema).min(1).optional(),
       recipientUserId: z.string().optional(),
       active: z.boolean().optional(),
@@ -111,10 +137,16 @@ export const updateReminderSchema = {
       recurrenceUntil: z.string().datetime().nullable().optional(),
       notifyHour: notifyHourSchema.optional(),
       notifyMinute: notifyMinuteSchema.optional(),
+      generatesTransaction: z.boolean().optional(),
+      defaultPayToId: z.string().nullable().optional(),
+      transactionType: transactionTypeSchema.optional(),
     })
     .refine(data => Object.keys(data).length > 0, { message: 'At least one field required' })
     .refine(data => recurringRefinement(data), {
       message: 'recurrenceType is required when isRecurring is true',
+    })
+    .refine(data => generatesTransactionRefinement(data), {
+      message: 'defaultPayToId is required when generatesTransaction is true',
     }),
   response: {
     [StatusCodes.OK]: z.object({
@@ -175,6 +207,39 @@ export const uncompleteReminderPeriodSchema = {
   },
 }
 
+export const completeReminderPeriodWithTransactionSchema = {
+  tags: ['Alerts'],
+  description: 'Complete reminder period and register a one-off transaction',
+  operationId: 'completeReminderPeriodWithTransaction',
+  params: z.object({
+    slug: z.string().nonempty(),
+    id: z.string().nonempty(),
+  }),
+  body: z.object({
+    amount: z
+      .string()
+      .regex(
+        /^-?\d+(\.\d{1,2})?$/,
+        'Use ponto como separador decimal e no máximo 2 casas (ex.: 1234.56)'
+      ),
+    date: z
+      .string()
+      .refine(value => !Number.isNaN(Date.parse(value)), {
+        message: 'date must be a valid date',
+      })
+      .optional(),
+    payToEmail: z.string().email().optional(),
+    description: z.string().max(1000).optional(),
+  }),
+  response: {
+    [StatusCodes.OK]: z.object({
+      reminder: reminderDtoSchema,
+      seriesId: z.string(),
+      occurrenceId: z.string(),
+    }),
+  },
+}
+
 export const deleteReminderSchema = {
   tags: ['Alerts'],
   description: 'Delete custom reminder',
@@ -226,6 +291,12 @@ export type UncompleteReminderPeriodSchemaParams = z.infer<
 >
 export type UncompleteReminderPeriodSchemaBody = z.infer<
   typeof uncompleteReminderPeriodSchema.body
+>
+export type CompleteReminderPeriodWithTransactionSchemaParams = z.infer<
+  typeof completeReminderPeriodWithTransactionSchema.params
+>
+export type CompleteReminderPeriodWithTransactionSchemaBody = z.infer<
+  typeof completeReminderPeriodWithTransactionSchema.body
 >
 export type DeleteReminderSchemaParams = z.infer<typeof deleteReminderSchema.params>
 export type SnoozeReminderSchemaParams = z.infer<typeof snoozeReminderSchema.params>

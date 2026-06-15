@@ -35,7 +35,6 @@ export async function updateTransactionController(request: Req, reply: FastifyRe
       description,
       tags,
       payToEmail,
-      updateSerie: true,
     })
 
     return reply.status(204).send(null)

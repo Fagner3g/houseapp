@@ -6,6 +6,7 @@ import type {
   AlertRuleKind,
   AlertRuleRecipient,
   AlertRuleScope,
+  AlertRuleTarget,
 } from '@/db/schemas/alertRules'
 import { createRuleService } from '@/domain/alerts/rules/create-rule'
 
@@ -14,6 +15,7 @@ export async function createRuleController(
     Params: { slug: string }
     Body: {
       scope: AlertRuleScope
+      target?: AlertRuleTarget
       seriesId?: string | null
       kind: AlertRuleKind
       config: AlertRuleConfig
@@ -31,6 +33,7 @@ export async function createRuleController(
     orgId,
     createdBy: userId,
     scope: body.scope,
+    target: body.target,
     seriesId: body.seriesId,
     kind: body.kind,
     config: body.config,

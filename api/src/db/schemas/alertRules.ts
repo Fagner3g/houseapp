@@ -6,6 +6,7 @@ import { transactionSeries } from './transactionSeries'
 import { users } from './users'
 
 export type AlertRuleScope = 'organization' | 'series'
+export type AlertRuleTarget = 'transaction' | 'reminder'
 export type AlertRuleKind = 'upcoming' | 'overdue'
 export type AlertRuleChannel = 'in_app' | 'whatsapp' | 'extension'
 export type AlertRuleRecipient = 'owner' | 'pay_to' | 'both' | 'none'
@@ -25,6 +26,7 @@ export const alertRules = pgTable('alert_rules', {
     .notNull()
     .references(() => organizations.id, { onDelete: 'cascade' }),
   scope: text('scope').$type<AlertRuleScope>().notNull(),
+  target: text('target').$type<AlertRuleTarget>().notNull().default('transaction'),
   seriesId: text('series_id').references(() => transactionSeries.id, { onDelete: 'cascade' }),
   kind: text('kind').$type<AlertRuleKind>().notNull(),
   config: jsonb('config').$type<AlertRuleConfig>().notNull(),

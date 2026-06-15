@@ -7,7 +7,7 @@ import { organizations } from '@/db/schemas/organization'
 import { transactionOccurrences } from '@/db/schemas/transactionOccurrences'
 import { transactionSeries } from '@/db/schemas/transactionSeries'
 import type { AlertPreferences } from '@/db/schemas/userOrganization'
-import { userOrganizations } from '@/db/schemas/userOrganization'
+import { DEFAULT_ALERT_PREFERENCES, userOrganizations } from '@/db/schemas/userOrganization'
 import { hasBlockingDedupeKey } from '../delivery/insert-alert-delivery'
 import { resolveRuleForSeries } from '../rules/resolve-rule-for-series'
 import type { RulePreviewItem } from '../types'
@@ -78,9 +78,9 @@ type OccurrenceRow = {
   payToName: string | null
   payToPhone: string | null
   ownerNotificationsEnabled: boolean
-  payToNotificationsEnabled: boolean
+  payToNotificationsEnabled: boolean | null
   ownerAlertPreferences: AlertPreferences
-  payToAlertPreferences: AlertPreferences
+  payToAlertPreferences: AlertPreferences | null
 }
 
 function resolveRecipientsFromRow(
@@ -106,8 +106,8 @@ function resolveRecipientsFromRow(
       userId: row.payToId,
       name: row.payToName,
       phone: row.payToPhone,
-      notificationsEnabled: row.payToNotificationsEnabled,
-      alertPreferences: row.payToAlertPreferences,
+      notificationsEnabled: row.payToNotificationsEnabled ?? true,
+      alertPreferences: row.payToAlertPreferences ?? DEFAULT_ALERT_PREFERENCES,
     })
   }
 
@@ -164,7 +164,7 @@ async function fetchOccurrenceRows(orgIds: string[], maxDaysAhead: number, userI
         eq(sql`owner_uo.organization_id`, transactionSeries.organizationId)
       )
     )
-    .innerJoin(
+    .leftJoin(
       sql`user_organizations as pay_to_uo`,
       and(
         eq(sql`pay_to_uo.user_id`, transactionSeries.payToId),

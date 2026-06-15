@@ -5,6 +5,7 @@ import { env } from '@/config/env'
 import { alertDeliveries } from './schemas/alertDeliveries'
 import { alertRules } from './schemas/alertRules'
 import { customReminders } from './schemas/customReminders'
+import { reminderOccurrenceTransactions } from './schemas/reminderOccurrenceTransactions'
 import { goalCompletions } from './schemas/goalCompletions'
 import { goals } from './schemas/goals'
 import { investmentAssets } from './schemas/investmentAssets'
@@ -27,6 +28,7 @@ const schema = {
   organizations,
   userOrganizations,
   customReminders,
+  reminderOccurrenceTransactions,
   alertDeliveries,
   alertRules,
   goals,
