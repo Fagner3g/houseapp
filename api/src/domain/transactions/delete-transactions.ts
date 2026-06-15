@@ -1,6 +1,7 @@
 import { and, eq, inArray, sql } from 'drizzle-orm'
 
 import { db } from '@/db'
+import { revertRemindersLinkedToDeletedSeries } from '@/domain/alerts/reminders/sync-reminders-on-transaction-change'
 import { transactionOccurrences } from '@/db/schemas/transactionOccurrences'
 import { transactionSeries } from '@/db/schemas/transactionSeries'
 
@@ -20,6 +21,8 @@ export async function deleteTransactionsService({
   // TODO: create rotine to delete transactions 6 months
 
   await db.transaction(async trx => {
+    await revertRemindersLinkedToDeletedSeries(ids, trx)
+
     await trx
       .update(transactionSeries)
       .set({ active: false, updatedAt: sql`now()` })
