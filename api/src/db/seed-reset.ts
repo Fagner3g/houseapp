@@ -1,10 +1,7 @@
 import { sql } from 'drizzle-orm'
-import dayjs from 'dayjs'
 import slugify from 'slugify'
 
 import { client, db } from '.'
-import { goalCompletions } from './schemas/goalCompletions'
-import { goals } from './schemas/goals'
 import { organizations } from './schemas/organization'
 import { userOrganizations } from './schemas/userOrganization'
 import { users } from './schemas/users'
@@ -12,8 +9,6 @@ import { users } from './schemas/users'
 async function seedReset() {
   await db.execute(sql`
     TRUNCATE TABLE
-      "goal_completions",
-      "goals",
       "investment_quotes",
       "investment_executions",
       "investment_plans",
@@ -61,22 +56,6 @@ async function seedReset() {
     { userId: user.id, organizationId: org.id },
     { userId: otherUser.id, organizationId: org.id },
     { userId: thirdUser.id, organizationId: otherOrg.id },
-  ])
-
-  const result = await db
-    .insert(goals)
-    .values([
-      { userId: user.id, title: 'Acordar cedo', desiredWeeklyFrequency: 5 },
-      { userId: user.id, title: 'Me exercitar', desiredWeeklyFrequency: 2 },
-      { userId: user.id, title: 'Meditar', desiredWeeklyFrequency: 1 },
-    ])
-    .returning()
-
-  const startOfWeek = dayjs().startOf('week')
-
-  await db.insert(goalCompletions).values([
-    { goalId: result[0].id, createdAt: startOfWeek.toDate() },
-    { goalId: result[1].id, createdAt: startOfWeek.add(1, 'day').toDate() },
   ])
 
   console.log('Seed destrutiva concluída.')

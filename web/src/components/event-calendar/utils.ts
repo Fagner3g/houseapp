@@ -87,14 +87,37 @@ export function sortEvents(events: CalendarEvent[]): CalendarEvent[] {
 }
 
 /**
+ * Whether the event is already completed/paid for display purposes.
+ */
+export function isEventDone(event: CalendarEvent): boolean {
+  return event.status === "paid"
+}
+
+function compareEventsForDisplay(a: CalendarEvent, b: CalendarEvent): number {
+  const aDone = isEventDone(a)
+  const bDone = isEventDone(b)
+  if (aDone !== bDone) return aDone ? 1 : -1
+
+  if (a.isTransbordo && b.isTransbordo) {
+    return (b.overdueDays ?? 0) - (a.overdueDays ?? 0)
+  }
+
+  const aIsMultiDay = isMultiDayEvent(a)
+  const bIsMultiDay = isMultiDayEvent(b)
+
+  if (aIsMultiDay && !bIsMultiDay) return -1
+  if (!aIsMultiDay && bIsMultiDay) return 1
+
+  return new Date(a.start).getTime() - new Date(b.start).getTime()
+}
+
+/**
  * Sort events with transbordo first (most overdue first), then multi-day, then by start time.
+ * Pending items always appear before completed ones within each group.
  */
 export function sortEventsWithTransbordoFirst(events: CalendarEvent[]): CalendarEvent[] {
-  const sorted = sortEvents(events)
-  const transbordo = sorted.filter(event => event.isTransbordo)
-  const doMes = sorted.filter(event => !event.isTransbordo)
-
-  transbordo.sort((a, b) => (b.overdueDays ?? 0) - (a.overdueDays ?? 0))
+  const transbordo = events.filter(event => event.isTransbordo).sort(compareEventsForDisplay)
+  const doMes = events.filter(event => !event.isTransbordo).sort(compareEventsForDisplay)
 
   return [...transbordo, ...doMes]
 }
@@ -103,15 +126,8 @@ export function partitionDayEvents(events: CalendarEvent[]): {
   transbordo: CalendarEvent[]
   doMes: CalendarEvent[]
 } {
-  const transbordo: CalendarEvent[] = []
-  const doMes: CalendarEvent[] = []
-
-  for (const event of events) {
-    if (event.isTransbordo) transbordo.push(event)
-    else doMes.push(event)
-  }
-
-  transbordo.sort((a, b) => (b.overdueDays ?? 0) - (a.overdueDays ?? 0))
+  const transbordo = events.filter(event => event.isTransbordo).sort(compareEventsForDisplay)
+  const doMes = events.filter(event => !event.isTransbordo).sort(compareEventsForDisplay)
 
   return { transbordo, doMes }
 }

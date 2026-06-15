@@ -3,9 +3,10 @@
  * Do not edit manually.
  * HouseApp API
  * API for HouseApp
- * OpenAPI spec version: 1.1.1
+ * OpenAPI spec version: 1.5.1
  */
 import type { CreateAlertRuleBodyScope } from "./createAlertRuleBodyScope";
+import type { CreateAlertRuleBodyTarget } from "./createAlertRuleBodyTarget";
 import type { CreateAlertRuleBodyKind } from "./createAlertRuleBodyKind";
 import type { CreateAlertRuleBodyConfig } from "./createAlertRuleBodyConfig";
 import type { CreateAlertRuleBodyChannelsItem } from "./createAlertRuleBodyChannelsItem";
@@ -13,6 +14,7 @@ import type { CreateAlertRuleBodyRecipients } from "./createAlertRuleBodyRecipie
 
 export type CreateAlertRuleBody = {
   scope: CreateAlertRuleBodyScope;
+  target?: CreateAlertRuleBodyTarget;
   /** @nullable */
   seriesId?: string | null;
   kind: CreateAlertRuleBodyKind;

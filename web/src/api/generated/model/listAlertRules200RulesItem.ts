@@ -3,9 +3,10 @@
  * Do not edit manually.
  * HouseApp API
  * API for HouseApp
- * OpenAPI spec version: 1.1.1
+ * OpenAPI spec version: 1.5.1
  */
 import type { ListAlertRules200RulesItemScope } from "./listAlertRules200RulesItemScope";
+import type { ListAlertRules200RulesItemTarget } from "./listAlertRules200RulesItemTarget";
 import type { ListAlertRules200RulesItemKind } from "./listAlertRules200RulesItemKind";
 import type { ListAlertRules200RulesItemConfig } from "./listAlertRules200RulesItemConfig";
 import type { ListAlertRules200RulesItemChannelsItem } from "./listAlertRules200RulesItemChannelsItem";
@@ -15,6 +16,7 @@ export type ListAlertRules200RulesItem = {
   id: string;
   organizationId: string;
   scope: ListAlertRules200RulesItemScope;
+  target: ListAlertRules200RulesItemTarget;
   /** @nullable */
   seriesId: string | null;
   kind: ListAlertRules200RulesItemKind;

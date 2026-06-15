@@ -3,15 +3,18 @@
  * Do not edit manually.
  * HouseApp API
  * API for HouseApp
- * OpenAPI spec version: 1.1.1
+ * OpenAPI spec version: 1.5.1
  */
+import type { PreviewAlerts200RemindersItemKind } from "./previewAlerts200RemindersItemKind";
 import type { PreviewAlerts200RemindersItemChannelsItem } from "./previewAlerts200RemindersItemChannelsItem";
 
 export type PreviewAlerts200RemindersItem = {
   reminderId: string;
   title: string;
   dueDate: string;
+  kind: PreviewAlerts200RemindersItemKind;
   daysUntilDue: number;
+  overdueDays?: number;
   /** @nullable */
   amountCents: number | null;
   notifyHour: number;

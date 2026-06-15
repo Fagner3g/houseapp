@@ -3,7 +3,7 @@
  * Do not edit manually.
  * HouseApp API
  * API for HouseApp
- * OpenAPI spec version: 1.1.1
+ * OpenAPI spec version: 1.5.1
  */
 
 export type PreviewAlerts200SkippedRemindersItemReason =
@@ -12,5 +12,8 @@ export type PreviewAlerts200SkippedRemindersItemReason =
 // eslint-disable-next-line @typescript-eslint/no-redeclare
 export const PreviewAlerts200SkippedRemindersItemReason = {
   snoozed: "snoozed",
-  no_matching_day: "no_matching_day",
+  outside_schedule: "outside_schedule",
+  already_sent: "already_sent",
+  no_rule: "no_rule",
+  period_completed: "period_completed",
 } as const;

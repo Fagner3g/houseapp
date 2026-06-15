@@ -3,10 +3,11 @@
  * Do not edit manually.
  * HouseApp API
  * API for HouseApp
- * OpenAPI spec version: 1.1.1
+ * OpenAPI spec version: 1.5.1
  */
 import type { ListPendingExtensionAlerts200AlertsItemSourceType } from "./listPendingExtensionAlerts200AlertsItemSourceType";
 import type { ListPendingExtensionAlerts200AlertsItemChannel } from "./listPendingExtensionAlerts200AlertsItemChannel";
+import type { ListPendingExtensionAlerts200AlertsItemChannelsItem } from "./listPendingExtensionAlerts200AlertsItemChannelsItem";
 import type { ListPendingExtensionAlerts200AlertsItemStatus } from "./listPendingExtensionAlerts200AlertsItemStatus";
 import type { ListPendingExtensionAlerts200AlertsItemPayload } from "./listPendingExtensionAlerts200AlertsItemPayload";
 
@@ -14,6 +15,8 @@ export type ListPendingExtensionAlerts200AlertsItem = {
   id: string;
   organizationId: string;
   userId: string;
+  /** @nullable */
+  recipientName?: string | null;
   sourceType: ListPendingExtensionAlerts200AlertsItemSourceType;
   /** @nullable */
   ruleId: string | null;
@@ -23,6 +26,7 @@ export type ListPendingExtensionAlerts200AlertsItem = {
   occurrenceId: string | null;
   kind: string;
   channel: ListPendingExtensionAlerts200AlertsItemChannel;
+  channels?: ListPendingExtensionAlerts200AlertsItemChannelsItem[];
   status: ListPendingExtensionAlerts200AlertsItemStatus;
   payload: ListPendingExtensionAlerts200AlertsItemPayload;
   /** @nullable */

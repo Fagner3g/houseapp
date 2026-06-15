@@ -3,7 +3,7 @@
  * Do not edit manually.
  * HouseApp API
  * API for HouseApp
- * OpenAPI spec version: 1.1.1
+ * OpenAPI spec version: 1.5.1
  */
 import type { ListChatMessages200MessagesItem } from "./listChatMessages200MessagesItem";
 import type { ListChatMessages200Pagination } from "./listChatMessages200Pagination";

@@ -22,7 +22,6 @@ import { Route as AppOrgsettingsLayoutRouteImport } from './pages/_app/$org/(set
 import { Route as AppOrguserUsersRouteImport } from './pages/_app/$org/(user)/users'
 import { Route as AppOrgtransactionsTransactionsRouteImport } from './pages/_app/$org/(transactions)/transactions'
 import { Route as AppOrgsettingsSettingsRouteImport } from './pages/_app/$org/(settings)/settings'
-import { Route as AppOrggoalGoalsRouteImport } from './pages/_app/$org/(goal)/goals'
 import { Route as AppOrgdashboardDashboardRouteImport } from './pages/_app/$org/(dashboard)/dashboard'
 import { Route as AppOrgadminAlertsRouteImport } from './pages/_app/$org/(admin)/alerts'
 
@@ -90,11 +89,6 @@ const AppOrgsettingsSettingsRoute = AppOrgsettingsSettingsRouteImport.update({
   path: '/settings',
   getParentRoute: () => AppOrgsettingsLayoutRoute,
 } as any)
-const AppOrggoalGoalsRoute = AppOrggoalGoalsRouteImport.update({
-  id: '/$org/(goal)/goals',
-  path: '/$org/goals',
-  getParentRoute: () => AppLayoutRoute,
-} as any)
 const AppOrgdashboardDashboardRoute =
   AppOrgdashboardDashboardRouteImport.update({
     id: '/$org/(dashboard)/dashboard',
@@ -118,7 +112,6 @@ export interface FileRoutesByFullPath {
   '/$org': typeof AppOrgsettingsLayoutRouteWithChildren
   '/$org/alerts': typeof AppOrgadminAlertsRoute
   '/$org/dashboard': typeof AppOrgdashboardDashboardRoute
-  '/$org/goals': typeof AppOrggoalGoalsRoute
   '/$org/settings': typeof AppOrgsettingsSettingsRoute
   '/$org/transactions': typeof AppOrgtransactionsTransactionsRoute
   '/$org/users': typeof AppOrguserUsersRoute
@@ -134,7 +127,6 @@ export interface FileRoutesByTo {
   '/$org': typeof AppOrgsettingsLayoutRouteWithChildren
   '/$org/alerts': typeof AppOrgadminAlertsRoute
   '/$org/dashboard': typeof AppOrgdashboardDashboardRoute
-  '/$org/goals': typeof AppOrggoalGoalsRoute
   '/$org/settings': typeof AppOrgsettingsSettingsRoute
   '/$org/transactions': typeof AppOrgtransactionsTransactionsRoute
   '/$org/users': typeof AppOrguserUsersRoute
@@ -153,7 +145,6 @@ export interface FileRoutesById {
   '/_app/$org/(settings)': typeof AppOrgsettingsLayoutRouteWithChildren
   '/_app/$org/(admin)/alerts': typeof AppOrgadminAlertsRoute
   '/_app/$org/(dashboard)/dashboard': typeof AppOrgdashboardDashboardRoute
-  '/_app/$org/(goal)/goals': typeof AppOrggoalGoalsRoute
   '/_app/$org/(settings)/settings': typeof AppOrgsettingsSettingsRoute
   '/_app/$org/(transactions)/transactions': typeof AppOrgtransactionsTransactionsRoute
   '/_app/$org/(user)/users': typeof AppOrguserUsersRoute
@@ -171,7 +162,6 @@ export interface FileRouteTypes {
     | '/$org'
     | '/$org/alerts'
     | '/$org/dashboard'
-    | '/$org/goals'
     | '/$org/settings'
     | '/$org/transactions'
     | '/$org/users'
@@ -187,7 +177,6 @@ export interface FileRouteTypes {
     | '/$org'
     | '/$org/alerts'
     | '/$org/dashboard'
-    | '/$org/goals'
     | '/$org/settings'
     | '/$org/transactions'
     | '/$org/users'
@@ -205,7 +194,6 @@ export interface FileRouteTypes {
     | '/_app/$org/(settings)'
     | '/_app/$org/(admin)/alerts'
     | '/_app/$org/(dashboard)/dashboard'
-    | '/_app/$org/(goal)/goals'
     | '/_app/$org/(settings)/settings'
     | '/_app/$org/(transactions)/transactions'
     | '/_app/$org/(user)/users'
@@ -310,13 +298,6 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AppOrgsettingsSettingsRouteImport
       parentRoute: typeof AppOrgsettingsLayoutRoute
     }
-    '/_app/$org/(goal)/goals': {
-      id: '/_app/$org/(goal)/goals'
-      path: '/$org/goals'
-      fullPath: '/$org/goals'
-      preLoaderRoute: typeof AppOrggoalGoalsRouteImport
-      parentRoute: typeof AppLayoutRoute
-    }
     '/_app/$org/(dashboard)/dashboard': {
       id: '/_app/$org/(dashboard)/dashboard'
       path: '/$org/dashboard'
@@ -351,7 +332,6 @@ interface AppLayoutRouteChildren {
   AppOrgsettingsLayoutRoute: typeof AppOrgsettingsLayoutRouteWithChildren
   AppOrgadminAlertsRoute: typeof AppOrgadminAlertsRoute
   AppOrgdashboardDashboardRoute: typeof AppOrgdashboardDashboardRoute
-  AppOrggoalGoalsRoute: typeof AppOrggoalGoalsRoute
   AppOrgtransactionsTransactionsRoute: typeof AppOrgtransactionsTransactionsRoute
   AppOrguserUsersRoute: typeof AppOrguserUsersRoute
 }
@@ -362,7 +342,6 @@ const AppLayoutRouteChildren: AppLayoutRouteChildren = {
   AppOrgsettingsLayoutRoute: AppOrgsettingsLayoutRouteWithChildren,
   AppOrgadminAlertsRoute: AppOrgadminAlertsRoute,
   AppOrgdashboardDashboardRoute: AppOrgdashboardDashboardRoute,
-  AppOrggoalGoalsRoute: AppOrggoalGoalsRoute,
   AppOrgtransactionsTransactionsRoute: AppOrgtransactionsTransactionsRoute,
   AppOrguserUsersRoute: AppOrguserUsersRoute,
 }

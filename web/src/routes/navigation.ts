@@ -3,7 +3,6 @@ import {
   BriefcaseBusiness,
   CreditCard,
   LayoutDashboard,
-  Rocket,
   Users,
 } from 'lucide-react'
 
@@ -14,7 +13,6 @@ import { useOrgStore } from '@/stores/org'
 const baseItems = [
   { title: 'Carteira', url: '/investments', icon: BriefcaseBusiness },
   { title: 'Dashboard', path: 'dashboard', icon: LayoutDashboard },
-  { title: 'Metas', path: 'goals', icon: Rocket },
   { title: 'Transações', path: 'transactions', icon: CreditCard },
   { title: 'Alertas', path: 'alerts', icon: Bell },
   { title: 'Usuários', path: 'users', icon: Users },

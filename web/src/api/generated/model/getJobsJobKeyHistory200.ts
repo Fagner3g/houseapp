@@ -3,7 +3,7 @@
  * Do not edit manually.
  * HouseApp API
  * API for HouseApp
- * OpenAPI spec version: 1.1.1
+ * OpenAPI spec version: 1.5.1
  */
 import type { GetJobsJobKeyHistory200LastRun } from "./getJobsJobKeyHistory200LastRun";
 import type { GetJobsJobKeyHistory200HistoryItem } from "./getJobsJobKeyHistory200HistoryItem";
