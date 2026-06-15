@@ -1,7 +1,11 @@
 import { and, eq } from 'drizzle-orm'
 
 import { db } from '@/db'
-import type { ReminderChannel, ReminderRecurrenceType } from '@/db/schemas/customReminders'
+import type {
+  ReminderChannel,
+  ReminderRecurrenceType,
+  ReminderTransactionType,
+} from '@/db/schemas/customReminders'
 import { customReminders } from '@/db/schemas/customReminders'
 import { userOrganizations } from '@/db/schemas/userOrganization'
 import { users } from '@/db/schemas/users'
@@ -16,6 +20,9 @@ interface CreateReminderRequest {
   dueDate: Date
   amountCents?: number | null
   daysBefore: number[]
+  useOrgAlertDefaults?: boolean
+  overdueAlertFrequency?: 'daily' | 'weekly' | 'monthly' | null
+  overdueAlertInterval?: number
   channels: ReminderChannel[]
   recipientUserId: string
   linkedSeriesId?: string | null
@@ -25,6 +32,9 @@ interface CreateReminderRequest {
   recurrenceUntil?: Date | null
   notifyHour?: number | null
   notifyMinute?: number | null
+  generatesTransaction?: boolean
+  defaultPayToId?: string | null
+  transactionType?: ReminderTransactionType
 }
 
 export async function createReminderService(input: CreateReminderRequest) {
@@ -47,6 +57,27 @@ export async function createReminderService(input: CreateReminderRequest) {
     throw new BadRequestError('Recurrence type is required for recurring reminders')
   }
 
+  if (input.generatesTransaction && !input.defaultPayToId) {
+    throw new BadRequestError('defaultPayToId is required when generatesTransaction is true')
+  }
+
+  if (input.defaultPayToId) {
+    const [payToMembership] = await db
+      .select({ userId: userOrganizations.userId })
+      .from(userOrganizations)
+      .where(
+        and(
+          eq(userOrganizations.organizationId, input.orgId),
+          eq(userOrganizations.userId, input.defaultPayToId)
+        )
+      )
+      .limit(1)
+
+    if (!payToMembership) {
+      throw new BadRequestError('Pay-to user must belong to the organization')
+    }
+  }
+
   const [recipient] = await db
     .select({ name: users.name })
     .from(users)
@@ -64,6 +95,9 @@ export async function createReminderService(input: CreateReminderRequest) {
       amountCents:
         input.amountCents != null ? BigInt(Math.round(input.amountCents)) : null,
       daysBefore: input.daysBefore,
+      useOrgAlertDefaults: input.useOrgAlertDefaults ?? true,
+      overdueAlertFrequency: input.overdueAlertFrequency ?? null,
+      overdueAlertInterval: input.overdueAlertInterval ?? 1,
       channels: input.channels,
       recipientUserId: input.recipientUserId,
       linkedSeriesId: input.linkedSeriesId ?? null,
@@ -73,6 +107,9 @@ export async function createReminderService(input: CreateReminderRequest) {
       recurrenceUntil: input.recurrenceUntil ?? null,
       notifyHour: input.notifyHour ?? null,
       notifyMinute: input.notifyMinute ?? null,
+      generatesTransaction: input.generatesTransaction ?? false,
+      defaultPayToId: input.generatesTransaction ? (input.defaultPayToId ?? null) : null,
+      transactionType: input.transactionType ?? 'expense',
     })
     .returning()
 

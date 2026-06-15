@@ -5,6 +5,7 @@ const alertChannelSchema = z.enum(['in_app', 'whatsapp', 'extension'])
 const alertRecipientSchema = z.enum(['owner', 'pay_to', 'both', 'none'])
 const alertRuleKindSchema = z.enum(['upcoming', 'overdue'])
 const alertRuleScopeSchema = z.enum(['organization', 'series'])
+const alertRuleTargetSchema = z.enum(['transaction', 'reminder'])
 
 const upcomingConfigSchema = z.object({
   daysBefore: z.array(z.number().int().min(0).max(365)).min(1),
@@ -19,6 +20,7 @@ export const alertRuleDtoSchema = z.object({
   id: z.string(),
   organizationId: z.string(),
   scope: alertRuleScopeSchema,
+  target: alertRuleTargetSchema,
   seriesId: z.string().nullable(),
   kind: alertRuleKindSchema,
   config: z.union([upcomingConfigSchema, overdueConfigSchema]),
@@ -68,6 +70,7 @@ export const createRuleSchema = {
   params: z.object({ slug: z.string().nonempty() }),
   body: z.object({
     scope: alertRuleScopeSchema,
+    target: alertRuleTargetSchema.optional().default('transaction'),
     seriesId: z.string().nullable().optional(),
     kind: alertRuleKindSchema,
     config: z.union([upcomingConfigSchema, overdueConfigSchema]),

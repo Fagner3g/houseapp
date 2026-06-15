@@ -1,5 +1,4 @@
 import dayjs from 'dayjs'
-import { Link } from '@tanstack/react-router'
 import { useEffect, useState } from 'react'
 
 import { useListUsersByOrg } from '@/api/generated/api'
@@ -22,8 +21,10 @@ import {
   SelectTrigger,
   SelectValue,
 } from '@/components/ui/select'
+import { Switch } from '@/components/ui/switch'
 import { Textarea } from '@/components/ui/textarea'
 import { centsToNumber, numberToCents } from '@/lib/currency'
+import { AlertScheduleFields } from './AlertScheduleFields'
 import {
   formatDateToIso,
   formatNotifyTime,
@@ -88,6 +89,15 @@ export function ReminderForm({
   const [recurrenceInterval, setRecurrenceInterval] = useState(1)
   const [recurrenceUntil, setRecurrenceUntil] = useState<Date | undefined>()
   const [notifyTime, setNotifyTime] = useState<string>('default')
+  const [generatesTransaction, setGeneratesTransaction] = useState(false)
+  const [defaultPayToId, setDefaultPayToId] = useState('')
+  const [transactionType, setTransactionType] = useState<'expense' | 'income'>('expense')
+  const [useOrgAlertDefaults, setUseOrgAlertDefaults] = useState(true)
+  const [upcomingDays, setUpcomingDays] = useState<number[]>([1, 0])
+  const [overdueFrequency, setOverdueFrequency] = useState<'daily' | 'weekly' | 'monthly'>(
+    'weekly'
+  )
+  const [overdueInterval, setOverdueInterval] = useState(1)
 
   useEffect(() => {
     if (!open) return
@@ -109,6 +119,13 @@ export function ReminderForm({
           ? formatNotifyTime(reminder.notifyHour, reminder.notifyMinute ?? 0)
           : 'default'
       )
+      setGeneratesTransaction(reminder.generatesTransaction)
+      setDefaultPayToId(reminder.defaultPayToId ?? '')
+      setTransactionType(reminder.transactionType)
+      setUseOrgAlertDefaults(reminder.useOrgAlertDefaults)
+      setUpcomingDays(reminder.daysBefore)
+      setOverdueFrequency(reminder.overdueAlertFrequency ?? 'weekly')
+      setOverdueInterval(reminder.overdueAlertInterval)
     } else {
       setTitle('')
       setNotes('')
@@ -121,6 +138,13 @@ export function ReminderForm({
       setRecurrenceInterval(1)
       setRecurrenceUntil(undefined)
       setNotifyTime('default')
+      setGeneratesTransaction(false)
+      setDefaultPayToId('')
+      setTransactionType('expense')
+      setUseOrgAlertDefaults(true)
+      setUpcomingDays([1, 0])
+      setOverdueFrequency('weekly')
+      setOverdueInterval(1)
     }
   }, [open, reminder, users])
 
@@ -136,8 +160,10 @@ export function ReminderForm({
       !title.trim() ||
       !dueDate ||
       !recipientUserId ||
-      channels.length === 0 ||
-      (isRecurring && !recurrenceType)
+      (!useOrgAlertDefaults && channels.length === 0) ||
+      (isRecurring && !recurrenceType) ||
+      (generatesTransaction && !defaultPayToId) ||
+      (!useOrgAlertDefaults && upcomingDays.length === 0)
     ) {
       return
     }
@@ -147,14 +173,24 @@ export function ReminderForm({
       notes: notes.trim() || null,
       dueDate: formatDateToIso(dueDate),
       amountCents: amount != null ? numberToCents(amount) : null,
-      daysBefore: [1, 0],
-      channels,
+      ...(!useOrgAlertDefaults ? { channels } : {}),
       recipientUserId,
       isRecurring,
       recurrenceType: isRecurring ? recurrenceType : null,
       recurrenceInterval: isRecurring ? recurrenceInterval : 1,
       recurrenceUntil:
         isRecurring && recurrenceUntil ? formatDateToIso(recurrenceUntil) : null,
+      generatesTransaction,
+      defaultPayToId: generatesTransaction ? defaultPayToId : null,
+      transactionType,
+      useOrgAlertDefaults,
+      ...(!useOrgAlertDefaults
+        ? {
+            daysBefore: upcomingDays,
+            overdueAlertFrequency: overdueFrequency,
+            overdueAlertInterval: overdueInterval,
+          }
+        : {}),
       ...(notifyTime === 'default'
         ? { notifyHour: null, notifyMinute: null }
         : (() => {
@@ -203,15 +239,67 @@ export function ReminderForm({
           />
 
           <div className="space-y-2">
-            <Label htmlFor="amount">Valor (opcional)</Label>
+            <Label htmlFor="amount">
+              Valor {generatesTransaction ? '(opcional — informado na conclusão)' : '(opcional)'}
+            </Label>
             <CurrencyInput
               id="amount"
               value={amount}
               onValueChange={setAmount}
               allowEmpty
-              placeholder="0,00"
+              placeholder={generatesTransaction ? 'Desconhecido até a fatura' : '0,00'}
             />
+            {generatesTransaction && (
+              <p className="text-xs text-muted-foreground">
+                Ideal para faturas variáveis. O valor será informado na conclusão.
+              </p>
+            )}
           </div>
+
+          <div className="space-y-2">
+            <label className="flex items-center gap-2 text-sm font-medium">
+              <Checkbox
+                checked={generatesTransaction}
+                onCheckedChange={checked => setGeneratesTransaction(checked === true)}
+              />
+              Registrar transação ao concluir
+            </label>
+          </div>
+
+          {generatesTransaction && (
+            <div className="space-y-4 rounded-md border p-3">
+              <div className="space-y-2">
+                <Label>{transactionType === 'expense' ? 'Pagar para' : 'Receber de'}</Label>
+                <Select value={defaultPayToId} onValueChange={setDefaultPayToId}>
+                  <SelectTrigger>
+                    <SelectValue placeholder="Selecione o usuário" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {users.map(user => (
+                      <SelectItem key={user.id} value={user.id}>
+                        {user.name}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
+              <div className="space-y-2">
+                <Label>Tipo</Label>
+                <Select
+                  value={transactionType}
+                  onValueChange={v => setTransactionType(v as 'expense' | 'income')}
+                >
+                  <SelectTrigger>
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="expense">Despesa</SelectItem>
+                    <SelectItem value="income">Receita</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
+            </div>
+          )}
 
           <div className="space-y-2">
             <Label>Destinatário</Label>
@@ -309,31 +397,67 @@ export function ReminderForm({
             </div>
           )}
 
-          <p className="text-sm text-muted-foreground">
-            Alertas seguem as{' '}
-            <Link
-              to="/$org/alerts"
-              params={{ org: slug }}
-              className="text-primary underline-offset-4 hover:underline"
-            >
-              regras da organização
-            </Link>{' '}
-            (aba Regras automáticas).
-          </p>
-
-          <div className="space-y-2">
-            <Label>Canais</Label>
-            <div className="flex flex-wrap gap-3">
-              {CHANNEL_OPTIONS.map(opt => (
-                <label key={opt.value} className="flex items-center gap-2 text-sm">
-                  <Checkbox
-                    checked={channels.includes(opt.value)}
-                    onCheckedChange={() => toggleChannel(opt.value)}
-                  />
-                  {opt.label}
-                </label>
-              ))}
+          <div className="space-y-4 rounded-md border p-3">
+            <div className="flex items-center justify-between gap-3">
+              <div className="space-y-1">
+                <span className="text-sm font-medium">Alertas de vencimento</span>
+                <p className="text-xs text-muted-foreground">
+                  {useOrgAlertDefaults
+                    ? 'Usando regras padrão da organização (aba Regras automáticas).'
+                    : 'Regras personalizadas para este lembrete.'}
+                </p>
+              </div>
+              <div className="flex items-center gap-2">
+                <Label htmlFor="use-org-alert-defaults" className="text-xs text-muted-foreground">
+                  Org padrão
+                </Label>
+                <Switch
+                  id="use-org-alert-defaults"
+                  checked={useOrgAlertDefaults}
+                  onCheckedChange={checked => setUseOrgAlertDefaults(checked)}
+                />
+              </div>
             </div>
+
+            {!useOrgAlertDefaults && (
+              <>
+                <AlertScheduleFields
+                  upcomingDays={upcomingDays}
+                  onUpcomingDayToggle={day => {
+                    setUpcomingDays(prev =>
+                      prev.includes(day)
+                        ? prev.filter(d => d !== day)
+                        : [...prev, day].sort((a, b) => b - a)
+                    )
+                  }}
+                  overdueFrequency={overdueFrequency}
+                  onOverdueFrequencyChange={(frequency, interval) => {
+                    if (frequency === 'never') return
+                    setOverdueFrequency(frequency)
+                    if (interval !== undefined) setOverdueInterval(interval)
+                  }}
+                  overdueInterval={overdueInterval}
+                  hideOverdueSection
+                  upcomingLabel="Marcos de alerta"
+                  upcomingHelpText="Os mesmos marcos valem antes e depois do vencimento."
+                />
+
+                <div className="space-y-2">
+                  <Label>Canais</Label>
+                  <div className="flex flex-wrap gap-3">
+                    {CHANNEL_OPTIONS.map(opt => (
+                      <label key={opt.value} className="flex items-center gap-2 text-sm">
+                        <Checkbox
+                          checked={channels.includes(opt.value)}
+                          onCheckedChange={() => toggleChannel(opt.value)}
+                        />
+                        {opt.label}
+                      </label>
+                    ))}
+                  </div>
+                </div>
+              </>
+            )}
           </div>
 
           <div className="space-y-2">

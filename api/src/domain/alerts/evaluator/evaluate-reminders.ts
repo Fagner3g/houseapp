@@ -1,24 +1,24 @@
 import { and, eq, isNull } from 'drizzle-orm'
 
 import { db } from '@/db'
+import type { AlertRuleChannel } from '@/db/schemas/alertRules'
 import { customReminders } from '@/db/schemas/customReminders'
 import { organizations } from '@/db/schemas/organization'
 import { userOrganizations } from '@/db/schemas/userOrganization'
 import { users } from '@/db/schemas/users'
-import type { ReminderChannel } from '@/db/schemas/customReminders'
 import type { AlertPreferences } from '@/db/schemas/userOrganization'
 import { hasBlockingDedupeKey } from '../delivery/insert-alert-delivery'
-import { resolveOrgAlertRule } from '../rules/resolve-org-alert-rule'
-import type { ReminderPreviewSkipItem } from '../types'
+import { resolveReminderAlertRule } from '../rules/resolve-reminder-alert-rule'
+import type { ReminderPreviewSkipItem, ReminderPreviewSkipReason } from '../types'
 import {
-  buildReminderOverdueDedupeKey,
+  buildReminderOverdueDayDedupeKey,
   buildReminderUpcomingDedupeKey,
   computeDaysUntilDue,
-  getOverduePeriodKey,
   getReminderPeriodKey,
   isReminderSnoozed,
   matchesNotifyTime,
   resolveNotifyTime,
+  resolveReminderEvaluationDueDate,
   type NotifyTime,
 } from '../utils'
 
@@ -27,8 +27,8 @@ export type ReminderMatch = {
   kind: 'upcoming' | 'overdue'
   daysUntilDue: number
   daysBefore?: number
+  daysAfter?: number
   overdueDays?: number
-  overduePeriodKey?: string
   orgSlug: string
   orgName: string
   orgOwnerId: string
@@ -36,7 +36,7 @@ export type ReminderMatch = {
   recipientPhone: string | null
   notificationsEnabled: boolean
   alertPreferences: AlertPreferences
-  channels: ReminderChannel[]
+  channels: AlertRuleChannel[]
   notifyTime: NotifyTime
 }
 
@@ -52,6 +52,11 @@ type ReminderRow = {
   notificationsEnabled: boolean
   alertPreferences: AlertPreferences
 }
+
+type ReminderEvalResult =
+  | { status: 'match'; match: ReminderMatch }
+  | { status: 'skip'; reason: ReminderPreviewSkipReason }
+  | { status: 'ignore' }
 
 async function fetchReminderRows(userId?: string, orgId?: string) {
   const conditions = [
@@ -91,43 +96,89 @@ async function fetchReminderRows(userId?: string, orgId?: string) {
     )
 }
 
-async function evaluateReminderRow(
+function buildReminderMatch(
   row: ReminderRow,
-  options?: { skipTimeCheck?: boolean }
-): Promise<ReminderMatch | null> {
-  if (isReminderSnoozed(row.reminder.snoozedUntil)) return null
+  input: {
+    kind: 'upcoming' | 'overdue'
+    daysUntilDue: number
+    daysBefore?: number
+    daysAfter?: number
+    overdueDays?: number
+    channels: AlertRuleChannel[]
+    notifyTime: NotifyTime
+  }
+): ReminderMatch {
+  return {
+    reminder: row.reminder,
+    kind: input.kind,
+    daysUntilDue: input.daysUntilDue,
+    daysBefore: input.daysBefore,
+    daysAfter: input.daysAfter,
+    overdueDays: input.overdueDays,
+    orgSlug: row.orgSlug,
+    orgName: row.orgName,
+    orgOwnerId: row.orgOwnerId,
+    recipientName: row.recipientName,
+    recipientPhone: row.recipientPhone,
+    notificationsEnabled: row.notificationsEnabled,
+    alertPreferences: row.alertPreferences,
+    channels: input.channels,
+    notifyTime: input.notifyTime,
+  }
+}
 
+async function evaluateReminderRowCore(
+  row: ReminderRow,
+  options?: { skipTimeCheck?: boolean; referenceDate?: Date }
+): Promise<ReminderEvalResult> {
+  if (isReminderSnoozed(row.reminder.snoozedUntil)) {
+    return { status: 'skip', reason: 'snoozed' }
+  }
+
+  const referenceDate = options?.referenceDate ?? new Date()
   const resolvedTime = resolveNotifyTime(
     row.reminder.notifyHour,
     row.reminder.notifyMinute,
     row.defaultNotifyHour,
     row.defaultNotifyMinute
   )
-  if (!options?.skipTimeCheck && !matchesNotifyTime(resolvedTime)) return null
+  if (!options?.skipTimeCheck && !matchesNotifyTime(resolvedTime, referenceDate)) {
+    return { status: 'ignore' }
+  }
+
+  const evaluationDueDate = resolveReminderEvaluationDueDate(row.reminder, referenceDate)
+  const reminderForEval =
+    evaluationDueDate.getTime() === row.reminder.dueDate.getTime()
+      ? row.reminder
+      : { ...row.reminder, dueDate: evaluationDueDate }
 
   const periodKey = getReminderPeriodKey(
-    row.reminder.dueDate,
-    row.reminder.isRecurring ? row.reminder.recurrenceType : null
+    reminderForEval.dueDate,
+    reminderForEval.isRecurring ? reminderForEval.recurrenceType : null
   )
-  if (row.reminder.lastCompletedPeriodKey === periodKey) return null
+  if (reminderForEval.lastCompletedPeriodKey === periodKey) {
+    return { status: 'skip', reason: 'period_completed' }
+  }
 
-  const daysUntilDue = computeDaysUntilDue(row.reminder.dueDate)
+  const daysUntilDue = computeDaysUntilDue(reminderForEval.dueDate, referenceDate)
   const isOverdue = daysUntilDue < 0
 
   if (!isOverdue) {
-    const rule = await resolveOrgAlertRule(row.reminder.organizationId, 'upcoming')
-    if (!rule) return null
+    const rule = await resolveReminderAlertRule(reminderForEval, 'upcoming')
+    if (!rule) return { status: 'skip', reason: 'no_rule' }
 
     const config = rule.config as { daysBefore: number[] }
     const matchingDay = config.daysBefore.find(d => d === daysUntilDue)
-    if (matchingDay === undefined) return null
+    if (matchingDay === undefined) {
+      return { status: 'skip', reason: 'outside_schedule' }
+    }
 
-    const pendingChannels: ReminderChannel[] = []
-    for (const channel of row.reminder.channels) {
+    const pendingChannels: AlertRuleChannel[] = []
+    for (const channel of rule.channels) {
       const dedupeKey = buildReminderUpcomingDedupeKey(
-        row.reminder.id,
+        reminderForEval.id,
         matchingDay,
-        row.reminder.recipientUserId,
+        reminderForEval.recipientUserId,
         channel,
         resolvedTime
       )
@@ -136,44 +187,41 @@ async function evaluateReminderRow(
       }
     }
 
-    if (pendingChannels.length === 0) return null
+    if (pendingChannels.length === 0) {
+      return { status: 'skip', reason: 'already_sent' }
+    }
 
     return {
-      reminder: row.reminder,
-      kind: 'upcoming',
-      daysUntilDue,
-      daysBefore: matchingDay,
-      orgSlug: row.orgSlug,
-      orgName: row.orgName,
-      orgOwnerId: row.orgOwnerId,
-      recipientName: row.recipientName,
-      recipientPhone: row.recipientPhone,
-      notificationsEnabled: row.notificationsEnabled,
-      alertPreferences: row.alertPreferences,
-      channels: pendingChannels,
-      notifyTime: resolvedTime,
+      status: 'match',
+      match: buildReminderMatch(
+        { ...row, reminder: reminderForEval },
+        {
+          kind: 'upcoming',
+          daysUntilDue,
+          daysBefore: matchingDay,
+          channels: pendingChannels,
+          notifyTime: resolvedTime,
+        }
+      ),
     }
   }
 
-  const rule = await resolveOrgAlertRule(row.reminder.organizationId, 'overdue')
-  if (!rule) return null
+  const rule = await resolveReminderAlertRule(reminderForEval, 'upcoming')
+  if (!rule) return { status: 'skip', reason: 'no_rule' }
 
-  const config = rule.config as { frequency: 'daily' | 'weekly' | 'monthly'; interval: number }
-  const overduePeriodKey = getOverduePeriodKey(config.frequency, config.interval)
+  const config = rule.config as { daysBefore: number[] }
+  const overdueDays = Math.max(0, -daysUntilDue)
+  const matchingDay = config.daysBefore.find(d => d === overdueDays && d > 0)
+  if (matchingDay === undefined) {
+    return { status: 'skip', reason: 'outside_schedule' }
+  }
 
-  const today = new Date()
-  today.setHours(0, 0, 0, 0)
-  const overdueDays = Math.max(
-    0,
-    Math.ceil((today.getTime() - row.reminder.dueDate.getTime()) / 86400000)
-  )
-
-  const pendingChannels: ReminderChannel[] = []
-  for (const channel of row.reminder.channels) {
-    const dedupeKey = buildReminderOverdueDedupeKey(
-      row.reminder.id,
-      overduePeriodKey,
-      row.reminder.recipientUserId,
+  const pendingChannels: AlertRuleChannel[] = []
+  for (const channel of rule.channels) {
+    const dedupeKey = buildReminderOverdueDayDedupeKey(
+      reminderForEval.id,
+      matchingDay,
+      reminderForEval.recipientUserId,
       channel,
       resolvedTime
     )
@@ -182,24 +230,32 @@ async function evaluateReminderRow(
     }
   }
 
-  if (pendingChannels.length === 0) return null
+  if (pendingChannels.length === 0) {
+    return { status: 'skip', reason: 'already_sent' }
+  }
 
   return {
-    reminder: row.reminder,
-    kind: 'overdue',
-    daysUntilDue,
-    overdueDays,
-    overduePeriodKey,
-    orgSlug: row.orgSlug,
-    orgName: row.orgName,
-    orgOwnerId: row.orgOwnerId,
-    recipientName: row.recipientName,
-    recipientPhone: row.recipientPhone,
-    notificationsEnabled: row.notificationsEnabled,
-    alertPreferences: row.alertPreferences,
-    channels: pendingChannels,
-    notifyTime: resolvedTime,
+    status: 'match',
+    match: buildReminderMatch(
+      { ...row, reminder: reminderForEval },
+      {
+        kind: 'overdue',
+        daysUntilDue,
+        daysAfter: matchingDay,
+        overdueDays,
+        channels: pendingChannels,
+        notifyTime: resolvedTime,
+      }
+    ),
   }
+}
+
+async function evaluateReminderRow(
+  row: ReminderRow,
+  options?: { skipTimeCheck?: boolean }
+): Promise<ReminderMatch | null> {
+  const result = await evaluateReminderRowCore(row, options)
+  return result.status === 'match' ? result.match : null
 }
 
 export async function evaluateReminders(
@@ -237,49 +293,30 @@ function findMatchingReminders(
       )
       const daysUntilDue = computeDaysUntilDue(row.reminder.dueDate, now)
 
-      if (isReminderSnoozed(row.reminder.snoozedUntil, now)) {
-        skipped.push({
-          reminderId: row.reminder.id,
-          title: row.reminder.title,
-          reason: 'snoozed',
-          daysUntilDue,
-          notifyHour: notifyTime.hour,
-          notifyMinute: notifyTime.minute,
-          snoozedUntil: row.reminder.snoozedUntil?.toISOString(),
-        })
-        return
-      }
-
-      const periodKey = getReminderPeriodKey(
-        row.reminder.dueDate,
-        row.reminder.isRecurring ? row.reminder.recurrenceType : null
-      )
-      if (row.reminder.lastCompletedPeriodKey === periodKey) {
-        skipped.push({
-          reminderId: row.reminder.id,
-          title: row.reminder.title,
-          reason: 'period_completed',
-          daysUntilDue,
-          notifyHour: notifyTime.hour,
-          notifyMinute: notifyTime.minute,
-        })
-        return
-      }
-
-      const match = await evaluateReminderRow(row, { skipTimeCheck: true, ...options })
-      if (match) {
-        matches.push(match)
-        return
-      }
-
-      skipped.push({
-        reminderId: row.reminder.id,
-        title: row.reminder.title,
-        reason: 'no_matching_rule',
-        daysUntilDue,
-        notifyHour: notifyTime.hour,
-        notifyMinute: notifyTime.minute,
+      const result = await evaluateReminderRowCore(row, {
+        skipTimeCheck: true,
+        referenceDate: now,
+        ...options,
       })
+
+      if (result.status === 'match') {
+        matches.push(result.match)
+        return
+      }
+
+      if (result.status === 'skip') {
+        skipped.push({
+          reminderId: row.reminder.id,
+          title: row.reminder.title,
+          reason: result.reason,
+          daysUntilDue,
+          notifyHour: notifyTime.hour,
+          notifyMinute: notifyTime.minute,
+          ...(result.reason === 'snoozed' && row.reminder.snoozedUntil
+            ? { snoozedUntil: row.reminder.snoozedUntil.toISOString() }
+            : {}),
+        })
+      }
     })
   ).then(() => ({ matches, skipped }))
 }

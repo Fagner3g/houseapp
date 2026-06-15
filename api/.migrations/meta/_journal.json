@@ -78,6 +78,20 @@
       "when": 1784000000000,
       "tag": "0010_reminder_period_completion",
       "breakpoints": true
+    },
+    {
+      "idx": 11,
+      "version": "7",
+      "when": 1785000000000,
+      "tag": "0011_reminder_transaction_fields",
+      "breakpoints": true
+    },
+    {
+      "idx": 12,
+      "version": "7",
+      "when": 1786000000000,
+      "tag": "0012_reminder_alert_target",
+      "breakpoints": true
     }
   ]
 }

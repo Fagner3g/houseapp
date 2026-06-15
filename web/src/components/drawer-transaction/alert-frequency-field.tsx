@@ -2,7 +2,6 @@ import { useEffect, useMemo, useState } from 'react'
 import { toast } from 'sonner'
 
 import type { ListUsersByOrg200 } from '@/api/generated/model'
-import { Checkbox } from '@/components/ui/checkbox'
 import { Label } from '@/components/ui/label'
 import {
   Select,
@@ -12,6 +11,7 @@ import {
   SelectValue,
 } from '@/components/ui/select'
 import { Switch } from '@/components/ui/switch'
+import { AlertScheduleFields } from '@/features/alerts/components/AlertScheduleFields'
 import {
   type AlertRuleRecipient,
   type UpsertSeriesRuleInput,
@@ -19,8 +19,6 @@ import {
   useUpsertSeriesAlertRule,
 } from '@/features/alerts/api'
 import { useActiveOrganization } from '@/hooks/use-active-organization'
-
-const UPCOMING_DAY_OPTIONS = [7, 3, 1, 0] as const
 const DEFAULT_RECIPIENTS: AlertRuleRecipient = 'pay_to'
 
 export type TransactionAlertRecipient = AlertRuleRecipient | 'none'
@@ -109,7 +107,9 @@ export function AlertFrequencyField({
   const { data } = useAlertRules(slug, seriesId ? 'series' : 'organization')
   const upsertMutation = useUpsertSeriesAlertRule(slug, seriesId ?? '')
 
-  const orgRules = (data?.rules ?? []).filter(r => r.scope === 'organization' && r.active)
+  const orgRules = (data?.rules ?? []).filter(
+    r => r.scope === 'organization' && r.active && r.target === 'transaction'
+  )
   const seriesRules = seriesId
     ? (data?.rules ?? []).filter(r => r.seriesId === seriesId && r.active)
     : []
@@ -299,66 +299,16 @@ export function AlertFrequencyField({
       </div>
 
       {!useOrgDefaults && recipients !== 'none' && (
-        <div className="space-y-4 rounded-lg border p-3">
-          <div className="space-y-2">
-            <Label className="text-xs">Vencimentos próximos</Label>
-            <div className="flex flex-wrap gap-3">
-              {UPCOMING_DAY_OPTIONS.map(day => (
-                <span key={day} className="flex items-center gap-2 text-sm">
-                  <Checkbox
-                    checked={upcomingDays.includes(day)}
-                    onCheckedChange={() => handleUpcomingDayToggle(day)}
-                    disabled={disabled || isPending}
-                  />
-                  {day === 0 ? 'No dia' : `${day} dias antes`}
-                </span>
-              ))}
-            </div>
-          </div>
-
-          <div className="grid gap-3 sm:grid-cols-2">
-            <div className="space-y-2">
-              <Label className="text-xs">Vencidas — frequência</Label>
-              <Select
-                value={overdueFrequency}
-                onValueChange={v =>
-                  handleOverdueChange(v as 'daily' | 'weekly' | 'monthly' | 'never')
-                }
-                disabled={disabled || isPending}
-              >
-                <SelectTrigger>
-                  <SelectValue />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="never">Nunca</SelectItem>
-                  <SelectItem value="daily">Diário</SelectItem>
-                  <SelectItem value="weekly">Semanal</SelectItem>
-                  <SelectItem value="monthly">Mensal</SelectItem>
-                </SelectContent>
-              </Select>
-            </div>
-            {overdueFrequency !== 'never' && (
-              <div className="space-y-2">
-                <Label className="text-xs">Intervalo</Label>
-                <Select
-                  value={String(overdueInterval)}
-                  onValueChange={v => handleOverdueChange(overdueFrequency, Number(v))}
-                  disabled={disabled || isPending}
-                >
-                  <SelectTrigger>
-                    <SelectValue />
-                  </SelectTrigger>
-                  <SelectContent>
-                    {[1, 2, 3, 4].map(n => (
-                      <SelectItem key={n} value={String(n)}>
-                        {n}
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
-              </div>
-            )}
-          </div>
+        <div className="rounded-lg border p-3">
+          <AlertScheduleFields
+            upcomingDays={upcomingDays}
+            onUpcomingDayToggle={handleUpcomingDayToggle}
+            overdueFrequency={overdueFrequency}
+            onOverdueFrequencyChange={handleOverdueChange}
+            overdueInterval={overdueInterval}
+            disabled={disabled || isPending}
+            showNeverOption
+          />
         </div>
       )}
 

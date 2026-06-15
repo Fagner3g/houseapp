@@ -531,138 +531,60 @@ function isReminderSnoozed(item) {
   return item.snoozedUntil && new Date(item.snoozedUntil) > new Date()
 }
 
-function toDateKey(isoString) {
-  const d = new Date(isoString)
-  const y = d.getFullYear()
-  const m = String(d.getMonth() + 1).padStart(2, '0')
-  const day = String(d.getDate()).padStart(2, '0')
-  return `${y}-${m}-${day}`
-}
-
-function isInDateKeyRange(dateKey, from, to) {
-  return dateKey >= from && dateKey <= to
-}
-
-function getMonthDateKeyRange(year, month) {
-  const m = String(month).padStart(2, '0')
-  const lastDay = new Date(year, month, 0).getDate()
-  return {
-    from: `${year}-${m}-01`,
-    to: `${year}-${m}-${String(lastDay).padStart(2, '0')}`,
-  }
-}
-
 function fromDateKey(dateKey) {
   const [y, mo, d] = dateKey.split('-').map(Number)
   return new Date(y, mo - 1, d)
 }
 
-function addPeriod(date, type, interval) {
-  const next = new Date(date)
-  switch (type) {
-    case 'weekly':
-      next.setDate(next.getDate() + 7 * interval)
-      break
-    case 'monthly':
-      next.setMonth(next.getMonth() + interval)
-      break
-    case 'yearly':
-      next.setFullYear(next.getFullYear() + interval)
-      break
-  }
-  return next
+const {
+  toDateKey,
+  filterPendingRemindersForMonth,
+  isReminderOccurrenceCompleted,
+  countOverdueReminders,
+} = ReminderDisplay
+
+let _loadDataInFlight = null
+
+async function reloadReportsAndRender() {
+  const data = await apiFetch(
+    `/org/${state.orgSlug}/reports/transactions?year=${state.year}&month=${state.month}`
+  )
+  state.reports = data.reports || data
+  const context = getViewingContext(state.year, state.month)
+  renderKpis(state.reports, context)
+  renderReminders(state.reminders, state.year, state.month)
+  renderOverdue(state.reports, context, state.year, state.month)
+  renderUpcoming(state.reports, context, state.year, state.month)
+  renderTransbordo(state.reports, context, state.year, state.month)
+  renderAllTransactions(state.reports, context, state.year, state.month)
 }
 
-function subPeriod(date, type, interval) {
-  const prev = new Date(date)
-  switch (type) {
-    case 'weekly':
-      prev.setDate(prev.getDate() - 7 * interval)
-      break
-    case 'monthly':
-      prev.setMonth(prev.getMonth() - interval)
-      break
-    case 'yearly':
-      prev.setFullYear(prev.getFullYear() - interval)
-      break
-  }
-  return prev
-}
-
-/** Mirrors web calendar getReminderOccurrenceDatesInRange. */
-function getReminderOccurrenceDatesInRange(reminder, dateFrom, dateTo) {
-  const untilKey = reminder.recurrenceUntil ? toDateKey(reminder.recurrenceUntil) : null
-
-  if (!reminder.isRecurring || !reminder.recurrenceType) {
-    const dueKey = toDateKey(reminder.dueDate)
-    return isInDateKeyRange(dueKey, dateFrom, dateTo) ? [dueKey] : []
-  }
-
-  const type = reminder.recurrenceType
-  const interval = reminder.recurrenceInterval || 1
-  let current = new Date(reminder.dueDate)
-  current.setHours(0, 0, 0, 0)
-
-  while (toDateKey(current) > dateFrom) {
-    const prev = subPeriod(current, type, interval)
-    if (toDateKey(prev) >= toDateKey(current)) break
-    current = prev
-    current.setHours(0, 0, 0, 0)
-  }
-
-  const dates = []
-  for (let i = 0; i < 500; i++) {
-    const key = toDateKey(current)
-    if (untilKey && key > untilKey) break
-    if (key > dateTo) break
-    if (isInDateKeyRange(key, dateFrom, dateTo)) {
-      dates.push(key)
-    }
-    const next = addPeriod(current, type, interval)
-    if (toDateKey(next) <= toDateKey(current)) break
-    current = next
-    current.setHours(0, 0, 0, 0)
-  }
-
-  return dates
-}
-
-/**
- * Include every reminder occurrence in the viewing month — pending or completed
- * (e.g. recurring reminder advanced to next month after "feito no mês").
- */
-function filterRemindersForMonth(reminders, year, month) {
-  const { from, to } = getMonthDateKeyRange(year, month)
-  const result = []
-  for (const reminder of reminders || []) {
-    for (const occurrenceDateKey of getReminderOccurrenceDatesInRange(reminder, from, to)) {
-      result.push({ reminder, occurrenceDateKey })
-    }
-  }
-  return result
-}
-
-/** Mirrors web calendar isReminderOccurrenceCompleted. */
-function isReminderOccurrenceCompleted(item, dateKey) {
-  const currentDueKey = toDateKey(item.dueDate)
-
-  if (!item.isRecurring || !item.recurrenceType) {
-    return item.completedAt != null && currentDueKey === dateKey
-  }
-
-  if (dateKey < currentDueKey) return true
-  if (dateKey > currentDueKey) return false
-
-  return item.completedAt != null || item.lastCompletedPeriodKey != null
+async function reloadAfterReminderAction() {
+  await fetchReminders()
+  await reloadReportsAndRender()
+  await refreshBadgeAllOrgs()
 }
 
 async function completeReminderPeriod(reminderId) {
   await apiFetch(`/org/${state.orgSlug}/reminders/${reminderId}/complete-period`, {
     method: 'POST',
   })
-  await fetchReminders()
-  renderReminders(state.reminders, state.year, state.month)
-  await refreshBadgeAllOrgs()
+  await reloadAfterReminderAction()
+}
+
+async function completeReminderPeriodWithTransaction(reminderId, { amount, date, description }) {
+  const body = { amount }
+  if (date) body.date = date
+  if (description) body.description = description
+  await apiFetch(`/org/${state.orgSlug}/reminders/${reminderId}/complete-period-with-transaction`, {
+    method: 'POST',
+    body: JSON.stringify(body),
+  })
+  await reloadAfterReminderAction()
+}
+
+function reminderGeneratesTransaction(reminder) {
+  return reminder.generatesTransaction === true
 }
 
 async function snoozeReminder(reminderId, body) {
@@ -672,6 +594,7 @@ async function snoozeReminder(reminderId, body) {
   })
   await fetchReminders()
   renderReminders(state.reminders, state.year, state.month)
+  await refreshBadgeAllOrgs()
 }
 
 let _snoozeResolve = null
@@ -703,7 +626,7 @@ function renderReminders(reminders, year, month) {
   const title = document.getElementById('reminders-title')
 
   list.innerHTML = ''
-  const items = filterRemindersForMonth(reminders, year, month)
+  const items = filterPendingRemindersForMonth(reminders, year, month)
   title.textContent = `Lembretes (${items.length})`
 
   if (!items.length) {
@@ -715,7 +638,7 @@ function renderReminders(reminders, year, month) {
   const todayMidnight = new Date()
   todayMidnight.setHours(0, 0, 0, 0)
 
-  for (const { reminder: item, occurrenceDateKey } of items) {
+  for (const { reminder: item, occurrenceDateKey, isTransbordo } of items) {
     const li = document.createElement('li')
     li.className = 'tx-item'
     li.dataset.id = item.id
@@ -738,39 +661,46 @@ function renderReminders(reminders, year, month) {
       ? 'badge-completed'
       : snoozed
         ? 'badge-snoozed'
-        : d < 0
-          ? 'badge-overdue'
-          : 'badge-reminder'
+        : isTransbordo
+          ? 'badge-transbordo'
+          : d < 0
+            ? 'badge-overdue'
+            : 'badge-reminder'
     const badgeLabel = completed
       ? 'Concluído'
       : snoozed
         ? 'Adiado'
         : d < 0
-          ? 'Vencido'
+          ? isTransbordo
+            ? 'Transbordo'
+            : 'Vencido'
           : 'Lembrete'
     const snoozeTitle = snoozed && item.snoozedUntil
       ? `Adiado até ${fmtDate(item.snoozedUntil)}`
       : 'Adiar'
+    const safeTitle = escapeHtml(item.title)
+    const safeMeta = escapeHtml(meta)
+    const safeSnoozeTitle = escapeHtml(snoozeTitle)
 
     li.classList.add('reminder-item')
     if (completed) li.classList.add('paid')
     li.innerHTML = `
       <div class="reminder-row reminder-row-top">
         <span class="type-dot reminder">◆</span>
-        <span class="tx-title" title="${item.title}">${item.title}</span>
+        <span class="tx-title" title="${safeTitle}">${safeTitle}</span>
         <span class="tx-amount">${amount}</span>
       </div>
       <div class="reminder-row reminder-row-bottom">
-        <span class="tx-meta">${meta}</span>
+        <span class="tx-meta">${safeMeta}</span>
         <div class="reminder-actions">
           <button class="btn-reminder-done" title="Feito no mês">✓</button>
-          <select class="reminder-snooze-select" title="${snoozeTitle}" aria-label="Adiar lembrete">
+          <select class="reminder-snooze-select" title="${safeSnoozeTitle}" aria-label="Adiar lembrete">
             <option value="">Adiar</option>
             <option value="1">1 dia</option>
             <option value="3">3 dias</option>
             <option value="custom">Até data...</option>
           </select>
-          <span class="badge ${badgeClass}" title="${snoozeTitle}">${badgeLabel}</span>
+          <span class="badge ${badgeClass}" title="${safeSnoozeTitle}">${badgeLabel}</span>
         </div>
       </div>
     `
@@ -778,22 +708,36 @@ function renderReminders(reminders, year, month) {
     const doneBtn = li.querySelector('.btn-reminder-done')
     const snoozeSelect = li.querySelector('.reminder-snooze-select')
 
+    if (!doneBtn || !snoozeSelect) {
+      console.warn('[HouseApp] reminder row controls missing for', item.id)
+      list.appendChild(li)
+      continue
+    }
+
     if (!isActiveOccurrence) {
       doneBtn.disabled = true
       snoozeSelect.disabled = true
     } else {
       doneBtn.addEventListener('click', async (e) => {
         e.stopPropagation()
-        if (!confirm(`Marcar "${item.title}" como feito neste mês?`)) return
-
         const btn = e.currentTarget
         btn.disabled = true
+
         try {
-          await completeReminderPeriod(item.id)
+          if (reminderGeneratesTransaction(item)) {
+            const result = await openCompleteReminderTransactionModal(item, occurrenceDateKey)
+            if (!result) return
+
+            await completeReminderPeriodWithTransaction(item.id, result)
+          } else {
+            if (!await showConfirm(`Marcar "${item.title}" como feito neste mês?`)) return
+            await completeReminderPeriod(item.id)
+          }
         } catch (err) {
           console.error('[HouseApp] complete-period error:', err)
-          btn.disabled = false
-          alert('Erro ao marcar como feito')
+          showAlert('Erro ao marcar como feito')
+        } finally {
+          if (btn) btn.disabled = false
         }
       })
     }
@@ -815,7 +759,7 @@ function renderReminders(reminders, year, month) {
         }
       } catch (err) {
         console.error('[HouseApp] snooze error:', err)
-        alert('Erro ao adiar lembrete')
+        showAlert('Erro ao adiar lembrete')
       }
     })
 
@@ -906,14 +850,6 @@ function countOverdueTransactions(reports) {
   return overdue.length + alsoOverdue.filter(t => !seenIds.has(t.id)).length
 }
 
-function countOverdueReminders(reminders, year, month) {
-  const today = todayMidnight()
-  return filterRemindersForMonth(reminders, year, month).filter(({ reminder: r, occurrenceDateKey }) => {
-    if (isReminderOccurrenceCompleted(r, occurrenceDateKey)) return false
-    return fromDateKey(occurrenceDateKey) < today
-  }).length
-}
-
 function updateBadge(overdueCount = 0) {
   if (overdueCount === 0) { chrome.action.setBadgeText({ text: '' }); return }
   chrome.action.setBadgeText({ text: String(overdueCount) })
@@ -938,7 +874,7 @@ async function refreshBadgeAllOrgs() {
 
   const reminderResults = await Promise.all(
     state.orgs.map(org =>
-      apiFetch(`/org/${org.slug}/reminders`)
+      apiFetch(`/org/${org.slug}/reminders?includeCompleted=true`)
         .then(data => data.reminders || data)
         .catch(() => [])
     )
@@ -961,6 +897,168 @@ async function refreshBadgeAllOrgs() {
     badgeTotals: { overdue: totalOverdue },
   })
 }
+
+// ── Confirm / alert modal ─────────────────────────────────────────────────────
+
+let _confirmResolve = null
+
+function showConfirm(message, { confirmLabel = 'Confirmar', cancelLabel = 'Cancelar' } = {}) {
+  document.getElementById('confirm-message').textContent = message
+  document.getElementById('confirm-cancel').textContent = cancelLabel
+  document.getElementById('confirm-ok').textContent = confirmLabel
+  document.getElementById('confirm-cancel').classList.remove('hidden')
+  document.getElementById('confirm-modal').classList.remove('hidden')
+  return new Promise(resolve => { _confirmResolve = resolve })
+}
+
+function showAlert(message) {
+  document.getElementById('confirm-message').textContent = message
+  document.getElementById('confirm-ok').textContent = 'OK'
+  document.getElementById('confirm-cancel').classList.add('hidden')
+  document.getElementById('confirm-modal').classList.remove('hidden')
+  return new Promise(resolve => { _confirmResolve = resolve })
+}
+
+function closeConfirmModal(result) {
+  document.getElementById('confirm-modal').classList.add('hidden')
+  document.getElementById('confirm-cancel').classList.remove('hidden')
+  if (_confirmResolve) { _confirmResolve(result); _confirmResolve = null }
+}
+
+document.getElementById('confirm-cancel').addEventListener('click', () => closeConfirmModal(false))
+document.getElementById('confirm-ok').addEventListener('click', () => closeConfirmModal(true))
+
+// ── Complete reminder with transaction modal ───────────────────────────────────
+
+let _completeReminderResolve = null
+let _completeReminderItem = null
+let _completeReminderAmountTouched = false
+let _completeReminderSubmitAttempted = false
+
+const _completeReminderAmountInput = document.getElementById('complete-reminder-amount')
+const _completeReminderAmountError = document.getElementById('complete-reminder-amount-error')
+const _completeReminderAmountHintForm = document.getElementById('complete-reminder-amount-hint-form')
+const _completeReminderConfirmBtn = document.getElementById('complete-reminder-confirm')
+
+function getCompleteReminderAmountValue() {
+  return _completeReminderAmountInput ? parseCurrency(_completeReminderAmountInput.value) : 0
+}
+
+function isCompleteReminderAmountValid() {
+  const amount = getCompleteReminderAmountValue()
+  return amount > 0
+}
+
+function updateCompleteReminderValidationUI() {
+  if (!_completeReminderAmountInput || !_completeReminderAmountError || !_completeReminderConfirmBtn) return
+  const showError = (_completeReminderAmountTouched || _completeReminderSubmitAttempted) && !isCompleteReminderAmountValid()
+  _completeReminderAmountError.classList.toggle('hidden', !showError)
+  _completeReminderAmountInput.classList.toggle('input-error', showError)
+  _completeReminderConfirmBtn.disabled = !isCompleteReminderAmountValid() || _completeReminderConfirmBtn.dataset.loading === 'true'
+}
+
+function resetCompleteReminderModalForm(defaultDateKey) {
+  _completeReminderAmountTouched = false
+  _completeReminderSubmitAttempted = false
+  if (!_completeReminderAmountInput || !_completeReminderConfirmBtn) return
+  _completeReminderAmountInput.value = ''
+  document.getElementById('complete-reminder-date').value = defaultDateKey || toDateKey(new Date())
+  const descInput = document.getElementById('complete-reminder-description')
+  descInput.value = ''
+  descInput.placeholder = 'Descrição da transação'
+  _completeReminderAmountError?.classList.add('hidden')
+  _completeReminderAmountHintForm?.classList.add('hidden')
+  _completeReminderAmountInput.classList.remove('input-error')
+  _completeReminderConfirmBtn.disabled = true
+  delete _completeReminderConfirmBtn.dataset.loading
+  _completeReminderConfirmBtn.textContent = 'Registrar e concluir'
+}
+
+function openCompleteReminderTransactionModal(reminder, occurrenceDateKey) {
+  if (!_completeReminderAmountInput || !_completeReminderConfirmBtn) {
+    console.error('[HouseApp] complete-reminder modal elements missing from popup.html')
+    return Promise.resolve(null)
+  }
+
+  resetCompleteReminderModalForm(occurrenceDateKey)
+  _completeReminderItem = reminder
+
+  document.getElementById('complete-reminder-title').textContent = reminder.title
+
+  const amountHintEl = document.getElementById('complete-reminder-amount-hint')
+  const descInput = document.getElementById('complete-reminder-description')
+
+  if (reminder.amountCents != null) {
+    const formatted = fmt(reminder.amountCents / 100)
+    amountHintEl.textContent = `Valor estimado: ${formatted}`
+    _completeReminderAmountHintForm.textContent = 'Use o valor estimado como referência ou informe o valor da fatura.'
+    _completeReminderAmountHintForm.classList.remove('hidden')
+    const centavos = reminder.amountCents
+    _completeReminderAmountInput.value = maskCurrency(String(centavos))
+  } else {
+    amountHintEl.textContent = 'Valor variável — informe na conclusão'
+    descInput.placeholder = reminder.notes || 'Descrição da transação'
+  }
+
+  if (reminder.notes) {
+    descInput.value = reminder.notes
+    if (!descInput.placeholder || descInput.placeholder === 'Descrição da transação') {
+      descInput.placeholder = reminder.notes
+    }
+  } else {
+    descInput.placeholder = 'Descrição da transação'
+  }
+
+  updateCompleteReminderValidationUI()
+  document.getElementById('complete-reminder-modal').classList.remove('hidden')
+  window.setTimeout(() => _completeReminderAmountInput.focus(), 0)
+
+  return new Promise(resolve => { _completeReminderResolve = resolve })
+}
+
+function closeCompleteReminderTransactionModal(result) {
+  document.getElementById('complete-reminder-modal').classList.add('hidden')
+  _completeReminderItem = null
+  if (_completeReminderResolve) {
+    _completeReminderResolve(result)
+    _completeReminderResolve = null
+  }
+}
+
+if (_completeReminderAmountInput) {
+  _completeReminderAmountInput.addEventListener('input', (e) => {
+    const digits = e.target.value.replace(/\D/g, '')
+    e.target.value = maskCurrency(digits)
+    if (isCompleteReminderAmountValid()) {
+      _completeReminderSubmitAttempted = false
+    }
+    updateCompleteReminderValidationUI()
+  })
+
+  _completeReminderAmountInput.addEventListener('blur', () => {
+    _completeReminderAmountTouched = true
+    updateCompleteReminderValidationUI()
+  })
+}
+
+document.getElementById('complete-reminder-cancel')?.addEventListener('click', () => {
+  closeCompleteReminderTransactionModal(null)
+})
+
+document.getElementById('complete-reminder-confirm')?.addEventListener('click', () => {
+  _completeReminderSubmitAttempted = true
+  updateCompleteReminderValidationUI()
+  if (!isCompleteReminderAmountValid()) return
+
+  const amount = getCompleteReminderAmountValue()
+  const date = document.getElementById('complete-reminder-date').value
+  const description = document.getElementById('complete-reminder-description').value.trim()
+  closeCompleteReminderTransactionModal({
+    amount: amount.toFixed(2),
+    date: date || undefined,
+    description: description || undefined,
+  })
+})
 
 // ── Pay modal ─────────────────────────────────────────────────────────────────
 
@@ -1011,10 +1109,14 @@ document.getElementById('btn-today').addEventListener('click', () => {
   document.getElementById('pay-date').value = new Date().toISOString().split('T')[0]
 })
 
+document.getElementById('btn-complete-reminder-today')?.addEventListener('click', () => {
+  document.getElementById('complete-reminder-date').value = toDateKey(new Date())
+})
+
 document.getElementById('snooze-cancel').addEventListener('click', () => closeSnoozeModal(null))
 document.getElementById('snooze-confirm').addEventListener('click', () => {
   const dateVal = document.getElementById('snooze-date').value
-  if (!dateVal) { alert('Informe a data'); return }
+  if (!dateVal) { showAlert('Informe a data'); return }
   closeSnoozeModal({ type: 'until', until: new Date(dateVal).toISOString() })
 })
 
@@ -1022,8 +1124,8 @@ document.getElementById('pay-cancel').addEventListener('click', () => closePayMo
 document.getElementById('pay-confirm').addEventListener('click', () => {
   const dateVal = document.getElementById('pay-date').value
   const amount  = parseCurrency(document.getElementById('pay-amount').value)
-  if (!dateVal) { alert('Informe a data do pagamento'); return }
-  if (!amount || amount <= 0) { alert('Informe o valor pago'); return }
+  if (!dateVal) { showAlert('Informe a data do pagamento'); return }
+  if (!amount || amount <= 0) { showAlert('Informe o valor pago'); return }
   closePayModal({ paidAt: new Date(dateVal).toISOString(), paidAmount: amount })
 })
 
@@ -1052,6 +1154,7 @@ async function handlePay(txId, liEl, tx) {
   if (!result) return  // cancelled
 
   const btn = liEl.querySelector('.btn-pay')
+  if (!btn) return
   btn.disabled = true
   btn.textContent = '...'
 
@@ -1093,12 +1196,15 @@ async function handlePay(txId, liEl, tx) {
     btn.disabled = false
     const label = tx.status === 'partial' ? 'Pagar resto' : 'Pagar'
     btn.textContent = label
-    alert(`Erro ${err.status || ''}: ${err.body || err.message}`)
+    showAlert(`Erro ${err.status || ''}: ${err.body || err.message}`)
   }
 }
 
-async function loadData() {
-  showScreen('loading')
+async function loadData({ silent = false } = {}) {
+  if (_loadDataInFlight) return _loadDataInFlight
+
+  _loadDataInFlight = (async () => {
+  if (!silent) showScreen('loading')
   try {
     const data = await apiFetch(
       `/org/${state.orgSlug}/reports/transactions?year=${state.year}&month=${state.month}`
@@ -1150,6 +1256,9 @@ async function loadData() {
 
     showScreen('error')
   }
+  })().finally(() => { _loadDataInFlight = null })
+
+  return _loadDataInFlight
 }
 
 // ── Init ──────────────────────────────────────────────────────────────────────
@@ -1241,6 +1350,18 @@ document.getElementById('btn-next-month').addEventListener('click', () => {
   state.month++
   if (state.month > 12) { state.month = 1; state.year++ }
   loadData()
+})
+
+document.addEventListener('visibilitychange', () => {
+  if (document.visibilityState === 'visible' && state.token && state.orgSlug) {
+    loadData({ silent: true })
+  }
+})
+
+chrome.runtime.onMessage.addListener((message) => {
+  if (message?.type === 'data-updated' && state.token && state.orgSlug) {
+    loadData({ silent: true })
+  }
 })
 
 // ── Boot ──────────────────────────────────────────────────────────────────────

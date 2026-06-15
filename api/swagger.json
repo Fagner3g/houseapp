@@ -3,7 +3,7 @@
   "info": {
     "title": "HouseApp API",
     "description": "API for HouseApp",
-    "version": "1.3.0"
+    "version": "1.4.0"
   },
   "components": {
     "securitySchemes": {
@@ -5679,6 +5679,18 @@
                               "type": "number"
                             }
                           },
+                          "useOrgAlertDefaults": {
+                            "type": "boolean"
+                          },
+                          "overdueAlertFrequency": {
+                            "type": "string",
+                            "nullable": true
+                          },
+                          "overdueAlertInterval": {
+                            "type": "integer",
+                            "minimum": 1,
+                            "maximum": 9007199254740991
+                          },
                           "channels": {
                             "type": "array",
                             "items": {
@@ -5740,6 +5752,20 @@
                             "type": "string",
                             "nullable": true
                           },
+                          "generatesTransaction": {
+                            "type": "boolean"
+                          },
+                          "defaultPayToId": {
+                            "type": "string",
+                            "nullable": true
+                          },
+                          "transactionType": {
+                            "type": "string",
+                            "enum": [
+                              "expense",
+                              "income"
+                            ]
+                          },
                           "createdAt": {
                             "type": "string"
                           },
@@ -5756,6 +5782,9 @@
                           "dueDate",
                           "amountCents",
                           "daysBefore",
+                          "useOrgAlertDefaults",
+                          "overdueAlertFrequency",
+                          "overdueAlertInterval",
                           "channels",
                           "recipientUserId",
                           "recipientName",
@@ -5770,6 +5799,9 @@
                           "linkedSeriesId",
                           "snoozedUntil",
                           "lastCompletedPeriodKey",
+                          "generatesTransaction",
+                          "defaultPayToId",
+                          "transactionType",
                           "createdAt",
                           "updatedAt"
                         ],
@@ -5830,6 +5862,20 @@
                       "maximum": 365
                     }
                   },
+                  "useOrgAlertDefaults": {
+                    "default": true,
+                    "type": "boolean"
+                  },
+                  "overdueAlertFrequency": {
+                    "type": "string",
+                    "nullable": true
+                  },
+                  "overdueAlertInterval": {
+                    "default": 1,
+                    "type": "integer",
+                    "minimum": 1,
+                    "maximum": 9007199254740991
+                  },
                   "channels": {
                     "default": [
                       "in_app",
@@ -5879,6 +5925,22 @@
                   "notifyMinute": {
                     "type": "integer",
                     "nullable": true
+                  },
+                  "generatesTransaction": {
+                    "default": false,
+                    "type": "boolean"
+                  },
+                  "defaultPayToId": {
+                    "type": "string",
+                    "nullable": true
+                  },
+                  "transactionType": {
+                    "default": "expense",
+                    "type": "string",
+                    "enum": [
+                      "expense",
+                      "income"
+                    ]
                   }
                 },
                 "required": [
@@ -5942,6 +6004,18 @@
                             "type": "number"
                           }
                         },
+                        "useOrgAlertDefaults": {
+                          "type": "boolean"
+                        },
+                        "overdueAlertFrequency": {
+                          "type": "string",
+                          "nullable": true
+                        },
+                        "overdueAlertInterval": {
+                          "type": "integer",
+                          "minimum": 1,
+                          "maximum": 9007199254740991
+                        },
                         "channels": {
                           "type": "array",
                           "items": {
@@ -6003,6 +6077,20 @@
                           "type": "string",
                           "nullable": true
                         },
+                        "generatesTransaction": {
+                          "type": "boolean"
+                        },
+                        "defaultPayToId": {
+                          "type": "string",
+                          "nullable": true
+                        },
+                        "transactionType": {
+                          "type": "string",
+                          "enum": [
+                            "expense",
+                            "income"
+                          ]
+                        },
                         "createdAt": {
                           "type": "string"
                         },
@@ -6019,6 +6107,9 @@
                         "dueDate",
                         "amountCents",
                         "daysBefore",
+                        "useOrgAlertDefaults",
+                        "overdueAlertFrequency",
+                        "overdueAlertInterval",
                         "channels",
                         "recipientUserId",
                         "recipientName",
@@ -6033,6 +6124,9 @@
                         "linkedSeriesId",
                         "snoozedUntil",
                         "lastCompletedPeriodKey",
+                        "generatesTransaction",
+                        "defaultPayToId",
+                        "transactionType",
                         "createdAt",
                         "updatedAt"
                       ],
@@ -6090,6 +6184,18 @@
                       "maximum": 365
                     }
                   },
+                  "useOrgAlertDefaults": {
+                    "type": "boolean"
+                  },
+                  "overdueAlertFrequency": {
+                    "type": "string",
+                    "nullable": true
+                  },
+                  "overdueAlertInterval": {
+                    "type": "integer",
+                    "minimum": 1,
+                    "maximum": 9007199254740991
+                  },
                   "channels": {
                     "minItems": 1,
                     "type": "array",
@@ -6135,6 +6241,20 @@
                   "notifyMinute": {
                     "type": "integer",
                     "nullable": true
+                  },
+                  "generatesTransaction": {
+                    "type": "boolean"
+                  },
+                  "defaultPayToId": {
+                    "type": "string",
+                    "nullable": true
+                  },
+                  "transactionType": {
+                    "type": "string",
+                    "enum": [
+                      "expense",
+                      "income"
+                    ]
                   }
                 }
               }
@@ -6201,6 +6321,18 @@
                             "type": "number"
                           }
                         },
+                        "useOrgAlertDefaults": {
+                          "type": "boolean"
+                        },
+                        "overdueAlertFrequency": {
+                          "type": "string",
+                          "nullable": true
+                        },
+                        "overdueAlertInterval": {
+                          "type": "integer",
+                          "minimum": 1,
+                          "maximum": 9007199254740991
+                        },
                         "channels": {
                           "type": "array",
                           "items": {
@@ -6262,6 +6394,20 @@
                           "type": "string",
                           "nullable": true
                         },
+                        "generatesTransaction": {
+                          "type": "boolean"
+                        },
+                        "defaultPayToId": {
+                          "type": "string",
+                          "nullable": true
+                        },
+                        "transactionType": {
+                          "type": "string",
+                          "enum": [
+                            "expense",
+                            "income"
+                          ]
+                        },
                         "createdAt": {
                           "type": "string"
                         },
@@ -6278,6 +6424,9 @@
                         "dueDate",
                         "amountCents",
                         "daysBefore",
+                        "useOrgAlertDefaults",
+                        "overdueAlertFrequency",
+                        "overdueAlertInterval",
                         "channels",
                         "recipientUserId",
                         "recipientName",
@@ -6292,6 +6441,9 @@
                         "linkedSeriesId",
                         "snoozedUntil",
                         "lastCompletedPeriodKey",
+                        "generatesTransaction",
+                        "defaultPayToId",
+                        "transactionType",
                         "createdAt",
                         "updatedAt"
                       ],
@@ -6408,6 +6560,18 @@
                             "type": "number"
                           }
                         },
+                        "useOrgAlertDefaults": {
+                          "type": "boolean"
+                        },
+                        "overdueAlertFrequency": {
+                          "type": "string",
+                          "nullable": true
+                        },
+                        "overdueAlertInterval": {
+                          "type": "integer",
+                          "minimum": 1,
+                          "maximum": 9007199254740991
+                        },
                         "channels": {
                           "type": "array",
                           "items": {
@@ -6469,6 +6633,20 @@
                           "type": "string",
                           "nullable": true
                         },
+                        "generatesTransaction": {
+                          "type": "boolean"
+                        },
+                        "defaultPayToId": {
+                          "type": "string",
+                          "nullable": true
+                        },
+                        "transactionType": {
+                          "type": "string",
+                          "enum": [
+                            "expense",
+                            "income"
+                          ]
+                        },
                         "createdAt": {
                           "type": "string"
                         },
@@ -6485,6 +6663,9 @@
                         "dueDate",
                         "amountCents",
                         "daysBefore",
+                        "useOrgAlertDefaults",
+                        "overdueAlertFrequency",
+                        "overdueAlertInterval",
                         "channels",
                         "recipientUserId",
                         "recipientName",
@@ -6499,6 +6680,9 @@
                         "linkedSeriesId",
                         "snoozedUntil",
                         "lastCompletedPeriodKey",
+                        "generatesTransaction",
+                        "defaultPayToId",
+                        "transactionType",
                         "createdAt",
                         "updatedAt"
                       ],
@@ -6583,6 +6767,18 @@
                             "type": "number"
                           }
                         },
+                        "useOrgAlertDefaults": {
+                          "type": "boolean"
+                        },
+                        "overdueAlertFrequency": {
+                          "type": "string",
+                          "nullable": true
+                        },
+                        "overdueAlertInterval": {
+                          "type": "integer",
+                          "minimum": 1,
+                          "maximum": 9007199254740991
+                        },
                         "channels": {
                           "type": "array",
                           "items": {
@@ -6644,6 +6840,20 @@
                           "type": "string",
                           "nullable": true
                         },
+                        "generatesTransaction": {
+                          "type": "boolean"
+                        },
+                        "defaultPayToId": {
+                          "type": "string",
+                          "nullable": true
+                        },
+                        "transactionType": {
+                          "type": "string",
+                          "enum": [
+                            "expense",
+                            "income"
+                          ]
+                        },
                         "createdAt": {
                           "type": "string"
                         },
@@ -6660,6 +6870,9 @@
                         "dueDate",
                         "amountCents",
                         "daysBefore",
+                        "useOrgAlertDefaults",
+                        "overdueAlertFrequency",
+                        "overdueAlertInterval",
                         "channels",
                         "recipientUserId",
                         "recipientName",
@@ -6674,6 +6887,9 @@
                         "linkedSeriesId",
                         "snoozedUntil",
                         "lastCompletedPeriodKey",
+                        "generatesTransaction",
+                        "defaultPayToId",
+                        "transactionType",
                         "createdAt",
                         "updatedAt"
                       ],
@@ -6682,6 +6898,252 @@
                   },
                   "required": [
                     "reminder"
+                  ],
+                  "additionalProperties": false
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/org/{slug}/reminders/{id}/complete-period-with-transaction": {
+      "post": {
+        "operationId": "completeReminderPeriodWithTransaction",
+        "tags": [
+          "Alerts"
+        ],
+        "description": "Complete reminder period and register a one-off transaction",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "amount": {
+                    "type": "string",
+                    "pattern": "^-?\\d+(\\.\\d{1,2})?$"
+                  },
+                  "date": {
+                    "type": "string"
+                  },
+                  "payToEmail": {
+                    "type": "string",
+                    "format": "email",
+                    "pattern": "^(?!\\.)(?!.*\\.\\.)([A-Za-z0-9_'+\\-\\.]*)[A-Za-z0-9_+-]@([A-Za-z0-9][A-Za-z0-9\\-]*\\.)+[A-Za-z]{2,}$"
+                  },
+                  "description": {
+                    "type": "string",
+                    "maxLength": 1000
+                  }
+                },
+                "required": [
+                  "amount"
+                ]
+              }
+            }
+          },
+          "required": true
+        },
+        "parameters": [
+          {
+            "schema": {
+              "type": "string",
+              "minLength": 1
+            },
+            "in": "path",
+            "name": "slug",
+            "required": true
+          },
+          {
+            "schema": {
+              "type": "string",
+              "minLength": 1
+            },
+            "in": "path",
+            "name": "id",
+            "required": true
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Default Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "reminder": {
+                      "type": "object",
+                      "properties": {
+                        "id": {
+                          "type": "string"
+                        },
+                        "organizationId": {
+                          "type": "string"
+                        },
+                        "createdBy": {
+                          "type": "string"
+                        },
+                        "title": {
+                          "type": "string"
+                        },
+                        "notes": {
+                          "type": "string",
+                          "nullable": true
+                        },
+                        "dueDate": {
+                          "type": "string"
+                        },
+                        "amountCents": {
+                          "type": "number",
+                          "nullable": true
+                        },
+                        "daysBefore": {
+                          "type": "array",
+                          "items": {
+                            "type": "number"
+                          }
+                        },
+                        "useOrgAlertDefaults": {
+                          "type": "boolean"
+                        },
+                        "overdueAlertFrequency": {
+                          "type": "string",
+                          "nullable": true
+                        },
+                        "overdueAlertInterval": {
+                          "type": "integer",
+                          "minimum": 1,
+                          "maximum": 9007199254740991
+                        },
+                        "channels": {
+                          "type": "array",
+                          "items": {
+                            "type": "string",
+                            "enum": [
+                              "in_app",
+                              "whatsapp",
+                              "extension"
+                            ]
+                          }
+                        },
+                        "recipientUserId": {
+                          "type": "string"
+                        },
+                        "recipientName": {
+                          "type": "string",
+                          "nullable": true
+                        },
+                        "active": {
+                          "type": "boolean"
+                        },
+                        "completedAt": {
+                          "type": "string",
+                          "nullable": true
+                        },
+                        "isRecurring": {
+                          "type": "boolean"
+                        },
+                        "recurrenceType": {
+                          "type": "string",
+                          "nullable": true
+                        },
+                        "recurrenceInterval": {
+                          "type": "integer",
+                          "minimum": 1,
+                          "maximum": 9007199254740991
+                        },
+                        "recurrenceUntil": {
+                          "type": "string",
+                          "nullable": true
+                        },
+                        "notifyHour": {
+                          "type": "integer",
+                          "nullable": true
+                        },
+                        "notifyMinute": {
+                          "type": "integer",
+                          "nullable": true
+                        },
+                        "linkedSeriesId": {
+                          "type": "string",
+                          "nullable": true
+                        },
+                        "snoozedUntil": {
+                          "type": "string",
+                          "nullable": true
+                        },
+                        "lastCompletedPeriodKey": {
+                          "type": "string",
+                          "nullable": true
+                        },
+                        "generatesTransaction": {
+                          "type": "boolean"
+                        },
+                        "defaultPayToId": {
+                          "type": "string",
+                          "nullable": true
+                        },
+                        "transactionType": {
+                          "type": "string",
+                          "enum": [
+                            "expense",
+                            "income"
+                          ]
+                        },
+                        "createdAt": {
+                          "type": "string"
+                        },
+                        "updatedAt": {
+                          "type": "string"
+                        }
+                      },
+                      "required": [
+                        "id",
+                        "organizationId",
+                        "createdBy",
+                        "title",
+                        "notes",
+                        "dueDate",
+                        "amountCents",
+                        "daysBefore",
+                        "useOrgAlertDefaults",
+                        "overdueAlertFrequency",
+                        "overdueAlertInterval",
+                        "channels",
+                        "recipientUserId",
+                        "recipientName",
+                        "active",
+                        "completedAt",
+                        "isRecurring",
+                        "recurrenceType",
+                        "recurrenceInterval",
+                        "recurrenceUntil",
+                        "notifyHour",
+                        "notifyMinute",
+                        "linkedSeriesId",
+                        "snoozedUntil",
+                        "lastCompletedPeriodKey",
+                        "generatesTransaction",
+                        "defaultPayToId",
+                        "transactionType",
+                        "createdAt",
+                        "updatedAt"
+                      ],
+                      "additionalProperties": false
+                    },
+                    "seriesId": {
+                      "type": "string"
+                    },
+                    "occurrenceId": {
+                      "type": "string"
+                    }
+                  },
+                  "required": [
+                    "reminder",
+                    "seriesId",
+                    "occurrenceId"
                   ],
                   "additionalProperties": false
                 }
@@ -6776,6 +7238,18 @@
                             "type": "number"
                           }
                         },
+                        "useOrgAlertDefaults": {
+                          "type": "boolean"
+                        },
+                        "overdueAlertFrequency": {
+                          "type": "string",
+                          "nullable": true
+                        },
+                        "overdueAlertInterval": {
+                          "type": "integer",
+                          "minimum": 1,
+                          "maximum": 9007199254740991
+                        },
                         "channels": {
                           "type": "array",
                           "items": {
@@ -6837,6 +7311,20 @@
                           "type": "string",
                           "nullable": true
                         },
+                        "generatesTransaction": {
+                          "type": "boolean"
+                        },
+                        "defaultPayToId": {
+                          "type": "string",
+                          "nullable": true
+                        },
+                        "transactionType": {
+                          "type": "string",
+                          "enum": [
+                            "expense",
+                            "income"
+                          ]
+                        },
                         "createdAt": {
                           "type": "string"
                         },
@@ -6853,6 +7341,9 @@
                         "dueDate",
                         "amountCents",
                         "daysBefore",
+                        "useOrgAlertDefaults",
+                        "overdueAlertFrequency",
+                        "overdueAlertInterval",
                         "channels",
                         "recipientUserId",
                         "recipientName",
@@ -6867,6 +7358,9 @@
                         "linkedSeriesId",
                         "snoozedUntil",
                         "lastCompletedPeriodKey",
+                        "generatesTransaction",
+                        "defaultPayToId",
+                        "transactionType",
                         "createdAt",
                         "updatedAt"
                       ],
@@ -6972,6 +7466,18 @@
                             "type": "number"
                           }
                         },
+                        "useOrgAlertDefaults": {
+                          "type": "boolean"
+                        },
+                        "overdueAlertFrequency": {
+                          "type": "string",
+                          "nullable": true
+                        },
+                        "overdueAlertInterval": {
+                          "type": "integer",
+                          "minimum": 1,
+                          "maximum": 9007199254740991
+                        },
                         "channels": {
                           "type": "array",
                           "items": {
@@ -7033,6 +7539,20 @@
                           "type": "string",
                           "nullable": true
                         },
+                        "generatesTransaction": {
+                          "type": "boolean"
+                        },
+                        "defaultPayToId": {
+                          "type": "string",
+                          "nullable": true
+                        },
+                        "transactionType": {
+                          "type": "string",
+                          "enum": [
+                            "expense",
+                            "income"
+                          ]
+                        },
                         "createdAt": {
                           "type": "string"
                         },
@@ -7049,6 +7569,9 @@
                         "dueDate",
                         "amountCents",
                         "daysBefore",
+                        "useOrgAlertDefaults",
+                        "overdueAlertFrequency",
+                        "overdueAlertInterval",
                         "channels",
                         "recipientUserId",
                         "recipientName",
@@ -7063,6 +7586,9 @@
                         "linkedSeriesId",
                         "snoozedUntil",
                         "lastCompletedPeriodKey",
+                        "generatesTransaction",
+                        "defaultPayToId",
+                        "transactionType",
                         "createdAt",
                         "updatedAt"
                       ],
@@ -7134,6 +7660,13 @@
                             "enum": [
                               "organization",
                               "series"
+                            ]
+                          },
+                          "target": {
+                            "type": "string",
+                            "enum": [
+                              "transaction",
+                              "reminder"
                             ]
                           },
                           "seriesId": {
@@ -7234,6 +7767,7 @@
                           "id",
                           "organizationId",
                           "scope",
+                          "target",
                           "seriesId",
                           "kind",
                           "config",
@@ -7275,6 +7809,14 @@
                     "enum": [
                       "organization",
                       "series"
+                    ]
+                  },
+                  "target": {
+                    "default": "transaction",
+                    "type": "string",
+                    "enum": [
+                      "transaction",
+                      "reminder"
                     ]
                   },
                   "seriesId": {
@@ -7404,6 +7946,13 @@
                             "series"
                           ]
                         },
+                        "target": {
+                          "type": "string",
+                          "enum": [
+                            "transaction",
+                            "reminder"
+                          ]
+                        },
                         "seriesId": {
                           "type": "string",
                           "nullable": true
@@ -7502,6 +8051,7 @@
                         "id",
                         "organizationId",
                         "scope",
+                        "target",
                         "seriesId",
                         "kind",
                         "config",
@@ -7655,6 +8205,13 @@
                             "series"
                           ]
                         },
+                        "target": {
+                          "type": "string",
+                          "enum": [
+                            "transaction",
+                            "reminder"
+                          ]
+                        },
                         "seriesId": {
                           "type": "string",
                           "nullable": true
@@ -7753,6 +8310,7 @@
                         "id",
                         "organizationId",
                         "scope",
+                        "target",
                         "seriesId",
                         "kind",
                         "config",
@@ -7909,6 +8467,13 @@
                               "series"
                             ]
                           },
+                          "target": {
+                            "type": "string",
+                            "enum": [
+                              "transaction",
+                              "reminder"
+                            ]
+                          },
                           "seriesId": {
                             "type": "string",
                             "nullable": true
@@ -8007,6 +8572,7 @@
                           "id",
                           "organizationId",
                           "scope",
+                          "target",
                           "seriesId",
                           "kind",
                           "config",
@@ -8155,7 +8721,9 @@
                             "type": "string",
                             "enum": [
                               "snoozed",
-                              "no_matching_rule",
+                              "outside_schedule",
+                              "already_sent",
+                              "no_rule",
                               "period_completed"
                             ]
                           },

@@ -43,10 +43,36 @@ function formatSkipReason(item: ReminderPreviewSkipItem) {
   if (item.reason === 'period_completed') {
     return 'feito no mês'
   }
-  if (item.reason === 'no_matching_rule') {
-    return `sem alerta para ${formatDaysUntilDue(item.daysUntilDue)}`
+  if (item.reason === 'outside_schedule') {
+    if (item.daysUntilDue < 0) {
+      return `fora do calendário de atraso (${formatDaysUntilDue(item.daysUntilDue)})`
+    }
+    return `fora do calendário 7/3/1/no dia (${formatDaysUntilDue(item.daysUntilDue)})`
+  }
+  if (item.reason === 'already_sent') {
+    return item.daysUntilDue < 0 ? 'já enviado neste marco de atraso' : 'já enviado neste marco'
+  }
+  if (item.reason === 'no_rule') {
+    return 'sem regra de alerta configurada'
   }
   return 'fora do agendamento de hoje'
+}
+
+function skipReasonBadge(item: ReminderPreviewSkipItem) {
+  switch (item.reason) {
+    case 'snoozed':
+      return 'Adiado'
+    case 'period_completed':
+      return 'Feito'
+    case 'outside_schedule':
+      return 'Fora do calendário'
+    case 'already_sent':
+      return 'Já enviado'
+    case 'no_rule':
+      return 'Sem regra'
+    default:
+      return 'Sem alerta'
+  }
 }
 
 export function AlertsPreviewCard({ slug }: AlertsPreviewCardProps) {
@@ -99,13 +125,7 @@ export function AlertsPreviewCard({ slug }: AlertsPreviewCardProps) {
                       </p>
                     </div>
                   </div>
-                  <Badge variant="secondary">
-                    {item.reason === 'snoozed'
-                      ? 'Adiado'
-                      : item.reason === 'period_completed'
-                        ? 'Feito'
-                        : 'Sem alerta'}
-                  </Badge>
+                  <Badge variant="secondary">{skipReasonBadge(item)}</Badge>
                 </li>
               ))}
             </ul>
@@ -272,13 +292,7 @@ export function AlertsPreviewCard({ slug }: AlertsPreviewCardProps) {
                       </p>
                     </div>
                   </div>
-                  <Badge variant="secondary">
-                    {item.reason === 'snoozed'
-                      ? 'Adiado'
-                      : item.reason === 'period_completed'
-                        ? 'Feito'
-                        : 'Sem alerta'}
-                  </Badge>
+                  <Badge variant="secondary">{skipReasonBadge(item)}</Badge>
                 </li>
               ))}
             </ul>

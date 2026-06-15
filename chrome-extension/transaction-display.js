@@ -74,6 +74,8 @@
   }
 
   function getTransactionEventSpan(transaction, dateFrom, dateTo, allTransactions) {
+    if (transaction.status === 'canceled') return null
+
     const dueKey = toDateKey(transaction.dueDate)
 
     // Transbordo paid in the viewing month: show on payment date (partial or paid).

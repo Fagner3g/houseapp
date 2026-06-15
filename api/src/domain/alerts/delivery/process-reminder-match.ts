@@ -2,7 +2,7 @@ import type { AlertDeliveryStatus } from '@/db/schemas/alertDeliveries'
 import { normalizePhone } from '@/domain/whatsapp'
 import type { ReminderMatch } from '../evaluator/evaluate-reminders'
 import {
-  buildReminderOverdueDedupeKey,
+  buildReminderOverdueDayDedupeKey,
   buildReminderUpcomingDedupeKey,
   formatReminderWhatsAppMessage,
   isAlertChannelEnabled,
@@ -27,9 +27,9 @@ export async function processReminderMatch(
             channel,
             match.notifyTime
           )
-        : buildReminderOverdueDedupeKey(
+        : buildReminderOverdueDayDedupeKey(
             match.reminder.id,
-            match.overduePeriodKey ?? 'unknown',
+            match.daysAfter ?? match.overdueDays ?? 0,
             match.reminder.recipientUserId,
             channel,
             match.notifyTime

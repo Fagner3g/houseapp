@@ -93,6 +93,21 @@ describe('getOpenTransactionDisplayDate / transbordo roll', () => {
     expect(events[0]?.statusLine).toBe('Pago · 32d venc.')
   })
 
+  it('excludes canceled transactions from calendar events', () => {
+    const tx = mockTx({ id: 'tx-canceled', dueDate: '2026-06-15', status: 'canceled' })
+
+    expect(getTransactionEventSpan(tx, JUNE_FROM, JUNE_TO, [tx])).toBeNull()
+    expect(transactionToCalendarEvent(tx, JUNE_FROM, JUNE_TO, REFERENCE, [tx])).toBeNull()
+    expect(transactionsToCalendarEvents([tx], JUNE_FROM, JUNE_TO, REFERENCE)).toHaveLength(0)
+  })
+
+  it('excludes canceled transactions even when due date would roll as transbordo', () => {
+    const tx = mockTx({ id: 'tx-canceled', dueDate: '2026-05-10', status: 'canceled' })
+
+    expect(getTransactionEventSpan(tx, JUNE_FROM, JUNE_TO, [tx])).toBeNull()
+    expect(transactionsToCalendarEvents([tx], JUNE_FROM, JUNE_TO, REFERENCE)).toHaveLength(0)
+  })
+
   it('does not pull May 10 item to June 15 when series has June 15 installment', () => {
     const mayTx = mockTx({
       id: 'tx-may',

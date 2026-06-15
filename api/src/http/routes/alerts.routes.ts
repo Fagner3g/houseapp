@@ -5,6 +5,7 @@ import { updateAlertSettingsController } from '../controllers/alerts/update-aler
 import { ackAlertController } from '../controllers/alerts/ack-alert.controller'
 import { completeReminderController } from '../controllers/alerts/complete-reminder.controller'
 import { completeReminderPeriodController } from '../controllers/alerts/complete-reminder-period.controller'
+import { completeReminderPeriodWithTransactionController } from '../controllers/alerts/complete-reminder-period-with-transaction.controller'
 import { uncompleteReminderPeriodController } from '../controllers/alerts/uncomplete-reminder-period.controller'
 import { createReminderController } from '../controllers/alerts/create-reminder.controller'
 import { createRuleController } from '../controllers/alerts/create-rule.controller'
@@ -38,6 +39,7 @@ import {
 import {
   completeReminderSchema,
   completeReminderPeriodSchema,
+  completeReminderPeriodWithTransactionSchema,
   uncompleteReminderPeriodSchema,
   createReminderSchema,
   deleteReminderSchema,
@@ -101,6 +103,13 @@ export const alertsRoutes: FastifyPluginAsyncZod = async app => {
     preHandler: [verifyOrgAccessHook],
     schema: completeReminderPeriodSchema,
     handler: completeReminderPeriodController,
+  })
+
+  app.post('/org/:slug/reminders/:id/complete-period-with-transaction', {
+    onRequest: [authenticateUserHook],
+    preHandler: [verifyOrgAccessHook],
+    schema: completeReminderPeriodWithTransactionSchema,
+    handler: completeReminderPeriodWithTransactionController,
   })
 
   app.post('/org/:slug/reminders/:id/uncomplete-period', {

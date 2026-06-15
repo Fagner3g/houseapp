@@ -74,6 +74,7 @@ async function upsertSeriesKindRule(
     .values({
       organizationId: orgId,
       scope: 'series',
+      target: 'transaction',
       seriesId,
       kind,
       config,

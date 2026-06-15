@@ -47,6 +47,7 @@ import {
   type ReminderChannel,
 } from '../api'
 import { ReminderForm } from './ReminderForm'
+import { CompleteReminderTransactionDialog } from './CompleteReminderTransactionDialog'
 
 type ReminderListProps = {
   slug: string
@@ -222,6 +223,9 @@ export function ReminderList({ slug }: ReminderListProps) {
   const [customSnoozeReminder, setCustomSnoozeReminder] = useState<Reminder | null>(null)
   const [customSnoozeDate, setCustomSnoozeDate] = useState<Date | undefined>()
   const [completingPeriodId, setCompletingPeriodId] = useState<string | null>(null)
+  const [transactionCompleteReminder, setTransactionCompleteReminder] = useState<Reminder | null>(
+    null
+  )
 
   const reminders = data?.reminders ?? []
   const drawerKey = useMemo(
@@ -255,10 +259,15 @@ export function ReminderList({ slug }: ReminderListProps) {
     }
   }
 
-  const handleCompletePeriod = async (id: string) => {
-    setCompletingPeriodId(id)
+  const handleCompletePeriod = async (reminder: Reminder) => {
+    if (reminder.generatesTransaction) {
+      setTransactionCompleteReminder(reminder)
+      return
+    }
+
+    setCompletingPeriodId(reminder.id)
     try {
-      await completePeriodMutation.mutateAsync(id)
+      await completePeriodMutation.mutateAsync(reminder.id)
       toast.success('Lembrete marcado como feito no mês')
     } catch {
       toast.error('Erro ao marcar lembrete como feito')
@@ -445,7 +454,7 @@ export function ReminderList({ slug }: ReminderListProps) {
                             setEditing(reminder)
                             setFormOpen(true)
                           }}
-                          onCompletePeriod={() => handleCompletePeriod(reminder.id)}
+                          onCompletePeriod={() => handleCompletePeriod(reminder)}
                           onEnd={() => handleEnd(reminder.id)}
                           onSnooze={days => handleSnooze(reminder.id, days)}
                           onCustomSnooze={() => {
@@ -526,6 +535,16 @@ export function ReminderList({ slug }: ReminderListProps) {
           )}
         </DialogContent>
       </Dialog>
+
+      <CompleteReminderTransactionDialog
+        slug={slug}
+        reminder={transactionCompleteReminder}
+        open={!!transactionCompleteReminder}
+        onOpenChange={open => {
+          if (!open) setTransactionCompleteReminder(null)
+        }}
+        onSuccess={() => toast.success('Transação registrada e lembrete concluído')}
+      />
 
       {transactionDrawerOpen && (
         <DrawerTransaction

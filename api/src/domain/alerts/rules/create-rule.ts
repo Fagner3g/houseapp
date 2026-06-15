@@ -7,6 +7,7 @@ import type {
   AlertRuleKind,
   AlertRuleRecipient,
   AlertRuleScope,
+  AlertRuleTarget,
 } from '@/db/schemas/alertRules'
 import { alertRules } from '@/db/schemas/alertRules'
 import { transactionSeries } from '@/db/schemas/transactionSeries'
@@ -17,6 +18,7 @@ interface CreateRuleRequest {
   orgId: string
   createdBy: string
   scope: AlertRuleScope
+  target?: AlertRuleTarget
   seriesId?: string | null
   kind: AlertRuleKind
   config: AlertRuleConfig
@@ -50,6 +52,8 @@ export async function createRuleService(input: CreateRuleRequest) {
     }
   }
 
+  const target = input.target ?? 'transaction'
+
   const scopeCondition =
     input.scope === 'organization'
       ? eq(alertRules.scope, 'organization')
@@ -63,6 +67,7 @@ export async function createRuleService(input: CreateRuleRequest) {
     .where(
       and(
         eq(alertRules.organizationId, input.orgId),
+        eq(alertRules.target, target),
         eq(alertRules.kind, input.kind),
         eq(alertRules.active, true),
         scopeCondition
@@ -79,6 +84,7 @@ export async function createRuleService(input: CreateRuleRequest) {
     .values({
       organizationId: input.orgId,
       scope: input.scope,
+      target,
       seriesId: input.scope === 'series' ? input.seriesId : null,
       kind: input.kind,
       config: input.config,

@@ -97,7 +97,7 @@ const reminderPreviewItemSchema = z.object({
 const reminderPreviewSkipItemSchema = z.object({
   reminderId: z.string(),
   title: z.string(),
-  reason: z.enum(['snoozed', 'no_matching_rule', 'period_completed']),
+  reason: z.enum(['snoozed', 'outside_schedule', 'already_sent', 'no_rule', 'period_completed']),
   daysUntilDue: z.number(),
   notifyHour: z.number(),
   notifyMinute: z.number(),

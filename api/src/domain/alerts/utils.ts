@@ -1,5 +1,5 @@
 import type { customReminders } from '@/db/schemas/customReminders'
-import { subPeriod } from '@/domain/recurrence/utils'
+import { addPeriod, subPeriod } from '@/domain/recurrence/utils'
 import type { RecurrenceType } from '@/domain/recurrence/utils'
 import type { alertRules } from '@/db/schemas/alertRules'
 import {
@@ -227,6 +227,17 @@ export function buildReminderOverdueDedupeKey(
   return `reminder:${reminderId}:period-${periodKey}:at-${at}:${userId}:${channel}`
 }
 
+export function buildReminderOverdueDayDedupeKey(
+  reminderId: string,
+  daysAfter: number,
+  userId: string,
+  channel: string,
+  notifyTime: NotifyTime
+): string {
+  const at = formatNotifyTimeForDedupe(notifyTime.hour, notifyTime.minute)
+  return `reminder:${reminderId}:overdue-day-${daysAfter}:at-${at}:${userId}:${channel}`
+}
+
 /** @deprecated Use buildReminderUpcomingDedupeKey or buildReminderOverdueDedupeKey */
 export function buildReminderDedupeKey(
   reminderId: string,
@@ -268,6 +279,19 @@ export function parseOccurrenceDateKey(value: string): Date {
     return new Date(year, month - 1, day)
   }
   return new Date(value)
+}
+
+/** Transaction due date when completing a reminder period (defaults to period due date). */
+export function resolveReminderTransactionDueDate(
+  dateKey: string | undefined,
+  periodDueDate: Date
+): Date {
+  if (dateKey?.trim()) {
+    return parseOccurrenceDateKey(dateKey.trim())
+  }
+  const result = new Date(periodDueDate)
+  result.setHours(0, 0, 0, 0)
+  return result
 }
 
 export function applyDateKeyToDueDate(dueDate: Date, dateKey: string): Date {
@@ -323,6 +347,37 @@ export function isValidReminderOccurrenceDate(
   }
 
   return false
+}
+
+export function resolveReminderEvaluationDueDate(
+  reminder: ReminderOccurrenceState,
+  referenceDate = new Date(),
+  timezone = TIMEZONE
+): Date {
+  if (!reminder.isRecurring || !reminder.recurrenceType) {
+    return reminder.dueDate
+  }
+
+  const type = reminder.recurrenceType as RecurrenceType
+  const interval = reminder.recurrenceInterval || 1
+  let due = new Date(reminder.dueDate)
+  const todayPeriodKey = getReminderPeriodKey(referenceDate, type, timezone)
+  const untilKey = reminder.recurrenceUntil
+    ? formatDueDateKey(reminder.recurrenceUntil, timezone)
+    : null
+
+  while (true) {
+    const duePeriodKey = getReminderPeriodKey(due, type, timezone)
+    if (duePeriodKey >= todayPeriodKey) break
+
+    const nextDue = addPeriod(due, type, interval)
+    const nextDueKey = formatDueDateKey(nextDue, timezone)
+    if (untilKey && nextDueKey > untilKey) break
+    if (nextDueKey === formatDueDateKey(due, timezone)) break
+    due = nextDue
+  }
+
+  return due
 }
 
 export function getReminderPeriodKey(
@@ -550,9 +605,11 @@ export function buildOverdueRuleDedupeKey(
 export function getOverduePeriodKey(
   frequency: 'daily' | 'weekly' | 'monthly',
   interval: number,
-  referenceDate = new Date()
+  referenceDate = new Date(),
+  timezone = TIMEZONE
 ): string {
-  const epochDay = Math.floor(referenceDate.getTime() / 86400000)
+  const dateKey = formatDueDateKey(referenceDate, timezone)
+  const epochDay = Math.floor(parseCalendarDateKey(dateKey) / 86400000)
   if (frequency === 'daily') {
     return `d-${Math.floor(epochDay / interval)}`
   }
@@ -560,7 +617,8 @@ export function getOverduePeriodKey(
     const epochWeek = Math.floor(epochDay / 7)
     return `w-${Math.floor(epochWeek / interval)}`
   }
-  const monthIndex = referenceDate.getFullYear() * 12 + referenceDate.getMonth()
+  const [year, month] = dateKey.split('-').map(Number)
+  const monthIndex = year * 12 + (month - 1)
   return `m-${Math.floor(monthIndex / interval)}`
 }
 
@@ -665,6 +723,7 @@ export function serializeAlertRule(row: AlertRuleRow): AlertRuleDto {
     id: row.id,
     organizationId: row.organizationId,
     scope: row.scope,
+    target: row.target,
     seriesId: row.seriesId,
     kind: row.kind,
     config: row.config,
@@ -688,6 +747,9 @@ export function serializeReminder(row: ReminderRow): ReminderDto {
     dueDate: row.dueDate.toISOString(),
     amountCents: row.amountCents != null ? Number(row.amountCents) : null,
     daysBefore: row.daysBefore,
+    useOrgAlertDefaults: row.useOrgAlertDefaults,
+    overdueAlertFrequency: row.overdueAlertFrequency ?? null,
+    overdueAlertInterval: row.overdueAlertInterval,
     channels: row.channels,
     recipientUserId: row.recipientUserId,
     recipientName: row.recipientName ?? null,
@@ -702,6 +764,9 @@ export function serializeReminder(row: ReminderRow): ReminderDto {
     linkedSeriesId: row.linkedSeriesId,
     snoozedUntil: row.snoozedUntil?.toISOString() ?? null,
     lastCompletedPeriodKey: row.lastCompletedPeriodKey ?? null,
+    generatesTransaction: row.generatesTransaction,
+    defaultPayToId: row.defaultPayToId,
+    transactionType: row.transactionType,
     createdAt: row.createdAt.toISOString(),
     updatedAt: row.updatedAt.toISOString(),
   }

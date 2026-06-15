@@ -1,3 +1,5 @@
+importScripts('reminder-display.js')
+
 const DEFAULT_POLL_MINUTES = 15
 const ALARM_NAME = 'houseapp-poll'
 const CONFIRM_NOTIFICATION_ID = 'houseapp-confirm-action'
@@ -182,7 +184,10 @@ async function fetchPendingAlerts(apiUrl, token) {
 }
 
 async function fetchReminders(apiUrl, token, slug) {
-  const res = await fetch(`${apiUrl}/org/${slug}/reminders`, { headers: authHeaders(token) })
+  const res = await fetch(
+    `${apiUrl}/org/${slug}/reminders?includeCompleted=true`,
+    { headers: authHeaders(token) }
+  )
   if (!res.ok) throw new Error('reminders fetch failed')
   return res.json()
 }
@@ -197,7 +202,7 @@ async function ackReminderAlert(orgSlug, alertId) {
     headers: authHeaders(token),
   })
 
-  await chrome.storage.local.remove(['cachedPendingAlerts', 'cachedReportsByOrg'])
+  await chrome.storage.local.remove(['cachedPendingAlerts', 'cachedReportsByOrg', 'cachedRemindersByOrg'])
 }
 
 async function completeReminderPeriod(orgSlug, reminderId) {
@@ -210,7 +215,7 @@ async function completeReminderPeriod(orgSlug, reminderId) {
     headers: authHeaders(token),
   })
 
-  await chrome.storage.local.remove(['cachedPendingAlerts', 'cachedReportsByOrg'])
+  await chrome.storage.local.remove(['cachedPendingAlerts', 'cachedReportsByOrg', 'cachedRemindersByOrg'])
 }
 
 async function snoozeReminder(orgSlug, reminderId, body) {
@@ -224,7 +229,7 @@ async function snoozeReminder(orgSlug, reminderId, body) {
     body: JSON.stringify(body),
   })
 
-  await chrome.storage.local.remove(['cachedPendingAlerts', 'cachedReportsByOrg'])
+  await chrome.storage.local.remove(['cachedPendingAlerts', 'cachedReportsByOrg', 'cachedRemindersByOrg'])
 }
 
 async function payTransaction(orgSlug, transactionId) {
@@ -237,7 +242,7 @@ async function payTransaction(orgSlug, transactionId) {
     headers: authHeaders(token),
   })
 
-  await chrome.storage.local.remove('cachedReportsByOrg')
+  await chrome.storage.local.remove(['cachedReportsByOrg', 'cachedRemindersByOrg'])
 }
 
 // ── Confirm actions (notification two-step) ───────────────────────────────────
@@ -345,14 +350,7 @@ function isDueInMonth(dueDate, year, month) {
 }
 
 function countOverdueReminders(reminders, year, month) {
-  const today = todayMidnight()
-  return (reminders || []).filter(r => {
-    if (!isDueInMonth(r.dueDate, year, month)) return false
-    if (r.completedAt) return false
-    const due = new Date(r.dueDate)
-    due.setHours(0, 0, 0, 0)
-    return due < today
-  }).length
+  return ReminderDisplay.countOverdueReminders(reminders, year, month)
 }
 
 function setBadge(overdueCount = 0) {
@@ -511,6 +509,7 @@ async function poll() {
 
     let totalOverdue = 0
     const newCache = {}
+    const remindersCache = {}
 
     for (const orgData of results.filter(Boolean)) {
       totalOverdue += countOverdueTransactions(orgData.reports)
@@ -520,12 +519,13 @@ async function poll() {
     const reminderResults = await Promise.all(
       orgs.map(org =>
         fetchReminders(apiUrl, token, org.slug)
-          .then(data => data.reminders || data)
-          .catch(() => [])
+          .then(data => ({ slug: org.slug, reminders: data.reminders || data }))
+          .catch(() => null)
       )
     )
-    for (const reminders of reminderResults) {
-      totalOverdue += countOverdueReminders(reminders, year, month)
+    for (const orgReminders of reminderResults.filter(Boolean)) {
+      remindersCache[orgReminders.slug] = orgReminders.reminders
+      totalOverdue += countOverdueReminders(orgReminders.reminders, year, month)
     }
 
     let pendingAlerts = null
@@ -546,6 +546,7 @@ async function poll() {
 
     await chrome.storage.local.set({
       cachedReportsByOrg: newCache,
+      cachedRemindersByOrg: remindersCache,
       cachedPendingAlerts: pendingAlerts || null,
       badgeTotals: {
         overdue: totalOverdue,
@@ -553,6 +554,8 @@ async function poll() {
       cachedYear: year,
       cachedMonth: month,
     })
+
+    chrome.runtime.sendMessage({ type: 'data-updated' }).catch(() => {})
   } catch (err) {
     console.error('[HouseApp] poll error:', err)
   }
