@@ -47,6 +47,42 @@ export function CreditCardKpiSkeleton() {
   )
 }
 
+export function CreditCardAnalyticsSkeleton() {
+  return (
+    <div className="space-y-4 px-4 py-3 lg:px-6">
+      <div className="overflow-hidden rounded-xl border border-slate-200 bg-white shadow-sm">
+        <div className="bg-violet-50/40 px-5 py-5 sm:px-6">
+          <Skeleton className="h-4 w-32" />
+          <Skeleton className="mt-3 h-10 w-48" />
+          <Skeleton className="mt-2 h-4 w-64" />
+          <div className="mt-5 grid grid-cols-2 gap-3 sm:grid-cols-4">
+            {Array.from({ length: 4 }).map((_, index) => (
+              <Skeleton key={index} className="h-16 rounded-lg" />
+            ))}
+          </div>
+        </div>
+      </div>
+
+      <div className="grid gap-4 xl:grid-cols-2">
+        {Array.from({ length: 2 }).map((_, cardIndex) => (
+          <div
+            key={cardIndex}
+            className="finance-card rounded-lg border border-slate-200/80 bg-white p-4 shadow-sm"
+          >
+            <Skeleton className="h-5 w-40" />
+            <Skeleton className="mt-1 h-4 w-56" />
+            <div className="mt-4 space-y-3">
+              {Array.from({ length: 5 }).map((_, index) => (
+                <Skeleton key={index} className="h-14 rounded-lg" />
+              ))}
+            </div>
+          </div>
+        ))}
+      </div>
+    </div>
+  )
+}
+
 export function CreditCardStatementFiltersSkeleton() {
   return (
     <div className="flex flex-wrap gap-2">

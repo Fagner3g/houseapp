@@ -4,7 +4,7 @@ import { ChevronLeft, ChevronRight } from 'lucide-react'
 import type { BillingCycle } from '@/lib/billing-cycle'
 import { formatInvoiceLabel } from '@/lib/billing-cycle'
 import { useCardOverdueInvoices } from '@/features/credit-cards/hooks/use-card-overdue-invoices'
-import { useCreditCardCyclePending } from '@/features/credit-cards/hooks/use-credit-card-cycle-pending'
+import { useCreditCardInvoiceMetrics } from '@/features/credit-cards/hooks/use-credit-card-invoice-metrics'
 import { Button } from '@/components/ui/button'
 import { CreditCardDueBadgeSkeleton } from '@/features/credit-cards/components/credit-card-invoice-skeletons'
 import { cn } from '@/lib/utils'
@@ -33,20 +33,29 @@ export function CreditCardPageHeader({
   onNavigateToMonth,
 }: CreditCardPageHeaderProps) {
   const overdueInvoices = useCardOverdueInvoices(accountId)
-  const cyclePending = useCreditCardCyclePending(accountId, cycle, closingDay, dueDay)
+  const { isOverdue, isPaid, isPending } = useCreditCardInvoiceMetrics(
+    accountId,
+    cycle,
+    closingDay,
+    dueDay
+  )
+
   const overdueCount = overdueInvoices.length
   const oldestOverdue = overdueInvoices[0]
 
-  const isOverdue = !cyclePending && dayjs(cycle.dueDate).isBefore(dayjs(), 'day')
   const dueLabel = isOverdue
     ? dueDay
       ? `Em atraso · venceu dia ${dueDay}`
       : `Em atraso · venceu ${dayjs(cycle.dueDate).format('DD/MM')}`
-    : dueDay
-      ? `Vence dia ${dueDay}`
-      : cycle.dueDate
-        ? `Vence ${dayjs(cycle.dueDate).format('DD/MM')}`
-        : null
+    : isPaid
+      ? dueDay
+        ? `Quitada · venceu dia ${dueDay}`
+        : `Quitada · venceu ${dayjs(cycle.dueDate).format('DD/MM')}`
+      : dueDay
+        ? `Vence dia ${dueDay}`
+        : cycle.dueDate
+          ? `Vence ${dayjs(cycle.dueDate).format('DD/MM')}`
+          : null
 
   return (
     <div className="flex flex-col gap-1 border-b border-slate-100 px-4 py-3 lg:px-6">
@@ -101,14 +110,18 @@ export function CreditCardPageHeader({
               {overdueCount} fatura{overdueCount > 1 ? 's' : ''} em atraso
             </button>
           )}
-          {cyclePending ? (
+          {isPending ? (
             <CreditCardDueBadgeSkeleton />
           ) : (
             dueLabel && (
               <span
                 className={cn(
                   'rounded-full px-2.5 py-1 text-xs font-medium',
-                  isOverdue ? 'bg-rose-50 text-rose-700' : 'bg-slate-100 text-slate-600'
+                  isOverdue
+                    ? 'bg-rose-50 text-rose-700'
+                    : isPaid
+                      ? 'bg-emerald-50 text-emerald-700'
+                      : 'bg-slate-100 text-slate-600'
                 )}
               >
                 {dueLabel}

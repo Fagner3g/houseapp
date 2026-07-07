@@ -35,6 +35,7 @@ interface TransactionListProps {
   accountId?: string
   /** When multiple cards exist, shows which card made each purchase. */
   cards?: Array<{ id: string; label: string; lastFourDigits?: string | null }>
+  containerClassName?: string
 }
 
 function isCreditCardExpense(
@@ -82,6 +83,7 @@ function TransactionTable({
   mode = 'default',
   accountId,
   cards,
+  containerClassName,
 }: TransactionListProps) {
   const isCreditCardStatement = variant === 'credit_card_statement'
   const showCardLabel = isCreditCardStatement && !!cards?.length
@@ -172,9 +174,14 @@ function TransactionTable({
     </TableHeader>
   )
 
+  const tableContainerClass = cn(
+    'overflow-hidden rounded-lg border border-slate-200/80 bg-white',
+    containerClassName ?? 'mx-4 lg:mx-6'
+  )
+
   if (!items.length) {
     return (
-      <div className="mx-4 overflow-hidden rounded-lg border border-slate-200/80 bg-white lg:mx-6">
+      <div className={tableContainerClass}>
         <Table>
           {tableHeader}
           <TableBody>
@@ -194,7 +201,7 @@ function TransactionTable({
 
   return (
     <>
-      <div className="mx-4 overflow-hidden rounded-lg border border-slate-200/80 bg-white lg:mx-6">
+      <div className={tableContainerClass}>
         <Table>
           {tableHeader}
           <TableBody>
@@ -431,6 +438,7 @@ export function TransactionList({
   mode = 'default',
   accountId,
   cards,
+  containerClassName,
 }: TransactionListProps) {
   const search = useSearch({ strict: false }) as {
     recurring?: 'all' | 'recurring' | 'single'
@@ -456,6 +464,7 @@ export function TransactionList({
         mode="overdue"
         accountId={accountId}
         cards={cards}
+        containerClassName={containerClassName}
       />
     )
   }
@@ -468,6 +477,7 @@ export function TransactionList({
       mode="default"
       accountId={accountId}
       cards={cards}
+      containerClassName={containerClassName}
     />
   )
 }

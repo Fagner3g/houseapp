@@ -17,11 +17,16 @@ import { AccountTypeSidebar } from '@/features/accounts/components/account-type-
 import { ImportStatementDialog } from '@/features/accounts/components/import-statement-dialog'
 import { groupCreditCardsForSidebar } from '@/features/accounts/constants'
 import { DeleteCreditCardDialog } from '@/features/credit-cards/components/delete-credit-card-dialog'
+import { CreditCardAnalyticsSection } from '@/features/credit-cards/components/credit-card-analytics-section'
 import { CreditCardKpiRow } from '@/features/credit-cards/components/credit-card-kpi-row'
 import { CreditCardOverdueBanner } from '@/features/credit-cards/components/credit-card-overdue-banner'
 import { CreditCardPageHeader } from '@/features/credit-cards/components/credit-card-page-header'
 import { CreditCardSettingsSection } from '@/features/credit-cards/components/credit-card-settings-section'
 import { CreditCardStatementSection } from '@/features/credit-cards/components/credit-card-statement-section'
+import {
+  CreditCardSubNav,
+  type CreditCardView,
+} from '@/features/credit-cards/components/credit-card-sub-nav'
 import { useActiveOrganization } from '@/hooks/use-active-organization'
 import {
   currentBillingMonthKey,
@@ -38,7 +43,7 @@ export const Route = createFileRoute('/_app/$org/accounts/')({
       .string()
       .regex(/^\d{4}-\d{2}$/)
       .optional(),
-    view: z.enum(['settings']).optional(),
+    view: z.enum(['settings', 'analytics']).optional(),
   }),
 })
 
@@ -47,6 +52,13 @@ function AccountsPage() {
   const navigate = useNavigate({ from: Route.fullPath })
   const { accountId, month, view } = Route.useSearch()
   const isSettingsView = view === 'settings'
+  const isAnalyticsView = view === 'analytics'
+  const isStatementView = !isSettingsView && !isAnalyticsView
+  const currentView: CreditCardView = isSettingsView
+    ? 'settings'
+    : isAnalyticsView
+      ? 'analytics'
+      : 'statement'
   const queryClient = useQueryClient()
   const openAccountDrawer = useDrawerStore(s => s.openAccountDrawer)
 
@@ -99,11 +111,17 @@ function AccountsPage() {
   const updateSearch = (patch: {
     accountId?: string
     month?: string
-    view?: 'settings' | undefined
+    view?: 'settings' | 'analytics' | undefined
   }) => {
     navigate({
       search: prev => ({ ...prev, ...patch }),
       replace: true,
+    })
+  }
+
+  const handleViewChange = (nextView: CreditCardView) => {
+    updateSearch({
+      view: nextView === 'statement' ? undefined : nextView,
     })
   }
 
@@ -190,6 +208,8 @@ function AccountsPage() {
 
             {selectedAccount && (
               <div className="min-w-0 flex-1 pb-24 md:pb-6">
+                <CreditCardSubNav view={currentView} onViewChange={handleViewChange} />
+
                 {isSettingsView ? (
                   <CreditCardSettingsSection
                     account={selectedAccount}
@@ -214,31 +234,42 @@ function AccountsPage() {
                       onGoToday={() => updateSearch({ month: currentBillingMonthKey() })}
                       onNavigateToMonth={monthKey => updateSearch({ month: monthKey })}
                     />
-                    <div className="space-y-4 py-3">
-                      <CreditCardOverdueBanner
-                        accountId={selectedAccount.id}
-                        cycle={cycle}
-                        closingDay={selectedAccount.closingDay ?? 1}
-                        dueDay={selectedAccount.dueDay ?? 10}
-                        viewingMonthKey={billingMonthKey}
-                        onNavigateToMonth={monthKey => updateSearch({ month: monthKey })}
-                      />
-                      <CreditCardKpiRow
+
+                    {isStatementView ? (
+                      <div className="space-y-4 py-3">
+                        <CreditCardOverdueBanner
+                          accountId={selectedAccount.id}
+                          cycle={cycle}
+                          closingDay={selectedAccount.closingDay ?? 1}
+                          dueDay={selectedAccount.dueDay ?? 10}
+                          viewingMonthKey={billingMonthKey}
+                          onNavigateToMonth={monthKey => updateSearch({ month: monthKey })}
+                        />
+                        <CreditCardKpiRow
+                          accountId={selectedAccount.id}
+                          accountName={selectedAccount.name}
+                          cycle={cycle}
+                          closingDay={selectedAccount.closingDay ?? 1}
+                          dueDay={selectedAccount.dueDay ?? 10}
+                        />
+                        <CreditCardStatementSection
+                          accountId={selectedAccount.id}
+                          cycle={cycle}
+                          closingDay={selectedAccount.closingDay ?? 1}
+                          dueDay={selectedAccount.dueDay ?? 10}
+                          onImported={handleImported}
+                          onViewExistingStatement={handleViewExistingStatement}
+                        />
+                      </div>
+                    ) : (
+                      <CreditCardAnalyticsSection
                         accountId={selectedAccount.id}
                         accountName={selectedAccount.name}
                         cycle={cycle}
                         closingDay={selectedAccount.closingDay ?? 1}
                         dueDay={selectedAccount.dueDay ?? 10}
                       />
-                      <CreditCardStatementSection
-                        accountId={selectedAccount.id}
-                        cycle={cycle}
-                        closingDay={selectedAccount.closingDay ?? 1}
-                        dueDay={selectedAccount.dueDay ?? 10}
-                        onImported={handleImported}
-                        onViewExistingStatement={handleViewExistingStatement}
-                      />
-                    </div>
+                    )}
                   </>
                 )}
               </div>

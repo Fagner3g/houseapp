@@ -85,6 +85,8 @@ import type {
   GetReportInsightsParams,
   GetReportSummary200,
   GetReportSummaryParams,
+  GetReportTopMerchants200,
+  GetReportTopMerchantsParams,
   GetReportTrends200,
   GetReportTrendsParams,
   GetSplitDebtSummary200,
@@ -11068,6 +11070,209 @@ export function useGetReportInsights<
   queryKey: DataTag<QueryKey, TData, TError>;
 } {
   const queryOptions = getGetReportInsightsQueryOptions(slug, params, options);
+
+  const query = useQuery(queryOptions, queryClient) as UseQueryResult<
+    TData,
+    TError
+  > & { queryKey: DataTag<QueryKey, TData, TError> };
+
+  query.queryKey = queryOptions.queryKey;
+
+  return query;
+}
+
+/**
+ * Top expense merchants/items grouped by normalized title (personal scope)
+ */
+export const getGetReportTopMerchantsUrl = (
+  slug: string,
+  params?: GetReportTopMerchantsParams,
+) => {
+  const normalizedParams = new URLSearchParams();
+
+  Object.entries(params || {}).forEach(([key, value]) => {
+    if (value !== undefined) {
+      normalizedParams.append(key, value === null ? "null" : value.toString());
+    }
+  });
+
+  const stringifiedParams = normalizedParams.toString();
+
+  return stringifiedParams.length > 0
+    ? `/organizations/${slug}/reports/top-merchants?${stringifiedParams}`
+    : `/organizations/${slug}/reports/top-merchants`;
+};
+
+export const getReportTopMerchants = async (
+  slug: string,
+  params?: GetReportTopMerchantsParams,
+  options?: RequestInit,
+): Promise<GetReportTopMerchants200> => {
+  return http<GetReportTopMerchants200>(
+    getGetReportTopMerchantsUrl(slug, params),
+    {
+      ...options,
+      method: "GET",
+    },
+  );
+};
+
+export const getGetReportTopMerchantsQueryKey = (
+  slug?: string,
+  params?: GetReportTopMerchantsParams,
+) => {
+  return [
+    `/organizations/${slug}/reports/top-merchants`,
+    ...(params ? [params] : []),
+  ] as const;
+};
+
+export const getGetReportTopMerchantsQueryOptions = <
+  TData = Awaited<ReturnType<typeof getReportTopMerchants>>,
+  TError = unknown,
+>(
+  slug: string,
+  params?: GetReportTopMerchantsParams,
+  options?: {
+    query?: Partial<
+      UseQueryOptions<
+        Awaited<ReturnType<typeof getReportTopMerchants>>,
+        TError,
+        TData
+      >
+    >;
+    request?: SecondParameter<typeof http>;
+  },
+) => {
+  const { query: queryOptions, request: requestOptions } = options ?? {};
+
+  const queryKey =
+    queryOptions?.queryKey ?? getGetReportTopMerchantsQueryKey(slug, params);
+
+  const queryFn: QueryFunction<
+    Awaited<ReturnType<typeof getReportTopMerchants>>
+  > = ({ signal }) =>
+    getReportTopMerchants(slug, params, { signal, ...requestOptions });
+
+  return {
+    queryKey,
+    queryFn,
+    enabled: !!slug,
+    ...queryOptions,
+  } as UseQueryOptions<
+    Awaited<ReturnType<typeof getReportTopMerchants>>,
+    TError,
+    TData
+  > & { queryKey: DataTag<QueryKey, TData, TError> };
+};
+
+export type GetReportTopMerchantsQueryResult = NonNullable<
+  Awaited<ReturnType<typeof getReportTopMerchants>>
+>;
+export type GetReportTopMerchantsQueryError = unknown;
+
+export function useGetReportTopMerchants<
+  TData = Awaited<ReturnType<typeof getReportTopMerchants>>,
+  TError = unknown,
+>(
+  slug: string,
+  params: undefined | GetReportTopMerchantsParams,
+  options: {
+    query: Partial<
+      UseQueryOptions<
+        Awaited<ReturnType<typeof getReportTopMerchants>>,
+        TError,
+        TData
+      >
+    > &
+      Pick<
+        DefinedInitialDataOptions<
+          Awaited<ReturnType<typeof getReportTopMerchants>>,
+          TError,
+          Awaited<ReturnType<typeof getReportTopMerchants>>
+        >,
+        "initialData"
+      >;
+    request?: SecondParameter<typeof http>;
+  },
+  queryClient?: QueryClient,
+): DefinedUseQueryResult<TData, TError> & {
+  queryKey: DataTag<QueryKey, TData, TError>;
+};
+export function useGetReportTopMerchants<
+  TData = Awaited<ReturnType<typeof getReportTopMerchants>>,
+  TError = unknown,
+>(
+  slug: string,
+  params?: GetReportTopMerchantsParams,
+  options?: {
+    query?: Partial<
+      UseQueryOptions<
+        Awaited<ReturnType<typeof getReportTopMerchants>>,
+        TError,
+        TData
+      >
+    > &
+      Pick<
+        UndefinedInitialDataOptions<
+          Awaited<ReturnType<typeof getReportTopMerchants>>,
+          TError,
+          Awaited<ReturnType<typeof getReportTopMerchants>>
+        >,
+        "initialData"
+      >;
+    request?: SecondParameter<typeof http>;
+  },
+  queryClient?: QueryClient,
+): UseQueryResult<TData, TError> & {
+  queryKey: DataTag<QueryKey, TData, TError>;
+};
+export function useGetReportTopMerchants<
+  TData = Awaited<ReturnType<typeof getReportTopMerchants>>,
+  TError = unknown,
+>(
+  slug: string,
+  params?: GetReportTopMerchantsParams,
+  options?: {
+    query?: Partial<
+      UseQueryOptions<
+        Awaited<ReturnType<typeof getReportTopMerchants>>,
+        TError,
+        TData
+      >
+    >;
+    request?: SecondParameter<typeof http>;
+  },
+  queryClient?: QueryClient,
+): UseQueryResult<TData, TError> & {
+  queryKey: DataTag<QueryKey, TData, TError>;
+};
+
+export function useGetReportTopMerchants<
+  TData = Awaited<ReturnType<typeof getReportTopMerchants>>,
+  TError = unknown,
+>(
+  slug: string,
+  params?: GetReportTopMerchantsParams,
+  options?: {
+    query?: Partial<
+      UseQueryOptions<
+        Awaited<ReturnType<typeof getReportTopMerchants>>,
+        TError,
+        TData
+      >
+    >;
+    request?: SecondParameter<typeof http>;
+  },
+  queryClient?: QueryClient,
+): UseQueryResult<TData, TError> & {
+  queryKey: DataTag<QueryKey, TData, TError>;
+} {
+  const queryOptions = getGetReportTopMerchantsQueryOptions(
+    slug,
+    params,
+    options,
+  );
 
   const query = useQuery(queryOptions, queryClient) as UseQueryResult<
     TData,

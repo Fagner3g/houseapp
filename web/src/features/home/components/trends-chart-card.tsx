@@ -4,6 +4,7 @@ import 'dayjs/locale/pt-br'
 import type { GetReportTrends200 } from '@/api/generated/model'
 import { MonthlyTrendChart } from '@/components/charts/monthly-trend-chart'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
+import { currentMonthKey } from '@/lib/date-range'
 
 import { mapTrendsToChartData } from '../lib/chart-mappers'
 
@@ -11,16 +12,15 @@ dayjs.locale('pt-br')
 
 interface TrendsChartCardProps {
   data?: GetReportTrends200
-  monthKey?: string
+  selectedMonthKey?: string
+  onMonthSelect?: (monthKey: string) => void
   isLoading?: boolean
   error?: unknown
 }
 
-export function TrendsChartCard({ data, monthKey, isLoading, error }: TrendsChartCardProps) {
+export function TrendsChartCard({ data, selectedMonthKey, onMonthSelect, isLoading, error }: TrendsChartCardProps) {
   const chartData = data ? mapTrendsToChartData(data.months) : []
-  const subtitle = monthKey
-    ? `Últimos 6 meses até ${dayjs(`${monthKey}-01`).format('MMMM [de] YYYY')}`
-    : 'Últimos 6 meses'
+  const subtitle = `Últimos 6 meses até ${dayjs(`${currentMonthKey()}-01`).format('MMMM [de] YYYY')}`
 
   return (
     <Card className="finance-card">
@@ -42,7 +42,11 @@ export function TrendsChartCard({ data, monthKey, isLoading, error }: TrendsChar
             Sem dados para exibir
           </div>
         ) : (
-          <MonthlyTrendChart data={chartData} />
+          <MonthlyTrendChart
+            data={chartData}
+            selectedMonthKey={selectedMonthKey}
+            onMonthSelect={onMonthSelect}
+          />
         )}
       </CardContent>
     </Card>

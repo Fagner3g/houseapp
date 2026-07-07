@@ -2,7 +2,7 @@ import dayjs from 'dayjs'
 import { ChevronLeft, ChevronRight } from 'lucide-react'
 
 import { Button } from '@/components/ui/button'
-import { monthKeyToRange, shiftMonth } from '@/lib/date-range'
+import { currentMonthKey, monthKeyToRange, shiftMonth } from '@/lib/date-range'
 
 interface MonthPickerProps {
   monthKey: string
@@ -11,7 +11,7 @@ interface MonthPickerProps {
 
 export function MonthPicker({ monthKey, onChange }: MonthPickerProps) {
   const { label } = monthKeyToRange(monthKey)
-  const isCurrentMonth = monthKey === dayjs().format('YYYY-MM')
+  const isCurrentMonth = monthKey === currentMonthKey()
 
   return (
     <div className="flex items-center gap-2">
@@ -25,9 +25,20 @@ export function MonthPicker({ monthKey, onChange }: MonthPickerProps) {
       >
         <ChevronLeft className="size-4" />
       </Button>
-      <span className="min-w-[140px] text-center text-sm font-medium capitalize text-slate-700">
-        {label}
-      </span>
+      <div className="flex min-w-[140px] items-center justify-center gap-2">
+        <span className="text-center text-sm font-medium capitalize text-slate-700">{label}</span>
+        {!isCurrentMonth && (
+          <Button
+            type="button"
+            variant="ghost"
+            size="sm"
+            className="h-7 px-2 text-xs"
+            onClick={() => onChange(currentMonthKey())}
+          >
+            Hoje
+          </Button>
+        )}
+      </div>
       <Button
         type="button"
         variant="outline"

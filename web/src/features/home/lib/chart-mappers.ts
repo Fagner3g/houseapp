@@ -20,6 +20,7 @@ export function mapCategoryToChartData(categories: GetReportByCategory200Categor
 export function mapTrendsToChartData(months: GetReportTrends200MonthsItem[]) {
   return months.map(m => ({
     month: dayjs(`${m.month}-01`).format('MMM/YY'),
+    monthKey: m.month,
     income: moneyStringToReais(m.income),
     expense: moneyStringToReais(m.expense),
   }))

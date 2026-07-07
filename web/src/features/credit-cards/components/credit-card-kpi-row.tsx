@@ -1,22 +1,14 @@
 import dayjs from 'dayjs'
 import { CalendarDays, CheckCircle2 } from 'lucide-react'
-import { useMemo } from 'react'
 
-import { useListStatements } from '@/api/generated/api'
 import { Button } from '@/components/ui/button'
 import { formatCurrency, numberToCents } from '@/lib/currency'
 import type { BillingCycle } from '@/lib/billing-cycle'
-import { findStatementForCycle, findPreviousStatementForCycle, formatDateRange, formatImportedPurchasePeriodRange } from '@/lib/billing-cycle'
-import {
-  computeInvoiceMetrics,
-  resolvePaymentPeriod,
-  resolvePurchasesPeriod,
-} from '@/lib/credit-card-invoice-metrics'
-import { useActiveOrganization } from '@/hooks/use-active-organization'
+import { formatDateRange, formatImportedPurchasePeriodRange } from '@/lib/billing-cycle'
 import { useDrawerStore } from '@/stores/drawers'
 import { cn } from '@/lib/utils'
 
-import { useInvoiceCycleTransactions } from '../hooks/use-invoice-cycle-transactions'
+import { useCreditCardInvoiceMetrics } from '../hooks/use-credit-card-invoice-metrics'
 import { CreditCardKpiSkeleton } from './credit-card-invoice-skeletons'
 
 interface CreditCardKpiRowProps {
@@ -66,61 +58,18 @@ export function CreditCardKpiRow({
   closingDay,
   dueDay,
 }: CreditCardKpiRowProps) {
-  const { slug } = useActiveOrganization()
   const openPayInvoiceDrawer = useDrawerStore(s => s.openPayInvoiceDrawer)
 
-  const { data: statementsData } = useListStatements(slug, accountId, {
-    query: { enabled: !!slug && !!accountId },
-  })
-
-  const matchedStatement = useMemo(
-    () =>
-      findStatementForCycle(statementsData?.statements ?? [], cycle, {
-        closingDay,
-        dueDay,
-      }),
-    [statementsData?.statements, cycle, closingDay, dueDay]
-  )
-
-  const previousStatement = useMemo(
-    () =>
-      findPreviousStatementForCycle(
-        statementsData?.statements ?? [],
-        cycle,
-        closingDay,
-        dueDay
-      ),
-    [statementsData?.statements, cycle, closingDay, dueDay]
-  )
-
-  const paymentContext = useMemo(
-    () => ({ previousStatement, closingDay, dueDay }),
-    [previousStatement, closingDay, dueDay]
-  )
-
-  const purchasesPeriod = resolvePurchasesPeriod(cycle, matchedStatement)
-  const paymentPeriod = resolvePaymentPeriod(cycle, matchedStatement, paymentContext)
-
-  const dateFromIso = dayjs(purchasesPeriod.start).startOf('day').toISOString()
-  const dateToIso = dayjs(paymentPeriod.end).endOf('day').toISOString()
-
-  const { transactions: cycleTransactions, isPending: cyclePending } =
-    useInvoiceCycleTransactions(
-      slug,
-      { accountId, dateFrom: dateFromIso, dateTo: dateToIso, perPage: 100 },
-      !!slug && !!accountId
-    )
-
-  const metrics = useMemo(
-    () =>
-      computeInvoiceMetrics(
-        cycle,
-        matchedStatement,
-        cycleTransactions,
-        paymentContext
-      ),
-    [cycleTransactions, matchedStatement, cycle, paymentContext]
-  )
+  const {
+    metrics,
+    matchedStatement,
+    purchasesPeriod,
+    dueDate,
+    isPaid,
+    isSettledEmpty,
+    isOverdue,
+    isPending,
+  } = useCreditCardInvoiceMetrics(accountId, cycle, closingDay, dueDay)
 
   const purchasesLabel = metrics.usesImportedStatementPeriod
     ? formatImportedPurchasePeriodRange(purchasesPeriod.start, purchasesPeriod.end)
@@ -128,10 +77,6 @@ export function CreditCardKpiRow({
 
   const invoiceTotalLabel = formatCurrency(metrics.invoiceTotal)
 
-  const dueDate = paymentPeriod.end
-  const isOverdue = metrics.remaining > 0 && dayjs(dueDate).isBefore(dayjs(), 'day')
-  const isPaid = metrics.remaining <= 0 && metrics.invoiceTotal > 0
-  const isSettledEmpty = metrics.remaining <= 0 && metrics.invoiceTotal <= 0
   const supportsManualPayment =
     matchedStatement?.importSource !== 'ofx' && matchedStatement?.importSource !== 'csv'
 
@@ -168,7 +113,7 @@ export function CreditCardKpiRow({
     metrics.payments > 0 ||
     metrics.invoiceTotal > 0
 
-  if (cyclePending) {
+  if (isPending) {
     return <CreditCardKpiSkeleton />
   }
 
@@ -182,7 +127,6 @@ export function CreditCardKpiRow({
           !isOverdue && !isPaid && 'border-slate-200'
         )}
       >
-        {/* Hero: valor a pagar */}
         <div
           className={cn(
             'px-5 py-5 sm:px-6',
@@ -264,7 +208,6 @@ export function CreditCardKpiRow({
           </div>
         </div>
 
-        {/* Breakdown estilo extrato */}
         {showBreakdown && (
           <div className="border-t border-slate-100 px-5 py-4 sm:px-6">
             <p className="mb-3 text-xs font-medium uppercase tracking-wide text-slate-400">

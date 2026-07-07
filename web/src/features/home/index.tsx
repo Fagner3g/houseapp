@@ -4,7 +4,6 @@ import { keepPreviousData } from '@tanstack/react-query'
 
 import {
   useGetReportByAccount,
-  useGetReportByCard,
   useGetReportByCategory,
   useGetReportDaily,
   useGetReportInsights,
@@ -14,13 +13,13 @@ import {
   useListRecurringTransactions,
 } from '@/api/generated/api'
 import { LoadingErrorState } from '@/components/loading-error-state'
+import { formatCurrency, moneyStringToReais } from '@/lib/currency'
 import { currentMonthKey, monthKeyToRange, shiftMonth } from '@/lib/date-range'
 import { pageInset, pageShell, pageSubtitle } from '@/lib/ui-classes'
 import { useActiveOrganization } from '@/hooks/use-active-organization'
 
 import { AccountBalancesCard } from './components/account-balances-card'
 import { AttentionPanel } from './components/attention-panel'
-import { CardSpendingCard } from './components/card-spending-card'
 import { CategoryChartCard } from './components/category-chart-card'
 import { DailyFlowCard } from './components/daily-flow-card'
 import { DashboardKpiRow } from './components/dashboard-kpi-row'
@@ -51,7 +50,7 @@ export function HomePage() {
   const prevSummary = useGetReportSummary(slug, prevRange, {
     query: { enabled: !!slug, placeholderData: keepPreviousData },
   })
-  const trends = useGetReportTrends(slug, { months: 6, endMonth: monthKey }, {
+  const trends = useGetReportTrends(slug, { months: 6, endMonth: currentMonthKey() }, {
     query: { enabled: !!slug, retry: 1 },
   })
   const daily = useGetReportDaily(slug, range, {
@@ -62,7 +61,6 @@ export function HomePage() {
     { ...range, type: 'expense' },
     { query: { enabled: !!slug, retry: 1 } }
   )
-  const byCard = useGetReportByCard(slug, range, { query: { enabled: !!slug } })
   const byAccount = useGetReportByAccount(slug, range, { query: { enabled: !!slug } })
   const pendingSplits = useListPendingSplits(slug, { query: { enabled: !!slug } })
   const recurring = useListRecurringTransactions(slug, { query: { enabled: !!slug } })
@@ -80,7 +78,6 @@ export function HomePage() {
     trends.refetch()
     daily.refetch()
     byCategory.refetch()
-    byCard.refetch()
     byAccount.refetch()
     pendingSplits.refetch()
     recurring.refetch()
@@ -111,12 +108,11 @@ export function HomePage() {
               summary={summary.data}
               previousSummary={prevSummary.data}
               pendingExpense={cashFlow.pendingExpense}
-              pendingIncome={cashFlow.pendingIncome}
               cashFlowLoading={cashFlow.isLoading}
             />
           ) : isSummaryLoading ? (
-            <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 xl:grid-cols-4 2xl:grid-cols-8">
-              {Array.from({ length: 8 }).map((_, index) => (
+            <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 xl:grid-cols-4">
+              {Array.from({ length: 4 }).map((_, index) => (
                 <div key={index} className="kpi-card animate-pulse">
                   <div className="mb-3 h-4 w-24 rounded bg-slate-200" />
                   <div className="h-8 w-32 rounded bg-slate-200" />
@@ -129,7 +125,8 @@ export function HomePage() {
           <div className="grid gap-4 xl:grid-cols-2">
             <TrendsChartCard
               data={trends.data}
-              monthKey={monthKey}
+              selectedMonthKey={monthKey}
+              onMonthSelect={setMonthKey}
               isLoading={trends.isLoading}
               error={trends.error}
             />
@@ -177,14 +174,11 @@ export function HomePage() {
 
             <OpenInvoicesCard monthKey={monthKey} />
 
-            <CardSpendingCard
-              transactions={byCard.data?.transactions ?? []}
-              grandTotal={byCard.data?.grandTotal ?? '0.00'}
-              myGrandTotal={byCard.data?.myGrandTotal}
-            />
-
             <AccountBalancesCard
               data={byAccount.data}
+              netWorth={
+                summary.data ? formatCurrency(moneyStringToReais(summary.data.netWorth)) : undefined
+              }
               isLoading={byAccount.isLoading}
               error={byAccount.error}
             />

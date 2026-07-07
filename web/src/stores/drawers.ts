@@ -16,6 +16,23 @@ export type PayInvoiceContext = {
   amountCents: number
 }
 
+export type AnalyticsGroupContext = {
+  accountId: string
+  accountName: string
+  cycleLabel: string
+  purchasesLabel: string
+  purchasesPeriod: {
+    start: string
+    end: string
+  }
+  groupType: 'category' | 'merchant'
+  groupKey: string
+  label: string
+  total: string
+  occurrenceCount?: number
+  color?: string | null
+}
+
 export type TransactionDrawerMode = 'create' | 'edit' | 'pay'
 
 export type CategoryDrawerMode = 'create' | 'edit'
@@ -46,6 +63,8 @@ interface DrawerStore {
   cardDrawerAccountId: string | null
   payInvoiceDrawerOpen: boolean
   payInvoiceContext: PayInvoiceContext | null
+  analyticsGroupDrawerOpen: boolean
+  analyticsGroupContext: AnalyticsGroupContext | null
   transactionDraft: TransactionDraft | null
   lockedAccountId: string | null
   editingTransactionId: string | null
@@ -81,6 +100,8 @@ interface DrawerStore {
   closeCardDrawer: () => void
   openPayInvoiceDrawer: (context: PayInvoiceContext) => void
   closePayInvoiceDrawer: () => void
+  openAnalyticsGroupDrawer: (context: AnalyticsGroupContext) => void
+  closeAnalyticsGroupDrawer: () => void
   closeNestedDrawers: () => void
 }
 
@@ -108,6 +129,8 @@ export const useDrawerStore = create<DrawerStore>(set => ({
   cardDrawerAccountId: null,
   payInvoiceDrawerOpen: false,
   payInvoiceContext: null,
+  analyticsGroupDrawerOpen: false,
+  analyticsGroupContext: null,
   transactionDraft: null,
   lockedAccountId: null,
   editingTransactionId: null,
@@ -213,6 +236,10 @@ export const useDrawerStore = create<DrawerStore>(set => ({
     set({ payInvoiceDrawerOpen: true, payInvoiceContext: context }),
   closePayInvoiceDrawer: () =>
     set({ payInvoiceDrawerOpen: false, payInvoiceContext: null }),
+  openAnalyticsGroupDrawer: context =>
+    set({ analyticsGroupDrawerOpen: true, analyticsGroupContext: context }),
+  closeAnalyticsGroupDrawer: () =>
+    set({ analyticsGroupDrawerOpen: false, analyticsGroupContext: null }),
   closeNestedDrawers: () =>
     set({
       accountDrawerOpen: false,
@@ -230,5 +257,7 @@ export const useDrawerStore = create<DrawerStore>(set => ({
       cardDrawerAccountId: null,
       payInvoiceDrawerOpen: false,
       payInvoiceContext: null,
+      analyticsGroupDrawerOpen: false,
+      analyticsGroupContext: null,
     }),
 }))

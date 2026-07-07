@@ -97,14 +97,14 @@ async function seedScenarios() {
 
   await ensureDefaultCategories(org.id)
   const categoryRows = await getOrganizationCategories(org.id)
-  const mercado = getCategoryIdByName(categoryRows, 'Mercado', 'expense')
-  const transporte = getCategoryIdByName(categoryRows, 'Transporte (Uber, Combustível)', 'expense')
-  const restaurantes = getCategoryIdByName(categoryRows, 'Restaurantes & Delivery', 'expense')
-  const compras = getCategoryIdByName(categoryRows, 'Compras Pessoais', 'expense')
+  const mercado = getCategoryIdByName(categoryRows, 'Alimentação', 'expense')
+  const transporte = getCategoryIdByName(categoryRows, 'Transporte & Mobilidade', 'expense')
+  const restaurantes = getCategoryIdByName(categoryRows, 'Alimentação', 'expense')
+  const compras = getCategoryIdByName(categoryRows, 'Compras & Lazer', 'expense')
   const salario = getCategoryIdByName(categoryRows, 'Salário / Renda Principal', 'income')
-  const moradia = getCategoryIdByName(categoryRows, 'Moradia (Aluguel, Luz, Condomínio)', 'expense')
-  const internet = getCategoryIdByName(categoryRows, 'Internet & Assinaturas', 'expense')
-  const lazer = getCategoryIdByName(categoryRows, 'Lazer & Hobbies', 'expense')
+  const moradia = getCategoryIdByName(categoryRows, 'Moradia & Contas Fixas', 'expense')
+  const internet = getCategoryIdByName(categoryRows, 'Moradia & Contas Fixas', 'expense')
+  const lazer = getCategoryIdByName(categoryRows, 'Compras & Lazer', 'expense')
   const saude = getCategoryIdByName(categoryRows, 'Saúde & Bem-estar', 'expense')
 
   const [nubank, itauChecking, cash] = await db

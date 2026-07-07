@@ -10,6 +10,7 @@ import {
   getDailyReportController,
   getInsightsReportController,
   getSummaryReportController,
+  getTopMerchantsReportController,
   getTrendsReportController,
 } from './report.controller'
 import {
@@ -19,6 +20,7 @@ import {
   dailyReportSchema,
   insightsReportSchema,
   summaryReportSchema,
+  topMerchantsReportSchema,
   trendsReportSchema,
 } from './report.schema'
 
@@ -70,5 +72,12 @@ export const reportsRoutes: FastifyPluginAsyncZod = async app => {
     preHandler: [verifyOrgAccessHook],
     schema: insightsReportSchema,
     handler: getInsightsReportController,
+  })
+
+  app.get('/organizations/:slug/reports/top-merchants', {
+    onRequest: [authenticateUserHook],
+    preHandler: [verifyOrgAccessHook],
+    schema: topMerchantsReportSchema,
+    handler: getTopMerchantsReportController,
   })
 }

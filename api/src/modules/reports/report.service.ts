@@ -11,6 +11,8 @@ import type {
   MonthlyTrendRow,
   ReportDateRange,
   ReportRepository,
+  ReportScopeOptions,
+  TopMerchantsReportResult,
   UpcomingTransactionRow,
 } from './report.repository'
 
@@ -92,6 +94,22 @@ export type DailyReportDto = {
 
 export type DailyFlowReportDto = {
   days: DailyReportDto[]
+}
+
+export type TopMerchantReportDto = {
+  key: string
+  label: string
+  total: string
+  occurrenceCount: number
+  isRecurring: boolean
+  avgAmount: string
+  lastDate: string
+  percentage: string
+}
+
+export type TopMerchantsReportDto = {
+  merchants: TopMerchantReportDto[]
+  grandTotal: string
 }
 
 function toIsoString(value: Date | string): string {
@@ -203,6 +221,31 @@ function toDailyDtos(rows: DailyReportRow[]): DailyReportDto[] {
   }))
 }
 
+function toTopMerchantsDto(result: TopMerchantsReportResult): TopMerchantsReportDto {
+  const { merchants, grandTotal } = result
+
+  return {
+    merchants: merchants.map(row => {
+      const percentage =
+        grandTotal > 0n
+          ? (Number((row.total * 10000n) / grandTotal) / 100).toFixed(2)
+          : '0.00'
+
+      return {
+        key: row.key,
+        label: row.label,
+        total: centavosToString(row.total) ?? '0.00',
+        occurrenceCount: row.occurrenceCount,
+        isRecurring: row.occurrenceCount >= 2,
+        avgAmount: centavosToString(row.avgAmount) ?? '0.00',
+        lastDate: toIsoString(row.lastDate),
+        percentage,
+      }
+    }),
+    grandTotal: centavosToString(grandTotal) ?? '0.00',
+  }
+}
+
 export class ReportService {
   constructor(private readonly reportRepository: ReportRepository) {}
 
@@ -245,10 +288,19 @@ export class ReportService {
     organizationId: string,
     type: 'income' | 'expense',
     dateFrom?: string,
-    dateTo?: string
+    dateTo?: string,
+    personal = false,
+    userId?: string,
+    scopeOptions?: ReportScopeOptions
   ): Promise<CategoryReportDto[]> {
     const range = parseDateRange(dateFrom, dateTo)
-    const rows = await this.reportRepository.getByCategory(organizationId, range, type)
+    const rows = await this.reportRepository.getByCategory(
+      organizationId,
+      range,
+      type,
+      personal ? userId : undefined,
+      scopeOptions
+    )
     return toCategoryDtos(rows)
   }
 
@@ -275,6 +327,25 @@ export class ReportService {
     const range = parseDateRange(dateFrom, dateTo)
     const rows = await this.reportRepository.getDaily(organizationId, range)
     return { days: toDailyDtos(rows) }
+  }
+
+  async getTopMerchants(
+    organizationId: string,
+    userId: string,
+    dateFrom?: string,
+    dateTo?: string,
+    limit = 15,
+    scopeOptions?: ReportScopeOptions
+  ): Promise<TopMerchantsReportDto> {
+    const range = parseDateRange(dateFrom, dateTo)
+    const result = await this.reportRepository.getTopMerchants(
+      organizationId,
+      range,
+      userId,
+      limit,
+      scopeOptions
+    )
+    return toTopMerchantsDto(result)
   }
 
   async buildMonthlySummaryData(

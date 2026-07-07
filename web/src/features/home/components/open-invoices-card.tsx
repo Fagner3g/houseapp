@@ -52,8 +52,13 @@ export function OpenInvoicesCard({ monthKey }: OpenInvoicesCardProps) {
             {openInvoices.slice(0, 5).map(invoice => (
               <Link
                 key={invoice.id}
-                to="/$org/accounts/$id"
-                params={{ org: slug, id: invoice.accountId }}
+                to="/$org/accounts"
+                params={{ org: slug }}
+                search={{
+                  accountId: invoice.accountId,
+                  month: invoice.monthKey,
+                  view: 'analytics',
+                }}
                 className="flex items-center justify-between rounded-lg border border-slate-100 p-3 hover:bg-slate-50"
               >
                 <div className="min-w-0">

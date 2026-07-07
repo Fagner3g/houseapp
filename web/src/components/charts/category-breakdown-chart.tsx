@@ -1,6 +1,8 @@
 import React from 'react'
 import { Cell, Pie, PieChart, ResponsiveContainer, Tooltip } from 'recharts'
 
+import { cn } from '@/lib/utils'
+
 interface CategoryBreakdown {
   category: string
   percentage: number
@@ -10,6 +12,7 @@ interface CategoryBreakdown {
 
 interface CategoryBreakdownChartProps {
   data: CategoryBreakdown[]
+  compact?: boolean
 }
 
 const FALLBACK_COLORS = [
@@ -57,7 +60,7 @@ const renderCustomizedLabel = ({ cx, cy, midAngle, outerRadius, percent }: Label
   )
 }
 
-export function CategoryBreakdownChart({ data }: CategoryBreakdownChartProps) {
+export function CategoryBreakdownChart({ data, compact = false }: CategoryBreakdownChartProps) {
   const [activeIndex, setActiveIndex] = React.useState<number | null>(null)
 
   const formatCurrency = (value: number) => {
@@ -66,7 +69,12 @@ export function CategoryBreakdownChart({ data }: CategoryBreakdownChartProps) {
 
   if (data.length === 0) {
     return (
-      <div className="flex h-80 w-full items-center justify-center">
+      <div
+        className={cn(
+          'flex w-full items-center justify-center',
+          compact ? 'h-48' : 'h-80'
+        )}
+      >
         <p className="text-muted-foreground">Nenhuma categoria encontrada</p>
       </div>
     )
@@ -77,8 +85,8 @@ export function CategoryBreakdownChart({ data }: CategoryBreakdownChartProps) {
   }
 
   return (
-    <div className="flex flex-col gap-4">
-      <div className="h-80 w-full">
+    <div className={cn('flex flex-col', compact ? 'gap-2' : 'gap-4')}>
+      <div className={cn('w-full', compact ? 'h-48' : 'h-80')}>
         <ResponsiveContainer width="100%" height="100%">
           <PieChart>
             <Pie
@@ -86,8 +94,8 @@ export function CategoryBreakdownChart({ data }: CategoryBreakdownChartProps) {
               cx="50%"
               cy="50%"
               labelLine={false}
-              label={renderCustomizedLabel}
-              outerRadius={90}
+              label={compact ? false : renderCustomizedLabel}
+              outerRadius={compact ? 70 : 90}
               fill="#8884d8"
               dataKey="totalAmount"
               nameKey="category"
@@ -124,8 +132,8 @@ export function CategoryBreakdownChart({ data }: CategoryBreakdownChartProps) {
         </ResponsiveContainer>
       </div>
 
-      {/* Legenda customizada com wrap e tooltip */}
-      <div className="flex flex-wrap justify-center gap-x-4 gap-y-2">
+      {!compact && (
+        <div className="flex flex-wrap justify-center gap-x-4 gap-y-2">
         {data.map((entry, index) => {
           const color = entry.color || FALLBACK_COLORS[index % FALLBACK_COLORS.length]
           const isActive = activeIndex === index
@@ -157,7 +165,8 @@ export function CategoryBreakdownChart({ data }: CategoryBreakdownChartProps) {
             </button>
           )
         })}
-      </div>
+        </div>
+      )}
     </div>
   )
 }

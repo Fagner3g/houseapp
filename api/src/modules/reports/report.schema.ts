@@ -60,6 +60,11 @@ export const byAccountReportSchema = {
   },
 }
 
+const reportScopeQuery = {
+  accountId: z.string().optional(),
+  scope: z.enum(['all', 'credit_card']).optional().default('all'),
+}
+
 export const byCategoryReportSchema = {
   tags: ['Reports'],
   description: 'Spending or income breakdown by category',
@@ -67,6 +72,8 @@ export const byCategoryReportSchema = {
   params: slugParams,
   querystring: reportDateQuery.extend({
     type: z.enum(['expense', 'income']),
+    personal: z.coerce.boolean().optional().default(false),
+    ...reportScopeQuery,
   }),
   response: {
     200: z.object({
@@ -177,5 +184,34 @@ export const insightsReportSchema = {
   },
 }
 
+export const topMerchantsReportSchema = {
+  tags: ['Reports'],
+  description: 'Top expense merchants/items grouped by normalized title (personal scope)',
+  operationId: 'getReportTopMerchants',
+  params: slugParams,
+  querystring: reportDateQuery.extend({
+    limit: z.coerce.number().int().min(1).max(50).optional().default(15),
+    ...reportScopeQuery,
+  }),
+  response: {
+    200: z.object({
+      merchants: z.array(
+        z.object({
+          key: z.string(),
+          label: z.string(),
+          total: z.string(),
+          occurrenceCount: z.number(),
+          isRecurring: z.boolean(),
+          avgAmount: z.string(),
+          lastDate: z.string(),
+          percentage: z.string(),
+        })
+      ),
+      grandTotal: z.string(),
+    }),
+  },
+}
+
 export type ReportDateQuery = z.infer<typeof reportDateQuery>
 export type ByCategoryReportQuery = z.infer<typeof byCategoryReportSchema.querystring>
+export type TopMerchantsReportQuery = z.infer<typeof topMerchantsReportSchema.querystring>

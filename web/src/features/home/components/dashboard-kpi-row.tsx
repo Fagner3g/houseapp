@@ -1,13 +1,5 @@
 import type { GetReportSummary200 } from '@/api/generated/model'
-import {
-  AlertCircle,
-  CircleMinus,
-  CirclePlus,
-  Clock,
-  HandCoins,
-  PiggyBank,
-  Wallet,
-} from 'lucide-react'
+import { CircleMinus, CirclePlus, Clock, PiggyBank } from 'lucide-react'
 
 import { formatCurrency, moneyStringToReais } from '@/lib/currency'
 import { cn } from '@/lib/utils'
@@ -18,7 +10,6 @@ interface DashboardKpiRowProps {
   summary: GetReportSummary200
   previousSummary?: GetReportSummary200
   pendingExpense?: number
-  pendingIncome?: number
   cashFlowLoading?: boolean
 }
 
@@ -26,15 +17,12 @@ export function DashboardKpiRow({
   summary,
   previousSummary,
   pendingExpense = 0,
-  pendingIncome = 0,
   cashFlowLoading = false,
 }: DashboardKpiRowProps) {
   const income = moneyStringToReais(summary.totalIncome)
   const expense = moneyStringToReais(summary.totalExpense)
   const myExpense = moneyStringToReais(summary.myExpenseTotal)
-  const myPendingSplits = moneyStringToReais(summary.myPendingSplitsTotal)
   const balance = income - myExpense
-  const netWorth = moneyStringToReais(summary.netWorth)
   const savingsRate = income > 0 ? (balance / income) * 100 : null
 
   const prevIncome = moneyStringToReais(previousSummary?.totalIncome)
@@ -71,22 +59,6 @@ export function DashboardKpiRow({
       valueClass: pendingExpense > 0 ? 'text-amber-600' : 'text-slate-900',
     },
     {
-      label: 'A receber',
-      value: cashFlowLoading ? '—' : formatCurrency(pendingIncome),
-      subtitle: 'Receitas pendentes no período',
-      icon: CirclePlus,
-      iconClass: 'text-emerald-500',
-      valueClass: pendingIncome > 0 ? 'text-emerald-600' : 'text-slate-900',
-    },
-    {
-      label: 'Splits a receber',
-      value: formatCurrency(myPendingSplits),
-      subtitle: 'Pendente de outras pessoas',
-      icon: HandCoins,
-      iconClass: 'text-amber-500',
-      valueClass: myPendingSplits > 0 ? 'text-amber-600' : 'text-slate-900',
-    },
-    {
       label: 'Saldo do mês',
       value: formatCurrency(balance),
       delta: savingsRate != null ? `${savingsRate.toFixed(0)}% poupança` : undefined,
@@ -95,29 +67,10 @@ export function DashboardKpiRow({
       iconClass: balance >= 0 ? 'text-emerald-500' : 'text-rose-500',
       valueClass: balance >= 0 ? 'text-emerald-700' : 'text-rose-600',
     },
-    {
-      label: 'Patrimônio',
-      value: formatCurrency(netWorth),
-      subtitle: 'Saldo atual das contas (hoje)',
-      icon: Wallet,
-      iconClass: 'text-blue-500',
-      valueClass: 'text-slate-900',
-    },
-    {
-      label: 'Pendências',
-      value: String(summary.pendingCount),
-      subtitle:
-        summary.overdueCount > 0
-          ? `${summary.overdueCount} vencida(s) · situação atual`
-          : 'Lançamentos em aberto · situação atual',
-      icon: AlertCircle,
-      iconClass: summary.overdueCount > 0 ? 'text-amber-500' : 'text-slate-400',
-      valueClass: summary.overdueCount > 0 ? 'text-amber-600' : 'text-slate-900',
-    },
   ]
 
   return (
-    <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 xl:grid-cols-4 2xl:grid-cols-8">
+    <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 xl:grid-cols-4">
       {cards.map(card => (
         <div key={card.label} className="kpi-card">
           <div className="mb-3 flex items-center justify-between gap-2">

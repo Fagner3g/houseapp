@@ -170,17 +170,9 @@ async function seedDemoData() {
     'Salário / Renda Principal',
     'income'
   )
-  const mercadoCategoryId = getCategoryIdByName(categoryRows, 'Mercado', 'expense')
-  const transporteCategoryId = getCategoryIdByName(
-    categoryRows,
-    'Transporte (Uber, Combustível)',
-    'expense'
-  )
-  const restaurantesCategoryId = getCategoryIdByName(
-    categoryRows,
-    'Restaurantes & Delivery',
-    'expense'
-  )
+  const mercadoCategoryId = getCategoryIdByName(categoryRows, 'Alimentação', 'expense')
+  const transporteCategoryId = getCategoryIdByName(categoryRows, 'Transporte & Mobilidade', 'expense')
+  const restaurantesCategoryId = getCategoryIdByName(categoryRows, 'Alimentação', 'expense')
 
   const today = dayjs()
   const yesterday = today.subtract(1, 'day')

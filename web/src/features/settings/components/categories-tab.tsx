@@ -1,11 +1,9 @@
 import { useQueryClient } from '@tanstack/react-query'
 import { Plus } from 'lucide-react'
 import { useMemo, useState } from 'react'
-import { toast } from 'sonner'
 
 import {
   getListCategoriesQueryKey,
-  useDeleteCategory,
   useListCategories,
 } from '@/api/generated/api'
 import type { ListCategories200CategoriesItem } from '@/api/generated/model'
@@ -15,6 +13,7 @@ import {
   groupCategoriesByType,
   type CategoryType,
 } from '@/features/categories/constants'
+import { DeleteCategoryDialog } from '@/features/categories/components/delete-category-dialog'
 import { useActiveOrganization } from '@/hooks/use-active-organization'
 import { useDrawerStore } from '@/stores/drawers'
 
@@ -26,9 +25,9 @@ export function CategoriesSettingsTab() {
   const openCategoryDrawer = useDrawerStore(s => s.openCategoryDrawer)
   const openEditCategoryDrawer = useDrawerStore(s => s.openEditCategoryDrawer)
   const { data, isLoading } = useListCategories(slug, { query: { enabled: !!slug } })
-  const { mutateAsync: deleteCategory } = useDeleteCategory()
 
   const [createType, setCreateType] = useState<CategoryType>('expense')
+  const [deleteTarget, setDeleteTarget] = useState<{ id: string; name: string } | null>(null)
 
   const categories = data?.categories ?? []
   const grouped = useMemo(() => groupCategoriesByType(categories), [categories])
@@ -48,15 +47,8 @@ export function CategoriesSettingsTab() {
     )
   }
 
-  const handleDelete = async (id: string, name: string) => {
-    if (!slug || !confirm(`Excluir categoria "${name}"?`)) return
-    try {
-      await deleteCategory({ slug, id })
-      invalidateCategories()
-      toast.success('Categoria excluída')
-    } catch {
-      toast.error('Erro ao excluir categoria')
-    }
+  const handleDelete = (id: string, name: string) => {
+    setDeleteTarget({ id, name })
   }
 
   const handleCreate = () => {
@@ -99,6 +91,15 @@ export function CategoriesSettingsTab() {
           )
         })}
       </div>
+
+      <DeleteCategoryDialog
+        category={deleteTarget}
+        open={deleteTarget != null}
+        onOpenChange={open => {
+          if (!open) setDeleteTarget(null)
+        }}
+        onDeleted={invalidateCategories}
+      />
     </div>
   )
 }

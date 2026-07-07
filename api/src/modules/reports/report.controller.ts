@@ -2,7 +2,7 @@ import type { FastifyReply, FastifyRequest } from 'fastify'
 
 import { container } from '@/core/container'
 
-import type { ByCategoryReportQuery, ReportDateQuery } from './report.schema'
+import type { ByCategoryReportQuery, ReportDateQuery, TopMerchantsReportQuery } from './report.schema'
 
 type OrgParams = { slug: string }
 
@@ -41,7 +41,13 @@ export async function getByCategoryReportController(
     request.organization.id,
     request.query.type,
     request.query.dateFrom,
-    request.query.dateTo
+    request.query.dateTo,
+    request.query.personal,
+    request.user.sub,
+    {
+      accountId: request.query.accountId,
+      scope: request.query.scope,
+    }
   )
 
   return reply.send({ categories })
@@ -98,6 +104,25 @@ export async function getInsightsReportController(
     request.user.sub,
     request.query.dateFrom,
     request.query.dateTo
+  )
+
+  return reply.send(result)
+}
+
+export async function getTopMerchantsReportController(
+  request: FastifyRequest<{ Params: OrgParams; Querystring: TopMerchantsReportQuery }>,
+  reply: FastifyReply
+) {
+  const result = await container.reportService.getTopMerchants(
+    request.organization.id,
+    request.user.sub,
+    request.query.dateFrom,
+    request.query.dateTo,
+    request.query.limit,
+    {
+      accountId: request.query.accountId,
+      scope: request.query.scope,
+    }
   )
 
   return reply.send(result)

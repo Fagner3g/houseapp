@@ -16,24 +16,36 @@ export type CategorizationExample = {
 }
 
 const HEURISTIC_RULES: Array<{ pattern: RegExp; categoryName: string }> = [
-  { pattern: /uber|99\*|99food|taxi|shell|posto|combust|xebra/i, categoryName: 'Transporte (Uber, Combustível)' },
   {
-    pattern: /ifood|delivery|restaur|burger|japa|bar |boteco|subway|ze delivery|nadinhos|santo japa|zigpay/i,
-    categoryName: 'Restaurantes & Delivery',
-  },
-  {
-    pattern: /mercado|super |epa |pão|paod|carne|extra|araujo|empório|queijo|coelho diniz/i,
-    categoryName: 'Mercado',
+    pattern:
+      /uber|99\*|taxi|shell|posto|combust|xebra|nutag|premmia|park plus|estacionam|easyjet|abastecer|peg pag|auto posto/i,
+    categoryName: 'Transporte & Mobilidade',
   },
   {
     pattern:
-      /internet|vivo|claro|tim fibra|oi fibra|starlink|band ?larga|netflix|spotify|youtube|amazon prime|disney|hbo|globoplay|deezer|apple music|assinatura|subscription|paramount|crunchyroll/i,
-    categoryName: 'Internet & Assinaturas',
+      /ifood|ifd\*|99food|delivery|restaur|burger|japa|bar |boteco|subway|ze delivery|nadinhos|santo japa|zigpay|zig\*|temaki|churrasc|pizzar|bistro|lanches|cafe|cervejaria|esfirra|hotdog|doceria|panificadora|peixe|caldo de cana|biscoit|mep\*|marukai|santorini|tatu bola|trem bom|cappta|bolota|silvinhos|frigideira de minas|chico do peixe|canabrava|vila para restaurante|teresa cafe|mercado|super |epa |pão|paod|carne|carnes|extra|araujo|empório|queijo|coelho diniz|carrefour|minimercado|padaria|frigideira|emporio|curral emp|h\.m\.f\.|distribuidora wallac|estrela do vale|comercial braga|minas rural|sn cidade|lojas rede|jesuconatural|je_suconatural|rezende/i,
+    categoryName: 'Alimentação',
   },
-  { pattern: /sympla|lazer|cinema/i, categoryName: 'Lazer & Hobbies' },
-  { pattern: /shopee|amazon|mercado ?livre|aliexpress|olx|compra|phone|celular/i, categoryName: 'Compras Pessoais' },
-  { pattern: /academia|fit|lifebox|saúde|imede|diagnost/i, categoryName: 'Saúde & Bem-estar' },
-  { pattern: /seguro|justos/i, categoryName: 'Moradia (Aluguel, Luz, Condomínio)' },
+  {
+    pattern:
+      /seguro|justos|condomínio|condominio|aluguel|luz |energia|água|agua|internet|vivo|claro|tim fibra|oi fibra|starlink|band ?larga|netflix|spotify|youtube|amazon prime|disney|hbo|globoplay|deezer|apple music|assinatura|subscription|paramount|crunchyroll|cursor|claude\.?ai|github|jetbrains|notion|figma|openai|chatgpt/i,
+    categoryName: 'Moradia & Contas Fixas',
+  },
+  {
+    pattern:
+      /academia|fit|lifebox|saúde|imede|diagnost|drogaria|droga mix|dentist|odonto|hospital|farmácia|farmacia|asa\*casal/i,
+    categoryName: 'Saúde & Bem-estar',
+  },
+  {
+    pattern:
+      /sympla|cinema|pesque pague|lounge|dome lounge|hotel|suites|hospedagem|airbnb|booking|uni brasil|vantagens\.cvolta|renner|constance|boutiq|cea |moda|vestuário|vestuario|roupa|calçado|calcado|ruivasstores|meu prata|joia|prata lj|leroy merlin|casas bahia|casas lealtex|utilidades|decoração|decoracao|móveis|moveis|eletrodomést|eletrodomest|mgpower|k2 phones|eletronic|tigrescelular|informática|informatica|phone|celular|notebook|tablet|kaka eletronicos|shopee|amazonmktplc|amazon|mercado ?livre|aliexpress|olx|nupay|zp\*olx|educa|curso|faculdade|escola|udemy|coursera|livro/i,
+    categoryName: 'Compras & Lazer',
+  },
+  {
+    pattern:
+      /parafuso|obracom|ferragem|material de construção|terraplana|depósito|deposito estancia|papelaria|ferrament|paodapracafestas|organizacoes junqueira|gennius|comercial e|empreendimento|trabalho|serviço profissional|icaroiannisouza|carlos cesar|valdinei marcos|edercarlospereira|cassiosonio|65651968|62464341|m a p comercio|raimunda lopes/i,
+    categoryName: 'Negócio & Trabalho',
+  },
 ]
 
 function resolveCategoryId(
@@ -65,8 +77,8 @@ function categorizeWithHeuristics(
     }
 
     return (
-      resolveCategoryId(categories, 'Rendimentos', 'income') ??
-      resolveCategoryId(categories, 'Renda Extra / Freelance', 'income')
+      resolveCategoryId(categories, 'Outras Receitas', 'income') ??
+      resolveCategoryId(categories, 'Salário / Renda Principal', 'income')
     )
   }
 

@@ -28,10 +28,16 @@ import {
   reportExpenseAmountExpr,
   reportMonthExpr,
 } from './report-spending'
+import { sumNetWorth } from './report-summary.logic'
 
 export type ReportDateRange = {
   from: Date
   to: Date
+}
+
+export type ReportScopeOptions = {
+  accountId?: string
+  scope?: 'all' | 'credit_card'
 }
 
 export type SummaryRow = {
@@ -107,6 +113,20 @@ export type DailyReportRow = {
   expense: bigint
 }
 
+export type TopMerchantReportRow = {
+  key: string
+  label: string
+  total: bigint
+  occurrenceCount: number
+  avgAmount: bigint
+  lastDate: Date | string
+}
+
+export type TopMerchantsReportResult = {
+  merchants: TopMerchantReportRow[]
+  grandTotal: bigint
+}
+
 export interface ReportRepository {
   getSummary(organizationId: string, range: ReportDateRange, userId: string): Promise<SummaryRow>
   listUpcoming(organizationId: string, days: number): Promise<UpcomingTransactionRow[]>
@@ -114,9 +134,18 @@ export interface ReportRepository {
   getByCategory(
     organizationId: string,
     range: ReportDateRange,
-    type: 'income' | 'expense'
+    type: 'income' | 'expense',
+    userId?: string,
+    scopeOptions?: ReportScopeOptions
   ): Promise<CategoryReportRow[]>
   getByCard(organizationId: string, range: ReportDateRange): Promise<CardTransactionsReportResult>
+  getTopMerchants(
+    organizationId: string,
+    range: ReportDateRange,
+    userId: string,
+    limit: number,
+    scopeOptions?: ReportScopeOptions
+  ): Promise<TopMerchantsReportResult>
   listTopPending(
     organizationId: string,
     type: 'income' | 'expense',
@@ -131,6 +160,42 @@ function toBigInt(value: unknown): bigint {
   if (value == null) return 0n
   if (typeof value === 'bigint') return value
   return BigInt(String(value).split('.')[0] || '0')
+}
+
+function splitSumExpr() {
+  return sql<bigint>`COALESCE((
+    SELECT SUM(${transactionSplits.amount})
+    FROM ${transactionSplits}
+    WHERE ${transactionSplits.transactionId} = ${transactions.id}
+  ), 0)`
+}
+
+function myExpenseAmountExpr() {
+  return sql<bigint>`GREATEST(${reportExpenseAmountExpr} - ${splitSumExpr()}, 0)`
+}
+
+function normalizedTitleExpr() {
+  return sql<string>`LOWER(TRIM(REGEXP_REPLACE(REGEXP_REPLACE(${transactions.title}, '\\s*-\\s*Parcela \\d+/\\d+', '', 'gi'), '\\s+Parcela \\d+/\\d+', '', 'gi')))`
+}
+
+function expenseRangeCondition(range: ReportDateRange, scope?: ReportScopeOptions['scope']) {
+  return scope === 'credit_card'
+    ? isCreditCardExpenseInRange(range)
+    : expenseInReportRangeCondition(range)
+}
+
+function reportScopeConditions(scopeOptions?: ReportScopeOptions) {
+  const conditions = []
+
+  if (scopeOptions?.accountId) {
+    conditions.push(eq(transactions.accountId, scopeOptions.accountId))
+  }
+
+  if (scopeOptions?.scope === 'credit_card') {
+    conditions.push(eq(accounts.type, 'credit_card'))
+  }
+
+  return conditions.length > 0 ? and(...conditions) : undefined
 }
 
 function balanceDeltaExpr() {
@@ -222,8 +287,13 @@ export class DrizzleReportRepository implements ReportRepository {
     const [pendingRow] = await db
       .select({ total: count() })
       .from(transactions)
+      .leftJoin(accounts, eq(transactions.accountId, accounts.id))
       .where(
-        and(eq(transactions.organizationId, organizationId), inArray(transactions.status, [...UNPAID_TRANSACTION_STATUSES]))
+        and(
+          eq(transactions.organizationId, organizationId),
+          inArray(transactions.status, [...UNPAID_TRANSACTION_STATUSES]),
+          isPayableTransactionCondition()
+        )
       )
 
     const [overdueRow] = await db
@@ -240,7 +310,7 @@ export class DrizzleReportRepository implements ReportRepository {
       )
 
     const accountRows = await this.getByAccount(organizationId, range)
-    const netWorth = accountRows.reduce((sumBalance, row) => sumBalance + row.balance, 0n)
+    const netWorth = sumNetWorth(accountRows)
 
     const [splitsRow] = await db
       .select({
@@ -343,11 +413,25 @@ export class DrizzleReportRepository implements ReportRepository {
   async getByCategory(
     organizationId: string,
     range: ReportDateRange,
-    type: 'income' | 'expense'
+    type: 'income' | 'expense',
+    userId?: string,
+    scopeOptions?: ReportScopeOptions
   ): Promise<CategoryReportRow[]> {
     const rangeCondition =
-      type === 'expense' ? expenseInReportRangeCondition(range) : incomeInReportRangeCondition(range)
-    const amountExpr = type === 'expense' ? reportExpenseAmountExpr : paidAmountExpr
+      type === 'expense'
+        ? expenseRangeCondition(range, scopeOptions?.scope)
+        : incomeInReportRangeCondition(range)
+    const amountExpr =
+      type === 'expense' && userId ? myExpenseAmountExpr() : type === 'expense' ? reportExpenseAmountExpr : paidAmountExpr
+
+    const personalConditions = userId
+      ? and(
+          rangeCondition,
+          userOwnsTransactionCondition(userId),
+          type === 'expense' ? sql`${myExpenseAmountExpr()} > 0` : undefined,
+          reportScopeConditions(scopeOptions)
+        )
+      : and(rangeCondition, reportScopeConditions(scopeOptions))
 
     const rows = await db
       .select({
@@ -360,13 +444,14 @@ export class DrizzleReportRepository implements ReportRepository {
       .innerJoin(transactionCategories, eq(transactionCategories.categoryId, categories.id))
       .innerJoin(transactions, eq(transactionCategories.transactionId, transactions.id))
       .leftJoin(accounts, eq(transactions.accountId, accounts.id))
+      .leftJoin(cards, eq(transactions.cardId, cards.id))
       .where(
         and(
           eq(categories.organizationId, organizationId),
           eq(categories.isActive, true),
           eq(transactions.organizationId, organizationId),
           eq(transactions.type, type),
-          rangeCondition
+          personalConditions
         )
       )
       .groupBy(categories.id, categories.name, categories.color)
@@ -437,6 +522,68 @@ export class DrizzleReportRepository implements ReportRepository {
       })),
       grandTotal: toBigInt(totalsRow?.grandTotal),
       myGrandTotal: toBigInt(totalsRow?.myGrandTotal),
+    }
+  }
+
+  async getTopMerchants(
+    organizationId: string,
+    range: ReportDateRange,
+    userId: string,
+    limit: number,
+    scopeOptions?: ReportScopeOptions
+  ): Promise<TopMerchantsReportResult> {
+    const myAmount = myExpenseAmountExpr()
+    const normalizedTitle = normalizedTitleExpr()
+    const expenseWhere = and(
+      eq(transactions.organizationId, organizationId),
+      expenseRangeCondition(range, scopeOptions?.scope),
+      userOwnsTransactionCondition(userId),
+      sql`${myAmount} > 0`,
+      reportScopeConditions(scopeOptions)
+    )
+
+    const [totalsRow] = await db
+      .select({ grandTotal: sql<bigint>`COALESCE(SUM(${myAmount}), 0)` })
+      .from(transactions)
+      .leftJoin(accounts, eq(transactions.accountId, accounts.id))
+      .leftJoin(cards, eq(transactions.cardId, cards.id))
+      .where(expenseWhere)
+
+    const rows = await db
+      .select({
+        key: normalizedTitle,
+        label: sql<string>`(array_agg(${transactions.title} ORDER BY ${purchaseDateExpr} DESC))[1]`,
+        total: sql<bigint>`COALESCE(SUM(${myAmount}), 0)`,
+        occurrenceCount: sql<number>`COUNT(*)::int`,
+        lastDate: sql<Date>`MAX(${purchaseDateExpr})`,
+      })
+      .from(transactions)
+      .leftJoin(accounts, eq(transactions.accountId, accounts.id))
+      .leftJoin(cards, eq(transactions.cardId, cards.id))
+      .where(expenseWhere)
+      .groupBy(normalizedTitle)
+      .orderBy(sql`COALESCE(SUM(${myAmount}), 0) DESC`, normalizedTitle)
+      .limit(limit)
+
+    const grandTotal = toBigInt(totalsRow?.grandTotal)
+
+    return {
+      merchants: rows.map(row => {
+        const total = toBigInt(row.total)
+        const occurrenceCount = Number(row.occurrenceCount) || 0
+        const avgAmount =
+          occurrenceCount > 0 ? total / BigInt(occurrenceCount) : 0n
+
+        return {
+          key: row.key,
+          label: row.label,
+          total,
+          occurrenceCount,
+          avgAmount,
+          lastDate: row.lastDate,
+        }
+      }),
+      grandTotal,
     }
   }
 

@@ -4,18 +4,32 @@ import { formatCentsString } from '@/lib/currency'
 
 interface AccountBalancesCardProps {
   data?: GetReportByAccount200
+  netWorth?: string
   isLoading?: boolean
   error?: unknown
 }
 
-export function AccountBalancesCard({ data, isLoading, error }: AccountBalancesCardProps) {
+export function AccountBalancesCard({
+  data,
+  netWorth,
+  isLoading,
+  error,
+}: AccountBalancesCardProps) {
   const accounts = data?.accounts ?? []
 
   return (
     <Card className="finance-card">
       <CardHeader>
         <CardTitle className="text-base">Saldo por conta</CardTitle>
-        <p className="text-sm text-slate-500">Saldo atual (hoje)</p>
+        <p className="text-sm text-slate-500">
+          {netWorth ? (
+            <>
+              Patrimônio: <span className="font-medium text-slate-700">{netWorth}</span>
+              {' · '}
+            </>
+          ) : null}
+          Saldo atual (hoje)
+        </p>
       </CardHeader>
       <CardContent>
         {isLoading ? (

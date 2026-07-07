@@ -12405,6 +12405,36 @@
           },
           {
             "schema": {
+              "default": false,
+              "type": "boolean"
+            },
+            "in": "query",
+            "name": "personal",
+            "required": false
+          },
+          {
+            "schema": {
+              "type": "string"
+            },
+            "in": "query",
+            "name": "accountId",
+            "required": false
+          },
+          {
+            "schema": {
+              "default": "all",
+              "type": "string",
+              "enum": [
+                "all",
+                "credit_card"
+              ]
+            },
+            "in": "query",
+            "name": "scope",
+            "required": false
+          },
+          {
+            "schema": {
               "type": "string"
             },
             "in": "path",
@@ -12835,6 +12865,142 @@
                   "required": [
                     "insights",
                     "source"
+                  ],
+                  "additionalProperties": false
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/organizations/{slug}/reports/top-merchants": {
+      "get": {
+        "operationId": "getReportTopMerchants",
+        "tags": [
+          "Reports"
+        ],
+        "description": "Top expense merchants/items grouped by normalized title (personal scope)",
+        "parameters": [
+          {
+            "schema": {
+              "type": "string",
+              "format": "date-time",
+              "pattern": "^(?:(?:\\d\\d[2468][048]|\\d\\d[13579][26]|\\d\\d0[48]|[02468][048]00|[13579][26]00)-02-29|\\d{4}-(?:(?:0[13578]|1[02])-(?:0[1-9]|[12]\\d|3[01])|(?:0[469]|11)-(?:0[1-9]|[12]\\d|30)|(?:02)-(?:0[1-9]|1\\d|2[0-8])))T(?:(?:[01]\\d|2[0-3]):[0-5]\\d(?::[0-5]\\d(?:\\.\\d+)?)?(?:Z))$"
+            },
+            "in": "query",
+            "name": "dateFrom",
+            "required": false
+          },
+          {
+            "schema": {
+              "type": "string",
+              "format": "date-time",
+              "pattern": "^(?:(?:\\d\\d[2468][048]|\\d\\d[13579][26]|\\d\\d0[48]|[02468][048]00|[13579][26]00)-02-29|\\d{4}-(?:(?:0[13578]|1[02])-(?:0[1-9]|[12]\\d|3[01])|(?:0[469]|11)-(?:0[1-9]|[12]\\d|30)|(?:02)-(?:0[1-9]|1\\d|2[0-8])))T(?:(?:[01]\\d|2[0-3]):[0-5]\\d(?::[0-5]\\d(?:\\.\\d+)?)?(?:Z))$"
+            },
+            "in": "query",
+            "name": "dateTo",
+            "required": false
+          },
+          {
+            "schema": {
+              "default": 15,
+              "type": "integer",
+              "minimum": 1,
+              "maximum": 50
+            },
+            "in": "query",
+            "name": "limit",
+            "required": false
+          },
+          {
+            "schema": {
+              "type": "string"
+            },
+            "in": "query",
+            "name": "accountId",
+            "required": false
+          },
+          {
+            "schema": {
+              "default": "all",
+              "type": "string",
+              "enum": [
+                "all",
+                "credit_card"
+              ]
+            },
+            "in": "query",
+            "name": "scope",
+            "required": false
+          },
+          {
+            "schema": {
+              "type": "string"
+            },
+            "in": "path",
+            "name": "slug",
+            "required": true
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Default Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "merchants": {
+                      "type": "array",
+                      "items": {
+                        "type": "object",
+                        "properties": {
+                          "key": {
+                            "type": "string"
+                          },
+                          "label": {
+                            "type": "string"
+                          },
+                          "total": {
+                            "type": "string"
+                          },
+                          "occurrenceCount": {
+                            "type": "number"
+                          },
+                          "isRecurring": {
+                            "type": "boolean"
+                          },
+                          "avgAmount": {
+                            "type": "string"
+                          },
+                          "lastDate": {
+                            "type": "string"
+                          },
+                          "percentage": {
+                            "type": "string"
+                          }
+                        },
+                        "required": [
+                          "key",
+                          "label",
+                          "total",
+                          "occurrenceCount",
+                          "isRecurring",
+                          "avgAmount",
+                          "lastDate",
+                          "percentage"
+                        ],
+                        "additionalProperties": false
+                      }
+                    },
+                    "grandTotal": {
+                      "type": "string"
+                    }
+                  },
+                  "required": [
+                    "merchants",
+                    "grandTotal"
                   ],
                   "additionalProperties": false
                 }
