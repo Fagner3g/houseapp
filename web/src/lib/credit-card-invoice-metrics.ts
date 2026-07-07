@@ -8,9 +8,6 @@ import {
   computePersonalSpendAdjustment as computePersonalSpendAdjustmentKernel,
   derivePreviousBalance as derivePreviousBalanceKernel,
   filterTransactionsForInvoiceCycle as filterTransactionsForInvoiceCycleKernel,
-  formatInvoiceAdjustmentTitle,
-  formatInvoiceBillPaymentTitle,
-  getUnlistedInvoiceCreditsCopy,
   hasImportedInvoiceTotal,
   hasStoredInvoiceSummary,
   isAppBookkeepingInvoicePayment,
@@ -39,6 +36,13 @@ import {
   type InvoiceStatementLike,
   type PaymentPeriodContext,
 } from '@houseapp/finance-core'
+import {
+  formatInvoiceAdjustmentTitle,
+  formatInvoiceBillPaymentTitle,
+  getUnlistedInvoiceCreditsCopy,
+  UNLISTED_INVOICE_CREDITS_HINT,
+  UNLISTED_INVOICE_CREDITS_LABEL,
+} from '@/lib/invoice-display'
 
 export type {
   CreditCardReportScope,
@@ -118,11 +122,9 @@ export {
   sumManualPurchasesInPeriod,
   transactionPurchaseDate,
   transactionsOwnedByInvoiceCycle,
+  UNLISTED_INVOICE_CREDITS_HINT,
+  UNLISTED_INVOICE_CREDITS_LABEL,
 }
-
-export const UNLISTED_INVOICE_CREDITS_LABEL = 'Outros créditos no total do banco'
-export const UNLISTED_INVOICE_CREDITS_HINT =
-  'O restante já está embutido no valor importado da fatura — o banco descontou, mas não exportou como lançamento no OFX.'
 
 export function derivePreviousBalance(invoiceTotal: number, purchases: number): number {
   return centavosToReaisNumber(
@@ -163,7 +165,13 @@ export function listInvoiceAdjustmentCredits(
   statement: InvoiceStatementLike | null
 ): InvoiceAdjustmentLine[] {
   return mapAdjustmentLines(
-    listInvoiceAdjustmentCreditsKernel(transactions, period, cycle, statement)
+    listInvoiceAdjustmentCreditsKernel(
+      transactions,
+      period,
+      cycle,
+      statement,
+      formatInvoiceAdjustmentTitle
+    )
   )
 }
 
@@ -180,7 +188,8 @@ export function listInvoiceBillPayments(
       purchasesPeriod,
       paymentPeriod,
       cycle,
-      statement
+      statement,
+      formatInvoiceBillPaymentTitle
     )
   )
 }

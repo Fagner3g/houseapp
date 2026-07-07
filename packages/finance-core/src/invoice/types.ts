@@ -1,4 +1,4 @@
-import type { BillingCycle } from '../billing-cycle.ts'
+import type { BillingCycle } from '../billing-cycle/index'
 
 export type TransactionLike = {
   title?: string | null

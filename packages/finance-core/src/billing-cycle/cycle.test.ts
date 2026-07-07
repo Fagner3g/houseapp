@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest'
 
-import { billingDaysFromStatementDates, getBillingCycle } from './billing-cycle'
+import { billingDaysFromStatementDates, getBillingCycle } from './cycle'
 
 describe('billingDaysFromStatementDates', () => {
   it('extracts closing and due days from Date inputs', () => {

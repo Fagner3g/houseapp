@@ -1,4 +1,4 @@
-import { maxCentavos, parseMoneyStringToCentavos } from '../amount.ts'
+import { maxCentavos, parseMoneyStringToCentavos } from '../money/strings'
 
 export function derivePreviousBalance(invoiceTotal: bigint, purchases: bigint): bigint {
   const diff = invoiceTotal - purchases

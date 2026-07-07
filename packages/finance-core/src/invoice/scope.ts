@@ -1,4 +1,4 @@
-import type { CreditCardReportScope, InvoiceStatementLike } from './types.ts'
+import type { CreditCardReportScope, InvoiceStatementLike } from './types'
 
 export function hasStoredInvoiceSummary(statement: InvoiceStatementLike | null): boolean {
   return statement?.purchasesTotal != null && statement?.previousBalance != null

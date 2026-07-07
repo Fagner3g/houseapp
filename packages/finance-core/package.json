@@ -7,10 +7,9 @@
   "types": "./src/index.ts",
   "exports": {
     ".": "./src/index.ts",
-    "./money": "./src/money.ts",
-    "./billing-cycle": "./src/billing-cycle.ts",
-    "./invoice": "./src/invoice/index.ts",
-    "./amount": "./src/amount.ts"
+    "./money": "./src/money/index.ts",
+    "./billing-cycle": "./src/billing-cycle/index.ts",
+    "./invoice": "./src/invoice/index.ts"
   },
   "scripts": {
     "test": "vitest run"

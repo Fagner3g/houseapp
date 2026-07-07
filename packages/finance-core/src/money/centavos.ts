@@ -1,4 +1,4 @@
-import { FinanceValidationError } from './errors'
+import { FinanceValidationError } from '../errors'
 
 const CENTAVOS_PATTERN = /^-?\d+(\.\d{1,2})?$/
 
@@ -7,7 +7,7 @@ export function parseCentavos(input: string): bigint {
 
   if (!CENTAVOS_PATTERN.test(value)) {
     throw new FinanceValidationError(
-      'Valor inválido: use string decimal com ponto (ex.: "1234.56") e no máximo 2 casas'
+      'Invalid amount: use a decimal string with a dot (e.g. "1234.56") and at most 2 fractional digits'
     )
   }
 
@@ -34,7 +34,7 @@ export function centavosToString(centavos: bigint | null | undefined): string | 
 /** Splits total centavos into N parts; distributes remainder to the first installments. */
 export function divideCentavos(total: bigint, parts: number): bigint[] {
   if (parts < 1) {
-    throw new FinanceValidationError('Número de parcelas inválido')
+    throw new FinanceValidationError('Invalid installment count')
   }
 
   const count = BigInt(parts)

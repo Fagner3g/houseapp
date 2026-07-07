@@ -2,8 +2,8 @@ import dayjs from 'dayjs'
 import customParseFormat from 'dayjs/plugin/customParseFormat'
 import 'dayjs/locale/pt-br'
 
-import type { BillingCycle } from '../billing-cycle.ts'
-import type { TransactionLike } from './types.ts'
+import type { BillingCycle } from '../billing-cycle/index'
+import type { TransactionLike } from './types'
 
 dayjs.extend(customParseFormat)
 
@@ -33,7 +33,7 @@ export function isImportedInvoiceSettlementCredit(tx: { title?: string | null })
   return isInvoiceSettlementCreditTitle(tx.title)
 }
 
-/** HouseApp bookkeeping entry — not an OFX "Pagamento recebido" line. */
+/** HouseApp bookkeeping entry — not an imported OFX bill-payment line. */
 export function isAppBookkeepingInvoicePayment(tx: { title?: string | null }): boolean {
   return isInvoicePaymentTitle(tx.title ?? '') && !isImportedBillPayment(tx)
 }
@@ -51,7 +51,7 @@ export function parseInvoicePaymentMonthKey(title: string): string | null {
   return parsed.format('YYYY-MM')
 }
 
-/** Bookkeeping entry from "Pagar fatura" — not the same as OFX "Pagamento recebido". */
+/** Manual pay-invoice bookkeeping — not the same as an imported OFX bill payment. */
 export function isManualAppInvoicePayment(
   tx: TransactionLike & { source?: string | null }
 ): boolean {

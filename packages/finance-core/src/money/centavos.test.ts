@@ -1,7 +1,7 @@
 import { describe, expect, it } from 'vitest'
 
-import { FinanceValidationError } from './errors'
-import { divideCentavos, formatCentavos, parseCentavos } from './money'
+import { FinanceValidationError } from '../errors'
+import { divideCentavos, formatCentavos, parseCentavos } from './centavos'
 
 describe('parseCentavos', () => {
   it('parses decimal strings', () => {

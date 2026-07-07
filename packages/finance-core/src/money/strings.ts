@@ -1,4 +1,4 @@
-import { parseCentavos } from './money.ts'
+import { parseCentavos } from './centavos'
 
 /** Parses API decimal strings and ambiguous UI integer strings into centavos. */
 export function parseMoneyStringToCentavos(value: string | null | undefined): bigint {

@@ -2,16 +2,16 @@ import dayjs from 'dayjs'
 
 import {
   getBillingCycle,
+  isWithinBillingRange,
   shiftBillingMonth,
   type BillingCycle,
-} from '../billing-cycle.ts'
+} from '../billing-cycle/index'
 import {
   isAppBookkeepingInvoicePayment,
   isForeignManualInvoicePayment,
   isImportedBillPayment,
-} from './classifiers.ts'
-import { isWithinBillingRange } from './ranges.ts'
-import type { InvoiceStatementLike, PaymentPeriodContext, TransactionLike } from './types.ts'
+} from './classifiers'
+import type { InvoiceStatementLike, PaymentPeriodContext, TransactionLike } from './types'
 
 /** OFX/PDF totals are authoritative even mid-cycle; CSV exports stay provisional until closed. */
 export function hasImportedInvoiceTotal(statement: InvoiceStatementLike | null): boolean {
