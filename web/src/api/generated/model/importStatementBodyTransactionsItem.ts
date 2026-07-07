@@ -5,8 +5,8 @@
  * API for HouseApp
  * OpenAPI spec version: 2.0.0
  */
-import type { ImportStatementBodyTransactionsItemType } from './importStatementBodyTransactionsItemType';
-import type { ImportStatementBodyTransactionsItemSplitHint } from './importStatementBodyTransactionsItemSplitHint';
+import type { ImportStatementBodyTransactionsItemType } from "./importStatementBodyTransactionsItemType";
+import type { ImportStatementBodyTransactionsItemSplitHint } from "./importStatementBodyTransactionsItemSplitHint";
 
 export type ImportStatementBodyTransactionsItem = {
   /** @minLength 1 */

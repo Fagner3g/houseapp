@@ -121,6 +121,7 @@ export async function getTopMerchantsReportController(
     request.query.dateFrom,
     request.query.dateTo,
     request.query.limit,
+    request.query.personal,
     {
       accountId: request.query.accountId,
       scope: request.query.scope,

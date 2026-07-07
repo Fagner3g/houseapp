@@ -35,6 +35,8 @@ interface TransactionListProps {
   accountId?: string
   /** When multiple cards exist, shows which card made each purchase. */
   cards?: Array<{ id: string; label: string; lastFourDigits?: string | null }>
+  /** Map of transaction id → delegate name for fully delegated purchases. */
+  fullyDelegatedById?: Map<string, string>
   containerClassName?: string
 }
 
@@ -83,6 +85,7 @@ function TransactionTable({
   mode = 'default',
   accountId,
   cards,
+  fullyDelegatedById,
   containerClassName,
 }: TransactionListProps) {
   const isCreditCardStatement = variant === 'credit_card_statement'
@@ -322,9 +325,19 @@ function TransactionTable({
               </TableCell>
               <TableCell>
                 <div>
-                  <span className="max-w-[200px] truncate font-medium text-slate-900 lg:max-w-xs">
-                    {tx.title}
-                  </span>
+                  <div className="flex flex-wrap items-center gap-2">
+                    <span className="max-w-[200px] truncate font-medium text-slate-900 lg:max-w-xs">
+                      {tx.title}
+                    </span>
+                    {fullyDelegatedById?.get(tx.id) ? (
+                      <Badge
+                        variant="secondary"
+                        className="shrink-0 border-amber-200 bg-amber-50 text-[10px] font-medium text-amber-800"
+                      >
+                        Delegada · {fullyDelegatedById.get(tx.id)}
+                      </Badge>
+                    ) : null}
+                  </div>
                   {tx.installmentsTotal != null && tx.installmentsTotal > 1 && (
                     <p className="text-xs text-slate-500">
                       Parcela {tx.installmentNumber ?? '?'}/{tx.installmentsTotal}
@@ -438,6 +451,7 @@ export function TransactionList({
   mode = 'default',
   accountId,
   cards,
+  fullyDelegatedById,
   containerClassName,
 }: TransactionListProps) {
   const search = useSearch({ strict: false }) as {
@@ -464,6 +478,7 @@ export function TransactionList({
         mode="overdue"
         accountId={accountId}
         cards={cards}
+        fullyDelegatedById={fullyDelegatedById}
         containerClassName={containerClassName}
       />
     )
@@ -477,6 +492,7 @@ export function TransactionList({
       mode="default"
       accountId={accountId}
       cards={cards}
+      fullyDelegatedById={fullyDelegatedById}
       containerClassName={containerClassName}
     />
   )

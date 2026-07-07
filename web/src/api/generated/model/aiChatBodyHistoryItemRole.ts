@@ -6,11 +6,11 @@
  * OpenAPI spec version: 2.0.0
  */
 
-export type AiChatBodyHistoryItemRole = typeof AiChatBodyHistoryItemRole[keyof typeof AiChatBodyHistoryItemRole];
-
+export type AiChatBodyHistoryItemRole =
+  (typeof AiChatBodyHistoryItemRole)[keyof typeof AiChatBodyHistoryItemRole];
 
 // eslint-disable-next-line @typescript-eslint/no-redeclare
 export const AiChatBodyHistoryItemRole = {
-  user: 'user',
-  assistant: 'assistant',
+  user: "user",
+  assistant: "assistant",
 } as const;

@@ -5,7 +5,9 @@
  * API for HouseApp
  * OpenAPI spec version: 2.0.0
  */
+import type { ListSplitTransactionIds200FullyDelegatedItem } from "./listSplitTransactionIds200FullyDelegatedItem";
 
 export type ListSplitTransactionIds200 = {
   transactionIds: string[];
+  fullyDelegated: ListSplitTransactionIds200FullyDelegatedItem[];
 };

@@ -5,7 +5,7 @@
  * API for HouseApp
  * OpenAPI spec version: 2.0.0
  */
-import type { GetReportDaily200DaysItem } from './getReportDaily200DaysItem';
+import type { GetReportDaily200DaysItem } from "./getReportDaily200DaysItem";
 
 export type GetReportDaily200 = {
   days: GetReportDaily200DaysItem[];

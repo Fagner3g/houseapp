@@ -76,6 +76,10 @@ export interface SplitRepository {
     organizationId: string,
     transactionIds: string[]
   ): Promise<string[]>
+  listFullyDelegatedTransactions(
+    organizationId: string,
+    transactionIds: string[]
+  ): Promise<Array<{ transactionId: string; delegateName: string }>>
   findSplitsWithTransactions(
     transactionIds: string[]
   ): Promise<
@@ -394,6 +398,39 @@ export class DrizzleSplitRepository implements SplitRepository {
       )
 
     return rows.map(row => row.transactionId)
+  }
+
+  async listFullyDelegatedTransactions(
+    organizationId: string,
+    transactionIds: string[]
+  ): Promise<Array<{ transactionId: string; delegateName: string }>> {
+    if (transactionIds.length === 0) return []
+
+    const rows = await db
+      .select({
+        transactionId: transactions.id,
+        delegateName: sql<string>`(
+          array_agg(COALESCE(${users.name}, ${transactionSplits.contactName}) ORDER BY ${transactionSplits.amount} DESC)
+        )[1]`,
+      })
+      .from(transactions)
+      .innerJoin(transactionSplits, eq(transactionSplits.transactionId, transactions.id))
+      .leftJoin(users, eq(transactionSplits.userId, users.id))
+      .where(
+        and(
+          eq(transactions.organizationId, organizationId),
+          inArray(transactions.id, transactionIds)
+        )
+      )
+      .groupBy(transactions.id, transactions.amount)
+      .having(sql`SUM(${transactionSplits.amount}) >= ${transactions.amount}`)
+
+    return rows
+      .filter(row => row.delegateName)
+      .map(row => ({
+        transactionId: row.transactionId,
+        delegateName: row.delegateName,
+      }))
   }
 
   async findSplitsWithTransactions(

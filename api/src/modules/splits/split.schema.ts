@@ -162,7 +162,15 @@ export const listSplitTransactionIdsSchema = {
     transactionIds: z.array(z.string()).max(500),
   }),
   response: {
-    200: z.object({ transactionIds: z.array(z.string()) }),
+    200: z.object({
+      transactionIds: z.array(z.string()),
+      fullyDelegated: z.array(
+        z.object({
+          transactionId: z.string(),
+          delegateName: z.string(),
+        })
+      ),
+    }),
   },
 }
 

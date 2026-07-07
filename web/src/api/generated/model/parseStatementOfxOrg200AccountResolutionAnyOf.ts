@@ -5,7 +5,7 @@
  * API for HouseApp
  * OpenAPI spec version: 2.0.0
  */
-import type { ParseStatementOfxOrg200AccountResolutionAnyOfMode } from './parseStatementOfxOrg200AccountResolutionAnyOfMode';
+import type { ParseStatementOfxOrg200AccountResolutionAnyOfMode } from "./parseStatementOfxOrg200AccountResolutionAnyOfMode";
 
 export type ParseStatementOfxOrg200AccountResolutionAnyOf = {
   mode: ParseStatementOfxOrg200AccountResolutionAnyOfMode;

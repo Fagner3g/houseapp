@@ -46,7 +46,7 @@ export const Route = createFileRoute('/_app/$org/accounts/')({
       .optional(),
     view: z.enum(['settings', 'analytics']).optional(),
     invoiceFilter: z
-      .enum(['all', 'purchases', 'payments', 'uncategorized', 'installments', 'divided'])
+      .enum(['all', 'purchases', 'payments', 'credits', 'uncategorized', 'installments', 'divided'])
       .optional(),
   }),
 })
@@ -277,6 +277,9 @@ function AccountsPage() {
                           updateSearch({ view: undefined, invoiceFilter: 'divided' })
                         }
                         onViewInvoiceCredits={() =>
+                          updateSearch({ view: undefined, invoiceFilter: 'credits' })
+                        }
+                        onViewInvoicePayments={() =>
                           updateSearch({ view: undefined, invoiceFilter: 'payments' })
                         }
                       />

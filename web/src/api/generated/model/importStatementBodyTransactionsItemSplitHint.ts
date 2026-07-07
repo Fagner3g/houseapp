@@ -5,7 +5,7 @@
  * API for HouseApp
  * OpenAPI spec version: 2.0.0
  */
-import type { ImportStatementBodyTransactionsItemSplitHintMode } from './importStatementBodyTransactionsItemSplitHintMode';
+import type { ImportStatementBodyTransactionsItemSplitHintMode } from "./importStatementBodyTransactionsItemSplitHintMode";
 
 export type ImportStatementBodyTransactionsItemSplitHint = {
   mode: ImportStatementBodyTransactionsItemSplitHintMode;

@@ -6,11 +6,11 @@
  * OpenAPI spec version: 2.0.0
  */
 
-export type ParseStatementPdf200SummaryPreviewTransactionsItemType = typeof ParseStatementPdf200SummaryPreviewTransactionsItemType[keyof typeof ParseStatementPdf200SummaryPreviewTransactionsItemType];
-
+export type ParseStatementPdf200SummaryPreviewTransactionsItemType =
+  (typeof ParseStatementPdf200SummaryPreviewTransactionsItemType)[keyof typeof ParseStatementPdf200SummaryPreviewTransactionsItemType];
 
 // eslint-disable-next-line @typescript-eslint/no-redeclare
 export const ParseStatementPdf200SummaryPreviewTransactionsItemType = {
-  income: 'income',
-  expense: 'expense',
+  income: "income",
+  expense: "expense",
 } as const;

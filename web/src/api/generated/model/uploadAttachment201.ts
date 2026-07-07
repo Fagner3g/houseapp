@@ -5,7 +5,7 @@
  * API for HouseApp
  * OpenAPI spec version: 2.0.0
  */
-import type { UploadAttachment201Attachment } from './uploadAttachment201Attachment';
+import type { UploadAttachment201Attachment } from "./uploadAttachment201Attachment";
 
 export type UploadAttachment201 = {
   attachment: UploadAttachment201Attachment;

@@ -5,7 +5,7 @@
  * API for HouseApp
  * OpenAPI spec version: 2.0.0
  */
-import type { GetInvite200InvitesItem } from './getInvite200InvitesItem';
+import type { GetInvite200InvitesItem } from "./getInvite200InvitesItem";
 
 export type GetInvite200 = {
   invites: GetInvite200InvitesItem[];

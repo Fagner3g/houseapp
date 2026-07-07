@@ -5,7 +5,7 @@
  * API for HouseApp
  * OpenAPI spec version: 2.0.0
  */
-import type { PatchOrgSlugUsersNotificationsBodyAlertPreferences } from './patchOrgSlugUsersNotificationsBodyAlertPreferences';
+import type { PatchOrgSlugUsersNotificationsBodyAlertPreferences } from "./patchOrgSlugUsersNotificationsBodyAlertPreferences";
 
 export type PatchOrgSlugUsersNotificationsBody = {
   userId: string;

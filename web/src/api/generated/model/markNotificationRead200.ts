@@ -5,7 +5,7 @@
  * API for HouseApp
  * OpenAPI spec version: 2.0.0
  */
-import type { MarkNotificationRead200Notification } from './markNotificationRead200Notification';
+import type { MarkNotificationRead200Notification } from "./markNotificationRead200Notification";
 
 export type MarkNotificationRead200 = {
   notification: MarkNotificationRead200Notification;

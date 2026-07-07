@@ -924,6 +924,78 @@ describe('resolveUnlistedInvoiceCredits', () => {
   })
 })
 
+describe('getUnlistedInvoiceCreditsCopy', () => {
+  it('labels residual as subtotal when listed credits exist', async () => {
+    const { getUnlistedInvoiceCreditsCopy } = await import('./credit-card-invoice-metrics')
+
+    expect(getUnlistedInvoiceCreditsCopy(true)).toEqual({
+      label: 'Outros créditos no total do banco',
+      hint: 'O restante já está embutido no valor importado da fatura — o banco descontou, mas não exportou como lançamento no OFX.',
+      prefix: '=',
+      emphasis: true,
+    })
+  })
+
+  it('labels full amount when no listed credits exist', async () => {
+    const { getUnlistedInvoiceCreditsCopy } = await import('./credit-card-invoice-metrics')
+
+    expect(getUnlistedInvoiceCreditsCopy(false)).toEqual({
+      label: 'Créditos no total importado do banco',
+      hint: 'O banco já descontou no valor da fatura, mas não exportou os estornos como lançamentos separados no OFX.',
+      emphasis: true,
+    })
+  })
+})
+
+describe('listInvoiceBillPayments', () => {
+  it('lists pagamento recebido but not estornos', async () => {
+    const { listInvoiceBillPayments } = await import('./credit-card-invoice-metrics')
+    const cycle = getBillingCycle(10, 17, '2026-07')
+    const purchasesPeriod = {
+      start: '2026-06-01T12:00:00.000Z',
+      end: '2026-07-10T12:00:00.000Z',
+    }
+    const paymentPeriod = {
+      start: '2026-06-09T12:00:00.000Z',
+      end: '2026-07-17T12:00:00.000Z',
+    }
+    const statement = {
+      id: 'st-july',
+      totalAmount: '6268.27',
+      isClosed: false,
+      importSource: 'ofx',
+      periodStart: purchasesPeriod.start,
+      periodEnd: purchasesPeriod.end,
+      dueDate: paymentPeriod.end,
+    }
+
+    expect(
+      listInvoiceBillPayments(
+        [
+          {
+            type: 'income',
+            title: 'Pagamento recebido',
+            amount: '500.00',
+            date: '2026-07-03T12:00:00.000Z',
+            statementId: 'st-july',
+          },
+          {
+            type: 'income',
+            title: 'Estorno de compra (Compra e Volta)',
+            amount: '27.00',
+            date: '2026-06-01T12:00:00.000Z',
+            statementId: 'st-july',
+          },
+        ],
+        purchasesPeriod,
+        paymentPeriod,
+        cycle,
+        statement
+      )
+    ).toEqual([{ title: 'Pagamento recebido', amount: 500 }])
+  })
+})
+
 describe('buildCreditCardReportScope', () => {
   it('scopes reports to the matched imported statement', async () => {
     const { buildCreditCardReportScope } = await import('./credit-card-invoice-metrics')

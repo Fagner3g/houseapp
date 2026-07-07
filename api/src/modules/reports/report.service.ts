@@ -106,6 +106,8 @@ export type TopMerchantReportDto = {
   avgAmount: string
   lastDate: string
   percentage: string
+  hasFullyDelegated: boolean
+  delegatedToName: string | null
 }
 
 export type TopMerchantsReportDto = {
@@ -244,6 +246,8 @@ function toTopMerchantsDto(result: TopMerchantsReportResult): TopMerchantsReport
         avgAmount: centavosToString(row.avgAmount) ?? '0.00',
         lastDate: toIsoString(row.lastDate),
         percentage,
+        hasFullyDelegated: row.hasFullyDelegated,
+        delegatedToName: row.delegatedToName,
       }
     }),
     grandTotal: centavosToString(grandTotal) ?? '0.00',
@@ -302,7 +306,8 @@ export class ReportService {
       organizationId,
       range,
       type,
-      personal ? userId : undefined,
+      userId,
+      personal,
       scopeOptions
     )
     return toCategoryDtos(rows)
@@ -339,6 +344,7 @@ export class ReportService {
     dateFrom?: string,
     dateTo?: string,
     limit = 15,
+    personal = false,
     scopeOptions?: ReportScopeOptions
   ): Promise<TopMerchantsReportDto> {
     const range = parseDateRange(dateFrom, dateTo)
@@ -347,7 +353,8 @@ export class ReportService {
       range,
       userId,
       limit,
-      scopeOptions
+      scopeOptions,
+      personal
     )
     return toTopMerchantsDto(result)
   }

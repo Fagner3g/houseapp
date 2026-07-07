@@ -122,12 +122,12 @@ export async function listSplitTransactionIdsController(
   request: FastifyRequest<{ Params: OrgParams; Body: ListSplitTransactionIdsBody }>,
   reply: FastifyReply
 ) {
-  const transactionIds = await container.splitService.listTransactionIdsWithSplits(
+  const result = await container.splitService.listTransactionIdsWithSplits(
     request.organization.id,
     request.body.transactionIds
   )
 
-  return reply.send({ transactionIds })
+  return reply.send(result)
 }
 
 export async function getSplitDebtSummaryController(

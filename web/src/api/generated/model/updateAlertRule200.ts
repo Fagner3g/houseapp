@@ -5,7 +5,7 @@
  * API for HouseApp
  * OpenAPI spec version: 2.0.0
  */
-import type { UpdateAlertRule200Rule } from './updateAlertRule200Rule';
+import type { UpdateAlertRule200Rule } from "./updateAlertRule200Rule";
 
 export type UpdateAlertRule200 = {
   rule: UpdateAlertRule200Rule;

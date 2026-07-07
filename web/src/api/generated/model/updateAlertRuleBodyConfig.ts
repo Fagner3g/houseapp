@@ -5,7 +5,9 @@
  * API for HouseApp
  * OpenAPI spec version: 2.0.0
  */
-import type { UpdateAlertRuleBodyConfigAnyOf } from './updateAlertRuleBodyConfigAnyOf';
-import type { UpdateAlertRuleBodyConfigAnyOfTwo } from './updateAlertRuleBodyConfigAnyOfTwo';
+import type { UpdateAlertRuleBodyConfigAnyOf } from "./updateAlertRuleBodyConfigAnyOf";
+import type { UpdateAlertRuleBodyConfigAnyOfTwo } from "./updateAlertRuleBodyConfigAnyOfTwo";
 
-export type UpdateAlertRuleBodyConfig = UpdateAlertRuleBodyConfigAnyOf | UpdateAlertRuleBodyConfigAnyOfTwo;
+export type UpdateAlertRuleBodyConfig =
+  | UpdateAlertRuleBodyConfigAnyOf
+  | UpdateAlertRuleBodyConfigAnyOfTwo;

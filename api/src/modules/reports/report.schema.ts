@@ -1,5 +1,9 @@
 import z from 'zod'
 
+import { toBool } from '@/lib/helpers'
+
+const queryBoolean = z.preprocess(toBool, z.boolean())
+
 const slugParams = z.object({ slug: z.string() })
 
 const reportDateQuery = z.object({
@@ -64,7 +68,7 @@ const reportScopeQuery = {
   accountId: z.string().optional(),
   scope: z.enum(['all', 'credit_card']).optional().default('all'),
   statementId: z.string().optional(),
-  excludeImported: z.coerce.boolean().optional(),
+  excludeImported: queryBoolean.optional(),
 }
 
 export const byCategoryReportSchema = {
@@ -74,7 +78,7 @@ export const byCategoryReportSchema = {
   params: slugParams,
   querystring: reportDateQuery.extend({
     type: z.enum(['expense', 'income']),
-    personal: z.coerce.boolean().optional().default(false),
+    personal: queryBoolean.optional().default(false),
     ...reportScopeQuery,
   }),
   response: {
@@ -188,11 +192,12 @@ export const insightsReportSchema = {
 
 export const topMerchantsReportSchema = {
   tags: ['Reports'],
-  description: 'Top expense merchants/items grouped by normalized title (personal scope)',
+  description: 'Top expense merchants/items grouped by normalized title',
   operationId: 'getReportTopMerchants',
   params: slugParams,
   querystring: reportDateQuery.extend({
     limit: z.coerce.number().int().min(1).max(50).optional().default(15),
+    personal: queryBoolean.optional().default(false),
     ...reportScopeQuery,
   }),
   response: {
@@ -208,6 +213,8 @@ export const topMerchantsReportSchema = {
           avgAmount: z.string(),
           lastDate: z.string(),
           percentage: z.string(),
+          hasFullyDelegated: z.boolean(),
+          delegatedToName: z.string().nullable(),
         })
       ),
       merchantCount: z.number(),

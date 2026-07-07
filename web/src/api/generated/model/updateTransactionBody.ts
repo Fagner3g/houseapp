@@ -5,9 +5,9 @@
  * API for HouseApp
  * OpenAPI spec version: 2.0.0
  */
-import type { UpdateTransactionBodyType } from './updateTransactionBodyType';
-import type { UpdateTransactionBodyStatus } from './updateTransactionBodyStatus';
-import type { UpdateTransactionBodySource } from './updateTransactionBodySource';
+import type { UpdateTransactionBodyType } from "./updateTransactionBodyType";
+import type { UpdateTransactionBodyStatus } from "./updateTransactionBodyStatus";
+import type { UpdateTransactionBodySource } from "./updateTransactionBodySource";
 
 export type UpdateTransactionBody = {
   /** @nullable */

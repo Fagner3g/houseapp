@@ -6,12 +6,12 @@
  * OpenAPI spec version: 2.0.0
  */
 
-export type UpdateAlertRuleBodyChannelsItem = typeof UpdateAlertRuleBodyChannelsItem[keyof typeof UpdateAlertRuleBodyChannelsItem];
-
+export type UpdateAlertRuleBodyChannelsItem =
+  (typeof UpdateAlertRuleBodyChannelsItem)[keyof typeof UpdateAlertRuleBodyChannelsItem];
 
 // eslint-disable-next-line @typescript-eslint/no-redeclare
 export const UpdateAlertRuleBodyChannelsItem = {
-  in_app: 'in_app',
-  whatsapp: 'whatsapp',
-  extension: 'extension',
+  in_app: "in_app",
+  whatsapp: "whatsapp",
+  extension: "extension",
 } as const;

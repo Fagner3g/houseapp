@@ -17,6 +17,7 @@ import { cn } from '@/lib/utils'
 import { useDrawerStore } from '@/stores/drawers'
 
 import { useInvoiceCycleTransactions } from '../hooks/use-invoice-cycle-transactions'
+import { useSplitTransactionIds } from '../hooks/use-split-transaction-ids'
 import { filterAnalyticsGroupTransactions } from '../lib/filter-analytics-group-transactions'
 
 export function AnalyticsGroupDrawer() {
@@ -56,6 +57,13 @@ export function AnalyticsGroupDrawer() {
       context.purchasesPeriod
     )
   }, [context, transactions])
+
+  const filteredTransactionIds = useMemo(
+    () => filteredTransactions.map(transaction => transaction.id),
+    [filteredTransactions]
+  )
+  const { data: splitData } = useSplitTransactionIds(slug, filteredTransactionIds)
+  const fullyDelegatedById = splitData?.fullyDelegatedById ?? new Map<string, string>()
 
   const purchaseCount = context?.occurrenceCount ?? filteredTransactions.length
   const purchaseLabel =
@@ -145,6 +153,7 @@ export function AnalyticsGroupDrawer() {
                   items={filteredTransactions.map(toTransactionListItem)}
                   variant="credit_card_statement"
                   accountId={context.accountId}
+                  fullyDelegatedById={fullyDelegatedById}
                   containerClassName="mx-4 overflow-x-auto lg:mx-6"
                 />
               )}

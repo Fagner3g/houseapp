@@ -6,12 +6,12 @@
  * OpenAPI spec version: 2.0.0
  */
 
-export type ListTransactionsType = typeof ListTransactionsType[keyof typeof ListTransactionsType];
-
+export type ListTransactionsType =
+  (typeof ListTransactionsType)[keyof typeof ListTransactionsType];
 
 // eslint-disable-next-line @typescript-eslint/no-redeclare
 export const ListTransactionsType = {
-  income: 'income',
-  expense: 'expense',
-  transfer: 'transfer',
+  income: "income",
+  expense: "expense",
+  transfer: "transfer",
 } as const;

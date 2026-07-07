@@ -124,7 +124,7 @@ export const pageTabsList =
   'mb-1 h-auto w-full justify-start gap-0 overflow-x-auto rounded-none border-b border-slate-200 bg-transparent p-0'
 
 export const pageTabsTrigger =
-  'flex-none gap-2 rounded-none border-0 border-b-2 border-transparent bg-transparent px-4 pb-3 pt-2 text-sm font-medium text-slate-500 shadow-none transition-colors hover:bg-transparent hover:text-slate-700 data-[state=active]:border-violet-600 data-[state=active]:bg-transparent data-[state=active]:text-violet-700 data-[state=active]:shadow-none'
+  'flex-none cursor-pointer gap-2 rounded-none border-0 border-b-2 border-transparent bg-transparent px-4 pb-3 pt-2 text-sm font-medium text-slate-500 shadow-none transition-colors hover:bg-transparent hover:text-slate-700 data-[state=active]:border-violet-600 data-[state=active]:bg-transparent data-[state=active]:text-violet-700 data-[state=active]:shadow-none'
 
 /** Label + value pairs inside settings/detail panels */
 export const settingsFieldLabel =

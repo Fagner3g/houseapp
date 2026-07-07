@@ -184,6 +184,38 @@ export function TransactionSplitsSection({
     return split.contactName ?? 'Contato'
   }
 
+  const isFullyDelegated =
+    splits.length > 0 && Math.abs(splitsTotalReais - transactionTotalReais) < 0.01
+  const sectionTitle = isFullyDelegated
+    ? `Delegada para ${splits.map(splitPersonLabel).join(', ')}`
+    : 'Divisões'
+
+  const handleDelegateToMember = async (userId: string) => {
+    if (!slug) return
+
+    const remainingReais = Math.max(0, transactionTotalReais - splitsTotalReais)
+    if (remainingReais <= 0) {
+      toast.error('Esta compra já está totalmente delegada ou dividida')
+      return
+    }
+
+    try {
+      await createSplit({
+        slug,
+        transactionId,
+        data: {
+          userId,
+          amount: reaisToMoneyString(remainingReais),
+          notifyEnabled: true,
+        },
+      })
+      toast.success('Conta delegada')
+      invalidate()
+    } catch {
+      toast.error('Erro ao delegar conta')
+    }
+  }
+
   const handleAddSplit = async () => {
     if (!slug) return
 
@@ -293,8 +325,8 @@ export function TransactionSplitsSection({
       >
         <span className="flex items-center gap-2">
           <Wallet className="size-4" />
-          Divisões
-          {splits.length > 0 && (
+          {sectionTitle}
+          {splits.length > 0 && !isFullyDelegated && (
             <Badge variant="secondary" className="ml-1">
               {splits.length}
             </Badge>
@@ -419,6 +451,28 @@ export function TransactionSplitsSection({
             })
           ) : (
             <p className="text-sm text-slate-500">Nenhuma divisão cadastrada.</p>
+          )}
+
+          {!showAddForm && splits.length === 0 && splitEligibleMembers.length > 0 && (
+            <div className="space-y-2">
+              <p className="text-xs font-medium uppercase tracking-wide text-slate-500">
+                Delegar conta
+              </p>
+              <div className="flex flex-wrap gap-2">
+                {splitEligibleMembers.map(member => (
+                  <Button
+                    key={member.id}
+                    type="button"
+                    variant="outline"
+                    size="sm"
+                    disabled={isCreating}
+                    onClick={() => void handleDelegateToMember(member.id)}
+                  >
+                    Delegar para {member.name}
+                  </Button>
+                ))}
+              </div>
+            </div>
           )}
 
           {showAddForm ? (
@@ -562,7 +616,7 @@ export function TransactionSplitsSection({
               onClick={() => setShowAddForm(true)}
             >
               <Plus className="mr-2 size-4" />
-              Adicionar divisão
+              {splits.length > 0 ? 'Adicionar divisão' : 'Dividir com alguém'}
             </Button>
           )}
 

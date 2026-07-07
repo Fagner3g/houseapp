@@ -1,12 +1,29 @@
 import type { ListTransactions200TransactionsItem } from '@/api/generated/model'
+import {
+  isAppBookkeepingInvoicePayment,
+  isImportedBillPayment,
+} from '@/lib/credit-card-invoice-metrics'
 
 export type InvoiceQuickFilter =
   | 'all'
   | 'purchases'
   | 'payments'
+  | 'credits'
   | 'uncategorized'
   | 'installments'
   | 'divided'
+
+function isBillPaymentTransaction(tx: ListTransactions200TransactionsItem): boolean {
+  if (tx.type !== 'income') return false
+  return isImportedBillPayment(tx) || isAppBookkeepingInvoicePayment(tx)
+}
+
+function isCreditAdjustmentTransaction(tx: ListTransactions200TransactionsItem): boolean {
+  if (tx.type !== 'income') return false
+  if (isBillPaymentTransaction(tx)) return false
+  if (/reversão do crédito|reversao do credito/i.test(tx.title ?? '')) return false
+  return true
+}
 
 export type InvoiceStatementFilters = {
   search: string
@@ -25,6 +42,7 @@ export const defaultInvoiceStatementFilters = (): InvoiceStatementFilters => ({
 export type InvoiceFilterCounts = {
   purchases: number
   payments: number
+  credits: number
   uncategorized: number
   installments: number
   divided: number
@@ -36,7 +54,8 @@ export function computeInvoiceFilterCounts(
 ): InvoiceFilterCounts {
   return {
     purchases: transactions.filter(tx => tx.type === 'expense').length,
-    payments: transactions.filter(tx => tx.type === 'income').length,
+    payments: transactions.filter(tx => isBillPaymentTransaction(tx)).length,
+    credits: transactions.filter(tx => isCreditAdjustmentTransaction(tx)).length,
     uncategorized: transactions.filter(
       tx => tx.type === 'expense' && !(tx.categoryIds?.length ?? 0)
     ).length,
@@ -75,7 +94,9 @@ export function filterInvoiceTransactions(
       case 'purchases':
         return tx.type === 'expense'
       case 'payments':
-        return tx.type === 'income'
+        return isBillPaymentTransaction(tx)
+      case 'credits':
+        return isCreditAdjustmentTransaction(tx)
       case 'uncategorized':
         return tx.type === 'expense' && !(tx.categoryIds?.length ?? 0)
       case 'installments':

@@ -5,7 +5,7 @@
  * API for HouseApp
  * OpenAPI spec version: 2.0.0
  */
-import type { DeleteCardBodyReason } from './deleteCardBodyReason';
+import type { DeleteCardBodyReason } from "./deleteCardBodyReason";
 
 export type DeleteCardBody = {
   reason?: DeleteCardBodyReason;

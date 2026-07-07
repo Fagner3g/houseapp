@@ -6,11 +6,11 @@
  * OpenAPI spec version: 2.0.0
  */
 
-export type CreateCategoryBodyType = typeof CreateCategoryBodyType[keyof typeof CreateCategoryBodyType];
-
+export type CreateCategoryBodyType =
+  (typeof CreateCategoryBodyType)[keyof typeof CreateCategoryBodyType];
 
 // eslint-disable-next-line @typescript-eslint/no-redeclare
 export const CreateCategoryBodyType = {
-  income: 'income',
-  expense: 'expense',
+  income: "income",
+  expense: "expense",
 } as const;

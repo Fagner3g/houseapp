@@ -5,7 +5,7 @@
  * API for HouseApp
  * OpenAPI spec version: 2.0.0
  */
-import type { ListAiProviders200ProvidersItemName } from './listAiProviders200ProvidersItemName';
+import type { ListAiProviders200ProvidersItemName } from "./listAiProviders200ProvidersItemName";
 
 export type ListAiProviders200ProvidersItem = {
   name: ListAiProviders200ProvidersItemName;

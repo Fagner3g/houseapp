@@ -5,9 +5,9 @@
  * API for HouseApp
  * OpenAPI spec version: 2.0.0
  */
-import type { ParseStatementPdf200InvoiceStatusKind } from './parseStatementPdf200InvoiceStatusKind';
-import type { ParseStatementPdf200InvoiceStatusClosedConfidence } from './parseStatementPdf200InvoiceStatusClosedConfidence';
-import type { ParseStatementPdf200InvoiceStatusImportSource } from './parseStatementPdf200InvoiceStatusImportSource';
+import type { ParseStatementPdf200InvoiceStatusKind } from "./parseStatementPdf200InvoiceStatusKind";
+import type { ParseStatementPdf200InvoiceStatusClosedConfidence } from "./parseStatementPdf200InvoiceStatusClosedConfidence";
+import type { ParseStatementPdf200InvoiceStatusImportSource } from "./parseStatementPdf200InvoiceStatusImportSource";
 
 export type ParseStatementPdf200InvoiceStatus = {
   kind: ParseStatementPdf200InvoiceStatusKind;

@@ -6,11 +6,11 @@
  * OpenAPI spec version: 2.0.0
  */
 
-export type CreateRecurringTransactionBodyType = typeof CreateRecurringTransactionBodyType[keyof typeof CreateRecurringTransactionBodyType];
-
+export type CreateRecurringTransactionBodyType =
+  (typeof CreateRecurringTransactionBodyType)[keyof typeof CreateRecurringTransactionBodyType];
 
 // eslint-disable-next-line @typescript-eslint/no-redeclare
 export const CreateRecurringTransactionBodyType = {
-  income: 'income',
-  expense: 'expense',
+  income: "income",
+  expense: "expense",
 } as const;

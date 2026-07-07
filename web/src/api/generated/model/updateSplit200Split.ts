@@ -5,7 +5,7 @@
  * API for HouseApp
  * OpenAPI spec version: 2.0.0
  */
-import type { UpdateSplit200SplitStatus } from './updateSplit200SplitStatus';
+import type { UpdateSplit200SplitStatus } from "./updateSplit200SplitStatus";
 
 export type UpdateSplit200Split = {
   id: string;

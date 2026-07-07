@@ -125,6 +125,8 @@ export type TopMerchantReportRow = {
   avgAmount: bigint
   lastDate: Date | string
   hasInstallments: boolean
+  hasFullyDelegated: boolean
+  delegatedToName: string | null
 }
 
 export type TopMerchantsReportResult = {
@@ -141,7 +143,8 @@ export interface ReportRepository {
     organizationId: string,
     range: ReportDateRange,
     type: 'income' | 'expense',
-    userId?: string,
+    userId: string | undefined,
+    personal: boolean,
     scopeOptions?: ReportScopeOptions
   ): Promise<CategoryReportRow[]>
   getByCard(organizationId: string, range: ReportDateRange): Promise<CardTransactionsReportResult>
@@ -150,7 +153,8 @@ export interface ReportRepository {
     range: ReportDateRange,
     userId: string,
     limit: number,
-    scopeOptions?: ReportScopeOptions
+    scopeOptions?: ReportScopeOptions,
+    personal?: boolean
   ): Promise<TopMerchantsReportResult>
   listTopPending(
     organizationId: string,
@@ -178,6 +182,21 @@ function splitSumExpr() {
 
 function myExpenseAmountExpr() {
   return sql<bigint>`GREATEST(${reportExpenseAmountExpr} - ${splitSumExpr()}, 0)`
+}
+
+function fullyDelegatedCondition() {
+  return sql`${splitSumExpr()} >= ${reportExpenseAmountExpr} AND ${reportExpenseAmountExpr} > 0`
+}
+
+function delegateNameExpr() {
+  return sql<string | null>`(
+    SELECT COALESCE(u.name, ts.contact_name)
+    FROM transaction_splits ts
+    LEFT JOIN users u ON u.id = ts.user_id
+    WHERE ts.transaction_id = ${transactions.id}
+    ORDER BY ts.amount DESC
+    LIMIT 1
+  )`
 }
 
 function normalizedTitleExpr() {
@@ -440,24 +459,28 @@ export class DrizzleReportRepository implements ReportRepository {
     organizationId: string,
     range: ReportDateRange,
     type: 'income' | 'expense',
-    userId?: string,
+    userId: string | undefined,
+    personal: boolean,
     scopeOptions?: ReportScopeOptions
   ): Promise<CategoryReportRow[]> {
     const rangeCondition =
       type === 'expense'
         ? expenseRangeCondition(range, scopeOptions?.scope)
         : incomeInReportRangeCondition(range)
+    const applyOwnership = personal || scopeOptions?.scope === 'credit_card'
     const amountExpr =
-      type === 'expense' && userId ? myExpenseAmountExpr() : type === 'expense' ? reportExpenseAmountExpr : paidAmountExpr
+      type === 'expense' && personal
+        ? myExpenseAmountExpr()
+        : type === 'expense'
+          ? reportExpenseAmountExpr
+          : paidAmountExpr
 
-    const personalConditions = userId
-      ? and(
-          rangeCondition,
-          userOwnsTransactionCondition(userId),
-          type === 'expense' ? sql`${myExpenseAmountExpr()} > 0` : undefined,
-          reportScopeConditions(scopeOptions)
-        )
-      : and(rangeCondition, reportScopeConditions(scopeOptions))
+    const personalConditions = and(
+      rangeCondition,
+      applyOwnership && userId ? userOwnsTransactionCondition(userId) : undefined,
+      personal && type === 'expense' && userId ? sql`${myExpenseAmountExpr()} > 0` : undefined,
+      reportScopeConditions(scopeOptions)
+    )
 
     const rows = await db
       .select({
@@ -557,20 +580,22 @@ export class DrizzleReportRepository implements ReportRepository {
     range: ReportDateRange,
     userId: string,
     limit: number,
-    scopeOptions?: ReportScopeOptions
+    scopeOptions?: ReportScopeOptions,
+    personal = false
   ): Promise<TopMerchantsReportResult> {
-    const myAmount = myExpenseAmountExpr()
+    const amountExpr = personal ? myExpenseAmountExpr() : reportExpenseAmountExpr
     const normalizedTitle = normalizedTitleExpr()
+    const fullyDelegated = fullyDelegatedCondition()
     const expenseWhere = and(
       eq(transactions.organizationId, organizationId),
       expenseRangeCondition(range, scopeOptions?.scope),
       userOwnsTransactionCondition(userId),
-      sql`${myAmount} > 0`,
+      personal ? sql`${myExpenseAmountExpr()} > 0` : undefined,
       reportScopeConditions(scopeOptions)
     )
 
     const totalsQuery = db
-      .select({ grandTotal: sql<bigint>`COALESCE(SUM(${myAmount}), 0)` })
+      .select({ grandTotal: sql<bigint>`COALESCE(SUM(${amountExpr}), 0)` })
       .from(transactions)
       .leftJoin(accounts, eq(transactions.accountId, accounts.id))
       .leftJoin(cards, eq(transactions.cardId, cards.id))
@@ -589,17 +614,19 @@ export class DrizzleReportRepository implements ReportRepository {
       .select({
         key: normalizedTitle,
         label: sql<string>`(array_agg(${transactions.title} ORDER BY ${purchaseDateExpr} DESC))[1]`,
-        total: sql<bigint>`COALESCE(SUM(${myAmount}), 0)`,
+        total: sql<bigint>`COALESCE(SUM(${amountExpr}), 0)`,
         occurrenceCount: sql<number>`COUNT(*)::int`,
         lastDate: sql<Date>`MAX(${purchaseDateExpr})`,
         hasInstallments: sql<boolean>`BOOL_OR(COALESCE(${transactions.installmentsTotal}, 0) > 1 OR ${transactions.title} ~* 'parcela \\d+/\\d+')`,
+        hasFullyDelegated: sql<boolean>`BOOL_OR(${fullyDelegated})`,
+        delegatedToName: sql<string | null>`MAX(CASE WHEN ${fullyDelegated} THEN ${delegateNameExpr()} END)`,
       })
       .from(transactions)
       .leftJoin(accounts, eq(transactions.accountId, accounts.id))
       .leftJoin(cards, eq(transactions.cardId, cards.id))
       .where(expenseWhere)
       .groupBy(normalizedTitle)
-      .orderBy(sql`COALESCE(SUM(${myAmount}), 0) DESC`, normalizedTitle)
+      .orderBy(sql`COALESCE(SUM(${amountExpr}), 0) DESC`, normalizedTitle)
       .limit(limit)
 
     const [[totalsRow], [countRow], rows] = await Promise.all([
@@ -626,6 +653,8 @@ export class DrizzleReportRepository implements ReportRepository {
           avgAmount,
           lastDate: row.lastDate,
           hasInstallments: Boolean(row.hasInstallments),
+          hasFullyDelegated: Boolean(row.hasFullyDelegated),
+          delegatedToName: row.delegatedToName ?? null,
         }
       }),
       grandTotal,

@@ -5,9 +5,9 @@
  * API for HouseApp
  * OpenAPI spec version: 2.0.0
  */
-import type { CreateTransaction201TransactionsItemType } from './createTransaction201TransactionsItemType';
-import type { CreateTransaction201TransactionsItemStatus } from './createTransaction201TransactionsItemStatus';
-import type { CreateTransaction201TransactionsItemSource } from './createTransaction201TransactionsItemSource';
+import type { CreateTransaction201TransactionsItemType } from "./createTransaction201TransactionsItemType";
+import type { CreateTransaction201TransactionsItemStatus } from "./createTransaction201TransactionsItemStatus";
+import type { CreateTransaction201TransactionsItemSource } from "./createTransaction201TransactionsItemSource";
 
 export type CreateTransaction201TransactionsItem = {
   id: string;

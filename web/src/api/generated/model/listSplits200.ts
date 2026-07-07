@@ -5,7 +5,7 @@
  * API for HouseApp
  * OpenAPI spec version: 2.0.0
  */
-import type { ListSplits200SplitsItem } from './listSplits200SplitsItem';
+import type { ListSplits200SplitsItem } from "./listSplits200SplitsItem";
 
 export type ListSplits200 = {
   splits: ListSplits200SplitsItem[];

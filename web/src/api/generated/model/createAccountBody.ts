@@ -5,7 +5,7 @@
  * API for HouseApp
  * OpenAPI spec version: 2.0.0
  */
-import type { CreateAccountBodyType } from './createAccountBodyType';
+import type { CreateAccountBodyType } from "./createAccountBodyType";
 
 export type CreateAccountBody = {
   /** @minLength 1 */

@@ -12,6 +12,7 @@ export type ExpenseRankingItem = {
   percentage: string
   subtitle?: string
   isRecurring?: boolean
+  delegatedToName?: string | null
   color?: string | null
   occurrenceCount?: number
 }
@@ -84,6 +85,14 @@ export function ExpenseRankingList({
                         className="shrink-0 border-violet-200 bg-violet-50 text-[10px] font-medium text-violet-700"
                       >
                         Recorrente
+                      </Badge>
+                    ) : null}
+                    {item.delegatedToName ? (
+                      <Badge
+                        variant="secondary"
+                        className="shrink-0 border-amber-200 bg-amber-50 text-[10px] font-medium text-amber-800"
+                      >
+                        Delegada · {item.delegatedToName}
                       </Badge>
                     ) : null}
                   </div>

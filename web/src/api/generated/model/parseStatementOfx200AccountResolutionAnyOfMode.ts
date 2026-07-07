@@ -6,10 +6,10 @@
  * OpenAPI spec version: 2.0.0
  */
 
-export type ParseStatementOfx200AccountResolutionAnyOfMode = typeof ParseStatementOfx200AccountResolutionAnyOfMode[keyof typeof ParseStatementOfx200AccountResolutionAnyOfMode];
-
+export type ParseStatementOfx200AccountResolutionAnyOfMode =
+  (typeof ParseStatementOfx200AccountResolutionAnyOfMode)[keyof typeof ParseStatementOfx200AccountResolutionAnyOfMode];
 
 // eslint-disable-next-line @typescript-eslint/no-redeclare
 export const ParseStatementOfx200AccountResolutionAnyOfMode = {
-  existing: 'existing',
+  existing: "existing",
 } as const;

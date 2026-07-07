@@ -6,17 +6,18 @@
  * OpenAPI spec version: 2.0.0
  */
 
-export type ParseStatementOfxOrg200AccountResolutionAnyOfThreeSuggestedAccount = {
-  name: string;
-  institution: string;
-  currency: string;
-  /**
-   * @minimum 1
-   * @maximum 31
-   */
-  closingDay: number;
-  /** @nullable */
-  dueDay: number | null;
-  /** @nullable */
-  creditLimit?: string | null;
-};
+export type ParseStatementOfxOrg200AccountResolutionAnyOfThreeSuggestedAccount =
+  {
+    name: string;
+    institution: string;
+    currency: string;
+    /**
+     * @minimum 1
+     * @maximum 31
+     */
+    closingDay: number;
+    /** @nullable */
+    dueDay: number | null;
+    /** @nullable */
+    creditLimit?: string | null;
+  };

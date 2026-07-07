@@ -1,5 +1,5 @@
 import dayjs from 'dayjs'
-import { BarChart3, CalendarDays, ChevronDown, Info, Repeat, Store, Tag } from 'lucide-react'
+import { BarChart3, CalendarDays, ChevronDown, Info, Repeat, Share2, Store, Tag } from 'lucide-react'
 import type { ElementType } from 'react'
 import { useMemo, useState } from 'react'
 
@@ -26,13 +26,20 @@ import {
   computePersonalSpendAdjustment,
   hasImportedInvoiceTotal,
   listInvoiceAdjustmentCredits,
+  listInvoiceBillPayments,
   resolveUnlistedInvoiceCredits,
+  getUnlistedInvoiceCreditsCopy,
   type InvoiceAdjustmentLine,
 } from '@/lib/credit-card-invoice-metrics'
 import { useActiveOrganization } from '@/hooks/use-active-organization'
 import { cn } from '@/lib/utils'
 import { useDrawerStore, type AnalyticsGroupContext } from '@/stores/drawers'
 
+import {
+  aggregateCategoriesFromTransactions,
+  aggregateMerchantsFromTransactions,
+  filterDividedExpenseTransactions,
+} from '../lib/compute-divided-analytics'
 import { useCreditCardInvoiceMetrics } from '../hooks/use-credit-card-invoice-metrics'
 import { useSplitTransactionIds } from '../hooks/use-split-transaction-ids'
 import { CreditCardAnalyticsSkeleton } from './credit-card-invoice-skeletons'
@@ -46,9 +53,11 @@ interface CreditCardAnalyticsSectionProps {
   onNavigateToMonth?: (monthKey: string) => void
   onViewDividedTransactions?: () => void
   onViewInvoiceCredits?: () => void
+  onViewInvoicePayments?: () => void
 }
 
 type MerchantQuickFilter = 'all' | 'recurring' | 'single' | 'installments'
+type AnalyticsSpendingView = 'all' | 'personal'
 
 const MERCHANT_QUICK_FILTERS: Array<{
   id: MerchantQuickFilter
@@ -113,25 +122,29 @@ function BridgeLine({
   amount,
   deduction = false,
   emphasis = false,
+  subtotal = false,
   prefix,
 }: {
   label: string
   amount: number
   deduction?: boolean
   emphasis?: boolean
+  subtotal?: boolean
   prefix?: string
 }) {
   const formatted =
     deduction && amount > 0 ? `− ${formatCurrency(amount)}` : formatCurrency(amount)
+  const isHighlighted = emphasis || subtotal
 
   return (
     <div
       className={cn(
         'flex items-baseline justify-between gap-4 text-sm',
-        emphasis && 'border-t border-slate-200 pt-2 font-medium'
+        emphasis && 'border-t border-slate-200 pt-2 font-medium',
+        subtotal && 'font-medium'
       )}
     >
-      <span className={cn('min-w-0 truncate', emphasis ? 'text-slate-800' : 'text-slate-600')}>
+      <span className={cn('min-w-0 truncate', isHighlighted ? 'text-slate-800' : 'text-slate-600')}>
         {prefix && <span className="text-slate-400">{prefix} </span>}
         {label}
       </span>
@@ -140,7 +153,7 @@ function BridgeLine({
           'shrink-0 tabular-nums',
           deduction && amount > 0
             ? 'text-emerald-700'
-            : emphasis
+            : isHighlighted
               ? 'text-slate-900'
               : 'text-slate-800'
         )}
@@ -151,16 +164,84 @@ function BridgeLine({
   )
 }
 
+function AnalyticsSpendingToggle({
+  value,
+  allTotal,
+  personalTotal,
+  onChange,
+}: {
+  value: AnalyticsSpendingView
+  allTotal: number
+  personalTotal: number
+  onChange: (value: AnalyticsSpendingView) => void
+}) {
+  const options: Array<{
+    id: AnalyticsSpendingView
+    label: string
+    total: number
+    hint: string
+  }> = [
+    {
+      id: 'all',
+      label: 'Todas as compras',
+      total: allTotal,
+      hint: 'Valor bruto no cartão, incluindo delegadas',
+    },
+    {
+      id: 'personal',
+      label: 'Meu gasto',
+      total: personalTotal,
+      hint: 'Líquido após divisões e delegações',
+    },
+  ]
+
+  return (
+    <div className="mt-5 grid gap-2 sm:grid-cols-2">
+      {options.map(option => {
+        const isActive = value === option.id
+        return (
+          <button
+            key={option.id}
+            type="button"
+            onClick={() => onChange(option.id)}
+            className={cn(
+              'cursor-pointer rounded-xl border px-4 py-3 text-left transition-colors',
+              isActive
+                ? 'border-violet-300 bg-violet-50/80 ring-1 ring-violet-200'
+                : 'border-slate-200 bg-white hover:border-slate-300 hover:bg-slate-50/80'
+            )}
+          >
+            <p
+              className={cn(
+                'text-xs font-medium uppercase tracking-wide',
+                isActive ? 'text-violet-700' : 'text-slate-500'
+              )}
+            >
+              {option.label}
+            </p>
+            <p className="mt-1 text-2xl font-bold tabular-nums tracking-tight text-slate-900">
+              {formatCurrency(option.total)}
+            </p>
+            <p className="mt-0.5 text-xs text-slate-500">{option.hint}</p>
+          </button>
+        )
+      })}
+    </div>
+  )
+}
+
 function DualMetricsHero({
   mySpend,
   invoiceTotal,
   hasImportedInvoice,
   invoiceCredits,
+  invoicePayments,
 }: {
   mySpend: number
   invoiceTotal: number
   hasImportedInvoice: boolean
   invoiceCredits: number
+  invoicePayments: number
 }) {
   const showDelta =
     hasImportedInvoice &&
@@ -199,11 +280,18 @@ function DualMetricsHero({
         )}
       </div>
 
-      {showDelta && invoiceCredits > 0 && (
-        <div className="sm:col-span-2">
-          <span className="inline-flex items-center rounded-full border border-emerald-200 bg-emerald-50 px-3 py-1 text-xs font-medium tabular-nums text-emerald-800">
-            − {formatCurrency(invoiceCredits)} em créditos do banco
-          </span>
+      {showDelta && (invoiceCredits > 0 || invoicePayments > 0) && (
+        <div className="flex flex-wrap gap-2 sm:col-span-2">
+          {invoiceCredits > 0 && (
+            <span className="inline-flex items-center rounded-full border border-emerald-200 bg-emerald-50 px-3 py-1 text-xs font-medium tabular-nums text-emerald-800">
+              − {formatCurrency(invoiceCredits)} em estornos e créditos
+            </span>
+          )}
+          {invoicePayments > 0 && (
+            <span className="inline-flex items-center rounded-full border border-blue-200 bg-blue-50 px-3 py-1 text-xs font-medium tabular-nums text-blue-800">
+              {formatCurrency(invoicePayments)} em pagamentos
+            </span>
+          )}
         </div>
       )}
     </div>
@@ -216,29 +304,37 @@ function InvoiceBridgeBreakdown({
   invoiceCredits,
   invoiceCharges,
   creditLines,
+  paymentLines,
   splitAdjustment,
   mySpend,
   invoiceTotal,
   dividedCount,
   onViewDividedTransactions,
   onViewInvoiceCredits,
+  onViewInvoicePayments,
 }: {
   purchases: number
   previousBalance: number
   invoiceCredits: number
   invoiceCharges: number
   creditLines: InvoiceAdjustmentLine[]
+  paymentLines: InvoiceAdjustmentLine[]
   splitAdjustment: number
   mySpend: number
   invoiceTotal: number
   dividedCount: number
   onViewDividedTransactions?: () => void
   onViewInvoiceCredits?: () => void
+  onViewInvoicePayments?: () => void
 }) {
   const unlistedCredits = resolveUnlistedInvoiceCredits(invoiceCredits, creditLines)
+  const unlistedCreditsCopy = getUnlistedInvoiceCreditsCopy(creditLines.length > 0)
+  const paymentTotal = paymentLines.reduce((sum, line) => sum + line.amount, 0)
+  const hasExpandableCredits = creditLines.length > 0 || unlistedCredits > 0
   const [creditsExpanded, setCreditsExpanded] = useState(false)
+  const [paymentsExpanded, setPaymentsExpanded] = useState(false)
   const showCreditsSection =
-    invoiceCredits > 0 || invoiceCharges > 0 || previousBalance > 0
+    invoiceCredits > 0 || invoiceCharges > 0 || previousBalance > 0 || paymentTotal > 0
 
   return (
     <div className="mt-5 rounded-xl border border-slate-200 bg-slate-50/50">
@@ -251,7 +347,7 @@ function InvoiceBridgeBreakdown({
         {splitAdjustment > 0 && onViewDividedTransactions && dividedCount > 0 && (
           <button
             type="button"
-            className="text-left text-xs font-medium text-slate-600 underline-offset-2 hover:text-slate-900 hover:underline"
+            className="cursor-pointer text-left text-xs font-medium text-slate-600 underline-offset-2 hover:text-slate-900 hover:underline"
             onClick={onViewDividedTransactions}
           >
             Ver {dividedCount === 1 ? 'compra dividida' : `${dividedCount} compras divididas`}
@@ -269,11 +365,11 @@ function InvoiceBridgeBreakdown({
                 <button
                   type="button"
                   className="flex w-full items-baseline justify-between gap-4 text-left text-sm"
-                  onClick={() => creditLines.length > 0 && setCreditsExpanded(open => !open)}
-                  disabled={creditLines.length === 0 && unlistedCredits <= 0}
+                  onClick={() => hasExpandableCredits && setCreditsExpanded(open => !open)}
+                  disabled={!hasExpandableCredits}
                 >
                   <span className="flex min-w-0 items-center gap-1 text-slate-600">
-                    {creditLines.length > 0 && (
+                    {hasExpandableCredits && (
                       <ChevronDown
                         className={cn(
                           'size-3.5 shrink-0 text-slate-400 transition-transform',
@@ -283,15 +379,18 @@ function InvoiceBridgeBreakdown({
                     )}
                     <span>
                       <span className="text-slate-400">− </span>
-                      Créditos do banco
+                      Créditos e estornos
                     </span>
                   </span>
                   <span className="shrink-0 tabular-nums text-emerald-700">
                     − {formatCurrency(invoiceCredits)}
                   </span>
                 </button>
-                {creditsExpanded && creditLines.length > 0 && (
-                  <div className="space-y-1 border-l-2 border-slate-200 pl-3">
+                <p className="text-xs text-slate-500">
+                  Estornos, IOF de volta e ajustes que reduzem o total da fatura.
+                </p>
+                {creditsExpanded && hasExpandableCredits && (
+                  <div className="space-y-1 border-l-2 border-emerald-200/80 pl-3">
                     {creditLines.map(line => (
                       <BridgeLine
                         key={`${line.title}-${line.amount}`}
@@ -301,18 +400,31 @@ function InvoiceBridgeBreakdown({
                       />
                     ))}
                     {unlistedCredits > 0 && (
-                      <BridgeLine
-                        label="Ajustes do banco"
-                        amount={unlistedCredits}
-                        deduction
-                      />
+                      <div
+                        className={cn(
+                          'space-y-0.5',
+                          unlistedCreditsCopy.emphasis &&
+                            'rounded-md border border-emerald-200/80 bg-emerald-50/60 px-2 py-1.5'
+                        )}
+                      >
+                        <BridgeLine
+                          label={unlistedCreditsCopy.label}
+                          amount={unlistedCredits}
+                          deduction
+                          subtotal={unlistedCreditsCopy.emphasis}
+                          prefix={unlistedCreditsCopy.prefix}
+                        />
+                        <p className="text-xs leading-relaxed text-slate-500">
+                          {unlistedCreditsCopy.hint}
+                        </p>
+                      </div>
                     )}
                   </div>
                 )}
                 {creditLines.length > 0 && onViewInvoiceCredits && (
                   <button
                     type="button"
-                    className="text-left text-xs font-medium text-slate-600 underline-offset-2 hover:text-slate-900 hover:underline"
+                    className="cursor-pointer text-left text-xs font-medium text-slate-600 underline-offset-2 hover:text-slate-900 hover:underline"
                     onClick={onViewInvoiceCredits}
                   >
                     {creditLines.length === 1
@@ -326,6 +438,58 @@ function InvoiceBridgeBreakdown({
               <BridgeLine label="Encargos na fatura" amount={invoiceCharges} />
             )}
             <BridgeLine label="Total da fatura" amount={invoiceTotal} emphasis prefix="=" />
+
+            {paymentTotal > 0 && (
+              <div className="mt-2 space-y-1 border-t border-dashed border-slate-200 pt-2">
+                <button
+                  type="button"
+                  className="flex w-full items-baseline justify-between gap-4 text-left text-sm"
+                  onClick={() => paymentLines.length > 0 && setPaymentsExpanded(open => !open)}
+                  disabled={paymentLines.length === 0}
+                >
+                  <span className="flex min-w-0 items-center gap-1 text-slate-600">
+                    {paymentLines.length > 0 && (
+                      <ChevronDown
+                        className={cn(
+                          'size-3.5 shrink-0 text-slate-400 transition-transform',
+                          paymentsExpanded && 'rotate-180'
+                        )}
+                      />
+                    )}
+                    <span>Pagamentos na fatura</span>
+                  </span>
+                  <span className="shrink-0 tabular-nums text-blue-700">
+                    {formatCurrency(paymentTotal)}
+                  </span>
+                </button>
+                <p className="text-xs text-slate-500">
+                  Valores que você pagou ao cartão. Não são estornos — reduzem o que ainda falta
+                  pagar, mas não entram no cálculo acima.
+                </p>
+                {paymentsExpanded && paymentLines.length > 0 && (
+                  <div className="space-y-1 border-l-2 border-blue-200/80 pl-3">
+                    {paymentLines.map(line => (
+                      <BridgeLine
+                        key={`${line.title}-${line.amount}`}
+                        label={line.title}
+                        amount={line.amount}
+                      />
+                    ))}
+                  </div>
+                )}
+                {onViewInvoicePayments && (
+                  <button
+                    type="button"
+                    className="cursor-pointer text-left text-xs font-medium text-slate-600 underline-offset-2 hover:text-slate-900 hover:underline"
+                    onClick={onViewInvoicePayments}
+                  >
+                    {paymentLines.length === 1
+                      ? 'Ver pagamento na fatura'
+                      : `Ver ${paymentLines.length} pagamentos na fatura`}
+                  </button>
+                )}
+              </div>
+            )}
           </>
         )}
 
@@ -335,7 +499,7 @@ function InvoiceBridgeBreakdown({
       </div>
 
       <p className="border-t border-slate-200 px-4 py-2.5 text-xs text-slate-500">
-        Gráficos abaixo = gasto pessoal, não total da fatura.
+        Use o filtro abaixo para alternar entre todas as compras e seu gasto líquido.
       </p>
     </div>
   )
@@ -350,10 +514,14 @@ export function CreditCardAnalyticsSection({
   onNavigateToMonth,
   onViewDividedTransactions,
   onViewInvoiceCredits,
+  onViewInvoicePayments,
 }: CreditCardAnalyticsSectionProps) {
   const { slug } = useActiveOrganization()
   const openAnalyticsGroupDrawer = useDrawerStore(s => s.openAnalyticsGroupDrawer)
   const [merchantQuickFilter, setMerchantQuickFilter] = useState<MerchantQuickFilter>('all')
+  const [dividedOnly, setDividedOnly] = useState(false)
+  const [spendingView, setSpendingView] = useState<AnalyticsSpendingView>('all')
+  const showPersonal = spendingView === 'personal'
   const {
     purchasesPeriod,
     paymentPeriod,
@@ -369,10 +537,10 @@ export function CreditCardAnalyticsSection({
     () => cycleTransactions.map(transaction => transaction.id),
     [cycleTransactions]
   )
-  const { data: dividedTransactionIds = new Set<string>() } = useSplitTransactionIds(
-    slug,
-    cycleTransactionIds
-  )
+  const { data: splitData } = useSplitTransactionIds(slug, cycleTransactionIds)
+  const dividedTransactionIds = splitData?.transactionIds ?? new Set<string>()
+  const fullyDelegatedById = splitData?.fullyDelegatedById ?? new Map<string, string>()
+  const fullyDelegatedCount = splitData?.fullyDelegatedCount ?? 0
   const dividedCount = useMemo(
     () => cycleTransactions.filter(transaction => dividedTransactionIds.has(transaction.id)).length,
     [cycleTransactions, dividedTransactionIds]
@@ -397,23 +565,81 @@ export function CreditCardAnalyticsSection({
     ...reportScope,
   }
 
-  const byCategory = useGetReportByCategory(
+  const byCategoryAll = useGetReportByCategory(
+    slug,
+    { ...reportParams, type: 'expense' },
+    { query: { enabled: !!slug && !!accountId } }
+  )
+  const byCategoryPersonal = useGetReportByCategory(
     slug,
     { ...reportParams, type: 'expense', personal: true },
     { query: { enabled: !!slug && !!accountId } }
   )
-  const topMerchants = useGetReportTopMerchants(
+  const topMerchantsAll = useGetReportTopMerchants(
     slug,
     { ...reportParams, limit: MERCHANT_FETCH_LIMIT },
     { query: { enabled: !!slug && !!accountId } }
   )
+  const topMerchantsPersonal = useGetReportTopMerchants(
+    slug,
+    { ...reportParams, personal: true, limit: MERCHANT_FETCH_LIMIT },
+    { query: { enabled: !!slug && !!accountId } }
+  )
 
-  const isLoading = isPending || byCategory.isLoading || topMerchants.isLoading
-  const categories = byCategory.data?.categories ?? []
-  const allMerchants = topMerchants.data?.merchants ?? []
-  const merchantCount = topMerchants.data?.merchantCount ?? allMerchants.length
-  const grandTotal = topMerchants.data?.grandTotal ?? '0'
-  const mySpend = moneyStringToReais(grandTotal)
+  const byCategory = showPersonal ? byCategoryPersonal : byCategoryAll
+  const topMerchants = showPersonal ? topMerchantsPersonal : topMerchantsAll
+
+  const dividedExpenses = useMemo(
+    () => filterDividedExpenseTransactions(cycleTransactions, dividedTransactionIds),
+    [cycleTransactions, dividedTransactionIds]
+  )
+
+  const baseCategories = byCategory.data?.categories ?? []
+  const baseMerchants = topMerchants.data?.merchants ?? []
+
+  const dividedAnalytics = useMemo(() => {
+    if (!dividedOnly) return null
+
+    const categoryMeta = byCategoryAll.data?.categories ?? baseCategories
+    const aggregatedCategories = aggregateCategoriesFromTransactions(
+      dividedExpenses,
+      categoryMeta
+    )
+    const aggregatedMerchants = aggregateMerchantsFromTransactions(
+      dividedExpenses,
+      fullyDelegatedById
+    )
+
+    return {
+      categories: aggregatedCategories,
+      merchants: aggregatedMerchants.merchants,
+      merchantCount: aggregatedMerchants.merchantCount,
+      grandTotal: aggregatedMerchants.grandTotal,
+    }
+  }, [
+    dividedOnly,
+    dividedExpenses,
+    byCategoryAll.data?.categories,
+    baseCategories,
+    fullyDelegatedById,
+  ])
+
+  const isLoading =
+    isPending ||
+    byCategoryAll.isLoading ||
+    byCategoryPersonal.isLoading ||
+    topMerchantsAll.isLoading ||
+    topMerchantsPersonal.isLoading
+  const categories = dividedAnalytics?.categories ?? baseCategories
+  const allMerchants = dividedAnalytics?.merchants ?? baseMerchants
+  const merchantCount =
+    dividedAnalytics?.merchantCount ??
+    topMerchants.data?.merchantCount ??
+    allMerchants.length
+  const grandTotal = dividedAnalytics?.grandTotal ?? topMerchants.data?.grandTotal ?? '0'
+  const mySpend = moneyStringToReais(topMerchantsPersonal.data?.grandTotal ?? '0')
+  const allPurchasesTotal = moneyStringToReais(topMerchantsAll.data?.grandTotal ?? '0')
+  const chartSpendTotal = moneyStringToReais(grandTotal)
   const invoiceTotal = metrics.invoiceTotal
   const invoicePurchases = metrics.purchases
   const amountReconciliation = computeInvoiceAmountReconciliation({
@@ -436,6 +662,21 @@ export function CreditCardAnalyticsSection({
       ),
     [cycleTransactions, adjustmentPeriod, cycle, matchedStatement]
   )
+  const paymentLines = useMemo(
+    () =>
+      listInvoiceBillPayments(
+        cycleTransactions,
+        purchasesPeriod,
+        paymentPeriod,
+        cycle,
+        matchedStatement
+      ),
+    [cycleTransactions, purchasesPeriod, paymentPeriod, cycle, matchedStatement]
+  )
+  const paymentTotal = useMemo(
+    () => paymentLines.reduce((sum, line) => sum + line.amount, 0),
+    [paymentLines]
+  )
   const amountsDiffer =
     hasImportedInvoice &&
     reaisToCents(invoiceTotal) !== reaisToCents(mySpend) &&
@@ -448,9 +689,25 @@ export function CreditCardAnalyticsSection({
   const breakdownNote = suggestedForeignMonthKey
     ? `Não há fatura importada neste ciclo. Compras importadas deste período estão na ${formatInvoiceLabel(suggestedForeignMonthKey).toLowerCase()}.`
     : 'Não há fatura importada neste ciclo. Suas compras aqui podem constar na fatura de outro mês.'
-  const categorySectionHint =
-    'Meu gasto no período de compras da fatura · toque para ver as compras'
-  const merchantSectionHint = `Top ${TOP_MERCHANTS_LIMIT} por gasto · agrupados pelo nome na fatura · toque para ver`
+  const categorySectionHint = dividedOnly
+    ? `Compras divididas ou delegadas por categoria · toque para ver`
+    : showPersonal
+      ? 'Seu gasto líquido após divisões · toque para ver'
+      : 'Todas as compras do período da fatura · toque para ver'
+  const merchantSectionHint = dividedOnly
+    ? `Top ${TOP_MERCHANTS_LIMIT} em compras divididas ou delegadas · toque para ver`
+    : showPersonal
+      ? `Top ${TOP_MERCHANTS_LIMIT} por gasto pessoal · agrupados pelo nome na fatura · toque para ver`
+      : `Top ${TOP_MERCHANTS_LIMIT} por valor · agrupados pelo nome na fatura · toque para ver`
+
+  const fullyDelegatedAmount = useMemo(
+    () =>
+      cycleTransactions
+        .filter(transaction => fullyDelegatedById.has(transaction.id))
+        .reduce((sum, transaction) => sum + moneyStringToReais(transaction.amount), 0),
+    [cycleTransactions, fullyDelegatedById]
+  )
+  const partialSplitAdjustment = Math.max(0, splitAdjustment - fullyDelegatedAmount)
 
   const recurringMerchants = useMemo(
     () => allMerchants.filter(merchant => merchant.isRecurring),
@@ -503,14 +760,21 @@ export function CreditCardAnalyticsSection({
     [merchantFilterCounts]
   )
 
-  const merchantEmptyMessage =
-    merchantQuickFilter === 'recurring'
+  const merchantEmptyMessage = dividedOnly
+    ? 'Nenhuma compra dividida ou delegada nesta fatura'
+    : merchantQuickFilter === 'recurring'
       ? 'Nenhum estabelecimento recorrente nesta fatura'
       : merchantQuickFilter === 'installments'
         ? 'Nenhuma compra parcelada nesta fatura'
         : merchantQuickFilter === 'single'
           ? 'Nenhuma compra avulsa nesta fatura'
           : 'Nenhuma compra nesta fatura'
+
+  const toggleDividedFilter = () => {
+    if (dividedCount === 0) return
+    setDividedOnly(current => !current)
+    setMerchantQuickFilter('all')
+  }
 
   const chartData = mapCategoryToChartData(categories)
 
@@ -550,6 +814,7 @@ export function CreditCardAnalyticsSection({
             invoiceTotal={invoiceTotal}
             hasImportedInvoice={hasImportedInvoice}
             invoiceCredits={amountReconciliation.invoiceCredits}
+            invoicePayments={paymentTotal}
           />
 
           {showAmountReconciliation && (
@@ -559,12 +824,14 @@ export function CreditCardAnalyticsSection({
               invoiceCredits={amountReconciliation.invoiceCredits}
               invoiceCharges={amountReconciliation.invoiceCharges}
               creditLines={creditLines}
+              paymentLines={paymentLines}
               splitAdjustment={splitAdjustment}
               mySpend={mySpend}
               invoiceTotal={invoiceTotal}
               dividedCount={dividedCount}
               onViewDividedTransactions={onViewDividedTransactions}
               onViewInvoiceCredits={onViewInvoiceCredits}
+              onViewInvoicePayments={onViewInvoicePayments}
             />
           )}
 
@@ -572,14 +839,35 @@ export function CreditCardAnalyticsSection({
             <div className="mt-5 flex gap-2 rounded-xl border border-slate-200 bg-slate-50/50 px-4 py-3 text-sm text-slate-700">
               <Info className="mt-0.5 size-4 shrink-0 text-slate-500" />
               <div className="space-y-1">
-                <p>
-                  Parte das compras foi dividida com outras pessoas (
-                  <span className="font-medium tabular-nums">{formatCurrency(splitAdjustment)}</span>
-                  ).
-                </p>
+                {fullyDelegatedCount > 0 && (
+                  <p>
+                    {fullyDelegatedCount === 1 ? '1 compra delegada' : `${fullyDelegatedCount} compras delegadas`}
+                    {fullyDelegatedAmount > 0 && (
+                      <>
+                        {' '}
+                        (
+                        <span className="font-medium tabular-nums">
+                          {formatCurrency(fullyDelegatedAmount)}
+                        </span>
+                        )
+                      </>
+                    )}
+                    {' '}
+                    — não entra no seu gasto.
+                  </p>
+                )}
+                {partialSplitAdjustment > 0 && (
+                  <p>
+                    Parte das compras foi dividida com outras pessoas (
+                    <span className="font-medium tabular-nums">
+                      {formatCurrency(partialSplitAdjustment)}
+                    </span>
+                    ).
+                  </p>
+                )}
                 <button
                   type="button"
-                  className="font-medium text-slate-700 underline-offset-2 hover:underline"
+                  className="cursor-pointer font-medium text-slate-700 underline-offset-2 hover:underline"
                   onClick={onViewDividedTransactions}
                 >
                   Ver {dividedCount === 1 ? 'compra dividida' : `${dividedCount} compras divididas`}
@@ -596,7 +884,7 @@ export function CreditCardAnalyticsSection({
                 {suggestedForeignMonthKey && onNavigateToMonth && (
                   <button
                     type="button"
-                    className="font-medium text-slate-700 underline-offset-2 hover:underline"
+                    className="cursor-pointer font-medium text-slate-700 underline-offset-2 hover:underline"
                     onClick={() => onNavigateToMonth(suggestedForeignMonthKey)}
                   >
                     Ver {formatInvoiceLabel(suggestedForeignMonthKey).toLowerCase()}
@@ -626,7 +914,7 @@ export function CreditCardAnalyticsSection({
             )}
           </div>
 
-          <div className="mt-5 grid grid-cols-2 gap-3 sm:grid-cols-4">
+          <div className="mt-5 grid grid-cols-2 gap-3 sm:grid-cols-3 lg:grid-cols-5">
             <AnalyticsStat
               icon={Tag}
               label="Categorias"
@@ -638,28 +926,52 @@ export function CreditCardAnalyticsSection({
               label="Estabelecimentos"
               value={String(merchantCount)}
               iconClass="text-blue-500"
-              onClick={() => setMerchantQuickFilter('all')}
-              isActive={merchantQuickFilter === 'all'}
+              onClick={() => {
+                setDividedOnly(false)
+                setMerchantQuickFilter('all')
+              }}
+              isActive={!dividedOnly && merchantQuickFilter === 'all'}
             />
             <AnalyticsStat
               icon={Repeat}
               label="Recorrentes"
               value={String(recurringCount)}
               iconClass="text-amber-500"
-              onClick={() => setMerchantQuickFilter('recurring')}
-              isActive={merchantQuickFilter === 'recurring'}
+              onClick={() => {
+                setDividedOnly(false)
+                setMerchantQuickFilter('recurring')
+              }}
+              isActive={!dividedOnly && merchantQuickFilter === 'recurring'}
+            />
+            <AnalyticsStat
+              icon={Share2}
+              label="Divididos"
+              value={String(dividedCount)}
+              iconClass="text-rose-500"
+              onClick={dividedCount > 0 ? toggleDividedFilter : undefined}
+              isActive={dividedOnly}
             />
             <AnalyticsStat
               icon={BarChart3}
               label="Ticket médio"
               value={
-                merchantCount > 0 && mySpend > 0
-                  ? formatCurrency(mySpend / merchantCount)
+                merchantCount > 0 && chartSpendTotal > 0
+                  ? formatCurrency(chartSpendTotal / merchantCount)
                   : '—'
               }
               iconClass="text-emerald-500"
             />
           </div>
+
+          <AnalyticsSpendingToggle
+            value={spendingView}
+            allTotal={allPurchasesTotal}
+            personalTotal={mySpend}
+            onChange={nextView => {
+              setSpendingView(nextView)
+              if (dividedOnly) setDividedOnly(false)
+            }}
+          />
         </div>
       </div>
 
@@ -673,7 +985,13 @@ export function CreditCardAnalyticsSection({
             {byCategory.error ? (
               <AnalyticsError message="Não foi possível carregar as categorias" />
             ) : categories.length === 0 ? (
-              <AnalyticsError message="Nenhuma compra categorizada nesta fatura" />
+              <AnalyticsError
+                message={
+                  dividedOnly
+                    ? 'Nenhuma compra dividida ou delegada nesta fatura'
+                    : 'Nenhuma compra categorizada nesta fatura'
+                }
+              />
             ) : (
               <div className="space-y-4">
                 <CategoryBreakdownChart data={chartData} compact />
@@ -705,7 +1023,10 @@ export function CreditCardAnalyticsSection({
             <QuickFilterBadges
               value={merchantQuickFilter}
               options={merchantQuickFilterOptions}
-              onChange={setMerchantQuickFilter}
+              onChange={nextFilter => {
+                setDividedOnly(false)
+                setMerchantQuickFilter(nextFilter)
+              }}
             />
           </CardHeader>
           <CardContent>
@@ -721,6 +1042,10 @@ export function CreditCardAnalyticsSection({
                   percentage: merchant.percentage,
                   isRecurring: merchant.isRecurring,
                   occurrenceCount: merchant.occurrenceCount,
+                  delegatedToName:
+                    !showPersonal && merchant.hasFullyDelegated
+                      ? merchant.delegatedToName
+                      : undefined,
                   subtitle: formatMerchantSubtitle(
                     merchant.occurrenceCount,
                     merchant.avgAmount,

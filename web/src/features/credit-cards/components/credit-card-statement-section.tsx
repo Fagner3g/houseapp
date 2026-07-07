@@ -142,10 +142,8 @@ export function CreditCardStatementSection({
   )
 
   const transactionIds = useMemo(() => baseItems.map(item => item.id), [baseItems])
-  const { data: dividedTransactionIds = new Set<string>() } = useSplitTransactionIds(
-    slug,
-    transactionIds
-  )
+  const { data: splitData } = useSplitTransactionIds(slug, transactionIds)
+  const dividedTransactionIds = splitData?.transactionIds ?? new Set<string>()
 
   const filterCounts = useMemo(
     () => computeInvoiceFilterCounts(baseItems, dividedTransactionIds),

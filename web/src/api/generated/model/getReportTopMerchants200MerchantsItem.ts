@@ -16,4 +16,7 @@ export type GetReportTopMerchants200MerchantsItem = {
   avgAmount: string;
   lastDate: string;
   percentage: string;
+  hasFullyDelegated: boolean;
+  /** @nullable */
+  delegatedToName: string | null;
 };

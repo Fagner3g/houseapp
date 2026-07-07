@@ -5,8 +5,8 @@
  * API for HouseApp
  * OpenAPI spec version: 2.0.0
  */
-import type { UpdateCard200CardType } from './updateCard200CardType';
-import type { UpdateCard200CardStatus } from './updateCard200CardStatus';
+import type { UpdateCard200CardType } from "./updateCard200CardType";
+import type { UpdateCard200CardStatus } from "./updateCard200CardStatus";
 
 export type UpdateCard200Card = {
   id: string;

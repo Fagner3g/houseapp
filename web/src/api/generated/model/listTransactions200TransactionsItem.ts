@@ -5,9 +5,9 @@
  * API for HouseApp
  * OpenAPI spec version: 2.0.0
  */
-import type { ListTransactions200TransactionsItemType } from './listTransactions200TransactionsItemType';
-import type { ListTransactions200TransactionsItemStatus } from './listTransactions200TransactionsItemStatus';
-import type { ListTransactions200TransactionsItemSource } from './listTransactions200TransactionsItemSource';
+import type { ListTransactions200TransactionsItemType } from "./listTransactions200TransactionsItemType";
+import type { ListTransactions200TransactionsItemStatus } from "./listTransactions200TransactionsItemStatus";
+import type { ListTransactions200TransactionsItemSource } from "./listTransactions200TransactionsItemSource";
 
 export type ListTransactions200TransactionsItem = {
   id: string;

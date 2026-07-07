@@ -6,12 +6,12 @@
  * OpenAPI spec version: 2.0.0
  */
 
-export type ParseStatementOfxOrg200InvoiceStatusKind = typeof ParseStatementOfxOrg200InvoiceStatusKind[keyof typeof ParseStatementOfxOrg200InvoiceStatusKind];
-
+export type ParseStatementOfxOrg200InvoiceStatusKind =
+  (typeof ParseStatementOfxOrg200InvoiceStatusKind)[keyof typeof ParseStatementOfxOrg200InvoiceStatusKind];
 
 // eslint-disable-next-line @typescript-eslint/no-redeclare
 export const ParseStatementOfxOrg200InvoiceStatusKind = {
-  partial: 'partial',
-  closed_unpaid: 'closed_unpaid',
-  closed_paid: 'closed_paid',
+  partial: "partial",
+  closed_unpaid: "closed_unpaid",
+  closed_paid: "closed_paid",
 } as const;

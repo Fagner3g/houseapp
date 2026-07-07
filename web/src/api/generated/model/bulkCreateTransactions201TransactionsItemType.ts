@@ -6,12 +6,12 @@
  * OpenAPI spec version: 2.0.0
  */
 
-export type BulkCreateTransactions201TransactionsItemType = typeof BulkCreateTransactions201TransactionsItemType[keyof typeof BulkCreateTransactions201TransactionsItemType];
-
+export type BulkCreateTransactions201TransactionsItemType =
+  (typeof BulkCreateTransactions201TransactionsItemType)[keyof typeof BulkCreateTransactions201TransactionsItemType];
 
 // eslint-disable-next-line @typescript-eslint/no-redeclare
 export const BulkCreateTransactions201TransactionsItemType = {
-  income: 'income',
-  expense: 'expense',
-  transfer: 'transfer',
+  income: "income",
+  expense: "expense",
+  transfer: "transfer",
 } as const;

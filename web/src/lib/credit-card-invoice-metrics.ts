@@ -332,6 +332,43 @@ export function listInvoiceAdjustmentCredits(
     .sort((a, b) => b.amount - a.amount)
 }
 
+/** Bill payments on the statement (Pagamento recebido, pay-invoice bookkeeping). */
+export function isInvoiceBillPaymentLine(
+  tx: TransactionLike & { source?: string | null },
+  purchasesPeriod: { start: string; end: string },
+  paymentPeriod: { start: string; end: string },
+  cycle: BillingCycle,
+  statement: InvoiceStatementLike | null
+): boolean {
+  return isInvoicePayment(tx, purchasesPeriod, paymentPeriod, cycle, statement)
+}
+
+export function formatInvoiceBillPaymentTitle(title: string): string {
+  const normalized = title.trim()
+  if (/^pagamento recebido$/i.test(normalized)) return 'Pagamento recebido'
+  if (normalized.length > 52) return `${normalized.slice(0, 49)}…`
+  return normalized || 'Pagamento na fatura'
+}
+
+export function listInvoiceBillPayments(
+  transactions: Array<TransactionLike & { source?: string | null }>,
+  purchasesPeriod: { start: string; end: string },
+  paymentPeriod: { start: string; end: string },
+  cycle: BillingCycle,
+  statement: InvoiceStatementLike | null
+): InvoiceAdjustmentLine[] {
+  return transactions
+    .filter(tx =>
+      isInvoiceBillPaymentLine(tx, purchasesPeriod, paymentPeriod, cycle, statement)
+    )
+    .map(tx => ({
+      title: formatInvoiceBillPaymentTitle(tx.title ?? ''),
+      amount: moneyStringToReais(tx.amount),
+    }))
+    .filter(line => line.amount > 0)
+    .sort((a, b) => b.amount - a.amount)
+}
+
 /** Residual credits not matched to individual transactions (rounding / summary gaps). */
 export function resolveUnlistedInvoiceCredits(
   invoiceCredits: number,
@@ -345,6 +382,34 @@ export function resolveUnlistedInvoiceCredits(
   // Hide sub-real residuals; surface meaningful bank-level adjustments.
   return gapCents >= 100 ? centsToReais(gapCents) : 0
 }
+
+export function getUnlistedInvoiceCreditsCopy(hasListedCredits: boolean): {
+  label: string
+  hint: string
+  prefix?: string
+  emphasis: boolean
+} {
+  if (hasListedCredits) {
+    return {
+      label: 'Outros créditos no total do banco',
+      hint: 'O restante já está embutido no valor importado da fatura — o banco descontou, mas não exportou como lançamento no OFX.',
+      prefix: '=',
+      emphasis: true,
+    }
+  }
+
+  return {
+    label: 'Créditos no total importado do banco',
+    hint: 'O banco já descontou no valor da fatura, mas não exportou os estornos como lançamentos separados no OFX.',
+    emphasis: true,
+  }
+}
+
+/** @deprecated Use getUnlistedInvoiceCreditsCopy */
+export const UNLISTED_INVOICE_CREDITS_LABEL = 'Outros créditos no total do banco'
+/** @deprecated Use getUnlistedInvoiceCreditsCopy */
+export const UNLISTED_INVOICE_CREDITS_HINT =
+  'O restante já está embutido no valor importado da fatura — o banco descontou, mas não exportou como lançamento no OFX.'
 
 export function hasStoredInvoiceSummary(statement: InvoiceStatementLike | null): boolean {
   return (

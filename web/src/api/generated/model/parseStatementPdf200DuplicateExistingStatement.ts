@@ -9,4 +9,6 @@
 /**
  * @nullable
  */
-export type ParseStatementPdf200DuplicateExistingStatement = { [key: string]: unknown } | null;
+export type ParseStatementPdf200DuplicateExistingStatement = {
+  [key: string]: unknown;
+} | null;

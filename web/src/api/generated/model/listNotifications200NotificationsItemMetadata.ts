@@ -6,4 +6,6 @@
  * OpenAPI spec version: 2.0.0
  */
 
-export type ListNotifications200NotificationsItemMetadata = {[key: string]: unknown};
+export type ListNotifications200NotificationsItemMetadata = {
+  [key: string]: unknown;
+};

@@ -7972,10 +7972,30 @@
                       "items": {
                         "type": "string"
                       }
+                    },
+                    "fullyDelegated": {
+                      "type": "array",
+                      "items": {
+                        "type": "object",
+                        "properties": {
+                          "transactionId": {
+                            "type": "string"
+                          },
+                          "delegateName": {
+                            "type": "string"
+                          }
+                        },
+                        "required": [
+                          "transactionId",
+                          "delegateName"
+                        ],
+                        "additionalProperties": false
+                      }
                     }
                   },
                   "required": [
-                    "transactionIds"
+                    "transactionIds",
+                    "fullyDelegated"
                   ],
                   "additionalProperties": false
                 }
@@ -12405,7 +12425,6 @@
           },
           {
             "schema": {
-              "default": false,
               "type": "boolean"
             },
             "in": "query",
@@ -12896,7 +12915,7 @@
         "tags": [
           "Reports"
         ],
-        "description": "Top expense merchants/items grouped by normalized title (personal scope)",
+        "description": "Top expense merchants/items grouped by normalized title",
         "parameters": [
           {
             "schema": {
@@ -12927,6 +12946,14 @@
             },
             "in": "query",
             "name": "limit",
+            "required": false
+          },
+          {
+            "schema": {
+              "type": "boolean"
+            },
+            "in": "query",
+            "name": "personal",
             "required": false
           },
           {
@@ -13014,6 +13041,13 @@
                           },
                           "percentage": {
                             "type": "string"
+                          },
+                          "hasFullyDelegated": {
+                            "type": "boolean"
+                          },
+                          "delegatedToName": {
+                            "type": "string",
+                            "nullable": true
                           }
                         },
                         "required": [
@@ -13025,7 +13059,9 @@
                           "hasInstallments",
                           "avgAmount",
                           "lastDate",
-                          "percentage"
+                          "percentage",
+                          "hasFullyDelegated",
+                          "delegatedToName"
                         ],
                         "additionalProperties": false
                       }

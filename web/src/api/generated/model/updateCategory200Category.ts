@@ -5,7 +5,7 @@
  * API for HouseApp
  * OpenAPI spec version: 2.0.0
  */
-import type { UpdateCategory200CategoryType } from './updateCategory200CategoryType';
+import type { UpdateCategory200CategoryType } from "./updateCategory200CategoryType";
 
 export type UpdateCategory200Category = {
   id: string;

@@ -6,12 +6,12 @@
  * OpenAPI spec version: 2.0.0
  */
 
-export type BlockCard200CardStatus = typeof BlockCard200CardStatus[keyof typeof BlockCard200CardStatus];
-
+export type BlockCard200CardStatus =
+  (typeof BlockCard200CardStatus)[keyof typeof BlockCard200CardStatus];
 
 // eslint-disable-next-line @typescript-eslint/no-redeclare
 export const BlockCard200CardStatus = {
-  active: 'active',
-  blocked: 'blocked',
-  canceled: 'canceled',
+  active: "active",
+  blocked: "blocked",
+  canceled: "canceled",
 } as const;

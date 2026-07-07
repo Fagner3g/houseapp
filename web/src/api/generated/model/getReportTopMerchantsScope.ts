@@ -6,11 +6,11 @@
  * OpenAPI spec version: 2.0.0
  */
 
-export type GetReportTopMerchantsScope = typeof GetReportTopMerchantsScope[keyof typeof GetReportTopMerchantsScope];
-
+export type GetReportTopMerchantsScope =
+  (typeof GetReportTopMerchantsScope)[keyof typeof GetReportTopMerchantsScope];
 
 // eslint-disable-next-line @typescript-eslint/no-redeclare
 export const GetReportTopMerchantsScope = {
-  all: 'all',
-  credit_card: 'credit_card',
+  all: "all",
+  credit_card: "credit_card",
 } as const;

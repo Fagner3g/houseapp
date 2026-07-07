@@ -5,7 +5,7 @@
  * API for HouseApp
  * OpenAPI spec version: 2.0.0
  */
-import type { GetReportInsights200InsightsItemType } from './getReportInsights200InsightsItemType';
+import type { GetReportInsights200InsightsItemType } from "./getReportInsights200InsightsItemType";
 
 export type GetReportInsights200InsightsItem = {
   title: string;

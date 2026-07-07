@@ -26,6 +26,7 @@ const QUICK_FILTERS: Array<{
 }> = [
   { id: 'all', label: 'Todos' },
   { id: 'purchases', label: 'Compras', count: c => c.purchases },
+  { id: 'credits', label: 'Créditos', count: c => c.credits },
   { id: 'payments', label: 'Pagamentos', count: c => c.payments },
   { id: 'uncategorized', label: 'Sem categoria', count: c => c.uncategorized },
   { id: 'divided', label: 'Compras divididas', count: c => c.divided },

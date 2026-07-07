@@ -6,13 +6,13 @@
  * OpenAPI spec version: 2.0.0
  */
 
-export type PayTransaction200TransactionSource = typeof PayTransaction200TransactionSource[keyof typeof PayTransaction200TransactionSource];
-
+export type PayTransaction200TransactionSource =
+  (typeof PayTransaction200TransactionSource)[keyof typeof PayTransaction200TransactionSource];
 
 // eslint-disable-next-line @typescript-eslint/no-redeclare
 export const PayTransaction200TransactionSource = {
-  manual: 'manual',
-  import: 'import',
-  recurring: 'recurring',
-  ai_chat: 'ai_chat',
+  manual: "manual",
+  import: "import",
+  recurring: "recurring",
+  ai_chat: "ai_chat",
 } as const;

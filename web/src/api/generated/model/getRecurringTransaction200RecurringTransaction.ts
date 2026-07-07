@@ -5,8 +5,8 @@
  * API for HouseApp
  * OpenAPI spec version: 2.0.0
  */
-import type { GetRecurringTransaction200RecurringTransactionType } from './getRecurringTransaction200RecurringTransactionType';
-import type { GetRecurringTransaction200RecurringTransactionFrequency } from './getRecurringTransaction200RecurringTransactionFrequency';
+import type { GetRecurringTransaction200RecurringTransactionType } from "./getRecurringTransaction200RecurringTransactionType";
+import type { GetRecurringTransaction200RecurringTransactionFrequency } from "./getRecurringTransaction200RecurringTransactionFrequency";
 
 export type GetRecurringTransaction200RecurringTransaction = {
   id: string;

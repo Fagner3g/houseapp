@@ -5,9 +5,9 @@
  * API for HouseApp
  * OpenAPI spec version: 2.0.0
  */
-import type { PayTransaction200TransactionType } from './payTransaction200TransactionType';
-import type { PayTransaction200TransactionStatus } from './payTransaction200TransactionStatus';
-import type { PayTransaction200TransactionSource } from './payTransaction200TransactionSource';
+import type { PayTransaction200TransactionType } from "./payTransaction200TransactionType";
+import type { PayTransaction200TransactionStatus } from "./payTransaction200TransactionStatus";
+import type { PayTransaction200TransactionSource } from "./payTransaction200TransactionSource";
 
 export type PayTransaction200Transaction = {
   id: string;

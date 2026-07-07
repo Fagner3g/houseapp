@@ -5,9 +5,9 @@
  * API for HouseApp
  * OpenAPI spec version: 2.0.0
  */
-import type { CancelTransactionPayment200TransactionType } from './cancelTransactionPayment200TransactionType';
-import type { CancelTransactionPayment200TransactionStatus } from './cancelTransactionPayment200TransactionStatus';
-import type { CancelTransactionPayment200TransactionSource } from './cancelTransactionPayment200TransactionSource';
+import type { CancelTransactionPayment200TransactionType } from "./cancelTransactionPayment200TransactionType";
+import type { CancelTransactionPayment200TransactionStatus } from "./cancelTransactionPayment200TransactionStatus";
+import type { CancelTransactionPayment200TransactionSource } from "./cancelTransactionPayment200TransactionSource";
 
 export type CancelTransactionPayment200Transaction = {
   id: string;

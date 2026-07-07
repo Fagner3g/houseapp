@@ -273,8 +273,16 @@ export class SplitService {
   async listTransactionIdsWithSplits(
     organizationId: string,
     transactionIds: string[]
-  ): Promise<string[]> {
-    return this.splitRepository.listTransactionIdsWithSplits(organizationId, transactionIds)
+  ): Promise<{
+    transactionIds: string[]
+    fullyDelegated: Array<{ transactionId: string; delegateName: string }>
+  }> {
+    const [transactionIdsWithSplits, fullyDelegated] = await Promise.all([
+      this.splitRepository.listTransactionIdsWithSplits(organizationId, transactionIds),
+      this.splitRepository.listFullyDelegatedTransactions(organizationId, transactionIds),
+    ])
+
+    return { transactionIds: transactionIdsWithSplits, fullyDelegated }
   }
 
   async getSplitDebtSummary(

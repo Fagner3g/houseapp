@@ -6,12 +6,12 @@
  * OpenAPI spec version: 2.0.0
  */
 
-export type ListAiProviders200ProvidersItemName = typeof ListAiProviders200ProvidersItemName[keyof typeof ListAiProviders200ProvidersItemName];
-
+export type ListAiProviders200ProvidersItemName =
+  (typeof ListAiProviders200ProvidersItemName)[keyof typeof ListAiProviders200ProvidersItemName];
 
 // eslint-disable-next-line @typescript-eslint/no-redeclare
 export const ListAiProviders200ProvidersItemName = {
-  groq: 'groq',
-  gemini: 'gemini',
-  deepseek: 'deepseek',
+  groq: "groq",
+  gemini: "gemini",
+  deepseek: "deepseek",
 } as const;

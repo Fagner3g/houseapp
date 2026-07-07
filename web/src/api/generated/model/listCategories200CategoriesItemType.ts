@@ -6,11 +6,11 @@
  * OpenAPI spec version: 2.0.0
  */
 
-export type ListCategories200CategoriesItemType = typeof ListCategories200CategoriesItemType[keyof typeof ListCategories200CategoriesItemType];
-
+export type ListCategories200CategoriesItemType =
+  (typeof ListCategories200CategoriesItemType)[keyof typeof ListCategories200CategoriesItemType];
 
 // eslint-disable-next-line @typescript-eslint/no-redeclare
 export const ListCategories200CategoriesItemType = {
-  income: 'income',
-  expense: 'expense',
+  income: "income",
+  expense: "expense",
 } as const;

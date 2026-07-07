@@ -5,8 +5,8 @@
  * API for HouseApp
  * OpenAPI spec version: 2.0.0
  */
-import type { CreateRecurringTransactionBodyType } from './createRecurringTransactionBodyType';
-import type { CreateRecurringTransactionBodyFrequency } from './createRecurringTransactionBodyFrequency';
+import type { CreateRecurringTransactionBodyType } from "./createRecurringTransactionBodyType";
+import type { CreateRecurringTransactionBodyFrequency } from "./createRecurringTransactionBodyFrequency";
 
 export type CreateRecurringTransactionBody = {
   /** @minLength 1 */

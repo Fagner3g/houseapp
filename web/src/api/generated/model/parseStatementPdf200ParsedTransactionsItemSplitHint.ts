@@ -5,7 +5,7 @@
  * API for HouseApp
  * OpenAPI spec version: 2.0.0
  */
-import type { ParseStatementPdf200ParsedTransactionsItemSplitHintMode } from './parseStatementPdf200ParsedTransactionsItemSplitHintMode';
+import type { ParseStatementPdf200ParsedTransactionsItemSplitHintMode } from "./parseStatementPdf200ParsedTransactionsItemSplitHintMode";
 
 export type ParseStatementPdf200ParsedTransactionsItemSplitHint = {
   mode: ParseStatementPdf200ParsedTransactionsItemSplitHintMode;

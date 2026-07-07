@@ -6,13 +6,13 @@
  * OpenAPI spec version: 2.0.0
  */
 
-export type UpdateSplitBodyStatus = typeof UpdateSplitBodyStatus[keyof typeof UpdateSplitBodyStatus];
-
+export type UpdateSplitBodyStatus =
+  (typeof UpdateSplitBodyStatus)[keyof typeof UpdateSplitBodyStatus];
 
 // eslint-disable-next-line @typescript-eslint/no-redeclare
 export const UpdateSplitBodyStatus = {
-  pending: 'pending',
-  partial: 'partial',
-  paid: 'paid',
-  forgiven: 'forgiven',
+  pending: "pending",
+  partial: "partial",
+  paid: "paid",
+  forgiven: "forgiven",
 } as const;

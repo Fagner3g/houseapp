@@ -9,4 +9,6 @@
 /**
  * @nullable
  */
-export type ParseStatementCsv200DuplicateExistingStatement = { [key: string]: unknown } | null;
+export type ParseStatementCsv200DuplicateExistingStatement = {
+  [key: string]: unknown;
+} | null;
