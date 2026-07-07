@@ -743,6 +743,187 @@ describe('computePersonalSpendAdjustment', () => {
   })
 })
 
+describe('listInvoiceAdjustmentCredits', () => {
+  it('lists settlement credits in the purchase period', async () => {
+    const { listInvoiceAdjustmentCredits } = await import('./credit-card-invoice-metrics')
+    const cycle = getBillingCycle(10, 17, '2026-06')
+    const period = {
+      start: '2026-05-01T12:00:00.000Z',
+      end: '2026-06-08T12:00:00.000Z',
+    }
+    const statement = { id: 'st-june' }
+
+    expect(
+      listInvoiceAdjustmentCredits(
+        [
+          {
+            type: 'income',
+            title: 'Crédito de Confiança de "Vantagens.Cvolta.Com"',
+            amount: '27.00',
+            date: '2026-05-29T12:00:00.000Z',
+            statementId: 'st-june',
+          },
+          {
+            type: 'income',
+            title: 'Pagamento recebido',
+            amount: '2500.00',
+            date: '2026-06-01T12:00:00.000Z',
+            statementId: 'st-june',
+          },
+          {
+            type: 'income',
+            title: 'Reversão do Crédito de confiança de Vantagens.Cvolta.Com',
+            amount: '27.00',
+            date: '2026-06-01T12:00:00.000Z',
+            statementId: 'st-june',
+          },
+        ],
+        period,
+        cycle,
+        statement
+      )
+    ).toEqual([
+      {
+        title: 'Crédito — Vantagens.Cvolta.Com',
+        amount: 27,
+      },
+    ])
+  })
+
+  it('includes large credits that reduce the invoice total', async () => {
+    const { listInvoiceAdjustmentCredits } = await import('./credit-card-invoice-metrics')
+    const cycle = getBillingCycle(10, 17, '2026-07')
+    const period = {
+      start: '2026-06-01T12:00:00.000Z',
+      end: '2026-07-17T12:00:00.000Z',
+    }
+
+    expect(
+      listInvoiceAdjustmentCredits(
+        [
+          {
+            type: 'income',
+            title: 'Estorno de Compra Loja Exemplo',
+            amount: '494.77',
+            date: '2026-06-15T12:00:00.000Z',
+            statementId: 'st-july',
+          },
+        ],
+        period,
+        cycle,
+        { id: 'st-july' }
+      )
+    ).toEqual([
+      {
+        title: 'Estorno de Compra Loja Exemplo',
+        amount: 494.77,
+      },
+    ])
+  })
+
+  it('includes credits after purchase period end but before due date', async () => {
+    const { listInvoiceAdjustmentCredits } = await import('./credit-card-invoice-metrics')
+    const cycle = getBillingCycle(10, 17, '2026-07')
+    const purchasesEnd = '2026-07-10T23:59:59.999Z'
+    const period = {
+      start: '2026-06-01T12:00:00.000Z',
+      end: '2026-07-17T12:00:00.000Z',
+    }
+
+    expect(
+      listInvoiceAdjustmentCredits(
+        [
+          {
+            type: 'income',
+            title: 'Estorno de compra (Compra e Volta)',
+            amount: '446.91',
+            date: '2026-07-12T12:00:00.000Z',
+            statementId: 'st-july',
+          },
+          {
+            type: 'income',
+            title: 'Estorno de compra (Compra e Volta)',
+            amount: '27.00',
+            date: '2026-06-15T12:00:00.000Z',
+            statementId: 'st-july',
+          },
+        ],
+        period,
+        cycle,
+        { id: 'st-july' }
+      )
+    ).toEqual([
+      { title: 'Estorno de compra (Compra e Volta)', amount: 446.91 },
+      { title: 'Estorno de compra (Compra e Volta)', amount: 27 },
+    ])
+
+    expect(
+      listInvoiceAdjustmentCredits(
+        [
+          {
+            type: 'income',
+            title: 'Estorno de compra (Compra e Volta)',
+            amount: '446.91',
+            date: '2026-07-12T12:00:00.000Z',
+            statementId: 'st-july',
+          },
+        ],
+        { start: '2026-06-01T12:00:00.000Z', end: purchasesEnd },
+        cycle,
+        { id: 'st-july' }
+      )
+    ).toEqual([])
+  })
+
+  it('uses competenceDate when date falls outside the billing window', async () => {
+    const { listInvoiceAdjustmentCredits } = await import('./credit-card-invoice-metrics')
+    const cycle = getBillingCycle(10, 17, '2026-07')
+    const period = {
+      start: '2026-06-01T12:00:00.000Z',
+      end: '2026-07-17T12:00:00.000Z',
+    }
+
+    expect(
+      listInvoiceAdjustmentCredits(
+        [
+          {
+            type: 'income',
+            title: 'Estorno Loja Exemplo',
+            amount: '500.00',
+            date: '2026-07-20T12:00:00.000Z',
+            competenceDate: '2026-06-20T12:00:00.000Z',
+            statementId: 'st-july',
+          },
+        ],
+        period,
+        cycle,
+        { id: 'st-july' }
+      )
+    ).toEqual([{ title: 'Estorno Loja Exemplo', amount: 500 }])
+  })
+})
+
+describe('resolveUnlistedInvoiceCredits', () => {
+  it('hides sub-real residuals', async () => {
+    const { resolveUnlistedInvoiceCredits } = await import('./credit-card-invoice-metrics')
+
+    expect(
+      resolveUnlistedInvoiceCredits(494.77, [
+        { title: 'A', amount: 494 },
+        { title: 'B', amount: 0.5 },
+      ])
+    ).toBe(0)
+  })
+
+  it('surfaces meaningful bank-level adjustments', async () => {
+    const { resolveUnlistedInvoiceCredits } = await import('./credit-card-invoice-metrics')
+
+    expect(
+      resolveUnlistedInvoiceCredits(494.77, [{ title: 'A', amount: 27 }])
+    ).toBe(467.77)
+  })
+})
+
 describe('buildCreditCardReportScope', () => {
   it('scopes reports to the matched imported statement', async () => {
     const { buildCreditCardReportScope } = await import('./credit-card-invoice-metrics')

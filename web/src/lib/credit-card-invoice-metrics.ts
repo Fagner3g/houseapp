@@ -267,6 +267,85 @@ export function computePersonalSpendAdjustment(purchases: number, mySpend: numbe
   return diffCents > 0 ? centsToReais(diffCents) : 0
 }
 
+export type InvoiceAdjustmentLine = {
+  title: string
+  amount: number
+}
+
+function isCreditReversalTitle(title: string): boolean {
+  return /reversão do crédito|reversao do credito/i.test(title)
+}
+
+/** Income on the statement that reduces the imported invoice total (not bill payments). */
+export function isInvoiceStatementAdjustment(
+  tx: TransactionLike & { source?: string | null },
+  period: { start: string; end: string },
+  cycle: BillingCycle,
+  statement: InvoiceStatementLike | null
+): boolean {
+  if (tx.type !== 'income') return false
+  if (
+    !isWithinBillingRange(transactionPurchaseDate(tx), period.start, period.end)
+  ) {
+    return false
+  }
+  if (isCreditReversalTitle(tx.title ?? '')) return false
+  if (isImportedBillPayment(tx)) return false
+  if (isAppBookkeepingInvoicePayment(tx)) return false
+  if (isForeignManualInvoicePayment(tx, cycle)) return false
+
+  const matchedStatementId = statement?.id ?? null
+  if (matchedStatementId != null && tx.statementId && tx.statementId !== matchedStatementId) {
+    return false
+  }
+
+  return true
+}
+
+export function formatInvoiceAdjustmentTitle(title: string): string {
+  const normalized = title.trim()
+  const confidenceMatch = normalized.match(/^cr[eé]dito de confian[çc]a de "?(.+?)"?\.?$/i)
+  if (confidenceMatch?.[1]) {
+    return `Crédito — ${confidenceMatch[1]}`
+  }
+
+  if (normalized.length > 52) {
+    return `${normalized.slice(0, 49)}…`
+  }
+
+  return normalized || 'Crédito na fatura'
+}
+
+export function listInvoiceAdjustmentCredits(
+  transactions: Array<TransactionLike & { source?: string | null }>,
+  period: { start: string; end: string },
+  cycle: BillingCycle,
+  statement: InvoiceStatementLike | null
+): InvoiceAdjustmentLine[] {
+  return transactions
+    .filter(tx => isInvoiceStatementAdjustment(tx, period, cycle, statement))
+    .map(tx => ({
+      title: formatInvoiceAdjustmentTitle(tx.title ?? ''),
+      amount: moneyStringToReais(tx.amount),
+    }))
+    .filter(line => line.amount > 0)
+    .sort((a, b) => b.amount - a.amount)
+}
+
+/** Residual credits not matched to individual transactions (rounding / summary gaps). */
+export function resolveUnlistedInvoiceCredits(
+  invoiceCredits: number,
+  creditLines: InvoiceAdjustmentLine[]
+): number {
+  const listedCents = creditLines.reduce(
+    (sum, line) => sum + reaisToCents(line.amount),
+    0
+  )
+  const gapCents = reaisToCents(invoiceCredits) - listedCents
+  // Hide sub-real residuals; surface meaningful bank-level adjustments.
+  return gapCents >= 100 ? centsToReais(gapCents) : 0
+}
+
 export function hasStoredInvoiceSummary(statement: InvoiceStatementLike | null): boolean {
   return (
     statement?.purchasesTotal != null &&

@@ -257,12 +257,17 @@ jobs:
             docker pull ghcr.io/fagner3g/houseapp-api:$TAG
             docker pull ghcr.io/fagner3g/houseapp-web:$TAG
 
-            # Run database migrations before starting API traffic
-            PG_CONTAINER=$(docker ps -q -f name=postgres_postgres | head -1)
-            PG_IP=$(docker inspect -f '{{range .NetworkSettings.Networks}}{{.IPAddress}}{{end}}' "$PG_CONTAINER")
+            # Run database migrations before starting API traffic.
+            # The migrate container must join network_swarm_public so DB_HOST=postgres
+            # from api.env resolves (overlay IPs like 10.0.1.x are not reachable from bridge).
+            if ! docker network inspect network_swarm_public >/dev/null 2>&1; then
+              echo "ERROR: Docker network network_swarm_public not found"
+              exit 1
+            fi
+
             docker run --rm \
+              --network network_swarm_public \
               --env-file "$STACK_DIR/api.env" \
-              -e DB_HOST="$PG_IP" \
               ghcr.io/fagner3g/houseapp-api:$TAG \
               sh -c "yarn db:migrate"
 

@@ -17,13 +17,11 @@ Produção (`houseapp`) ainda usa o schema legado (`invites.user_id`, `user_orga
    ```bash
    DB_NAME=houseapp_v2
    ```
-3. Rodar migrações:
+3. Rodar migrações (na mesma rede overlay do Postgres; use `DB_HOST=postgres` no api.env):
    ```bash
-   PG_CONTAINER=$(docker ps -q -f name=postgres_postgres | head -1)
-   PG_IP=$(docker inspect -f '{{range .NetworkSettings.Networks}}{{.IPAddress}}{{end}}' "$PG_CONTAINER")
    docker run --rm \
+     --network network_swarm_public \
      --env-file /opt/stacks/houseapp/prod/api.env \
-     -e DB_HOST="$PG_IP" \
      ghcr.io/fagner3g/houseapp-api:<TAG> \
      sh -c "yarn db:migrate"
    ```

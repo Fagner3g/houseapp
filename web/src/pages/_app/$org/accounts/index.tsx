@@ -276,6 +276,9 @@ function AccountsPage() {
                         onViewDividedTransactions={() =>
                           updateSearch({ view: undefined, invoiceFilter: 'divided' })
                         }
+                        onViewInvoiceCredits={() =>
+                          updateSearch({ view: undefined, invoiceFilter: 'payments' })
+                        }
                       />
                     )}
                   </>

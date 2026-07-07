@@ -1,7 +1,7 @@
 import dayjs from 'dayjs'
-import { BarChart3, CalendarDays, Info, Repeat, Store, Tag } from 'lucide-react'
+import { BarChart3, CalendarDays, ChevronDown, Info, Repeat, Store, Tag } from 'lucide-react'
 import type { ElementType } from 'react'
-import { useEffect, useMemo, useState } from 'react'
+import { useMemo, useState } from 'react'
 
 import { useGetReportByCategory, useGetReportTopMerchants } from '@/api/generated/api'
 import { CategoryBreakdownChart } from '@/components/charts/category-breakdown-chart'
@@ -12,7 +12,6 @@ import {
 } from '@/components/expense-ranking-list'
 import { QuickFilterBadges } from '@/components/quick-filter-badges'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
-import { ToggleGroup, ToggleGroupItem } from '@/components/ui/toggle-group'
 import { mapCategoryToChartData } from '@/features/home/lib/chart-mappers'
 import type { BillingCycle } from '@/lib/billing-cycle'
 import {
@@ -26,6 +25,9 @@ import {
   computeInvoiceAmountReconciliation,
   computePersonalSpendAdjustment,
   hasImportedInvoiceTotal,
+  listInvoiceAdjustmentCredits,
+  resolveUnlistedInvoiceCredits,
+  type InvoiceAdjustmentLine,
 } from '@/lib/credit-card-invoice-metrics'
 import { useActiveOrganization } from '@/hooks/use-active-organization'
 import { cn } from '@/lib/utils'
@@ -43,16 +45,10 @@ interface CreditCardAnalyticsSectionProps {
   dueDay: number
   onNavigateToMonth?: (monthKey: string) => void
   onViewDividedTransactions?: () => void
+  onViewInvoiceCredits?: () => void
 }
 
-type AnalyticsAmountView = 'personal' | 'invoice'
-
 type MerchantQuickFilter = 'all' | 'recurring' | 'single' | 'installments'
-
-const ANALYTICS_AMOUNT_VIEWS: Array<{ id: AnalyticsAmountView; label: string }> = [
-  { id: 'personal', label: 'Meu gasto' },
-  { id: 'invoice', label: 'Total da fatura' },
-]
 
 const MERCHANT_QUICK_FILTERS: Array<{
   id: MerchantQuickFilter
@@ -112,16 +108,18 @@ function AnalyticsError({ message }: { message: string }) {
   )
 }
 
-function ReconciliationLine({
+function BridgeLine({
   label,
   amount,
   deduction = false,
   emphasis = false,
+  prefix,
 }: {
   label: string
   amount: number
   deduction?: boolean
   emphasis?: boolean
+  prefix?: string
 }) {
   const formatted =
     deduction && amount > 0 ? `− ${formatCurrency(amount)}` : formatCurrency(amount)
@@ -130,10 +128,13 @@ function ReconciliationLine({
     <div
       className={cn(
         'flex items-baseline justify-between gap-4 text-sm',
-        emphasis && 'border-t border-violet-200/80 pt-2 font-medium text-slate-800'
+        emphasis && 'border-t border-slate-200 pt-2 font-medium'
       )}
     >
-      <span className={emphasis ? 'text-slate-800' : 'text-slate-600'}>{label}</span>
+      <span className={cn('min-w-0 truncate', emphasis ? 'text-slate-800' : 'text-slate-600')}>
+        {prefix && <span className="text-slate-400">{prefix} </span>}
+        {label}
+      </span>
       <span
         className={cn(
           'shrink-0 tabular-nums',
@@ -150,73 +151,192 @@ function ReconciliationLine({
   )
 }
 
-function InvoiceAmountReconciliationCard({
+function DualMetricsHero({
+  mySpend,
+  invoiceTotal,
+  hasImportedInvoice,
+  invoiceCredits,
+}: {
+  mySpend: number
+  invoiceTotal: number
+  hasImportedInvoice: boolean
+  invoiceCredits: number
+}) {
+  const showDelta =
+    hasImportedInvoice &&
+    mySpend > 0 &&
+    reaisToCents(invoiceTotal) !== reaisToCents(mySpend)
+
+  return (
+    <div className="mt-5 grid gap-4 sm:grid-cols-2 sm:gap-6">
+      <div>
+        <p className="text-3xl font-bold tabular-nums tracking-tight text-slate-900 sm:text-4xl">
+          {formatCurrency(mySpend)}
+        </p>
+        <p className="mt-1 text-sm font-medium text-slate-700">Meu gasto</p>
+        <p className="mt-0.5 text-sm text-slate-500">
+          Suas compras no período, descontando divisões
+        </p>
+      </div>
+
+      <div className="sm:border-l sm:border-slate-200 sm:pl-6">
+        {hasImportedInvoice ? (
+          <>
+            <p className="text-3xl font-bold tabular-nums tracking-tight text-slate-900 sm:text-4xl">
+              {formatCurrency(invoiceTotal)}
+            </p>
+            <p className="mt-1 text-sm font-medium text-slate-700">Total da fatura</p>
+            <p className="mt-0.5 text-sm text-slate-500">Valor importado do banco</p>
+          </>
+        ) : (
+          <>
+            <p className="text-3xl font-bold tabular-nums tracking-tight text-slate-400 sm:text-4xl">
+              —
+            </p>
+            <p className="mt-1 text-sm font-medium text-slate-700">Total da fatura</p>
+            <p className="mt-0.5 text-sm text-slate-500">Importe a fatura OFX para ver o total</p>
+          </>
+        )}
+      </div>
+
+      {showDelta && invoiceCredits > 0 && (
+        <div className="sm:col-span-2">
+          <span className="inline-flex items-center rounded-full border border-emerald-200 bg-emerald-50 px-3 py-1 text-xs font-medium tabular-nums text-emerald-800">
+            − {formatCurrency(invoiceCredits)} em créditos do banco
+          </span>
+        </div>
+      )}
+    </div>
+  )
+}
+
+function InvoiceBridgeBreakdown({
   purchases,
   previousBalance,
   invoiceCredits,
   invoiceCharges,
+  creditLines,
   splitAdjustment,
   mySpend,
   invoiceTotal,
   dividedCount,
   onViewDividedTransactions,
+  onViewInvoiceCredits,
 }: {
   purchases: number
   previousBalance: number
   invoiceCredits: number
   invoiceCharges: number
+  creditLines: InvoiceAdjustmentLine[]
   splitAdjustment: number
   mySpend: number
   invoiceTotal: number
   dividedCount: number
   onViewDividedTransactions?: () => void
+  onViewInvoiceCredits?: () => void
 }) {
+  const unlistedCredits = resolveUnlistedInvoiceCredits(invoiceCredits, creditLines)
+  const [creditsExpanded, setCreditsExpanded] = useState(false)
+  const showCreditsSection =
+    invoiceCredits > 0 || invoiceCharges > 0 || previousBalance > 0
+
   return (
-    <div className="mt-3 flex gap-2 rounded-lg border border-violet-100 bg-violet-50/60 px-3 py-2.5 text-sm text-violet-900/80">
-      <Info className="mt-0.5 size-4 shrink-0 text-violet-600" />
-      <div className="min-w-0 flex-1 space-y-2">
-        <p className="font-medium text-violet-950">Por que os valores diferem?</p>
-        <div className="space-y-1">
-          <ReconciliationLine label="Compras no período" amount={purchases} />
-          {previousBalance > 0 && (
-            <ReconciliationLine label="Saldo anterior" amount={previousBalance} />
-          )}
-          {splitAdjustment > 0 && (
-            <ReconciliationLine
-              label="Divisões com outras pessoas"
-              amount={splitAdjustment}
-              deduction
-            />
-          )}
-          {splitAdjustment > 0 && (
-            <ReconciliationLine label="Meu gasto" amount={mySpend} emphasis />
-          )}
-          {splitAdjustment > 0 && onViewDividedTransactions && dividedCount > 0 && (
-            <button
-              type="button"
-              className="text-left text-xs font-medium text-violet-700 underline-offset-2 hover:underline"
-              onClick={onViewDividedTransactions}
-            >
-              Ver {dividedCount === 1 ? 'compra dividida' : `${dividedCount} compras divididas`}
-            </button>
-          )}
-          {invoiceCredits > 0 && (
-            <ReconciliationLine label="Créditos na fatura" amount={invoiceCredits} deduction />
-          )}
-          {invoiceCharges > 0 && (
-            <ReconciliationLine label="Encargos na fatura" amount={invoiceCharges} />
-          )}
-          <ReconciliationLine label="Total da fatura" amount={invoiceTotal} emphasis />
-        </div>
-        {invoiceCredits > 0 && (
-          <p className="text-xs leading-relaxed text-violet-800/80">
-            Créditos incluem estornos, IOF de volta e outros ajustes do banco.
-          </p>
+    <div className="mt-5 rounded-xl border border-slate-200 bg-slate-50/50">
+      <div className="space-y-1 px-4 py-3">
+        <BridgeLine label="Compras no período" amount={purchases} />
+        {splitAdjustment > 0 && (
+          <BridgeLine label="Divisões" amount={splitAdjustment} deduction prefix="−" />
         )}
-        <p className="text-xs leading-relaxed text-violet-800/80">
-          Os gráficos abaixo mostram seu gasto pessoal, não o total da fatura.
-        </p>
+        <BridgeLine label="Meu gasto" amount={mySpend} emphasis prefix="=" />
+        {splitAdjustment > 0 && onViewDividedTransactions && dividedCount > 0 && (
+          <button
+            type="button"
+            className="text-left text-xs font-medium text-slate-600 underline-offset-2 hover:text-slate-900 hover:underline"
+            onClick={onViewDividedTransactions}
+          >
+            Ver {dividedCount === 1 ? 'compra dividida' : `${dividedCount} compras divididas`}
+          </button>
+        )}
+
+        {showCreditsSection && (
+          <>
+            <div className="my-2 border-t border-dashed border-slate-200" />
+            {previousBalance > 0 && (
+              <BridgeLine label="Saldo anterior" amount={previousBalance} />
+            )}
+            {invoiceCredits > 0 && (
+              <div className="space-y-1">
+                <button
+                  type="button"
+                  className="flex w-full items-baseline justify-between gap-4 text-left text-sm"
+                  onClick={() => creditLines.length > 0 && setCreditsExpanded(open => !open)}
+                  disabled={creditLines.length === 0 && unlistedCredits <= 0}
+                >
+                  <span className="flex min-w-0 items-center gap-1 text-slate-600">
+                    {creditLines.length > 0 && (
+                      <ChevronDown
+                        className={cn(
+                          'size-3.5 shrink-0 text-slate-400 transition-transform',
+                          creditsExpanded && 'rotate-180'
+                        )}
+                      />
+                    )}
+                    <span>
+                      <span className="text-slate-400">− </span>
+                      Créditos do banco
+                    </span>
+                  </span>
+                  <span className="shrink-0 tabular-nums text-emerald-700">
+                    − {formatCurrency(invoiceCredits)}
+                  </span>
+                </button>
+                {creditsExpanded && creditLines.length > 0 && (
+                  <div className="space-y-1 border-l-2 border-slate-200 pl-3">
+                    {creditLines.map(line => (
+                      <BridgeLine
+                        key={`${line.title}-${line.amount}`}
+                        label={line.title}
+                        amount={line.amount}
+                        deduction
+                      />
+                    ))}
+                    {unlistedCredits > 0 && (
+                      <BridgeLine
+                        label="Ajustes do banco"
+                        amount={unlistedCredits}
+                        deduction
+                      />
+                    )}
+                  </div>
+                )}
+                {creditLines.length > 0 && onViewInvoiceCredits && (
+                  <button
+                    type="button"
+                    className="text-left text-xs font-medium text-slate-600 underline-offset-2 hover:text-slate-900 hover:underline"
+                    onClick={onViewInvoiceCredits}
+                  >
+                    {creditLines.length === 1
+                      ? 'Ver crédito na fatura'
+                      : `Ver ${creditLines.length} créditos na fatura`}
+                  </button>
+                )}
+              </div>
+            )}
+            {invoiceCharges > 0 && (
+              <BridgeLine label="Encargos na fatura" amount={invoiceCharges} />
+            )}
+            <BridgeLine label="Total da fatura" amount={invoiceTotal} emphasis prefix="=" />
+          </>
+        )}
+
+        {!showCreditsSection && (
+          <BridgeLine label="Total da fatura" amount={invoiceTotal} emphasis prefix="=" />
+        )}
       </div>
+
+      <p className="border-t border-slate-200 px-4 py-2.5 text-xs text-slate-500">
+        Gráficos abaixo = gasto pessoal, não total da fatura.
+      </p>
     </div>
   )
 }
@@ -229,13 +349,21 @@ export function CreditCardAnalyticsSection({
   dueDay,
   onNavigateToMonth,
   onViewDividedTransactions,
+  onViewInvoiceCredits,
 }: CreditCardAnalyticsSectionProps) {
   const { slug } = useActiveOrganization()
   const openAnalyticsGroupDrawer = useDrawerStore(s => s.openAnalyticsGroupDrawer)
-  const [amountView, setAmountView] = useState<AnalyticsAmountView>('personal')
   const [merchantQuickFilter, setMerchantQuickFilter] = useState<MerchantQuickFilter>('all')
-  const { purchasesPeriod, metrics, matchedStatement, isPending, reportScope, foreignStatements, cycleTransactions } =
-    useCreditCardInvoiceMetrics(accountId, cycle, closingDay, dueDay)
+  const {
+    purchasesPeriod,
+    paymentPeriod,
+    metrics,
+    matchedStatement,
+    isPending,
+    reportScope,
+    foreignStatements,
+    cycleTransactions,
+  } = useCreditCardInvoiceMetrics(accountId, cycle, closingDay, dueDay)
 
   const cycleTransactionIds = useMemo(
     () => cycleTransactions.map(transaction => transaction.id),
@@ -294,8 +422,20 @@ export function CreditCardAnalyticsSection({
     invoiceTotal,
   })
   const splitAdjustment = computePersonalSpendAdjustment(invoicePurchases, mySpend)
-  const isInvoiceView = amountView === 'invoice' && hasImportedInvoice
-  const heroAmount = isInvoiceView ? invoiceTotal : mySpend
+  const adjustmentPeriod = useMemo(
+    () => ({ start: purchasesPeriod.start, end: paymentPeriod.end }),
+    [purchasesPeriod.start, paymentPeriod.end]
+  )
+  const creditLines = useMemo(
+    () =>
+      listInvoiceAdjustmentCredits(
+        cycleTransactions,
+        adjustmentPeriod,
+        cycle,
+        matchedStatement
+      ),
+    [cycleTransactions, adjustmentPeriod, cycle, matchedStatement]
+  )
   const amountsDiffer =
     hasImportedInvoice &&
     reaisToCents(invoiceTotal) !== reaisToCents(mySpend) &&
@@ -305,27 +445,12 @@ export function CreditCardAnalyticsSection({
   const showAmountReconciliation =
     amountsDiffer && invoicePurchases > 0 && !showNoInvoiceNotice
 
-  useEffect(() => {
-    if (!hasImportedInvoice && amountView === 'invoice') {
-      setAmountView('personal')
-    }
-  }, [amountView, hasImportedInvoice])
-
-  const heroTitle = isInvoiceView ? 'Total da fatura' : 'Meu gasto'
-  const heroDescription = isInvoiceView
-    ? metrics.usesImportedStatementPeriod
-      ? 'Saldo importado do banco nesta fatura (já considera pagamentos e créditos).'
-      : 'Valor total desta fatura no período de compras.'
-    : 'Suas compras no período, após descontar o que foi dividido com outras pessoas.'
   const breakdownNote = suggestedForeignMonthKey
     ? `Não há fatura importada neste ciclo. Compras importadas deste período estão na ${formatInvoiceLabel(suggestedForeignMonthKey).toLowerCase()}.`
     : 'Não há fatura importada neste ciclo. Suas compras aqui podem constar na fatura de outro mês.'
-  const categorySectionHint = isInvoiceView
-    ? 'Seu gasto pessoal no período · toque para ver as compras'
-    : 'Meu gasto no período de compras da fatura · toque para ver as compras'
-  const merchantSectionHint = isInvoiceView
-    ? 'Top por gasto pessoal · agrupados pelo nome na fatura · toque para ver'
-    : `Top ${TOP_MERCHANTS_LIMIT} por gasto · agrupados pelo nome na fatura · toque para ver`
+  const categorySectionHint =
+    'Meu gasto no período de compras da fatura · toque para ver as compras'
+  const merchantSectionHint = `Top ${TOP_MERCHANTS_LIMIT} por gasto · agrupados pelo nome na fatura · toque para ver`
 
   const recurringMerchants = useMemo(
     () => allMerchants.filter(merchant => merchant.isRecurring),
@@ -413,97 +538,39 @@ export function CreditCardAnalyticsSection({
 
   return (
     <div className="space-y-4 px-4 py-3 lg:px-6">
-      <div className="overflow-hidden rounded-xl border border-violet-200/60 bg-white shadow-sm">
-        <div className="bg-gradient-to-br from-violet-50/80 via-white to-white px-5 py-5 sm:px-6">
-          <div className="flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
-            <div className="flex items-center gap-2">
-              <BarChart3 className="size-4 text-violet-600" />
-              <span className="text-sm font-medium text-violet-700">Análise da fatura</span>
-            </div>
-            <ToggleGroup
-              type="single"
-              value={isInvoiceView ? 'invoice' : 'personal'}
-              onValueChange={(value: AnalyticsAmountView | '') => {
-                if (value === 'personal') setAmountView('personal')
-                if (value === 'invoice' && hasImportedInvoice) setAmountView('invoice')
-              }}
-              variant="outline"
-              size="sm"
-              className="w-full sm:w-auto"
-            >
-              {ANALYTICS_AMOUNT_VIEWS.map(view => (
-                <ToggleGroupItem
-                  key={view.id}
-                  value={view.id}
-                  disabled={view.id === 'invoice' && !hasImportedInvoice}
-                  className="px-3 text-xs sm:text-sm"
-                  title={
-                    view.id === 'invoice' && !hasImportedInvoice
-                      ? 'Não há fatura importada neste ciclo'
-                      : undefined
-                  }
-                >
-                  {view.label}
-                </ToggleGroupItem>
-              ))}
-            </ToggleGroup>
+      <div className="overflow-hidden rounded-xl border border-slate-200 bg-white shadow-sm">
+        <div className="bg-slate-50/40 px-5 py-5 sm:px-6">
+          <div className="flex items-center gap-2">
+            <BarChart3 className="size-4 text-violet-600" />
+            <span className="text-sm font-medium text-slate-700">Análise da fatura</span>
           </div>
 
-          <p className="mt-4 text-4xl font-bold tabular-nums tracking-tight text-slate-900">
-            {formatCurrency(heroAmount)}
-          </p>
-          <p className="mt-1 text-sm font-medium text-slate-700">{heroTitle}</p>
-          <p className="mt-1 text-sm text-slate-500">{heroDescription}</p>
-
-          {amountsDiffer && (
-            <p className="mt-2 text-sm text-slate-500">
-              {isInvoiceView ? (
-                <>
-                  Meu gasto no período:{' '}
-                  <span className="font-medium tabular-nums text-slate-700">
-                    {formatCurrency(mySpend)}
-                  </span>
-                </>
-              ) : (
-                <>
-                  Total da fatura:{' '}
-                  <span className="font-medium tabular-nums text-slate-700">
-                    {formatCurrency(invoiceTotal)}
-                  </span>
-                </>
-              )}
-            </p>
-          )}
-
-          {isInvoiceView &&
-            invoicePurchases > 0 &&
-            invoicePurchases !== invoiceTotal &&
-            !showAmountReconciliation && (
-            <p className="mt-1 text-sm text-slate-500">
-              Compras no arquivo:{' '}
-              <span className="font-medium tabular-nums text-slate-700">
-                {formatCurrency(invoicePurchases)}
-              </span>
-            </p>
-          )}
+          <DualMetricsHero
+            mySpend={mySpend}
+            invoiceTotal={invoiceTotal}
+            hasImportedInvoice={hasImportedInvoice}
+            invoiceCredits={amountReconciliation.invoiceCredits}
+          />
 
           {showAmountReconciliation && (
-            <InvoiceAmountReconciliationCard
+            <InvoiceBridgeBreakdown
               purchases={amountReconciliation.purchases}
               previousBalance={amountReconciliation.previousBalance}
               invoiceCredits={amountReconciliation.invoiceCredits}
               invoiceCharges={amountReconciliation.invoiceCharges}
+              creditLines={creditLines}
               splitAdjustment={splitAdjustment}
               mySpend={mySpend}
               invoiceTotal={invoiceTotal}
               dividedCount={dividedCount}
               onViewDividedTransactions={onViewDividedTransactions}
+              onViewInvoiceCredits={onViewInvoiceCredits}
             />
           )}
 
           {splitAdjustment > 0 && !showAmountReconciliation && onViewDividedTransactions && dividedCount > 0 && (
-            <div className="mt-3 flex gap-2 rounded-lg border border-violet-100 bg-violet-50/60 px-3 py-2.5 text-sm text-violet-900/80">
-              <Info className="mt-0.5 size-4 shrink-0 text-violet-600" />
+            <div className="mt-5 flex gap-2 rounded-xl border border-slate-200 bg-slate-50/50 px-4 py-3 text-sm text-slate-700">
+              <Info className="mt-0.5 size-4 shrink-0 text-slate-500" />
               <div className="space-y-1">
                 <p>
                   Parte das compras foi dividida com outras pessoas (
@@ -512,7 +579,7 @@ export function CreditCardAnalyticsSection({
                 </p>
                 <button
                   type="button"
-                  className="font-medium text-violet-700 underline-offset-2 hover:underline"
+                  className="font-medium text-slate-700 underline-offset-2 hover:underline"
                   onClick={onViewDividedTransactions}
                 >
                   Ver {dividedCount === 1 ? 'compra dividida' : `${dividedCount} compras divididas`}
@@ -522,14 +589,14 @@ export function CreditCardAnalyticsSection({
           )}
 
           {showNoInvoiceNotice && (
-            <div className="mt-3 flex gap-2 rounded-lg border border-violet-100 bg-violet-50/60 px-3 py-2.5 text-sm text-violet-900/80">
-              <Info className="mt-0.5 size-4 shrink-0 text-violet-600" />
+            <div className="mt-5 flex gap-2 rounded-xl border border-slate-200 bg-slate-50/50 px-4 py-3 text-sm text-slate-700">
+              <Info className="mt-0.5 size-4 shrink-0 text-slate-500" />
               <div className="space-y-2">
                 <p>{breakdownNote}</p>
                 {suggestedForeignMonthKey && onNavigateToMonth && (
                   <button
                     type="button"
-                    className="font-medium text-violet-700 underline-offset-2 hover:underline"
+                    className="font-medium text-slate-700 underline-offset-2 hover:underline"
                     onClick={() => onNavigateToMonth(suggestedForeignMonthKey)}
                   >
                     Ver {formatInvoiceLabel(suggestedForeignMonthKey).toLowerCase()}
