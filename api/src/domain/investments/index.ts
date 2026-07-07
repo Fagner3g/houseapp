@@ -1,1 +1,0 @@
-export { investmentService } from './service'

@@ -3,7 +3,7 @@
  * Do not edit manually.
  * HouseApp API
  * API for HouseApp
- * OpenAPI spec version: 1.5.1
+ * OpenAPI spec version: 1.5.2
  */
 
 export type ListTransactions200TransactionsItemStatus =
@@ -12,7 +12,7 @@ export type ListTransactions200TransactionsItemStatus =
 // eslint-disable-next-line @typescript-eslint/no-redeclare
 export const ListTransactions200TransactionsItemStatus = {
   pending: "pending",
-  paid: "paid",
   partial: "partial",
+  paid: "paid",
   canceled: "canceled",
 } as const;

@@ -1,11 +1,21 @@
 import type { FastifyInstance } from 'fastify'
 
-import { logoutRoute, signInRoute, signUpRoute, validateTokenRoute } from './auth.routes'
+import { accountsRoutes } from '@/modules/accounts/account.routes'
+import { alertRulesRoutes } from '@/modules/alerts/alert-rule.routes'
+import { alertSettingsRoutes } from '@/modules/alerts/alert-settings.routes'
+import { notificationsRoutes } from '@/modules/alerts/notification.routes'
+import { attachmentsRoutes } from '@/modules/attachments/attachment.routes'
+import { authRoutes } from '@/modules/auth/auth.routes'
+import { cardsRoutes } from '@/modules/cards/card.routes'
+import { categoriesRoutes } from '@/modules/categories/category.routes'
+import { recurringRoutes } from '@/modules/recurring/recurring.routes'
+import { aiRoutes } from '@/modules/ai/ai.routes'
+import { reportsRoutes } from '@/modules/reports/report.routes'
+import { splitsRoutes } from '@/modules/splits/split.routes'
+import { statementsRoutes } from '@/modules/statements/statement.routes'
+import { transactionsRoutes } from '@/modules/transactions/transaction.routes'
 import { healthRoute } from './health.routes'
-import { investmentRoutes } from './investments.routes'
-import { alertsRoutes } from './alerts.routes'
 import { acceptInviteRoute, createInviteRoute, getInvitesRoute } from './invite.routes'
-import { jobsRoutes } from './jobs.routes'
 import {
   createOrgRoute,
   deleteOrgRoute,
@@ -13,84 +23,46 @@ import {
   listUsersByOrgRoute,
   renameOrgRoute,
 } from './organization.routes'
-import { transactionReportsRoute } from './reports.routes'
-import { createTagRoute, deleteTagRoute, listTagsRoute, updateTagRoute } from './tag.routes'
-import {
-  createChatMessageRoute,
-  createTransactionRoute,
-  deleteTransactionsRoute,
-  getTransactionInstallmentsRoute,
-  getTransactionRoute,
-  listChatMessagesRoute,
-  listTransactionRoute,
-  payTransactionRoute,
-  updateTransactionRoute,
-} from './transaction.routes'
 import {
   createUserWithInviteRoute,
   getProfileRoute,
-  removeUserRoute,
   updateUserNotificationsRoute,
   updateUserRoute,
 } from './user.routes'
+import { jobsRoutes } from './jobs.routes'
 
 export function createRoutes(app: FastifyInstance) {
-  // Health
   app.register(healthRoute)
-
-  // Jobs
   app.register(jobsRoutes)
 
-  // Auth
-  app.register(signInRoute)
-  app.register(signUpRoute)
-  app.register(validateTokenRoute)
-  app.register(logoutRoute)
+  app.register(authRoutes)
 
-  // User
   app.register(getProfileRoute)
   app.register(createUserWithInviteRoute)
   app.register(updateUserRoute)
   app.register(updateUserNotificationsRoute)
-  app.register(removeUserRoute)
 
-  // Investments
-  app.register(investmentRoutes)
-
-  // Organization
   app.register(createOrgRoute)
   app.register(renameOrgRoute)
   app.register(deleteOrgRoute)
   app.register(listOrgRoute)
   app.register(listUsersByOrgRoute)
 
-  // Invite
   app.register(acceptInviteRoute)
   app.register(createInviteRoute)
   app.register(getInvitesRoute)
 
-  // Transaction
-  app.register(createTransactionRoute)
-  app.register(getTransactionRoute)
-  app.register(getTransactionInstallmentsRoute)
-  app.register(listTransactionRoute)
-  app.register(deleteTransactionsRoute)
-  app.register(updateTransactionRoute)
-  app.register(payTransactionRoute)
-
-  // Transaction Chat
-  app.register(listChatMessagesRoute)
-  app.register(createChatMessageRoute)
-
-  // Reports
-  app.register(transactionReportsRoute)
-
-  // Alerts
-  app.register(alertsRoutes)
-
-  // Tag
-  app.register(listTagsRoute)
-  app.register(createTagRoute)
-  app.register(updateTagRoute)
-  app.register(deleteTagRoute)
+  app.register(accountsRoutes)
+  app.register(cardsRoutes)
+  app.register(categoriesRoutes)
+  app.register(recurringRoutes)
+  app.register(transactionsRoutes)
+  app.register(splitsRoutes)
+  app.register(attachmentsRoutes)
+  app.register(statementsRoutes)
+  app.register(reportsRoutes)
+  app.register(aiRoutes)
+  app.register(alertRulesRoutes)
+  app.register(alertSettingsRoutes)
+  app.register(notificationsRoutes)
 }

@@ -3,7 +3,7 @@
  * Do not edit manually.
  * HouseApp API
  * API for HouseApp
- * OpenAPI spec version: 1.5.1
+ * OpenAPI spec version: 1.5.2
  */
 
 export type UpdateTransactionBodyType =
@@ -11,6 +11,7 @@ export type UpdateTransactionBodyType =
 
 // eslint-disable-next-line @typescript-eslint/no-redeclare
 export const UpdateTransactionBodyType = {
-  expense: "expense",
   income: "income",
+  expense: "expense",
+  transfer: "transfer",
 } as const;

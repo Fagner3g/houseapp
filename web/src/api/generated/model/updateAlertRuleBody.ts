@@ -3,16 +3,14 @@
  * Do not edit manually.
  * HouseApp API
  * API for HouseApp
- * OpenAPI spec version: 1.5.1
+ * OpenAPI spec version: 1.5.2
  */
 import type { UpdateAlertRuleBodyConfig } from "./updateAlertRuleBodyConfig";
 import type { UpdateAlertRuleBodyChannelsItem } from "./updateAlertRuleBodyChannelsItem";
-import type { UpdateAlertRuleBodyRecipients } from "./updateAlertRuleBodyRecipients";
 
 export type UpdateAlertRuleBody = {
   config?: UpdateAlertRuleBodyConfig;
   /** @minItems 1 */
   channels?: UpdateAlertRuleBodyChannelsItem[];
-  recipients?: UpdateAlertRuleBodyRecipients;
-  active?: boolean;
+  isActive?: boolean;
 };

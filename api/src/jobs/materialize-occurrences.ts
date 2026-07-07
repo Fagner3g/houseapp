@@ -1,53 +1,43 @@
-import { eq } from 'drizzle-orm'
-
-import { db } from '@/db'
-import { transactionSeries } from '@/db/schemas/transactionSeries'
-import { materializeOccurrences } from '@/domain/transactions/materialize-occurrences'
+import { logger } from '@/lib/logger'
+import { container } from '@/core/container'
 import { JOB_CONFIGS } from './config'
 import { jobManager } from './job-manager'
 import type { JobResult } from './types'
 
 async function ensureOccurrences(): Promise<JobResult> {
   const startTime = Date.now()
-  let processed = 0
-  let errors = 0
 
   try {
-    const series = await db
-      .select({ id: transactionSeries.id })
-      .from(transactionSeries)
-      .where(eq(transactionSeries.active, true))
+    const result = await container.recurringService.materializeOccurrences()
 
-    for (const s of series) {
-      try {
-        await materializeOccurrences(s.id)
-        processed++
-      } catch {
-        errors++
-        // Log individual errors but continue processing
-      }
-    }
+    logger.info(
+      {
+        processed: result.processed,
+        generated: result.generated,
+        errors: result.errors,
+      },
+      'Recurring transactions materialized'
+    )
 
     return {
-      success: errors === 0,
-      processed,
-      errors,
+      success: result.errors === 0,
+      processed: result.processed,
+      errors: result.errors,
       duration: Date.now() - startTime,
     }
-  } catch {
+  } catch (error) {
+    logger.error(error, 'Failed to materialize recurring transactions')
     return {
       success: false,
-      processed,
-      errors: errors + 1,
+      processed: 0,
+      errors: 1,
       duration: Date.now() - startTime,
     }
   }
 }
 
-// Registrar o job
 jobManager.registerJob(JOB_CONFIGS.MATERIALIZE_OCCURRENCES, ensureOccurrences)
 
-// Export para execução manual
 export async function runMaterializeNow(): Promise<JobResult | null> {
   return await jobManager.runJobNow(JOB_CONFIGS.MATERIALIZE_OCCURRENCES.key)
 }

@@ -13,8 +13,8 @@ import {
 
 interface DailyTransaction {
   date: string
-  paid: number
-  pending: number
+  income: number
+  expense: number
   total: number
 }
 
@@ -23,8 +23,8 @@ interface DailyTransactionsChartProps {
 }
 
 export function DailyTransactionsChart({ data }: DailyTransactionsChartProps) {
-  const paidGradientId = useId()
-  const pendingGradientId = useId()
+  const incomeGradientId = useId()
+  const expenseGradientId = useId()
 
   const formatDate = (dateStr: string) => {
     return format(new Date(dateStr), 'dd/MM', { locale: ptBR })
@@ -39,13 +39,13 @@ export function DailyTransactionsChart({ data }: DailyTransactionsChartProps) {
       <ResponsiveContainer width="100%" height="100%">
         <AreaChart data={data} margin={{ top: 10, right: 30, left: 0, bottom: 0 }}>
           <defs>
-            <linearGradient id={paidGradientId} x1="0" y1="0" x2="0" y2="1">
+            <linearGradient id={incomeGradientId} x1="0" y1="0" x2="0" y2="1">
               <stop offset="5%" stopColor="#10b981" stopOpacity={0.8} />
               <stop offset="95%" stopColor="#10b981" stopOpacity={0.1} />
             </linearGradient>
-            <linearGradient id={pendingGradientId} x1="0" y1="0" x2="0" y2="1">
-              <stop offset="5%" stopColor="#f59e0b" stopOpacity={0.8} />
-              <stop offset="95%" stopColor="#f59e0b" stopOpacity={0.1} />
+            <linearGradient id={expenseGradientId} x1="0" y1="0" x2="0" y2="1">
+              <stop offset="5%" stopColor="#fb7185" stopOpacity={0.8} />
+              <stop offset="95%" stopColor="#fb7185" stopOpacity={0.1} />
             </linearGradient>
           </defs>
           <CartesianGrid strokeDasharray="3 3" className="stroke-muted" />
@@ -70,15 +70,15 @@ export function DailyTransactionsChart({ data }: DailyTransactionsChartProps) {
                     <p className="font-medium">{formatDate(label)}</p>
                     <div className="space-y-1">
                       <div className="flex items-center gap-2">
-                        <div className="h-2 w-2 rounded-full bg-green-500" />
+                        <div className="h-2 w-2 rounded-full bg-emerald-500" />
                         <span className="text-sm">
-                          Pago: {formatCurrency(payload[0]?.value as number)}
+                          Receitas: {formatCurrency(payload[0]?.value as number)}
                         </span>
                       </div>
                       <div className="flex items-center gap-2">
-                        <div className="h-2 w-2 rounded-full bg-yellow-500" />
+                        <div className="h-2 w-2 rounded-full bg-rose-400" />
                         <span className="text-sm">
-                          Pendente: {formatCurrency(payload[1]?.value as number)}
+                          Despesas: {formatCurrency(payload[1]?.value as number)}
                         </span>
                       </div>
                     </div>
@@ -90,18 +90,18 @@ export function DailyTransactionsChart({ data }: DailyTransactionsChartProps) {
           />
           <Area
             type="monotone"
-            dataKey="paid"
+            dataKey="income"
             stackId="1"
             stroke="#10b981"
-            fill={`url(#${paidGradientId})`}
+            fill={`url(#${incomeGradientId})`}
             strokeWidth={2}
           />
           <Area
             type="monotone"
-            dataKey="pending"
+            dataKey="expense"
             stackId="1"
-            stroke="#f59e0b"
-            fill={`url(#${pendingGradientId})`}
+            stroke="#fb7185"
+            fill={`url(#${expenseGradientId})`}
             strokeWidth={2}
           />
         </AreaChart>

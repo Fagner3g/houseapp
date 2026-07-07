@@ -53,3 +53,33 @@ export async function http<T>(path: string, options: RequestInit): Promise<T> {
     return Promise.reject(error)
   }
 }
+
+export async function readHttpErrorMessage(
+  error: unknown,
+  fallback = 'Ocorreu um erro inesperado'
+): Promise<string> {
+  if (error instanceof Response) {
+    try {
+      const body = (await error.json()) as {
+        message?: string
+        errors?: Array<Record<string, string>>
+      }
+      if (body.errors?.length) {
+        const firstError = body.errors[0]
+        const detail = firstError ? Object.values(firstError)[0] : undefined
+        if (detail) return detail
+      }
+      if (body.message && body.message !== 'Erro de validação') return body.message
+      if (body.message) return body.message
+    } catch {
+      // ignore parse errors
+    }
+
+    if (error.status === 409) return 'Conflito: este recurso já existe'
+    if (error.status === 400) return 'Dados inválidos'
+  }
+
+  if (error instanceof Error && error.message) return error.message
+
+  return fallback
+}

@@ -2,7 +2,7 @@ import type { FastifyReply, FastifyRequest } from 'fastify'
 import { StatusCodes } from 'http-status-codes'
 
 import { db } from '@/db'
-import { userOrganizations } from '@/db/schemas/userOrganization'
+import { organizationMembers } from '@/db/schemas/organizationMembers'
 import { createOrganization } from '@/domain/organization/create-organization'
 import type { CreateOrganizationBody } from '@/http/schemas/organization/create-organization.schema'
 
@@ -16,9 +16,10 @@ export async function createOrganizationController(request: Req, reply: FastifyR
 
   const { organization } = await createOrganization({ name, isFirstOrg: false, ownerId: userId })
 
-  await db.insert(userOrganizations).values({
+  await db.insert(organizationMembers).values({
     userId,
     organizationId: organization.id,
+    role: 'owner',
   })
 
   return reply

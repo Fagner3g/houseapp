@@ -10,6 +10,14 @@ export function getSelectableOrgUsers<T extends OrgUser>(
   return users.filter(user => user.notificationsEnabled || keep.has(user.id))
 }
 
+export function getSplitEligibleOrgUsers<T extends Pick<OrgUser, 'id'>>(
+  users: T[],
+  currentUserId?: string | null
+): T[] {
+  if (!currentUserId) return users
+  return users.filter(user => user.id !== currentUserId)
+}
+
 export function formatOrgUserLabel(
   user: Pick<OrgUser, 'id' | 'name'>,
   currentUserId?: string | null

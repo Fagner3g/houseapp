@@ -2,6 +2,7 @@ import type { FastifyInstance } from 'fastify'
 import { StatusCodes } from 'http-status-codes'
 
 import { env } from '@/config/env'
+import { AppError } from '@/core/errors'
 import {
   BadRequestError,
   ForbiddenError,
@@ -20,6 +21,13 @@ export const errorHandler: FastifyErrorHandler = (error, _request, reply) => {
       errors: error.validation.map(({ instancePath, message }) => ({
         [instancePath.replace(/^\//, '')]: message,
       })),
+    })
+  }
+
+  if (error instanceof AppError) {
+    return reply.status(error.statusCode).send({
+      code: error.code,
+      message: error.message,
     })
   }
 

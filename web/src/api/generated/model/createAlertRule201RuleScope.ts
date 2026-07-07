@@ -3,7 +3,7 @@
  * Do not edit manually.
  * HouseApp API
  * API for HouseApp
- * OpenAPI spec version: 1.5.1
+ * OpenAPI spec version: 1.5.2
  */
 
 export type CreateAlertRule201RuleScope =
@@ -12,5 +12,6 @@ export type CreateAlertRule201RuleScope =
 // eslint-disable-next-line @typescript-eslint/no-redeclare
 export const CreateAlertRule201RuleScope = {
   organization: "organization",
-  series: "series",
+  account: "account",
+  recurring: "recurring",
 } as const;

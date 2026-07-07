@@ -5,6 +5,7 @@
   "scripts": {
     "dev": "yarn dev:vite",
     "dev:vite": "vite --host",
+    "orval": "orval",
     "dev:orval": "orval -w",
     "build": "vite build",
     "lint": "biome lint .",

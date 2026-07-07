@@ -96,7 +96,7 @@ DB_HOST="$(read_env_var DB_HOST localhost)"
 DB_PORT="$(read_env_var DB_PORT 5432)"
 DB_USER="$(read_env_var DB_USER postgres)"
 DB_PASSWORD="$(read_env_var DB_PASSWORD postgres)"
-DB_NAME="$(read_env_var DB_NAME houseapp)"
+DB_NAME="$(read_env_var DB_NAME houseapp_v2)"
 
 LOCAL_DOCKER_CONTAINER="${LOCAL_DOCKER_CONTAINER:-}"
 if [[ -z "$LOCAL_DOCKER_CONTAINER" ]]; then

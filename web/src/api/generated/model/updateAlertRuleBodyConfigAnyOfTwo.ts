@@ -3,7 +3,7 @@
  * Do not edit manually.
  * HouseApp API
  * API for HouseApp
- * OpenAPI spec version: 1.5.1
+ * OpenAPI spec version: 1.5.2
  */
 import type { UpdateAlertRuleBodyConfigAnyOfTwoFrequency } from "./updateAlertRuleBodyConfigAnyOfTwoFrequency";
 
@@ -11,7 +11,7 @@ export type UpdateAlertRuleBodyConfigAnyOfTwo = {
   frequency: UpdateAlertRuleBodyConfigAnyOfTwoFrequency;
   /**
    * @minimum 1
-   * @maximum 365
+   * @maximum 9007199254740991
    */
-  interval?: number;
+  interval: number;
 };

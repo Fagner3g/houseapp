@@ -2,9 +2,8 @@ import { Bar, BarChart, CartesianGrid, ResponsiveContainer, Tooltip, XAxis, YAxi
 
 interface MonthlyTrend {
   month: string
-  total: number
-  paid: number
-  pending: number
+  income: number
+  expense: number
 }
 
 interface MonthlyTrendChartProps {
@@ -41,15 +40,15 @@ export function MonthlyTrendChart({ data }: MonthlyTrendChartProps) {
                     <p className="font-medium">{label}</p>
                     <div className="space-y-1">
                       <div className="flex items-center gap-2">
-                        <div className="h-2 w-2 rounded-full bg-green-500" />
+                        <div className="h-2 w-2 rounded-full bg-emerald-500" />
                         <span className="text-sm">
-                          Pago: {formatCurrency(payload[0]?.value as number)}
+                          Receitas: {formatCurrency(payload[0]?.value as number)}
                         </span>
                       </div>
                       <div className="flex items-center gap-2">
-                        <div className="h-2 w-2 rounded-full bg-yellow-500" />
+                        <div className="h-2 w-2 rounded-full bg-rose-400" />
                         <span className="text-sm">
-                          Pendente: {formatCurrency(payload[1]?.value as number)}
+                          Despesas: {formatCurrency(payload[1]?.value as number)}
                         </span>
                       </div>
                     </div>
@@ -59,8 +58,8 @@ export function MonthlyTrendChart({ data }: MonthlyTrendChartProps) {
               return null
             }}
           />
-          <Bar dataKey="paid" fill="#10b981" radius={[2, 2, 0, 0]} />
-          <Bar dataKey="pending" fill="#f59e0b" radius={[2, 2, 0, 0]} />
+          <Bar dataKey="income" fill="#10b981" radius={[2, 2, 0, 0]} />
+          <Bar dataKey="expense" fill="#fb7185" radius={[2, 2, 0, 0]} />
         </BarChart>
       </ResponsiveContainer>
     </div>

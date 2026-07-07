@@ -1,10 +1,32 @@
 import type * as React from 'react'
 import { Drawer as DrawerPrimitive } from 'vaul'
 
+import {
+  stackyDrawerContentStackedOuter,
+  stackyDrawerInnerShell,
+  stackyDrawerInnerShellStacked,
+  stackyDrawerOverlayNested,
+} from '@/lib/ui-classes'
 import { cn } from '@/lib/utils'
 
-function Drawer({ ...props }: React.ComponentProps<typeof DrawerPrimitive.Root>) {
-  return <DrawerPrimitive.Root data-slot="drawer" {...props} />
+function Drawer({
+  dismissible = false,
+  ...props
+}: React.ComponentProps<typeof DrawerPrimitive.Root>) {
+  return <DrawerPrimitive.Root data-slot="drawer" dismissible={dismissible} {...props} />
+}
+
+function DrawerNestedRoot({
+  dismissible = false,
+  ...props
+}: React.ComponentProps<typeof DrawerPrimitive.NestedRoot>) {
+  return (
+    <DrawerPrimitive.NestedRoot
+      data-slot="drawer-nested"
+      dismissible={dismissible}
+      {...props}
+    />
+  )
 }
 
 function DrawerTrigger({ ...props }: React.ComponentProps<typeof DrawerPrimitive.Trigger>) {
@@ -21,44 +43,127 @@ function DrawerClose({ ...props }: React.ComponentProps<typeof DrawerPrimitive.C
 
 function DrawerOverlay({
   className,
+  dismissible = true,
+  animated = true,
+  onDismiss,
   ...props
-}: React.ComponentProps<typeof DrawerPrimitive.Overlay>) {
-  return (
-    <DrawerPrimitive.Overlay
+}: React.ComponentProps<'div'> & {
+  dismissible?: boolean
+  animated?: boolean
+  onDismiss?: () => void
+}) {
+  const classStr = typeof className === 'string' ? className : ''
+  const hasZIndex = /\bz-/.test(classStr)
+  const hasCustomPosition = /\b(inset-y-0|right-0|left-auto|max-w-)/.test(classStr)
+  const hasCustomBg = /\bbg-/.test(classStr)
+
+  const handleClick = () => {
+    if (!dismissible) return
+    onDismiss?.()
+  }
+
+  const overlay = (
+    <div
       data-slot="drawer-overlay"
       className={cn(
-        'data-[state=open]:animate-in data-[state=closed]:animate-out data-[state=closed]:fade-out-0 data-[state=open]:fade-in-0 fixed inset-0 z-50 bg-black/50',
+        'fixed select-none duration-[400ms]',
+        animated && 'animate-in fade-in-0',
+        !hasCustomBg && 'bg-black/45',
+        !hasCustomPosition && 'inset-0',
+        !hasZIndex && 'z-50',
+        dismissible ? 'pointer-events-auto' : 'pointer-events-none',
         className
       )}
+      aria-hidden="true"
+      onClick={onDismiss ? handleClick : undefined}
       {...props}
     />
   )
+
+  if (onDismiss) {
+    return overlay
+  }
+
+  return <DrawerClose asChild>{overlay}</DrawerClose>
 }
 
 function DrawerContent({
   className,
   children,
+  hideOverlay = false,
+  overlayClassName,
+  overlayDismissible = true,
+  overlayAnimated = true,
+  onOverlayDismiss,
+  stackedOverlayClassName,
+  onStackedOverlayDismiss,
+  stackable = false,
+  stacked = false,
   ...props
-}: React.ComponentProps<typeof DrawerPrimitive.Content>) {
+}: React.ComponentProps<typeof DrawerPrimitive.Content> & {
+  hideOverlay?: boolean
+  overlayClassName?: string
+  overlayDismissible?: boolean
+  overlayAnimated?: boolean
+  onOverlayDismiss?: () => void
+  /** Full-screen dim layer rendered in this portal above the back drawer when stacked. */
+  stackedOverlayClassName?: string
+  onStackedOverlayDismiss?: () => void
+  /** Enables inner-shell animation when another drawer opens on top. */
+  stackable?: boolean
+  stacked?: boolean
+}) {
   return (
     <DrawerPortal data-slot="drawer-portal">
-      <DrawerOverlay />
+      {!hideOverlay && (
+        <DrawerOverlay
+          className={overlayClassName}
+          dismissible={overlayDismissible}
+          animated={overlayAnimated}
+          onDismiss={onOverlayDismiss}
+        />
+      )}
       <DrawerPrimitive.Content
         data-slot="drawer-content"
+        data-stacked={stacked ? 'true' : undefined}
         className={cn(
-          'group/drawer-content bg-background fixed z-50 flex h-auto flex-col',
+          'group/drawer-content bg-background fixed flex h-auto flex-col',
           'data-[vaul-drawer-direction=top]:inset-x-0 data-[vaul-drawer-direction=top]:top-0 data-[vaul-drawer-direction=top]:mb-24 data-[vaul-drawer-direction=top]:max-h-[80vh] data-[vaul-drawer-direction=top]:rounded-b-lg data-[vaul-drawer-direction=top]:border-b',
           'data-[vaul-drawer-direction=bottom]:inset-x-0 data-[vaul-drawer-direction=bottom]:bottom-0 data-[vaul-drawer-direction=bottom]:mt-24 data-[vaul-drawer-direction=bottom]:max-h-[80vh] data-[vaul-drawer-direction=bottom]:rounded-t-lg data-[vaul-drawer-direction=bottom]:border-t',
-          'data-[vaul-drawer-direction=right]:inset-y-0 data-[vaul-drawer-direction=right]:right-0 data-[vaul-drawer-direction=right]:w-3/4 data-[vaul-drawer-direction=right]:border-l data-[vaul-drawer-direction=right]:sm:max-w-sm',
-          'data-[vaul-drawer-direction=left]:inset-y-0 data-[vaul-drawer-direction=left]:left-0 data-[vaul-drawer-direction=left]:w-3/4 data-[vaul-drawer-direction=left]:border-r data-[vaul-drawer-direction=left]:sm:max-w-sm',
-          className
+          'data-[vaul-drawer-direction=right]:inset-y-0 data-[vaul-drawer-direction=right]:right-0 data-[vaul-drawer-direction=right]:w-3/4 data-[vaul-drawer-direction=right]:max-w-md data-[vaul-drawer-direction=right]:border-l',
+          'data-[vaul-drawer-direction=left]:inset-y-0 data-[vaul-drawer-direction=left]:left-0 data-[vaul-drawer-direction=left]:w-3/4 data-[vaul-drawer-direction=left]:max-w-md data-[vaul-drawer-direction=left]:border-r',
+          className,
+          stackable && stacked && stackyDrawerContentStackedOuter
         )}
         aria-describedby={undefined}
         {...props}
       >
         <div className="bg-muted mx-auto mt-4 hidden h-2 w-[100px] shrink-0 rounded-full group-data-[vaul-drawer-direction=bottom]/drawer-content:block" />
-        {children}
+        {stackable ? (
+          <div
+            className={cn(
+              stackyDrawerInnerShell,
+              stacked && stackyDrawerInnerShellStacked
+            )}
+          >
+            {children}
+          </div>
+        ) : (
+          children
+        )}
       </DrawerPrimitive.Content>
+      {stackable && stacked && (
+        <button
+          type="button"
+          aria-label="Fechar painel sobreposto"
+          className={cn(
+            stackyDrawerOverlayNested,
+            stackedOverlayClassName,
+            'cursor-default border-0 p-0'
+          )}
+          onClick={onStackedOverlayDismiss}
+        />
+      )}
     </DrawerPortal>
   )
 }
@@ -68,7 +173,7 @@ function DrawerHeader({ className, ...props }: React.ComponentProps<'div'>) {
     <div
       data-slot="drawer-header"
       className={cn(
-        'flex flex-col gap-0.5 p-4 group-data-[vaul-drawer-direction=bottom]/drawer-content:text-center group-data-[vaul-drawer-direction=top]/drawer-content:text-center md:gap-1.5 md:text-left',
+        'flex shrink-0 flex-col gap-0.5 p-4 group-data-[vaul-drawer-direction=bottom]/drawer-content:text-center group-data-[vaul-drawer-direction=top]/drawer-content:text-center group-data-[vaul-drawer-direction=left]/drawer-content:flex-row group-data-[vaul-drawer-direction=left]/drawer-content:items-center group-data-[vaul-drawer-direction=left]/drawer-content:justify-between group-data-[vaul-drawer-direction=right]/drawer-content:flex-row group-data-[vaul-drawer-direction=right]/drawer-content:items-center group-data-[vaul-drawer-direction=right]/drawer-content:justify-between md:gap-1.5 md:text-left',
         className
       )}
       {...props}
@@ -90,7 +195,7 @@ function DrawerTitle({ className, ...props }: React.ComponentProps<typeof Drawer
   return (
     <DrawerPrimitive.Title
       data-slot="drawer-title"
-      className={cn('text-foreground font-semibold', className)}
+      className={cn('text-xl font-semibold text-gray-900', className)}
       {...props}
     />
   )
@@ -111,6 +216,7 @@ function DrawerDescription({
 
 export {
   Drawer,
+  DrawerNestedRoot,
   DrawerPortal,
   DrawerOverlay,
   DrawerTrigger,

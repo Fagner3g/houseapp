@@ -3,25 +3,57 @@
  * Do not edit manually.
  * HouseApp API
  * API for HouseApp
- * OpenAPI spec version: 1.5.1
+ * OpenAPI spec version: 1.5.2
  */
 import type { UpdateTransactionBodyType } from "./updateTransactionBodyType";
-import type { UpdateTransactionBodyTagsItem } from "./updateTransactionBodyTagsItem";
+import type { UpdateTransactionBodyStatus } from "./updateTransactionBodyStatus";
+import type { UpdateTransactionBodySource } from "./updateTransactionBodySource";
 
 export type UpdateTransactionBody = {
-  type: UpdateTransactionBodyType;
-  /**
-   * @minLength 1
-   * @maxLength 50
-   */
-  title: string;
-  /** @pattern ^-?\d+(\.\d{1,2})?$ */
-  amount: string;
-  serieId: string;
-  updateSeries?: boolean;
-  dueDate: unknown;
-  /** @pattern ^(?!\.)(?!.*\.\.)([A-Za-z0-9_'+\-\.]*)[A-Za-z0-9_+-]@([A-Za-z0-9][A-Za-z0-9\-]*\.)+[A-Za-z]{2,}$ */
-  payToEmail?: string;
-  description?: string;
-  tags?: UpdateTransactionBodyTagsItem[];
+  /** @nullable */
+  accountId?: string | null;
+  /** @nullable */
+  cardId?: string | null;
+  /** @nullable */
+  recurringTransactionId?: string | null;
+  /** @nullable */
+  statementId?: string | null;
+  /** @nullable */
+  transferPairId?: string | null;
+  /** @minLength 1 */
+  title?: string;
+  /** @nullable */
+  description?: string | null;
+  /** @nullable */
+  amount?: string | null;
+  type?: UpdateTransactionBodyType;
+  /** @pattern ^(?:(?:\d\d[2468][048]|\d\d[13579][26]|\d\d0[48]|[02468][048]00|[13579][26]00)-02-29|\d{4}-(?:(?:0[13578]|1[02])-(?:0[1-9]|[12]\d|3[01])|(?:0[469]|11)-(?:0[1-9]|[12]\d|30)|(?:02)-(?:0[1-9]|1\d|2[0-8])))T(?:(?:[01]\d|2[0-3]):[0-5]\d(?::[0-5]\d(?:\.\d+)?)?(?:Z))$ */
+  date?: string;
+  /** @nullable */
+  competenceDate?: string | null;
+  status?: UpdateTransactionBodyStatus;
+  /** @nullable */
+  paidAt?: string | null;
+  /** @nullable */
+  paidAmount?: string | null;
+  /** @nullable */
+  counterparty?: string | null;
+  /** @nullable */
+  installmentNumber?: number | null;
+  /** @nullable */
+  installmentsTotal?: number | null;
+  /** @nullable */
+  installmentPeriodicity?: string | null;
+  source?: UpdateTransactionBodySource;
+  categoryIds?: string[];
+  notifyEnabled?: boolean;
+  /** @nullable */
+  notifyTargetType?: string | null;
+  /** @nullable */
+  notifyUserId?: string | null;
+  /** @nullable */
+  notifyContactName?: string | null;
+  /** @nullable */
+  notifyContactPhone?: string | null;
+  notifyDaysBefore?: number[];
 };

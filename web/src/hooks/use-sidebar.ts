@@ -1,12 +1,17 @@
 import { useRouterState } from '@tanstack/react-router'
 
-import { useNavItems } from '@/routes/navigation'
 import { useSidebar as useSidebarContext } from '@/components/ui/sidebar'
+import { findActiveNavItem } from '@/lib/nav'
+import { useNavItems } from '@/routes/navigation'
 
 export const useSidebar = () => {
-  const router = useRouterState()
+  const pathname = useRouterState({ select: s => s.location.pathname })
   const items = useNavItems()
-  const route = items.find(r => r.url === router.location.pathname)
+  const route =
+    findActiveNavItem(pathname, items) ??
+    (pathname.endsWith('/profile')
+      ? { title: 'Meu Perfil', url: pathname }
+      : undefined)
   const sidebarContext = useSidebarContext()
 
   return {

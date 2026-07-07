@@ -3,30 +3,26 @@
  * Do not edit manually.
  * HouseApp API
  * API for HouseApp
- * OpenAPI spec version: 1.5.1
+ * OpenAPI spec version: 1.5.2
  */
 import type { ListAlertRules200RulesItemScope } from "./listAlertRules200RulesItemScope";
-import type { ListAlertRules200RulesItemTarget } from "./listAlertRules200RulesItemTarget";
-import type { ListAlertRules200RulesItemKind } from "./listAlertRules200RulesItemKind";
+import type { ListAlertRules200RulesItemTriggerType } from "./listAlertRules200RulesItemTriggerType";
 import type { ListAlertRules200RulesItemConfig } from "./listAlertRules200RulesItemConfig";
 import type { ListAlertRules200RulesItemChannelsItem } from "./listAlertRules200RulesItemChannelsItem";
-import type { ListAlertRules200RulesItemRecipients } from "./listAlertRules200RulesItemRecipients";
 
 export type ListAlertRules200RulesItem = {
   id: string;
   organizationId: string;
   scope: ListAlertRules200RulesItemScope;
-  target: ListAlertRules200RulesItemTarget;
   /** @nullable */
-  seriesId: string | null;
-  kind: ListAlertRules200RulesItemKind;
+  accountId: string | null;
+  /** @nullable */
+  recurringTransactionId: string | null;
+  triggerType: ListAlertRules200RulesItemTriggerType;
   config: ListAlertRules200RulesItemConfig;
   channels: ListAlertRules200RulesItemChannelsItem[];
-  recipients: ListAlertRules200RulesItemRecipients;
-  active: boolean;
+  isActive: boolean;
   createdBy: string;
   createdAt: string;
   updatedAt: string;
-  /** @nullable */
-  seriesTitle?: string | null;
 };

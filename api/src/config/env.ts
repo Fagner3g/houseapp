@@ -8,7 +8,7 @@ const envSchema = z.object({
   DB_PORT: z.coerce.number().default(5432),
   DB_USER: z.string().default('postgres'),
   DB_PASSWORD: z.string(),
-  DB_NAME: z.string().default('houseapp'),
+  DB_NAME: z.string().default('houseapp_v2'),
 
   // Legacy DATABASE_URL (optional - for backward compatibility)
   DATABASE_URL: z.url().optional(),
@@ -26,6 +26,8 @@ const envSchema = z.object({
   LOG_STACK: z.preprocess(toBool, z.boolean()).default(false),
   LOG_FASTIFY: z.preprocess(toBool, z.boolean()).default(false),
   LOG_SQL: z.preprocess(toBool, z.boolean()).default(false),
+  // Jobs — alertas desligados em dev por padrão; defina true para testar localmente
+  JOBS_ALERTS_ENABLED: z.preprocess(toBool, z.boolean()).optional(),
   // WhatsApp
   EVOLUTION_BASE_URL: z.url().optional(),
   EVOLUTION_INSTANCE: z.string().optional(),
@@ -45,6 +47,19 @@ const envSchema = z.object({
   GEMINI_API_KEY: z.string().optional(),
   DEEPSEEK_API_KEY: z.string().optional(),
   AI_REPORT_PROVIDER: z.enum(['groq', 'gemini', 'deepseek']).default('groq'),
+  // Storage
+  STORAGE_DRIVER: z.enum(['local', 's3']).default('local'),
+  STORAGE_LOCAL_PATH: z.string().default('uploads'),
+  S3_BUCKET: z.string().optional(),
+  S3_REGION: z.string().optional(),
+  S3_ACCESS_KEY: z.string().optional(),
+  S3_SECRET_KEY: z.string().optional(),
 })
 
-export const env = envSchema.parse(process.env)
+const parsed = envSchema.parse(process.env)
+
+export const env = {
+  ...parsed,
+  jobsAlertsEnabled:
+    parsed.JOBS_ALERTS_ENABLED ?? parsed.NODE_ENV !== 'development',
+}

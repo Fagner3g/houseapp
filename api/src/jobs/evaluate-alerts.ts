@@ -1,82 +1,37 @@
-import { flushWhatsAppAlertQueue, type DeferredWhatsAppDelivery } from '@/domain/alerts/delivery/batch-whatsapp-alerts'
-import { processAllInvestmentMatches } from '@/domain/alerts/delivery/process-investment-match'
-import { processAllReminderMatches } from '@/domain/alerts/delivery/process-reminder-match'
-import { processAllRuleMatches } from '@/domain/alerts/delivery/process-rule-match'
-import {
-  evaluateInvestmentReminders,
-  previewInvestmentAlerts,
-} from '@/domain/alerts/evaluator/evaluate-investment-reminders'
-import {
-  evaluateReminders,
-  previewReminderAlerts,
-} from '@/domain/alerts/evaluator/evaluate-reminders'
-import {
-  evaluateTransactionRules,
-  previewTransactionRuleAlerts,
-} from '@/domain/alerts/evaluator/evaluate-transaction-rules'
 import { logger } from '@/lib/logger'
+import { container } from '@/core/container'
 import { JOB_CONFIGS } from './config'
 import { jobManager } from './job-manager'
-import type { JobResult, JobRunOptions } from './types'
+import type { JobResult } from './types'
 
-async function evaluateAlerts(userId?: string, options?: JobRunOptions): Promise<JobResult> {
+async function evaluateAlerts(): Promise<JobResult> {
   const startTime = Date.now()
-  let processed = 0
-  let errors = 0
 
   try {
-    logger.info('🚀 Iniciando job de avaliação de alertas...')
+    const result = await container.alertRuleService.evaluateAll()
 
-    const evaluatorOptions = options?.skipTimeCheck ? { skipTimeCheck: true as const } : undefined
-
-    const reminderMatches = await evaluateReminders(userId, evaluatorOptions)
-    const ruleMatches = await evaluateTransactionRules(userId, evaluatorOptions)
-    const investmentMatches = await evaluateInvestmentReminders(userId, evaluatorOptions)
-
-    if (
-      reminderMatches.length === 0 &&
-      ruleMatches.length === 0 &&
-      investmentMatches.length === 0
-    ) {
-      logger.info('ℹ️ Nenhum alerta para disparar')
-      return {
-        success: true,
-        processed: 0,
-        errors: 0,
-        duration: Date.now() - startTime,
-      }
+    if (result.processed > 0 || result.errors > 0) {
+      logger.info(
+        {
+          processed: result.processed,
+          errors: result.errors,
+        },
+        'Alert rules evaluated'
+      )
     }
 
-    const whatsappQueue: DeferredWhatsAppDelivery[] = []
-
-    const reminderResult = await processAllReminderMatches(reminderMatches, whatsappQueue)
-    const ruleResult = await processAllRuleMatches(ruleMatches, whatsappQueue)
-    const investmentResult = await processAllInvestmentMatches(investmentMatches, whatsappQueue)
-    const whatsappResult = await flushWhatsAppAlertQueue(whatsappQueue)
-
-    processed =
-      reminderResult.processed +
-      ruleResult.processed +
-      investmentResult.processed +
-      whatsappResult.processed
-    errors =
-      reminderResult.errors +
-      ruleResult.errors +
-      investmentResult.errors +
-      whatsappResult.errors
-
     return {
-      success: errors === 0,
-      processed,
-      errors,
+      success: result.errors === 0,
+      processed: result.processed,
+      errors: result.errors,
       duration: Date.now() - startTime,
     }
   } catch (error) {
-    logger.error(`Erro no job de avaliação de alertas: ${String(error)}`)
+    logger.error(error, 'Failed to evaluate alert rules')
     return {
       success: false,
-      processed,
-      errors: errors + 1,
+      processed: 0,
+      errors: 1,
       duration: Date.now() - startTime,
     }
   }
@@ -84,15 +39,17 @@ async function evaluateAlerts(userId?: string, options?: JobRunOptions): Promise
 
 jobManager.registerJob(JOB_CONFIGS.EVALUATE_ALERTS, evaluateAlerts)
 
-export async function previewEvaluateAlerts(orgId?: string, userId?: string) {
-  const [reminders, rules, investments] = await Promise.all([
-    previewReminderAlerts(orgId, userId),
-    previewTransactionRuleAlerts(orgId, userId),
-    previewInvestmentAlerts(orgId, userId),
-  ])
+export async function runEvaluateAlertsNow(): Promise<JobResult | null> {
+  return await jobManager.runJobNow(JOB_CONFIGS.EVALUATE_ALERTS.key)
+}
+
+export async function previewEvaluateAlerts(orgId?: string) {
+  const rules = orgId
+    ? await container.alertRuleService.list(orgId)
+    : []
+
   return {
-    reminders: reminders.items,
-    rules: rules.items,
-    investments: investments.items,
+    rules,
+    notificationsCreated: 0,
   }
 }

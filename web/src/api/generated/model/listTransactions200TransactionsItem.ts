@@ -3,39 +3,57 @@
  * Do not edit manually.
  * HouseApp API
  * API for HouseApp
- * OpenAPI spec version: 1.5.1
+ * OpenAPI spec version: 1.5.2
  */
 import type { ListTransactions200TransactionsItemType } from "./listTransactions200TransactionsItemType";
-import type { ListTransactions200TransactionsItemContextualizedType } from "./listTransactions200TransactionsItemContextualizedType";
-import type { ListTransactions200TransactionsItemPayTo } from "./listTransactions200TransactionsItemPayTo";
 import type { ListTransactions200TransactionsItemStatus } from "./listTransactions200TransactionsItemStatus";
-import type { ListTransactions200TransactionsItemTagsItem } from "./listTransactions200TransactionsItemTagsItem";
+import type { ListTransactions200TransactionsItemSource } from "./listTransactions200TransactionsItemSource";
 
 export type ListTransactions200TransactionsItem = {
   id: string;
-  serieId: string;
-  type: ListTransactions200TransactionsItemType;
-  contextualizedType: ListTransactions200TransactionsItemContextualizedType;
+  organizationId: string;
+  /** @nullable */
+  accountId: string | null;
+  /** @nullable */
+  cardId: string | null;
+  /** @nullable */
+  recurringTransactionId: string | null;
+  /** @nullable */
+  statementId: string | null;
   title: string;
-  payTo: ListTransactions200TransactionsItemPayTo;
-  ownerId: string;
-  payToId: string;
-  ownerName: string;
-  amount: string;
-  dueDate: string;
+  /** @nullable */
+  description: string | null;
+  /** @nullable */
+  amount: string | null;
+  type: ListTransactions200TransactionsItemType;
+  date: string;
+  /** @nullable */
+  competenceDate: string | null;
+  status: ListTransactions200TransactionsItemStatus;
   /** @nullable */
   paidAt: string | null;
   /** @nullable */
-  valuePaid: number | null;
-  status: ListTransactions200TransactionsItemStatus;
-  overdueDays: number;
-  tags: ListTransactions200TransactionsItemTagsItem[];
+  paidAmount: string | null;
+  /** @nullable */
+  counterparty: string | null;
+  /** @nullable */
+  installmentNumber: number | null;
   /** @nullable */
   installmentsTotal: number | null;
+  source: ListTransactions200TransactionsItemSource;
+  categoryIds: string[];
   /** @nullable */
-  installmentsPaid: number | null;
+  transferPairId: string | null;
+  notifyEnabled: boolean;
   /** @nullable */
-  installmentIndex: number | null;
+  notifyTargetType: string | null;
   /** @nullable */
-  description: string | null;
+  notifyUserId: string | null;
+  /** @nullable */
+  notifyContactName: string | null;
+  /** @nullable */
+  notifyContactPhone: string | null;
+  notifyDaysBefore?: number[];
+  createdAt: string;
+  updatedAt: string;
 };

@@ -3,7 +3,7 @@
  * Do not edit manually.
  * HouseApp API
  * API for HouseApp
- * OpenAPI spec version: 1.5.1
+ * OpenAPI spec version: 1.5.2
  */
 
 export type ListTransactionsType =
@@ -11,7 +11,7 @@ export type ListTransactionsType =
 
 // eslint-disable-next-line @typescript-eslint/no-redeclare
 export const ListTransactionsType = {
-  all: "all",
   income: "income",
   expense: "expense",
+  transfer: "transfer",
 } as const;

@@ -1,4 +1,4 @@
-import { ChevronsUpDown, GalleryVerticalEnd, Plus, Settings2 } from 'lucide-react'
+import { ChevronsUpDown, Plus, Settings2 } from 'lucide-react'
 import { useState } from 'react'
 
 import { useListOrganizations } from '@/api/generated/api'
@@ -10,7 +10,6 @@ import {
   DropdownMenuItem,
   DropdownMenuLabel,
   DropdownMenuSeparator,
-  DropdownMenuShortcut,
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu'
 import {
@@ -32,8 +31,6 @@ export function TeamSwitcher() {
   const teams = (data?.organizations ?? []).map(org => ({
     id: org.slug,
     name: org.name,
-    logo: GalleryVerticalEnd,
-    plan: 'Enterprise',
   }))
 
   const activeTeam = teams.find(t => t.id === slug) ?? teams[0]
@@ -41,8 +38,6 @@ export function TeamSwitcher() {
   if (!activeTeam) {
     return null
   }
-
-  // sem logs
 
   return (
     <>
@@ -52,62 +47,52 @@ export function TeamSwitcher() {
             <DropdownMenuTrigger asChild>
               <SidebarMenuButton
                 type="button"
-                size="lg"
-                className="data-[state=open]:bg-sidebar-accent data-[state=open]:text-sidebar-accent-foreground"
+                className="h-10 rounded-lg border border-slate-200/80 bg-white/80 px-3 hover:bg-white data-[state=open]:bg-white group-data-[collapsible=icon]:hidden"
                 onClick={() => setOpenSelector(true)}
               >
-                <div className="bg-sidebar-primary text-sidebar-primary-foreground flex aspect-square size-8 items-center justify-center rounded-lg">
-                  <activeTeam.logo className="size-4" />
-                </div>
                 <div className="grid flex-1 text-left text-sm leading-tight">
-                  <span className="truncate font-medium">{activeTeam.name}</span>
-                  <span className="truncate text-xs">{activeTeam.plan}</span>
+                  <span className="truncate text-[11px] font-medium uppercase tracking-wide text-slate-500">
+                    Organização
+                  </span>
+                  <span className="truncate font-semibold text-slate-900">{activeTeam.name}</span>
                 </div>
-                <ChevronsUpDown className="ml-auto" />
+                <ChevronsUpDown className="ml-auto size-4 text-slate-400" />
               </SidebarMenuButton>
             </DropdownMenuTrigger>
             <DropdownMenuContent
-              className="w-(--radix-dropdown-menu-trigger-width) min-w-56 rounded-lg"
+              className="min-w-56 rounded-lg"
               align="start"
               side={isMobile ? 'bottom' : 'right'}
               sideOffset={4}
               collisionPadding={8}
             >
-              <DropdownMenuLabel className="text-muted-foreground text-xs">Teams</DropdownMenuLabel>
-              {teams.map((team, index) => (
+              <DropdownMenuLabel className="text-xs text-muted-foreground">
+                Organizações
+              </DropdownMenuLabel>
+              {teams.map(team => (
                 <DropdownMenuItem
                   key={team.id}
                   onSelect={() => {
                     setOrganization(team.id)
                     setOpenSelector(false)
-                    if (isMobile) {
-                      setTimeout(() => setOpenMobile(false), 50)
-                    }
+                    if (isMobile) setOpenMobile(false)
                   }}
                   className={cn(
-                    'gap-2 p-2',
-                    team.id === activeTeam.id && 'bg-sidebar-accent text-sidebar-accent-foreground'
+                    'rounded-lg',
+                    team.id === activeTeam.id && 'bg-slate-100 font-medium'
                   )}
                 >
-                  <div className="flex size-6 items-center justify-center rounded-md border">
-                    <team.logo />
-                  </div>
                   {team.name}
-                  <DropdownMenuShortcut>⌘{index + 1}</DropdownMenuShortcut>
                 </DropdownMenuItem>
               ))}
               <DropdownMenuSeparator />
-              <DropdownMenuItem className="gap-2 p-2" onClick={() => setOpenCreate(true)}>
-                <div className="flex size-6 items-center justify-center rounded-md border bg-transparent">
-                  <Plus className="size-4" />
-                </div>
-                <div className="text-muted-foreground font-medium">Adicionar</div>
+              <DropdownMenuItem className="rounded-lg" onClick={() => setOpenCreate(true)}>
+                <Plus className="size-4" />
+                Adicionar organização
               </DropdownMenuItem>
-              <DropdownMenuItem className="gap-2 p-2" onClick={() => setOpenEdit(true)}>
-                <div className="flex size-6 items-center justify-center rounded-md border bg-transparent">
-                  <Settings2 className="size-4" />
-                </div>
-                <div className="text-muted-foreground font-medium">Configurar</div>
+              <DropdownMenuItem className="rounded-lg" onClick={() => setOpenEdit(true)}>
+                <Settings2 className="size-4" />
+                Configurar organização
               </DropdownMenuItem>
             </DropdownMenuContent>
           </DropdownMenu>

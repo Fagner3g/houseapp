@@ -2,7 +2,7 @@ import { defineConfig } from 'drizzle-kit'
 
 // Função simplificada para obter a URL do banco sem dependências complexas
 function getDatabaseUrl(): string {
-  const dbName = process.env.DB_NAME || 'houseapp'
+  const dbName = process.env.DB_NAME || 'houseapp_v2'
   const host = process.env.DB_HOST || 'localhost'
   const port = process.env.DB_PORT || '5432'
   const username = process.env.DB_USER || 'postgres'

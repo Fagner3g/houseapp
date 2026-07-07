@@ -2,8 +2,8 @@ import { eq } from 'drizzle-orm'
 
 import { db } from '@/db'
 import { invites } from '@/db/schemas/invites'
-import { organizations } from '@/db/schemas/organization'
-import { userOrganizations } from '@/db/schemas/userOrganization'
+import { organizationMembers } from '@/db/schemas/organizationMembers'
+import { organizations } from '@/db/schemas/organizations'
 import { users } from '@/db/schemas/users'
 import type { CreateInviteRequest, GetInviteRequest } from './models'
 
@@ -13,15 +13,16 @@ async function createInvite({ email, userId, orgId }: CreateInviteRequest) {
     .values({
       organizationId: orgId,
       email,
-      userId,
+      invitedBy: userId,
     })
     .returning()
 
   await db
-    .insert(userOrganizations)
+    .insert(organizationMembers)
     .values({
       userId,
       organizationId: orgId,
+      role: 'member',
     })
     .returning()
 
@@ -39,7 +40,7 @@ async function getInvites({ email }: GetInviteRequest) {
     })
     .from(invites)
     .leftJoin(organizations, eq(invites.organizationId, organizations.id))
-    .innerJoin(users, eq(invites.userId, users.id))
+    .innerJoin(users, eq(invites.invitedBy, users.id))
     .where(eq(invites.email, email))
 
   return { invites: resp }

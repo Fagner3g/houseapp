@@ -1,0 +1,2358 @@
+import { zodResolver } from '@hookform/resolvers/zod'
+import { useNavigate, useRouterState } from '@tanstack/react-router'
+import dayjs from 'dayjs'
+import { ChevronDown, Download, ExternalLink, FileText, Plus, Trash2, X } from 'lucide-react'
+import { useEffect, useLayoutEffect, useMemo, useRef, useState, useCallback } from 'react'
+import { useForm, useFormState } from 'react-hook-form'
+import { z } from 'zod'
+
+import {
+  getGetSplitDebtSummaryQueryKey,
+  getGetTransactionQueryKey,
+  getListSplitsQueryKey,
+  getListTransactionsQueryKey,
+  useCancelTransactionPayment,
+  useCreateRecurringTransaction,
+  useCreateSplit,
+  useCreateTransaction,
+  useGetInstallmentSeries,
+  useGetSplitDebtSummary,
+  useGetTransaction,
+  useListAccounts,
+  useListAttachments,
+  useListCards,
+  useListSplits,
+  useListUsersByOrg,
+  usePayTransaction,
+  useRegisterSplitPayment,
+  useUpdateTransaction,
+} from '@/api/generated/api'
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from '@/components/ui/alert-dialog'
+import { Button } from '@/components/ui/button'
+import { CurrencyInput } from '@/components/ui/currency-input'
+import { DatePickerInput } from '@/components/ui/date-picker-field'
+import {
+  Drawer,
+  DrawerContent,
+  DrawerFooter,
+  DrawerHeader,
+  DrawerTitle,
+} from '@/components/ui/drawer'
+import {
+  Form,
+  FormControl,
+  FormErrorBanner,
+  FormField,
+  FormItem,
+  FormLabel,
+  FormRequiredMark,
+  buildRequiredFieldsMessage,
+} from '@/components/ui/form'
+import { Input } from '@/components/ui/input'
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from '@/components/ui/select'
+import { Textarea } from '@/components/ui/textarea'
+import { ToggleGroup, ToggleGroupItem } from '@/components/ui/toggle-group'
+import { useActiveOrganization } from '@/hooks/use-active-organization'
+import {
+  downloadTransactionAttachment,
+  uploadTransactionAttachment,
+} from '@/lib/attachments'
+import { centsStringToNumber, formatCentsString, moneyStringToReais, reaisToCentsString, reaisToMoneyString } from '@/lib/currency'
+import { readHttpErrorMessage } from '@/lib/http'
+import {
+  formatInvoiceLabel,
+  resolveBillingCycleForPurchaseDate,
+} from '@/lib/billing-cycle'
+import {
+  isOnCanonicalInvoiceView,
+  resolveInvoicePaymentTarget,
+} from '@/lib/invoice-payment'
+import { selectNestedDrawerOpen, useDrawerStore } from '@/stores/drawers'
+import { cn } from '@/lib/utils'
+import {
+  stackyDrawerContent,
+  stackyDrawerOverlay,
+  stackyDrawerOverlayNested,
+  stackyDrawerOverlaySuppressed,
+  stackyDrawerLabelRow,
+  stackyDrawerFormLabelSlot,
+  stackyDrawerAddButton,
+  stackyDrawerFooter,
+  stackyDrawerHeader,
+  stackyDrawerTitle,
+  stackyDrawerCloseButton,
+  stackyDrawerLabel,
+  stackyDrawerForm,
+  stackyDrawerPanel,
+  stackyDrawerFormRow,
+  stackyDrawerFormItem,
+  stackyDrawerPanelMuted,
+  stackyRecurrencePanel,
+  stackyRecurrenceSegmentedControl,
+  stackyRecurrenceSegmentItem,
+  stackySelectTrigger,
+  stackySelectItem,
+  stackyFilePickerButton,
+  stackyTypeSegmentedControl,
+  stackyTypeSegmentItem,
+  stackyPrimaryButton,
+  stackySecondaryButton,
+  stackySegmentedControl,
+  stackySegmentItem,
+  stackySegmentItemExpense,
+  stackySegmentItemIncome,
+  stackySegmentItemTransfer,
+} from '@/lib/ui-classes'
+import { useQueryClient } from '@tanstack/react-query'
+import { toast } from 'sonner'
+
+import { buildSplitCreateBody } from '@/features/accounts/components/import-review-types'
+import {
+  defaultSplitDraftState,
+  TransactionSplitsDraftSection,
+  validateSplitDraft,
+  type SplitDraftState,
+} from './transaction-splits-draft-section'
+import { TransactionFooterSummary } from './transaction-footer-summary'
+import { TransactionSplitsSection } from './transaction-splits-section'
+import { DeleteTransactionDialog } from './delete-transaction-dialog'
+import { canDeleteTransaction } from '@/features/transactions/utils/can-delete-transaction'
+import {
+  buildNotifyApiPayload,
+  defaultNotifyState,
+  notifyStateFromTransaction,
+  TransactionRemindersSection,
+  type TransactionNotifyState,
+} from './transaction-reminders-section'
+import { AccountDrawer } from '@/features/accounts/components/account-drawer'
+import { AccountSelect } from '@/features/accounts/components/account-select'
+import { CardDrawer } from '@/features/accounts/components/card-drawer'
+import { CategoryDrawer } from '@/features/categories/components/category-drawer'
+import { CategorySelect } from '@/features/categories/components/category-select'
+import {
+  resolveTransactionInstallmentAmountReais,
+  resolveTransactionInstallmentRemainingReais,
+} from '@/features/transactions/installment-amount.utils'
+import {
+  parseTransactionPeriodicity,
+  RECURRING_DURATION_OPTIONS,
+  TRANSACTION_PERIODICITY_OPTIONS,
+} from '../constants'
+import { InstallmentPreviewPanel } from './installment-preview-panel'
+import {
+  AdvanceInstallmentsPicker,
+  computeAdvancePaymentTotalReais,
+} from './advance-installments-picker'
+import { buildInstallmentPreview } from '../installment-preview'
+import {
+  buildUnsettledSplitItems,
+  type UnsettledSplitItem,
+} from '../split-debt-summary.utils'
+import {
+  SplitPaymentConfirmDialog,
+  SplitPaymentPayBanner,
+} from './split-payment-confirm-dialog'
+
+const transactionSchema = z
+  .object({
+    type: z.enum(['expense', 'income', 'transfer']),
+    title: z.string().min(1, 'Descrição obrigatória'),
+    amount: z.number().positive('Valor obrigatório'),
+    date: z.string().min(1),
+    competenceDate: z.string().optional(),
+    accountId: z.string().optional(),
+    transferToAccountId: z.string().optional(),
+    cardId: z.string().optional(),
+    categoryId: z.string().optional(),
+    status: z.enum(['pending', 'paid']),
+    description: z.string().optional(),
+    recurrence: z.enum(['once', 'installment', 'recurring']),
+    periodicity: z
+      .enum([
+        'weekly-1',
+        'weekly-2',
+        'monthly-1',
+        'monthly-2',
+        'monthly-3',
+        'monthly-6',
+        'yearly-1',
+      ])
+      .default('monthly-1'),
+    installmentsTotal: z.coerce.number().int().min(2).optional(),
+    recurringDuration: z.enum(['infinite', 'times', 'until']).default('times'),
+    recurringRepetitions: z.coerce.number().int().min(1).optional(),
+    recurringEndDate: z.string().optional(),
+    paidAt: z.string().optional(),
+    paidAmount: z.number().optional(),
+  })
+  .superRefine((values, ctx) => {
+    if (values.type === 'transfer') {
+      if (!values.accountId) {
+        ctx.addIssue({
+          code: z.ZodIssueCode.custom,
+          message: 'Selecione a conta de origem',
+          path: ['accountId'],
+        })
+      }
+      if (!values.transferToAccountId) {
+        ctx.addIssue({
+          code: z.ZodIssueCode.custom,
+          message: 'Selecione a conta de destino',
+          path: ['transferToAccountId'],
+        })
+      }
+      return
+    }
+
+    if (!values.categoryId) {
+      ctx.addIssue({
+        code: z.ZodIssueCode.custom,
+        message: 'Selecione uma categoria',
+        path: ['categoryId'],
+      })
+    }
+    if (!values.accountId) {
+      ctx.addIssue({
+        code: z.ZodIssueCode.custom,
+        message: 'Selecione uma conta',
+        path: ['accountId'],
+      })
+    }
+
+    if (values.recurrence === 'recurring') {
+      if (values.recurringDuration === 'times' && !values.recurringRepetitions) {
+        ctx.addIssue({
+          code: z.ZodIssueCode.custom,
+          message: 'Informe o número de repetições',
+          path: ['recurringRepetitions'],
+        })
+      }
+      if (values.recurringDuration === 'until' && !values.recurringEndDate) {
+        ctx.addIssue({
+          code: z.ZodIssueCode.custom,
+          message: 'Informe a data final',
+          path: ['recurringEndDate'],
+        })
+      }
+    }
+  })
+
+type TransactionFormValues = z.infer<typeof transactionSchema>
+
+const payTransactionSchema = z.object({
+  paidAmount: z.number().positive('Valor obrigatório'),
+  paidAt: z.string().min(1, 'Data obrigatória'),
+})
+
+function isTransactionPartial(status: string | undefined): boolean {
+  return status === 'partial'
+}
+
+function resolveTransactionDisplayStatus(
+  txStatus: string | undefined,
+  formStatus: 'pending' | 'paid'
+): 'paid' | 'partial' | 'pending' {
+  if (txStatus === 'paid') return 'paid'
+  if (isTransactionPartial(txStatus)) return 'partial'
+  if (txStatus === 'canceled') return 'pending'
+  return formStatus
+}
+
+function defaultFormValues(): TransactionFormValues {
+  return {
+    type: 'expense',
+    title: '',
+    amount: 0,
+    date: dayjs().format('YYYY-MM-DD'),
+    status: 'pending',
+    recurrence: 'once',
+    periodicity: 'monthly-1',
+    installmentsTotal: 2,
+    recurringDuration: 'times',
+    recurringRepetitions: 2,
+    recurringEndDate: dayjs().format('YYYY-MM-DD'),
+    paidAt: dayjs().format('YYYY-MM-DD'),
+    paidAmount: 0,
+  }
+}
+
+type AccountOption = {
+  id: string
+  type: string
+  name: string
+  cards?: Array<{ id: string }>
+}
+
+function resolveFormAccountId(
+  tx: { accountId?: string | null; cardId?: string | null },
+  options: {
+    draftAccountId?: string | null
+    lockedAccountId?: string | null
+    accounts: AccountOption[]
+  }
+): string | undefined {
+  if (tx.accountId) return tx.accountId
+
+  if (tx.cardId) {
+    const account = options.accounts.find(item =>
+      item.cards?.some(card => card.id === tx.cardId)
+    )
+    if (account) return account.id
+  }
+
+  if (options.draftAccountId) return options.draftAccountId
+  if (options.lockedAccountId) return options.lockedAccountId
+
+  return undefined
+}
+
+export function TransactionDrawer() {
+  const { slug } = useActiveOrganization()
+  const navigate = useNavigate()
+  const pathname = useRouterState({ select: state => state.location.pathname })
+  const routeSearch = useRouterState({
+    select: state => state.location.search as { accountId?: string; month?: string },
+  })
+  const open = useDrawerStore(s => s.transactionDrawerOpen)
+  const mode = useDrawerStore(s => s.transactionDrawerMode)
+  const draft = useDrawerStore(s => s.transactionDraft)
+  const lockedAccountId = useDrawerStore(s => s.lockedAccountId)
+  const editingId = useDrawerStore(s => s.editingTransactionId)
+  const close = useDrawerStore(s => s.closeTransactionDrawer)
+  const openAccountDrawer = useDrawerStore(s => s.openAccountDrawer)
+  const openCategoryDrawer = useDrawerStore(s => s.openCategoryDrawer)
+  const closeNestedDrawers = useDrawerStore(s => s.closeNestedDrawers)
+  const nestedDrawerOpen = useDrawerStore(selectNestedDrawerOpen)
+  const queryClient = useQueryClient()
+
+  const { mutateAsync: createTransaction, isPending: isCreating } = useCreateTransaction()
+  const { mutateAsync: createSplit } = useCreateSplit()
+  const { mutateAsync: updateTransaction, isPending: isUpdating } = useUpdateTransaction()
+  const { mutateAsync: payTransaction, isPending: isPaying } = usePayTransaction()
+  const { mutateAsync: registerSplitPayment, isPending: isRegisteringSplitPayment } =
+    useRegisterSplitPayment()
+  const { mutateAsync: cancelTransactionPayment, isPending: isCancelingPayment } =
+    useCancelTransactionPayment()
+  const { mutateAsync: createRecurring, isPending: isCreatingRecurring } =
+    useCreateRecurringTransaction()
+
+  const { data: accountsData } = useListAccounts(slug, { query: { enabled: !!slug && open } })
+  const activeAccounts = accountsData?.accounts ?? []
+  const effectiveLockedAccountId = useMemo(() => {
+    if (!lockedAccountId) return null
+    return activeAccounts.some(account => account.id === lockedAccountId) ? lockedAccountId : null
+  }, [lockedAccountId, activeAccounts])
+  const { data: transactionData, isLoading: isLoadingTx, isError: isTxError } = useGetTransaction(slug, editingId ?? '', {
+    query: { enabled: !!slug && !!editingId && open && mode !== 'create' },
+  })
+
+  const [notesOpen, setNotesOpen] = useState(false)
+  const [deleteDialogOpen, setDeleteDialogOpen] = useState(false)
+  const [notifyState, setNotifyState] = useState<TransactionNotifyState>(defaultNotifyState())
+  const [splitDraft, setSplitDraft] = useState<SplitDraftState>(defaultSplitDraftState())
+  const [pendingFiles, setPendingFiles] = useState<File[]>([])
+  const [advancePromptOpen, setAdvancePromptOpen] = useState(false)
+  const [cancelPaymentDialogOpen, setCancelPaymentDialogOpen] = useState(false)
+  const [showAdvancePicker, setShowAdvancePicker] = useState(false)
+  const [selectedAdvanceIds, setSelectedAdvanceIds] = useState<string[]>([])
+  const [splitPaymentConfirmOpen, setSplitPaymentConfirmOpen] = useState(false)
+  const pendingPaymentRef = useRef<(() => Promise<void>) | null>(null)
+  const fileInputRef = useRef<HTMLInputElement>(null)
+
+  const isEdit = mode === 'edit'
+  const isPay = mode === 'pay'
+
+  const form = useForm<TransactionFormValues>({
+    resolver: (values, context, options) => {
+      const schema = isPay ? payTransactionSchema : transactionSchema
+      return zodResolver(schema)(values, context, options)
+    },
+    defaultValues: defaultFormValues(),
+  })
+
+  const tx = transactionData?.transaction
+
+  const pairedTransactionId = tx?.transferPairId ?? null
+  const { data: pairedTransactionData } = useGetTransaction(slug, pairedTransactionId ?? '', {
+    query: {
+      enabled: !!slug && !!pairedTransactionId && open && mode !== 'create',
+    },
+  })
+
+  const { data: attachmentsData } = useListAttachments(
+    slug,
+    editingId ?? '',
+    { query: { enabled: !!slug && !!editingId && open && isEdit } }
+  )
+
+  const { data: splitDebtSummaryData } = useGetSplitDebtSummary(slug, editingId ?? '', {
+    query: { enabled: !!slug && !!editingId && open && (isEdit || isPay) },
+  })
+  const { data: splitsData } = useListSplits(slug, editingId ?? '', {
+    query: { enabled: !!slug && !!editingId && open && (isEdit || isPay) },
+  })
+  const { data: orgMembersData } = useListUsersByOrg(slug, {
+    query: { enabled: !!slug && open && (isEdit || isPay) },
+  })
+  const transactionSplits = splitsData?.splits ?? []
+  const orgMembers = orgMembersData?.users ?? []
+
+  const resolveSplitLabel = useCallback(
+    (split: (typeof transactionSplits)[number]) => {
+      if (split.userId) {
+        return orgMembers.find(member => member.id === split.userId)?.name ?? 'Membro'
+      }
+      return split.contactName ?? 'Contato'
+    },
+    [orgMembers]
+  )
+
+  const installmentSummary =
+    splitDebtSummaryData && (tx?.installmentsTotal ?? 0) > 1 ? splitDebtSummaryData : undefined
+  const splitDebtSummary = installmentSummary?.persons.length ? installmentSummary : undefined
+
+  const splitInstallmentContext = useMemo(
+    () => ({
+      debtSummary: splitDebtSummary,
+      installmentNumber: tx?.installmentNumber,
+      installmentsTotal: tx?.installmentsTotal,
+    }),
+    [splitDebtSummary, tx?.installmentNumber, tx?.installmentsTotal]
+  )
+
+  const unsettledSplitItems = useMemo(
+    () => buildUnsettledSplitItems(transactionSplits, resolveSplitLabel, splitInstallmentContext),
+    [transactionSplits, resolveSplitLabel, splitInstallmentContext]
+  )
+
+  const hasInstallmentContext =
+    (tx?.installmentsTotal ?? 0) > 1 && tx?.installmentNumber != null
+
+  const { data: installmentSeriesData, refetch: refetchInstallmentSeries } =
+    useGetInstallmentSeries(slug, editingId ?? '', {
+      query: {
+        enabled: !!slug && !!editingId && open && isPay && hasInstallmentContext,
+      },
+    })
+
+  const selectedAccountId = form.watch('accountId')
+  const purchaseDate = form.watch('date')
+  const selectedAccount = accountsData?.accounts?.find(a => a.id === selectedAccountId)
+  const isCreditCard = selectedAccount?.type === 'credit_card'
+  const txType = form.watch('type')
+  const isCreditCardExpense =
+    isCreditCard && (isEdit || isPay ? tx?.type === 'expense' : txType === 'expense')
+
+  const creditCardInvoiceLabel = useMemo(() => {
+    if (!isCreditCardExpense || !selectedAccount) return null
+    const closing = selectedAccount.closingDay ?? 1
+    const due = selectedAccount.dueDay ?? 10
+    const cycle = resolveBillingCycleForPurchaseDate(closing, due, purchaseDate)
+    return formatInvoiceLabel(cycle.monthKey)
+  }, [isCreditCardExpense, selectedAccount, purchaseDate])
+
+  const invoiceTarget =
+    tx && selectedAccount
+      ? resolveInvoicePaymentTarget(
+          tx,
+          selectedAccount.type,
+          accountsData?.accounts ?? [],
+          pairedTransactionData?.transaction ?? null
+        )
+      : null
+
+  const viewingInvoice =
+    invoiceTarget && isOnCanonicalInvoiceView(pathname, routeSearch, invoiceTarget)
+
+  const deletable = canDeleteTransaction(tx)
+
+  const openPaidInvoice = () => {
+    if (!invoiceTarget) return
+    navigate({
+      to: '/$org/accounts',
+      params: { org: slug },
+      search: { accountId: invoiceTarget.accountId, month: invoiceTarget.monthKey },
+    })
+    close()
+  }
+
+  const { data: cardsData } = useListCards(slug, selectedAccountId ?? '', {
+    query: { enabled: !!slug && !!selectedAccountId && isCreditCard && open },
+  })
+
+  const cards =
+    selectedAccount?.cards?.length
+      ? selectedAccount.cards
+      : cardsData?.cards?.map(c => ({
+          id: c.id,
+          label: c.label,
+          lastFourDigits: c.lastFourDigits,
+          status: c.status,
+        })) ?? []
+
+  const selectableCards = cards.filter(
+    card => !('status' in card) || !card.status || card.status === 'active'
+  )
+
+  const isAccountLocked = !!effectiveLockedAccountId
+  const waitingForTransaction = (isEdit || isPay) && (isLoadingTx || (!tx && !isTxError))
+
+  useEffect(() => {
+    if (!open) {
+      setPendingFiles([])
+      setNotesOpen(false)
+      setNotifyState(defaultNotifyState())
+      setSplitDraft(defaultSplitDraftState())
+      setAdvancePromptOpen(false)
+      setSplitPaymentConfirmOpen(false)
+      pendingPaymentRef.current = null
+      setShowAdvancePicker(false)
+      setSelectedAdvanceIds([])
+      form.reset(defaultFormValues())
+      return
+    }
+  }, [open, form])
+
+  useLayoutEffect(() => {
+    if (!open || (!isEdit && !isPay) || !tx || tx.id !== editingId) return
+
+    const accountId = resolveFormAccountId(tx, {
+      draftAccountId: draft?.accountId,
+      lockedAccountId: effectiveLockedAccountId,
+      accounts: activeAccounts,
+    })
+
+    if (isPay) {
+      const remaining = resolveTransactionInstallmentRemainingReais(tx, installmentSummary)
+      const installmentAmount = resolveTransactionInstallmentAmountReais(tx, installmentSummary)
+      form.reset({
+        ...defaultFormValues(),
+        title: tx.title,
+        amount: centsStringToNumber(tx.amount),
+        paidAt: dayjs().format('YYYY-MM-DD'),
+        paidAmount: remaining > 0 ? remaining : installmentAmount,
+        accountId,
+      })
+      return
+    }
+
+    form.reset({
+      ...defaultFormValues(),
+      type: tx.type as TransactionFormValues['type'],
+      title: tx.title,
+      amount: centsStringToNumber(tx.amount),
+      date: dayjs(tx.date).format('YYYY-MM-DD'),
+      competenceDate: tx.competenceDate
+        ? dayjs(tx.competenceDate).format('YYYY-MM-DD')
+        : undefined,
+      accountId,
+      cardId: tx.cardId ?? undefined,
+      categoryId: tx.categoryIds?.[0] ?? draft?.categoryIds?.[0],
+      status: tx.status === 'paid' ? 'paid' : 'pending',
+      paidAt: tx.paidAt ? dayjs(tx.paidAt).format('YYYY-MM-DD') : dayjs().format('YYYY-MM-DD'),
+      paidAmount: 0,
+      description: tx.description ?? '',
+      recurrence: tx.installmentsTotal ? 'installment' : 'once',
+      installmentsTotal: tx.installmentsTotal ?? undefined,
+    })
+    setNotifyState(notifyStateFromTransaction(tx, [1, 3, 7]))
+  }, [
+    open,
+    isEdit,
+    isPay,
+    editingId,
+    tx,
+    draft?.categoryIds,
+    draft?.accountId,
+    effectiveLockedAccountId,
+    activeAccounts,
+    form,
+    installmentSummary,
+  ])
+
+  useEffect(() => {
+    if (!open || (!isEdit && !isPay) || !tx || tx.id !== editingId) return
+
+    const accountId = resolveFormAccountId(tx, {
+      draftAccountId: draft?.accountId,
+      lockedAccountId: effectiveLockedAccountId,
+      accounts: activeAccounts,
+    })
+    if (!accountId || form.getValues('accountId') === accountId) return
+
+    form.setValue('accountId', accountId)
+  }, [
+    open,
+    isEdit,
+    isPay,
+    tx,
+    editingId,
+    draft?.accountId,
+    effectiveLockedAccountId,
+    activeAccounts,
+    form,
+  ])
+
+  useEffect(() => {
+    if (!open || isEdit || isPay) return
+
+    form.reset({
+      ...defaultFormValues(),
+      type: (draft?.type as TransactionFormValues['type']) ?? 'expense',
+      title: draft?.title ?? '',
+      amount: draft?.amount ? centsStringToNumber(draft.amount) : 0,
+      date: draft?.date ? dayjs(draft.date).format('YYYY-MM-DD') : dayjs().format('YYYY-MM-DD'),
+      competenceDate: draft?.competenceDate
+        ? dayjs(draft.competenceDate).format('YYYY-MM-DD')
+        : undefined,
+      accountId: draft?.accountId ?? effectiveLockedAccountId ?? activeAccounts[0]?.id,
+      cardId: draft?.cardId ?? undefined,
+      categoryId: draft?.categoryIds?.[0],
+      status: (draft?.status as TransactionFormValues['status']) ?? 'pending',
+      description: draft?.description ?? '',
+    })
+  }, [open, isEdit, isPay, draft, form, effectiveLockedAccountId, activeAccounts])
+
+  useEffect(() => {
+    if (!open || !effectiveLockedAccountId) return
+    if (form.getValues('accountId') !== effectiveLockedAccountId) {
+      form.setValue('accountId', effectiveLockedAccountId)
+    }
+  }, [open, effectiveLockedAccountId, form])
+
+  useEffect(() => {
+    if (!open || !isCreditCard || selectableCards.length !== 1) return
+    if (!form.getValues('cardId')) {
+      form.setValue('cardId', selectableCards[0]!.id)
+    }
+  }, [open, isCreditCard, selectableCards, form])
+
+  useEffect(() => {
+    if (!open || !isPay || !tx || isLoadingTx) return
+
+    const account = accountsData?.accounts?.find(a => a.id === tx.accountId)
+    if (account?.type === 'credit_card' && tx.type === 'expense') {
+      toast.info('Compras no cartão são quitadas pelo pagamento da fatura.')
+      close()
+    }
+  }, [open, isPay, tx, isLoadingTx, accountsData?.accounts, close])
+
+  const amount = form.watch('amount')
+  const installmentsTotal = form.watch('installmentsTotal')
+  const paidAmountWatched = form.watch('paidAmount')
+  const periodicity = form.watch('periodicity')
+
+  useEffect(() => {
+    if (!open) return
+    setSplitDraft(prev => {
+      if (prev.splitMode === 'none' || prev.splitMode === 'custom') return prev
+      const splitAmountReais = prev.splitMode === 'half' ? amount / 2 : amount
+      if (prev.splitAmountReais === splitAmountReais) return prev
+      return { ...prev, splitAmountReais }
+    })
+  }, [open, amount])
+
+  const status = form.watch('status')
+  const recurrence = form.watch('recurrence')
+  const recurringDuration = form.watch('recurringDuration')
+
+  useEffect(() => {
+    if (!open || !isEdit || isPay || !tx) return
+    if (status !== 'paid' || tx.status === 'paid') return
+
+    const remaining = resolveTransactionInstallmentRemainingReais(tx, installmentSummary)
+    if (remaining > 0 && (form.getValues('paidAmount') ?? 0) <= 0) {
+      form.setValue('paidAmount', remaining)
+    }
+  }, [open, isEdit, isPay, status, tx, form, installmentSummary])
+
+  const installmentAmountReais = useMemo(
+    () => resolveTransactionInstallmentAmountReais(tx, installmentSummary),
+    [tx, installmentSummary]
+  )
+  const installmentRemainingReais = useMemo(
+    () => resolveTransactionInstallmentRemainingReais(tx, installmentSummary),
+    [tx, installmentSummary]
+  )
+
+  useEffect(() => {
+    if (!isPay || !showAdvancePicker) return
+    const paymentAmount = paidAmountWatched ?? 0
+    if (paymentAmount <= installmentRemainingReais) {
+      setShowAdvancePicker(false)
+      setSelectedAdvanceIds([])
+    }
+  }, [isPay, showAdvancePicker, paidAmountWatched, installmentRemainingReais])
+
+  const installmentPaidReais = useMemo(
+    () => moneyStringToReais(tx?.paidAmount),
+    [tx?.paidAmount]
+  )
+  const displayStatus = resolveTransactionDisplayStatus(tx?.status, status)
+  const isPaidLocked = isEdit && tx?.status === 'paid'
+  const showPaymentFields =
+    !isCreditCardExpense &&
+    (isPay ||
+      (isEdit &&
+        tx?.status !== 'paid' &&
+        (status === 'paid' || isTransactionPartial(tx?.status))))
+
+  const installmentPreview = useMemo(() => {
+    if (recurrence !== 'installment') return null
+    return buildInstallmentPreview({
+      totalAmount: amount,
+      installmentsTotal: installmentsTotal ?? 0,
+      startDate: purchaseDate,
+      periodicity,
+      account: selectedAccount,
+      isCreditCardExpense,
+      split:
+        splitDraft.splitMode !== 'none'
+          ? {
+              splitMode: splitDraft.splitMode,
+              splitAmountReais: splitDraft.splitAmountReais,
+            }
+          : null,
+    })
+  }, [
+    recurrence,
+    amount,
+    installmentsTotal,
+    purchaseDate,
+    periodicity,
+    selectedAccount,
+    isCreditCardExpense,
+    splitDraft.splitMode,
+    splitDraft.splitAmountReais,
+  ])
+
+  const isTransfer = txType === 'transfer'
+  const showSplitDraft =
+    !isPay && !isTransfer && !isEdit && txType === 'expense' && recurrence !== 'recurring'
+  const showCardField = !isTransfer && isCreditCard && selectableCards.length > 1
+  const isPending =
+    isCreating ||
+    isUpdating ||
+    isPaying ||
+    isRegisteringSplitPayment ||
+    isCreatingRecurring ||
+    isCancelingPayment
+  const advancePaymentTotalReais = useMemo(() => {
+    if (!showAdvancePicker) return installmentRemainingReais
+    return computeAdvancePaymentTotalReais(
+      installmentRemainingReais,
+      installmentSeriesData?.installments ?? [],
+      selectedAdvanceIds
+    )
+  }, [
+    showAdvancePicker,
+    installmentRemainingReais,
+    installmentSeriesData?.installments,
+    selectedAdvanceIds,
+  ])
+  const canConfirmPay = useMemo(() => {
+    if (!isPay) return true
+    const paymentAmount = paidAmountWatched ?? 0
+    if (paymentAmount <= 0) return false
+    if (paymentAmount <= installmentRemainingReais) return true
+    if (!showAdvancePicker) return true
+    if (selectedAdvanceIds.length === 0) return false
+    return Math.abs(paymentAmount - advancePaymentTotalReais) < 0.005
+  }, [
+    isPay,
+    paidAmountWatched,
+    installmentRemainingReais,
+    showAdvancePicker,
+    selectedAdvanceIds.length,
+    advancePaymentTotalReais,
+  ])
+  const { isSubmitted, errors } = useFormState({ control: form.control })
+
+  const validationErrorMessage = isSubmitted
+    ? buildRequiredFieldsMessage(
+        errors,
+        isPay
+          ? {
+              paidAmount: 'valor pago',
+              paidAt: 'data do pagamento',
+            }
+          : {
+              title: 'descrição',
+              amount: 'valor',
+              categoryId: 'categoria',
+              accountId: 'conta',
+              transferToAccountId: 'conta destino',
+              recurringRepetitions: 'repetições',
+              recurringEndDate: 'data final',
+            }
+      )
+    : null
+
+  const invalidateAll = () => {
+    queryClient.invalidateQueries({ queryKey: getListTransactionsQueryKey(slug) })
+    queryClient.invalidateQueries()
+  }
+
+  const uploadPendingFiles = async (transactionId: string) => {
+    for (const file of pendingFiles) {
+      await uploadTransactionAttachment(slug!, transactionId, file)
+    }
+    setPendingFiles([])
+  }
+
+  const applyDraftSplits = async (
+    transactions: Array<{
+      id: string
+      amount: string | null
+      installmentNumber?: number | null
+      installmentsTotal?: number | null
+    }>
+  ): Promise<number> => {
+    if (splitDraft.splitMode === 'none') return 0
+
+    let created = 0
+    for (const transaction of transactions) {
+      if (!transaction.amount) continue
+      const body = buildSplitCreateBody(transaction.amount, splitDraft, {
+        installmentsTotal: transaction.installmentsTotal,
+        installmentNumber: transaction.installmentNumber,
+      })
+      if (!body) continue
+      await createSplit({
+        slug: slug!,
+        transactionId: transaction.id,
+        data: body,
+      })
+      created += 1
+    }
+    return created
+  }
+
+  const invalidateSplits = () => {
+    if (!slug || !editingId) return
+    queryClient.invalidateQueries({ queryKey: getListSplitsQueryKey(slug, editingId) })
+    queryClient.invalidateQueries({ queryKey: getGetSplitDebtSummaryQueryKey(slug, editingId) })
+  }
+
+  const registerUnsettledSplitPayments = async (items: UnsettledSplitItem[]) => {
+    if (!slug || !editingId) return
+    for (const item of items) {
+      await registerSplitPayment({
+        slug,
+        transactionId: editingId,
+        id: item.split.id,
+        data: {
+          amount: reaisToMoneyString(item.remainingReais),
+          method: 'pix',
+        },
+      })
+    }
+    invalidateSplits()
+  }
+
+  const executeWithSplitCheck = async (executePayment: () => Promise<void>) => {
+    if (unsettledSplitItems.length === 0) {
+      await executePayment()
+      return
+    }
+    pendingPaymentRef.current = executePayment
+    setSplitPaymentConfirmOpen(true)
+  }
+
+  const handleSplitPaymentConfirm = async () => {
+    const pending = pendingPaymentRef.current
+    try {
+      await registerUnsettledSplitPayments(unsettledSplitItems)
+      setSplitPaymentConfirmOpen(false)
+      pendingPaymentRef.current = null
+      if (pending) await pending()
+    } catch {
+      toast.error('Erro ao registrar pagamento da divisão')
+    }
+  }
+
+  const handleSplitPaymentDecline = () => {
+    setSplitPaymentConfirmOpen(false)
+    pendingPaymentRef.current = null
+    toast.info(
+      'Registre o pagamento da divisão em "Divisões" antes de marcar a transação como paga.'
+    )
+  }
+
+  const onSubmit = async (values: TransactionFormValues) => {
+    if (!slug) return
+    if (isPaidLocked) return
+
+    const notifyPayload = buildNotifyApiPayload(notifyState)
+    if (notifyState.notifyEnabled && !notifyPayload.notifyEnabled) {
+      toast.error('Informe o responsável pelos lembretes')
+      return
+    }
+
+    if (showSplitDraft) {
+      const splitError = validateSplitDraft(splitDraft)
+      if (splitError) {
+        toast.error(splitError)
+        return
+      }
+    }
+
+    try {
+      if (isPay && editingId && tx) {
+        const remaining = installmentRemainingReais
+        const paymentAmount = values.paidAmount ?? 0
+
+        if (paymentAmount <= 0) {
+          toast.error('Informe o valor pago')
+          return
+        }
+
+        if (paymentAmount > remaining) {
+          if (!showAdvancePicker) {
+            setAdvancePromptOpen(true)
+            return
+          }
+
+          const installments = installmentSeriesData?.installments ?? []
+          const expectedTotal = computeAdvancePaymentTotalReais(
+            remaining,
+            installments,
+            selectedAdvanceIds
+          )
+
+          if (selectedAdvanceIds.length === 0) {
+            toast.error('Selecione ao menos uma parcela para adiantar')
+            return
+          }
+
+          if (Math.abs(paymentAmount - expectedTotal) >= 0.005) {
+            toast.error('Selecione parcelas que fechem exatamente com o valor pago')
+            return
+          }
+
+          await executeWithSplitCheck(async () => {
+            await payTransaction({
+              slug,
+              id: editingId,
+              data: {
+                paidAt: dayjs(values.paidAt).toISOString(),
+                paidAmount: reaisToMoneyString(paymentAmount),
+                advanceTransactionIds: selectedAdvanceIds,
+              },
+            })
+            toast.success('Pagamento registrado com adiantamento de parcelas')
+            invalidateAll()
+            close()
+          })
+          return
+        }
+
+        await executeWithSplitCheck(async () => {
+          await payTransaction({
+            slug,
+            id: editingId,
+            data: {
+              paidAt: dayjs(values.paidAt).toISOString(),
+              paidAmount: reaisToMoneyString(values.paidAmount ?? values.amount),
+            },
+          })
+          toast.success('Pagamento registrado')
+          invalidateAll()
+          close()
+        })
+        return
+      }
+
+      if (isEdit && editingId && tx) {
+        const remaining = installmentRemainingReais
+        const paymentAmount = values.paidAmount ?? 0
+        const registeringPayment =
+          tx.status !== 'paid' &&
+          paymentAmount > 0 &&
+          (values.status === 'paid' || isTransactionPartial(tx.status))
+
+        if (values.status === 'paid' && tx.status !== 'paid' && paymentAmount <= 0) {
+          toast.error('Informe o valor pago')
+          return
+        }
+
+        if (registeringPayment && paymentAmount > remaining) {
+          toast.error(`Valor excede o saldo da parcela (${formatCentsString(reaisToCentsString(remaining))})`)
+          return
+        }
+
+        if (values.status === 'pending' && installmentPaidReais > 0) {
+          toast.error('Não é possível voltar para pendente com pagamentos registrados')
+          return
+        }
+
+        if (registeringPayment) {
+          await executeWithSplitCheck(async () => {
+            await payTransaction({
+              slug,
+              id: editingId,
+              data: {
+                paidAt: dayjs(values.paidAt).toISOString(),
+                paidAmount: reaisToMoneyString(paymentAmount),
+              },
+            })
+
+            await updateTransaction({
+              slug,
+              id: editingId,
+              data: {
+                title: values.title,
+                type: values.type,
+                amount: reaisToMoneyString(values.amount),
+                date: dayjs(values.date).toISOString(),
+                competenceDate: values.competenceDate
+                  ? dayjs(values.competenceDate).toISOString()
+                  : null,
+                accountId: values.accountId ?? null,
+                cardId: values.cardId ?? null,
+                status: undefined,
+                description: values.description || null,
+                categoryIds: values.categoryId ? [values.categoryId] : [],
+                notifyEnabled: false,
+              },
+            })
+            if (pendingFiles.length) await uploadPendingFiles(editingId)
+            toast.success('Pagamento registrado')
+            invalidateAll()
+            close()
+          })
+          return
+        }
+
+        await updateTransaction({
+          slug,
+          id: editingId,
+          data: {
+            title: values.title,
+            type: values.type,
+            amount: reaisToMoneyString(values.amount),
+            date: dayjs(values.date).toISOString(),
+            competenceDate: values.competenceDate
+              ? dayjs(values.competenceDate).toISOString()
+              : null,
+            accountId: values.accountId ?? null,
+            cardId: values.cardId ?? null,
+            status:
+              registeringPayment || tx.status === 'paid'
+                ? undefined
+                : values.status === 'pending'
+                  ? 'pending'
+                  : undefined,
+            description: values.description || null,
+            categoryIds: values.categoryId ? [values.categoryId] : [],
+            ...(values.status === 'pending' && !registeringPayment
+              ? notifyPayload
+              : { notifyEnabled: false }),
+          },
+        })
+        if (pendingFiles.length) await uploadPendingFiles(editingId)
+        toast.success(registeringPayment ? 'Pagamento registrado' : 'Lançamento atualizado')
+        invalidateAll()
+        close()
+        return
+      }
+
+      if (values.recurrence === 'recurring') {
+        const { frequency, interval } = parseTransactionPeriodicity(values.periodicity)
+        await createRecurring({
+          slug,
+          data: {
+            title: values.title,
+            amount: reaisToMoneyString(values.amount),
+            type: values.type === 'income' ? 'income' : 'expense',
+            accountId: values.accountId ?? null,
+            categoryId: values.categoryId ?? null,
+            frequency,
+            interval,
+            startDate: dayjs(values.date).toISOString(),
+            installmentsTotal:
+              values.recurringDuration === 'times' ? values.recurringRepetitions ?? null : null,
+            endDate:
+              values.recurringDuration === 'until' && values.recurringEndDate
+                ? dayjs(values.recurringEndDate).toISOString()
+                : null,
+          },
+        })
+        toast.success('Recorrência criada')
+        invalidateAll()
+        close()
+        return
+      }
+
+      if (isTransfer) {
+        const fromName =
+          accountsData?.accounts?.find(a => a.id === values.accountId)?.name ?? 'Origem'
+        const toName =
+          accountsData?.accounts?.find(a => a.id === values.transferToAccountId)?.name ??
+          'Destino'
+        const title = values.title || `Transferência: ${fromName} → ${toName}`
+        const isoDate = dayjs(values.date).toISOString()
+        const amount = reaisToMoneyString(values.amount)
+
+        await createTransaction({
+          slug,
+          data: {
+            title,
+            type: 'expense',
+            amount,
+            date: isoDate,
+            accountId: values.accountId,
+            status: 'paid',
+            paidAt: isoDate,
+            paidAmount: amount,
+          },
+        })
+        await createTransaction({
+          slug,
+          data: {
+            title,
+            type: 'income',
+            amount,
+            date: isoDate,
+            accountId: values.transferToAccountId,
+            status: 'paid',
+            paidAt: isoDate,
+            paidAmount: amount,
+          },
+        })
+        toast.success('Transferência registrada')
+        invalidateAll()
+        close()
+        return
+      }
+
+      const result = await createTransaction({
+        slug,
+        data: {
+          title: values.title,
+          type: values.type,
+          amount: reaisToMoneyString(values.amount),
+          date: dayjs(values.date).toISOString(),
+          competenceDate: values.competenceDate
+            ? dayjs(values.competenceDate).toISOString()
+            : null,
+          accountId: values.accountId ?? null,
+          cardId: values.cardId ?? null,
+          status: values.status,
+          description: values.description || null,
+          categoryIds: values.categoryId ? [values.categoryId] : [],
+          installmentNumber: values.recurrence === 'installment' ? 1 : null,
+          installmentsTotal:
+            values.recurrence === 'installment' ? values.installmentsTotal ?? null : null,
+          installmentPeriodicity:
+            values.recurrence === 'installment' ? values.periodicity : null,
+          ...(values.status === 'pending' ? notifyPayload : { notifyEnabled: false }),
+        },
+      })
+
+      if (pendingFiles.length) await uploadPendingFiles(result.transaction.id)
+
+      const createdTransactions = result.transactions ?? [result.transaction]
+      const splitsCreated = showSplitDraft ? await applyDraftSplits(createdTransactions) : 0
+
+      toast.success(
+        splitsCreated > 0
+          ? result.installmentsCreated && result.installmentsCreated > 1
+            ? `${result.installmentsCreated} parcelas criadas com divisão`
+            : 'Lançamento criado com divisão'
+          : result.installmentsCreated && result.installmentsCreated > 1
+            ? `${result.installmentsCreated} parcelas criadas`
+            : 'Lançamento criado'
+      )
+      invalidateAll()
+      close()
+    } catch (error) {
+      toast.error(await readHttpErrorMessage(error, 'Erro ao salvar lançamento'))
+    }
+  }
+
+  const handleCancelPayment = async () => {
+    if (!slug || !editingId) return
+
+    try {
+      await cancelTransactionPayment({ slug, id: editingId })
+      toast.success('Pagamento cancelado')
+      queryClient.invalidateQueries({ queryKey: getGetTransactionQueryKey(slug, editingId) })
+      invalidateAll()
+      setCancelPaymentDialogOpen(false)
+    } catch (error) {
+      toast.error(await readHttpErrorMessage(error, 'Erro ao cancelar pagamento'))
+    }
+  }
+
+  const drawerTitle = isPay
+    ? 'Registrar Pagamento'
+    : isEdit
+      ? 'Editar Transação'
+      : txType === 'income'
+        ? 'Nova Receita'
+        : txType === 'transfer'
+          ? 'Nova Transferência'
+          : 'Nova Despesa'
+  const submitLabel = isPay
+    ? 'Confirmar Pagamento'
+    : isEdit
+      ? 'Salvar Alterações'
+      : recurrence === 'recurring'
+        ? 'Criar Recorrência'
+        : 'Criar Lançamento'
+
+  return (
+    <Drawer
+      open={open}
+      onOpenChange={v => !v && close()}
+      direction="right"
+      modal={!nestedDrawerOpen}
+    >
+      <DrawerContent
+        className={stackyDrawerContent}
+        overlayClassName={cn(
+          stackyDrawerOverlay,
+          nestedDrawerOpen && stackyDrawerOverlaySuppressed
+        )}
+        overlayDismissible={!nestedDrawerOpen}
+        onOverlayDismiss={close}
+        stackedOverlayClassName={stackyDrawerOverlayNested}
+        onStackedOverlayDismiss={closeNestedDrawers}
+        stackable
+        stacked={nestedDrawerOpen}
+      >
+        <DrawerHeader className={stackyDrawerHeader}>
+          <DrawerTitle className={stackyDrawerTitle}>{drawerTitle}</DrawerTitle>
+          <button
+            type="button"
+            aria-label="Fechar"
+            className={stackyDrawerCloseButton}
+            onClick={close}
+          >
+            <X className="size-5" />
+          </button>
+        </DrawerHeader>
+
+        {waitingForTransaction ? (
+          <div className="flex flex-1 items-center justify-center p-8 text-slate-500">
+            Carregando...
+          </div>
+        ) : isTxError && (isEdit || isPay) ? (
+          <div className="flex flex-1 flex-col items-center justify-center gap-3 p-8 text-slate-500">
+            <p>Não foi possível carregar o lançamento.</p>
+            <Button type="button" variant="outline" onClick={close}>
+              Fechar
+            </Button>
+          </div>
+        ) : (
+          <Form {...form}>
+            <form
+              onSubmit={form.handleSubmit(onSubmit)}
+              className="flex min-h-0 flex-1 flex-col overflow-hidden"
+            >
+              <div className={cn('min-h-0 flex-1 space-y-5 overflow-y-auto p-6', stackyDrawerForm)}>
+                {isPaidLocked && (
+                  <div className="rounded-lg border border-violet-200 bg-violet-50/80 px-4 py-3 text-sm text-violet-900">
+                    Esta transação está paga e não pode ser editada. Para alterar, cancele o
+                    pagamento.
+                  </div>
+                )}
+                {invoiceTarget && (
+                  <div className="rounded-lg border border-slate-200 bg-slate-50/80 px-4 py-3">
+                    {viewingInvoice ? (
+                      <div className="space-y-1">
+                        <p className="text-sm font-medium text-slate-900">
+                          Pagamento da fatura de {invoiceTarget.cycleLabel}
+                        </p>
+                        <p className="text-sm text-slate-600">
+                          Valor: {formatCentsString(tx?.amount ?? '0')} · você está vendo esta fatura
+                        </p>
+                      </div>
+                    ) : (
+                      <div className="flex items-center justify-between gap-3">
+                        <p className="text-sm text-slate-600">
+                          Pagamento da fatura de {invoiceTarget.cycleLabel}
+                        </p>
+                        <Button
+                          type="button"
+                          variant="outline"
+                          size="sm"
+                          className="shrink-0 gap-1.5"
+                          onClick={openPaidInvoice}
+                        >
+                          Ver fatura
+                          <ExternalLink className="size-3.5" />
+                        </Button>
+                      </div>
+                    )}
+                  </div>
+                )}
+                <fieldset
+                  disabled={isPaidLocked}
+                  className={cn('min-w-0 space-y-5 border-0 p-0', isPaidLocked && 'opacity-70')}
+                >
+                {!isPay && (
+                  <FormField
+                    control={form.control}
+                    name="type"
+                    render={({ field }) => (
+                      <ToggleGroup
+                        type="single"
+                        value={field.value}
+                        onValueChange={v => {
+                          if (!v) return
+                          const previousType = field.value
+                          field.onChange(v)
+                          const categoryId = form.getValues('categoryId')
+                          if (
+                            categoryId &&
+                            previousType !== 'transfer' &&
+                            v !== 'transfer' &&
+                            previousType !== v
+                          ) {
+                            form.setValue('categoryId', undefined)
+                          }
+                        }}
+                        className={stackyTypeSegmentedControl}
+                        disabled={isEdit}
+                      >
+                        <ToggleGroupItem
+                          value="expense"
+                          className={cn(stackyTypeSegmentItem, stackySegmentItemExpense)}
+                        >
+                          Despesa
+                        </ToggleGroupItem>
+                        <ToggleGroupItem
+                          value="income"
+                          className={cn(stackyTypeSegmentItem, stackySegmentItemIncome)}
+                        >
+                          Receita
+                        </ToggleGroupItem>
+                        <ToggleGroupItem
+                          value="transfer"
+                          className={cn(stackyTypeSegmentItem, stackySegmentItemTransfer)}
+                        >
+                          Transferência
+                        </ToggleGroupItem>
+                      </ToggleGroup>
+                    )}
+                  />
+                )}
+
+                <FormErrorBanner message={validationErrorMessage} />
+
+                {isPay ? (
+                  <>
+                    <div className="rounded-lg bg-slate-50 p-4 space-y-1">
+                      <p className="font-medium text-slate-900">{tx?.title}</p>
+                      <p className="text-sm text-slate-500">
+                        Valor da parcela:{' '}
+                        {formatCentsString(reaisToCentsString(installmentAmountReais))}
+                      </p>
+                      {hasInstallmentContext && (
+                        <p className="text-sm text-slate-500">
+                          Parcela {tx?.installmentNumber} de {tx?.installmentsTotal}
+                        </p>
+                      )}
+                      {installmentPaidReais > 0 && (
+                        <p className="text-sm text-amber-700">
+                          Já pago {formatCentsString(reaisToCentsString(installmentPaidReais))} · Saldo{' '}
+                          {formatCentsString(reaisToCentsString(installmentRemainingReais))}
+                        </p>
+                      )}
+                    </div>
+                    <SplitPaymentPayBanner items={unsettledSplitItems} />
+                    <FormField
+                      control={form.control}
+                      name="paidAmount"
+                      render={({ field }) => (
+                        <FormItem>
+                          <FormLabel>
+                            Valor pago <FormRequiredMark />
+                          </FormLabel>
+                          <FormControl>
+                            <CurrencyInput value={field.value ?? 0} onValueChange={field.onChange} />
+                          </FormControl>
+                          {installmentRemainingReais > 0 && (
+                            <p className="text-xs text-slate-500">
+                              Saldo da parcela: {formatCentsString(reaisToCentsString(installmentRemainingReais))}
+                            </p>
+                          )}
+                        </FormItem>
+                      )}
+                    />
+                    <FormField
+                      control={form.control}
+                      name="paidAt"
+                      render={({ field }) => (
+                        <FormItem>
+                          <FormLabel>
+                            Data do pagamento <FormRequiredMark />
+                          </FormLabel>
+                          <FormControl>
+                            <DatePickerInput
+                              value={field.value}
+                              onChange={field.onChange}
+                              placeholder="dd/mm/aaaa"
+                            />
+                          </FormControl>
+                        </FormItem>
+                      )}
+                    />
+                    {showAdvancePicker && hasInstallmentContext && (
+                      <AdvanceInstallmentsPicker
+                        installments={installmentSeriesData?.installments ?? []}
+                        currentInstallmentNumber={tx?.installmentNumber ?? 1}
+                        selectedIds={selectedAdvanceIds}
+                        onSelectedIdsChange={setSelectedAdvanceIds}
+                        paidAmountReais={paidAmountWatched ?? 0}
+                        currentRemainingReais={installmentRemainingReais}
+                      />
+                    )}
+                  </>
+                ) : (
+                  <>
+                    <div className={stackyDrawerFormRow}>
+                      <FormField
+                        control={form.control}
+                        name="title"
+                        render={({ field }) => (
+                          <FormItem className={cn(stackyDrawerFormItem, 'col-span-5')}>
+                            <div className={stackyDrawerFormLabelSlot}>
+                              <FormLabel>
+                                Descrição <FormRequiredMark />
+                              </FormLabel>
+                            </div>
+                            <FormControl>
+                              <Input placeholder="Ex: Mercado, Salário..." {...field} />
+                            </FormControl>
+                          </FormItem>
+                        )}
+                      />
+                      <FormField
+                        control={form.control}
+                        name="amount"
+                        render={({ field }) => (
+                          <FormItem className={cn(stackyDrawerFormItem, 'col-span-3')}>
+                            <div className={stackyDrawerFormLabelSlot}>
+                              <FormLabel>
+                                Valor <FormRequiredMark />
+                              </FormLabel>
+                            </div>
+                            <FormControl>
+                              <CurrencyInput value={field.value} onValueChange={field.onChange} />
+                            </FormControl>
+                          </FormItem>
+                        )}
+                      />
+                      {!isTransfer ? (
+                        isCreditCardExpense ? (
+                          <FormField
+                            control={form.control}
+                            name="date"
+                            render={({ field }) => (
+                              <FormItem className={cn(stackyDrawerFormItem, 'col-span-4')}>
+                                <div className={stackyDrawerFormLabelSlot}>
+                                  <FormLabel>Competência</FormLabel>
+                                </div>
+                                <FormControl>
+                                  <DatePickerInput
+                                    value={field.value}
+                                    onChange={field.onChange}
+                                    placeholder="dd/mm/aaaa"
+                                  />
+                                </FormControl>
+                              </FormItem>
+                            )}
+                          />
+                        ) : (
+                          <FormField
+                            control={form.control}
+                            name="competenceDate"
+                            render={({ field }) => (
+                              <FormItem className={cn(stackyDrawerFormItem, 'col-span-4')}>
+                                <div className={stackyDrawerFormLabelSlot}>
+                                  <FormLabel>Competência</FormLabel>
+                                </div>
+                                <FormControl>
+                                  <DatePickerInput
+                                    value={field.value}
+                                    onChange={field.onChange}
+                                    placeholder="dd/mm/aaaa"
+                                  />
+                                </FormControl>
+                              </FormItem>
+                            )}
+                          />
+                        )
+                      ) : (
+                        <FormField
+                          control={form.control}
+                          name="date"
+                          render={({ field }) => (
+                            <FormItem className={cn(stackyDrawerFormItem, 'col-span-4')}>
+                              <div className={stackyDrawerFormLabelSlot}>
+                                <FormLabel>Data</FormLabel>
+                              </div>
+                              <FormControl>
+                                <DatePickerInput
+                                  value={field.value}
+                                  onChange={field.onChange}
+                                  placeholder="dd/mm/aaaa"
+                                />
+                              </FormControl>
+                            </FormItem>
+                          )}
+                        />
+                      )}
+                    </div>
+
+                    {!isTransfer && (
+                      <FormField
+                        control={form.control}
+                        name="categoryId"
+                        render={({ field }) => (
+                          <FormItem>
+                            <div className={stackyDrawerLabelRow}>
+                              <FormLabel>
+                                Categoria <FormRequiredMark />
+                              </FormLabel>
+                              <button
+                                type="button"
+                                aria-label="Nova categoria"
+                                className={stackyDrawerAddButton}
+                                onClick={() =>
+                                  openCategoryDrawer(
+                                    id => form.setValue('categoryId', id),
+                                    txType === 'income' ? 'income' : 'expense'
+                                  )
+                                }
+                              >
+                                <Plus className="size-3" />
+                              </button>
+                            </div>
+                            <FormControl>
+                              <CategorySelect
+                                value={field.value}
+                                type={txType === 'income' ? 'income' : 'expense'}
+                                onChange={field.onChange}
+                                className={stackySelectTrigger}
+                                enabled={open}
+                                instanceKey={editingId ?? 'create'}
+                              />
+                            </FormControl>
+                          </FormItem>
+                        )}
+                      />
+                    )}
+
+                    {isTransfer ? (
+                      <div className="grid grid-cols-2 gap-3">
+                        <FormField
+                          control={form.control}
+                          name="accountId"
+                          render={({ field }) => (
+                            <FormItem>
+                              <FormLabel>
+                                Conta origem <FormRequiredMark />
+                              </FormLabel>
+                              <FormControl>
+                                <AccountSelect
+                                  accounts={accountsData?.accounts ?? []}
+                                  value={field.value}
+                                  onValueChange={field.onChange}
+                                  placeholder="De"
+                                  instanceKey={editingId ?? 'create'}
+                                  className={stackySelectTrigger}
+                                  itemClassName={stackySelectItem}
+                                />
+                              </FormControl>
+                            </FormItem>
+                          )}
+                        />
+                        <FormField
+                          control={form.control}
+                          name="transferToAccountId"
+                          render={({ field }) => (
+                            <FormItem>
+                              <FormLabel>
+                                Conta destino <FormRequiredMark />
+                              </FormLabel>
+                              <FormControl>
+                                <AccountSelect
+                                  accounts={accountsData?.accounts ?? []}
+                                  value={field.value}
+                                  onValueChange={field.onChange}
+                                  excludeAccountId={selectedAccountId}
+                                  placeholder="Para"
+                                  instanceKey={`${editingId ?? 'create'}-to`}
+                                  className={stackySelectTrigger}
+                                  itemClassName={stackySelectItem}
+                                />
+                              </FormControl>
+                            </FormItem>
+                          )}
+                        />
+                      </div>
+                    ) : isCreditCardExpense ? (
+                      <div className={stackyDrawerFormRow}>
+                        <FormField
+                          control={form.control}
+                          name="accountId"
+                          render={({ field }) => (
+                            <FormItem className={cn(stackyDrawerFormItem, 'col-span-7')}>
+                              <div className={stackyDrawerLabelRow}>
+                                <FormLabel>
+                                  Conta / Cartão <FormRequiredMark />
+                                </FormLabel>
+                                {!isAccountLocked && (
+                                  <button
+                                    type="button"
+                                    aria-label="Novo produto financeiro"
+                                    className={stackyDrawerAddButton}
+                                    onClick={() =>
+                                      openAccountDrawer(id => form.setValue('accountId', id))
+                                    }
+                                  >
+                                    <Plus className="size-3" />
+                                  </button>
+                                )}
+                              </div>
+                              <FormControl>
+                                <AccountSelect
+                                  accounts={accountsData?.accounts ?? []}
+                                  value={field.value}
+                                  onValueChange={v => {
+                                    field.onChange(v)
+                                    form.setValue('cardId', undefined)
+                                  }}
+                                  disabled={isAccountLocked}
+                                  instanceKey={editingId ?? 'create'}
+                                  className={stackySelectTrigger}
+                                  itemClassName={stackySelectItem}
+                                />
+                              </FormControl>
+                            </FormItem>
+                          )}
+                        />
+                        <FormItem className={cn(stackyDrawerFormItem, 'col-span-5')}>
+                          <div className={stackyDrawerFormLabelSlot}>
+                            <FormLabel>Vencimento</FormLabel>
+                          </div>
+                          <div className="flex h-10 items-center rounded-lg border border-slate-200 bg-slate-50 px-3 text-sm text-slate-700">
+                            {creditCardInvoiceLabel ?? '—'}
+                          </div>
+                        </FormItem>
+                      </div>
+                    ) : (
+                      (!isAccountLocked || !isCreditCardExpense) && (
+                      <div className={stackyDrawerFormRow}>
+                        {!isAccountLocked && (
+                        <FormField
+                          control={form.control}
+                          name="accountId"
+                          render={({ field }) => (
+                            <FormItem className={cn(stackyDrawerFormItem, 'col-span-12')}>
+                              <div className={stackyDrawerLabelRow}>
+                                <FormLabel>
+                                  Conta <FormRequiredMark />
+                                </FormLabel>
+                                <button
+                                  type="button"
+                                  aria-label="Novo produto financeiro"
+                                  className={stackyDrawerAddButton}
+                                  onClick={() =>
+                                    openAccountDrawer(id => form.setValue('accountId', id))
+                                  }
+                                >
+                                  <Plus className="size-3" />
+                                </button>
+                              </div>
+                              <FormControl>
+                                <AccountSelect
+                                  accounts={accountsData?.accounts ?? []}
+                                  value={field.value}
+                                  onValueChange={v => {
+                                    field.onChange(v)
+                                    form.setValue('cardId', undefined)
+                                  }}
+                                  instanceKey={editingId ?? 'create'}
+                                  className={stackySelectTrigger}
+                                  itemClassName={stackySelectItem}
+                                />
+                              </FormControl>
+                            </FormItem>
+                          )}
+                        />
+                        )}
+                        {!isCreditCardExpense && (
+                          <FormField
+                            control={form.control}
+                            name="date"
+                            render={({ field }) => (
+                              <FormItem className={cn(stackyDrawerFormItem, 'col-span-5')}>
+                                <div className={stackyDrawerFormLabelSlot}>
+                                  <FormLabel>Vencimento</FormLabel>
+                                </div>
+                                <FormControl>
+                                  <DatePickerInput
+                                    value={field.value}
+                                    onChange={field.onChange}
+                                    placeholder="dd/mm/aaaa"
+                                  />
+                                </FormControl>
+                              </FormItem>
+                            )}
+                          />
+                        )}
+                        {!isCreditCardExpense && (
+                          <FormField
+                            control={form.control}
+                            name="status"
+                            render={({ field }) => (
+                              <FormItem className={cn(stackyDrawerFormItem, 'col-span-7')}>
+                                <div className={stackyDrawerFormLabelSlot}>
+                                  <FormLabel>Status</FormLabel>
+                                </div>
+                                {isEdit && isTransactionPartial(tx?.status) && (
+                                  <p className="mb-2 text-xs text-amber-700">
+                                    Pagamento parcial · falta{' '}
+                                    {formatCentsString(reaisToCentsString(installmentRemainingReais))}
+                                  </p>
+                                )}
+                                <ToggleGroup
+                                  type="single"
+                                  value={tx?.status === 'paid' ? 'paid' : field.value}
+                                  onValueChange={v => {
+                                    if (!v || tx?.status === 'paid') return
+                                    if (v === 'pending' && installmentPaidReais > 0) return
+                                    field.onChange(v)
+                                  }}
+                                  className={stackySegmentedControl}
+                                >
+                                  <ToggleGroupItem
+                                    value="pending"
+                                    className={stackySegmentItem}
+                                    disabled={tx?.status === 'paid' || installmentPaidReais > 0}
+                                  >
+                                    Pendente
+                                  </ToggleGroupItem>
+                                  <ToggleGroupItem
+                                    value="paid"
+                                    className={stackySegmentItem}
+                                    disabled={tx?.status === 'paid'}
+                                  >
+                                    Pago
+                                  </ToggleGroupItem>
+                                </ToggleGroup>
+                              </FormItem>
+                            )}
+                          />
+                        )}
+                      </div>
+                      )
+                    )}
+
+                    {isEdit && showPaymentFields && (
+                      <div className={stackyDrawerFormRow}>
+                        {hasInstallmentContext && (
+                          <p className="col-span-12 text-xs text-slate-500">
+                            O pagamento será registrado apenas nesta parcela ({tx?.installmentNumber} de{' '}
+                            {tx?.installmentsTotal}).
+                          </p>
+                        )}
+                        {installmentPaidReais > 0 && (
+                          <p className="col-span-12 text-sm text-amber-700">
+                            Já pago {formatCentsString(reaisToCentsString(installmentPaidReais))} · Saldo{' '}
+                            {formatCentsString(reaisToCentsString(installmentRemainingReais))}
+                          </p>
+                        )}
+                        <FormField
+                          control={form.control}
+                          name="paidAmount"
+                          render={({ field }) => (
+                            <FormItem className={cn(stackyDrawerFormItem, 'col-span-5')}>
+                              <div className={stackyDrawerFormLabelSlot}>
+                                <FormLabel>
+                                  Valor a pagar <FormRequiredMark />
+                                </FormLabel>
+                              </div>
+                              <FormControl>
+                                <CurrencyInput
+                                  value={field.value ?? 0}
+                                  onValueChange={field.onChange}
+                                />
+                              </FormControl>
+                            </FormItem>
+                          )}
+                        />
+                        <FormField
+                          control={form.control}
+                          name="paidAt"
+                          render={({ field }) => (
+                            <FormItem className={cn(stackyDrawerFormItem, 'col-span-7')}>
+                              <div className={stackyDrawerFormLabelSlot}>
+                                <FormLabel>
+                                  Data do pagamento <FormRequiredMark />
+                                </FormLabel>
+                              </div>
+                              <FormControl>
+                                <DatePickerInput
+                                  value={field.value}
+                                  onChange={field.onChange}
+                                  placeholder="dd/mm/aaaa"
+                                />
+                              </FormControl>
+                            </FormItem>
+                          )}
+                        />
+                      </div>
+                    )}
+
+                    {showCardField && (
+                      <FormField
+                        control={form.control}
+                        name="cardId"
+                        render={({ field }) => (
+                          <FormItem>
+                            <FormLabel>Cartão</FormLabel>
+                            <Select value={field.value} onValueChange={field.onChange}>
+                              <FormControl>
+                                <SelectTrigger>
+                                  <SelectValue placeholder="Selecione o cartão" />
+                                </SelectTrigger>
+                              </FormControl>
+                              <SelectContent>
+                                {selectableCards.map(card => (
+                                  <SelectItem key={card.id} value={card.id}>
+                                    {card.label}
+                                    {card.lastFourDigits ? ` · ${card.lastFourDigits}` : ''}
+                                  </SelectItem>
+                                ))}
+                              </SelectContent>
+                            </Select>
+                          </FormItem>
+                        )}
+                      />
+                    )}
+
+                    {!isPay && !isTransfer && status === 'pending' && (
+                      <TransactionRemindersSection
+                        value={notifyState}
+                        onChange={setNotifyState}
+                      />
+                    )}
+
+                    {showSplitDraft && (
+                      <TransactionSplitsDraftSection
+                        amountCents={reaisToCentsString(amount)}
+                        installmentsTotal={installmentsTotal}
+                        recurrence={recurrence}
+                        value={splitDraft}
+                        onChange={setSplitDraft}
+                      />
+                    )}
+
+                    {!isPay && (
+                      <div className={stackyDrawerPanelMuted}>
+                        <button
+                          type="button"
+                          className={cn(
+                            'flex w-full cursor-pointer items-center gap-2 bg-slate-50 px-4 py-3 text-left text-sm font-medium text-slate-800',
+                            notesOpen && 'border-b border-slate-200'
+                          )}
+                          onClick={() => setNotesOpen(v => !v)}
+                        >
+                          <FileText className="size-4 shrink-0 text-slate-500" />
+                          <span className="flex-1">Observações e Anexos</span>
+                          <ChevronDown
+                            className={cn(
+                              'size-4 shrink-0 text-slate-500 transition-transform',
+                              notesOpen && 'rotate-180'
+                            )}
+                          />
+                        </button>
+                        {notesOpen && (
+                          <div className="space-y-4 bg-white p-4">
+                            <FormField
+                              control={form.control}
+                              name="description"
+                              render={({ field }) => (
+                                <FormItem>
+                                  <FormControl>
+                                    <Textarea
+                                      placeholder="Observações..."
+                                      rows={4}
+                                      className="resize-none"
+                                      {...field}
+                                    />
+                                  </FormControl>
+                                </FormItem>
+                              )}
+                            />
+                            <div className="space-y-2">
+                              <p className="text-sm font-medium text-slate-700">Anexo</p>
+                              <input
+                                ref={fileInputRef}
+                                type="file"
+                                className="hidden"
+                                accept=".pdf,.png,.jpg,.jpeg,.webp,.xlsx,.xls,.doc,.docx"
+                                onChange={e => {
+                                  const file = e.target.files?.[0]
+                                  if (file) setPendingFiles(prev => [...prev, file])
+                                  e.target.value = ''
+                                }}
+                              />
+                              <div className="flex flex-wrap items-center gap-3">
+                                <button
+                                  type="button"
+                                  className={stackyFilePickerButton}
+                                  onClick={() => fileInputRef.current?.click()}
+                                >
+                                  Escolher arquivo
+                                </button>
+                                <span className="text-sm text-slate-500">
+                                  {pendingFiles.length === 0 &&
+                                  !(attachmentsData?.attachments?.length ?? 0)
+                                    ? 'Nenhum arquivo escolhido'
+                                    : [
+                                        ...pendingFiles.map(f => f.name),
+                                        ...(attachmentsData?.attachments?.map(a => a.fileName) ??
+                                          []),
+                                      ].join(', ')}
+                                </span>
+                              </div>
+                              <p className="text-xs text-slate-500">
+                                PDF, imagem, planilha ou documento — até 15 MB
+                              </p>
+                              {pendingFiles.map((file, i) => (
+                                <div
+                                  key={`${file.name}-${i}`}
+                                  className="flex items-center justify-between rounded-lg border border-slate-200 px-3 py-2 text-sm"
+                                >
+                                  <span className="truncate">{file.name}</span>
+                                  <Button
+                                    type="button"
+                                    variant="ghost"
+                                    size="icon"
+                                    onClick={() =>
+                                      setPendingFiles(prev => prev.filter((_, idx) => idx !== i))
+                                    }
+                                  >
+                                    <Trash2 className="size-4" />
+                                  </Button>
+                                </div>
+                              ))}
+                              {attachmentsData?.attachments?.map(att => (
+                                <div
+                                  key={att.id}
+                                  className="flex items-center justify-between rounded-lg border border-slate-200 px-3 py-2 text-sm"
+                                >
+                                  <span className="truncate">{att.fileName}</span>
+                                  <Button
+                                    type="button"
+                                    variant="ghost"
+                                    size="icon"
+                                    onClick={() =>
+                                      downloadTransactionAttachment(
+                                        slug!,
+                                        editingId!,
+                                        att.id,
+                                        att.fileName
+                                      ).catch(() => toast.error('Erro ao baixar anexo'))
+                                    }
+                                  >
+                                    <Download className="size-4" />
+                                  </Button>
+                                </div>
+                              ))}
+                            </div>
+                          </div>
+                        )}
+                      </div>
+                    )}
+
+                    {!isTransfer && !isEdit && (
+                      <FormField
+                        control={form.control}
+                        name="recurrence"
+                        render={({ field }) => (
+                          <FormItem>
+                            <div className={stackyRecurrencePanel}>
+                              <p className="mb-3 text-sm font-medium text-gray-700">
+                                Repetição do lançamento
+                              </p>
+                              <ToggleGroup
+                                type="single"
+                                value={field.value}
+                                onValueChange={v => v && field.onChange(v)}
+                                className={stackyRecurrenceSegmentedControl}
+                              >
+                                <ToggleGroupItem
+                                  value="once"
+                                  className={stackyRecurrenceSegmentItem}
+                                >
+                                  Única
+                                </ToggleGroupItem>
+                                <ToggleGroupItem
+                                  value="installment"
+                                  className={stackyRecurrenceSegmentItem}
+                                >
+                                  Parcelada
+                                </ToggleGroupItem>
+                                <ToggleGroupItem
+                                  value="recurring"
+                                  className={stackyRecurrenceSegmentItem}
+                                >
+                                  Recorrente
+                                </ToggleGroupItem>
+                              </ToggleGroup>
+
+                              {field.value === 'installment' && (
+                                <div className={cn(stackyDrawerFormRow, 'mt-4')}>
+                                  <FormField
+                                    control={form.control}
+                                    name="periodicity"
+                                    render={({ field: periodicityField }) => (
+                                      <FormItem className={cn(stackyDrawerFormItem, 'col-span-7')}>
+                                        <FormLabel>Periodicidade</FormLabel>
+                                        <Select
+                                          value={periodicityField.value}
+                                          onValueChange={periodicityField.onChange}
+                                        >
+                                          <FormControl>
+                                            <SelectTrigger className={stackySelectTrigger}>
+                                              <SelectValue />
+                                            </SelectTrigger>
+                                          </FormControl>
+                                          <SelectContent>
+                                            {TRANSACTION_PERIODICITY_OPTIONS.map(option => (
+                                              <SelectItem
+                                                key={option.value}
+                                                value={option.value}
+                                                className={stackySelectItem}
+                                              >
+                                                {option.label}
+                                              </SelectItem>
+                                            ))}
+                                          </SelectContent>
+                                        </Select>
+                                      </FormItem>
+                                    )}
+                                  />
+                                  <FormField
+                                    control={form.control}
+                                    name="installmentsTotal"
+                                    render={({ field: installmentsField }) => (
+                                      <FormItem className={cn(stackyDrawerFormItem, 'col-span-5')}>
+                                        <FormLabel>Parcelas</FormLabel>
+                                        <FormControl>
+                                          <Input
+                                            type="number"
+                                            min={2}
+                                            className="bg-white"
+                                            {...installmentsField}
+                                            value={installmentsField.value ?? ''}
+                                          />
+                                        </FormControl>
+                                      </FormItem>
+                                    )}
+                                  />
+                                </div>
+                              )}
+
+                              {field.value === 'installment' && installmentPreview && (
+                                <InstallmentPreviewPanel items={installmentPreview} />
+                              )}
+
+                              {field.value === 'recurring' && (
+                                <div className={cn(stackyDrawerFormRow, 'mt-4')}>
+                                  <FormField
+                                    control={form.control}
+                                    name="periodicity"
+                                    render={({ field: periodicityField }) => (
+                                      <FormItem className={cn(stackyDrawerFormItem, 'col-span-5')}>
+                                        <FormLabel>Periodicidade</FormLabel>
+                                        <Select
+                                          value={periodicityField.value}
+                                          onValueChange={periodicityField.onChange}
+                                        >
+                                          <FormControl>
+                                            <SelectTrigger className={stackySelectTrigger}>
+                                              <SelectValue />
+                                            </SelectTrigger>
+                                          </FormControl>
+                                          <SelectContent>
+                                            {TRANSACTION_PERIODICITY_OPTIONS.map(option => (
+                                              <SelectItem
+                                                key={option.value}
+                                                value={option.value}
+                                                className={stackySelectItem}
+                                              >
+                                                {option.label}
+                                              </SelectItem>
+                                            ))}
+                                          </SelectContent>
+                                        </Select>
+                                      </FormItem>
+                                    )}
+                                  />
+                                  <FormField
+                                    control={form.control}
+                                    name="recurringDuration"
+                                    render={({ field: durationField }) => (
+                                      <FormItem className={cn(stackyDrawerFormItem, 'col-span-4')}>
+                                        <FormLabel>Duração</FormLabel>
+                                        <Select
+                                          value={durationField.value}
+                                          onValueChange={durationField.onChange}
+                                        >
+                                          <FormControl>
+                                            <SelectTrigger className={stackySelectTrigger}>
+                                              <SelectValue />
+                                            </SelectTrigger>
+                                          </FormControl>
+                                          <SelectContent>
+                                            {RECURRING_DURATION_OPTIONS.map(option => (
+                                              <SelectItem
+                                                key={option.value}
+                                                value={option.value}
+                                                className={stackySelectItem}
+                                              >
+                                                {option.label}
+                                              </SelectItem>
+                                            ))}
+                                          </SelectContent>
+                                        </Select>
+                                      </FormItem>
+                                    )}
+                                  />
+                                  {recurringDuration === 'times' && (
+                                    <FormField
+                                      control={form.control}
+                                      name="recurringRepetitions"
+                                      render={({ field: repetitionsField }) => (
+                                        <FormItem className={cn(stackyDrawerFormItem, 'col-span-3')}>
+                                          <FormLabel>Repetições</FormLabel>
+                                          <FormControl>
+                                            <Input
+                                              type="number"
+                                              min={1}
+                                              {...repetitionsField}
+                                              value={repetitionsField.value ?? ''}
+                                            />
+                                          </FormControl>
+                                        </FormItem>
+                                      )}
+                                    />
+                                  )}
+                                  {recurringDuration === 'until' && (
+                                    <FormField
+                                      control={form.control}
+                                      name="recurringEndDate"
+                                      render={({ field: endDateField }) => (
+                                        <FormItem className={cn(stackyDrawerFormItem, 'col-span-3')}>
+                                          <FormLabel>Até</FormLabel>
+                                          <FormControl>
+                                            <DatePickerInput
+                                              value={endDateField.value}
+                                              onChange={endDateField.onChange}
+                                              placeholder="dd/mm/aaaa"
+                                              buttonClassName="bg-white"
+                                            />
+                                          </FormControl>
+                                        </FormItem>
+                                      )}
+                                    />
+                                  )}
+                                </div>
+                              )}
+                            </div>
+                          </FormItem>
+                        )}
+                      />
+                    )}
+
+                    {isEdit && editingId && !isTransfer && (
+                      <TransactionSplitsSection
+                        transactionId={editingId}
+                        transactionAmount={tx?.amount ?? reaisToMoneyString(amount)}
+                        installmentsTotal={tx?.installmentsTotal}
+                        installmentNumber={tx?.installmentNumber}
+                        debtSummary={splitDebtSummary}
+                      />
+                    )}
+                  </>
+                )}
+                </fieldset>
+              </div>
+
+              <DrawerFooter className={stackyDrawerFooter}>
+                {(splitDebtSummary || !isPay) && (
+                  <TransactionFooterSummary
+                    splitDebtSummary={splitDebtSummary}
+                    installmentSummary={installmentSummary}
+                    amount={amount}
+                    status={displayStatus}
+                    showStatus={!isTransfer && !isCreditCardExpense}
+                    accountName={selectedAccount && !isTransfer ? selectedAccount.name : undefined}
+                    installmentNumber={tx?.installmentNumber}
+                    installmentsTotal={tx?.installmentsTotal}
+                    isEdit={isEdit}
+                  />
+                )}
+                <div className="flex gap-2">
+                  {isEdit && deletable && !isPaidLocked && (
+                    <Button
+                      type="button"
+                      variant="outline"
+                      className="shrink-0 border-red-200 text-red-700 hover:bg-red-50 hover:text-red-800"
+                      onClick={() => setDeleteDialogOpen(true)}
+                    >
+                      <Trash2 className="mr-2 size-4" />
+                      Excluir
+                    </Button>
+                  )}
+                  <div className="flex flex-1 gap-2">
+                    <Button
+                      type="button"
+                      variant="outline"
+                      className={cn('flex-1', stackySecondaryButton)}
+                      onClick={close}
+                    >
+                      Cancelar
+                    </Button>
+                    {isPaidLocked ? (
+                      <Button
+                        type="button"
+                        className={cn('flex-1', stackyPrimaryButton)}
+                        disabled={isPending}
+                        onClick={() => setCancelPaymentDialogOpen(true)}
+                      >
+                        Cancelar pagamento
+                      </Button>
+                    ) : (
+                      <Button
+                        type="submit"
+                        className={cn('flex-1', stackyPrimaryButton)}
+                        disabled={isPending || (isPay && !canConfirmPay)}
+                      >
+                        {submitLabel}
+                      </Button>
+                    )}
+                  </div>
+                </div>
+              </DrawerFooter>
+            </form>
+          </Form>
+        )}
+      </DrawerContent>
+      <AccountDrawer nested />
+      <CategoryDrawer nested />
+      <CardDrawer nested />
+      <DeleteTransactionDialog
+        transaction={
+          tx
+            ? {
+                id: tx.id,
+                title: tx.title,
+                amount: tx.amount,
+                transferPairId: tx.transferPairId,
+              }
+            : null
+        }
+        open={deleteDialogOpen}
+        onOpenChange={setDeleteDialogOpen}
+        onDeleted={close}
+      />
+      <AlertDialog open={cancelPaymentDialogOpen} onOpenChange={setCancelPaymentDialogOpen}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Cancelar pagamento?</AlertDialogTitle>
+            <AlertDialogDescription>
+              A transação voltará para pendente e você poderá editá-la novamente.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel disabled={isCancelingPayment}>Voltar</AlertDialogCancel>
+            <AlertDialogAction
+              disabled={isCancelingPayment}
+              onClick={event => {
+                event.preventDefault()
+                void handleCancelPayment()
+              }}
+            >
+              Cancelar pagamento
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
+      <AlertDialog open={advancePromptOpen} onOpenChange={setAdvancePromptOpen}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Adiantar parcelas?</AlertDialogTitle>
+            <AlertDialogDescription>
+              O valor informado é maior que o saldo desta parcela. Deseja adiantar outras parcelas
+              da mesma compra?
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel
+              onClick={() => {
+                toast.error(
+                  `Valor excede o saldo da parcela (${formatCentsString(reaisToCentsString(installmentRemainingReais))})`
+                )
+              }}
+            >
+              Não
+            </AlertDialogCancel>
+            <AlertDialogAction
+              onClick={() => {
+                setShowAdvancePicker(true)
+                setSelectedAdvanceIds([])
+                if (slug && editingId) {
+                  void queryClient.invalidateQueries({
+                    queryKey: getGetTransactionQueryKey(slug, editingId),
+                  })
+                  void queryClient.invalidateQueries({
+                    queryKey: getGetSplitDebtSummaryQueryKey(slug, editingId),
+                  })
+                  void refetchInstallmentSeries()
+                }
+              }}
+            >
+              Sim, adiantar
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
+      <SplitPaymentConfirmDialog
+        open={splitPaymentConfirmOpen}
+        onOpenChange={open => {
+          setSplitPaymentConfirmOpen(open)
+          if (!open) pendingPaymentRef.current = null
+        }}
+        items={unsettledSplitItems}
+        isPending={isRegisteringSplitPayment || isPaying}
+        onConfirm={handleSplitPaymentConfirm}
+        onDecline={handleSplitPaymentDecline}
+      />
+    </Drawer>
+  )
+}

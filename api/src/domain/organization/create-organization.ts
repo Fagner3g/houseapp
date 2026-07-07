@@ -2,7 +2,8 @@ import { PostgresError } from 'postgres'
 import slugify from 'slugify'
 
 import { db } from '@/db'
-import { organizations } from '@/db/schemas/organization'
+import { organizations } from '@/db/schemas/organizations'
+import { ensureDefaultCategories } from '@/modules/categories/default-categories'
 
 interface CreateOrganization {
   name: string
@@ -27,6 +28,8 @@ export async function createOrganization({ name, ownerId }: CreateOrganization) 
           slug,
         })
         .returning()
+
+      await ensureDefaultCategories(organization.id)
 
       return { organization }
     } catch (err) {

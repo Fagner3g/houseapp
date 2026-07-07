@@ -11,14 +11,22 @@ function runAndLog(
 ): () => Promise<void> {
   return async () => {
     const startTime = Date.now()
-    const logInfo = (msg: string) =>
-      logger.info({ jobKey: config.key }, msg)
+    const log = (level: 'debug' | 'info', msg: string, data?: Record<string, unknown>) => {
+      const payload = { jobKey: config.key, ...data }
+      if (level === 'debug') {
+        logger.debug(payload, msg)
+      } else {
+        logger.info(payload, msg)
+      }
+    }
 
-    logInfo(`${trigger === 'cron' ? '⏰' : '🚀'} Iniciando job: ${config.description}`)
+    log('debug', `${trigger === 'cron' ? '⏰' : '🚀'} Iniciando job: ${config.description}`)
 
     try {
       const result = await jobFunction()
       const duration = Date.now() - startTime
+      const idle = result.processed === 0 && result.errors === 0
+      const level = idle ? 'debug' : 'info'
 
       logExecution(config.key, {
         success: result.success,
@@ -27,9 +35,10 @@ function runAndLog(
         duration,
       })
 
-      logger.info(
-        { jobKey: config.key, duration, processed: result.processed, errors: result.errors },
-        `✅ Job concluído: ${config.description}`
+      log(
+        level,
+        `✅ Job concluído: ${config.description}`,
+        { duration, processed: result.processed, errors: result.errors }
       )
     } catch (error) {
       const duration = Date.now() - startTime
@@ -70,6 +79,15 @@ export class JobManager {
     }
 
     this.jobFunctions.set(config.key, jobFunction)
+
+    if (config.enabled === false) {
+      this.jobStatus.set(config.key, false)
+      logger.info(
+        { jobKey: config.key },
+        `⏸️ Job registrado mas desabilitado: ${config.description}`
+      )
+      return
+    }
 
     const task = cron.schedule(
       config.schedule,
@@ -137,35 +155,7 @@ export class JobManager {
 
     const task = cron.schedule(
       config.schedule,
-      async () => {
-        const startTime = Date.now()
-        logger.info({ jobKey }, `⏰ Iniciando job: ${config.description}`)
-
-        try {
-          const result = await jobFunction()
-          const duration = Date.now() - startTime
-
-          logger.info(
-            {
-              jobKey,
-              duration,
-              processed: result.processed,
-              errors: result.errors,
-            },
-            `✅ Job concluído: ${config.description}`
-          )
-        } catch (error) {
-          const duration = Date.now() - startTime
-          logger.error(
-            {
-              jobKey,
-              error,
-              duration,
-            },
-            `❌ Erro no job: ${config.description}`
-          )
-        }
-      },
+      runAndLog(config, jobFunction, 'cron'),
       { timezone: config.timezone }
     )
 

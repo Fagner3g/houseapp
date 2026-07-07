@@ -1,5 +1,6 @@
-import { eq } from 'drizzle-orm'
+import { eq, inArray } from 'drizzle-orm'
 
+import { normalizePhoneDigits, phoneLookupVariants, phonesMatch } from '@/core/phone'
 import { db } from '@/db'
 import { users } from '@/db/schemas/users'
 
@@ -26,8 +27,19 @@ export async function getUser({ userId, email, phone }: GetUserRequest) {
   }
 
   if (phone) {
-    const result = await db.select().from(users).where(eq(users.phone, phone)).limit(1)
+    const digits = normalizePhoneDigits(phone)
+    if (!digits) return undefined
 
-    return result[0]
+    const variants = phoneLookupVariants(digits)
+    const [exact] = await db
+      .select()
+      .from(users)
+      .where(inArray(users.phone, variants))
+      .limit(1)
+
+    if (exact) return exact
+
+    const candidates = await db.select().from(users)
+    return candidates.find(candidate => phonesMatch(candidate.phone, digits))
   }
 }

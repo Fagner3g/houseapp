@@ -3,8 +3,9 @@
  * Do not edit manually.
  * HouseApp API
  * API for HouseApp
- * OpenAPI spec version: 1.5.1
+ * OpenAPI spec version: 1.5.2
  */
+import type { UpdateAlertSettings200Timezone } from "./updateAlertSettings200Timezone";
 
 export type UpdateAlertSettings200 = {
   /**
@@ -17,4 +18,6 @@ export type UpdateAlertSettings200 = {
    * @maximum 59
    */
   defaultNotifyMinute: number;
+  timezone: UpdateAlertSettings200Timezone;
+  notifyTimeLabel: string;
 };

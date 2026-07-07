@@ -3,15 +3,12 @@
  * Do not edit manually.
  * HouseApp API
  * API for HouseApp
- * OpenAPI spec version: 1.5.1
+ * OpenAPI spec version: 1.5.2
  */
 import type { ListTransactions200TransactionsItem } from "./listTransactions200TransactionsItem";
+import type { ListTransactions200Pagination } from "./listTransactions200Pagination";
 
 export type ListTransactions200 = {
   transactions: ListTransactions200TransactionsItem[];
-  page: number;
-  perPage: number;
-  totalItems: number;
-  totalPages: number;
-  pagesRemaining: number;
+  pagination: ListTransactions200Pagination;
 };

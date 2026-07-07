@@ -232,3 +232,18 @@ export function listAvailableProviders(): Array<{ name: ProviderName; label: str
     .filter(p => p.available)
     .map(p => ({ name: p.name, label: p.label }))
 }
+
+export async function completeWithProvider(
+  name: ProviderName,
+  messages: LLMMessage[],
+  systemPrompt: string
+): Promise<string> {
+  const provider = getProvider(name)
+  let result = ''
+
+  for await (const chunk of provider.stream(messages, systemPrompt)) {
+    result += chunk
+  }
+
+  return result
+}

@@ -8,7 +8,6 @@ import {
   getListUsersByOrgQueryKey,
   useListUsersByOrg,
   usePatchOrgSlugUsers,
-  useRemoveUserFromOrg,
 } from '@/api/generated/api'
 import type { ListUsersByOrg200, PatchOrgSlugUsersBody } from '@/api/generated/model'
 import { LoadingErrorState } from '@/components/loading-error-state'
@@ -47,32 +46,11 @@ function Users() {
   type UserWithId = ListUsersByOrg200['users'][number] & { id: string }
   type PatchUserBody = PatchOrgSlugUsersBody & { userId: string }
 
-  const { mutateAsync: removeUser, isPending: isDeleting } = useRemoveUserFromOrg({
-    mutation: {
-      onSuccess: (_data, { data }) => {
-        queryClient.invalidateQueries({ queryKey: getListUsersByOrgQueryKey(slug) })
-        toast.success(
-          data.mode === 'delete'
-            ? 'Usuário excluído permanentemente'
-            : 'Usuário desativado na organização'
-        )
-        setIsEditOpen(false)
-        setEditingUser(null)
-      },
-      onError: async (error: unknown) => {
-        let message = 'Erro ao remover usuário'
-        if (error instanceof Response) {
-          try {
-            const body = (await error.json()) as { message?: string }
-            if (body.message) message = body.message
-          } catch {
-            // keep default message
-          }
-        }
-        toast.error(message)
-      },
-    },
-  })
+  const isDeleting = false
+
+  const handleDeleteUser = async (_user: { id: string }, _mode: RemoveUserMode) => {
+    toast.info('Remoção de membros será adicionada nas configurações')
+  }
 
   const handleToggleNotifications = async (
     userId: string,
@@ -134,16 +112,6 @@ function Users() {
       },
     },
   })
-
-  const handleDeleteUser = async (user: { id: string }, mode: RemoveUserMode) => {
-    await removeUser({
-      slug,
-      data: {
-        userId: user.id,
-        mode,
-      },
-    })
-  }
 
   const filteredUsers = useMemo(() => {
     const q = search.trim().toLowerCase()

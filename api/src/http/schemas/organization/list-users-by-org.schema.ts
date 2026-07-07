@@ -12,14 +12,9 @@ export const listUsersByOrgSchema = {
           id: z.string(),
           name: z.string(),
           email: z.string(),
-          phone: z.string(),
-          avatarUrl: z.string(),
-          notificationsEnabled: z.boolean(),
-          alertPreferences: z.object({
-            whatsapp: z.boolean(),
-            inApp: z.boolean(),
-            extension: z.boolean(),
-          }),
+          phone: z.string().nullable(),
+          avatarUrl: z.string().nullable(),
+          role: z.string(),
           isOwner: z.boolean(),
         })
       ),

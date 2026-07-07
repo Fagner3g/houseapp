@@ -3,23 +3,21 @@
  * Do not edit manually.
  * HouseApp API
  * API for HouseApp
- * OpenAPI spec version: 1.5.1
+ * OpenAPI spec version: 1.5.2
  */
 import type { CreateAlertRuleBodyScope } from "./createAlertRuleBodyScope";
-import type { CreateAlertRuleBodyTarget } from "./createAlertRuleBodyTarget";
-import type { CreateAlertRuleBodyKind } from "./createAlertRuleBodyKind";
+import type { CreateAlertRuleBodyTriggerType } from "./createAlertRuleBodyTriggerType";
 import type { CreateAlertRuleBodyConfig } from "./createAlertRuleBodyConfig";
 import type { CreateAlertRuleBodyChannelsItem } from "./createAlertRuleBodyChannelsItem";
-import type { CreateAlertRuleBodyRecipients } from "./createAlertRuleBodyRecipients";
 
 export type CreateAlertRuleBody = {
   scope: CreateAlertRuleBodyScope;
-  target?: CreateAlertRuleBodyTarget;
   /** @nullable */
-  seriesId?: string | null;
-  kind: CreateAlertRuleBodyKind;
+  accountId?: string | null;
+  /** @nullable */
+  recurringTransactionId?: string | null;
+  triggerType: CreateAlertRuleBodyTriggerType;
   config: CreateAlertRuleBodyConfig;
   /** @minItems 1 */
-  channels?: CreateAlertRuleBodyChannelsItem[];
-  recipients?: CreateAlertRuleBodyRecipients;
+  channels: CreateAlertRuleBodyChannelsItem[];
 };

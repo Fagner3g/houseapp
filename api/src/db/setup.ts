@@ -1,6 +1,8 @@
 import fs from 'node:fs'
 import path from 'node:path'
+import { createHash } from 'node:crypto'
 import { sql } from 'drizzle-orm'
+import { readMigrationFiles } from 'drizzle-orm/migrator'
 import postgres from 'postgres'
 
 import { env } from '../config/env'
@@ -129,36 +131,93 @@ export async function setupDatabase(): Promise<void> {
   }
 }
 
+function hashMigrationFile(content: string): string {
+  return createHash('sha256').update(content).digest('hex')
+}
+
+async function getLastDbMigration(): Promise<{ hash: string; created_at: number } | null> {
+  const { db } = await import('./index')
+
+  try {
+    const rows: Array<{ hash: string; created_at: number }> = await db.execute(
+      sql`SELECT hash, created_at FROM drizzle.__drizzle_migrations ORDER BY created_at DESC LIMIT 1`
+    )
+    return rows[0] ?? null
+  } catch {
+    return null
+  }
+}
+
+function getJournalEntries(): Array<{ tag: string; when: number }> {
+  const journalPath = path.join(process.cwd(), '.migrations', 'meta', '_journal.json')
+  if (!fs.existsSync(journalPath)) {
+    return []
+  }
+
+  const journalContent = fs.readFileSync(journalPath, 'utf-8')
+  const journal = JSON.parse(journalContent) as { entries?: Array<{ tag: string; when: number }> }
+  return Array.isArray(journal.entries) ? journal.entries : []
+}
+
+async function getPendingJournalEntries(): Promise<Array<{ tag: string; when: number }>> {
+  const journalPath = path.join(process.cwd(), '.migrations', 'meta', '_journal.json')
+  if (!fs.existsSync(journalPath)) {
+    return []
+  }
+
+  const migrationsFolder = path.join(process.cwd(), '.migrations')
+  const journal = getJournalEntries()
+  const lastDbMigration = await getLastDbMigration()
+
+  let migrations: ReturnType<typeof readMigrationFiles> = []
+  try {
+    migrations = readMigrationFiles({ migrationsFolder })
+  } catch {
+    return journal
+  }
+
+  const pending: Array<{ tag: string; when: number }> = []
+
+  for (let index = 0; index < journal.length; index++) {
+    const entry = journal[index]
+    const migration = migrations[index]
+    const migrationFile = path.join(migrationsFolder, `${entry.tag}.sql`)
+
+    if (!migration || !fs.existsSync(migrationFile)) {
+      pending.push(entry)
+      continue
+    }
+
+    // Same rule as drizzle-orm/pg-core: pending when DB has no record or
+    // the last applied created_at is older than this migration's folderMillis.
+    const isPending =
+      !lastDbMigration || Number(lastDbMigration.created_at) < migration.folderMillis
+
+    if (isPending) {
+      pending.push(entry)
+      continue
+    }
+
+    const sqlContent = fs.readFileSync(migrationFile, 'utf-8')
+    const currentHash = hashMigrationFile(sqlContent)
+    if (lastDbMigration.hash !== currentHash) {
+      logger.warn(
+        `⚠️ Migração ${entry.tag} foi alterada após aplicação (hash divergente). ` +
+          'O drizzle não reaplica migrações já registradas — revise o banco manualmente se necessário.'
+      )
+    }
+  }
+
+  return pending
+}
+
 // Função para ler e mostrar descrições das migrações pendentes
 export async function showPendingMigrations(): Promise<void> {
   try {
-    const journalPath = path.join(process.cwd(), '.migrations', 'meta', '_journal.json')
-
-    if (!fs.existsSync(journalPath)) {
-      logger.info('Nenhum arquivo de journal encontrado')
-      return
-    }
-
-    const journalContent = fs.readFileSync(journalPath, 'utf-8')
-    const journal = JSON.parse(journalContent)
-
-    // Consultar quantas migrações já foram aplicadas (ordem é sequencial)
-    const { db } = await import('./index')
-    let appliedCount = 0
-    try {
-      const rows: Array<{ c: number }> = await db.execute(
-        sql`SELECT count(*)::int AS c FROM drizzle.__drizzle_migrations`
-      )
-      const first = rows?.[0]
-      appliedCount = typeof first?.c === 'number' ? first.c : parseInt(first?.c ?? '0', 10)
-    } catch {
-      // Tabela não existe => nenhuma aplicada
-      appliedCount = 0
-    }
+    const pending = await getPendingJournalEntries()
 
     logger.info('=== Migrações Pendentes ===')
 
-    const pending = journal.entries.slice(appliedCount)
     if (pending.length === 0) {
       logger.info('Nenhuma migração pendente encontrada!')
       logger.info('=== Fim das Migrações ===')
@@ -188,30 +247,8 @@ export async function showPendingMigrations(): Promise<void> {
 // Função para verificar se há migrações pendentes
 async function hasPendingMigrations(): Promise<boolean> {
   try {
-    const journalPath = path.join(process.cwd(), '.migrations', 'meta', '_journal.json')
-    if (!fs.existsSync(journalPath)) {
-      return false
-    }
-
-    const journalContent = fs.readFileSync(journalPath, 'utf-8')
-    const journal = JSON.parse(journalContent)
-
-    const totalMigrations = Array.isArray(journal.entries) ? journal.entries.length : 0
-    if (totalMigrations === 0) return false
-
-    const { db } = await import('./index')
-    let appliedCount = 0
-    try {
-      const rows: Array<{ c: number }> = await db.execute(
-        sql`SELECT count(*)::int AS c FROM drizzle.__drizzle_migrations`
-      )
-      const first = rows?.[0]
-      appliedCount = typeof first?.c === 'number' ? first.c : parseInt(first?.c ?? '0', 10)
-    } catch {
-      appliedCount = 0
-    }
-
-    return appliedCount < totalMigrations
+    const pending = await getPendingJournalEntries()
+    return pending.length > 0
   } catch (error) {
     logger.error('Erro ao verificar migrações pendentes:', error)
     return false

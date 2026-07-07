@@ -1,6 +1,7 @@
 'use client'
 
-import { ChevronDownIcon } from 'lucide-react'
+import dayjs from 'dayjs'
+import { CalendarIcon } from 'lucide-react'
 import { useState } from 'react'
 import type { Matcher } from 'react-day-picker'
 
@@ -11,8 +12,21 @@ import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover
 import { formatDateLabel } from '@/lib/date'
 import { cn } from '@/lib/utils'
 
-/** Above Dialog overlay/content (z-[9999]). */
-const POPOVER_ABOVE_DIALOG_CLASS = 'z-[10010] w-auto overflow-hidden p-0 pointer-events-auto'
+/** Above drawer/dialog overlays (base drawer z-[51], nested z-[101]). */
+const POPOVER_ABOVE_OVERLAY_CLASS = 'z-[10010] w-auto overflow-hidden p-0 pointer-events-auto'
+
+const DATE_PICKER_BUTTON_CLASS =
+  'h-9 w-full justify-between px-3 font-normal hover:bg-slate-50 hover:text-slate-900 focus-visible:border-slate-400 focus-visible:ring-slate-400/30 data-[state=open]:bg-slate-50 data-[state=open]:text-slate-900'
+
+function parseFormDateString(value?: string | null): Date | undefined {
+  if (!value) return undefined
+  return dayjs(value).startOf('day').toDate()
+}
+
+function formatFormDateString(date?: Date): string {
+  if (!date) return ''
+  return dayjs(date).format('YYYY-MM-DD')
+}
 
 export type DatePickerProps = {
   value?: Date
@@ -46,7 +60,8 @@ export function DatePicker({
   toYear = new Date().getFullYear() + 10,
   disabledDates,
   'aria-invalid': ariaInvalid,
-}: DatePickerProps) {
+  ...buttonProps
+}: DatePickerProps & React.ComponentProps<'button'>) {
   const [open, setOpen] = useState(false)
 
   const calendarDisabled =
@@ -67,18 +82,23 @@ export function DatePicker({
           id={id}
           disabled={disabled}
           aria-invalid={ariaInvalid}
+          {...buttonProps}
           className={cn(
-            'w-full justify-between font-normal',
+            DATE_PICKER_BUTTON_CLASS,
             !value && 'text-muted-foreground',
-            buttonClassName
+            buttonClassName,
+            buttonProps.className
           )}
         >
-          {value ? formatDateLabel(value) : placeholder}
-          <ChevronDownIcon className="h-4 w-4 opacity-50" />
+          <span className="truncate">
+            {value ? formatDateLabel(value) : placeholder}
+          </span>
+          <CalendarIcon className="size-4 shrink-0 opacity-50" />
         </Button>
       </PopoverTrigger>
-      <PopoverContent align={align} className={cn(POPOVER_ABOVE_DIALOG_CLASS, className)}>
+      <PopoverContent align={align} className={cn(POPOVER_ABOVE_OVERLAY_CLASS, className)}>
         <Calendar
+          tone="neutral"
           mode="single"
           selected={value}
           captionLayout="dropdown"
@@ -113,5 +133,21 @@ export function DatePickerField({ label, labelClassName, id, ...props }: DatePic
       ) : null}
       <DatePicker id={id} {...props} />
     </div>
+  )
+}
+
+/** DatePicker bound to `YYYY-MM-DD` strings (react-hook-form friendly). */
+export type DatePickerInputProps = Omit<DatePickerProps, 'value' | 'onChange'> & {
+  value?: string | null
+  onChange: (value: string) => void
+}
+
+export function DatePickerInput({ value, onChange, ...props }: DatePickerInputProps) {
+  return (
+    <DatePicker
+      {...props}
+      value={parseFormDateString(value)}
+      onChange={date => onChange(formatFormDateString(date))}
+    />
   )
 }

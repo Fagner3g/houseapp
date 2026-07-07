@@ -3,7 +3,7 @@
  * Do not edit manually.
  * HouseApp API
  * API for HouseApp
- * OpenAPI spec version: 1.5.1
+ * OpenAPI spec version: 1.5.2
  */
 import type { UpdateAlertRule200RuleConfigAnyOf } from "./updateAlertRule200RuleConfigAnyOf";
 import type { UpdateAlertRule200RuleConfigAnyOfTwo } from "./updateAlertRule200RuleConfigAnyOfTwo";

@@ -43,7 +43,7 @@ function RouteComponent() {
 
           // 3) Navega: se tiver organização, vai pro dashboard; senão, abre criação
           if (data.slug) {
-            navigate({ to: '/$org/dashboard', params: { org: data.slug } })
+            navigate({ to: '/$org', params: { org: data.slug } })
           } else {
             navigate({ to: '/new-org' })
           }

@@ -785,3 +785,14 @@ section {
 }
 
 .btn-secondary:hover { background: #f3f4f6; }
+
+.summary-badge {
+  margin: 12px;
+  padding: 10px 12px;
+  border-radius: 10px;
+  background: #fff;
+  border: 1px solid #e5e7eb;
+  font-weight: 600;
+  color: #1a1a2e;
+  text-align: center;
+}

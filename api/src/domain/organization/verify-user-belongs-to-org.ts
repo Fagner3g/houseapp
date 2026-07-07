@@ -2,8 +2,8 @@ import { and, eq } from 'drizzle-orm'
 import type { FastifyRequest } from 'fastify'
 
 import { db } from '@/db'
-import { organizations } from '@/db/schemas/organization'
-import { userOrganizations } from '@/db/schemas/userOrganization'
+import { organizations } from '@/db/schemas/organizations'
+import { organizationMembers } from '@/db/schemas/organizationMembers'
 
 export async function verifyUserBelongsToOrg(request: FastifyRequest, slug: string) {
   const userId = request.user.sub
@@ -20,11 +20,11 @@ export async function verifyUserBelongsToOrg(request: FastifyRequest, slug: stri
 
   const [membership] = await db
     .select()
-    .from(userOrganizations)
+    .from(organizationMembers)
     .where(
       and(
-        eq(userOrganizations.userId, userId),
-        eq(userOrganizations.organizationId, organization.id)
+        eq(organizationMembers.userId, userId),
+        eq(organizationMembers.organizationId, organization.id)
       )
     )
     .limit(1)

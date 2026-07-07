@@ -3,9 +3,17 @@
  * Do not edit manually.
  * HouseApp API
  * API for HouseApp
- * OpenAPI spec version: 1.5.1
+ * OpenAPI spec version: 1.5.2
  */
+import type { CreateTransaction201Transaction } from "./createTransaction201Transaction";
+import type { CreateTransaction201TransactionsItem } from "./createTransaction201TransactionsItem";
 
 export type CreateTransaction201 = {
-  seriesId: string;
+  transaction: CreateTransaction201Transaction;
+  /**
+   * @minimum -9007199254740991
+   * @maximum 9007199254740991
+   */
+  installmentsCreated?: number;
+  transactions?: CreateTransaction201TransactionsItem[];
 };

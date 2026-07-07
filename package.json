@@ -5,6 +5,7 @@
   "scripts": {
     "prepare": "husky install",
     "test": "npm test --prefix api",
+    "seed:clear-transactions": "npm run seed:clear-transactions --prefix api",
     "precommit": "lint-staged",
     "dev": "./web/node_modules/.bin/concurrently -n api,web -c blue,green \"cd api && TZ=UTC npx tsx watch --env-file ./.env src/http/server.ts\" \"cd web && yarn dev\""
   },

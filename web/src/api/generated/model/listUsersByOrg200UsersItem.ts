@@ -3,17 +3,17 @@
  * Do not edit manually.
  * HouseApp API
  * API for HouseApp
- * OpenAPI spec version: 1.5.1
+ * OpenAPI spec version: 1.5.2
  */
-import type { ListUsersByOrg200UsersItemAlertPreferences } from "./listUsersByOrg200UsersItemAlertPreferences";
 
 export type ListUsersByOrg200UsersItem = {
   id: string;
   name: string;
   email: string;
-  phone: string;
-  avatarUrl: string;
-  notificationsEnabled: boolean;
-  alertPreferences: ListUsersByOrg200UsersItemAlertPreferences;
+  /** @nullable */
+  phone: string | null;
+  /** @nullable */
+  avatarUrl: string | null;
+  role: string;
   isOwner: boolean;
 };

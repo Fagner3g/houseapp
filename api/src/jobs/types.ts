@@ -3,6 +3,7 @@ export interface JobConfig {
   schedule: string
   timezone: string
   description: string
+  enabled?: boolean
 }
 
 export interface JobResult {

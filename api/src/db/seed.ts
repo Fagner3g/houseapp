@@ -1,21 +1,25 @@
 import dayjs from 'dayjs'
-import { and, eq, inArray } from 'drizzle-orm'
+import { and, eq } from 'drizzle-orm'
 import slugify from 'slugify'
 
 import { client, db } from '.'
-import { investmentAssets } from './schemas/investmentAssets'
-import { investmentExecutions } from './schemas/investmentExecutions'
-import { investmentPlans } from './schemas/investmentPlans'
-import { investmentQuotes } from './schemas/investmentQuotes'
-import { organizations } from './schemas/organization'
-import { userOrganizations } from './schemas/userOrganization'
+import { accounts } from './schemas/accounts'
+import { cards } from './schemas/cards'
+import { organizationMembers } from './schemas/organizationMembers'
+import { organizations } from './schemas/organizations'
+import { transactionCategories } from './schemas/transactionCategories'
+import { transactions } from './schemas/transactions'
 import { users } from './schemas/users'
+import {
+  ensureDefaultCategories,
+  getCategoryIdByName,
+  getOrganizationCategories,
+} from '@/modules/categories/default-categories'
 
 const TEST_USER_EMAIL = 'fagner.egomes@gmail.com'
-const TEST_USER_PHONE =
-  process.env.DEV_PHONE_OVERRIDE || process.env.DEV_PHONE || ''
-const TEST_ORG_SLUG = slugify('My House', { lower: true })
-const TEST_SYMBOLS = ['MXRF11', 'PETR4', 'TESOURO-IPCA-2035']
+const TEST_USER_PHONE = process.env.DEV_PHONE_OVERRIDE || process.env.DEV_PHONE || null
+const TEST_USER_PHONE_VALUE = TEST_USER_PHONE?.replace(/\D/g, '') || null
+const TEST_ORG_SLUG = slugify('Casa', { lower: true })
 
 async function ensureUser() {
   const [existing] = await db.select().from(users).where(eq(users.email, TEST_USER_EMAIL))
@@ -30,7 +34,7 @@ async function ensureUser() {
       name: 'Fagner Gomes',
       avatarUrl: 'https://github.com/fagner3g.png',
       email: TEST_USER_EMAIL,
-      phone: TEST_USER_PHONE,
+      phone: TEST_USER_PHONE_VALUE,
     })
     .returning()
 
@@ -38,7 +42,23 @@ async function ensureUser() {
 }
 
 async function ensureOrganization(userId: string) {
-  const [existing] = await db.select().from(organizations).where(eq(organizations.slug, TEST_ORG_SLUG))
+  // Migrate legacy seed slug from rebuild v1
+  const [legacy] = await db
+    .select()
+    .from(organizations)
+    .where(eq(organizations.slug, 'my-house'))
+
+  if (legacy && legacy.ownerId === userId) {
+    await db
+      .update(organizations)
+      .set({ slug: TEST_ORG_SLUG, name: 'Casa' })
+      .where(eq(organizations.id, legacy.id))
+  }
+
+  const [existing] = await db
+    .select()
+    .from(organizations)
+    .where(eq(organizations.slug, TEST_ORG_SLUG))
 
   const organization =
     existing ??
@@ -46,7 +66,7 @@ async function ensureOrganization(userId: string) {
       await db
         .insert(organizations)
         .values({
-          name: 'My House',
+          name: 'Casa',
           slug: TEST_ORG_SLUG,
           ownerId: userId,
         })
@@ -55,206 +75,187 @@ async function ensureOrganization(userId: string) {
 
   const [membership] = await db
     .select()
-    .from(userOrganizations)
+    .from(organizationMembers)
     .where(
       and(
-        eq(userOrganizations.userId, userId),
-        eq(userOrganizations.organizationId, organization.id)
+        eq(organizationMembers.userId, userId),
+        eq(organizationMembers.organizationId, organization.id)
       )
     )
 
   if (!membership) {
-    await db.insert(userOrganizations).values({
+    await db.insert(organizationMembers).values({
       userId,
       organizationId: organization.id,
+      role: 'owner',
     })
   }
 
   return organization
 }
 
-async function clearPreviousInvestmentFixture(userId: string) {
-  const existingAssets = await db
-    .select({ id: investmentAssets.id })
-    .from(investmentAssets)
-    .where(
-      and(eq(investmentAssets.userId, userId), inArray(investmentAssets.symbol, TEST_SYMBOLS))
-    )
+async function seedDemoData() {
+  const user = await ensureUser()
+  const organization = await ensureOrganization(user.id)
 
-  const assetIds = existingAssets.map(item => item.id)
-  if (assetIds.length === 0) return
+  const existingAccounts = await db
+    .select({ id: accounts.id })
+    .from(accounts)
+    .where(eq(accounts.organizationId, organization.id))
 
-  const existingPlans = await db
-    .select({ id: investmentPlans.id })
-    .from(investmentPlans)
-    .where(and(eq(investmentPlans.userId, userId), inArray(investmentPlans.assetId, assetIds)))
-
-  const planIds = existingPlans.map(item => item.id)
-
-  if (planIds.length > 0) {
-    await db.delete(investmentExecutions).where(inArray(investmentExecutions.planId, planIds))
-    await db.delete(investmentPlans).where(inArray(investmentPlans.id, planIds))
+  if (existingAccounts.length > 0) {
+    console.log('\nSeed demo já aplicado para esta organização.')
+    console.log(`Usuário: ${user.email}`)
+    console.log(`Organização: ${organization.slug}`)
+    return
   }
 
-  await db.delete(investmentExecutions).where(inArray(investmentExecutions.assetId, assetIds))
-  await db.delete(investmentQuotes).where(inArray(investmentQuotes.assetId, assetIds))
-  await db.delete(investmentAssets).where(inArray(investmentAssets.id, assetIds))
-}
-
-async function seedInvestments() {
-  const user = await ensureUser()
-  await ensureOrganization(user.id)
-  await clearPreviousInvestmentFixture(user.id)
-
-  const [mxrf, petr, tesouro] = await db
-    .insert(investmentAssets)
+  const [nubankAccount, itauAccount, cashAccount] = await db
+    .insert(accounts)
     .values([
       {
-        userId: user.id,
-        symbol: 'MXRF11',
-        displayName: 'Maxi Renda FII',
-        assetClass: 'FII',
-        quotePreference: 'auto_with_manual_fallback',
-        notes: 'Ativo para testar aportes por valor com progressão linear',
+        organizationId: organization.id,
+        name: 'Nubank Ultravioleta',
+        type: 'credit_card',
+        institution: 'nubank',
+        creditLimit: 1500000n,
+        closingDay: 1,
+        dueDay: 18,
+        initialBalance: 0n,
+        color: '#7C3AED',
+        icon: 'credit-card',
+        displayOrder: 0,
       },
       {
-        userId: user.id,
-        symbol: 'PETR4',
-        displayName: 'Petrobras PN',
-        assetClass: 'Ação',
-        quotePreference: 'manual',
-        notes: 'Ativo para testar aportes por quantidade e cotação manual',
+        organizationId: organization.id,
+        name: 'Conta Corrente Itaú',
+        type: 'checking',
+        institution: 'itau',
+        initialBalance: 850000n,
+        pixKey: user.email,
+        pixKeyType: 'email',
+        color: '#F97316',
+        icon: 'landmark',
+        displayOrder: 1,
       },
       {
-        userId: user.id,
-        symbol: 'TESOURO-IPCA-2035',
-        displayName: 'Tesouro IPCA 2035',
-        assetClass: 'Renda fixa',
-        quotePreference: 'manual',
-        notes: 'Ativo genérico para testar cadastro fora da bolsa',
+        organizationId: organization.id,
+        name: 'Carteira',
+        type: 'cash',
+        initialBalance: 42000n,
+        color: '#10B981',
+        icon: 'wallet',
+        displayOrder: 2,
       },
     ])
     .returning()
 
-  await db.insert(investmentQuotes).values([
-    {
-      assetId: mxrf.id,
-      source: 'manual',
-      price: 1035n,
-      capturedAt: dayjs().subtract(1, 'day').toDate(),
-    },
-    {
-      assetId: petr.id,
-      source: 'manual',
-      price: 3820n,
-      capturedAt: dayjs().subtract(1, 'day').toDate(),
-    },
-    {
-      assetId: tesouro.id,
-      source: 'manual',
-      price: 11420n,
-      capturedAt: dayjs().subtract(1, 'day').toDate(),
-    },
-  ])
+  const [nubankCard] = await db
+    .insert(cards)
+    .values({
+      accountId: nubankAccount.id,
+      label: 'Principal',
+      lastFourDigits: '4532',
+      type: 'physical',
+      holderName: user.name,
+      brand: 'mastercard',
+      status: 'active',
+    })
+    .returning()
 
-  const currentMonthStart = dayjs().startOf('month')
-  const previousMonthStart = currentMonthStart.subtract(1, 'month')
-  const twoMonthsAgoStart = currentMonthStart.subtract(2, 'month')
+  await ensureDefaultCategories(organization.id)
+  const categoryRows = await getOrganizationCategories(organization.id)
+  const salaryCategoryId = getCategoryIdByName(
+    categoryRows,
+    'Salário / Renda Principal',
+    'income'
+  )
+  const mercadoCategoryId = getCategoryIdByName(categoryRows, 'Mercado', 'expense')
+  const transporteCategoryId = getCategoryIdByName(
+    categoryRows,
+    'Transporte (Uber, Combustível)',
+    'expense'
+  )
+  const restaurantesCategoryId = getCategoryIdByName(
+    categoryRows,
+    'Restaurantes & Delivery',
+    'expense'
+  )
 
-  const [mxrfPlan, petrPlan, _tesouroPlan] = await db
-    .insert(investmentPlans)
+  const today = dayjs()
+  const yesterday = today.subtract(1, 'day')
+
+  const [salaryTx, marketTx, fuelTx, ifoodTx] = await db
+    .insert(transactions)
     .values([
       {
-        userId: user.id,
-        assetId: mxrf.id,
-        frequency: 'monthly',
-        mode: 'amount',
-        progressionType: 'linear_step',
-        initialAmount: 1000n,
-        stepAmount: 1000n,
-        startDate: twoMonthsAgoStart.date(5).toDate(),
-        active: true,
+        organizationId: organization.id,
+        accountId: itauAccount.id,
+        title: 'Salário',
+        amount: 850000n,
+        type: 'income',
+        date: yesterday.hour(9).toDate(),
+        status: 'paid',
+        paidAt: yesterday.hour(9).toDate(),
+        paidAmount: 850000n,
+        counterparty: 'Empresa',
+        source: 'manual',
       },
       {
-        userId: user.id,
-        assetId: petr.id,
-        frequency: 'monthly',
-        mode: 'quantity',
-        progressionType: 'linear_step',
-        initialQuantity: 1,
-        stepQuantity: 1,
-        startDate: previousMonthStart.date(10).toDate(),
-        active: true,
+        organizationId: organization.id,
+        accountId: nubankAccount.id,
+        cardId: nubankCard.id,
+        title: 'Mercado Pão de Açúcar',
+        amount: 23400n,
+        type: 'expense',
+        date: today.hour(12).toDate(),
+        status: 'paid',
+        paidAt: today.hour(12).toDate(),
+        paidAmount: 23400n,
+        counterparty: 'Pão de Açúcar',
+        source: 'manual',
       },
       {
-        userId: user.id,
-        assetId: tesouro.id,
-        frequency: 'monthly',
-        mode: 'amount',
-        progressionType: 'fixed',
-        initialAmount: 5000n,
-        stepAmount: 0n,
-        startDate: currentMonthStart.date(15).toDate(),
-        active: true,
+        organizationId: organization.id,
+        accountId: nubankAccount.id,
+        cardId: nubankCard.id,
+        title: 'Shell Combustível',
+        amount: 25000n,
+        type: 'expense',
+        date: yesterday.hour(18).toDate(),
+        status: 'paid',
+        paidAt: yesterday.hour(18).toDate(),
+        paidAmount: 25000n,
+        counterparty: 'Shell',
+        source: 'manual',
+      },
+      {
+        organizationId: organization.id,
+        accountId: nubankAccount.id,
+        cardId: nubankCard.id,
+        title: 'iFood',
+        amount: 6700n,
+        type: 'expense',
+        date: today.hour(20).toDate(),
+        status: 'pending',
+        counterparty: 'iFood',
+        source: 'manual',
       },
     ])
     .returning()
 
-  await db.insert(investmentExecutions).values([
-    {
-      userId: user.id,
-      assetId: mxrf.id,
-      planId: mxrfPlan.id,
-      referenceMonth: twoMonthsAgoStart.format('YYYY-MM'),
-      plannedAmount: 1000n,
-      plannedQuantity: 0.9804,
-      investedAmount: 1000n,
-      executedQuantity: 0.98,
-      executedUnitPrice: 1020n,
-      executedAt: twoMonthsAgoStart.date(5).hour(10).toDate(),
-    },
-    {
-      userId: user.id,
-      assetId: mxrf.id,
-      planId: mxrfPlan.id,
-      referenceMonth: previousMonthStart.format('YYYY-MM'),
-      plannedAmount: 2000n,
-      plannedQuantity: 1.9512,
-      investedAmount: 2000n,
-      executedQuantity: 1.95,
-      executedUnitPrice: 1025n,
-      executedAt: previousMonthStart.date(5).hour(10).toDate(),
-    },
-    {
-      userId: user.id,
-      assetId: petr.id,
-      planId: petrPlan.id,
-      referenceMonth: previousMonthStart.format('YYYY-MM'),
-      plannedAmount: 3650n,
-      plannedQuantity: 1,
-      investedAmount: 3650n,
-      executedQuantity: 1,
-      executedUnitPrice: 3650n,
-      executedAt: previousMonthStart.date(10).hour(11).toDate(),
-    },
-    {
-      userId: user.id,
-      assetId: petr.id,
-      planId: petrPlan.id,
-      referenceMonth: currentMonthStart.format('YYYY-MM'),
-      plannedAmount: 7440n,
-      plannedQuantity: 2,
-      investedAmount: 7440n,
-      executedQuantity: 2,
-      executedUnitPrice: 3720n,
-      executedAt: currentMonthStart.date(10).hour(11).toDate(),
-    },
+  await db.insert(transactionCategories).values([
+    { transactionId: salaryTx.id, categoryId: salaryCategoryId },
+    { transactionId: marketTx.id, categoryId: mercadoCategoryId },
+    { transactionId: fuelTx.id, categoryId: transporteCategoryId },
+    { transactionId: ifoodTx.id, categoryId: restaurantesCategoryId },
   ])
 
-  console.log('\nSeed segura de investimentos aplicada.')
-  console.log(`Usuário de teste: ${user.email}`)
-  console.log('A base existente foi preservada.')
-  console.log('Somente o fixture de investimentos desse usuário foi recriado.')
+  console.log('\nSeed demo aplicada com sucesso.')
+  console.log(`Usuário: ${user.email}`)
+  console.log(`Organização: ${organization.slug}`)
+  console.log('Contas: Nubank (credit_card), Itaú (checking), Carteira (cash)')
+  console.log(`Transações: ${4} lançamentos de exemplo`)
 }
 
-seedInvestments().finally(() => client.end())
+seedDemoData().finally(() => client.end())

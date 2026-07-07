@@ -3,10 +3,11 @@
  * Do not edit manually.
  * HouseApp API
  * API for HouseApp
- * OpenAPI spec version: 1.5.1
+ * OpenAPI spec version: 1.5.2
  */
 
 export type ValidateToken200 = {
   valid: boolean;
-  slug?: string;
+  /** @nullable */
+  slug?: string | null;
 };
