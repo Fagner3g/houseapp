@@ -53,7 +53,7 @@ export function ModalNewOrganization({ open, onOpenChange }: ModalNewOrganizatio
     onOpenChange(false)
     form.reset({ name: '' })
     // Navegar para o dashboard da nova organização
-    navigate({ to: `/${result.slug}/dashboard` })
+    navigate({ to: '/$org', params: { org: result.slug } })
     setIsRedirecting(false)
   }
 

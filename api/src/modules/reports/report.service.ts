@@ -5,7 +5,7 @@ import { centavosToString } from '@/core/money'
 
 import type {
   AccountReportRow,
-  CardReportRow,
+  CardTransactionsReportResult,
   CategoryReportRow,
   DailyReportRow,
   MonthlyTrendRow,
@@ -53,19 +53,22 @@ export type CategoryReportDto = {
   percentage: string
 }
 
-export type CardReportDto = {
-  cardId: string
-  label: string
+export type CardTransactionReportDto = {
+  transactionId: string
+  title: string
+  amount: string
+  myAmount: string
+  purchaseDate: string
+  cardId: string | null
+  cardLabel: string | null
   lastFourDigits: string | null
   accountId: string
   accountName: string
-  total: string
-  myTotal: string
   percentage: string
 }
 
 export type ByCardReportDto = {
-  cards: CardReportDto[]
+  transactions: CardTransactionReportDto[]
   grandTotal: string
   myGrandTotal: string
 }
@@ -144,30 +147,32 @@ function toCategoryDtos(rows: CategoryReportRow[]): CategoryReportDto[] {
   })
 }
 
-function toCardDtos(rows: CardReportRow[]): ByCardReportDto {
-  const grandTotal = rows.reduce((sum, row) => sum + row.total, 0n)
-  const myGrandTotal = rows.reduce((sum, row) => sum + row.myTotal, 0n)
+function toCardTransactionDtos(result: CardTransactionsReportResult): ByCardReportDto {
+  const { transactions: rows, grandTotal, myGrandTotal } = result
 
-  const cards = rows.map(row => {
+  const transactions = rows.map(row => {
     const percentage =
       grandTotal > 0n
-        ? (Number((row.total * 10000n) / grandTotal) / 100).toFixed(2)
+        ? (Number((row.amount * 10000n) / grandTotal) / 100).toFixed(2)
         : '0.00'
 
     return {
+      transactionId: row.transactionId,
+      title: row.title,
+      amount: centavosToString(row.amount) ?? '0.00',
+      myAmount: centavosToString(row.myAmount) ?? '0.00',
+      purchaseDate: row.purchaseDate.toISOString(),
       cardId: row.cardId,
-      label: row.label,
+      cardLabel: row.cardLabel,
       lastFourDigits: row.lastFourDigits,
       accountId: row.accountId,
       accountName: row.accountName,
-      total: centavosToString(row.total) ?? '0.00',
-      myTotal: centavosToString(row.myTotal) ?? '0.00',
       percentage,
     }
   })
 
   return {
-    cards,
+    transactions,
     grandTotal: centavosToString(grandTotal) ?? '0.00',
     myGrandTotal: centavosToString(myGrandTotal) ?? '0.00',
   }
@@ -245,12 +250,12 @@ export class ReportService {
     dateTo?: string
   ): Promise<ByCardReportDto> {
     const range = parseDateRange(dateFrom, dateTo)
-    const rows = await this.reportRepository.getByCard(organizationId, range)
-    return toCardDtos(rows)
+    const result = await this.reportRepository.getByCard(organizationId, range)
+    return toCardTransactionDtos(result)
   }
 
-  async getTrends(organizationId: string, months = 6): Promise<TrendsReportDto> {
-    const rows = await this.reportRepository.getTrends(organizationId, months)
+  async getTrends(organizationId: string, months = 6, endMonth?: string): Promise<TrendsReportDto> {
+    const rows = await this.reportRepository.getTrends(organizationId, months, endMonth)
     return { months: toTrendDtos(rows) }
   }
 

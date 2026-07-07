@@ -103,8 +103,13 @@ export class DashboardInsightsService {
 
     const income = parseAmount(summary.totalIncome)
     const expense = parseAmount(summary.totalExpense)
-    const balance = income - expense
+    const myExpense = parseAmount(summary.myExpenseTotal)
+    const balance = income - myExpense
     const savingsRate = income > 0 ? (balance / income) * 100 : null
+
+    const previousIncome = parseAmount(prevSummary.totalIncome)
+    const previousExpense = parseAmount(prevSummary.totalExpense)
+    const previousMyExpense = parseAmount(prevSummary.myExpenseTotal)
 
     const prevByName = new Map(prevCategories.map(c => [c.name, parseAmount(c.total)]))
 
@@ -132,12 +137,13 @@ export class DashboardInsightsService {
       monthLabel: dayjs(range.from).format('MMMM [de] YYYY'),
       income,
       expense,
+      myExpense,
       balance,
       savingsRate,
-      previousIncome: parseAmount(prevSummary.totalIncome),
-      previousExpense: parseAmount(prevSummary.totalExpense),
-      previousBalance:
-        parseAmount(prevSummary.totalIncome) - parseAmount(prevSummary.totalExpense),
+      previousIncome,
+      previousExpense,
+      previousMyExpense,
+      previousBalance: previousIncome - previousMyExpense,
       netWorth: parseAmount(summary.netWorth),
       overdueCount: summary.overdueCount,
       overdueTotal: parseAmount(overdueTotal),
@@ -166,7 +172,8 @@ export class DashboardInsightsService {
     dateTo?: string
   ): Promise<InsightsReportDto> {
     const monthKey = dayjs(dateFrom ?? undefined).format('YYYY-MM') || dayjs().format('YYYY-MM')
-    const cacheKey = `${organizationId}:${userId}:${monthKey}`
+    const dateToKey = dateTo ? dayjs(dateTo).format('YYYY-MM-DD') : 'default'
+    const cacheKey = `${organizationId}:${userId}:${monthKey}:${dateToKey}`
     const cached = cache.get(cacheKey)
 
     if (cached && cached.expiresAt > Date.now()) {

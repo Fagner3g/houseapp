@@ -90,3 +90,7 @@ sudo cp deploy/env/web.env /opt/stacks/houseapp/web.env
 - [ ] Configurar valores reais nos arquivos
 - [ ] Verificar se PostgreSQL está na rede `network_swarm_public`
 - [ ] Fazer deploy da stack
+
+## 🔄 Migração de produção (schema v2)
+
+Antes de deployar o código v2 em `main`, siga o guia em [`PROD_MIGRATION.md`](./PROD_MIGRATION.md).

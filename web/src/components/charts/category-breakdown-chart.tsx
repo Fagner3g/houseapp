@@ -3,7 +3,7 @@ import { Cell, Pie, PieChart, ResponsiveContainer, Tooltip } from 'recharts'
 
 interface CategoryBreakdown {
   category: string
-  count: number
+  percentage: number
   totalAmount: number
   color?: string
 }
@@ -111,7 +111,7 @@ export function CategoryBreakdownChart({ data }: CategoryBreakdownChartProps) {
                     <div className="rounded-lg border bg-background p-3 shadow-md">
                       <p className="font-medium">{data.category}</p>
                       <div className="space-y-1">
-                        <p className="text-sm">Quantidade: {data.count}</p>
+                        <p className="text-sm">Participação: {data.percentage.toFixed(1)}%</p>
                         <p className="text-sm">Valor: {formatCurrency(data.totalAmount)}</p>
                       </div>
                     </div>

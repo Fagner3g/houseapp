@@ -6,6 +6,7 @@ import { formatCurrency, moneyStringToReais } from '@/lib/currency'
 
 interface RecurringCostCardProps {
   recurring?: ListRecurringTransactions200RecurringTransactionsItem[]
+  isLoading?: boolean
 }
 
 function monthlyEquivalent(
@@ -28,7 +29,7 @@ function monthlyEquivalent(
   }
 }
 
-export function RecurringCostCard({ recurring = [] }: RecurringCostCardProps) {
+export function RecurringCostCard({ recurring = [], isLoading }: RecurringCostCardProps) {
   const expenses = recurring.filter(r => r.type === 'expense' && r.isActive)
   const monthlyTotal = expenses.reduce(
     (sum, r) =>
@@ -43,15 +44,24 @@ export function RecurringCostCard({ recurring = [] }: RecurringCostCardProps) {
         <CardTitle className="text-base">Custos fixos</CardTitle>
       </CardHeader>
       <CardContent>
-        <p className="text-2xl font-bold tabular-nums text-slate-900">
-          {formatCurrency(monthlyTotal)}
-          <span className="text-sm font-normal text-slate-500">/mês</span>
-        </p>
-        <p className="mt-1 text-sm text-slate-500">
-          {expenses.length === 0
-            ? 'Nenhuma despesa recorrente ativa'
-            : `${expenses.length} despesa(s) recorrente(s) ativa(s)`}
-        </p>
+        {isLoading ? (
+          <div className="space-y-2">
+            <div className="h-8 w-32 animate-pulse rounded bg-slate-200" />
+            <div className="h-4 w-48 animate-pulse rounded bg-slate-100" />
+          </div>
+        ) : (
+          <>
+            <p className="text-2xl font-bold tabular-nums text-slate-900">
+              {formatCurrency(monthlyTotal)}
+              <span className="text-sm font-normal text-slate-500">/mês</span>
+            </p>
+            <p className="mt-1 text-sm text-slate-500">
+              {expenses.length === 0
+                ? 'Nenhuma despesa recorrente ativa'
+                : `${expenses.length} despesa(s) recorrente(s) ativa(s)`}
+            </p>
+          </>
+        )}
       </CardContent>
     </Card>
   )

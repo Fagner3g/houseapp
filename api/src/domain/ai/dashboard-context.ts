@@ -17,10 +17,12 @@ export type DashboardInsightsContext = {
   monthLabel: string
   income: number
   expense: number
+  myExpense: number
   balance: number
   savingsRate: number | null
   previousIncome: number
   previousExpense: number
+  previousMyExpense: number
   previousBalance: number
   netWorth: number
   overdueCount: number
@@ -74,14 +76,16 @@ Regras:
 
 Mês: ${data.monthLabel}
 Receitas: ${formatBRL(data.income)}
-Despesas: ${formatBRL(data.expense)}
+Meu gasto: ${formatBRL(data.myExpense)}
+Despesas da casa: ${formatBRL(data.expense)}
 Saldo do mês: ${formatBRL(data.balance)}
 Taxa de poupança: ${data.savingsRate != null ? `${data.savingsRate.toFixed(0)}%` : 'N/A'}
 Patrimônio líquido: ${formatBRL(data.netWorth)}
 
 Mês anterior:
 Receitas: ${formatBRL(data.previousIncome)}
-Despesas: ${formatBRL(data.previousExpense)}
+Meu gasto: ${formatBRL(data.previousMyExpense)}
+Despesas da casa: ${formatBRL(data.previousExpense)}
 Saldo: ${formatBRL(data.previousBalance)}
 
 Pendências: ${data.pendingCount} transações
@@ -105,7 +109,7 @@ export function buildFallbackInsights(data: DashboardInsightsContext): Dashboard
   if (data.balance < 0) {
     insights.push({
       title: 'Saldo negativo no mês',
-      body: `Suas despesas (${formatBRL(data.expense)}) superaram as receitas (${formatBRL(data.income)}). Revise gastos não essenciais.`,
+      body: `Seu gasto (${formatBRL(data.myExpense)}) superou as receitas (${formatBRL(data.income)}). Revise gastos não essenciais.`,
       type: 'warning',
     })
   } else if (data.balance > 0) {

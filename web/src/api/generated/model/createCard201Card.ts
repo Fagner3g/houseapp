@@ -18,6 +18,8 @@ export type CreateCard201Card = {
   /** @nullable */
   holderName: string | null;
   /** @nullable */
+  userId: string | null;
+  /** @nullable */
   brand: string | null;
   status: CreateCard201CardStatus;
   /** @nullable */

@@ -10319,7 +10319,7 @@ export function useGetReportByCategory<
 }
 
 /**
- * Expense breakdown by credit card
+ * Top credit card expense transactions for a date range
  */
 export const getGetReportByCardUrl = (
   slug: string,

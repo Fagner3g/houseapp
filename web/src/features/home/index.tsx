@@ -15,10 +15,10 @@ import {
 } from '@/api/generated/api'
 import { LoadingErrorState } from '@/components/loading-error-state'
 import { currentMonthKey, monthKeyToRange, shiftMonth } from '@/lib/date-range'
-import { formatCentsString } from '@/lib/currency'
 import { pageInset, pageShell, pageSubtitle } from '@/lib/ui-classes'
 import { useActiveOrganization } from '@/hooks/use-active-organization'
 
+import { AccountBalancesCard } from './components/account-balances-card'
 import { AttentionPanel } from './components/attention-panel'
 import { CardSpendingCard } from './components/card-spending-card'
 import { CategoryChartCard } from './components/category-chart-card'
@@ -26,8 +26,10 @@ import { DailyFlowCard } from './components/daily-flow-card'
 import { DashboardKpiRow } from './components/dashboard-kpi-row'
 import { InsightsCard } from './components/insights-card'
 import { MonthPicker } from './components/month-picker'
+import { OpenInvoicesCard } from './components/open-invoices-card'
 import { RecurringCostCard } from './components/recurring-cost-card'
 import { TrendsChartCard } from './components/trends-chart-card'
+import { usePeriodCashFlowKpis } from './hooks/use-period-cash-flow-kpis'
 
 function toIsoRange(monthKey: string) {
   const { dateFrom, dateTo } = monthKeyToRange(monthKey)
@@ -49,7 +51,7 @@ export function HomePage() {
   const prevSummary = useGetReportSummary(slug, prevRange, {
     query: { enabled: !!slug, placeholderData: keepPreviousData },
   })
-  const trends = useGetReportTrends(slug, { months: 6 }, {
+  const trends = useGetReportTrends(slug, { months: 6, endMonth: monthKey }, {
     query: { enabled: !!slug, retry: 1 },
   })
   const daily = useGetReportDaily(slug, range, {
@@ -67,6 +69,7 @@ export function HomePage() {
   const insights = useGetReportInsights(slug, range, {
     query: { enabled: !!slug, staleTime: 60 * 60 * 1000 },
   })
+  const cashFlow = usePeriodCashFlowKpis(monthKey)
 
   const isSummaryLoading = summary.isLoading && !summary.data
   const summaryError = summary.error
@@ -104,10 +107,16 @@ export function HomePage() {
 
         <div className="flex flex-col gap-4 px-4 lg:px-6">
           {summary.data ? (
-            <DashboardKpiRow summary={summary.data} previousSummary={prevSummary.data} />
+            <DashboardKpiRow
+              summary={summary.data}
+              previousSummary={prevSummary.data}
+              pendingExpense={cashFlow.pendingExpense}
+              pendingIncome={cashFlow.pendingIncome}
+              cashFlowLoading={cashFlow.isLoading}
+            />
           ) : isSummaryLoading ? (
-            <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 xl:grid-cols-5">
-              {Array.from({ length: 5 }).map((_, index) => (
+            <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 xl:grid-cols-4 2xl:grid-cols-8">
+              {Array.from({ length: 8 }).map((_, index) => (
                 <div key={index} className="kpi-card animate-pulse">
                   <div className="mb-3 h-4 w-24 rounded bg-slate-200" />
                   <div className="h-8 w-32 rounded bg-slate-200" />
@@ -120,6 +129,7 @@ export function HomePage() {
           <div className="grid gap-4 xl:grid-cols-2">
             <TrendsChartCard
               data={trends.data}
+              monthKey={monthKey}
               isLoading={trends.isLoading}
               error={trends.error}
             />
@@ -159,33 +169,25 @@ export function HomePage() {
             />
           </div>
 
-          <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-3">
-            <RecurringCostCard recurring={recurring.data?.recurringTransactions} />
+          <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-4">
+            <RecurringCostCard
+              recurring={recurring.data?.recurringTransactions}
+              isLoading={recurring.isLoading}
+            />
+
+            <OpenInvoicesCard monthKey={monthKey} />
 
             <CardSpendingCard
-              cards={byCard.data?.cards ?? []}
+              transactions={byCard.data?.transactions ?? []}
               grandTotal={byCard.data?.grandTotal ?? '0.00'}
               myGrandTotal={byCard.data?.myGrandTotal}
             />
 
-            {byAccount.data && byAccount.data.accounts.length > 0 && (
-              <div className="finance-card rounded-xl border bg-white p-5 shadow-sm">
-                <h3 className="mb-3 text-base font-semibold text-slate-900">Saldo por conta</h3>
-                <div className="space-y-2">
-                  {byAccount.data.accounts.slice(0, 5).map(account => (
-                    <div
-                      key={account.accountId}
-                      className="flex items-center justify-between rounded-lg border border-slate-100 p-3"
-                    >
-                      <span className="text-sm font-medium text-slate-700">{account.name}</span>
-                      <span className="text-sm tabular-nums text-slate-900">
-                        {formatCentsString(account.balance)}
-                      </span>
-                    </div>
-                  ))}
-                </div>
-              </div>
-            )}
+            <AccountBalancesCard
+              data={byAccount.data}
+              isLoading={byAccount.isLoading}
+              error={byAccount.error}
+            />
           </div>
         </div>
     </div>

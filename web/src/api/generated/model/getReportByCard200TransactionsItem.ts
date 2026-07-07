@@ -6,14 +6,19 @@
  * OpenAPI spec version: 1.5.2
  */
 
-export type GetReportByCard200CardsItem = {
-  cardId: string;
-  label: string;
+export type GetReportByCard200TransactionsItem = {
+  transactionId: string;
+  title: string;
+  amount: string;
+  myAmount: string;
+  purchaseDate: string;
+  /** @nullable */
+  cardId: string | null;
+  /** @nullable */
+  cardLabel: string | null;
   /** @nullable */
   lastFourDigits: string | null;
   accountId: string;
   accountName: string;
-  total: string;
-  myTotal: string;
   percentage: string;
 };

@@ -15,7 +15,6 @@ interface DailyTransaction {
   date: string
   income: number
   expense: number
-  total: number
 }
 
 interface DailyTransactionsChartProps {
@@ -91,7 +90,6 @@ export function DailyTransactionsChart({ data }: DailyTransactionsChartProps) {
           <Area
             type="monotone"
             dataKey="income"
-            stackId="1"
             stroke="#10b981"
             fill={`url(#${incomeGradientId})`}
             strokeWidth={2}
@@ -99,7 +97,6 @@ export function DailyTransactionsChart({ data }: DailyTransactionsChartProps) {
           <Area
             type="monotone"
             dataKey="expense"
-            stackId="1"
             stroke="#fb7185"
             fill={`url(#${expenseGradientId})`}
             strokeWidth={2}

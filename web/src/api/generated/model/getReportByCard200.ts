@@ -5,10 +5,10 @@
  * API for HouseApp
  * OpenAPI spec version: 1.5.2
  */
-import type { GetReportByCard200CardsItem } from "./getReportByCard200CardsItem";
+import type { GetReportByCard200TransactionsItem } from "./getReportByCard200TransactionsItem";
 
 export type GetReportByCard200 = {
-  cards: GetReportByCard200CardsItem[];
+  transactions: GetReportByCard200TransactionsItem[];
   grandTotal: string;
   myGrandTotal: string;
 };

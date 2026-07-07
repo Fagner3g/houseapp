@@ -1,7 +1,10 @@
-import { createFileRoute } from '@tanstack/react-router'
-
-import { HomePage } from '@/features/home'
+import { createFileRoute, redirect } from '@tanstack/react-router'
 
 export const Route = createFileRoute('/_app/$org/(dashboard)/dashboard')({
-  component: HomePage,
+  beforeLoad: ({ params }) => {
+    throw redirect({
+      to: '/$org',
+      params: { org: params.org },
+    })
+  },
 })

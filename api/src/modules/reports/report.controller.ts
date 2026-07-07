@@ -61,12 +61,16 @@ export async function getByCardReportController(
 }
 
 export async function getTrendsReportController(
-  request: FastifyRequest<{ Params: OrgParams; Querystring: { months?: number } }>,
+  request: FastifyRequest<{
+    Params: OrgParams
+    Querystring: { months?: number; endMonth?: string }
+  }>,
   reply: FastifyReply
 ) {
   const result = await container.reportService.getTrends(
     request.organization.id,
-    request.query.months ?? 6
+    request.query.months ?? 6,
+    request.query.endMonth
   )
 
   return reply.send(result)

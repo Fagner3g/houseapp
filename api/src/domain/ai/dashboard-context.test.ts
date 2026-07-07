@@ -10,11 +10,13 @@ const baseContext: DashboardInsightsContext = {
   monthLabel: 'julho de 2026',
   income: 5000,
   expense: 3000,
-  balance: 2000,
-  savingsRate: 40,
+  myExpense: 2800,
+  balance: 2200,
+  savingsRate: 44,
   previousIncome: 4500,
   previousExpense: 3200,
-  previousBalance: 1300,
+  previousMyExpense: 3000,
+  previousBalance: 1500,
   netWorth: 15000,
   overdueCount: 0,
   overdueTotal: 0,
@@ -39,7 +41,7 @@ describe('buildFallbackInsights', () => {
   })
 
   it('returns warning for negative balance', () => {
-    const insights = buildFallbackInsights({ ...baseContext, balance: -500, expense: 5500 })
+    const insights = buildFallbackInsights({ ...baseContext, balance: -500, myExpense: 5500 })
     expect(insights.some(i => i.type === 'warning' && i.title.includes('negativo'))).toBe(true)
   })
 

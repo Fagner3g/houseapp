@@ -12,4 +12,8 @@ export type GetReportTrendsParams = {
    * @maximum 24
    */
   months?: number;
+  /**
+   * @pattern ^\d{4}-\d{2}$
+   */
+  endMonth?: string;
 };

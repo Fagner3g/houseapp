@@ -18,6 +18,8 @@ export type UnblockCard200Card = {
   /** @nullable */
   holderName: string | null;
   /** @nullable */
+  userId: string | null;
+  /** @nullable */
   brand: string | null;
   status: UnblockCard200CardStatus;
   /** @nullable */

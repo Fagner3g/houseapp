@@ -1,12 +1,8 @@
 import dayjs from 'dayjs'
-import { AlertTriangle, Bell, ChevronRight, Clock, Users } from 'lucide-react'
+import { AlertTriangle, ChevronRight, Clock, Users } from 'lucide-react'
 import { useNavigate } from '@tanstack/react-router'
 
-import {
-  useListAccounts,
-  useListPendingNotifications,
-  useListTransactions,
-} from '@/api/generated/api'
+import { useListAccounts, useListTransactions } from '@/api/generated/api'
 import type {
   GetReportSummary200,
   GetReportSummary200UpcomingItem,
@@ -23,16 +19,8 @@ interface AttentionPanelProps {
   splits: ListPendingSplits200SplitsItem[]
 }
 
-function EmptySection({ message }: { message: string }) {
-  return <p className="text-sm text-slate-500">{message}</p>
-}
-
 function UpcomingList({ items }: { items: GetReportSummary200UpcomingItem[] }) {
   const openTransactionDrawer = useDrawerStore(s => s.openTransactionDrawer)
-
-  if (!items.length) {
-    return <EmptySection message="Nenhum vencimento nos próximos 7 dias" />
-  }
 
   return (
     <div className="space-y-2">
@@ -76,10 +64,6 @@ function OverdueList({ overdueCount }: { overdueCount: number }) {
     },
     { query: { enabled: !!slug && overdueCount > 0 } }
   )
-
-  if (overdueCount === 0) {
-    return <EmptySection message="Nenhuma conta vencida" />
-  }
 
   const items = data?.transactions ?? []
 
@@ -138,10 +122,6 @@ function SplitsList({
   splits: ListPendingSplits200SplitsItem[]
   total: string
 }) {
-  if (!splits.length) {
-    return <EmptySection message="Nenhum split pendente" />
-  }
-
   return (
     <div className="space-y-2">
       <p className="text-sm font-medium text-amber-600">Total: {formatCentsString(total)}</p>
@@ -156,7 +136,9 @@ function SplitsList({
             className="flex items-center justify-between rounded-lg border border-slate-100 p-3"
           >
             <div>
-              <p className="font-medium text-slate-900">{split.personName ?? split.contactName ?? 'Contato'}</p>
+              <p className="font-medium text-slate-900">
+                {split.personName ?? split.contactName ?? 'Contato'}
+              </p>
               <p className="text-sm text-slate-500">{split.transactionTitle}</p>
             </div>
             <span className="font-medium tabular-nums text-amber-600">
@@ -169,67 +151,56 @@ function SplitsList({
   )
 }
 
-function NotificationsList() {
-  const { data } = useListPendingNotifications()
-
-  const notifications = data?.notifications ?? []
-
-  if (!notifications.length) {
-    return <EmptySection message="Nenhuma notificação pendente" />
-  }
-
-  return (
-    <div className="space-y-2">
-      {notifications.slice(0, 4).map(n => (
-        <div key={n.id} className="rounded-lg border border-slate-100 p-3">
-          <p className="font-medium text-slate-900">{n.title}</p>
-          {n.body && <p className="mt-0.5 text-sm text-slate-500 line-clamp-2">{n.body}</p>}
-        </div>
-      ))}
-    </div>
-  )
-}
-
 export function AttentionPanel({ summary, splits }: AttentionPanelProps) {
+  const hasOverdue = summary.overdueCount > 0
+  const hasUpcoming = summary.upcoming.length > 0
+  const hasSplits = splits.length > 0
+  const hasAnything = hasOverdue || hasUpcoming || hasSplits
+
   return (
     <Card className="finance-card">
       <CardHeader>
         <CardTitle className="text-base">Precisa de atenção</CardTitle>
+        <p className="text-sm text-slate-500">Situação atual — não filtrada pelo mês</p>
       </CardHeader>
-      <CardContent className="space-y-6">
-        <section>
-          <div className="mb-2 flex items-center gap-2">
-            <AlertTriangle className="size-4 text-amber-600" />
-            <h3 className="text-sm font-semibold text-slate-800">
-              Vencidas ({summary.overdueCount})
-            </h3>
-          </div>
-          <OverdueList overdueCount={summary.overdueCount} />
-        </section>
+      <CardContent>
+        {!hasAnything ? (
+          <p className="py-4 text-sm text-slate-500">Tudo em dia. Nenhuma pendência urgente.</p>
+        ) : (
+          <div className="space-y-6">
+            {hasOverdue && (
+              <section>
+                <div className="mb-2 flex items-center gap-2">
+                  <AlertTriangle className="size-4 text-amber-600" />
+                  <h3 className="text-sm font-semibold text-slate-800">
+                    Vencidas ({summary.overdueCount})
+                  </h3>
+                </div>
+                <OverdueList overdueCount={summary.overdueCount} />
+              </section>
+            )}
 
-        <section>
-          <div className="mb-2 flex items-center gap-2">
-            <Clock className="size-4 text-slate-500" />
-            <h3 className="text-sm font-semibold text-slate-800">Próximas (7 dias)</h3>
-          </div>
-          <UpcomingList items={summary.upcoming} />
-        </section>
+            {hasUpcoming && (
+              <section>
+                <div className="mb-2 flex items-center gap-2">
+                  <Clock className="size-4 text-slate-500" />
+                  <h3 className="text-sm font-semibold text-slate-800">Próximas (7 dias)</h3>
+                </div>
+                <UpcomingList items={summary.upcoming} />
+              </section>
+            )}
 
-        <section>
-          <div className="mb-2 flex items-center gap-2">
-            <Users className="size-4 text-amber-600" />
-            <h3 className="text-sm font-semibold text-slate-800">Quem me deve</h3>
+            {hasSplits && (
+              <section>
+                <div className="mb-2 flex items-center gap-2">
+                  <Users className="size-4 text-amber-600" />
+                  <h3 className="text-sm font-semibold text-slate-800">Quem me deve</h3>
+                </div>
+                <SplitsList splits={splits} total={summary.myPendingSplitsTotal} />
+              </section>
+            )}
           </div>
-          <SplitsList splits={splits} total={summary.myPendingSplitsTotal} />
-        </section>
-
-        <section>
-          <div className="mb-2 flex items-center gap-2">
-            <Bell className="size-4 text-slate-500" />
-            <h3 className="text-sm font-semibold text-slate-800">Notificações</h3>
-          </div>
-          <NotificationsList />
-        </section>
+        )}
       </CardContent>
     </Card>
   )

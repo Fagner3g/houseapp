@@ -257,6 +257,15 @@ jobs:
             docker pull ghcr.io/fagner3g/houseapp-api:$TAG
             docker pull ghcr.io/fagner3g/houseapp-web:$TAG
 
+            # Run database migrations before starting API traffic
+            PG_CONTAINER=$(docker ps -q -f name=postgres_postgres | head -1)
+            PG_IP=$(docker inspect -f '{{range .NetworkSettings.Networks}}{{.IPAddress}}{{end}}' "$PG_CONTAINER")
+            docker run --rm \
+              --env-file "$STACK_DIR/api.env" \
+              -e DB_HOST="$PG_IP" \
+              ghcr.io/fagner3g/houseapp-api:$TAG \
+              sh -c "yarn db:migrate"
+
             # Deploy stack
             docker stack deploy --with-registry-auth --resolve-image changed --prune -c "$STACK_DIR/stack.yml" "$STACK_NAME"
 

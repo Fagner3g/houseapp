@@ -163,7 +163,7 @@ export * from "./getReportByAccount200";
 export * from "./getReportByAccount200AccountsItem";
 export * from "./getReportByAccountParams";
 export * from "./getReportByCard200";
-export * from "./getReportByCard200CardsItem";
+export * from "./getReportByCard200TransactionsItem";
 export * from "./getReportByCardParams";
 export * from "./getReportByCategory200";
 export * from "./getReportByCategory200CategoriesItem";

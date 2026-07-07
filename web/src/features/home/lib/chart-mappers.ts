@@ -11,7 +11,7 @@ dayjs.locale('pt-br')
 export function mapCategoryToChartData(categories: GetReportByCategory200CategoriesItem[]) {
   return categories.map(cat => ({
     category: cat.name,
-    count: 1,
+    percentage: Number.parseFloat(cat.percentage) || 0,
     totalAmount: moneyStringToReais(cat.total),
     color: cat.color ?? undefined,
   }))
@@ -30,7 +30,6 @@ export function mapDailyToChartData(days: GetReportDaily200DaysItem[]) {
     date: d.date,
     income: moneyStringToReais(d.income),
     expense: moneyStringToReais(d.expense),
-    total: moneyStringToReais(d.income) + moneyStringToReais(d.expense),
   }))
 }
 

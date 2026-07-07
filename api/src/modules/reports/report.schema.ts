@@ -85,21 +85,24 @@ export const byCategoryReportSchema = {
 
 export const byCardReportSchema = {
   tags: ['Reports'],
-  description: 'Expense breakdown by credit card',
+  description: 'Top credit card expense transactions for a date range',
   operationId: 'getReportByCard',
   params: slugParams,
   querystring: reportDateQuery,
   response: {
     200: z.object({
-      cards: z.array(
+      transactions: z.array(
         z.object({
-          cardId: z.string(),
-          label: z.string(),
+          transactionId: z.string(),
+          title: z.string(),
+          amount: z.string(),
+          myAmount: z.string(),
+          purchaseDate: z.string(),
+          cardId: z.string().nullable(),
+          cardLabel: z.string().nullable(),
           lastFourDigits: z.string().nullable(),
           accountId: z.string(),
           accountName: z.string(),
-          total: z.string(),
-          myTotal: z.string(),
           percentage: z.string(),
         })
       ),
@@ -116,6 +119,10 @@ export const trendsReportSchema = {
   params: slugParams,
   querystring: z.object({
     months: z.coerce.number().int().min(1).max(24).optional().default(6),
+    endMonth: z
+      .string()
+      .regex(/^\d{4}-\d{2}$/)
+      .optional(),
   }),
   response: {
     200: z.object({

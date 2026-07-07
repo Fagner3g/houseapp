@@ -148,6 +148,34 @@ async function getLastDbMigration(): Promise<{ hash: string; created_at: number 
   }
 }
 
+async function assertSchemaCompatible(): Promise<void> {
+  const { db } = await import('./index')
+
+  try {
+    const [row] = await db.execute<{ legacy_invites: boolean }>(sql`
+      SELECT EXISTS (
+        SELECT 1
+        FROM information_schema.columns
+        WHERE table_schema = 'public'
+          AND table_name = 'invites'
+          AND column_name = 'user_id'
+      ) AS legacy_invites
+    `)
+
+    if (row?.legacy_invites) {
+      throw new Error(
+        'Schema do banco incompatível com o código (legado detectado). ' +
+          'Recrie o banco e aplique as migrações v2 antes de subir a API.'
+      )
+    }
+  } catch (error) {
+    if (error instanceof Error && error.message.includes('incompatível')) {
+      throw error
+    }
+    // Banco vazio ou sem tabelas — migrações vão rodar em seguida.
+  }
+}
+
 function getJournalEntries(): Array<{ tag: string; when: number }> {
   const journalPath = path.join(process.cwd(), '.migrations', 'meta', '_journal.json')
   if (!fs.existsSync(journalPath)) {
@@ -275,6 +303,8 @@ export async function runMigrations(): Promise<void> {
         return
       }
     }
+
+    await assertSchemaCompatible()
 
     // Verificar se há migrações pendentes
     const hasPending = await hasPendingMigrations()

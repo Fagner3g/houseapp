@@ -1,4 +1,4 @@
-import { and, asc, count, eq, gte, inArray, lt, lte, sql, sum } from 'drizzle-orm'
+import { and, asc, count, desc, eq, gte, inArray, lt, lte, or, sql, sum } from 'drizzle-orm'
 import dayjs from 'dayjs'
 
 import { db } from '@/db'
@@ -14,6 +14,20 @@ import {
   userIsSplitCreditorCondition,
   userOwnsTransactionCondition,
 } from '@/modules/splits/split-expense-attribution'
+
+import {
+  expenseAmountInRangeCase,
+  expenseInReportRangeCondition,
+  incomeAmountInRangeCase,
+  incomeInReportRangeCondition,
+  isCreditCardExpenseInRange,
+  isInvoicePaymentTitleCondition,
+  paidAmountExpr,
+  purchaseDateExpr,
+  reportDayExpr,
+  reportExpenseAmountExpr,
+  reportMonthExpr,
+} from './report-spending'
 
 export type ReportDateRange = {
   from: Date
@@ -57,14 +71,23 @@ export type CategoryReportRow = {
   total: bigint
 }
 
-export type CardReportRow = {
-  cardId: string
-  label: string
+export type CardTransactionReportRow = {
+  transactionId: string
+  title: string
+  amount: bigint
+  myAmount: bigint
+  purchaseDate: Date
+  cardId: string | null
+  cardLabel: string | null
   lastFourDigits: string | null
   accountId: string
   accountName: string
-  total: bigint
-  myTotal: bigint
+}
+
+export type CardTransactionsReportResult = {
+  transactions: CardTransactionReportRow[]
+  grandTotal: bigint
+  myGrandTotal: bigint
 }
 
 export type PendingCounterpartyRow = {
@@ -93,33 +116,21 @@ export interface ReportRepository {
     range: ReportDateRange,
     type: 'income' | 'expense'
   ): Promise<CategoryReportRow[]>
-  getByCard(organizationId: string, range: ReportDateRange): Promise<CardReportRow[]>
+  getByCard(organizationId: string, range: ReportDateRange): Promise<CardTransactionsReportResult>
   listTopPending(
     organizationId: string,
     type: 'income' | 'expense',
     limit: number
   ): Promise<PendingCounterpartyRow[]>
   getOverdueTotal(organizationId: string): Promise<bigint>
-  getTrends(organizationId: string, months: number): Promise<MonthlyTrendRow[]>
+  getTrends(organizationId: string, months: number, endMonth?: string): Promise<MonthlyTrendRow[]>
   getDaily(organizationId: string, range: ReportDateRange): Promise<DailyReportRow[]>
 }
-
-const paidAmountExpr = sql<bigint>`COALESCE(${transactions.paidAmount}, ${transactions.amount}, 0)`
 
 function toBigInt(value: unknown): bigint {
   if (value == null) return 0n
   if (typeof value === 'bigint') return value
   return BigInt(String(value).split('.')[0] || '0')
-}
-
-function paidInRangeConditions(organizationId: string, range: ReportDateRange, type: 'income' | 'expense') {
-  return and(
-    eq(transactions.organizationId, organizationId),
-    eq(transactions.type, type),
-    eq(transactions.status, 'paid'),
-    gte(transactions.date, range.from),
-    lte(transactions.date, range.to)
-  )
 }
 
 function balanceDeltaExpr() {
@@ -128,6 +139,37 @@ function balanceDeltaExpr() {
     WHEN ${transactions.status} = 'paid' AND ${transactions.type} = 'expense' THEN -${paidAmountExpr}
     ELSE 0
   END`
+}
+
+function accountPeriodIncomeCase(range: ReportDateRange) {
+  return sql<bigint>`COALESCE(SUM(CASE
+    WHEN ${transactions.type} = 'income'
+      AND ${transactions.status} = 'paid'
+      AND ${transactions.date} >= ${range.from.toISOString()}::timestamptz
+      AND ${transactions.date} <= ${range.to.toISOString()}::timestamptz
+      AND ${accounts.type} IS DISTINCT FROM 'credit_card'
+    THEN ${paidAmountExpr}
+    ELSE 0
+  END), 0)`
+}
+
+function accountPeriodExpenseCase(range: ReportDateRange) {
+  return sql<bigint>`COALESCE(SUM(CASE
+    WHEN ${transactions.type} = 'expense'
+      AND ${accounts.type} = 'credit_card'
+      AND ${transactions.status} IN ('paid', 'pending')
+      AND ${purchaseDateExpr} >= ${range.from.toISOString()}::timestamptz
+      AND ${purchaseDateExpr} <= ${range.to.toISOString()}::timestamptz
+    THEN ${reportExpenseAmountExpr}
+    WHEN ${transactions.type} = 'expense'
+      AND ${transactions.status} = 'paid'
+      AND ${accounts.type} IS DISTINCT FROM 'credit_card'
+      AND ${transactions.date} >= ${range.from.toISOString()}::timestamptz
+      AND ${transactions.date} <= ${range.to.toISOString()}::timestamptz
+      AND NOT (${isInvoicePaymentTitleCondition()})
+    THEN ${reportExpenseAmountExpr}
+    ELSE 0
+  END), 0)`
 }
 
 export class DrizzleReportRepository implements ReportRepository {
@@ -139,25 +181,28 @@ export class DrizzleReportRepository implements ReportRepository {
     const todayStart = dayjs().startOf('day').toDate()
 
     const [incomeRow] = await db
-      .select({ total: sum(paidAmountExpr) })
+      .select({ total: sum(incomeAmountInRangeCase(range)) })
       .from(transactions)
-      .where(paidInRangeConditions(organizationId, range, 'income'))
+      .leftJoin(accounts, eq(transactions.accountId, accounts.id))
+      .where(eq(transactions.organizationId, organizationId))
 
     const [expenseRow] = await db
-      .select({ total: sum(paidAmountExpr) })
+      .select({ total: sum(expenseAmountInRangeCase(range)) })
       .from(transactions)
-      .where(paidInRangeConditions(organizationId, range, 'expense'))
+      .leftJoin(accounts, eq(transactions.accountId, accounts.id))
+      .where(eq(transactions.organizationId, organizationId))
 
     const expenseOwnerConditions = and(
-      paidInRangeConditions(organizationId, range, 'expense'),
+      expenseInReportRangeCondition(range),
       userOwnsTransactionCondition(userId)
     )
 
     const [myExpenseRow] = await db
-      .select({ total: sum(paidAmountExpr) })
+      .select({ total: sum(reportExpenseAmountExpr) })
       .from(transactions)
+      .leftJoin(accounts, eq(transactions.accountId, accounts.id))
       .leftJoin(cards, eq(transactions.cardId, cards.id))
-      .where(expenseOwnerConditions)
+      .where(and(eq(transactions.organizationId, organizationId), expenseOwnerConditions))
 
     const [mySplitsRow] = await db
       .select({
@@ -165,8 +210,9 @@ export class DrizzleReportRepository implements ReportRepository {
       })
       .from(transactionSplits)
       .innerJoin(transactions, eq(transactionSplits.transactionId, transactions.id))
+      .leftJoin(accounts, eq(transactions.accountId, accounts.id))
       .leftJoin(cards, eq(transactions.cardId, cards.id))
-      .where(expenseOwnerConditions)
+      .where(and(eq(transactions.organizationId, organizationId), expenseOwnerConditions))
 
     const myExpenseGross = toBigInt(myExpenseRow?.total)
     const mySplitsInPeriod = toBigInt(mySplitsRow?.total)
@@ -271,20 +317,8 @@ export class DrizzleReportRepository implements ReportRepository {
         name: accounts.name,
         type: accounts.type,
         balance: sql<bigint>`${accounts.initialBalance} + COALESCE(SUM(${delta}), 0)`,
-        income: sql<bigint>`COALESCE(SUM(CASE
-          WHEN ${transactions.type} = 'income' AND ${transactions.status} = 'paid'
-            AND ${transactions.date} >= ${range.from.toISOString()}::timestamptz
-            AND ${transactions.date} <= ${range.to.toISOString()}::timestamptz
-          THEN ${paidAmountExpr}
-          ELSE 0
-        END), 0)`,
-        expense: sql<bigint>`COALESCE(SUM(CASE
-          WHEN ${transactions.type} = 'expense' AND ${transactions.status} = 'paid'
-            AND ${transactions.date} >= ${range.from.toISOString()}::timestamptz
-            AND ${transactions.date} <= ${range.to.toISOString()}::timestamptz
-          THEN ${paidAmountExpr}
-          ELSE 0
-        END), 0)`,
+        income: accountPeriodIncomeCase(range),
+        expense: accountPeriodExpenseCase(range),
       })
       .from(accounts)
       .leftJoin(transactions, eq(transactions.accountId, accounts.id))
@@ -311,29 +345,32 @@ export class DrizzleReportRepository implements ReportRepository {
     range: ReportDateRange,
     type: 'income' | 'expense'
   ): Promise<CategoryReportRow[]> {
+    const rangeCondition =
+      type === 'expense' ? expenseInReportRangeCondition(range) : incomeInReportRangeCondition(range)
+    const amountExpr = type === 'expense' ? reportExpenseAmountExpr : paidAmountExpr
+
     const rows = await db
       .select({
         categoryId: categories.id,
         name: categories.name,
         color: categories.color,
-        total: sql<bigint>`COALESCE(SUM(${paidAmountExpr}), 0)`,
+        total: sql<bigint>`COALESCE(SUM(${amountExpr}), 0)`,
       })
       .from(categories)
       .innerJoin(transactionCategories, eq(transactionCategories.categoryId, categories.id))
       .innerJoin(transactions, eq(transactionCategories.transactionId, transactions.id))
+      .leftJoin(accounts, eq(transactions.accountId, accounts.id))
       .where(
         and(
           eq(categories.organizationId, organizationId),
           eq(categories.isActive, true),
           eq(transactions.organizationId, organizationId),
           eq(transactions.type, type),
-          eq(transactions.status, 'paid'),
-          gte(transactions.date, range.from),
-          lte(transactions.date, range.to)
+          rangeCondition
         )
       )
       .groupBy(categories.id, categories.name, categories.color)
-      .orderBy(sql`COALESCE(SUM(${paidAmountExpr}), 0) DESC`, categories.name)
+      .orderBy(sql`COALESCE(SUM(${amountExpr}), 0) DESC`, categories.name)
 
     return rows.map(row => ({
       ...row,
@@ -341,43 +378,66 @@ export class DrizzleReportRepository implements ReportRepository {
     }))
   }
 
-  async getByCard(organizationId: string, range: ReportDateRange): Promise<CardReportRow[]> {
+  async getByCard(
+    organizationId: string,
+    range: ReportDateRange
+  ): Promise<CardTransactionsReportResult> {
     const splitSumExpr = sql<bigint>`COALESCE((
       SELECT SUM(${transactionSplits.amount})
       FROM ${transactionSplits}
       WHERE ${transactionSplits.transactionId} = ${transactions.id}
     ), 0)`
+    const myAmountExpr = sql<bigint>`GREATEST(${reportExpenseAmountExpr} - ${splitSumExpr}, 0)`
+    const cardExpenseWhere = and(
+      eq(transactions.organizationId, organizationId),
+      isCreditCardExpenseInRange(range)
+    )
+
+    const [totalsRow] = await db
+      .select({
+        grandTotal: sql<bigint>`COALESCE(SUM(${reportExpenseAmountExpr}), 0)`,
+        myGrandTotal: sql<bigint>`COALESCE(SUM(${myAmountExpr}), 0)`,
+      })
+      .from(transactions)
+      .innerJoin(accounts, eq(transactions.accountId, accounts.id))
+      .where(cardExpenseWhere)
 
     const rows = await db
       .select({
+        transactionId: transactions.id,
+        title: transactions.title,
+        amount: reportExpenseAmountExpr,
+        myAmount: myAmountExpr,
+        purchaseDate: purchaseDateExpr,
         cardId: cards.id,
-        label: cards.label,
+        cardLabel: cards.label,
         lastFourDigits: cards.lastFourDigits,
         accountId: accounts.id,
         accountName: accounts.name,
-        total: sql<bigint>`COALESCE(SUM(${paidAmountExpr}), 0)`,
-        myTotal: sql<bigint>`COALESCE(SUM(${paidAmountExpr} - ${splitSumExpr}), 0)`,
       })
       .from(transactions)
-      .innerJoin(cards, eq(transactions.cardId, cards.id))
-      .innerJoin(accounts, eq(cards.accountId, accounts.id))
-      .where(
-        and(
-          eq(transactions.organizationId, organizationId),
-          eq(transactions.type, 'expense'),
-          eq(transactions.status, 'paid'),
-          gte(transactions.date, range.from),
-          lte(transactions.date, range.to)
-        )
-      )
-      .groupBy(cards.id, cards.label, cards.lastFourDigits, accounts.id, accounts.name)
-      .orderBy(sql`COALESCE(SUM(${paidAmountExpr}), 0) DESC`, cards.label)
+      .innerJoin(accounts, eq(transactions.accountId, accounts.id))
+      .leftJoin(cards, eq(transactions.cardId, cards.id))
+      .where(cardExpenseWhere)
+      .orderBy(desc(reportExpenseAmountExpr), asc(transactions.title))
+      .limit(10)
 
-    return rows.map(row => ({
-      ...row,
-      total: toBigInt(row.total),
-      myTotal: toBigInt(row.myTotal),
-    }))
+    return {
+      transactions: rows.map(row => ({
+        transactionId: row.transactionId,
+        title: row.title,
+        amount: toBigInt(row.amount),
+        myAmount: toBigInt(row.myAmount),
+        purchaseDate: row.purchaseDate,
+        cardId: row.cardId,
+        cardLabel: row.cardLabel,
+        lastFourDigits: row.lastFourDigits,
+        accountId: row.accountId,
+        accountName: row.accountName,
+      })),
+      grandTotal: toBigInt(totalsRow?.grandTotal),
+      myGrandTotal: toBigInt(totalsRow?.myGrandTotal),
+    }
   }
 
   async listTopPending(
@@ -428,27 +488,33 @@ export class DrizzleReportRepository implements ReportRepository {
     return toBigInt(row?.total)
   }
 
-  async getTrends(organizationId: string, months: number): Promise<MonthlyTrendRow[]> {
+  async getTrends(
+    organizationId: string,
+    months: number,
+    endMonth?: string
+  ): Promise<MonthlyTrendRow[]> {
     const count = Math.min(Math.max(months, 1), 24)
-    const startMonth = dayjs().subtract(count - 1, 'month').startOf('month').toDate()
-    const endMonth = dayjs().endOf('month').toDate()
-
-    const monthExpr = sql<string>`to_char(date_trunc('month', ${transactions.date}), 'YYYY-MM')`
+    const anchor = endMonth ? dayjs(`${endMonth}-01`) : dayjs()
+    const startMonth = anchor.subtract(count - 1, 'month').startOf('month').toDate()
+    const endMonthDate = anchor.endOf('month').toDate()
+    const range = { from: startMonth, to: endMonthDate }
+    const monthExpr = reportMonthExpr()
 
     const rows = await db
       .select({
         month: monthExpr,
         income: sql<bigint>`COALESCE(SUM(CASE WHEN ${transactions.type} = 'income' THEN ${paidAmountExpr} ELSE 0 END), 0)`,
-        expense: sql<bigint>`COALESCE(SUM(CASE WHEN ${transactions.type} = 'expense' THEN ${paidAmountExpr} ELSE 0 END), 0)`,
+        expense: sql<bigint>`COALESCE(SUM(CASE WHEN ${transactions.type} = 'expense' THEN ${reportExpenseAmountExpr} ELSE 0 END), 0)`,
       })
       .from(transactions)
+      .leftJoin(accounts, eq(transactions.accountId, accounts.id))
       .where(
         and(
           eq(transactions.organizationId, organizationId),
-          eq(transactions.status, 'paid'),
-          inArray(transactions.type, ['income', 'expense']),
-          gte(transactions.date, startMonth),
-          lte(transactions.date, endMonth)
+          or(
+            incomeInReportRangeCondition(range),
+            expenseInReportRangeCondition(range)
+          )
         )
       )
       .groupBy(monthExpr)
@@ -472,22 +538,23 @@ export class DrizzleReportRepository implements ReportRepository {
   }
 
   async getDaily(organizationId: string, range: ReportDateRange): Promise<DailyReportRow[]> {
-    const dateExpr = sql<string>`to_char(${transactions.date}::date, 'YYYY-MM-DD')`
+    const dateExpr = reportDayExpr()
 
     const rows = await db
       .select({
         date: dateExpr,
         income: sql<bigint>`COALESCE(SUM(CASE WHEN ${transactions.type} = 'income' THEN ${paidAmountExpr} ELSE 0 END), 0)`,
-        expense: sql<bigint>`COALESCE(SUM(CASE WHEN ${transactions.type} = 'expense' THEN ${paidAmountExpr} ELSE 0 END), 0)`,
+        expense: sql<bigint>`COALESCE(SUM(CASE WHEN ${transactions.type} = 'expense' THEN ${reportExpenseAmountExpr} ELSE 0 END), 0)`,
       })
       .from(transactions)
+      .leftJoin(accounts, eq(transactions.accountId, accounts.id))
       .where(
         and(
           eq(transactions.organizationId, organizationId),
-          eq(transactions.status, 'paid'),
-          inArray(transactions.type, ['income', 'expense']),
-          gte(transactions.date, range.from),
-          lte(transactions.date, range.to)
+          or(
+            incomeInReportRangeCondition(range),
+            expenseInReportRangeCondition(range)
+          )
         )
       )
       .groupBy(dateExpr)
