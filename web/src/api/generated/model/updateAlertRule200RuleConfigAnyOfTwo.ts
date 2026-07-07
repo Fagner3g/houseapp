@@ -5,7 +5,7 @@
  * API for HouseApp
  * OpenAPI spec version: 2.0.0
  */
-import type { UpdateAlertRule200RuleConfigAnyOfTwoFrequency } from "./updateAlertRule200RuleConfigAnyOfTwoFrequency";
+import type { UpdateAlertRule200RuleConfigAnyOfTwoFrequency } from './updateAlertRule200RuleConfigAnyOfTwoFrequency';
 
 export type UpdateAlertRule200RuleConfigAnyOfTwo = {
   frequency: UpdateAlertRule200RuleConfigAnyOfTwoFrequency;

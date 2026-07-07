@@ -5,8 +5,8 @@
  * API for HouseApp
  * OpenAPI spec version: 2.0.0
  */
-import type { ParseStatementCsv200ParsedTransactionsItemType } from "./parseStatementCsv200ParsedTransactionsItemType";
-import type { ParseStatementCsv200ParsedTransactionsItemSplitHint } from "./parseStatementCsv200ParsedTransactionsItemSplitHint";
+import type { ParseStatementCsv200ParsedTransactionsItemType } from './parseStatementCsv200ParsedTransactionsItemType';
+import type { ParseStatementCsv200ParsedTransactionsItemSplitHint } from './parseStatementCsv200ParsedTransactionsItemSplitHint';
 
 export type ParseStatementCsv200ParsedTransactionsItem = {
   /** @minLength 1 */

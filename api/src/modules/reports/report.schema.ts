@@ -63,6 +63,8 @@ export const byAccountReportSchema = {
 const reportScopeQuery = {
   accountId: z.string().optional(),
   scope: z.enum(['all', 'credit_card']).optional().default('all'),
+  statementId: z.string().optional(),
+  excludeImported: z.coerce.boolean().optional(),
 }
 
 export const byCategoryReportSchema = {

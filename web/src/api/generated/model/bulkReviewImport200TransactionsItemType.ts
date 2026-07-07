@@ -6,12 +6,12 @@
  * OpenAPI spec version: 2.0.0
  */
 
-export type BulkReviewImport200TransactionsItemType =
-  (typeof BulkReviewImport200TransactionsItemType)[keyof typeof BulkReviewImport200TransactionsItemType];
+export type BulkReviewImport200TransactionsItemType = typeof BulkReviewImport200TransactionsItemType[keyof typeof BulkReviewImport200TransactionsItemType];
+
 
 // eslint-disable-next-line @typescript-eslint/no-redeclare
 export const BulkReviewImport200TransactionsItemType = {
-  income: "income",
-  expense: "expense",
-  transfer: "transfer",
+  income: 'income',
+  expense: 'expense',
+  transfer: 'transfer',
 } as const;

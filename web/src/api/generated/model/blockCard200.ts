@@ -5,7 +5,7 @@
  * API for HouseApp
  * OpenAPI spec version: 2.0.0
  */
-import type { BlockCard200Card } from "./blockCard200Card";
+import type { BlockCard200Card } from './blockCard200Card';
 
 export type BlockCard200 = {
   card: BlockCard200Card;

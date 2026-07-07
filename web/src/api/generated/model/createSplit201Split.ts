@@ -5,7 +5,7 @@
  * API for HouseApp
  * OpenAPI spec version: 2.0.0
  */
-import type { CreateSplit201SplitStatus } from "./createSplit201SplitStatus";
+import type { CreateSplit201SplitStatus } from './createSplit201SplitStatus';
 
 export type CreateSplit201Split = {
   id: string;

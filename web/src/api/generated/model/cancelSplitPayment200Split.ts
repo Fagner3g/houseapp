@@ -5,7 +5,7 @@
  * API for HouseApp
  * OpenAPI spec version: 2.0.0
  */
-import type { CancelSplitPayment200SplitStatus } from "./cancelSplitPayment200SplitStatus";
+import type { CancelSplitPayment200SplitStatus } from './cancelSplitPayment200SplitStatus';
 
 export type CancelSplitPayment200Split = {
   id: string;

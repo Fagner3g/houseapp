@@ -5,7 +5,7 @@
  * API for HouseApp
  * OpenAPI spec version: 2.0.0
  */
-import type { GetReportTrends200MonthsItem } from "./getReportTrends200MonthsItem";
+import type { GetReportTrends200MonthsItem } from './getReportTrends200MonthsItem';
 
 export type GetReportTrends200 = {
   months: GetReportTrends200MonthsItem[];

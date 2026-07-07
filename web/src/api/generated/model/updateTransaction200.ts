@@ -5,7 +5,7 @@
  * API for HouseApp
  * OpenAPI spec version: 2.0.0
  */
-import type { UpdateTransaction200Transaction } from "./updateTransaction200Transaction";
+import type { UpdateTransaction200Transaction } from './updateTransaction200Transaction';
 
 export type UpdateTransaction200 = {
   transaction: UpdateTransaction200Transaction;

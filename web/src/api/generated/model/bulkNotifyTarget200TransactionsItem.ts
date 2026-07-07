@@ -5,9 +5,9 @@
  * API for HouseApp
  * OpenAPI spec version: 2.0.0
  */
-import type { BulkNotifyTarget200TransactionsItemType } from "./bulkNotifyTarget200TransactionsItemType";
-import type { BulkNotifyTarget200TransactionsItemStatus } from "./bulkNotifyTarget200TransactionsItemStatus";
-import type { BulkNotifyTarget200TransactionsItemSource } from "./bulkNotifyTarget200TransactionsItemSource";
+import type { BulkNotifyTarget200TransactionsItemType } from './bulkNotifyTarget200TransactionsItemType';
+import type { BulkNotifyTarget200TransactionsItemStatus } from './bulkNotifyTarget200TransactionsItemStatus';
+import type { BulkNotifyTarget200TransactionsItemSource } from './bulkNotifyTarget200TransactionsItemSource';
 
 export type BulkNotifyTarget200TransactionsItem = {
   id: string;

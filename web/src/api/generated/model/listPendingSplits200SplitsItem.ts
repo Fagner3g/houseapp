@@ -5,7 +5,7 @@
  * API for HouseApp
  * OpenAPI spec version: 2.0.0
  */
-import type { ListPendingSplits200SplitsItemStatus } from "./listPendingSplits200SplitsItemStatus";
+import type { ListPendingSplits200SplitsItemStatus } from './listPendingSplits200SplitsItemStatus';
 
 export type ListPendingSplits200SplitsItem = {
   id: string;

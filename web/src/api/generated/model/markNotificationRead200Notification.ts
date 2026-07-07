@@ -5,7 +5,7 @@
  * API for HouseApp
  * OpenAPI spec version: 2.0.0
  */
-import type { MarkNotificationRead200NotificationMetadata } from "./markNotificationRead200NotificationMetadata";
+import type { MarkNotificationRead200NotificationMetadata } from './markNotificationRead200NotificationMetadata';
 
 export type MarkNotificationRead200Notification = {
   id: string;

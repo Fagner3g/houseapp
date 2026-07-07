@@ -5,7 +5,7 @@
  * API for HouseApp
  * OpenAPI spec version: 2.0.0
  */
-import type { PostJobsJobKeyRun200Result } from "./postJobsJobKeyRun200Result";
+import type { PostJobsJobKeyRun200Result } from './postJobsJobKeyRun200Result';
 
 export type PostJobsJobKeyRun200 = {
   success: boolean;

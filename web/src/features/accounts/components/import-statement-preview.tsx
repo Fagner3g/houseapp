@@ -205,10 +205,12 @@ export function ImportStatementPreview({
         <div className="min-w-0">
           <p className="truncate text-sm font-medium text-slate-900">{parsed.fileName}</p>
           <div className="mt-1 flex flex-wrap items-center gap-2 text-xs text-slate-500">
+            <span>Fech. {dayjs(parsed.closingDate).format('DD/MM/YYYY')}</span>
+            <span>·</span>
             <span>Venc. {dayjs(parsed.dueDate).format('DD/MM/YYYY')}</span>
             <span>·</span>
             <span>
-              {dayjs(parsed.periodStart).format('DD/MM')} –{' '}
+              Compras {dayjs(parsed.periodStart).format('DD/MM')} –{' '}
               {dayjs(parsed.periodEnd).format('DD/MM/YYYY')}
             </span>
             {provider ? (

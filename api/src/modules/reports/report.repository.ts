@@ -1,4 +1,4 @@
-import { and, asc, count, desc, eq, gte, inArray, lt, lte, or, sql, sum } from 'drizzle-orm'
+import { and, asc, count, desc, eq, gte, inArray, isNull, lt, lte, or, sql, sum } from 'drizzle-orm'
 import dayjs from 'dayjs'
 
 import { db } from '@/db'
@@ -38,6 +38,10 @@ export type ReportDateRange = {
 export type ReportScopeOptions = {
   accountId?: string
   scope?: 'all' | 'credit_card'
+  /** When set, includes manual entries plus lines from this imported statement only. */
+  statementId?: string
+  /** When true (and no statementId), excludes transactions linked to any imported statement. */
+  excludeImported?: boolean
 }
 
 export type SummaryRow = {
@@ -186,6 +190,21 @@ function expenseRangeCondition(range: ReportDateRange, scope?: ReportScopeOption
     : expenseInReportRangeCondition(range)
 }
 
+function invoiceStatementConditions(scopeOptions?: ReportScopeOptions) {
+  if (scopeOptions?.statementId) {
+    return or(
+      isNull(transactions.statementId),
+      eq(transactions.statementId, scopeOptions.statementId)
+    )
+  }
+
+  if (scopeOptions?.excludeImported) {
+    return isNull(transactions.statementId)
+  }
+
+  return undefined
+}
+
 function reportScopeConditions(scopeOptions?: ReportScopeOptions) {
   const conditions = []
 
@@ -195,6 +214,11 @@ function reportScopeConditions(scopeOptions?: ReportScopeOptions) {
 
   if (scopeOptions?.scope === 'credit_card') {
     conditions.push(eq(accounts.type, 'credit_card'))
+  }
+
+  const invoiceCondition = invoiceStatementConditions(scopeOptions)
+  if (invoiceCondition) {
+    conditions.push(invoiceCondition)
   }
 
   return conditions.length > 0 ? and(...conditions) : undefined

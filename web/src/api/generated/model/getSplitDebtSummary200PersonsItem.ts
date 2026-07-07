@@ -5,8 +5,8 @@
  * API for HouseApp
  * OpenAPI spec version: 2.0.0
  */
-import type { GetSplitDebtSummary200PersonsItemStatus } from "./getSplitDebtSummary200PersonsItemStatus";
-import type { GetSplitDebtSummary200PersonsItemInstallmentsItem } from "./getSplitDebtSummary200PersonsItemInstallmentsItem";
+import type { GetSplitDebtSummary200PersonsItemStatus } from './getSplitDebtSummary200PersonsItemStatus';
+import type { GetSplitDebtSummary200PersonsItemInstallmentsItem } from './getSplitDebtSummary200PersonsItemInstallmentsItem';
 
 export type GetSplitDebtSummary200PersonsItem = {
   key: string;

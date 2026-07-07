@@ -5,7 +5,7 @@
  * API for HouseApp
  * OpenAPI spec version: 2.0.0
  */
-import type { GetReportByCategory200CategoriesItem } from "./getReportByCategory200CategoriesItem";
+import type { GetReportByCategory200CategoriesItem } from './getReportByCategory200CategoriesItem';
 
 export type GetReportByCategory200 = {
   categories: GetReportByCategory200CategoriesItem[];

@@ -165,14 +165,10 @@ async function seedDemoData() {
 
   await ensureDefaultCategories(organization.id)
   const categoryRows = await getOrganizationCategories(organization.id)
-  const salaryCategoryId = getCategoryIdByName(
-    categoryRows,
-    'Salário / Renda Principal',
-    'income'
-  )
-  const mercadoCategoryId = getCategoryIdByName(categoryRows, 'Alimentação', 'expense')
-  const transporteCategoryId = getCategoryIdByName(categoryRows, 'Transporte & Mobilidade', 'expense')
-  const restaurantesCategoryId = getCategoryIdByName(categoryRows, 'Alimentação', 'expense')
+  const salaryCategoryId = getCategoryIdByName(categoryRows, 'Salário', 'income')
+  const mercadoCategoryId = getCategoryIdByName(categoryRows, 'Supermercado', 'expense')
+  const transporteCategoryId = getCategoryIdByName(categoryRows, 'Transporte', 'expense')
+  const restaurantesCategoryId = getCategoryIdByName(categoryRows, 'Restaurantes & Delivery', 'expense')
 
   const today = dayjs()
   const yesterday = today.subtract(1, 'day')

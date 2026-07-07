@@ -6,12 +6,12 @@
  * OpenAPI spec version: 2.0.0
  */
 
-export type GetCard200CardType =
-  (typeof GetCard200CardType)[keyof typeof GetCard200CardType];
+export type GetCard200CardType = typeof GetCard200CardType[keyof typeof GetCard200CardType];
+
 
 // eslint-disable-next-line @typescript-eslint/no-redeclare
 export const GetCard200CardType = {
-  physical: "physical",
-  virtual: "virtual",
-  additional: "additional",
+  physical: 'physical',
+  virtual: 'virtual',
+  additional: 'additional',
 } as const;

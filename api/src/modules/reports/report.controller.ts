@@ -47,6 +47,8 @@ export async function getByCategoryReportController(
     {
       accountId: request.query.accountId,
       scope: request.query.scope,
+      statementId: request.query.statementId,
+      excludeImported: request.query.excludeImported,
     }
   )
 
@@ -122,6 +124,8 @@ export async function getTopMerchantsReportController(
     {
       accountId: request.query.accountId,
       scope: request.query.scope,
+      statementId: request.query.statementId,
+      excludeImported: request.query.excludeImported,
     }
   )
 

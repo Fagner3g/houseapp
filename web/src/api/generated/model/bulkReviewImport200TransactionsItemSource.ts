@@ -6,13 +6,13 @@
  * OpenAPI spec version: 2.0.0
  */
 
-export type BulkReviewImport200TransactionsItemSource =
-  (typeof BulkReviewImport200TransactionsItemSource)[keyof typeof BulkReviewImport200TransactionsItemSource];
+export type BulkReviewImport200TransactionsItemSource = typeof BulkReviewImport200TransactionsItemSource[keyof typeof BulkReviewImport200TransactionsItemSource];
+
 
 // eslint-disable-next-line @typescript-eslint/no-redeclare
 export const BulkReviewImport200TransactionsItemSource = {
-  manual: "manual",
-  import: "import",
-  recurring: "recurring",
-  ai_chat: "ai_chat",
+  manual: 'manual',
+  import: 'import',
+  recurring: 'recurring',
+  ai_chat: 'ai_chat',
 } as const;

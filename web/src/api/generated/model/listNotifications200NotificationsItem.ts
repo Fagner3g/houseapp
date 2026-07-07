@@ -5,7 +5,7 @@
  * API for HouseApp
  * OpenAPI spec version: 2.0.0
  */
-import type { ListNotifications200NotificationsItemMetadata } from "./listNotifications200NotificationsItemMetadata";
+import type { ListNotifications200NotificationsItemMetadata } from './listNotifications200NotificationsItemMetadata';
 
 export type ListNotifications200NotificationsItem = {
   id: string;

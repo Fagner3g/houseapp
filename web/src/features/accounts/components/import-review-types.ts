@@ -1,6 +1,6 @@
 import type { ImportStatementBody } from '@/api/generated/model'
 import { divideReais } from '@/features/transactions/installment-preview'
-import { moneyStringToReais, reaisToCentsString, reaisToMoneyString } from '@/lib/currency'
+import { moneyStringToReais, reaisToMoneyString } from '@/lib/currency'
 import { normalizePhoneDigits } from '@/lib/phone'
 
 import type { BulkReviewImportUpdate } from '@/lib/bulk-review-import'
@@ -104,7 +104,7 @@ export function buildItemsFromParsedTransactions(
       id: `preview-${index}`,
       index,
       title: tx.title,
-      amount: reaisToCentsString(Number(tx.amount)),
+      amount: tx.amount,
       date: tx.date,
       type: (tx.type ?? 'expense') as 'income' | 'expense',
       installmentLabel:
@@ -168,7 +168,7 @@ export function buildInitialReviewRows(
       splitUserId: null,
       splitContactName: '',
       splitContactPhone: '',
-      splitAmountReais: Number(item.amount) / 200,
+      splitAmountReais: moneyStringToReais(item.amount) / 2,
       validated: item.isDuplicate === true,
     }
 

@@ -5,9 +5,7 @@
  * API for HouseApp
  * OpenAPI spec version: 2.0.0
  */
-import type { CreateAlertRule201RuleConfigAnyOf } from "./createAlertRule201RuleConfigAnyOf";
-import type { CreateAlertRule201RuleConfigAnyOfTwo } from "./createAlertRule201RuleConfigAnyOfTwo";
+import type { CreateAlertRule201RuleConfigAnyOf } from './createAlertRule201RuleConfigAnyOf';
+import type { CreateAlertRule201RuleConfigAnyOfTwo } from './createAlertRule201RuleConfigAnyOfTwo';
 
-export type CreateAlertRule201RuleConfig =
-  | CreateAlertRule201RuleConfigAnyOf
-  | CreateAlertRule201RuleConfigAnyOfTwo;
+export type CreateAlertRule201RuleConfig = CreateAlertRule201RuleConfigAnyOf | CreateAlertRule201RuleConfigAnyOfTwo;

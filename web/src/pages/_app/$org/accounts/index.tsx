@@ -23,6 +23,8 @@ import { CreditCardOverdueBanner } from '@/features/credit-cards/components/cred
 import { CreditCardPageHeader } from '@/features/credit-cards/components/credit-card-page-header'
 import { CreditCardSettingsSection } from '@/features/credit-cards/components/credit-card-settings-section'
 import { CreditCardStatementSection } from '@/features/credit-cards/components/credit-card-statement-section'
+import type { InvoiceQuickFilter } from '@/features/credit-cards/components/credit-card-statement-filter-utils'
+import { useCreditCardBillingCycle } from '@/features/credit-cards/hooks/use-credit-card-billing-cycle'
 import {
   CreditCardSubNav,
   type CreditCardView,
@@ -30,7 +32,6 @@ import {
 import { useActiveOrganization } from '@/hooks/use-active-organization'
 import {
   currentBillingMonthKey,
-  getBillingCycle,
   shiftBillingMonth,
 } from '@/lib/billing-cycle'
 import { useDrawerStore } from '@/stores/drawers'
@@ -44,13 +45,16 @@ export const Route = createFileRoute('/_app/$org/accounts/')({
       .regex(/^\d{4}-\d{2}$/)
       .optional(),
     view: z.enum(['settings', 'analytics']).optional(),
+    invoiceFilter: z
+      .enum(['all', 'purchases', 'payments', 'uncategorized', 'installments', 'divided'])
+      .optional(),
   }),
 })
 
 function AccountsPage() {
   const { slug } = useActiveOrganization()
   const navigate = useNavigate({ from: Route.fullPath })
-  const { accountId, month, view } = Route.useSearch()
+  const { accountId, month, view, invoiceFilter } = Route.useSearch()
   const isSettingsView = view === 'settings'
   const isAnalyticsView = view === 'analytics'
   const isStatementView = !isSettingsView && !isAnalyticsView
@@ -79,14 +83,12 @@ function AccountsPage() {
 
   const selectedId = accountId ?? creditCards[0]?.id
   const selectedAccount = creditCards.find(a => a.id === selectedId)
-
   const billingMonthKey = month ?? currentBillingMonthKey()
 
-  const cycle = useMemo(() => {
-    const closing = selectedAccount?.closingDay ?? 1
-    const due = selectedAccount?.dueDay ?? 10
-    return getBillingCycle(closing, due, billingMonthKey)
-  }, [selectedAccount?.closingDay, selectedAccount?.dueDay, billingMonthKey])
+  const { cycle, closingDay, dueDay } = useCreditCardBillingCycle(
+    selectedAccount,
+    billingMonthKey
+  )
 
   useEffect(() => {
     if (!creditCards.length) return
@@ -112,6 +114,7 @@ function AccountsPage() {
     accountId?: string
     month?: string
     view?: 'settings' | 'analytics' | undefined
+    invoiceFilter?: InvoiceQuickFilter | undefined
   }) => {
     navigate({
       search: prev => ({ ...prev, ...patch }),
@@ -222,8 +225,8 @@ function AccountsPage() {
                     <CreditCardPageHeader
                       accountId={selectedAccount.id}
                       cycle={cycle}
-                      closingDay={selectedAccount.closingDay ?? 1}
-                      dueDay={selectedAccount.dueDay ?? 10}
+                      closingDay={closingDay}
+                      dueDay={dueDay}
                       isCurrentCycle={billingMonthKey === currentBillingMonthKey()}
                       onPrevMonth={() =>
                         updateSearch({ month: shiftBillingMonth(billingMonthKey, -1) })
@@ -240,8 +243,8 @@ function AccountsPage() {
                         <CreditCardOverdueBanner
                           accountId={selectedAccount.id}
                           cycle={cycle}
-                          closingDay={selectedAccount.closingDay ?? 1}
-                          dueDay={selectedAccount.dueDay ?? 10}
+                          closingDay={closingDay}
+                          dueDay={dueDay}
                           viewingMonthKey={billingMonthKey}
                           onNavigateToMonth={monthKey => updateSearch({ month: monthKey })}
                         />
@@ -249,14 +252,15 @@ function AccountsPage() {
                           accountId={selectedAccount.id}
                           accountName={selectedAccount.name}
                           cycle={cycle}
-                          closingDay={selectedAccount.closingDay ?? 1}
-                          dueDay={selectedAccount.dueDay ?? 10}
+                          closingDay={closingDay}
+                          dueDay={dueDay}
                         />
                         <CreditCardStatementSection
                           accountId={selectedAccount.id}
                           cycle={cycle}
-                          closingDay={selectedAccount.closingDay ?? 1}
-                          dueDay={selectedAccount.dueDay ?? 10}
+                          closingDay={closingDay}
+                          dueDay={dueDay}
+                          initialQuickFilter={invoiceFilter}
                           onImported={handleImported}
                           onViewExistingStatement={handleViewExistingStatement}
                         />
@@ -266,8 +270,12 @@ function AccountsPage() {
                         accountId={selectedAccount.id}
                         accountName={selectedAccount.name}
                         cycle={cycle}
-                        closingDay={selectedAccount.closingDay ?? 1}
-                        dueDay={selectedAccount.dueDay ?? 10}
+                        closingDay={closingDay}
+                        dueDay={dueDay}
+                        onNavigateToMonth={monthKey => updateSearch({ month: monthKey })}
+                        onViewDividedTransactions={() =>
+                          updateSearch({ view: undefined, invoiceFilter: 'divided' })
+                        }
                       />
                     )}
                   </>

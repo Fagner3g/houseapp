@@ -6,15 +6,15 @@
  * OpenAPI spec version: 2.0.0
  */
 
-export type ParseStatementOfx200Provider =
-  (typeof ParseStatementOfx200Provider)[keyof typeof ParseStatementOfx200Provider];
+export type ParseStatementOfx200Provider = typeof ParseStatementOfx200Provider[keyof typeof ParseStatementOfx200Provider];
+
 
 // eslint-disable-next-line @typescript-eslint/no-redeclare
 export const ParseStatementOfx200Provider = {
-  groq: "groq",
-  gemini: "gemini",
-  deepseek: "deepseek",
-  regex: "regex",
-  csv: "csv",
-  ofx: "ofx",
+  groq: 'groq',
+  gemini: 'gemini',
+  deepseek: 'deepseek',
+  regex: 'regex',
+  csv: 'csv',
+  ofx: 'ofx',
 } as const;

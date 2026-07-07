@@ -6,12 +6,12 @@
  * OpenAPI spec version: 2.0.0
  */
 
-export type ParseStatementOfxOrg200ParsedImportSource =
-  (typeof ParseStatementOfxOrg200ParsedImportSource)[keyof typeof ParseStatementOfxOrg200ParsedImportSource];
+export type ParseStatementOfxOrg200ParsedImportSource = typeof ParseStatementOfxOrg200ParsedImportSource[keyof typeof ParseStatementOfxOrg200ParsedImportSource];
+
 
 // eslint-disable-next-line @typescript-eslint/no-redeclare
 export const ParseStatementOfxOrg200ParsedImportSource = {
-  pdf: "pdf",
-  csv: "csv",
-  ofx: "ofx",
+  pdf: 'pdf',
+  csv: 'csv',
+  ofx: 'ofx',
 } as const;

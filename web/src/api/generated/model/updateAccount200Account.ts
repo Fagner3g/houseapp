@@ -5,8 +5,8 @@
  * API for HouseApp
  * OpenAPI spec version: 2.0.0
  */
-import type { UpdateAccount200AccountType } from "./updateAccount200AccountType";
-import type { UpdateAccount200AccountCardsItem } from "./updateAccount200AccountCardsItem";
+import type { UpdateAccount200AccountType } from './updateAccount200AccountType';
+import type { UpdateAccount200AccountCardsItem } from './updateAccount200AccountCardsItem';
 
 export type UpdateAccount200Account = {
   id: string;

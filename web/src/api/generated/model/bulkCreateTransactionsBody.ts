@@ -5,7 +5,7 @@
  * API for HouseApp
  * OpenAPI spec version: 2.0.0
  */
-import type { BulkCreateTransactionsBodyTransactionsItem } from "./bulkCreateTransactionsBodyTransactionsItem";
+import type { BulkCreateTransactionsBodyTransactionsItem } from './bulkCreateTransactionsBodyTransactionsItem';
 
 export type BulkCreateTransactionsBody = {
   /** @minItems 1 */

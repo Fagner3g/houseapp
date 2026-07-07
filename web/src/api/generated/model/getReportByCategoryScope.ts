@@ -6,11 +6,11 @@
  * OpenAPI spec version: 2.0.0
  */
 
-export type GetReportByCategoryScope =
-  (typeof GetReportByCategoryScope)[keyof typeof GetReportByCategoryScope];
+export type GetReportByCategoryScope = typeof GetReportByCategoryScope[keyof typeof GetReportByCategoryScope];
+
 
 // eslint-disable-next-line @typescript-eslint/no-redeclare
 export const GetReportByCategoryScope = {
-  all: "all",
-  credit_card: "credit_card",
+  all: 'all',
+  credit_card: 'credit_card',
 } as const;

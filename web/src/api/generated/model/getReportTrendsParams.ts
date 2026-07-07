@@ -7,13 +7,13 @@
  */
 
 export type GetReportTrendsParams = {
-  /**
-   * @minimum 1
-   * @maximum 24
-   */
-  months?: number;
-  /**
-   * @pattern ^\d{4}-\d{2}$
-   */
-  endMonth?: string;
+/**
+ * @minimum 1
+ * @maximum 24
+ */
+months?: number;
+/**
+ * @pattern ^\d{4}-\d{2}$
+ */
+endMonth?: string;
 };

@@ -6,12 +6,12 @@
  * OpenAPI spec version: 2.0.0
  */
 
-export type ImportStatementBodyTransactionsItemSplitHintMode =
-  (typeof ImportStatementBodyTransactionsItemSplitHintMode)[keyof typeof ImportStatementBodyTransactionsItemSplitHintMode];
+export type ImportStatementBodyTransactionsItemSplitHintMode = typeof ImportStatementBodyTransactionsItemSplitHintMode[keyof typeof ImportStatementBodyTransactionsItemSplitHintMode];
+
 
 // eslint-disable-next-line @typescript-eslint/no-redeclare
 export const ImportStatementBodyTransactionsItemSplitHintMode = {
-  half: "half",
-  custom: "custom",
-  full_other: "full_other",
+  half: 'half',
+  custom: 'custom',
+  full_other: 'full_other',
 } as const;

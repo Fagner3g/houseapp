@@ -1,11 +1,31 @@
 import { describe, expect, it } from 'vitest'
 
+import { formatCentsString, moneyStringToReais } from '@/lib/currency'
+
 import {
+  buildItemsFromParsedTransactions,
   buildPostImportUpdates,
   buildSplitCreateBody,
   buildSplitPayload,
   resolveSplitAmountReais,
 } from './import-review-types'
+
+describe('buildItemsFromParsedTransactions', () => {
+  it('keeps API decimal amounts so small values display correctly', () => {
+    const items = buildItemsFromParsedTransactions([
+      {
+        title: 'Papelaria Santa Ines',
+        amount: '6.00',
+        date: '2026-07-07T12:00:00.000Z',
+        type: 'expense',
+      },
+    ])
+
+    expect(items[0]?.amount).toBe('6.00')
+    expect(moneyStringToReais(items[0]!.amount)).toBe(6)
+    expect(formatCentsString(items[0]!.amount)).toContain('6,00')
+  })
+})
 
 describe('resolveSplitAmountReais', () => {
   it('parses internal centavos strings', () => {
@@ -62,7 +82,7 @@ describe('buildSplitCreateBody', () => {
         id: 'preview-0',
         index: 0,
         title: 'Compra - Parcela 1/2',
-        amount: '45000',
+        amount: '450.00',
         date: '2026-07-06',
         type: 'expense',
         installmentNumber: 1,

@@ -6,13 +6,13 @@
  * OpenAPI spec version: 2.0.0
  */
 
-export type GetSplitDebtSummary200PersonsItemStatus =
-  (typeof GetSplitDebtSummary200PersonsItemStatus)[keyof typeof GetSplitDebtSummary200PersonsItemStatus];
+export type GetSplitDebtSummary200PersonsItemStatus = typeof GetSplitDebtSummary200PersonsItemStatus[keyof typeof GetSplitDebtSummary200PersonsItemStatus];
+
 
 // eslint-disable-next-line @typescript-eslint/no-redeclare
 export const GetSplitDebtSummary200PersonsItemStatus = {
-  pending: "pending",
-  partial: "partial",
-  paid: "paid",
-  forgiven: "forgiven",
+  pending: 'pending',
+  partial: 'partial',
+  paid: 'paid',
+  forgiven: 'forgiven',
 } as const;

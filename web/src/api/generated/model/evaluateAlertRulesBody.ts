@@ -5,7 +5,7 @@
  * API for HouseApp
  * OpenAPI spec version: 2.0.0
  */
-import type { EvaluateAlertRulesBodyMode } from "./evaluateAlertRulesBodyMode";
+import type { EvaluateAlertRulesBodyMode } from './evaluateAlertRulesBodyMode';
 
 export type EvaluateAlertRulesBody = {
   mode?: EvaluateAlertRulesBodyMode;

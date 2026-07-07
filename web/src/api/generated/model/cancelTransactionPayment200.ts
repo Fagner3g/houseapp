@@ -5,7 +5,7 @@
  * API for HouseApp
  * OpenAPI spec version: 2.0.0
  */
-import type { CancelTransactionPayment200Transaction } from "./cancelTransactionPayment200Transaction";
+import type { CancelTransactionPayment200Transaction } from './cancelTransactionPayment200Transaction';
 
 export type CancelTransactionPayment200 = {
   transaction: CancelTransactionPayment200Transaction;

@@ -3,10 +3,9 @@ import type { ReactNode } from 'react'
 import type { GetSplitDebtSummary200 } from '@/api/generated/model'
 import { Badge } from '@/components/ui/badge'
 import {
-  formatCentsString,
+  formatCurrency,
   formatMoneyString,
   moneyStringToReais,
-  reaisToCentsString,
   reaisToMoneyString,
 } from '@/lib/currency'
 import { cn } from '@/lib/utils'
@@ -194,7 +193,7 @@ export function TransactionFooterSummary({
           value={
             hasInstallments && installmentContext?.currentTransactionAmount
               ? formatMoneyString(installmentContext.currentTransactionAmount)
-              : formatCentsString(reaisToCentsString(amount))
+              : formatCurrency(amount)
           }
           emphasize
         />

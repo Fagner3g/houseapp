@@ -9,6 +9,4 @@
 /**
  * @nullable
  */
-export type ParseStatementOfxOrg200DuplicateExistingStatement = {
-  [key: string]: unknown;
-} | null;
+export type ParseStatementOfxOrg200DuplicateExistingStatement = { [key: string]: unknown } | null;

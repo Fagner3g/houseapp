@@ -5,7 +5,7 @@
  * API for HouseApp
  * OpenAPI spec version: 2.0.0
  */
-import type { UpdateCardBodyType } from "./updateCardBodyType";
+import type { UpdateCardBodyType } from './updateCardBodyType';
 
 export type UpdateCardBody = {
   /** @minLength 1 */

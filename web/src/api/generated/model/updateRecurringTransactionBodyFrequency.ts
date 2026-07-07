@@ -6,13 +6,13 @@
  * OpenAPI spec version: 2.0.0
  */
 
-export type UpdateRecurringTransactionBodyFrequency =
-  (typeof UpdateRecurringTransactionBodyFrequency)[keyof typeof UpdateRecurringTransactionBodyFrequency];
+export type UpdateRecurringTransactionBodyFrequency = typeof UpdateRecurringTransactionBodyFrequency[keyof typeof UpdateRecurringTransactionBodyFrequency];
+
 
 // eslint-disable-next-line @typescript-eslint/no-redeclare
 export const UpdateRecurringTransactionBodyFrequency = {
-  daily: "daily",
-  weekly: "weekly",
-  monthly: "monthly",
-  yearly: "yearly",
+  daily: 'daily',
+  weekly: 'weekly',
+  monthly: 'monthly',
+  yearly: 'yearly',
 } as const;

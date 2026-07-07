@@ -143,9 +143,64 @@ async function repairCrossInvoicePayments() {
   return moved
 }
 
+async function syncBillingDaysFromStructuredImports() {
+  const structuredStatements = await db
+    .select({
+      accountId: statements.accountId,
+      closingDate: statements.closingDate,
+      dueDate: statements.dueDate,
+    })
+    .from(statements)
+    .where(inArray(statements.importSource, ['pdf', 'ofx']))
+
+  const latestByAccount = new Map<
+    string,
+    { closingDate: Date; dueDate: Date }
+  >()
+
+  for (const statement of structuredStatements) {
+    if (!statement.closingDate || !statement.dueDate) continue
+
+    const existing = latestByAccount.get(statement.accountId)
+    if (!existing || statement.closingDate > existing.closingDate) {
+      latestByAccount.set(statement.accountId, {
+        closingDate: statement.closingDate,
+        dueDate: statement.dueDate,
+      })
+    }
+  }
+
+  let accountsUpdated = 0
+
+  for (const [accountId, dates] of latestByAccount) {
+    const [account] = await db
+      .select()
+      .from(accounts)
+      .where(eq(accounts.id, accountId))
+      .limit(1)
+
+    if (!account || account.type !== 'credit_card') continue
+
+    const { closingDay, dueDay } = billingDaysFromStatementDates(
+      dates.closingDate,
+      dates.dueDate
+    )
+
+    if (account.closingDay !== closingDay || account.dueDay !== dueDay) {
+      await db
+        .update(accounts)
+        .set({ closingDay, dueDay, updatedAt: new Date() })
+        .where(eq(accounts.id, account.id))
+      accountsUpdated += 1
+    }
+  }
+
+  return accountsUpdated
+}
+
 async function repairImportedStatements() {
   const crossInvoiceMoved = await repairCrossInvoicePayments()
-  let accountsUpdated = 0
+  let accountsUpdated = await syncBillingDaysFromStructuredImports()
   let paymentsFixed = 0
   let incomeMarkedPaid = 0
 

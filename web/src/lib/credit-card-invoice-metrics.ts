@@ -236,11 +236,58 @@ export function derivePreviousBalance(invoiceTotal: number, purchases: number): 
   return centsToReais(Math.max(0, diffCents))
 }
 
+export type InvoiceAmountReconciliation = {
+  purchases: number
+  previousBalance: number
+  invoiceCredits: number
+  invoiceCharges: number
+}
+
+/** Gap between statement purchases and the imported invoice total (credits, fees, etc.). */
+export function computeInvoiceAmountReconciliation(input: {
+  purchases: number
+  previousBalance: number
+  invoiceTotal: number
+}): InvoiceAmountReconciliation {
+  const baseCents =
+    reaisToCents(input.previousBalance) + reaisToCents(input.purchases)
+  const gapCents = baseCents - reaisToCents(input.invoiceTotal)
+
+  return {
+    purchases: input.purchases,
+    previousBalance: input.previousBalance,
+    invoiceCredits: gapCents > 0 ? centsToReais(gapCents) : 0,
+    invoiceCharges: gapCents < 0 ? centsToReais(-gapCents) : 0,
+  }
+}
+
+/** Portion of purchases attributed to other people via splits. */
+export function computePersonalSpendAdjustment(purchases: number, mySpend: number): number {
+  const diffCents = reaisToCents(purchases) - reaisToCents(mySpend)
+  return diffCents > 0 ? centsToReais(diffCents) : 0
+}
+
 export function hasStoredInvoiceSummary(statement: InvoiceStatementLike | null): boolean {
   return (
     statement?.purchasesTotal != null &&
     statement?.previousBalance != null
   )
+}
+
+export type CreditCardReportScope = {
+  statementId?: string
+  excludeImported?: boolean
+}
+
+/** Keeps analytics aligned with invoice metrics — no cross-invoice imported lines. */
+export function buildCreditCardReportScope(
+  matchedStatement: InvoiceStatementLike | null
+): CreditCardReportScope {
+  if (matchedStatement?.id) {
+    return { statementId: matchedStatement.id }
+  }
+
+  return { excludeImported: true }
 }
 
 /** Manual entries added after an import. */

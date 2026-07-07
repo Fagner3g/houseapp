@@ -5,7 +5,7 @@
  * API for HouseApp
  * OpenAPI spec version: 2.0.0
  */
-import type { ListAlertRules200RulesItem } from "./listAlertRules200RulesItem";
+import type { ListAlertRules200RulesItem } from './listAlertRules200RulesItem';
 
 export type ListAlertRules200 = {
   rules: ListAlertRules200RulesItem[];

@@ -5,7 +5,7 @@
  * API for HouseApp
  * OpenAPI spec version: 2.0.0
  */
-import type { GetStatement200Statement } from "./getStatement200Statement";
+import type { GetStatement200Statement } from './getStatement200Statement';
 
 export type GetStatement200 = {
   statement: GetStatement200Statement;

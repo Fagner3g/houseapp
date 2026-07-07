@@ -5,7 +5,7 @@
  * API for HouseApp
  * OpenAPI spec version: 2.0.0
  */
-import type { GetInstallmentSeries200InstallmentsItem } from "./getInstallmentSeries200InstallmentsItem";
+import type { GetInstallmentSeries200InstallmentsItem } from './getInstallmentSeries200InstallmentsItem';
 
 export type GetInstallmentSeries200 = {
   installments: GetInstallmentSeries200InstallmentsItem[];

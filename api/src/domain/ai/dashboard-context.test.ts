@@ -25,7 +25,7 @@ const baseContext: DashboardInsightsContext = {
   recurringMonthlyTotal: 500,
   recurringCount: 3,
   categoryChanges: [
-    { name: 'Alimentação', current: 1200, previous: 800, changePercent: 50 },
+    { name: 'Supermercado', current: 1200, previous: 800, changePercent: 50 },
     { name: 'Transporte', current: 400, previous: 350, changePercent: 14 },
   ],
   recentTrends: [],
@@ -56,7 +56,7 @@ describe('buildFallbackInsights', () => {
 
   it('returns tip for rising category', () => {
     const insights = buildFallbackInsights(baseContext)
-    expect(insights.some(i => i.title.includes('Alimentação'))).toBe(true)
+    expect(insights.some(i => i.title.includes('Supermercado'))).toBe(true)
   })
 
   it('returns at least one insight for empty context', () => {

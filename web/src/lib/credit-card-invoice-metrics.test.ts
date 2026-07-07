@@ -680,3 +680,81 @@ describe('filterTransactionsForInvoiceCycle', () => {
     ])
   })
 })
+
+describe('computeInvoiceAmountReconciliation', () => {
+  it('derives invoice credits from purchases and imported total', async () => {
+    const { computeInvoiceAmountReconciliation } = await import('./credit-card-invoice-metrics')
+
+    expect(
+      computeInvoiceAmountReconciliation({
+        purchases: 5836.51,
+        previousBalance: 0,
+        invoiceTotal: 5828.83,
+      })
+    ).toEqual({
+      purchases: 5836.51,
+      previousBalance: 0,
+      invoiceCredits: 7.68,
+      invoiceCharges: 0,
+    })
+  })
+
+  it('includes previous balance in the reconciliation base', async () => {
+    const { computeInvoiceAmountReconciliation } = await import('./credit-card-invoice-metrics')
+
+    expect(
+      computeInvoiceAmountReconciliation({
+        purchases: 500,
+        previousBalance: 100,
+        invoiceTotal: 600,
+      })
+    ).toEqual({
+      purchases: 500,
+      previousBalance: 100,
+      invoiceCredits: 0,
+      invoiceCharges: 0,
+    })
+  })
+
+  it('derives extra invoice charges when total exceeds purchases plus balance', async () => {
+    const { computeInvoiceAmountReconciliation } = await import('./credit-card-invoice-metrics')
+
+    expect(
+      computeInvoiceAmountReconciliation({
+        purchases: 500,
+        previousBalance: 0,
+        invoiceTotal: 515,
+      })
+    ).toEqual({
+      purchases: 500,
+      previousBalance: 0,
+      invoiceCredits: 0,
+      invoiceCharges: 15,
+    })
+  })
+})
+
+describe('computePersonalSpendAdjustment', () => {
+  it('returns the split portion when personal spend is lower than purchases', async () => {
+    const { computePersonalSpendAdjustment } = await import('./credit-card-invoice-metrics')
+
+    expect(computePersonalSpendAdjustment(6000, 5836.51)).toBe(163.49)
+    expect(computePersonalSpendAdjustment(5836.51, 5836.51)).toBe(0)
+  })
+})
+
+describe('buildCreditCardReportScope', () => {
+  it('scopes reports to the matched imported statement', async () => {
+    const { buildCreditCardReportScope } = await import('./credit-card-invoice-metrics')
+
+    expect(buildCreditCardReportScope({ id: 'st-april', totalAmount: '100.00' })).toEqual({
+      statementId: 'st-april',
+    })
+  })
+
+  it('excludes imported lines when there is no matched statement', async () => {
+    const { buildCreditCardReportScope } = await import('./credit-card-invoice-metrics')
+
+    expect(buildCreditCardReportScope(null)).toEqual({ excludeImported: true })
+  })
+})

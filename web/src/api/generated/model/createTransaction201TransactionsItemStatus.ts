@@ -6,13 +6,13 @@
  * OpenAPI spec version: 2.0.0
  */
 
-export type CreateTransaction201TransactionsItemStatus =
-  (typeof CreateTransaction201TransactionsItemStatus)[keyof typeof CreateTransaction201TransactionsItemStatus];
+export type CreateTransaction201TransactionsItemStatus = typeof CreateTransaction201TransactionsItemStatus[keyof typeof CreateTransaction201TransactionsItemStatus];
+
 
 // eslint-disable-next-line @typescript-eslint/no-redeclare
 export const CreateTransaction201TransactionsItemStatus = {
-  pending: "pending",
-  partial: "partial",
-  paid: "paid",
-  canceled: "canceled",
+  pending: 'pending',
+  partial: 'partial',
+  paid: 'paid',
+  canceled: 'canceled',
 } as const;

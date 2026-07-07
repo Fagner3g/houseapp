@@ -6,13 +6,13 @@
  * OpenAPI spec version: 2.0.0
  */
 
-export type BlockCardBodyReason =
-  (typeof BlockCardBodyReason)[keyof typeof BlockCardBodyReason];
+export type BlockCardBodyReason = typeof BlockCardBodyReason[keyof typeof BlockCardBodyReason];
+
 
 // eslint-disable-next-line @typescript-eslint/no-redeclare
 export const BlockCardBodyReason = {
-  fraud: "fraud",
-  lost: "lost",
-  stolen: "stolen",
-  preventive: "preventive",
+  fraud: 'fraud',
+  lost: 'lost',
+  stolen: 'stolen',
+  preventive: 'preventive',
 } as const;

@@ -5,7 +5,7 @@
  * API for HouseApp
  * OpenAPI spec version: 2.0.0
  */
-import type { EvaluateAlertRules200Mode } from "./evaluateAlertRules200Mode";
+import type { EvaluateAlertRules200Mode } from './evaluateAlertRules200Mode';
 
 export type EvaluateAlertRules200 = {
   processed: number;

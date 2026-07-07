@@ -1,18 +1,66 @@
 import { describe, expect, it } from 'vitest'
 
 import {
+  billingDaysFromStatementDates,
   findStatementForCycle,
   formatBillingCycleContext,
   formatBillingPeriodRange,
   formatImportedPurchasePeriodRange,
   formatInvoiceLabel,
   getBillingCycle,
+  resolveAccountBillingDays,
   resolveBillingCycleForPurchaseDate,
+  resolveBillingContextForMonth,
   resolveStatementViewMonthKey,
+  findOverlappingForeignStatements,
   shiftBillingMonth,
 } from './billing-cycle'
 
+describe('resolveAccountBillingDays', () => {
+  it('prefers billing days from the latest imported statement', () => {
+    const days = resolveAccountBillingDays(
+      { closingDay: 10, dueDay: 17 },
+      [
+        {
+          closingDate: '2026-04-01T12:00:00.000Z',
+          dueDate: '2026-04-08T12:00:00.000Z',
+        },
+      ]
+    )
+
+    expect(days).toEqual({ closingDay: 1, dueDay: 8, fromImport: true })
+  })
+
+  it('falls back to account settings without imports', () => {
+    expect(resolveAccountBillingDays({ closingDay: 10, dueDay: 17 }, [])).toEqual({
+      closingDay: 10,
+      dueDay: 17,
+      fromImport: false,
+    })
+  })
+})
+
+describe('billingDaysFromStatementDates', () => {
+  it('reads UTC day from Nubank OFX dates', () => {
+    expect(
+      billingDaysFromStatementDates(
+        '2026-03-01T12:00:00.000Z',
+        '2026-03-08T12:00:00.000Z'
+      )
+    ).toEqual({ closingDay: 1, dueDay: 8 })
+  })
+})
+
 describe('getBillingCycle', () => {
+  it('computes Nubank March 2026 with closing day 1', () => {
+    const cycle = getBillingCycle(1, 8, '2026-03')
+
+    expect(cycle.periodStart).toBe('2026-02-02')
+    expect(cycle.periodEnd).toBe('2026-03-01')
+    expect(cycle.dueDate).toBe('2026-03-08')
+    expect(formatBillingPeriodRange(cycle)).toBe('02/02 – 01/03/2026')
+  })
+
   it('computes period from closing day 10 and due day 20 for June 2026', () => {
     const cycle = getBillingCycle(10, 20, '2026-06')
 
@@ -153,5 +201,62 @@ describe('findStatementForCycle', () => {
     }
 
     expect(resolveStatementViewMonthKey(augustStatement, 1, 8)).toBe('2026-08')
+  })
+})
+
+describe('resolveBillingContextForMonth', () => {
+  const aprilOfxStatement = {
+    id: 'st-april',
+    periodStart: '2026-03-01T12:00:00.000Z',
+    periodEnd: '2026-04-01T12:00:00.000Z',
+    closingDate: '2026-04-01T12:00:00.000Z',
+    dueDate: '2026-04-08T12:00:00.000Z',
+  }
+
+  it('uses billing days from the imported statement for its invoice month', () => {
+    const context = resolveBillingContextForMonth(
+      { closingDay: 10, dueDay: 17 },
+      [aprilOfxStatement],
+      '2026-04'
+    )
+
+    expect(context.billingDays).toEqual({ closingDay: 1, dueDay: 8, fromImport: true })
+    expect(context.matchedStatement).toBe(aprilOfxStatement)
+    expect(context.cycle.periodStart).toBe('2026-03-02')
+    expect(context.cycle.periodEnd).toBe('2026-04-01')
+  })
+
+  it('falls back to account days when the month has no imported statement', () => {
+    const context = resolveBillingContextForMonth(
+      { closingDay: 10, dueDay: 17 },
+      [aprilOfxStatement],
+      '2026-03'
+    )
+
+    expect(context.matchedStatement).toBeNull()
+    expect(context.cycle.periodStart).toBe('2026-02-11')
+    expect(context.cycle.periodEnd).toBe('2026-03-10')
+  })
+})
+
+describe('findOverlappingForeignStatements', () => {
+  it('finds imported statements that overlap the current cycle but belong elsewhere', () => {
+    const aprilOfxStatement = {
+      id: 'st-april',
+      periodStart: '2026-03-01T12:00:00.000Z',
+      periodEnd: '2026-04-01T12:00:00.000Z',
+      closingDate: '2026-04-01T12:00:00.000Z',
+      dueDate: '2026-04-08T12:00:00.000Z',
+    }
+    const marchCycle = getBillingCycle(10, 17, '2026-03')
+
+    const foreign = findOverlappingForeignStatements(
+      [aprilOfxStatement],
+      marchCycle,
+      { start: marchCycle.periodStart, end: marchCycle.periodEnd },
+      { closingDay: 10, dueDay: 17 }
+    )
+
+    expect(foreign).toEqual([aprilOfxStatement])
   })
 })

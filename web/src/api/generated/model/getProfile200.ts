@@ -5,7 +5,7 @@
  * API for HouseApp
  * OpenAPI spec version: 2.0.0
  */
-import type { GetProfile200User } from "./getProfile200User";
+import type { GetProfile200User } from './getProfile200User';
 
 export type GetProfile200 = {
   user: GetProfile200User;

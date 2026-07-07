@@ -5,7 +5,7 @@
  * API for HouseApp
  * OpenAPI spec version: 2.0.0
  */
-import type { CreateCategoryBodyType } from "./createCategoryBodyType";
+import type { CreateCategoryBodyType } from './createCategoryBodyType';
 
 export type CreateCategoryBody = {
   /** @minLength 1 */

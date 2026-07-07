@@ -5,7 +5,7 @@
  * API for HouseApp
  * OpenAPI spec version: 2.0.0
  */
-import type { SendManualAlert200Type } from "./sendManualAlert200Type";
+import type { SendManualAlert200Type } from './sendManualAlert200Type';
 
 export type SendManualAlert200 = {
   sent: number;

@@ -5,8 +5,8 @@
  * API for HouseApp
  * OpenAPI spec version: 2.0.0
  */
-import type { ParseStatementCsv200DuplicateMode } from "./parseStatementCsv200DuplicateMode";
-import type { ParseStatementCsv200DuplicateExistingStatement } from "./parseStatementCsv200DuplicateExistingStatement";
+import type { ParseStatementCsv200DuplicateMode } from './parseStatementCsv200DuplicateMode';
+import type { ParseStatementCsv200DuplicateExistingStatement } from './parseStatementCsv200DuplicateExistingStatement';
 
 export type ParseStatementCsv200Duplicate = {
   isDuplicate: boolean;

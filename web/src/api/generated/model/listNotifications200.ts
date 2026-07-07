@@ -5,7 +5,7 @@
  * API for HouseApp
  * OpenAPI spec version: 2.0.0
  */
-import type { ListNotifications200NotificationsItem } from "./listNotifications200NotificationsItem";
+import type { ListNotifications200NotificationsItem } from './listNotifications200NotificationsItem';
 
 export type ListNotifications200 = {
   notifications: ListNotifications200NotificationsItem[];

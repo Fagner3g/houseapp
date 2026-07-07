@@ -6,12 +6,12 @@
  * OpenAPI spec version: 2.0.0
  */
 
-export type UpdateCard200CardType =
-  (typeof UpdateCard200CardType)[keyof typeof UpdateCard200CardType];
+export type UpdateCard200CardType = typeof UpdateCard200CardType[keyof typeof UpdateCard200CardType];
+
 
 // eslint-disable-next-line @typescript-eslint/no-redeclare
 export const UpdateCard200CardType = {
-  physical: "physical",
-  virtual: "virtual",
-  additional: "additional",
+  physical: 'physical',
+  virtual: 'virtual',
+  additional: 'additional',
 } as const;

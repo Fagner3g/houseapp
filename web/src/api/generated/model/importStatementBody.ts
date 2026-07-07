@@ -5,8 +5,8 @@
  * API for HouseApp
  * OpenAPI spec version: 2.0.0
  */
-import type { ImportStatementBodyImportSource } from "./importStatementBodyImportSource";
-import type { ImportStatementBodyTransactionsItem } from "./importStatementBodyTransactionsItem";
+import type { ImportStatementBodyImportSource } from './importStatementBodyImportSource';
+import type { ImportStatementBodyTransactionsItem } from './importStatementBodyTransactionsItem';
 
 export type ImportStatementBody = {
   /**

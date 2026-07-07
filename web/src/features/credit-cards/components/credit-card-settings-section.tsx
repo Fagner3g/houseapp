@@ -43,7 +43,7 @@ import { PaymentAccountField } from '@/features/accounts/components/payment-acco
 import { CARD_BRANDS, institutionLabel } from '@/features/accounts/constants'
 import { useActiveOrganization } from '@/hooks/use-active-organization'
 import { centsStringToNumber, formatCentsString, reaisToMoneyString } from '@/lib/currency'
-import { resolveStatementViewMonthKey } from '@/lib/billing-cycle'
+import { resolveStatementViewMonthKey, billingDaysFromStatementDates, formatStatementBillingDays, formatImportedPurchasePeriodRange } from '@/lib/billing-cycle'
 import { formatOrgUserLabel } from '@/lib/org-users'
 import { settingsFieldLabel, settingsPanel } from '@/lib/ui-classes'
 import { useAuthStore } from '@/stores/auth'
@@ -420,8 +420,17 @@ export function CreditCardSettingsSection({
           {statementsData?.statements?.length ? (
             <div className="space-y-2">
               {statementsData.statements.map(st => {
-                const monthKey =
-                  account.closingDay != null && account.dueDay != null
+                const statementBillingDays =
+                  st.closingDate && st.dueDate
+                    ? billingDaysFromStatementDates(st.closingDate, st.dueDate)
+                    : null
+                const monthKey = statementBillingDays
+                  ? resolveStatementViewMonthKey(
+                      st,
+                      statementBillingDays.closingDay,
+                      statementBillingDays.dueDay
+                    )
+                  : account.closingDay != null && account.dueDay != null
                     ? resolveStatementViewMonthKey(st, account.closingDay, account.dueDay)
                     : st.dueDate
                       ? dayjs(st.dueDate).format('YYYY-MM')
@@ -442,13 +451,21 @@ export function CreditCardSettingsSection({
                   <div>
                     <p className="font-medium text-slate-900">
                       {st.periodStart && st.periodEnd
-                        ? `${dayjs(st.periodStart).format('DD/MM')} – ${dayjs(st.periodEnd).format('DD/MM/YYYY')}`
+                        ? formatImportedPurchasePeriodRange(st.periodStart, st.periodEnd)
                         : st.fileName ?? 'Fatura'}
                     </p>
                     <p className="text-sm text-slate-500">
                       {st.transactionsCount} lançamentos
+                      {st.closingDate
+                        ? ` · Fech. ${dayjs(st.closingDate).format('DD/MM/YYYY')}`
+                        : ''}
                       {st.dueDate ? ` · Venc. ${dayjs(st.dueDate).format('DD/MM/YYYY')}` : ''}
                     </p>
+                    {st.closingDate && st.dueDate && (
+                      <p className="mt-0.5 text-xs text-slate-400">
+                        {formatStatementBillingDays(st.closingDate, st.dueDate)}
+                      </p>
+                    )}
                   </div>
                   <p className="shrink-0 font-semibold tabular-nums text-slate-900">
                     {formatCentsString(st.totalAmount)}

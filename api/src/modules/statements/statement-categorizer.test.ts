@@ -8,8 +8,8 @@ vi.mock('@/domain/ai/providers', () => ({
 import { categorizeStatementTransactions } from './statement-categorizer'
 
 const categories = [
-  { id: 'income-salary', name: 'Salário / Renda Principal', type: 'income' },
-  { id: 'expense-shopping', name: 'Compras & Lazer', type: 'expense' },
+  { id: 'income-salary', name: 'Salário', type: 'income' },
+  { id: 'expense-shopping', name: 'Compras Pessoais', type: 'expense' },
 ]
 
 describe('categorizeStatementTransactions', () => {
@@ -29,7 +29,7 @@ describe('categorizeStatementTransactions', () => {
           {
             title: 'Loja Exemplo ABC',
             categoryId: 'income-salary',
-            categoryName: 'Salário / Renda Principal',
+            categoryName: 'Salário',
             categoryType: 'income',
           },
         ],
@@ -55,7 +55,7 @@ describe('categorizeStatementTransactions', () => {
           {
             title: 'ZP*OLX - NuPay - Parcela 2/3',
             categoryId: 'expense-shopping',
-            categoryName: 'Compras & Lazer',
+            categoryName: 'Compras Pessoais',
             categoryType: 'expense',
           },
         ],

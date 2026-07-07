@@ -6,12 +6,12 @@
  * OpenAPI spec version: 2.0.0
  */
 
-export type UpdateTransactionBodyType =
-  (typeof UpdateTransactionBodyType)[keyof typeof UpdateTransactionBodyType];
+export type UpdateTransactionBodyType = typeof UpdateTransactionBodyType[keyof typeof UpdateTransactionBodyType];
+
 
 // eslint-disable-next-line @typescript-eslint/no-redeclare
 export const UpdateTransactionBodyType = {
-  income: "income",
-  expense: "expense",
-  transfer: "transfer",
+  income: 'income',
+  expense: 'expense',
+  transfer: 'transfer',
 } as const;

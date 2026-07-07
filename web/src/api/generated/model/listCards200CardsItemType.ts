@@ -6,12 +6,12 @@
  * OpenAPI spec version: 2.0.0
  */
 
-export type ListCards200CardsItemType =
-  (typeof ListCards200CardsItemType)[keyof typeof ListCards200CardsItemType];
+export type ListCards200CardsItemType = typeof ListCards200CardsItemType[keyof typeof ListCards200CardsItemType];
+
 
 // eslint-disable-next-line @typescript-eslint/no-redeclare
 export const ListCards200CardsItemType = {
-  physical: "physical",
-  virtual: "virtual",
-  additional: "additional",
+  physical: 'physical',
+  virtual: 'virtual',
+  additional: 'additional',
 } as const;

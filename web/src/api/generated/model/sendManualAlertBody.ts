@@ -5,7 +5,7 @@
  * API for HouseApp
  * OpenAPI spec version: 2.0.0
  */
-import type { SendManualAlertBodyType } from "./sendManualAlertBodyType";
+import type { SendManualAlertBodyType } from './sendManualAlertBodyType';
 
 export type SendManualAlertBody = {
   targetKey?: string;

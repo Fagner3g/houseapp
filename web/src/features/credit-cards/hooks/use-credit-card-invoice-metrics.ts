@@ -11,7 +11,9 @@ import {
   computeInvoiceMetrics,
   resolvePaymentPeriod,
   resolvePurchasesPeriod,
+  buildCreditCardReportScope,
 } from '@/lib/credit-card-invoice-metrics'
+import { findOverlappingForeignStatements } from '@/lib/billing-cycle'
 import { useActiveOrganization } from '@/hooks/use-active-organization'
 
 import { useInvoiceCycleTransactions } from './use-invoice-cycle-transactions'
@@ -87,6 +89,30 @@ export function useCreditCardInvoiceMetrics(
     [cycleTransactions, matchedStatement, cycle, paymentContext]
   )
 
+  const reportScope = useMemo(
+    () => buildCreditCardReportScope(matchedStatement),
+    [matchedStatement]
+  )
+
+  const foreignStatements = useMemo(
+    () =>
+      findOverlappingForeignStatements(
+        statementsData?.statements ?? [],
+        cycle,
+        purchasesPeriod,
+        { closingDay, dueDay },
+        matchedStatement?.id
+      ),
+    [
+      statementsData?.statements,
+      cycle,
+      purchasesPeriod,
+      closingDay,
+      dueDay,
+      matchedStatement?.id,
+    ]
+  )
+
   const dueDate = paymentPeriod.end
   const isPaid = metrics.remaining <= 0 && metrics.invoiceTotal > 0
   const isSettledEmpty = metrics.remaining <= 0 && metrics.invoiceTotal <= 0
@@ -103,5 +129,8 @@ export function useCreditCardInvoiceMetrics(
     isSettledEmpty,
     isOverdue,
     isPending: statementsPending || transactionsPending,
+    reportScope,
+    foreignStatements,
+    cycleTransactions,
   }
 }

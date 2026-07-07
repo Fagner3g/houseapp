@@ -72,7 +72,14 @@ import {
   downloadTransactionAttachment,
   uploadTransactionAttachment,
 } from '@/lib/attachments'
-import { centsStringToNumber, formatCentsString, moneyStringToReais, reaisToCentsString, reaisToMoneyString } from '@/lib/currency'
+import {
+  centsStringToNumber,
+  formatCentsString,
+  formatCurrency,
+  moneyStringToReais,
+  reaisToCentsString,
+  reaisToMoneyString,
+} from '@/lib/currency'
 import { readHttpErrorMessage } from '@/lib/http'
 import {
   formatInvoiceLabel,
@@ -992,7 +999,7 @@ export function TransactionDrawer() {
         }
 
         if (registeringPayment && paymentAmount > remaining) {
-          toast.error(`Valor excede o saldo da parcela (${formatCentsString(reaisToCentsString(remaining))})`)
+          toast.error(`Valor excede o saldo da parcela (${formatCurrency(remaining)})`)
           return
         }
 
@@ -1363,7 +1370,7 @@ export function TransactionDrawer() {
                       <p className="font-medium text-slate-900">{tx?.title}</p>
                       <p className="text-sm text-slate-500">
                         Valor da parcela:{' '}
-                        {formatCentsString(reaisToCentsString(installmentAmountReais))}
+                        {formatCurrency(installmentAmountReais)}
                       </p>
                       {hasInstallmentContext && (
                         <p className="text-sm text-slate-500">
@@ -1372,8 +1379,8 @@ export function TransactionDrawer() {
                       )}
                       {installmentPaidReais > 0 && (
                         <p className="text-sm text-amber-700">
-                          Já pago {formatCentsString(reaisToCentsString(installmentPaidReais))} · Saldo{' '}
-                          {formatCentsString(reaisToCentsString(installmentRemainingReais))}
+                          Já pago {formatCurrency(installmentPaidReais)} · Saldo{' '}
+                          {formatCurrency(installmentRemainingReais)}
                         </p>
                       )}
                     </div>
@@ -1391,7 +1398,7 @@ export function TransactionDrawer() {
                           </FormControl>
                           {installmentRemainingReais > 0 && (
                             <p className="text-xs text-slate-500">
-                              Saldo da parcela: {formatCentsString(reaisToCentsString(installmentRemainingReais))}
+                              Saldo da parcela: {formatCurrency(installmentRemainingReais)}
                             </p>
                           )}
                         </FormItem>
@@ -1733,7 +1740,7 @@ export function TransactionDrawer() {
                                 {isEdit && isTransactionPartial(tx?.status) && (
                                   <p className="mb-2 text-xs text-amber-700">
                                     Pagamento parcial · falta{' '}
-                                    {formatCentsString(reaisToCentsString(installmentRemainingReais))}
+                                    {formatCurrency(installmentRemainingReais)}
                                   </p>
                                 )}
                                 <ToggleGroup
@@ -1779,8 +1786,8 @@ export function TransactionDrawer() {
                         )}
                         {installmentPaidReais > 0 && (
                           <p className="col-span-12 text-sm text-amber-700">
-                            Já pago {formatCentsString(reaisToCentsString(installmentPaidReais))} · Saldo{' '}
-                            {formatCentsString(reaisToCentsString(installmentRemainingReais))}
+                            Já pago {formatCurrency(installmentPaidReais)} · Saldo{' '}
+                            {formatCurrency(installmentRemainingReais)}
                           </p>
                         )}
                         <FormField
@@ -2316,7 +2323,7 @@ export function TransactionDrawer() {
             <AlertDialogCancel
               onClick={() => {
                 toast.error(
-                  `Valor excede o saldo da parcela (${formatCentsString(reaisToCentsString(installmentRemainingReais))})`
+                  `Valor excede o saldo da parcela (${formatCurrency(installmentRemainingReais)})`
                 )
               }}
             >

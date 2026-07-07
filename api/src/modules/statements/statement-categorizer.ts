@@ -19,33 +19,78 @@ export type CategorizationExample = {
 const HEURISTIC_RULES: Array<{ pattern: RegExp; categoryName: string }> = [
   {
     pattern:
-      /uber|99\*|taxi|shell|posto|combust|xebra|nutag|premmia|park plus|estacionam|easyjet|abastecer|peg pag|auto posto/i,
-    categoryName: 'Transporte & Mobilidade',
+      /uber|99\*|taxi|shell|posto|combust|xebra|nutag|premmia|park plus|estacionam|easyjet|abastecer|peg pag|auto posto|ipva|pedágio|pedagio|metrô|metro|ônibus|onibus|passagem|locadora|estapar/i,
+    categoryName: 'Transporte',
   },
   {
     pattern:
-      /ifood|ifd\*|99food|delivery|restaur|burger|japa|bar |boteco|subway|ze delivery|nadinhos|santo japa|zigpay|zig\*|temaki|churrasc|pizzar|bistro|lanches|cafe|cervejaria|esfirra|hotdog|doceria|panificadora|peixe|caldo de cana|biscoit|mep\*|marukai|santorini|tatu bola|trem bom|cappta|bolota|silvinhos|frigideira de minas|chico do peixe|canabrava|vila para restaurante|teresa cafe|mercado|super |epa |pão|paod|carne|carnes|extra|araujo|empório|queijo|coelho diniz|carrefour|minimercado|padaria|frigideira|emporio|curral emp|h\.m\.f\.|distribuidora wallac|estrela do vale|comercial braga|minas rural|sn cidade|lojas rede|jesuconatural|je_suconatural|rezende/i,
-    categoryName: 'Alimentação',
+      /ifood|ifd\*|99food|delivery|restaur|burger|japa|bar |boteco|subway|ze delivery|nadinhos|santo japa|zigpay|zig\*|temaki|churrasc|pizzar|bistro|lanches|cervejaria|esfirra|hotdog|doceria|panificadora|peixe|caldo de cana|biscoit|mep\*|marukai|santorini|tatu bola|trem bom|cappta|bolota|silvinhos|frigideira de minas|chico do peixe|canabrava|vila para restaurante|teresa cafe/i,
+    categoryName: 'Restaurantes & Delivery',
   },
   {
     pattern:
-      /seguro|justos|condomínio|condominio|aluguel|luz |energia|água|agua|internet|vivo|claro|tim fibra|oi fibra|starlink|band ?larga|netflix|spotify|youtube|amazon prime|disney|hbo|globoplay|deezer|apple music|assinatura|subscription|paramount|crunchyroll|cursor|claude\.?ai|github|jetbrains|notion|figma|openai|chatgpt/i,
-    categoryName: 'Moradia & Contas Fixas',
+      /mercado|super |epa |pão|paod|carne|carnes|extra|araujo|empório|queijo|coelho diniz|carrefour|minimercado|padaria|frigideira|emporio|curral emp|h\.m\.f\.|distribuidora wallac|estrela do vale|comercial braga|minas rural|sn cidade|lojas rede|jesuconatural|je_suconatural|rezende|açougue|acougue|feira|hortifruti/i,
+    categoryName: 'Supermercado',
   },
   {
     pattern:
-      /academia|fit|lifebox|saúde|imede|diagnost|drogaria|droga mix|dentist|odonto|hospital|farmácia|farmacia|asa\*casal/i,
-    categoryName: 'Saúde & Bem-estar',
+      /condomínio|condominio|aluguel|iptu|financiamento imob|imobiliária|imobiliaria|taxa de incêndio|incendio/i,
+    categoryName: 'Moradia',
   },
   {
     pattern:
-      /sympla|cinema|pesque pague|lounge|dome lounge|hotel|suites|hospedagem|airbnb|booking|uni brasil|vantagens\.cvolta|renner|constance|boutiq|cea |moda|vestuário|vestuario|roupa|calçado|calcado|ruivasstores|meu prata|joia|prata lj|leroy merlin|casas bahia|casas lealtex|utilidades|decoração|decoracao|móveis|moveis|eletrodomést|eletrodomest|mgpower|k2 phones|eletronic|tigrescelular|informática|informatica|phone|celular|notebook|tablet|kaka eletronicos|shopee|amazonmktplc|amazon|mercado ?livre|aliexpress|olx|nupay|zp\*olx|educa|curso|faculdade|escola|udemy|coursera|livro/i,
-    categoryName: 'Compras & Lazer',
+      /luz |energia|cemig|cpfl|enel|light |água|agua|sabesp|copasa|gás|gas |internet|vivo|claro|tim fibra|oi fibra|starlink|band ?larga|telefone|telefonia/i,
+    categoryName: 'Contas da Casa',
   },
   {
     pattern:
-      /parafuso|obracom|ferragem|material de construção|terraplana|depósito|deposito estancia|papelaria|ferrament|paodapracafestas|organizacoes junqueira|gennius|comercial e|empreendimento|trabalho|serviço profissional|icaroiannisouza|carlos cesar|valdinei marcos|edercarlospereira|cassiosonio|65651968|62464341|m a p comercio|raimunda lopes/i,
+      /netflix|spotify|youtube|amazon prime|disney|hbo|globoplay|deezer|apple music|paramount|crunchyroll|cursor|claude\.?ai|github|jetbrains|notion|figma|openai|chatgpt|assinatura|subscription|microsoft 365|google one|icloud/i,
+    categoryName: 'Assinaturas & Streaming',
+  },
+  {
+    pattern:
+      /seguro|justos|academia|fit|lifebox|saúde|imede|diagnost|drogaria|droga mix|dentist|odonto|hospital|farmácia|farmacia|asa\*casal|unimed|amil|sulamerica|consulta médica|consulta medica|laborat/i,
+    categoryName: 'Saúde',
+  },
+  {
+    pattern:
+      /sympla|cinema|pesque pague|dome lounge|hotel|suites|hospedagem|airbnb|booking|uni brasil|vantagens\.cvolta|show |ingresso|parque|viagem|passagem aérea|passagem aerea|latam|gol linhas|azul linhas/i,
+    categoryName: 'Lazer & Entretenimento',
+  },
+  {
+    pattern:
+      /renner|constance|boutiq|cea |moda|vestuário|vestuario|roupa|calçado|calcado|ruivasstores|meu prata|joia|prata lj|shopee|amazonmktplc|amazon|mercado ?livre|aliexpress|olx|nupay|zp\*olx|shein|zara|riachuelo/i,
+    categoryName: 'Compras Pessoais',
+  },
+  {
+    pattern:
+      /leroy merlin|casas bahia|casas lealtex|utilidades|decoração|decoracao|móveis|moveis|eletrodomést|eletrodomest|parafuso|obracom|ferragem|material de construção|terraplana|depósito|deposito estancia|papelaria|ferrament|paodapracafestas/i,
+    categoryName: 'Casa & Manutenção',
+  },
+  {
+    pattern:
+      /mgpower|k2 phones|eletronic|tigrescelular|informática|informatica|phone|celular|notebook|tablet|kaka eletronicos|magazine luiza|kabum|fast shop/i,
+    categoryName: 'Eletrônicos & Tecnologia',
+  },
+  {
+    pattern:
+      /educa|curso|faculdade|escola|udemy|coursera|livro|universidade|colégio|colegio|material escolar|duolingo/i,
+    categoryName: 'Educação',
+  },
+  {
+    pattern:
+      /petz|cobasi|pet shop|petshop|veterin|banho e tosa|ração|racao/i,
+    categoryName: 'Pets',
+  },
+  {
+    pattern:
+      /organizacoes junqueira|gennius|comercial e|empreendimento|trabalho|serviço profissional|icaroiannisouza|carlos cesar|valdinei marcos|edercarlospereira|cassiosonio|65651968|62464341|m a p comercio|raimunda lopes/i,
     categoryName: 'Negócio & Trabalho',
+  },
+  {
+    pattern:
+      /empréstimo|emprestimo|financiamento|parcela banco|juros|acordo|consignado|nubank empr|creditas|bmg/i,
+    categoryName: 'Empréstimos & Dívidas',
   },
 ]
 
@@ -86,9 +131,20 @@ function categorizeWithHeuristics(
       return null
     }
 
+    const title = transaction.title.toLowerCase()
+    if (/salário|salario|folha|13º|13o|holerite|pro labore|prolabore/i.test(title)) {
+      return resolveCategoryId(categories, 'Salário', 'income')
+    }
+    if (/freelance|freela|honorário|honorario|bico|extra/i.test(title)) {
+      return resolveCategoryId(categories, 'Renda Extra / Freelance', 'income')
+    }
+    if (/dividendo|juros|rendimento|resgate|cdb|lci|lca|fii|tesouro|invest/i.test(title)) {
+      return resolveCategoryId(categories, 'Rendimentos', 'income')
+    }
+
     return (
       resolveCategoryId(categories, 'Outras Receitas', 'income') ??
-      resolveCategoryId(categories, 'Salário / Renda Principal', 'income')
+      resolveCategoryId(categories, 'Salário', 'income')
     )
   }
 
@@ -157,6 +213,9 @@ ${txList}
 
 Regras:
 - Use o histórico acima quando o título/estabelecimento for similar a transações já categorizadas.
+- Supermercado = compras de mercado/feira; Restaurantes & Delivery = comer fora.
+- Moradia = aluguel/condomínio; Contas da Casa = luz/água/gás/internet fixa.
+- Assinaturas & Streaming = Netflix, Spotify, software recorrente.
 - Se NÃO houver correspondência clara, NÃO inclua a transação no resultado — deixe sem categoria para revisão manual.
 - JAMAIS invente ou chute uma categoria.
 
@@ -182,7 +241,7 @@ Use somente categorias do tipo correto (expense para despesa, income para receit
     const categoryId = typeof item.categoryId === 'string' ? item.categoryId : null
     if (index == null || !categoryId || !validIds.has(categoryId)) continue
 
-    const transaction = chunk.find(entry => entry.index === index)
+    const transaction = items.find(entry => entry.index === index)
     if (!transaction || !isCategoryValidForTransaction(categories, categoryId, transaction.type)) {
       continue
     }

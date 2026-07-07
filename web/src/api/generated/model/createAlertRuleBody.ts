@@ -5,10 +5,10 @@
  * API for HouseApp
  * OpenAPI spec version: 2.0.0
  */
-import type { CreateAlertRuleBodyScope } from "./createAlertRuleBodyScope";
-import type { CreateAlertRuleBodyTriggerType } from "./createAlertRuleBodyTriggerType";
-import type { CreateAlertRuleBodyConfig } from "./createAlertRuleBodyConfig";
-import type { CreateAlertRuleBodyChannelsItem } from "./createAlertRuleBodyChannelsItem";
+import type { CreateAlertRuleBodyScope } from './createAlertRuleBodyScope';
+import type { CreateAlertRuleBodyTriggerType } from './createAlertRuleBodyTriggerType';
+import type { CreateAlertRuleBodyConfig } from './createAlertRuleBodyConfig';
+import type { CreateAlertRuleBodyChannelsItem } from './createAlertRuleBodyChannelsItem';
 
 export type CreateAlertRuleBody = {
   scope: CreateAlertRuleBodyScope;

@@ -5,7 +5,7 @@
  * API for HouseApp
  * OpenAPI spec version: 2.0.0
  */
-import type { GetAlertSettings200Timezone } from "./getAlertSettings200Timezone";
+import type { GetAlertSettings200Timezone } from './getAlertSettings200Timezone';
 
 export type GetAlertSettings200 = {
   /**

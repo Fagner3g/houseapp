@@ -12437,6 +12437,22 @@
             "schema": {
               "type": "string"
             },
+            "in": "query",
+            "name": "statementId",
+            "required": false
+          },
+          {
+            "schema": {
+              "type": "boolean"
+            },
+            "in": "query",
+            "name": "excludeImported",
+            "required": false
+          },
+          {
+            "schema": {
+              "type": "string"
+            },
             "in": "path",
             "name": "slug",
             "required": true
@@ -12932,6 +12948,22 @@
             },
             "in": "query",
             "name": "scope",
+            "required": false
+          },
+          {
+            "schema": {
+              "type": "string"
+            },
+            "in": "query",
+            "name": "statementId",
+            "required": false
+          },
+          {
+            "schema": {
+              "type": "boolean"
+            },
+            "in": "query",
+            "name": "excludeImported",
             "required": false
           },
           {

@@ -1,7 +1,165 @@
 import dayjs from 'dayjs'
 import 'dayjs/locale/pt-br'
+import utc from 'dayjs/plugin/utc'
 
+dayjs.extend(utc)
 dayjs.locale('pt-br')
+
+type BillingDaysAccount = {
+  closingDay?: number | null
+  dueDay?: number | null
+}
+
+type BillingDaysStatement = {
+  closingDate?: string | null
+  dueDate?: string | null
+}
+
+export type ResolvedAccountBillingDays = {
+  closingDay: number
+  dueDay: number
+  fromImport: boolean
+}
+
+/** Mirrors API billingDaysFromStatementDates — uses UTC day from imported statement dates. */
+export function billingDaysFromStatementDates(
+  closingDate: string,
+  dueDate: string
+): { closingDay: number; dueDay: number } {
+  return {
+    closingDay: dayjs.utc(closingDate).date(),
+    dueDay: dayjs.utc(dueDate).date(),
+  }
+}
+
+/**
+ * Prefers closing/due days from the latest imported statement (OFX/PDF).
+ * Falls back to account settings when there is no import yet.
+ */
+export function resolveAccountBillingDays(
+  account: BillingDaysAccount | null | undefined,
+  statements: BillingDaysStatement[]
+): ResolvedAccountBillingDays {
+  const imported = statements
+    .filter(
+      (statement): statement is BillingDaysStatement & { closingDate: string; dueDate: string } =>
+        Boolean(statement.closingDate && statement.dueDate)
+    )
+    .sort(
+      (left, right) =>
+        dayjs.utc(right.closingDate).valueOf() - dayjs.utc(left.closingDate).valueOf()
+    )
+
+  const latest = imported[0]
+  if (latest) {
+    return {
+      ...billingDaysFromStatementDates(latest.closingDate, latest.dueDate),
+      fromImport: true,
+    }
+  }
+
+  return {
+    closingDay: account?.closingDay ?? 1,
+    dueDay: account?.dueDay ?? 10,
+    fromImport: false,
+  }
+}
+
+type StatementWithPeriod = BillingDaysStatement & {
+  id?: string
+  periodStart?: string | null
+  periodEnd?: string | null
+}
+
+export type BillingContextForMonth = {
+  cycle: BillingCycle
+  billingDays: ResolvedAccountBillingDays
+  matchedStatement: StatementWithPeriod | null
+}
+
+/**
+ * Resolves the billing cycle for a month, preferring closing/due days from the
+ * imported statement that belongs to that invoice (handles Nubank day 1 vs day 10).
+ */
+export function resolveBillingContextForMonth(
+  account: BillingDaysAccount | null | undefined,
+  statements: StatementWithPeriod[],
+  monthKey: string
+): BillingContextForMonth {
+  const accountDays: ResolvedAccountBillingDays = {
+    closingDay: account?.closingDay ?? 1,
+    dueDay: account?.dueDay ?? 10,
+    fromImport: false,
+  }
+  const provisionalCycle = getBillingCycle(accountDays.closingDay, accountDays.dueDay, monthKey)
+  const matched = findStatementForCycle(statements, provisionalCycle, accountDays)
+
+  if (matched?.closingDate && matched?.dueDate) {
+    const statementDays = billingDaysFromStatementDates(matched.closingDate, matched.dueDate)
+
+    return {
+      cycle: getBillingCycle(statementDays.closingDay, statementDays.dueDay, monthKey),
+      billingDays: { ...statementDays, fromImport: true },
+      matchedStatement: matched,
+    }
+  }
+
+  return {
+    cycle: provisionalCycle,
+    billingDays: accountDays,
+    matchedStatement: null,
+  }
+}
+
+function periodsOverlap(
+  leftStart: string,
+  leftEnd: string,
+  rightStart: string,
+  rightEnd: string
+): boolean {
+  const start = dayjs(leftStart).startOf('day')
+  const end = dayjs(leftEnd).endOf('day')
+  const otherStart = dayjs(rightStart).startOf('day')
+  const otherEnd = dayjs(rightEnd).endOf('day')
+
+  return !start.isAfter(otherEnd) && !otherStart.isAfter(end)
+}
+
+/** Imported statements whose purchase window overlaps the current cycle but belong elsewhere. */
+export function findOverlappingForeignStatements(
+  statements: StatementWithPeriod[],
+  cycle: BillingCycle,
+  purchasesPeriod: { start: string; end: string },
+  billingDays: { closingDay: number; dueDay: number },
+  matchedStatementId?: string | null
+): StatementWithPeriod[] {
+  return statements.filter(statement => {
+    if (matchedStatementId && statement.id === matchedStatementId) return false
+    if (!statement.periodStart || !statement.periodEnd) return false
+
+    const viewMonth = resolveStatementViewMonthKey(
+      statement,
+      billingDays.closingDay,
+      billingDays.dueDay
+    )
+    if (viewMonth === cycle.monthKey) return false
+
+    return periodsOverlap(
+      purchasesPeriod.start,
+      purchasesPeriod.end,
+      statement.periodStart,
+      statement.periodEnd
+    )
+  })
+}
+
+export function formatStatementBillingDays(
+  closingDate: string,
+  dueDate: string
+): string {
+  const { closingDay, dueDay } = billingDaysFromStatementDates(closingDate, dueDate)
+  return `Fecha dia ${closingDay} · Vence dia ${dueDay}`
+}
 
 export type BillingCycle = {
   /** YYYY-MM anchor for the invoice month */

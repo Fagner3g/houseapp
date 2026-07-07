@@ -6,11 +6,11 @@
  * OpenAPI spec version: 2.0.0
  */
 
-export type ListManualAlertTargets200TargetsItemType =
-  (typeof ListManualAlertTargets200TargetsItemType)[keyof typeof ListManualAlertTargets200TargetsItemType];
+export type ListManualAlertTargets200TargetsItemType = typeof ListManualAlertTargets200TargetsItemType[keyof typeof ListManualAlertTargets200TargetsItemType];
+
 
 // eslint-disable-next-line @typescript-eslint/no-redeclare
 export const ListManualAlertTargets200TargetsItemType = {
-  member: "member",
-  contact: "contact",
+  member: 'member',
+  contact: 'contact',
 } as const;

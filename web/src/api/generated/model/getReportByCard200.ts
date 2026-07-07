@@ -5,7 +5,7 @@
  * API for HouseApp
  * OpenAPI spec version: 2.0.0
  */
-import type { GetReportByCard200TransactionsItem } from "./getReportByCard200TransactionsItem";
+import type { GetReportByCard200TransactionsItem } from './getReportByCard200TransactionsItem';
 
 export type GetReportByCard200 = {
   transactions: GetReportByCard200TransactionsItem[];

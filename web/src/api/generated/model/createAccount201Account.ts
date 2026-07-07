@@ -5,8 +5,8 @@
  * API for HouseApp
  * OpenAPI spec version: 2.0.0
  */
-import type { CreateAccount201AccountType } from "./createAccount201AccountType";
-import type { CreateAccount201AccountCardsItem } from "./createAccount201AccountCardsItem";
+import type { CreateAccount201AccountType } from './createAccount201AccountType';
+import type { CreateAccount201AccountCardsItem } from './createAccount201AccountCardsItem';
 
 export type CreateAccount201Account = {
   id: string;

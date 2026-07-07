@@ -17,7 +17,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from '@/components/ui/select'
-import { formatCentsString, moneyStringToReais, reaisToCentsString } from '@/lib/currency'
+import { formatCentsString, moneyStringToReais, reaisToMoneyString } from '@/lib/currency'
 import { cn } from '@/lib/utils'
 
 import { CategorySelect, MemberSelect, SPLIT_MODE_LABELS } from './import-review-fields'
@@ -537,7 +537,7 @@ export function ImportStatementReviewTable({
                             ) : (
                               <p className="text-[11px] tabular-nums text-slate-500">
                                 {formatCentsString(
-                                  reaisToCentsString(
+                                  reaisToMoneyString(
                                     resolveSplitAmountReais(
                                       item.amount,
                                       row.splitMode,

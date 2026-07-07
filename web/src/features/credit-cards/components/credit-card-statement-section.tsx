@@ -1,6 +1,6 @@
 import dayjs from 'dayjs'
 import { Plus } from 'lucide-react'
-import { useCallback, useEffect, useMemo, useState } from 'react'
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 
 import { useListCards, useListStatements } from '@/api/generated/api'
 import type { ListTransactions200TransactionsItem } from '@/api/generated/model'
@@ -27,6 +27,7 @@ import {
   computeInvoiceFilterCounts,
   defaultInvoiceStatementFilters,
   filterInvoiceTransactions,
+  type InvoiceQuickFilter,
   type InvoiceStatementFilters,
 } from './credit-card-statement-filter-utils'
 import { CreditCardStatementFilters } from './credit-card-statement-filters'
@@ -43,6 +44,7 @@ interface CreditCardStatementSectionProps {
   cycle: BillingCycle
   closingDay: number
   dueDay: number
+  initialQuickFilter?: InvoiceQuickFilter
   onImported: () => void
   onViewExistingStatement?: (params: { accountId: string; monthKey: string }) => void
 }
@@ -70,12 +72,17 @@ export function CreditCardStatementSection({
   cycle,
   closingDay,
   dueDay,
+  initialQuickFilter,
   onImported,
   onViewExistingStatement,
 }: CreditCardStatementSectionProps) {
   const { slug } = useActiveOrganization()
   const openTransactionDrawer = useDrawerStore(s => s.openTransactionDrawer)
-  const [filters, setFilters] = useState<InvoiceStatementFilters>(defaultInvoiceStatementFilters)
+  const sectionRef = useRef<HTMLElement>(null)
+  const [filters, setFilters] = useState<InvoiceStatementFilters>(() => ({
+    ...defaultInvoiceStatementFilters(),
+    quickFilter: initialQuickFilter ?? 'all',
+  }))
 
   const { data: statementsData } = useListStatements(slug, accountId, {
     query: { enabled: !!slug && !!accountId },
@@ -155,8 +162,16 @@ export function CreditCardStatementSection({
   }, [])
 
   useEffect(() => {
-    setFilters(defaultInvoiceStatementFilters())
-  }, [accountId, cycle.monthKey])
+    setFilters({
+      ...defaultInvoiceStatementFilters(),
+      quickFilter: initialQuickFilter ?? 'all',
+    })
+  }, [accountId, cycle.monthKey, initialQuickFilter])
+
+  useEffect(() => {
+    if (initialQuickFilter !== 'divided') return
+    sectionRef.current?.scrollIntoView({ behavior: 'smooth', block: 'start' })
+  }, [initialQuickFilter, accountId, cycle.monthKey])
 
   const hasPayments = baseItems.some(tx => tx.type === 'income')
   const purchasesLabel = purchasesPeriod.usesImportedStatementPeriod
@@ -164,7 +179,7 @@ export function CreditCardStatementSection({
     : `Ciclo do cartão: ${formatDateRange(purchasesPeriod.start, purchasesPeriod.end)}`
 
   return (
-    <section className="mt-6 space-y-4">
+    <section ref={sectionRef} className="mt-6 space-y-4">
       <div className="flex flex-col gap-3 px-4 sm:flex-row sm:items-center sm:justify-between lg:px-6">
         <div>
           <h2 className="text-base font-semibold text-slate-900">Compras e pagamentos</h2>
