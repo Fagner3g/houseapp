@@ -3,7 +3,7 @@
  * Do not edit manually.
  * HouseApp API
  * API for HouseApp
- * OpenAPI spec version: 1.5.2
+ * OpenAPI spec version: 2.0.0
  */
 import type { ListTransactions200TransactionsItem } from "./listTransactions200TransactionsItem";
 import type { ListTransactions200Pagination } from "./listTransactions200Pagination";

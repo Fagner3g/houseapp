@@ -3,7 +3,7 @@
  * Do not edit manually.
  * HouseApp API
  * API for HouseApp
- * OpenAPI spec version: 1.5.2
+ * OpenAPI spec version: 2.0.0
  */
 import type { CreateAccount201AccountType } from "./createAccount201AccountType";
 import type { CreateAccount201AccountCardsItem } from "./createAccount201AccountCardsItem";

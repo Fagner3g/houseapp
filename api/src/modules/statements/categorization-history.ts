@@ -27,6 +27,7 @@ export async function loadCategorizationHistory(
       title: row.title,
       categoryId,
       categoryName: categoryNameById.get(categoryId) ?? categoryId,
+      categoryType: row.type === 'income' ? 'income' : 'expense',
     })
   }
 

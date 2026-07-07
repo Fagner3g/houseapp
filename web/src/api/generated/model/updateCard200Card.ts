@@ -3,7 +3,7 @@
  * Do not edit manually.
  * HouseApp API
  * API for HouseApp
- * OpenAPI spec version: 1.5.2
+ * OpenAPI spec version: 2.0.0
  */
 import type { UpdateCard200CardType } from "./updateCard200CardType";
 import type { UpdateCard200CardStatus } from "./updateCard200CardStatus";

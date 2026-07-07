@@ -3,7 +3,7 @@
  * Do not edit manually.
  * HouseApp API
  * API for HouseApp
- * OpenAPI spec version: 1.5.2
+ * OpenAPI spec version: 2.0.0
  */
 import type { ParseStatementPdf200ParsedTransactionsItemType } from "./parseStatementPdf200ParsedTransactionsItemType";
 import type { ParseStatementPdf200ParsedTransactionsItemSplitHint } from "./parseStatementPdf200ParsedTransactionsItemSplitHint";

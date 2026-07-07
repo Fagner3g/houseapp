@@ -1,6 +1,7 @@
 import dayjs from 'dayjs'
 import { BarChart3, CalendarDays, Repeat, Store, Tag } from 'lucide-react'
 import type { ElementType } from 'react'
+import { useMemo, useState } from 'react'
 
 import { useGetReportByCategory, useGetReportTopMerchants } from '@/api/generated/api'
 import { CategoryBreakdownChart } from '@/components/charts/category-breakdown-chart'
@@ -9,6 +10,7 @@ import {
   formatMerchantSubtitle,
   type ExpenseRankingItem,
 } from '@/components/expense-ranking-list'
+import { QuickFilterBadges } from '@/components/quick-filter-badges'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { mapCategoryToChartData } from '@/features/home/lib/chart-mappers'
 import type { BillingCycle } from '@/lib/billing-cycle'
@@ -32,25 +34,55 @@ interface CreditCardAnalyticsSectionProps {
   dueDay: number
 }
 
+type MerchantQuickFilter = 'all' | 'recurring' | 'single' | 'installments'
+
+const MERCHANT_QUICK_FILTERS: Array<{
+  id: MerchantQuickFilter
+  label: string
+}> = [
+  { id: 'all', label: 'Todos' },
+  { id: 'recurring', label: 'Recorrentes' },
+  { id: 'installments', label: 'Parceladas' },
+  { id: 'single', label: 'Avulsos' },
+]
+
+const TOP_MERCHANTS_LIMIT = 15
+const MERCHANT_FETCH_LIMIT = 50
+
 function AnalyticsStat({
   icon: Icon,
   label,
   value,
   iconClass,
+  onClick,
+  isActive,
 }: {
   icon: ElementType
   label: string
   value: string
   iconClass: string
+  onClick?: () => void
+  isActive?: boolean
 }) {
+  const Comp = onClick ? 'button' : 'div'
+
   return (
-    <div className="rounded-lg border border-violet-100/80 bg-white/70 px-3 py-2.5 backdrop-blur-sm">
+    <Comp
+      type={onClick ? 'button' : undefined}
+      onClick={onClick}
+      className={cn(
+        'rounded-lg border border-violet-100/80 bg-white/70 px-3 py-2.5 text-left backdrop-blur-sm',
+        onClick &&
+          'cursor-pointer transition-colors hover:border-violet-200 hover:bg-white',
+        isActive && 'border-violet-300 bg-white ring-1 ring-violet-200'
+      )}
+    >
       <div className="mb-1 flex items-center gap-1.5">
         <Icon className={cn('size-3.5', iconClass)} />
         <span className="text-xs font-medium text-slate-600">{label}</span>
       </div>
       <p className="text-lg font-bold tabular-nums tracking-tight text-slate-900">{value}</p>
-    </div>
+    </Comp>
   )
 }
 
@@ -71,6 +103,7 @@ export function CreditCardAnalyticsSection({
 }: CreditCardAnalyticsSectionProps) {
   const { slug } = useActiveOrganization()
   const openAnalyticsGroupDrawer = useDrawerStore(s => s.openAnalyticsGroupDrawer)
+  const [merchantQuickFilter, setMerchantQuickFilter] = useState<MerchantQuickFilter>('all')
   const { purchasesPeriod, metrics, isPending } = useCreditCardInvoiceMetrics(
     accountId,
     cycle,
@@ -98,16 +131,77 @@ export function CreditCardAnalyticsSection({
   )
   const topMerchants = useGetReportTopMerchants(
     slug,
-    { ...reportParams, limit: 15 },
+    { ...reportParams, limit: MERCHANT_FETCH_LIMIT },
     { query: { enabled: !!slug && !!accountId } }
   )
 
   const isLoading = isPending || byCategory.isLoading || topMerchants.isLoading
   const categories = byCategory.data?.categories ?? []
-  const merchants = topMerchants.data?.merchants ?? []
+  const allMerchants = topMerchants.data?.merchants ?? []
+  const merchantCount = topMerchants.data?.merchantCount ?? allMerchants.length
   const grandTotal = topMerchants.data?.grandTotal ?? '0'
   const mySpend = moneyStringToReais(grandTotal)
-  const recurringCount = merchants.filter(merchant => merchant.isRecurring).length
+
+  const recurringMerchants = useMemo(
+    () => allMerchants.filter(merchant => merchant.isRecurring),
+    [allMerchants]
+  )
+  const singleMerchants = useMemo(
+    () => allMerchants.filter(merchant => !merchant.isRecurring && !merchant.hasInstallments),
+    [allMerchants]
+  )
+  const installmentMerchants = useMemo(
+    () => allMerchants.filter(merchant => merchant.hasInstallments),
+    [allMerchants]
+  )
+  const recurringCount = recurringMerchants.length
+
+  const merchantFilterCounts = useMemo(
+    () => ({
+      all: Math.min(allMerchants.length, TOP_MERCHANTS_LIMIT),
+      recurring: recurringMerchants.length,
+      installments: installmentMerchants.length,
+      single: singleMerchants.length,
+    }),
+    [
+      allMerchants.length,
+      recurringMerchants.length,
+      installmentMerchants.length,
+      singleMerchants.length,
+    ]
+  )
+
+  const visibleMerchants = useMemo(() => {
+    switch (merchantQuickFilter) {
+      case 'recurring':
+        return recurringMerchants
+      case 'installments':
+        return installmentMerchants
+      case 'single':
+        return singleMerchants.slice(0, TOP_MERCHANTS_LIMIT)
+      default:
+        return allMerchants.slice(0, TOP_MERCHANTS_LIMIT)
+    }
+  }, [allMerchants, merchantQuickFilter, installmentMerchants, recurringMerchants, singleMerchants])
+
+  const merchantQuickFilterOptions = useMemo(
+    () =>
+      MERCHANT_QUICK_FILTERS.map(filter => ({
+        ...filter,
+        count: merchantFilterCounts[filter.id],
+      })),
+    [merchantFilterCounts]
+  )
+
+  const merchantEmptyMessage =
+    merchantQuickFilter === 'recurring'
+      ? 'Nenhum estabelecimento recorrente nesta fatura'
+      : merchantQuickFilter === 'installments'
+        ? 'Nenhuma compra parcelada nesta fatura'
+        : merchantQuickFilter === 'single'
+          ? 'Nenhuma compra avulsa nesta fatura'
+          : 'Nenhuma compra nesta fatura'
+
   const chartData = mapCategoryToChartData(categories)
 
   const openGroup = (item: ExpenseRankingItem, groupType: AnalyticsGroupContext['groupType']) => {
@@ -167,21 +261,25 @@ export function CreditCardAnalyticsSection({
             <AnalyticsStat
               icon={Store}
               label="Estabelecimentos"
-              value={String(merchants.length)}
+              value={String(merchantCount)}
               iconClass="text-blue-500"
+              onClick={() => setMerchantQuickFilter('all')}
+              isActive={merchantQuickFilter === 'all'}
             />
             <AnalyticsStat
               icon={Repeat}
               label="Recorrentes"
               value={String(recurringCount)}
               iconClass="text-amber-500"
+              onClick={() => setMerchantQuickFilter('recurring')}
+              isActive={merchantQuickFilter === 'recurring'}
             />
             <AnalyticsStat
               icon={BarChart3}
               label="Ticket médio"
               value={
-                merchants.length > 0
-                  ? formatCurrency(mySpend / merchants.length)
+                merchantCount > 0
+                  ? formatCurrency(mySpend / merchantCount)
                   : '—'
               }
               iconClass="text-emerald-500"
@@ -226,11 +324,18 @@ export function CreditCardAnalyticsSection({
         </Card>
 
         <Card className="finance-card">
-          <CardHeader>
-            <CardTitle className="text-base">Maiores estabelecimentos</CardTitle>
-            <p className="text-sm text-slate-500">
-              Agrupados pelo nome na fatura · recorrente = 2 ou mais compras · toque para ver
-            </p>
+          <CardHeader className="space-y-3">
+            <div>
+              <CardTitle className="text-base">Maiores estabelecimentos</CardTitle>
+              <p className="text-sm text-slate-500">
+                Top {TOP_MERCHANTS_LIMIT} por gasto · agrupados pelo nome na fatura · toque para ver
+              </p>
+            </div>
+            <QuickFilterBadges
+              value={merchantQuickFilter}
+              options={merchantQuickFilterOptions}
+              onChange={setMerchantQuickFilter}
+            />
           </CardHeader>
           <CardContent>
             {topMerchants.error ? (
@@ -238,7 +343,7 @@ export function CreditCardAnalyticsSection({
             ) : (
               <ExpenseRankingList
                 showRank
-                items={merchants.map(merchant => ({
+                items={visibleMerchants.map(merchant => ({
                   id: merchant.key,
                   label: merchant.label,
                   total: merchant.total,
@@ -252,7 +357,7 @@ export function CreditCardAnalyticsSection({
                   ),
                 }))}
                 grandTotal={grandTotal}
-                emptyMessage="Nenhuma compra nesta fatura"
+                emptyMessage={merchantEmptyMessage}
                 onItemClick={item => openGroup(item, 'merchant')}
               />
             )}

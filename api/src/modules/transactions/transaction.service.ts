@@ -337,6 +337,7 @@ export class TransactionService {
       accountId: input.accountId ?? existing.accountId,
       cardId: input.cardId ?? existing.cardId,
       categoryIds: input.categoryIds,
+      type: input.type ?? existing.type,
     })
 
     const notifyTarget = await this.resolveNotifyFields(
@@ -743,7 +744,10 @@ export class TransactionService {
       )
 
       if (update.categoryIds !== undefined) {
-        await this.validateReferences(organizationId, { categoryIds: update.categoryIds })
+        await this.validateReferences(organizationId, {
+          categoryIds: update.categoryIds,
+          type: existing.type,
+        })
         await this.transactionRepository.setCategories(update.transactionId, update.categoryIds)
         current = toTransactionDto(existing, update.categoryIds)
       }
@@ -1161,6 +1165,7 @@ export class TransactionService {
       accountId?: string | null
       cardId?: string | null
       categoryIds?: string[]
+      type?: TransactionType
     }
   ): Promise<void> {
     if (input.accountId) {
@@ -1200,11 +1205,21 @@ export class TransactionService {
     }
 
     if (input.categoryIds?.length) {
+      if (!input.type) {
+        throw badRequest('Transaction type is required when assigning categories')
+      }
+
       for (const categoryId of input.categoryIds) {
         const category = await this.categoryRepository.findById(organizationId, categoryId)
 
         if (!category || !category.isActive) {
           throw badRequest(`Category not found: ${categoryId}`)
+        }
+
+        if (category.type !== input.type) {
+          throw badRequest(
+            `A categoria "${category.name}" é de ${category.type === 'income' ? 'receita' : 'despesa'} e não pode ser usada neste lançamento`
+          )
         }
       }
     }

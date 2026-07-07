@@ -13,6 +13,7 @@ export type CategorizationExample = {
   title: string
   categoryId: string
   categoryName: string
+  categoryType: 'income' | 'expense'
 }
 
 const HEURISTIC_RULES: Array<{ pattern: RegExp; categoryName: string }> = [
@@ -65,6 +66,15 @@ function resolveCategoryId(
       normalized.includes(category.name.toLowerCase())
   )
   return partial?.id ?? null
+}
+
+function isCategoryValidForTransaction(
+  categories: CategoryRow[],
+  categoryId: string,
+  type: 'income' | 'expense'
+): boolean {
+  const category = categories.find(row => row.id === categoryId)
+  return category?.type === type
 }
 
 function categorizeWithHeuristics(
@@ -171,6 +181,12 @@ Use somente categorias do tipo correto (expense para despesa, income para receit
     const index = typeof item.index === 'number' ? item.index : null
     const categoryId = typeof item.categoryId === 'string' ? item.categoryId : null
     if (index == null || !categoryId || !validIds.has(categoryId)) continue
+
+    const transaction = chunk.find(entry => entry.index === index)
+    if (!transaction || !isCategoryValidForTransaction(categories, categoryId, transaction.type)) {
+      continue
+    }
+
     result.set(index, categoryId)
   }
 
@@ -193,8 +209,9 @@ export async function categorizeStatementTransactions(
   transactions.forEach((transaction, index) => {
     const type = (transaction.type ?? 'expense') as 'income' | 'expense'
 
-    const historicalMatch = historicalExamples.find(example =>
-      titlesAreSimilar(example.title, transaction.title)
+    const historicalMatch = historicalExamples.find(
+      example =>
+        example.categoryType === type && titlesAreSimilar(example.title, transaction.title)
     )
     if (historicalMatch) {
       assignments.set(index, historicalMatch.categoryId)
@@ -231,11 +248,15 @@ export async function categorizeStatementTransactions(
   }
 
   return transactions.map((transaction, index) => {
+    const type = (transaction.type ?? 'expense') as 'income' | 'expense'
     const categoryId = assignments.get(index)
 
     return {
       ...transaction,
-      categoryIds: categoryId ? [categoryId] : undefined,
+      categoryIds:
+        categoryId && isCategoryValidForTransaction(categories, categoryId, type)
+          ? [categoryId]
+          : undefined,
     }
   })
 }

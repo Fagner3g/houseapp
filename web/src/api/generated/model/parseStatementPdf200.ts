@@ -3,7 +3,7 @@
  * Do not edit manually.
  * HouseApp API
  * API for HouseApp
- * OpenAPI spec version: 1.5.2
+ * OpenAPI spec version: 2.0.0
  */
 import type { ParseStatementPdf200Parsed } from "./parseStatementPdf200Parsed";
 import type { ParseStatementPdf200Provider } from "./parseStatementPdf200Provider";

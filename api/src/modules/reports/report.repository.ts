@@ -120,10 +120,12 @@ export type TopMerchantReportRow = {
   occurrenceCount: number
   avgAmount: bigint
   lastDate: Date | string
+  hasInstallments: boolean
 }
 
 export type TopMerchantsReportResult = {
   merchants: TopMerchantReportRow[]
+  merchantCount: number
   grandTotal: bigint
 }
 
@@ -449,6 +451,7 @@ export class DrizzleReportRepository implements ReportRepository {
         and(
           eq(categories.organizationId, organizationId),
           eq(categories.isActive, true),
+          eq(categories.type, type),
           eq(transactions.organizationId, organizationId),
           eq(transactions.type, type),
           personalConditions
@@ -542,20 +545,30 @@ export class DrizzleReportRepository implements ReportRepository {
       reportScopeConditions(scopeOptions)
     )
 
-    const [totalsRow] = await db
+    const totalsQuery = db
       .select({ grandTotal: sql<bigint>`COALESCE(SUM(${myAmount}), 0)` })
       .from(transactions)
       .leftJoin(accounts, eq(transactions.accountId, accounts.id))
       .leftJoin(cards, eq(transactions.cardId, cards.id))
       .where(expenseWhere)
 
-    const rows = await db
+    const merchantCountQuery = db
+      .select({
+        merchantCount: sql<number>`COUNT(DISTINCT ${normalizedTitle})::int`,
+      })
+      .from(transactions)
+      .leftJoin(accounts, eq(transactions.accountId, accounts.id))
+      .leftJoin(cards, eq(transactions.cardId, cards.id))
+      .where(expenseWhere)
+
+    const rowsQuery = db
       .select({
         key: normalizedTitle,
         label: sql<string>`(array_agg(${transactions.title} ORDER BY ${purchaseDateExpr} DESC))[1]`,
         total: sql<bigint>`COALESCE(SUM(${myAmount}), 0)`,
         occurrenceCount: sql<number>`COUNT(*)::int`,
         lastDate: sql<Date>`MAX(${purchaseDateExpr})`,
+        hasInstallments: sql<boolean>`BOOL_OR(COALESCE(${transactions.installmentsTotal}, 0) > 1 OR ${transactions.title} ~* 'parcela \\d+/\\d+')`,
       })
       .from(transactions)
       .leftJoin(accounts, eq(transactions.accountId, accounts.id))
@@ -565,9 +578,16 @@ export class DrizzleReportRepository implements ReportRepository {
       .orderBy(sql`COALESCE(SUM(${myAmount}), 0) DESC`, normalizedTitle)
       .limit(limit)
 
+    const [[totalsRow], [countRow], rows] = await Promise.all([
+      totalsQuery,
+      merchantCountQuery,
+      rowsQuery,
+    ])
+
     const grandTotal = toBigInt(totalsRow?.grandTotal)
 
     return {
+      merchantCount: Number(countRow?.merchantCount) || 0,
       merchants: rows.map(row => {
         const total = toBigInt(row.total)
         const occurrenceCount = Number(row.occurrenceCount) || 0
@@ -581,6 +601,7 @@ export class DrizzleReportRepository implements ReportRepository {
           occurrenceCount,
           avgAmount,
           lastDate: row.lastDate,
+          hasInstallments: Boolean(row.hasInstallments),
         }
       }),
       grandTotal,

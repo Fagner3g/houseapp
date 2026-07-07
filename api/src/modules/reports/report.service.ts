@@ -102,6 +102,7 @@ export type TopMerchantReportDto = {
   total: string
   occurrenceCount: number
   isRecurring: boolean
+  hasInstallments: boolean
   avgAmount: string
   lastDate: string
   percentage: string
@@ -109,6 +110,7 @@ export type TopMerchantReportDto = {
 
 export type TopMerchantsReportDto = {
   merchants: TopMerchantReportDto[]
+  merchantCount: number
   grandTotal: string
 }
 
@@ -222,9 +224,10 @@ function toDailyDtos(rows: DailyReportRow[]): DailyReportDto[] {
 }
 
 function toTopMerchantsDto(result: TopMerchantsReportResult): TopMerchantsReportDto {
-  const { merchants, grandTotal } = result
+  const { merchants, merchantCount, grandTotal } = result
 
   return {
+    merchantCount,
     merchants: merchants.map(row => {
       const percentage =
         grandTotal > 0n
@@ -237,6 +240,7 @@ function toTopMerchantsDto(result: TopMerchantsReportResult): TopMerchantsReport
         total: centavosToString(row.total) ?? '0.00',
         occurrenceCount: row.occurrenceCount,
         isRecurring: row.occurrenceCount >= 2,
+        hasInstallments: row.hasInstallments,
         avgAmount: centavosToString(row.avgAmount) ?? '0.00',
         lastDate: toIsoString(row.lastDate),
         percentage,

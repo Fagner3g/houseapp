@@ -3,7 +3,7 @@
   "info": {
     "title": "HouseApp API",
     "description": "API for HouseApp",
-    "version": "1.5.2"
+    "version": "2.0.0"
   },
   "components": {
     "securitySchemes": {
@@ -12971,6 +12971,9 @@
                           "isRecurring": {
                             "type": "boolean"
                           },
+                          "hasInstallments": {
+                            "type": "boolean"
+                          },
                           "avgAmount": {
                             "type": "string"
                           },
@@ -12987,6 +12990,7 @@
                           "total",
                           "occurrenceCount",
                           "isRecurring",
+                          "hasInstallments",
                           "avgAmount",
                           "lastDate",
                           "percentage"
@@ -12994,12 +12998,16 @@
                         "additionalProperties": false
                       }
                     },
+                    "merchantCount": {
+                      "type": "number"
+                    },
                     "grandTotal": {
                       "type": "string"
                     }
                   },
                   "required": [
                     "merchants",
+                    "merchantCount",
                     "grandTotal"
                   ],
                   "additionalProperties": false

@@ -202,11 +202,13 @@ export const topMerchantsReportSchema = {
           total: z.string(),
           occurrenceCount: z.number(),
           isRecurring: z.boolean(),
+          hasInstallments: z.boolean(),
           avgAmount: z.string(),
           lastDate: z.string(),
           percentage: z.string(),
         })
       ),
+      merchantCount: z.number(),
       grandTotal: z.string(),
     }),
   },
