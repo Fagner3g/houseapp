@@ -1,0 +1,58 @@
+---
+description: Finance Kernel — shared domain logic in @houseapp/finance-core, layered features (app-wide)
+globs: "{web/src/features/**,web/src/lib/**,api/src/modules/**,api/src/core/**,api/src/domain/**,packages/finance-core/**}"
+alwaysApply: false
+---
+
+# Finance Kernel Pattern
+
+Escopo **app-wide** (web + API + legado). Aplicar em **código novo** e em **qualquer refactor que toque o arquivo**. Arquivos legado intocados permanecem até serem editados.
+
+## Camadas
+
+| Camada | Onde | Contém |
+|--------|------|--------|
+| Kernel | `packages/finance-core/` | Funções puras, centavos (`bigint`), classificadores, períodos, métricas |
+| Feature lib | `features/<domain>/lib/` | Glue de tela, mapeamento API→kernel |
+| Hooks | `features/<domain>/hooks/` | React Query, `useMemo`, orquestração |
+| Components | `features/<domain>/components/` | JSX, estado local de UI |
+| API service | `api/src/modules/*/*.service.ts` | Validação, I/O, coordenação |
+| API logic | `api/src/modules/*/*.logic.ts` | Legado — ao refatorar, extrair para `finance-core` |
+| API domain | `api/src/domain/` | Legado — novo código financeiro não entra aqui |
+
+## Onde colocar código novo
+
+1. Regra usada em API + Web → `@houseapp/finance-core`
+2. Regra só numa feature → `features/<domain>/lib/`
+3. Só apresentação → `components/` ou `hooks/`
+4. I/O ou parser de arquivo → `api/src/modules/<feature>/`
+
+## Domínios complexos
+
+Dividir por **papel**, não por tamanho arbitrário (~150 linhas/arquivo):
+
+`types.ts` · `classifiers.ts` · `periods.ts` · `filters.ts` · `metrics.ts` · `index.ts`
+
+Exemplo: `packages/finance-core/src/invoice/`
+
+## Dinheiro
+
+- Kernel e API: centavos (`bigint`)
+- Web UI: converter na borda do hook (`reaisToCents` / `centsToReais`)
+- Nunca duplicar a mesma regra com `number` no kernel e `bigint` no API
+
+## Proibições
+
+- React, Drizzle ou HTTP em `finance-core`
+- `lib/` ou `finance-core` importando `features/`
+- Duplicar regra entre API e web — extrair para o kernel
+- Lógica de negócio nova em `components/` ou `api/src/domain/`
+- Expandir arquivos legado grandes — extrair o trecho alterado
+
+## Migração gradual (ao tocar)
+
+Ordem sugerida: `money` + `billing-cycle` → `invoice/*` → `splits/` + `installments/` → `reports/` → layout de features + `domain/` legado.
+
+Candidatos web: `lib/billing-cycle`, `lib/credit-card-invoice-metrics`, `lib/transaction-kpi`, `features/transactions/split-debt-summary.utils`, `features/accounts/constants`, `import-review-types`.
+
+Candidatos API: `core/money`, `core/billing-cycle`, `modules/statements/*`, `modules/splits/split-debt-summary.logic`, `modules/transactions/credit-card-installments.logic`, `modules/reports/report-*.ts`, `domain/` → `modules/` ao tocar.

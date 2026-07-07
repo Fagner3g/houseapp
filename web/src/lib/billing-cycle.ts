@@ -1,9 +1,23 @@
 import dayjs from 'dayjs'
 import 'dayjs/locale/pt-br'
 import utc from 'dayjs/plugin/utc'
+import {
+  billingDaysFromStatementDates as billingDaysFromStatementDatesKernel,
+  getBillingCycle as getCoreBillingCycle,
+  resolveBillingMonthKey as resolveBillingMonthKeyKernel,
+  shiftBillingMonth,
+  shiftBillingMonthByOffset,
+  type BillingCycle as CoreBillingCycle,
+} from '@houseapp/finance-core'
 
 dayjs.extend(utc)
 dayjs.locale('pt-br')
+
+export {
+  billingDaysFromStatementDatesKernel as billingDaysFromStatementDates,
+  shiftBillingMonth,
+  shiftBillingMonthByOffset,
+}
 
 type BillingDaysAccount = {
   closingDay?: number | null
@@ -19,17 +33,6 @@ export type ResolvedAccountBillingDays = {
   closingDay: number
   dueDay: number
   fromImport: boolean
-}
-
-/** Mirrors API billingDaysFromStatementDates — uses UTC day from imported statement dates. */
-export function billingDaysFromStatementDates(
-  closingDate: string,
-  dueDate: string
-): { closingDay: number; dueDay: number } {
-  return {
-    closingDay: dayjs.utc(closingDate).date(),
-    dueDay: dayjs.utc(dueDate).date(),
-  }
 }
 
 /**
@@ -53,7 +56,7 @@ export function resolveAccountBillingDays(
   const latest = imported[0]
   if (latest) {
     return {
-      ...billingDaysFromStatementDates(latest.closingDate, latest.dueDate),
+      ...billingDaysFromStatementDatesKernel(latest.closingDate, latest.dueDate),
       fromImport: true,
     }
   }
@@ -71,10 +74,8 @@ type StatementWithPeriod = BillingDaysStatement & {
   periodEnd?: string | null
 }
 
-export type BillingContextForMonth = {
-  cycle: BillingCycle
-  billingDays: ResolvedAccountBillingDays
-  matchedStatement: StatementWithPeriod | null
+export type BillingCycle = CoreBillingCycle & {
+  label: string
 }
 
 /**
@@ -95,7 +96,10 @@ export function resolveBillingContextForMonth(
   const matched = findStatementForCycle(statements, provisionalCycle, accountDays)
 
   if (matched?.closingDate && matched?.dueDate) {
-    const statementDays = billingDaysFromStatementDates(matched.closingDate, matched.dueDate)
+    const statementDays = billingDaysFromStatementDatesKernel(
+      matched.closingDate,
+      matched.dueDate
+    )
 
     return {
       cycle: getBillingCycle(statementDays.closingDay, statementDays.dueDay, monthKey),
@@ -109,6 +113,12 @@ export function resolveBillingContextForMonth(
     billingDays: accountDays,
     matchedStatement: null,
   }
+}
+
+export type BillingContextForMonth = {
+  cycle: BillingCycle
+  billingDays: ResolvedAccountBillingDays
+  matchedStatement: StatementWithPeriod | null
 }
 
 function periodsOverlap(
@@ -157,22 +167,8 @@ export function formatStatementBillingDays(
   closingDate: string,
   dueDate: string
 ): string {
-  const { closingDay, dueDay } = billingDaysFromStatementDates(closingDate, dueDate)
+  const { closingDay, dueDay } = billingDaysFromStatementDatesKernel(closingDate, dueDate)
   return `Fecha dia ${closingDay} · Vence dia ${dueDay}`
-}
-
-export type BillingCycle = {
-  /** YYYY-MM anchor for the invoice month */
-  monthKey: string
-  label: string
-  periodStart: string
-  periodEnd: string
-  closingDate: string
-  dueDate: string
-}
-
-function clampDayInMonth(year: number, monthIndex: number, day: number): number {
-  return Math.min(day, dayjs().year(year).month(monthIndex).daysInMonth())
 }
 
 /** Derives billing window from account closing/due days and an anchor month (YYYY-MM). */
@@ -181,51 +177,16 @@ export function getBillingCycle(
   dueDay: number,
   monthKey: string
 ): BillingCycle {
+  const cycle = getCoreBillingCycle(closingDay, dueDay, monthKey)
   const [yearStr, monthStr] = monthKey.split('-')
-  const year = Number(yearStr)
-  const monthIndex = Number(monthStr) - 1
-  const anchor = dayjs().year(year).month(monthIndex).startOf('month')
+  const anchor = dayjs().year(Number(yearStr)).month(Number(monthStr) - 1).startOf('month')
+  const label = `${anchor.format('MMMM')} de ${anchor.format('YYYY')}`
 
-  const endDay = clampDayInMonth(year, monthIndex, closingDay)
-  const periodEnd = anchor.date(endDay).endOf('day')
-
-  const prev = anchor.subtract(1, 'month')
-  const prevYear = prev.year()
-  const prevMonthIndex = prev.month()
-  const startDay = clampDayInMonth(prevYear, prevMonthIndex, closingDay)
-  const periodStart = prev.date(startDay).add(1, 'day').startOf('day')
-
-  const dueAnchor = dueDay > closingDay ? anchor : anchor.add(1, 'month')
-  const dueDateDay = clampDayInMonth(dueAnchor.year(), dueAnchor.month(), dueDay)
-  const dueDate = dueAnchor.date(dueDateDay)
-
-  return {
-    monthKey,
-    label: anchor.format('MMMM YYYY'),
-    periodStart: periodStart.format('YYYY-MM-DD'),
-    periodEnd: periodEnd.format('YYYY-MM-DD'),
-    closingDate: periodEnd.format('YYYY-MM-DD'),
-    dueDate: dueDate.format('YYYY-MM-DD'),
-  }
+  return { ...cycle, label }
 }
 
 export function currentBillingMonthKey(): string {
   return dayjs().format('YYYY-MM')
-}
-
-export function shiftBillingMonth(monthKey: string, direction: -1 | 1): string {
-  return dayjs(`${monthKey}-01`).add(direction, 'month').format('YYYY-MM')
-}
-
-export function shiftBillingMonthByOffset(monthKey: string, offset: number): string {
-  return dayjs(`${monthKey}-01`).add(offset, 'month').format('YYYY-MM')
-}
-
-function isWithinBillingRange(date: string, periodStart: string, periodEnd: string): boolean {
-  const d = dayjs(date).startOf('day')
-  const start = dayjs(periodStart).startOf('day')
-  const end = dayjs(periodEnd).startOf('day')
-  return !d.isBefore(start) && !d.isAfter(end)
 }
 
 /** Finds the invoice month that contains a purchase date. */
@@ -234,21 +195,7 @@ export function resolveBillingMonthKey(
   closingDay: number,
   dueDay: number
 ): string {
-  const anchorMonth = dayjs(purchaseDate).format('YYYY-MM')
-  const candidates = [
-    anchorMonth,
-    shiftBillingMonth(anchorMonth, -1),
-    shiftBillingMonth(anchorMonth, 1),
-  ]
-
-  for (const monthKey of candidates) {
-    const cycle = getBillingCycle(closingDay, dueDay, monthKey)
-    if (isWithinBillingRange(purchaseDate, cycle.periodStart, cycle.periodEnd)) {
-      return monthKey
-    }
-  }
-
-  return anchorMonth
+  return resolveBillingMonthKeyKernel(purchaseDate, closingDay, dueDay)
 }
 
 function isWithinBillingPeriod(date: string, cycle: BillingCycle): boolean {

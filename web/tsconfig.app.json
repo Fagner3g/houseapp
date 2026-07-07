@@ -8,7 +8,8 @@
     "skipLibCheck": true,
     "baseUrl": "./",
     "paths": {
-      "@/*": ["./src/*"]
+      "@/*": ["./src/*"],
+      "@houseapp/finance-core": ["../packages/finance-core/src/index.ts"]
     },
 
     /* Bundler mode */
