@@ -144,6 +144,16 @@ function AccountsPage() {
     invalidateAccounts()
   }
 
+  const handleViewExistingStatement = ({
+    accountId,
+    monthKey,
+  }: {
+    accountId: string
+    monthKey: string
+  }) => {
+    updateSearch({ accountId, month: monthKey, view: undefined })
+  }
+
   return (
     <LoadingErrorState
       isLoading={isLoading}
@@ -185,6 +195,7 @@ function AccountsPage() {
                     account={selectedAccount}
                     onBack={() => updateSearch({ view: undefined })}
                     onUpdated={invalidateAccounts}
+                    onViewStatement={handleViewExistingStatement}
                   />
                 ) : (
                   <>
@@ -225,6 +236,7 @@ function AccountsPage() {
                         closingDay={selectedAccount.closingDay ?? 1}
                         dueDay={selectedAccount.dueDay ?? 10}
                         onImported={handleImported}
+                        onViewExistingStatement={handleViewExistingStatement}
                       />
                     </div>
                   </>
@@ -256,6 +268,7 @@ function AccountsPage() {
             month: currentBillingMonthKey(),
           })
         }}
+        onViewExistingStatement={handleViewExistingStatement}
       />
     </LoadingErrorState>
   )

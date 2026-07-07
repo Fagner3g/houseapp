@@ -32,8 +32,12 @@ export function useCreditCardCyclePending(
   )
 
   const matchedStatement = useMemo(
-    () => findStatementForCycle(statementsData?.statements ?? [], cycle),
-    [statementsData?.statements, cycle]
+    () =>
+      findStatementForCycle(statementsData?.statements ?? [], cycle, {
+        closingDay,
+        dueDay,
+      }),
+    [statementsData?.statements, cycle, closingDay, dueDay]
   )
 
   const previousStatement = useMemo(

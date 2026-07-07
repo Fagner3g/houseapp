@@ -8,6 +8,7 @@ import {
   formatInvoiceLabel,
   getBillingCycle,
   resolveBillingCycleForPurchaseDate,
+  resolveStatementViewMonthKey,
   shiftBillingMonth,
 } from './billing-cycle'
 
@@ -125,6 +126,32 @@ describe('findStatementForCycle', () => {
     const aprilCycle = getBillingCycle(10, 17, '2026-04')
 
     expect(aprilCycle.closingDate).toBe('2026-04-10')
-    expect(findStatementForCycle([aprilOfxStatement], aprilCycle)).toBe(aprilOfxStatement)
+    expect(findStatementForCycle([aprilOfxStatement], aprilCycle, { closingDay: 10, dueDay: 17 })).toBe(
+      aprilOfxStatement
+    )
+  })
+
+  it('matches statement by billing view month when closing day differs from account', () => {
+    const julyOpenStatement = {
+      periodStart: '2026-06-01T12:00:00.000Z',
+      periodEnd: '2026-07-10T12:00:00.000Z',
+      closingDate: '2026-07-10T12:00:00.000Z',
+      dueDate: '2026-07-17T12:00:00.000Z',
+    }
+
+    const julyCycle = getBillingCycle(10, 17, '2026-07')
+
+    expect(
+      findStatementForCycle([julyOpenStatement], julyCycle, { closingDay: 10, dueDay: 17 })
+    ).toBe(julyOpenStatement)
+  })
+
+  it('resolves the UI month for a Nubank statement with closing on the 1st', () => {
+    const augustStatement = {
+      closingDate: '2026-08-01T12:00:00.000Z',
+      dueDate: '2026-08-08T12:00:00.000Z',
+    }
+
+    expect(resolveStatementViewMonthKey(augustStatement, 1, 8)).toBe('2026-08')
   })
 })

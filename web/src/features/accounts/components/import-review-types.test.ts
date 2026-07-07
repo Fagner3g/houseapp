@@ -1,6 +1,11 @@
 import { describe, expect, it } from 'vitest'
 
-import { buildSplitCreateBody, buildSplitPayload, resolveSplitAmountReais } from './import-review-types'
+import {
+  buildPostImportUpdates,
+  buildSplitCreateBody,
+  buildSplitPayload,
+  resolveSplitAmountReais,
+} from './import-review-types'
 
 describe('resolveSplitAmountReais', () => {
   it('parses internal centavos strings', () => {
@@ -78,5 +83,60 @@ describe('buildSplitCreateBody', () => {
     )
 
     expect(payload?.amount).toBe('225.00')
+  })
+})
+
+describe('buildPostImportUpdates', () => {
+  it('skips duplicate items when aligning created transaction ids', () => {
+    const updates = buildPostImportUpdates(
+      [
+        {
+          id: 'dup',
+          index: 0,
+          title: 'Existing',
+          amount: '100.00',
+          date: '2026-05-01',
+          type: 'expense',
+          categoryId: 'cat-1',
+          isDuplicate: true,
+        },
+        {
+          id: 'new',
+          index: 1,
+          title: 'New purchase',
+          amount: '200.00',
+          date: '2026-05-02',
+          type: 'expense',
+          categoryId: 'cat-2',
+        },
+      ],
+      {
+        dup: {
+          id: 'dup',
+          categoryId: 'cat-1',
+          splitMode: 'none',
+          splitPersonMode: 'member',
+          splitUserId: null,
+          splitContactName: '',
+          splitContactPhone: '',
+          splitAmountReais: 0,
+          validated: true,
+        },
+        new: {
+          id: 'new',
+          categoryId: 'cat-2',
+          splitMode: 'none',
+          splitPersonMode: 'member',
+          splitUserId: null,
+          splitContactName: '',
+          splitContactPhone: '',
+          splitAmountReais: 0,
+          validated: true,
+        },
+      },
+      ['tx-created-1']
+    )
+
+    expect(updates).toEqual([{ transactionId: 'tx-created-1', categoryIds: ['cat-2'] }])
   })
 })

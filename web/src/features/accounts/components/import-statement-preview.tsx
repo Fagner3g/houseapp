@@ -7,6 +7,11 @@ import type { ImportStatementBody } from '@/api/generated/model'
 import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
 import { formatCurrency } from '@/lib/currency'
+import {
+  formatImportedPurchasePeriodRange,
+  formatInvoiceLabel,
+  resolveStatementViewMonthKey,
+} from '@/lib/billing-cycle'
 import type { ParseStatementPdfResponse } from '@/lib/parse-statement-pdf'
 
 import {
@@ -20,6 +25,8 @@ import { ImportStatementReviewTable } from './import-statement-review-table'
 
 type ImportStatementPreviewProps = {
   accountId: string
+  closingDay?: number
+  dueDay?: number
   parsed: ImportStatementBody
   summary: ParseStatementPdfResponse['summary']
   duplicate: ParseStatementPdfResponse['duplicate']
@@ -27,6 +34,7 @@ type ImportStatementPreviewProps = {
   provider: string | null
   isPending: boolean
   onReset: () => void
+  onViewExistingStatement?: (params: { accountId: string; monthKey: string }) => void
   onConfirm: (data: {
     parsedWithReview: ImportStatementBody
     rows: Record<string, ImportReviewRowState>
@@ -48,12 +56,15 @@ function formatProviderLabel(provider: string | null): string | null {
 
 export function ImportStatementPreview({
   accountId,
+  closingDay,
+  dueDay,
   parsed,
   duplicate,
   invoiceStatus,
   provider,
   isPending,
   onReset,
+  onViewExistingStatement,
   onConfirm,
 }: ImportStatementPreviewProps) {
   const items = useMemo(() => buildItemsFromParsedTransactions(parsed.transactions), [parsed.transactions])
@@ -82,6 +93,24 @@ export function ImportStatementPreview({
   const allApproved =
     newItems.length === 0 || newItems.every(item => initializedRows[item.id]?.validated)
   const remainingCount = newItems.length - approvedCount
+  const existingStatement = duplicate.existingStatement as {
+    accountId?: string
+    periodStart?: string | null
+    periodEnd?: string | null
+    dueDate?: string | null
+    closingDate?: string | null
+    importedAt?: string
+    transactionsCount?: number
+    totalAmount?: string | null
+    fileName?: string | null
+  } | null
+  const existingViewMonthKey =
+    existingStatement && closingDay != null && dueDay != null
+      ? resolveStatementViewMonthKey(existingStatement, closingDay, dueDay)
+      : existingStatement?.dueDate
+        ? dayjs(existingStatement.dueDate).format('YYYY-MM')
+        : null
+  const existingAccountId = existingStatement?.accountId ?? accountId
 
   const handleConfirm = () => {
     if (!allApproved) {
@@ -101,16 +130,59 @@ export function ImportStatementPreview({
 
   return (
     <div className="flex min-h-0 flex-1 flex-col gap-3 overflow-hidden">
-      {duplicate.mode === 'blocked' && duplicate.existingStatement ? (
+      {duplicate.mode === 'blocked' && existingStatement ? (
         <div className="flex shrink-0 gap-3 rounded-lg border border-amber-300 bg-amber-50 p-3 text-sm text-amber-950">
           <AlertTriangle className="mt-0.5 size-4 shrink-0 text-amber-600" />
-          <div className="space-y-1">
+          <div className="space-y-2">
             <p className="font-medium">Esta fatura já foi importada</p>
             <p className="text-amber-900/80">
               {duplicate.matchType === 'file_hash'
                 ? 'O arquivo é idêntico a uma importação anterior.'
                 : 'Já existe uma fatura com o mesmo vencimento neste cartão.'}
             </p>
+            <div className="space-y-1 text-xs text-amber-900/90">
+              {existingStatement.fileName ? (
+                <p>Arquivo: {existingStatement.fileName}</p>
+              ) : null}
+              {existingStatement.periodStart && existingStatement.periodEnd ? (
+                <p>
+                  Período:{' '}
+                  {formatImportedPurchasePeriodRange(
+                    existingStatement.periodStart,
+                    existingStatement.periodEnd
+                  )}
+                </p>
+              ) : null}
+              {existingStatement.dueDate ? (
+                <p>Vencimento: {dayjs(existingStatement.dueDate).format('DD/MM/YYYY')}</p>
+              ) : null}
+              {existingStatement.importedAt ? (
+                <p>Importada em {dayjs(existingStatement.importedAt).format('DD/MM/YYYY HH:mm')}</p>
+              ) : null}
+              {existingStatement.transactionsCount != null ? (
+                <p>{existingStatement.transactionsCount} lançamento(s) no sistema</p>
+              ) : null}
+            </div>
+            {existingViewMonthKey && onViewExistingStatement ? (
+              <Button
+                type="button"
+                size="sm"
+                variant="outline"
+                className="mt-1 border-amber-400 bg-white text-amber-950 hover:bg-amber-100"
+                onClick={() =>
+                  onViewExistingStatement({
+                    accountId: existingAccountId,
+                    monthKey: existingViewMonthKey,
+                  })
+                }
+              >
+                Ver {formatInvoiceLabel(existingViewMonthKey)}
+              </Button>
+            ) : existingViewMonthKey ? (
+              <p className="text-xs text-amber-900/90">
+                Abra {formatInvoiceLabel(existingViewMonthKey)} no cartão para ver os lançamentos.
+              </p>
+            ) : null}
           </div>
         </div>
       ) : null}

@@ -99,10 +99,13 @@ async function seedScenarios() {
   const categoryRows = await getOrganizationCategories(org.id)
   const mercado = getCategoryIdByName(categoryRows, 'Mercado', 'expense')
   const transporte = getCategoryIdByName(categoryRows, 'Transporte (Uber, Combustível)', 'expense')
+  const restaurantes = getCategoryIdByName(categoryRows, 'Restaurantes & Delivery', 'expense')
   const compras = getCategoryIdByName(categoryRows, 'Compras Pessoais', 'expense')
   const salario = getCategoryIdByName(categoryRows, 'Salário / Renda Principal', 'income')
   const moradia = getCategoryIdByName(categoryRows, 'Moradia (Aluguel, Luz, Condomínio)', 'expense')
   const internet = getCategoryIdByName(categoryRows, 'Internet & Assinaturas', 'expense')
+  const lazer = getCategoryIdByName(categoryRows, 'Lazer & Hobbies', 'expense')
+  const saude = getCategoryIdByName(categoryRows, 'Saúde & Bem-estar', 'expense')
 
   const [nubank, itauChecking, cash] = await db
     .insert(accounts)
@@ -167,13 +170,13 @@ async function seedScenarios() {
       periodEnd: at(2026, 7, 1),
       closingDate: at(2026, 7, 1),
       dueDate: at(2026, 8, 8),
-      totalAmount: 118917n,
-      minimumPayment: 118917n,
+      totalAmount: 157117n,
+      minimumPayment: 157117n,
       previousBalance: 0n,
       paymentsReceived: 0n,
-      purchasesTotal: 118917n,
+      purchasesTotal: 157117n,
       otherCharges: 0n,
-      transactionsCount: 3,
+      transactionsCount: 8,
       fileHash: 'b7e4f2a91c038d5e6f1b9c4a8d3e5f7092d6b9c4e8f3a2047b0d9c6e4f8a2153',
       fileName: 'Nubank_jul-2026-em-aberto.pdf',
       importedBy: owner.id,
@@ -191,7 +194,7 @@ async function seedScenarios() {
         title: 'Netflix',
         amount: 5590n,
         type: 'expense',
-        date: at(2026, 6, 12),
+        date: at(2026, 7, 2),
         status: 'pending',
         source: 'import',
         externalId: 'nubank-jul-netflix',
@@ -204,7 +207,7 @@ async function seedScenarios() {
         title: 'Uber *Trip',
         amount: 3247n,
         type: 'expense',
-        date: at(2026, 6, 20),
+        date: at(2026, 7, 8),
         status: 'pending',
         source: 'import',
         externalId: 'nubank-jul-uber',
@@ -217,10 +220,75 @@ async function seedScenarios() {
         title: 'Mercado Extra',
         amount: 110080n,
         type: 'expense',
-        date: at(2026, 6, 28),
+        date: at(2026, 7, 20),
         status: 'pending',
         source: 'import',
         externalId: 'nubank-jul-mercado',
+      },
+      {
+        organizationId: org.id,
+        accountId: nubank.id,
+        cardId: nubankCard.id,
+        statementId: nubankJulStatement.id,
+        title: 'iFood',
+        amount: 5270n,
+        type: 'expense',
+        date: at(2026, 7, 5),
+        status: 'pending',
+        source: 'import',
+        externalId: 'nubank-jul-ifood',
+      },
+      {
+        organizationId: org.id,
+        accountId: nubank.id,
+        cardId: nubankCard.id,
+        statementId: nubankJulStatement.id,
+        title: 'Spotify',
+        amount: 3490n,
+        type: 'expense',
+        date: at(2026, 7, 3),
+        status: 'pending',
+        source: 'import',
+        externalId: 'nubank-jul-spotify',
+      },
+      {
+        organizationId: org.id,
+        accountId: nubank.id,
+        cardId: nubankCard.id,
+        statementId: nubankJulStatement.id,
+        title: 'Cinemark',
+        amount: 4500n,
+        type: 'expense',
+        date: at(2026, 7, 12),
+        status: 'pending',
+        source: 'import',
+        externalId: 'nubank-jul-cinema',
+      },
+      {
+        organizationId: org.id,
+        accountId: nubank.id,
+        cardId: nubankCard.id,
+        statementId: nubankJulStatement.id,
+        title: 'Drogasil',
+        amount: 8950n,
+        type: 'expense',
+        date: at(2026, 7, 10),
+        status: 'pending',
+        source: 'import',
+        externalId: 'nubank-jul-farmacia',
+      },
+      {
+        organizationId: org.id,
+        accountId: nubank.id,
+        cardId: nubankCard.id,
+        statementId: nubankJulStatement.id,
+        title: 'Amazon BR',
+        amount: 15990n,
+        type: 'expense',
+        date: at(2026, 7, 15),
+        status: 'pending',
+        source: 'import',
+        externalId: 'nubank-jul-amazon',
       },
     ])
     .returning()
@@ -290,9 +358,14 @@ async function seedScenarios() {
     .returning()
 
   await db.insert(transactionCategories).values([
-    { transactionId: nubankJulPurchases[0].id, categoryId: compras },
+    { transactionId: nubankJulPurchases[0].id, categoryId: internet },
     { transactionId: nubankJulPurchases[1].id, categoryId: transporte },
     { transactionId: nubankJulPurchases[2].id, categoryId: mercado },
+    { transactionId: nubankJulPurchases[3].id, categoryId: restaurantes },
+    { transactionId: nubankJulPurchases[4].id, categoryId: internet },
+    { transactionId: nubankJulPurchases[5].id, categoryId: lazer },
+    { transactionId: nubankJulPurchases[6].id, categoryId: saude },
+    { transactionId: nubankJulPurchases[7].id, categoryId: compras },
     { transactionId: salaryTx.id, categoryId: salario },
     { transactionId: overdueTx.id, categoryId: internet },
     { transactionId: dueSoonTx.id, categoryId: moradia },
@@ -307,7 +380,8 @@ async function seedScenarios() {
   console.log('┌─ CARTÃO NUBANK (/casa/credit-cards) ───────────────────────────────────')
   console.log('│')
   console.log('│  A) Fatura jul/2026 em aberto')
-  console.log('│     R$ 1.189,17 · vencimento 08/ago · FUTURO')
+  console.log('│     R$ 1.571,17 · vencimento 08/ago · FUTURO')
+  console.log('│     8 compras categorizadas no cartão')
   console.log('│')
   console.log('├─ CONTA CORRENTE (/casa/accounts) ──────────────────────────────────────')
   console.log('│')

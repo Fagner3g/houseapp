@@ -743,9 +743,9 @@ export class TransactionService {
       )
 
       if (update.categoryIds !== undefined) {
-        current = await this.update(organizationId, update.transactionId, {
-          categoryIds: update.categoryIds,
-        })
+        await this.validateReferences(organizationId, { categoryIds: update.categoryIds })
+        await this.transactionRepository.setCategories(update.transactionId, update.categoryIds)
+        current = toTransactionDto(existing, update.categoryIds)
       }
 
       if (update.split) {

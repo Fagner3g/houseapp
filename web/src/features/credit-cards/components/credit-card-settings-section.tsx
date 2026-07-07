@@ -43,6 +43,7 @@ import { PaymentAccountField } from '@/features/accounts/components/payment-acco
 import { CARD_BRANDS, institutionLabel } from '@/features/accounts/constants'
 import { useActiveOrganization } from '@/hooks/use-active-organization'
 import { centsStringToNumber, formatCentsString, reaisToMoneyString } from '@/lib/currency'
+import { resolveStatementViewMonthKey } from '@/lib/billing-cycle'
 import { formatOrgUserLabel } from '@/lib/org-users'
 import { settingsFieldLabel, settingsPanel } from '@/lib/ui-classes'
 import { useAuthStore } from '@/stores/auth'
@@ -64,12 +65,14 @@ interface CreditCardSettingsSectionProps {
   account: ListAccounts200AccountsItem
   onBack: () => void
   onUpdated: () => void
+  onViewStatement?: (params: { accountId: string; monthKey: string }) => void
 }
 
 export function CreditCardSettingsSection({
   account,
   onBack,
   onUpdated,
+  onViewStatement,
 }: CreditCardSettingsSectionProps) {
   const { slug } = useActiveOrganization()
   const currentUserId = useAuthStore(s => s.user?.id)
@@ -416,10 +419,25 @@ export function CreditCardSettingsSection({
           </div>
           {statementsData?.statements?.length ? (
             <div className="space-y-2">
-              {statementsData.statements.map(st => (
-                <div
+              {statementsData.statements.map(st => {
+                const monthKey =
+                  account.closingDay != null && account.dueDay != null
+                    ? resolveStatementViewMonthKey(st, account.closingDay, account.dueDay)
+                    : st.dueDate
+                      ? dayjs(st.dueDate).format('YYYY-MM')
+                      : null
+
+                return (
+                <button
                   key={st.id}
-                  className="flex items-start justify-between gap-3 rounded-lg border border-slate-200 bg-white px-4 py-3"
+                  type="button"
+                  className="flex w-full items-start justify-between gap-3 rounded-lg border border-slate-200 bg-white px-4 py-3 text-left transition-colors hover:border-slate-300 hover:bg-slate-50"
+                  onClick={() => {
+                    if (monthKey && onViewStatement) {
+                      onViewStatement({ accountId: account.id, monthKey })
+                    }
+                  }}
+                  disabled={!monthKey || !onViewStatement}
                 >
                   <div>
                     <p className="font-medium text-slate-900">
@@ -435,8 +453,9 @@ export function CreditCardSettingsSection({
                   <p className="shrink-0 font-semibold tabular-nums text-slate-900">
                     {formatCentsString(st.totalAmount)}
                   </p>
-                </div>
-              ))}
+                </button>
+                )
+              })}
             </div>
           ) : (
             <div className="rounded-lg border border-dashed border-slate-200 px-4 py-8 text-center text-sm text-slate-500">

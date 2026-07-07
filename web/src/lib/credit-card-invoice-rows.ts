@@ -102,7 +102,10 @@ export function buildInvoiceSummariesForRange({
       const cycle = getBillingCycle(closing, due, monthKey)
       if (!shouldIncludeCycleInRange(cycle, accountTx, dateFrom, dateTo)) continue
 
-      const statement = findStatementForCycle(accountStatements, cycle)
+      const statement = findStatementForCycle(accountStatements, cycle, {
+        closingDay: closing,
+        dueDay: due,
+      })
       const previousStatement = findPreviousStatementForCycle(
         accountStatements,
         cycle,
@@ -201,7 +204,10 @@ export function buildOverdueInvoiceSummaries({
       const cycle = getBillingCycle(closing, due, monthKey)
       if (!dayjs(cycle.dueDate).isBefore(today)) continue
 
-      const statement = findStatementForCycle(accountStatements, cycle)
+      const statement = findStatementForCycle(accountStatements, cycle, {
+        closingDay: closing,
+        dueDay: due,
+      })
       const previousStatement = findPreviousStatementForCycle(
         accountStatements,
         cycle,

@@ -50,7 +50,7 @@ export type UpcomingTransactionRow = {
   title: string
   amount: bigint | null
   type: string
-  date: Date
+  date: Date | string
   status: string
   accountId: string | null
 }
@@ -76,7 +76,7 @@ export type CardTransactionReportRow = {
   title: string
   amount: bigint
   myAmount: bigint
-  purchaseDate: Date
+  purchaseDate: Date | string
   cardId: string | null
   cardLabel: string | null
   lastFourDigits: string | null

@@ -326,10 +326,15 @@ export function buildPostImportUpdates(
   rows: Record<string, ImportReviewRowState>,
   transactionIds: string[]
 ): BulkReviewImportUpdate[] {
+  let createdIndex = 0
+
   return items
-    .map((item, index) => {
+    .map(item => {
+      if (item.isDuplicate) return null
+
       const row = rows[item.id]
-      const transactionId = transactionIds[index]
+      const transactionId = transactionIds[createdIndex]
+      createdIndex += 1
       if (!row || !transactionId) return null
 
       const split = buildSplitPayload(item, row)

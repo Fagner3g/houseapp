@@ -51,7 +51,10 @@ function detectStatementFileKind(file: File): StatementFileKind | null {
 
 interface ImportStatementDialogProps {
   accountId?: string
+  closingDay?: number
+  dueDay?: number
   onImported?: (accountId: string) => void
+  onViewExistingStatement?: (params: { accountId: string; monthKey: string }) => void
   open?: boolean
   onOpenChange?: (open: boolean) => void
   showTrigger?: boolean
@@ -59,7 +62,10 @@ interface ImportStatementDialogProps {
 
 export function ImportStatementDialog({
   accountId: initialAccountId,
+  closingDay,
+  dueDay,
   onImported,
+  onViewExistingStatement,
   open: controlledOpen,
   onOpenChange: controlledOnOpenChange,
   showTrigger = true,
@@ -365,6 +371,8 @@ export function ImportStatementDialog({
             </DialogHeader>
             <ImportStatementPreview
               accountId={reviewAccountId!}
+              closingDay={closingDay}
+              dueDay={dueDay}
               parsed={parseResult.parsed}
               summary={parseResult.summary}
               duplicate={parseResult.duplicate}
@@ -372,6 +380,11 @@ export function ImportStatementDialog({
               provider={parseResult.provider}
               isPending={isPending}
               onReset={resetFileState}
+              onViewExistingStatement={params => {
+                onViewExistingStatement?.(params)
+                setOpen(false)
+                resetFileState()
+              }}
               onConfirm={data => void handleFileImport(data)}
             />
           </div>

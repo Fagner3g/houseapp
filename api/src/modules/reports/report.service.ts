@@ -94,6 +94,14 @@ export type DailyFlowReportDto = {
   days: DailyReportDto[]
 }
 
+function toIsoString(value: Date | string): string {
+  if (value instanceof Date) {
+    return value.toISOString()
+  }
+
+  return dayjs(value).toISOString()
+}
+
 function parseDateRange(dateFrom?: string, dateTo?: string): ReportDateRange {
   const now = dayjs()
   const from = dateFrom ? dayjs(dateFrom) : now.startOf('month')
@@ -111,7 +119,7 @@ function toUpcomingDto(row: UpcomingTransactionRow): UpcomingTransactionDto {
     title: row.title,
     amount: centavosToString(row.amount),
     type: row.type,
-    date: row.date.toISOString(),
+    date: toIsoString(row.date),
     status: row.status,
     accountId: row.accountId,
   }
@@ -161,7 +169,7 @@ function toCardTransactionDtos(result: CardTransactionsReportResult): ByCardRepo
       title: row.title,
       amount: centavosToString(row.amount) ?? '0.00',
       myAmount: centavosToString(row.myAmount) ?? '0.00',
-      purchaseDate: row.purchaseDate.toISOString(),
+      purchaseDate: toIsoString(row.purchaseDate),
       cardId: row.cardId,
       cardLabel: row.cardLabel,
       lastFourDigits: row.lastFourDigits,

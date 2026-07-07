@@ -4,6 +4,15 @@ import { db } from '@/db'
 import { cards } from '@/db/schemas/cards'
 
 import type { ImportStatementBody } from './statement.schema'
+import {
+  applySplitHintsToTransactions,
+  countInferredSplits,
+  inferModeFromAmounts,
+  inferSplitsFromCardOwners,
+  normalizeTitleForSplit,
+  sanitizeSplitHint,
+  type StatementSplitHint,
+} from './statement-split-inferrer.logic'
 
 export type { StatementSplitHint }
 export {
@@ -13,7 +22,7 @@ export {
   inferSplitsFromCardOwners,
   normalizeTitleForSplit,
   sanitizeSplitHint,
-} from './statement-split-inferrer.logic'
+}
 
 export async function inferStatementSplits(
   accountId: string,

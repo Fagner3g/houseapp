@@ -44,6 +44,7 @@ interface CreditCardStatementSectionProps {
   closingDay: number
   dueDay: number
   onImported: () => void
+  onViewExistingStatement?: (params: { accountId: string; monthKey: string }) => void
 }
 
 function invoiceTransactions(
@@ -70,6 +71,7 @@ export function CreditCardStatementSection({
   closingDay,
   dueDay,
   onImported,
+  onViewExistingStatement,
 }: CreditCardStatementSectionProps) {
   const { slug } = useActiveOrganization()
   const openTransactionDrawer = useDrawerStore(s => s.openTransactionDrawer)
@@ -80,8 +82,12 @@ export function CreditCardStatementSection({
   })
 
   const matchedStatement = useMemo(
-    () => findStatementForCycle(statementsData?.statements ?? [], cycle),
-    [statementsData?.statements, cycle]
+    () =>
+      findStatementForCycle(statementsData?.statements ?? [], cycle, {
+        closingDay,
+        dueDay,
+      }),
+    [statementsData?.statements, cycle, closingDay, dueDay]
   )
 
   const previousStatement = useMemo(
@@ -175,7 +181,13 @@ export function CreditCardStatementSection({
           )}
         </div>
         <div className="flex flex-wrap items-center gap-2">
-          <ImportStatementDialog accountId={accountId} onImported={onImported} />
+          <ImportStatementDialog
+            accountId={accountId}
+            closingDay={closingDay}
+            dueDay={dueDay}
+            onImported={onImported}
+            onViewExistingStatement={onViewExistingStatement}
+          />
           <Button
             type="button"
             variant="outline"
