@@ -41,37 +41,37 @@ export const accountResponseSchema = z.object({
 const slugParams = z.object({ slug: z.string() })
 const accountParams = slugParams.extend({ id: z.string() })
 
-const createAccountBody = z
-  .object({
-    name: z.string().min(1),
-    type: accountTypeSchema,
-    institution: z.string().nullable().optional(),
-    currency: z.string().optional(),
-    creditLimit: z.string().nullable().optional(),
-    closingDay: z.number().int().min(1).max(31).nullable().optional(),
-    dueDay: z.number().int().min(1).max(31).nullable().optional(),
-    paymentAccountId: z.string().nullable().optional(),
-    initialBalance: z.string().nullable().optional(),
-    pixKey: z.string().nullable().optional(),
-    pixKeyType: pixKeyTypeSchema.nullable().optional(),
-    color: z.string().nullable().optional(),
-    icon: z.string().nullable().optional(),
-    displayOrder: z.number().int().optional(),
-    brand: cardBrandSchema.nullable().optional(),
-    holderName: z.string().nullable().optional(),
-    ofxAccountId: z.string().nullable().optional(),
-  })
-  .superRefine((body, ctx) => {
-    if (body.type === 'investment' && !body.institution?.trim()) {
-      ctx.addIssue({
-        code: 'custom',
-        message: 'Investment accounts require an institution',
-        path: ['institution'],
-      })
-    }
-  })
+const accountBodyFields = z.object({
+  name: z.string().min(1),
+  type: accountTypeSchema,
+  institution: z.string().nullable().optional(),
+  currency: z.string().optional(),
+  creditLimit: z.string().nullable().optional(),
+  closingDay: z.number().int().min(1).max(31).nullable().optional(),
+  dueDay: z.number().int().min(1).max(31).nullable().optional(),
+  paymentAccountId: z.string().nullable().optional(),
+  initialBalance: z.string().nullable().optional(),
+  pixKey: z.string().nullable().optional(),
+  pixKeyType: pixKeyTypeSchema.nullable().optional(),
+  color: z.string().nullable().optional(),
+  icon: z.string().nullable().optional(),
+  displayOrder: z.number().int().optional(),
+  brand: cardBrandSchema.nullable().optional(),
+  holderName: z.string().nullable().optional(),
+  ofxAccountId: z.string().nullable().optional(),
+})
 
-const updateAccountBody = createAccountBody
+const createAccountBody = accountBodyFields.superRefine((body, ctx) => {
+  if (body.type === 'investment' && !body.institution?.trim()) {
+    ctx.addIssue({
+      code: 'custom',
+      message: 'Investment accounts require an institution',
+      path: ['institution'],
+    })
+  }
+})
+
+const updateAccountBody = accountBodyFields
   .omit({ type: true, brand: true, holderName: true })
   .partial()
 
