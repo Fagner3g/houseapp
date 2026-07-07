@@ -18,21 +18,13 @@ export type InvoicePeriod = {
   dueDate: Date
 }
 
+import {
+  isImportedBillPaymentTitle,
+  isInvoiceSettlementCreditTitle,
+} from '@houseapp/finance-core'
+
 /** Nubank OFX uses "Pagamento recebido" for card bill payments. */
-export function isImportedBillPaymentTitle(title: string | null | undefined): boolean {
-  return /pagamento recebido/i.test(title ?? '')
-}
-
-/** Credits that reduce the invoice balance (not cash bill payments). */
-export function isInvoiceSettlementCreditTitle(title: string | null | undefined): boolean {
-  const normalized = title ?? ''
-  if (/pagamento recebido|pagamento em/i.test(normalized)) return false
-  if (/reversão do crédito|reversao do credito/i.test(normalized)) return false
-
-  return /crédito de confiança|credito de confianca|estorno|reversão|reversao|iof de volta/i.test(
-    normalized
-  )
-}
+export { isImportedBillPaymentTitle, isInvoiceSettlementCreditTitle }
 
 function isWithinPurchasePeriod(date: Date, periodStart: Date, periodEnd: Date): boolean {
   return date.getTime() >= periodStart.getTime() && date.getTime() <= periodEnd.getTime()

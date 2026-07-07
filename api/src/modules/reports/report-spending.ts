@@ -6,6 +6,13 @@ import { isPayableTransactionCondition } from '@/modules/transactions/payable-tr
 
 import type { ReportDateRange } from './report.repository'
 
+function requiredSql(condition: SQL | undefined): SQL {
+  if (!condition) {
+    throw new Error('Expected SQL condition')
+  }
+  return condition
+}
+
 /** Purchase date for credit card expenses (competence date when set). */
 export const purchaseDateExpr = sql<Date>`COALESCE(${transactions.competenceDate}, ${transactions.date})`
 
@@ -28,11 +35,13 @@ export function isInvoicePaymentTitleCondition(): SQL {
 }
 
 function isNonCreditCardAccountCondition(): SQL {
-  return or(
-    isNull(transactions.accountId),
-    isNull(accounts.type),
-    ne(accounts.type, 'credit_card')
-  )!
+  return requiredSql(
+    or(
+      isNull(transactions.accountId),
+      isNull(accounts.type),
+      ne(accounts.type, 'credit_card')
+    )
+  )
 }
 
 function rangeFromIso(range: ReportDateRange) {
@@ -45,41 +54,49 @@ function rangeToIso(range: ReportDateRange) {
 
 /** Credit card purchase in the report period (pending or paid). */
 export function isCreditCardExpenseInRange(range: ReportDateRange): SQL {
-  return and(
-    eq(transactions.type, 'expense'),
-    eq(accounts.type, 'credit_card'),
-    inArray(transactions.status, ['paid', 'pending']),
-    sql`${purchaseDateExpr} >= ${rangeFromIso(range)}::timestamptz`,
-    sql`${purchaseDateExpr} <= ${rangeToIso(range)}::timestamptz`
-  )!
+  return requiredSql(
+    and(
+      eq(transactions.type, 'expense'),
+      eq(accounts.type, 'credit_card'),
+      inArray(transactions.status, ['paid', 'pending']),
+      sql`${purchaseDateExpr} >= ${rangeFromIso(range)}::timestamptz`,
+      sql`${purchaseDateExpr} <= ${rangeToIso(range)}::timestamptz`
+    )
+  )
 }
 
 /** Paid payable expense in the report period, excluding invoice payments. */
 export function isPayableExpenseInRange(range: ReportDateRange): SQL {
-  return and(
-    eq(transactions.type, 'expense'),
-    eq(transactions.status, 'paid'),
-    sql`${transactions.date} >= ${rangeFromIso(range)}::timestamptz`,
-    sql`${transactions.date} <= ${rangeToIso(range)}::timestamptz`,
-    isPayableTransactionCondition(),
-    sql`NOT (${isInvoicePaymentTitleCondition()})`
-  )!
+  return requiredSql(
+    and(
+      eq(transactions.type, 'expense'),
+      eq(transactions.status, 'paid'),
+      sql`${transactions.date} >= ${rangeFromIso(range)}::timestamptz`,
+      sql`${transactions.date} <= ${rangeToIso(range)}::timestamptz`,
+      isPayableTransactionCondition(),
+      sql`NOT (${isInvoicePaymentTitleCondition()})`
+    )
+  )
 }
 
 /** Any expense that counts toward dashboard spending KPIs. */
 export function expenseInReportRangeCondition(range: ReportDateRange): SQL {
-  return or(isCreditCardExpenseInRange(range), isPayableExpenseInRange(range))!
+  return requiredSql(
+    or(isCreditCardExpenseInRange(range), isPayableExpenseInRange(range))
+  )
 }
 
 /** Paid income from non-credit-card accounts in the report period. */
 export function incomeInReportRangeCondition(range: ReportDateRange): SQL {
-  return and(
-    eq(transactions.type, 'income'),
-    eq(transactions.status, 'paid'),
-    sql`${transactions.date} >= ${rangeFromIso(range)}::timestamptz`,
-    sql`${transactions.date} <= ${rangeToIso(range)}::timestamptz`,
-    isNonCreditCardAccountCondition()
-  )!
+  return requiredSql(
+    and(
+      eq(transactions.type, 'income'),
+      eq(transactions.status, 'paid'),
+      sql`${transactions.date} >= ${rangeFromIso(range)}::timestamptz`,
+      sql`${transactions.date} <= ${rangeToIso(range)}::timestamptz`,
+      isNonCreditCardAccountCondition()
+    )
+  )
 }
 
 /** SQL CASE expression: expense amount when in range, else 0. */
@@ -108,10 +125,10 @@ export function reportDayExpr() {
   return sql<string>`to_char(${reportGroupingDateExpr}::date, 'YYYY-MM-DD')`
 }
 
+import { isInvoicePaymentTitle } from '@houseapp/finance-core'
+
 /** Pure functions for unit tests (mirror SQL rules). */
-export function isInvoicePaymentTitle(title: string): boolean {
-  return /pagamento fatura/i.test(title)
-}
+export { isInvoicePaymentTitle }
 
 export type ReportSpendingTransactionLike = {
   type: 'income' | 'expense'

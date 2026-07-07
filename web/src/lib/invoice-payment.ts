@@ -4,7 +4,7 @@ import 'dayjs/locale/pt-br'
 
 import { isPaymentAccountType } from '@/features/accounts/constants'
 import { currentBillingMonthKey } from '@/lib/billing-cycle'
-import { isInvoicePaymentTitle } from '@/lib/transaction-kpi'
+import { isInvoicePaymentTitle, parseInvoicePaymentMonthKey } from '@houseapp/finance-core'
 
 dayjs.extend(customParseFormat)
 
@@ -14,18 +14,7 @@ export type InvoicePaymentTarget = {
   cycleLabel: string
 }
 
-export function parseInvoicePaymentMonthKey(title: string): string | null {
-  if (!isInvoicePaymentTitle(title)) return null
-
-  const match = title.match(/\s[-–—]\s*([^-–—]+)$/i)
-  if (!match) return null
-
-  const label = match[1].trim()
-  const parsed = dayjs(label, 'MMMM YYYY', 'pt-br', true)
-  if (!parsed.isValid()) return null
-
-  return parsed.format('YYYY-MM')
-}
+export { parseInvoicePaymentMonthKey } from '@houseapp/finance-core'
 
 export function parseInvoicePaymentCycleLabel(title: string): string | null {
   if (!isInvoicePaymentTitle(title)) return null

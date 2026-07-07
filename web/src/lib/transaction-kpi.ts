@@ -11,9 +11,7 @@ function sumAmounts(amounts: (string | null | undefined)[]) {
   return amounts.reduce((sum, value) => sum + moneyStringToReais(value), 0)
 }
 
-export function isInvoicePaymentTitle(title: string) {
-  return /pagamento fatura/i.test(title)
-}
+export { isInvoicePaymentTitle } from '@houseapp/finance-core'
 
 /**
  * Cash-flow KPIs for the transactions page.
