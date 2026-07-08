@@ -23,9 +23,11 @@ Produção (`houseapp`) ainda usa o schema legado (`invites.user_id`, `user_orga
    MIGRATE_SVC=houseapp_migrate
    docker service rm "$MIGRATE_SVC" 2>/dev/null || true
    docker service create \
+     --detach \
      --name "$MIGRATE_SVC" \
      --network network_swarm_public \
      --restart-condition none \
+     --restart-max-attempts 0 \
      --env-file /opt/stacks/houseapp/prod/api.env \
      --with-registry-auth \
      ghcr.io/fagner3g/houseapp-api:<TAG> \

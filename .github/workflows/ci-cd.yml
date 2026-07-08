@@ -221,6 +221,7 @@ jobs:
           host: ${{ secrets.VPS_HOST }}
           username: ${{ secrets.VPS_USER }}
           key: ${{ secrets.VPS_SSH_KEY }}
+          command_timeout: 8m
           script: |
             set -e
             
@@ -273,9 +274,11 @@ jobs:
             docker service rm "$MIGRATE_SVC" >/dev/null 2>&1 || true
 
             docker service create \
+              --detach \
               --name "$MIGRATE_SVC" \
               --network network_swarm_public \
               --restart-condition none \
+              --restart-max-attempts 0 \
               --env-file "$STACK_DIR/api.env" \
               --with-registry-auth \
               "ghcr.io/fagner3g/houseapp-api:$TAG" \
