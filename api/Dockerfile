@@ -10,8 +10,13 @@ RUN apk add --no-cache python3 make g++
 COPY packages/finance-core /app/packages/finance-core
 COPY api/package.json api/yarn.lock ./
 
-# Use Yarn to respect yarn.lock
-RUN corepack enable && yarn install --frozen-lockfile
+# Use Yarn to respect yarn.lock.
+# finance-core is consumed from source under /app/packages; Yarn only installs its
+# deps into api/node_modules here, so link dayjs where Node/tsup resolve from.
+RUN corepack enable && yarn install --frozen-lockfile \
+  && mkdir -p /app/packages/finance-core/node_modules \
+  && ln -sfn "$(node -e "console.log(require('path').dirname(require.resolve('dayjs/package.json')))")" \
+    /app/packages/finance-core/node_modules/dayjs
 
 FROM deps AS build
 COPY api/ ./

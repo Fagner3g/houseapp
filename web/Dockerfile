@@ -9,8 +9,13 @@ RUN apk add --no-cache python3 make g++ libc6-compat
 COPY packages/finance-core /app/packages/finance-core
 COPY web/package.json web/yarn.lock ./
 
-# Use Yarn para respeitar yarn.lock e evitar mismatch do esbuild
-RUN corepack enable && yarn install --frozen-lockfile
+# Use Yarn para respeitar yarn.lock e evitar mismatch do esbuild.
+# finance-core is consumed from source under /app/packages; Yarn only installs its
+# deps into web/node_modules here, so link dayjs where Node/Vite resolve from.
+RUN corepack enable && yarn install --frozen-lockfile \
+  && mkdir -p /app/packages/finance-core/node_modules \
+  && ln -sfn "$(node -e "console.log(require('path').dirname(require.resolve('dayjs/package.json')))")" \
+    /app/packages/finance-core/node_modules/dayjs
 
 # Copiar arquivos de configuração necessários
 COPY web/tsconfig*.json ./
