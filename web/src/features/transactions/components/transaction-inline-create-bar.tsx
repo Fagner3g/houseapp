@@ -127,6 +127,7 @@ export function TransactionInlineCreateBar({
             value={draft.accountId}
             onValueChange={accountId => patch({ accountId })}
             placeholder="Conta"
+            paymentOnly
             className="h-8 w-full bg-white"
           />
         </TableCell>

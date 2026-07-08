@@ -7,6 +7,7 @@ import { CardDrawer } from '@/features/accounts/components/card-drawer'
 import { CategoryDrawer } from '@/features/categories/components/category-drawer'
 import { PayInvoiceDrawer } from '@/features/credit-cards/components/pay-invoice-drawer'
 import { AnalyticsGroupDrawer } from '@/features/credit-cards/components/analytics-group-drawer'
+import { RecurringContractDrawer } from '@/features/recurring/components/recurring-contract-drawer'
 import { TransactionDrawer } from '@/features/transactions/components/transaction-drawer'
 import { BottomNav, AiChatFab } from '@/components/layout/app-chrome'
 import { Header } from '@/components/layout/header'
@@ -65,6 +66,7 @@ function RouteComponent() {
         <AiChatFab />
       </SidebarInset>
       <TransactionDrawer />
+      <RecurringContractDrawer />
       <PayInvoiceDrawer />
       <AnalyticsGroupDrawer />
       <AccountDrawer />

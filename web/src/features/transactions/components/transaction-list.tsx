@@ -1,6 +1,6 @@
 import { useQueryClient } from '@tanstack/react-query'
 import dayjs from 'dayjs'
-import { Check, ChevronRight, CreditCard, Loader2, Tag, Trash2, X } from 'lucide-react'
+import { Check, ChevronRight, CreditCard, Loader2, RefreshCw, Tag, Trash2, X } from 'lucide-react'
 import { useEffect, useMemo, useState } from 'react'
 import { useNavigate, useSearch } from '@tanstack/react-router'
 import { toast } from 'sonner'
@@ -135,6 +135,7 @@ function TransactionTable({
   const { mutateAsync: deleteTransaction, isPending: isDeletingBulk } = useDeleteTransaction()
   const openDrawer = useDrawerStore(s => s.openTransactionDrawer)
   const openPayDrawer = useDrawerStore(s => s.openTransactionPayDrawer)
+  const openRecurringContractDrawer = useDrawerStore(s => s.openRecurringContractDrawer)
   const [selected, setSelected] = useState<Set<string>>(new Set())
   const [bulkCategoryId, setBulkCategoryId] = useState<string>('')
   const [bulkDeleteOpen, setBulkDeleteOpen] = useState(false)
@@ -480,6 +481,7 @@ function TransactionTable({
             const tx = item
             const overdue = mode === 'overdue' && isOverdue(tx)
             const creditCardExpense = isCreditCardExpense(tx, accounts?.accounts)
+            const showRecurringContractButton = tx.recurringTransactionId != null
             const showPayButton =
               showPayActionColumn && tx.status === 'pending' && !creditCardExpense
             const showDeleteButton = showDeleteActionColumn && canDeleteTransaction(tx)
@@ -551,6 +553,16 @@ function TransactionTable({
                           </Badge>
                         )
                       }
+                      if (tx.recurringTransactionId) {
+                        return (
+                          <Badge
+                            variant="secondary"
+                            className="shrink-0 border-violet-200 bg-violet-50 text-[10px] font-medium text-violet-800"
+                          >
+                            Recorrente
+                          </Badge>
+                        )
+                      }
                       return null
                     })()}
                   </div>
@@ -609,6 +621,21 @@ function TransactionTable({
               {showActionsColumn && (
                 <TableCell onClick={e => e.stopPropagation()}>
                   <div className="flex items-center justify-end gap-0.5">
+                    {showRecurringContractButton && (
+                      <Button
+                        type="button"
+                        variant="ghost"
+                        size="icon"
+                        className="size-8 rounded-lg text-slate-500 hover:text-violet-600"
+                        onClick={() => {
+                          const recurringId = tx.recurringTransactionId
+                          if (recurringId) openRecurringContractDrawer(recurringId)
+                        }}
+                        aria-label="Editar contrato recorrente"
+                      >
+                        <RefreshCw className="size-4" />
+                      </Button>
+                    )}
                     {showPayButton && (
                       <Button
                         type="button"

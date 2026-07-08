@@ -18,6 +18,16 @@ export const TRANSACTION_PERIODICITY_OPTIONS = [
 export type TransactionPeriodicityValue =
   (typeof TRANSACTION_PERIODICITY_OPTIONS)[number]['value']
 
+export function formatTransactionPeriodicity(
+  frequency: string,
+  interval: number
+): TransactionPeriodicityValue {
+  const match = TRANSACTION_PERIODICITY_OPTIONS.find(
+    option => option.frequency === frequency && option.interval === interval
+  )
+  return match?.value ?? 'monthly-1'
+}
+
 export function parseTransactionPeriodicity(value: string | undefined) {
   const option = TRANSACTION_PERIODICITY_OPTIONS.find(item => item.value === value)
   return option ?? TRANSACTION_PERIODICITY_OPTIONS[2]

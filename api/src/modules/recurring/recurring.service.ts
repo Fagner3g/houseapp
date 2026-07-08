@@ -7,6 +7,7 @@ import { centavosToString, parseCentavos } from '@/core/money'
 import type { AccountRepository } from '@/modules/accounts/account.repository'
 import type { CategoryRepository } from '@/modules/categories/category.repository'
 import type { TransactionRepository } from '@/modules/transactions/transaction.repository'
+import type { TransactionRecord } from '@/modules/transactions/transaction.repository'
 
 import type { RecurringRecord, RecurringRepository } from './recurring.repository'
 
@@ -66,12 +67,42 @@ export type CreateRecurringInput = {
   installmentsTotal?: number | null
 }
 
-export type UpdateRecurringInput = Partial<CreateRecurringInput>
+export type UpdateRecurringInput = Partial<CreateRecurringInput> & {
+  effectiveFrom?: string
+}
+
+export type PreviewUpdateInput = UpdateRecurringInput
+
+export type PreviewUpdateImpact = {
+  preservedPastCount: number
+  updatedFuturePendingCount: number
+  unchangedCount: number
+}
+
+export type PreviewUpdateResult = {
+  current: RecurringDto
+  proposed: RecurringDto
+  impact: PreviewUpdateImpact
+}
+
+export type CreateRecurringResult = {
+  recurringTransaction: RecurringDto
+  materializedCount: number
+  nextOccurrenceDate: string | null
+}
 
 export type MaterializeResult = {
   processed: number
   generated: number
   errors: number
+}
+
+export type RecurringPropagationData = {
+  amount?: bigint
+  title?: string
+  accountId?: string | null
+  counterparty?: string | null
+  categoryId?: string | null
 }
 
 export class RecurringService {
@@ -97,7 +128,7 @@ export class RecurringService {
     return toRecurringDto(row)
   }
 
-  async create(organizationId: string, input: CreateRecurringInput): Promise<RecurringDto> {
+  async create(organizationId: string, input: CreateRecurringInput): Promise<CreateRecurringResult> {
     await this.validateReferences(organizationId, input)
 
     const created = await this.recurringRepository.create({
@@ -115,7 +146,43 @@ export class RecurringService {
       installmentsTotal: input.installmentsTotal ?? null,
     })
 
-    return toRecurringDto(created)
+    const materializedCount = await this.materializeOne(created, {
+      horizonDate: startOfDay(created.startDate),
+    })
+
+    const refreshed = await this.recurringRepository.findById(organizationId, created.id)
+    const row = refreshed ?? created
+
+    return {
+      recurringTransaction: toRecurringDto(row),
+      materializedCount,
+      nextOccurrenceDate: computeNextOccurrenceDate(row),
+    }
+  }
+
+  async previewUpdate(
+    organizationId: string,
+    id: string,
+    input: PreviewUpdateInput
+  ): Promise<PreviewUpdateResult> {
+    const existing = await this.recurringRepository.findById(organizationId, id)
+
+    if (!existing || !existing.isActive) {
+      throw notFound('Recurring transaction not found')
+    }
+
+    this.assertEditableFields(existing, input)
+
+    const effectiveFrom = resolveEffectiveFrom(input.effectiveFrom)
+    const proposedRow = mergeRecurringInput(existing, input)
+    const proposed = toRecurringDto(proposedRow)
+    const current = toRecurringDto(existing)
+    const propagation = buildPropagationData(existing, input)
+
+    const transactions = await this.transactionRepository.findByRecurringId(organizationId, id)
+    const impact = computeUpdateImpact(transactions, effectiveFrom, propagation)
+
+    return { current, proposed, impact }
   }
 
   async update(
@@ -129,21 +196,24 @@ export class RecurringService {
       throw notFound('Recurring transaction not found')
     }
 
+    this.assertEditableFields(existing, input)
+
     await this.validateReferences(organizationId, {
       accountId: input.accountId ?? existing.accountId,
       categoryId: input.categoryId ?? existing.categoryId,
     })
 
+    const effectiveFrom = resolveEffectiveFrom(input.effectiveFrom)
+    const propagation = buildPropagationData(existing, input)
+
     const updated = await this.recurringRepository.update(id, {
       accountId: input.accountId,
       title: input.title,
       amount: input.amount != null ? parseCentavos(input.amount) : undefined,
-      type: input.type,
       counterparty: input.counterparty,
       categoryId: input.categoryId,
       frequency: input.frequency,
       interval: input.interval,
-      startDate: input.startDate ? new Date(input.startDate) : undefined,
       endDate:
         input.endDate !== undefined
           ? input.endDate
@@ -155,6 +225,15 @@ export class RecurringService {
 
     if (!updated) {
       throw notFound('Recurring transaction not found')
+    }
+
+    if (Object.keys(propagation).length > 0) {
+      await this.transactionRepository.updatePendingFromDate(
+        organizationId,
+        id,
+        effectiveFrom,
+        propagation
+      )
     }
 
     return toRecurringDto(updated)
@@ -177,7 +256,7 @@ export class RecurringService {
 
     for (const row of rows) {
       try {
-        generated += await this.materializeOne(row)
+        generated += await this.materializeOne(row, { horizonDate: startOfDay(new Date()) })
       } catch {
         errors += 1
       }
@@ -190,12 +269,15 @@ export class RecurringService {
     }
   }
 
-  private async materializeOne(row: RecurringRecord): Promise<number> {
-    const today = startOfDay(new Date())
+  async materializeOne(
+    row: RecurringRecord,
+    options?: { horizonDate?: Date }
+  ): Promise<number> {
+    const horizonDate = startOfDay(options?.horizonDate ?? new Date())
     const startDate = startOfDay(row.startDate)
     const endDate = row.endDate ? startOfDay(row.endDate) : null
 
-    if (startDate > today) {
+    if (startDate > horizonDate) {
       return 0
     }
 
@@ -220,7 +302,7 @@ export class RecurringService {
       installmentNumber: number | null
     }> = []
 
-    while (nextDate <= today) {
+    while (nextDate <= horizonDate) {
       installmentNumber++
 
       if (row.installmentsTotal && installmentNumber > row.installmentsTotal) {
@@ -243,7 +325,8 @@ export class RecurringService {
       return 0
     }
 
-    const lastGeneratedDate = toCreate[toCreate.length - 1]!.date
+    const lastItem = toCreate.at(-1)
+    const lastGeneratedDate = lastItem?.date as Date
 
     await this.transactionRepository.createMany(
       toCreate.map(item => ({
@@ -269,6 +352,23 @@ export class RecurringService {
     return toCreate.length
   }
 
+  private assertEditableFields(
+    existing: RecurringRecord,
+    input: UpdateRecurringInput
+  ): void {
+    if (input.type != null && input.type !== existing.type) {
+      throw badRequest('Recurring transaction type cannot be changed')
+    }
+
+    if (input.startDate != null) {
+      const nextStart = startOfDay(new Date(input.startDate)).getTime()
+      const currentStart = startOfDay(existing.startDate).getTime()
+      if (nextStart !== currentStart) {
+        throw badRequest('Recurring transaction start date cannot be changed')
+      }
+    }
+  }
+
   private async validateReferences(
     organizationId: string,
     input: { accountId?: string | null; categoryId?: string | null }
@@ -278,6 +378,10 @@ export class RecurringService {
 
       if (!account || !account.isActive) {
         throw badRequest('Account not found')
+      }
+
+      if (account.type === 'credit_card') {
+        throw badRequest('Recurring transactions cannot use credit card accounts')
       }
     }
 
@@ -289,6 +393,167 @@ export class RecurringService {
       }
     }
   }
+}
+
+function resolveEffectiveFrom(value?: string): Date {
+  if (value) {
+    return startOfDay(new Date(value))
+  }
+
+  return startOfDay(new Date())
+}
+
+function mergeRecurringInput(existing: RecurringRecord, input: PreviewUpdateInput): RecurringRecord {
+  return {
+    ...existing,
+    accountId: input.accountId !== undefined ? input.accountId : existing.accountId,
+    title: input.title ?? existing.title,
+    amount: input.amount != null ? parseCentavos(input.amount) : existing.amount,
+    counterparty: input.counterparty !== undefined ? input.counterparty : existing.counterparty,
+    categoryId: input.categoryId !== undefined ? input.categoryId : existing.categoryId,
+    frequency: input.frequency ?? existing.frequency,
+    interval: input.interval ?? existing.interval,
+    endDate:
+      input.endDate !== undefined
+        ? input.endDate
+          ? new Date(input.endDate)
+          : null
+        : existing.endDate,
+    installmentsTotal:
+      input.installmentsTotal !== undefined ? input.installmentsTotal : existing.installmentsTotal,
+  }
+}
+
+function buildPropagationData(
+  existing: RecurringRecord,
+  input: PreviewUpdateInput
+): RecurringPropagationData {
+  const data: RecurringPropagationData = {}
+
+  if (input.amount != null) {
+    const nextAmount = parseCentavos(input.amount)
+    if (nextAmount !== existing.amount) {
+      data.amount = nextAmount
+    }
+  }
+
+  if (input.title != null && input.title !== existing.title) {
+    data.title = input.title
+  }
+
+  if (input.accountId !== undefined && input.accountId !== existing.accountId) {
+    data.accountId = input.accountId
+  }
+
+  if (input.counterparty !== undefined && input.counterparty !== existing.counterparty) {
+    data.counterparty = input.counterparty
+  }
+
+  if (input.categoryId !== undefined && input.categoryId !== existing.categoryId) {
+    data.categoryId = input.categoryId
+  }
+
+  return data
+}
+
+function computeUpdateImpact(
+  transactions: TransactionRecord[],
+  effectiveFrom: Date,
+  propagation: RecurringPropagationData
+): PreviewUpdateImpact {
+  let preservedPastCount = 0
+  let updatedFuturePendingCount = 0
+  let unchangedCount = 0
+
+  const hasPropagation = Object.keys(propagation).length > 0
+
+  for (const transaction of transactions) {
+    const txDate = startOfDay(transaction.date)
+
+    if (
+      transaction.status === 'paid' ||
+      transaction.status === 'canceled' ||
+      txDate < effectiveFrom
+    ) {
+      preservedPastCount++
+      continue
+    }
+
+    if (transaction.status !== 'pending' || txDate < effectiveFrom) {
+      unchangedCount++
+      continue
+    }
+
+    if (!hasPropagation || !transactionWouldChange(transaction, propagation)) {
+      unchangedCount++
+      continue
+    }
+
+    updatedFuturePendingCount++
+  }
+
+  return { preservedPastCount, updatedFuturePendingCount, unchangedCount }
+}
+
+function transactionWouldChange(
+  transaction: TransactionRecord,
+  propagation: RecurringPropagationData
+): boolean {
+  if (propagation.amount !== undefined && transaction.amount !== propagation.amount) {
+    return true
+  }
+
+  if (propagation.title !== undefined && transaction.title !== propagation.title) {
+    return true
+  }
+
+  if (propagation.accountId !== undefined && transaction.accountId !== propagation.accountId) {
+    return true
+  }
+
+  if (
+    propagation.counterparty !== undefined &&
+    transaction.counterparty !== propagation.counterparty
+  ) {
+    return true
+  }
+
+  if (propagation.categoryId !== undefined) {
+    return true
+  }
+
+  return false
+}
+
+function computeNextOccurrenceDate(row: RecurringRecord): string | null {
+  const cursor = row.lastGeneratedDate ? startOfDay(row.lastGeneratedDate) : startOfDay(row.startDate)
+  const endDate = row.endDate ? startOfDay(row.endDate) : null
+
+  let installmentNumber = 0
+  let current = startOfDay(row.startDate)
+
+  while (current <= cursor) {
+    installmentNumber++
+    if (row.installmentsTotal && installmentNumber >= row.installmentsTotal) {
+      return null
+    }
+    if (current.getTime() === cursor.getTime()) {
+      break
+    }
+    current = addPeriod(current, row.frequency, row.interval)
+  }
+
+  const next = addPeriod(cursor, row.frequency, row.interval)
+
+  if (row.installmentsTotal && installmentNumber >= row.installmentsTotal) {
+    return null
+  }
+
+  if (endDate && next > endDate) {
+    return null
+  }
+
+  return next.toISOString()
 }
 
 function startOfDay(date: Date): Date {

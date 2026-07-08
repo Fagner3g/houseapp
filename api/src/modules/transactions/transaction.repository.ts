@@ -5,6 +5,7 @@ import {
   desc,
   eq,
   gt,
+  gte,
   ilike,
   inArray,
   or,
@@ -105,6 +106,19 @@ export interface TransactionRepository {
     organizationId: string,
     accountId: string
   ): Promise<TransactionRecord[]>
+  findByRecurringId(organizationId: string, recurringId: string): Promise<TransactionRecord[]>
+  updatePendingFromDate(
+    organizationId: string,
+    recurringId: string,
+    effectiveFrom: Date,
+    data: {
+      amount?: bigint
+      title?: string
+      accountId?: string | null
+      counterparty?: string | null
+      categoryId?: string | null
+    }
+  ): Promise<number>
 }
 
 function transactionDateForFilter(filter: ListTransactionsFilter) {
@@ -151,7 +165,7 @@ function buildWhereConditions(filter: ListTransactionsFilter) {
         ilike(transactions.title, pattern),
         ilike(transactions.description, pattern),
         ilike(transactions.counterparty, pattern)
-      )!
+      )
     )
   }
 
@@ -546,5 +560,87 @@ export class DrizzleTransactionRepository implements TransactionRepository {
           gt(transactions.installmentsTotal, 1)
         )
       )
+  }
+
+  async findByRecurringId(
+    organizationId: string,
+    recurringId: string
+  ): Promise<TransactionRecord[]> {
+    return db
+      .select()
+      .from(transactions)
+      .where(
+        and(
+          eq(transactions.organizationId, organizationId),
+          eq(transactions.recurringTransactionId, recurringId)
+        )
+      )
+      .orderBy(asc(transactions.date))
+  }
+
+  async updatePendingFromDate(
+    organizationId: string,
+    recurringId: string,
+    effectiveFrom: Date,
+    data: {
+      amount?: bigint
+      title?: string
+      accountId?: string | null
+      counterparty?: string | null
+      categoryId?: string | null
+    }
+  ): Promise<number> {
+    const transactionPatch: UpdateTransactionData = {}
+
+    if (data.amount !== undefined) transactionPatch.amount = data.amount
+    if (data.title !== undefined) transactionPatch.title = data.title
+    if (data.accountId !== undefined) transactionPatch.accountId = data.accountId
+    if (data.counterparty !== undefined) transactionPatch.counterparty = data.counterparty
+
+    const { categoryId } = data
+
+    return db.transaction(async tx => {
+      const rows = await tx
+        .select({ id: transactions.id })
+        .from(transactions)
+        .where(
+          and(
+            eq(transactions.organizationId, organizationId),
+            eq(transactions.recurringTransactionId, recurringId),
+            eq(transactions.status, 'pending'),
+            gte(transactions.date, effectiveFrom)
+          )
+        )
+
+      if (rows.length === 0) {
+        return 0
+      }
+
+      const ids = rows.map(row => row.id)
+
+      if (Object.keys(transactionPatch).length > 0) {
+        await tx
+          .update(transactions)
+          .set({ ...transactionPatch, updatedAt: new Date() })
+          .where(inArray(transactions.id, ids))
+      }
+
+      if (categoryId !== undefined) {
+        for (const id of ids) {
+          await tx
+            .delete(transactionCategories)
+            .where(eq(transactionCategories.transactionId, id))
+
+          if (categoryId) {
+            await tx.insert(transactionCategories).values({
+              transactionId: id,
+              categoryId,
+            })
+          }
+        }
+      }
+
+      return rows.length
+    })
   }
 }

@@ -2,7 +2,11 @@ import type { FastifyReply, FastifyRequest } from 'fastify'
 import { StatusCodes } from 'http-status-codes'
 
 import { container } from '@/core/container'
-import type { CreateRecurringBody, UpdateRecurringBody } from './recurring.schema'
+import type {
+  CreateRecurringBody,
+  PreviewUpdateRecurringBody,
+  UpdateRecurringBody,
+} from './recurring.schema'
 
 type OrgParams = { slug: string }
 type RecurringParams = OrgParams & { id: string }
@@ -31,12 +35,22 @@ export async function createRecurringController(
   request: FastifyRequest<{ Params: OrgParams; Body: CreateRecurringBody }>,
   reply: FastifyReply
 ) {
-  const recurringTransaction = await container.recurringService.create(
+  const result = await container.recurringService.create(request.organization.id, request.body)
+
+  return reply.status(StatusCodes.CREATED).send(result)
+}
+
+export async function previewUpdateRecurringController(
+  request: FastifyRequest<{ Params: RecurringParams; Body: PreviewUpdateRecurringBody }>,
+  reply: FastifyReply
+) {
+  const preview = await container.recurringService.previewUpdate(
     request.organization.id,
+    request.params.id,
     request.body
   )
 
-  return reply.status(StatusCodes.CREATED).send({ recurringTransaction })
+  return reply.send(preview)
 }
 
 export async function updateRecurringController(

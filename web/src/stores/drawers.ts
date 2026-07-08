@@ -65,6 +65,8 @@ interface DrawerStore {
   payInvoiceContext: PayInvoiceContext | null
   analyticsGroupDrawerOpen: boolean
   analyticsGroupContext: AnalyticsGroupContext | null
+  recurringContractDrawerOpen: boolean
+  editingRecurringId: string | null
   transactionDraft: TransactionDraft | null
   lockedAccountId: string | null
   editingTransactionId: string | null
@@ -102,6 +104,8 @@ interface DrawerStore {
   closePayInvoiceDrawer: () => void
   openAnalyticsGroupDrawer: (context: AnalyticsGroupContext) => void
   closeAnalyticsGroupDrawer: () => void
+  openRecurringContractDrawer: (recurringId: string) => void
+  closeRecurringContractDrawer: () => void
   closeNestedDrawers: () => void
 }
 
@@ -131,6 +135,8 @@ export const useDrawerStore = create<DrawerStore>(set => ({
   payInvoiceContext: null,
   analyticsGroupDrawerOpen: false,
   analyticsGroupContext: null,
+  recurringContractDrawerOpen: false,
+  editingRecurringId: null,
   transactionDraft: null,
   lockedAccountId: null,
   editingTransactionId: null,
@@ -240,6 +246,10 @@ export const useDrawerStore = create<DrawerStore>(set => ({
     set({ analyticsGroupDrawerOpen: true, analyticsGroupContext: context }),
   closeAnalyticsGroupDrawer: () =>
     set({ analyticsGroupDrawerOpen: false, analyticsGroupContext: null }),
+  openRecurringContractDrawer: recurringId =>
+    set({ recurringContractDrawerOpen: true, editingRecurringId: recurringId }),
+  closeRecurringContractDrawer: () =>
+    set({ recurringContractDrawerOpen: false, editingRecurringId: null }),
   closeNestedDrawers: () =>
     set({
       accountDrawerOpen: false,

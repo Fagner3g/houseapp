@@ -138,6 +138,8 @@ import type {
   PostOrgSlugJobsSendMonthlySummary200,
   PostOrgSlugJobsSendMonthlySummary400,
   PostOrgSlugJobsSendMonthlySummaryBody,
+  PreviewUpdateRecurringTransaction200,
+  PreviewUpdateRecurringTransactionBody,
   RegisterSplitPayment201,
   RegisterSplitPaymentBody,
   RejectAiAction200,
@@ -5721,6 +5723,104 @@ export const useDeleteRecurringTransaction = <
   TContext
 > => {
   const mutationOptions = getDeleteRecurringTransactionMutationOptions(options);
+
+  return useMutation(mutationOptions, queryClient);
+};
+
+/**
+ * Preview impact of updating a recurring transaction contract
+ */
+export const getPreviewUpdateRecurringTransactionUrl = (
+  slug: string,
+  id: string,
+) => {
+  return `/organizations/${slug}/recurring-transactions/${id}/preview-update`;
+};
+
+export const previewUpdateRecurringTransaction = async (
+  slug: string,
+  id: string,
+  previewUpdateRecurringTransactionBody: PreviewUpdateRecurringTransactionBody,
+  options?: RequestInit,
+): Promise<PreviewUpdateRecurringTransaction200> => {
+  return http<PreviewUpdateRecurringTransaction200>(
+    getPreviewUpdateRecurringTransactionUrl(slug, id),
+    {
+      ...options,
+      method: "POST",
+      headers: { "Content-Type": "application/json", ...options?.headers },
+      body: JSON.stringify(previewUpdateRecurringTransactionBody),
+    },
+  );
+};
+
+export const getPreviewUpdateRecurringTransactionMutationOptions = <
+  TError = unknown,
+  TContext = unknown,
+>(options?: {
+  mutation?: UseMutationOptions<
+    Awaited<ReturnType<typeof previewUpdateRecurringTransaction>>,
+    TError,
+    { slug: string; id: string; data: PreviewUpdateRecurringTransactionBody },
+    TContext
+  >;
+  request?: SecondParameter<typeof http>;
+}): UseMutationOptions<
+  Awaited<ReturnType<typeof previewUpdateRecurringTransaction>>,
+  TError,
+  { slug: string; id: string; data: PreviewUpdateRecurringTransactionBody },
+  TContext
+> => {
+  const mutationKey = ["previewUpdateRecurringTransaction"];
+  const { mutation: mutationOptions, request: requestOptions } = options
+    ? options.mutation &&
+      "mutationKey" in options.mutation &&
+      options.mutation.mutationKey
+      ? options
+      : { ...options, mutation: { ...options.mutation, mutationKey } }
+    : { mutation: { mutationKey }, request: undefined };
+
+  const mutationFn: MutationFunction<
+    Awaited<ReturnType<typeof previewUpdateRecurringTransaction>>,
+    { slug: string; id: string; data: PreviewUpdateRecurringTransactionBody }
+  > = (props) => {
+    const { slug, id, data } = props ?? {};
+
+    return previewUpdateRecurringTransaction(slug, id, data, requestOptions);
+  };
+
+  return { mutationFn, ...mutationOptions };
+};
+
+export type PreviewUpdateRecurringTransactionMutationResult = NonNullable<
+  Awaited<ReturnType<typeof previewUpdateRecurringTransaction>>
+>;
+export type PreviewUpdateRecurringTransactionMutationBody =
+  PreviewUpdateRecurringTransactionBody;
+export type PreviewUpdateRecurringTransactionMutationError = unknown;
+
+export const usePreviewUpdateRecurringTransaction = <
+  TError = unknown,
+  TContext = unknown,
+>(
+  options?: {
+    mutation?: UseMutationOptions<
+      Awaited<ReturnType<typeof previewUpdateRecurringTransaction>>,
+      TError,
+      { slug: string; id: string; data: PreviewUpdateRecurringTransactionBody },
+      TContext
+    >;
+    request?: SecondParameter<typeof http>;
+  },
+  queryClient?: QueryClient,
+): UseMutationResult<
+  Awaited<ReturnType<typeof previewUpdateRecurringTransaction>>,
+  TError,
+  { slug: string; id: string; data: PreviewUpdateRecurringTransactionBody },
+  TContext
+> => {
+  const mutationOptions =
+    getPreviewUpdateRecurringTransactionMutationOptions(options);
 
   return useMutation(mutationOptions, queryClient);
 };

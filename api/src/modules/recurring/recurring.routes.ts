@@ -8,6 +8,7 @@ import {
   deleteRecurringController,
   getRecurringController,
   listRecurringController,
+  previewUpdateRecurringController,
   updateRecurringController,
 } from './recurring.controller'
 import {
@@ -15,6 +16,7 @@ import {
   deleteRecurringSchema,
   getRecurringSchema,
   listRecurringSchema,
+  previewUpdateRecurringSchema,
   updateRecurringSchema,
 } from './recurring.schema'
 
@@ -45,6 +47,13 @@ export const recurringRoutes: FastifyPluginAsyncZod = async app => {
     preHandler: [verifyOrgAccessHook],
     schema: updateRecurringSchema,
     handler: updateRecurringController,
+  })
+
+  app.post('/organizations/:slug/recurring-transactions/:id/preview-update', {
+    onRequest: [authenticateUserHook],
+    preHandler: [verifyOrgAccessHook],
+    schema: previewUpdateRecurringSchema,
+    handler: previewUpdateRecurringController,
   })
 
   app.delete('/organizations/:slug/recurring-transactions/:id', {

@@ -1178,6 +1178,7 @@ export class TransactionService {
       cardId?: string | null
       categoryIds?: string[]
       type?: TransactionType
+      source?: TransactionSource
     }
   ): Promise<void> {
     if (input.accountId) {
@@ -1189,6 +1190,17 @@ export class TransactionService {
 
       if (!account.isActive) {
         throw badRequest('Conta inativa — selecione outra conta')
+      }
+
+      const source = input.source ?? 'manual'
+      if (
+        account.type === 'credit_card' &&
+        source !== 'import' &&
+        source !== 'recurring'
+      ) {
+        throw badRequest(
+          'Lançamentos manuais não podem ser criados em cartão de crédito. Use contas bancárias, carteira ou poupança, ou importe o extrato do cartão.'
+        )
       }
     }
 

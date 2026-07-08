@@ -6364,10 +6364,28 @@
                         "updatedAt"
                       ],
                       "additionalProperties": false
+                    },
+                    "materializedCount": {
+                      "type": "number"
+                    },
+                    "nextOccurrenceDate": {
+                      "anyOf": [
+                        {
+                          "type": "string"
+                        },
+                        {
+                          "nullable": true,
+                          "enum": [
+                            null
+                          ]
+                        }
+                      ]
                     }
                   },
                   "required": [
-                    "recurringTransaction"
+                    "recurringTransaction",
+                    "materializedCount",
+                    "nextOccurrenceDate"
                   ],
                   "additionalProperties": false
                 }
@@ -6681,6 +6699,11 @@
                         ]
                       }
                     ]
+                  },
+                  "effectiveFrom": {
+                    "type": "string",
+                    "format": "date-time",
+                    "pattern": "^(?:(?:\\d\\d[2468][048]|\\d\\d[13579][26]|\\d\\d0[48]|[02468][048]00|[13579][26]00)-02-29|\\d{4}-(?:(?:0[13578]|1[02])-(?:0[1-9]|[12]\\d|3[01])|(?:0[469]|11)-(?:0[1-9]|[12]\\d|30)|(?:02)-(?:0[1-9]|1\\d|2[0-8])))T(?:(?:[01]\\d|2[0-3]):[0-5]\\d(?::[0-5]\\d(?:\\.\\d+)?)?(?:Z))$"
                   }
                 }
               }
@@ -6897,6 +6920,484 @@
         "responses": {
           "204": {
             "description": "Default Response"
+          }
+        }
+      }
+    },
+    "/organizations/{slug}/recurring-transactions/{id}/preview-update": {
+      "post": {
+        "operationId": "previewUpdateRecurringTransaction",
+        "tags": [
+          "Recurring Transactions"
+        ],
+        "description": "Preview impact of updating a recurring transaction contract",
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "title": {
+                    "type": "string",
+                    "minLength": 1
+                  },
+                  "amount": {
+                    "type": "string"
+                  },
+                  "type": {
+                    "type": "string",
+                    "enum": [
+                      "income",
+                      "expense"
+                    ]
+                  },
+                  "counterparty": {
+                    "anyOf": [
+                      {
+                        "type": "string"
+                      },
+                      {
+                        "nullable": true,
+                        "enum": [
+                          null
+                        ]
+                      }
+                    ]
+                  },
+                  "categoryId": {
+                    "anyOf": [
+                      {
+                        "type": "string"
+                      },
+                      {
+                        "nullable": true,
+                        "enum": [
+                          null
+                        ]
+                      }
+                    ]
+                  },
+                  "accountId": {
+                    "anyOf": [
+                      {
+                        "type": "string"
+                      },
+                      {
+                        "nullable": true,
+                        "enum": [
+                          null
+                        ]
+                      }
+                    ]
+                  },
+                  "frequency": {
+                    "type": "string",
+                    "enum": [
+                      "daily",
+                      "weekly",
+                      "monthly",
+                      "yearly"
+                    ]
+                  },
+                  "interval": {
+                    "type": "integer",
+                    "minimum": 1,
+                    "maximum": 9007199254740991
+                  },
+                  "startDate": {
+                    "type": "string",
+                    "format": "date-time",
+                    "pattern": "^(?:(?:\\d\\d[2468][048]|\\d\\d[13579][26]|\\d\\d0[48]|[02468][048]00|[13579][26]00)-02-29|\\d{4}-(?:(?:0[13578]|1[02])-(?:0[1-9]|[12]\\d|3[01])|(?:0[469]|11)-(?:0[1-9]|[12]\\d|30)|(?:02)-(?:0[1-9]|1\\d|2[0-8])))T(?:(?:[01]\\d|2[0-3]):[0-5]\\d(?::[0-5]\\d(?:\\.\\d+)?)?(?:Z))$"
+                  },
+                  "endDate": {
+                    "anyOf": [
+                      {
+                        "type": "string",
+                        "format": "date-time",
+                        "pattern": "^(?:(?:\\d\\d[2468][048]|\\d\\d[13579][26]|\\d\\d0[48]|[02468][048]00|[13579][26]00)-02-29|\\d{4}-(?:(?:0[13578]|1[02])-(?:0[1-9]|[12]\\d|3[01])|(?:0[469]|11)-(?:0[1-9]|[12]\\d|30)|(?:02)-(?:0[1-9]|1\\d|2[0-8])))T(?:(?:[01]\\d|2[0-3]):[0-5]\\d(?::[0-5]\\d(?:\\.\\d+)?)?(?:Z))$"
+                      },
+                      {
+                        "nullable": true,
+                        "enum": [
+                          null
+                        ]
+                      }
+                    ]
+                  },
+                  "installmentsTotal": {
+                    "anyOf": [
+                      {
+                        "type": "integer",
+                        "minimum": 1,
+                        "maximum": 9007199254740991
+                      },
+                      {
+                        "nullable": true,
+                        "enum": [
+                          null
+                        ]
+                      }
+                    ]
+                  },
+                  "effectiveFrom": {
+                    "type": "string",
+                    "format": "date-time",
+                    "pattern": "^(?:(?:\\d\\d[2468][048]|\\d\\d[13579][26]|\\d\\d0[48]|[02468][048]00|[13579][26]00)-02-29|\\d{4}-(?:(?:0[13578]|1[02])-(?:0[1-9]|[12]\\d|3[01])|(?:0[469]|11)-(?:0[1-9]|[12]\\d|30)|(?:02)-(?:0[1-9]|1\\d|2[0-8])))T(?:(?:[01]\\d|2[0-3]):[0-5]\\d(?::[0-5]\\d(?:\\.\\d+)?)?(?:Z))$"
+                  }
+                }
+              }
+            }
+          }
+        },
+        "parameters": [
+          {
+            "schema": {
+              "type": "string"
+            },
+            "in": "path",
+            "name": "slug",
+            "required": true
+          },
+          {
+            "schema": {
+              "type": "string"
+            },
+            "in": "path",
+            "name": "id",
+            "required": true
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Default Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "current": {
+                      "type": "object",
+                      "properties": {
+                        "id": {
+                          "type": "string"
+                        },
+                        "organizationId": {
+                          "type": "string"
+                        },
+                        "accountId": {
+                          "anyOf": [
+                            {
+                              "type": "string"
+                            },
+                            {
+                              "nullable": true,
+                              "enum": [
+                                null
+                              ]
+                            }
+                          ]
+                        },
+                        "title": {
+                          "type": "string"
+                        },
+                        "amount": {
+                          "type": "string"
+                        },
+                        "type": {
+                          "type": "string",
+                          "enum": [
+                            "income",
+                            "expense"
+                          ]
+                        },
+                        "counterparty": {
+                          "anyOf": [
+                            {
+                              "type": "string"
+                            },
+                            {
+                              "nullable": true,
+                              "enum": [
+                                null
+                              ]
+                            }
+                          ]
+                        },
+                        "categoryId": {
+                          "anyOf": [
+                            {
+                              "type": "string"
+                            },
+                            {
+                              "nullable": true,
+                              "enum": [
+                                null
+                              ]
+                            }
+                          ]
+                        },
+                        "frequency": {
+                          "type": "string",
+                          "enum": [
+                            "daily",
+                            "weekly",
+                            "monthly",
+                            "yearly"
+                          ]
+                        },
+                        "interval": {
+                          "type": "number"
+                        },
+                        "startDate": {
+                          "type": "string"
+                        },
+                        "endDate": {
+                          "anyOf": [
+                            {
+                              "type": "string"
+                            },
+                            {
+                              "nullable": true,
+                              "enum": [
+                                null
+                              ]
+                            }
+                          ]
+                        },
+                        "installmentsTotal": {
+                          "anyOf": [
+                            {
+                              "type": "number"
+                            },
+                            {
+                              "nullable": true,
+                              "enum": [
+                                null
+                              ]
+                            }
+                          ]
+                        },
+                        "isActive": {
+                          "type": "boolean"
+                        },
+                        "lastGeneratedDate": {
+                          "anyOf": [
+                            {
+                              "type": "string"
+                            },
+                            {
+                              "nullable": true,
+                              "enum": [
+                                null
+                              ]
+                            }
+                          ]
+                        },
+                        "createdAt": {
+                          "type": "string"
+                        },
+                        "updatedAt": {
+                          "type": "string"
+                        }
+                      },
+                      "required": [
+                        "id",
+                        "organizationId",
+                        "accountId",
+                        "title",
+                        "amount",
+                        "type",
+                        "counterparty",
+                        "categoryId",
+                        "frequency",
+                        "interval",
+                        "startDate",
+                        "endDate",
+                        "installmentsTotal",
+                        "isActive",
+                        "lastGeneratedDate",
+                        "createdAt",
+                        "updatedAt"
+                      ],
+                      "additionalProperties": false
+                    },
+                    "proposed": {
+                      "type": "object",
+                      "properties": {
+                        "id": {
+                          "type": "string"
+                        },
+                        "organizationId": {
+                          "type": "string"
+                        },
+                        "accountId": {
+                          "anyOf": [
+                            {
+                              "type": "string"
+                            },
+                            {
+                              "nullable": true,
+                              "enum": [
+                                null
+                              ]
+                            }
+                          ]
+                        },
+                        "title": {
+                          "type": "string"
+                        },
+                        "amount": {
+                          "type": "string"
+                        },
+                        "type": {
+                          "type": "string",
+                          "enum": [
+                            "income",
+                            "expense"
+                          ]
+                        },
+                        "counterparty": {
+                          "anyOf": [
+                            {
+                              "type": "string"
+                            },
+                            {
+                              "nullable": true,
+                              "enum": [
+                                null
+                              ]
+                            }
+                          ]
+                        },
+                        "categoryId": {
+                          "anyOf": [
+                            {
+                              "type": "string"
+                            },
+                            {
+                              "nullable": true,
+                              "enum": [
+                                null
+                              ]
+                            }
+                          ]
+                        },
+                        "frequency": {
+                          "type": "string",
+                          "enum": [
+                            "daily",
+                            "weekly",
+                            "monthly",
+                            "yearly"
+                          ]
+                        },
+                        "interval": {
+                          "type": "number"
+                        },
+                        "startDate": {
+                          "type": "string"
+                        },
+                        "endDate": {
+                          "anyOf": [
+                            {
+                              "type": "string"
+                            },
+                            {
+                              "nullable": true,
+                              "enum": [
+                                null
+                              ]
+                            }
+                          ]
+                        },
+                        "installmentsTotal": {
+                          "anyOf": [
+                            {
+                              "type": "number"
+                            },
+                            {
+                              "nullable": true,
+                              "enum": [
+                                null
+                              ]
+                            }
+                          ]
+                        },
+                        "isActive": {
+                          "type": "boolean"
+                        },
+                        "lastGeneratedDate": {
+                          "anyOf": [
+                            {
+                              "type": "string"
+                            },
+                            {
+                              "nullable": true,
+                              "enum": [
+                                null
+                              ]
+                            }
+                          ]
+                        },
+                        "createdAt": {
+                          "type": "string"
+                        },
+                        "updatedAt": {
+                          "type": "string"
+                        }
+                      },
+                      "required": [
+                        "id",
+                        "organizationId",
+                        "accountId",
+                        "title",
+                        "amount",
+                        "type",
+                        "counterparty",
+                        "categoryId",
+                        "frequency",
+                        "interval",
+                        "startDate",
+                        "endDate",
+                        "installmentsTotal",
+                        "isActive",
+                        "lastGeneratedDate",
+                        "createdAt",
+                        "updatedAt"
+                      ],
+                      "additionalProperties": false
+                    },
+                    "impact": {
+                      "type": "object",
+                      "properties": {
+                        "preservedPastCount": {
+                          "type": "number"
+                        },
+                        "updatedFuturePendingCount": {
+                          "type": "number"
+                        },
+                        "unchangedCount": {
+                          "type": "number"
+                        }
+                      },
+                      "required": [
+                        "preservedPastCount",
+                        "updatedFuturePendingCount",
+                        "unchangedCount"
+                      ],
+                      "additionalProperties": false
+                    }
+                  },
+                  "required": [
+                    "current",
+                    "proposed",
+                    "impact"
+                  ],
+                  "additionalProperties": false
+                }
+              }
+            }
           }
         }
       }

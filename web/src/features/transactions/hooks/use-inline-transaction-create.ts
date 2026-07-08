@@ -8,6 +8,7 @@ import {
   useCreateTransaction,
   useListAccounts,
 } from '@/api/generated/api'
+import { filterPaymentAccounts } from '@/features/accounts/constants'
 import { reaisToMoneyString } from '@/lib/currency'
 import { readHttpErrorMessage } from '@/lib/http'
 import { useActiveOrganization } from '@/hooks/use-active-organization'
@@ -43,6 +44,7 @@ export function useInlineTransactionCreate(lockedAccountId?: string) {
   const { mutateAsync: createTransaction, isPending } = useCreateTransaction()
   const { data: accountsData } = useListAccounts(slug, { query: { enabled: !!slug } })
   const activeAccounts = accountsData?.accounts ?? []
+  const paymentAccounts = useMemo(() => filterPaymentAccounts(activeAccounts), [activeAccounts])
 
   const resolvedLockedAccountId = useMemo(() => {
     if (!lockedAccountId) return undefined
@@ -62,11 +64,11 @@ export function useInlineTransactionCreate(lockedAccountId?: string) {
       )
       return
     }
-    const firstAccount = activeAccounts[0]?.id
+    const firstAccount = paymentAccounts[0]?.id
     if (firstAccount && !draft.accountId) {
       setDraft(prev => ({ ...prev, accountId: firstAccount }))
     }
-  }, [activeAccounts, draft.accountId, resolvedLockedAccountId])
+  }, [paymentAccounts, draft.accountId, resolvedLockedAccountId])
 
   useEffect(() => {
     if (focusToken > 0) {
@@ -82,7 +84,7 @@ export function useInlineTransactionCreate(lockedAccountId?: string) {
   const reset = () => {
     setDraft({
       ...defaultDraft(),
-      accountId: resolvedLockedAccountId ?? activeAccounts[0]?.id ?? '',
+      accountId: resolvedLockedAccountId ?? paymentAccounts[0]?.id ?? '',
     })
     titleRef.current?.focus()
   }
@@ -122,9 +124,9 @@ export function useInlineTransactionCreate(lockedAccountId?: string) {
 
     const accountId =
       resolvedLockedAccountId ??
-      (activeAccounts.some(account => account.id === draft.accountId)
+      (paymentAccounts.some(account => account.id === draft.accountId)
         ? draft.accountId
-        : activeAccounts[0]?.id)
+        : paymentAccounts[0]?.id)
 
     if (!accountId) {
       toast.error('Nenhuma conta ativa disponível')
@@ -167,7 +169,7 @@ export function useInlineTransactionCreate(lockedAccountId?: string) {
     onKeyDown,
     titleRef,
     isPending,
-    accounts: activeAccounts,
+    accounts: paymentAccounts,
     lockedAccountId: resolvedLockedAccountId,
   }
 }

@@ -40,7 +40,17 @@ const createRecurringBody = z.object({
   installmentsTotal: z.number().int().min(1).nullable().optional(),
 })
 
-const updateRecurringBody = createRecurringBody.partial()
+const updateRecurringBody = createRecurringBody.partial().extend({
+  effectiveFrom: z.string().datetime().optional(),
+})
+
+const previewUpdateRecurringBody = updateRecurringBody
+
+const previewUpdateImpactSchema = z.object({
+  preservedPastCount: z.number(),
+  updatedFuturePendingCount: z.number(),
+  unchangedCount: z.number(),
+})
 
 export const listRecurringSchema = {
   tags: ['Recurring Transactions'],
@@ -69,7 +79,26 @@ export const createRecurringSchema = {
   params: slugParams,
   body: createRecurringBody,
   response: {
-    201: z.object({ recurringTransaction: recurringResponseSchema }),
+    201: z.object({
+      recurringTransaction: recurringResponseSchema,
+      materializedCount: z.number(),
+      nextOccurrenceDate: z.string().nullable(),
+    }),
+  },
+}
+
+export const previewUpdateRecurringSchema = {
+  tags: ['Recurring Transactions'],
+  description: 'Preview impact of updating a recurring transaction contract',
+  operationId: 'previewUpdateRecurringTransaction',
+  params: recurringParams,
+  body: previewUpdateRecurringBody,
+  response: {
+    200: z.object({
+      current: recurringResponseSchema,
+      proposed: recurringResponseSchema,
+      impact: previewUpdateImpactSchema,
+    }),
   },
 }
 
@@ -96,3 +125,4 @@ export const deleteRecurringSchema = {
 
 export type CreateRecurringBody = z.infer<typeof createRecurringBody>
 export type UpdateRecurringBody = z.infer<typeof updateRecurringBody>
+export type PreviewUpdateRecurringBody = z.infer<typeof previewUpdateRecurringBody>

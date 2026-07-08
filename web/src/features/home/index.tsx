@@ -27,6 +27,7 @@ import { InsightsCard } from './components/insights-card'
 import { MonthPicker } from './components/month-picker'
 import { OpenInvoicesCard } from './components/open-invoices-card'
 import { RecurringCostCard } from './components/recurring-cost-card'
+import { RecurringIncomeCard } from './components/recurring-income-card'
 import { TrendsChartCard } from './components/trends-chart-card'
 import { usePeriodCashFlowKpis } from './hooks/use-period-cash-flow-kpis'
 
@@ -112,8 +113,8 @@ export function HomePage() {
             />
           ) : isSummaryLoading ? (
             <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 xl:grid-cols-4">
-              {Array.from({ length: 4 }).map((_, index) => (
-                <div key={index} className="kpi-card animate-pulse">
+              {[0, 1, 2, 3].map(i => (
+                <div key={`sk-${i}`} className="kpi-card animate-pulse">
                   <div className="mb-3 h-4 w-24 rounded bg-slate-200" />
                   <div className="h-8 w-32 rounded bg-slate-200" />
                   <div className="mt-2 h-3 w-20 rounded bg-slate-100" />
@@ -167,6 +168,11 @@ export function HomePage() {
           </div>
 
           <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-4">
+            <RecurringIncomeCard
+              recurring={recurring.data?.recurringTransactions}
+              isLoading={recurring.isLoading}
+            />
+
             <RecurringCostCard
               recurring={recurring.data?.recurringTransactions}
               isLoading={recurring.isLoading}

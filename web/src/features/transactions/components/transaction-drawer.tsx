@@ -1,7 +1,7 @@
 import { zodResolver } from '@hookform/resolvers/zod'
-import { useNavigate, useRouterState } from '@tanstack/react-router'
+import { Link, useNavigate, useRouterState } from '@tanstack/react-router'
 import dayjs from 'dayjs'
-import { ChevronDown, Download, ExternalLink, FileText, Plus, Trash2, X } from 'lucide-react'
+import { ChevronDown, Download, ExternalLink, FileText, Plus, RefreshCw, Trash2, X } from 'lucide-react'
 import { useEffect, useLayoutEffect, useMemo, useRef, useState, useCallback } from 'react'
 import { useForm, useFormState } from 'react-hook-form'
 import { z } from 'zod'
@@ -148,6 +148,7 @@ import {
 } from './transaction-reminders-section'
 import { AccountDrawer } from '@/features/accounts/components/account-drawer'
 import { AccountSelect } from '@/features/accounts/components/account-select'
+import { filterPaymentAccounts } from '@/features/accounts/constants'
 import { CardDrawer } from '@/features/accounts/components/card-drawer'
 import { CategoryDrawer } from '@/features/categories/components/category-drawer'
 import { CategorySelect } from '@/features/categories/components/category-select'
@@ -189,6 +190,7 @@ function createTransactionSchema(options: { requireCategory: boolean }) {
       categoryId: z.string().optional(),
       status: z.enum(['pending', 'paid']),
       description: z.string().optional(),
+      counterparty: z.string().optional(),
       recurrence: z.enum(['once', 'installment', 'recurring']),
       periodicity: z
         .enum([
@@ -298,6 +300,7 @@ function defaultFormValues(): TransactionFormValues {
     recurringDuration: 'times',
     recurringRepetitions: 2,
     recurringEndDate: dayjs().format('YYYY-MM-DD'),
+    counterparty: '',
     paidAt: dayjs().format('YYYY-MM-DD'),
     paidAmount: 0,
   }
@@ -392,6 +395,7 @@ export function TransactionDrawer() {
   const editingId = useDrawerStore(s => s.editingTransactionId)
   const close = useDrawerStore(s => s.closeTransactionDrawer)
   const openAccountDrawer = useDrawerStore(s => s.openAccountDrawer)
+  const openRecurringContractDrawer = useDrawerStore(s => s.openRecurringContractDrawer)
   const openCategoryDrawer = useDrawerStore(s => s.openCategoryDrawer)
   const closeNestedDrawers = useDrawerStore(s => s.closeNestedDrawers)
   const nestedDrawerOpen = useDrawerStore(selectNestedDrawerOpen)
@@ -410,6 +414,7 @@ export function TransactionDrawer() {
 
   const { data: accountsData } = useListAccounts(slug, { query: { enabled: !!slug && open } })
   const activeAccounts = accountsData?.accounts ?? []
+  const paymentAccounts = useMemo(() => filterPaymentAccounts(activeAccounts), [activeAccounts])
   const effectiveLockedAccountId = useMemo(() => {
     if (!lockedAccountId) return null
     return activeAccounts.some(account => account.id === lockedAccountId) ? lockedAccountId : null
@@ -684,13 +689,13 @@ export function TransactionDrawer() {
       competenceDate: draft?.competenceDate
         ? dayjs(draft.competenceDate).format('YYYY-MM-DD')
         : undefined,
-      accountId: draft?.accountId ?? effectiveLockedAccountId ?? activeAccounts[0]?.id,
+      accountId: draft?.accountId ?? effectiveLockedAccountId ?? paymentAccounts[0]?.id,
       cardId: draft?.cardId ?? undefined,
       categoryId: draft?.categoryIds?.[0],
       status: (draft?.status as TransactionFormValues['status']) ?? 'pending',
       description: draft?.description ?? '',
     })
-  }, [open, isEdit, isPay, draft, form, effectiveLockedAccountId, activeAccounts])
+  }, [open, isEdit, isPay, draft, form, effectiveLockedAccountId, paymentAccounts])
 
   useEffect(() => {
     if (!open || !effectiveLockedAccountId) return
@@ -1114,7 +1119,7 @@ export function TransactionDrawer() {
 
       if (values.recurrence === 'recurring') {
         const { frequency, interval } = parseTransactionPeriodicity(values.periodicity)
-        await createRecurring({
+        const result = await createRecurring({
           slug,
           data: {
             title: values.title,
@@ -1122,6 +1127,7 @@ export function TransactionDrawer() {
             type: values.type === 'income' ? 'income' : 'expense',
             accountId: values.accountId ?? null,
             categoryId: values.categoryId ?? null,
+            counterparty: values.counterparty?.trim() ? values.counterparty.trim() : null,
             frequency,
             interval,
             startDate: dayjs(values.date).toISOString(),
@@ -1133,7 +1139,12 @@ export function TransactionDrawer() {
                 : null,
           },
         })
-        toast.success('Recorrência criada')
+        const firstDate = dayjs(values.date).format('DD/MM/YYYY')
+        toast.success(
+          result.materializedCount > 0
+            ? `Contrato criado. O recebimento de ${firstDate} já aparece na lista.`
+            : 'Contrato recorrente criado'
+        )
         invalidateAll()
         close()
         return
@@ -1403,6 +1414,24 @@ export function TransactionDrawer() {
 
                 <FormErrorBanner message={validationErrorMessage} />
 
+                {isEdit && tx?.recurringTransactionId && (
+                  <div className="rounded-lg border border-violet-200 bg-violet-50 px-3 py-2 text-sm text-violet-900">
+                    Este lançamento faz parte de um contrato recorrente de{' '}
+                    {tx.type === 'income' ? 'receita' : 'despesa'}.{' '}
+                    <button
+                      type="button"
+                      className="inline-flex items-center gap-1 font-medium text-violet-700 underline-offset-2 hover:underline"
+                      onClick={() => {
+                        const recurringId = tx.recurringTransactionId
+                        if (recurringId) openRecurringContractDrawer(recurringId)
+                      }}
+                    >
+                      <RefreshCw className="size-3.5" />
+                      Editar contrato
+                    </button>
+                  </div>
+                )}
+
                 {isPay ? (
                   <>
                     <div className="rounded-lg bg-slate-50 p-4 space-y-1">
@@ -1636,6 +1665,7 @@ export function TransactionDrawer() {
                                   value={field.value}
                                   onValueChange={field.onChange}
                                   placeholder="De"
+                                  paymentOnly
                                   instanceKey={editingId ?? 'create'}
                                   className={stackySelectTrigger}
                                   itemClassName={stackySelectItem}
@@ -1659,6 +1689,7 @@ export function TransactionDrawer() {
                                   onValueChange={field.onChange}
                                   excludeAccountId={selectedAccountId}
                                   placeholder="Para"
+                                  paymentOnly
                                   instanceKey={`${editingId ?? 'create'}-to`}
                                   className={stackySelectTrigger}
                                   itemClassName={stackySelectItem}
@@ -1750,11 +1781,26 @@ export function TransactionDrawer() {
                                     field.onChange(v)
                                     form.setValue('cardId', undefined)
                                   }}
+                                  paymentOnly={!isEdit || !isCreditCardExpense}
                                   instanceKey={editingId ?? 'create'}
                                   className={stackySelectTrigger}
                                   itemClassName={stackySelectItem}
                                 />
                               </FormControl>
+                              {!isEdit && paymentAccounts.length === 0 && (
+                                <p className="mt-2 text-xs text-amber-700">
+                                  Cadastre uma conta em{' '}
+                                  <Link
+                                    to="/$org/settings/accounts"
+                                    params={{ org: slug }}
+                                    className="font-medium underline"
+                                    onClick={close}
+                                  >
+                                    Configurações → Contas
+                                  </Link>
+                                  .
+                                </p>
+                              )}
                             </FormItem>
                           )}
                         />
@@ -2143,6 +2189,21 @@ export function TransactionDrawer() {
 
                               {field.value === 'recurring' && (
                                 <div className={cn(stackyDrawerFormRow, 'mt-4')}>
+                                  <FormField
+                                    control={form.control}
+                                    name="counterparty"
+                                    render={({ field: counterpartyField }) => (
+                                      <FormItem className={cn(stackyDrawerFormItem, 'col-span-12')}>
+                                        <FormLabel>Empresa / contraparte</FormLabel>
+                                        <FormControl>
+                                          <Input
+                                            placeholder="Ex: Empresa empregadora"
+                                            {...counterpartyField}
+                                          />
+                                        </FormControl>
+                                      </FormItem>
+                                    )}
+                                  />
                                   <FormField
                                     control={form.control}
                                     name="periodicity"

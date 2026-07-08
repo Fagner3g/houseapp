@@ -6,7 +6,10 @@
  * OpenAPI spec version: 2.0.0
  */
 import type { CreateRecurringTransaction201RecurringTransaction } from "./createRecurringTransaction201RecurringTransaction";
+import type { CreateRecurringTransaction201NextOccurrenceDate } from "./createRecurringTransaction201NextOccurrenceDate";
 
 export type CreateRecurringTransaction201 = {
   recurringTransaction: CreateRecurringTransaction201RecurringTransaction;
+  materializedCount: number;
+  nextOccurrenceDate: CreateRecurringTransaction201NextOccurrenceDate;
 };
