@@ -175,89 +175,94 @@ import {
   SplitPaymentPayBanner,
 } from './split-payment-confirm-dialog'
 
-const transactionSchema = z
-  .object({
-    type: z.enum(['expense', 'income', 'transfer']),
-    title: z.string().min(1, 'Descrição obrigatória'),
-    amount: z.number().positive('Valor obrigatório'),
-    date: z.string().min(1),
-    competenceDate: z.string().optional(),
-    accountId: z.string().optional(),
-    transferToAccountId: z.string().optional(),
-    cardId: z.string().optional(),
-    categoryId: z.string().optional(),
-    status: z.enum(['pending', 'paid']),
-    description: z.string().optional(),
-    recurrence: z.enum(['once', 'installment', 'recurring']),
-    periodicity: z
-      .enum([
-        'weekly-1',
-        'weekly-2',
-        'monthly-1',
-        'monthly-2',
-        'monthly-3',
-        'monthly-6',
-        'yearly-1',
-      ])
-      .default('monthly-1'),
-    installmentsTotal: z.coerce.number().int().min(2).optional(),
-    recurringDuration: z.enum(['infinite', 'times', 'until']).default('times'),
-    recurringRepetitions: z.coerce.number().int().min(1).optional(),
-    recurringEndDate: z.string().optional(),
-    paidAt: z.string().optional(),
-    paidAmount: z.number().optional(),
-  })
-  .superRefine((values, ctx) => {
-    if (values.type === 'transfer') {
+function createTransactionSchema(options: { requireCategory: boolean }) {
+  return z
+    .object({
+      type: z.enum(['expense', 'income', 'transfer']),
+      title: z.string().min(1, 'Descrição obrigatória'),
+      amount: z.number().positive('Valor obrigatório'),
+      date: z.string().min(1),
+      competenceDate: z.string().optional(),
+      accountId: z.string().optional(),
+      transferToAccountId: z.string().optional(),
+      cardId: z.string().optional(),
+      categoryId: z.string().optional(),
+      status: z.enum(['pending', 'paid']),
+      description: z.string().optional(),
+      recurrence: z.enum(['once', 'installment', 'recurring']),
+      periodicity: z
+        .enum([
+          'weekly-1',
+          'weekly-2',
+          'monthly-1',
+          'monthly-2',
+          'monthly-3',
+          'monthly-6',
+          'yearly-1',
+        ])
+        .default('monthly-1'),
+      installmentsTotal: z.coerce.number().int().min(2).optional(),
+      recurringDuration: z.enum(['infinite', 'times', 'until']).default('times'),
+      recurringRepetitions: z.coerce.number().int().min(1).optional(),
+      recurringEndDate: z.string().optional(),
+      paidAt: z.string().optional(),
+      paidAmount: z.number().optional(),
+    })
+    .superRefine((values, ctx) => {
+      if (values.type === 'transfer') {
+        if (!values.accountId) {
+          ctx.addIssue({
+            code: z.ZodIssueCode.custom,
+            message: 'Selecione a conta de origem',
+            path: ['accountId'],
+          })
+        }
+        if (!values.transferToAccountId) {
+          ctx.addIssue({
+            code: z.ZodIssueCode.custom,
+            message: 'Selecione a conta de destino',
+            path: ['transferToAccountId'],
+          })
+        }
+        return
+      }
+
+      if (options.requireCategory && !values.categoryId) {
+        ctx.addIssue({
+          code: z.ZodIssueCode.custom,
+          message: 'Selecione uma categoria',
+          path: ['categoryId'],
+        })
+      }
       if (!values.accountId) {
         ctx.addIssue({
           code: z.ZodIssueCode.custom,
-          message: 'Selecione a conta de origem',
+          message: 'Selecione uma conta',
           path: ['accountId'],
         })
       }
-      if (!values.transferToAccountId) {
-        ctx.addIssue({
-          code: z.ZodIssueCode.custom,
-          message: 'Selecione a conta de destino',
-          path: ['transferToAccountId'],
-        })
-      }
-      return
-    }
 
-    if (!values.categoryId) {
-      ctx.addIssue({
-        code: z.ZodIssueCode.custom,
-        message: 'Selecione uma categoria',
-        path: ['categoryId'],
-      })
-    }
-    if (!values.accountId) {
-      ctx.addIssue({
-        code: z.ZodIssueCode.custom,
-        message: 'Selecione uma conta',
-        path: ['accountId'],
-      })
-    }
+      if (values.recurrence === 'recurring') {
+        if (values.recurringDuration === 'times' && !values.recurringRepetitions) {
+          ctx.addIssue({
+            code: z.ZodIssueCode.custom,
+            message: 'Informe o número de repetições',
+            path: ['recurringRepetitions'],
+          })
+        }
+        if (values.recurringDuration === 'until' && !values.recurringEndDate) {
+          ctx.addIssue({
+            code: z.ZodIssueCode.custom,
+            message: 'Informe a data final',
+            path: ['recurringEndDate'],
+          })
+        }
+      }
+    })
+}
 
-    if (values.recurrence === 'recurring') {
-      if (values.recurringDuration === 'times' && !values.recurringRepetitions) {
-        ctx.addIssue({
-          code: z.ZodIssueCode.custom,
-          message: 'Informe o número de repetições',
-          path: ['recurringRepetitions'],
-        })
-      }
-      if (values.recurringDuration === 'until' && !values.recurringEndDate) {
-        ctx.addIssue({
-          code: z.ZodIssueCode.custom,
-          message: 'Informe a data final',
-          path: ['recurringEndDate'],
-        })
-      }
-    }
-  })
+const transactionSchema = createTransactionSchema({ requireCategory: true })
+const editTransactionSchema = createTransactionSchema({ requireCategory: false })
 
 type TransactionFormValues = z.infer<typeof transactionSchema>
 
@@ -431,7 +436,11 @@ export function TransactionDrawer() {
 
   const form = useForm<TransactionFormValues>({
     resolver: (values, context, options) => {
-      const schema = isPay ? payTransactionSchema : transactionSchema
+      const schema = isPay
+        ? payTransactionSchema
+        : isEdit
+          ? editTransactionSchema
+          : transactionSchema
       return zodResolver(schema)(values, context, options)
     },
     defaultValues: defaultFormValues(),
@@ -1579,7 +1588,7 @@ export function TransactionDrawer() {
                           <FormItem>
                             <div className={stackyDrawerLabelRow}>
                               <FormLabel>
-                                Categoria <FormRequiredMark />
+                                Categoria {!isEdit ? <FormRequiredMark /> : null}
                               </FormLabel>
                               <button
                                 type="button"
@@ -1599,10 +1608,11 @@ export function TransactionDrawer() {
                               <CategorySelect
                                 value={field.value}
                                 type={txType === 'income' ? 'income' : 'expense'}
-                                onChange={field.onChange}
+                                onChange={categoryId => field.onChange(categoryId ?? undefined)}
                                 className={stackySelectTrigger}
                                 enabled={open}
                                 instanceKey={editingId ?? 'create'}
+                                clearable={isEdit}
                               />
                             </FormControl>
                           </FormItem>
@@ -2246,6 +2256,10 @@ export function TransactionDrawer() {
                         installmentsTotal={tx?.installmentsTotal}
                         installmentNumber={tx?.installmentNumber}
                         debtSummary={splitDebtSummary}
+                        installmentSiblings={installmentSeriesData?.installments.map(item => ({
+                          id: item.id,
+                          amount: item.amount,
+                        }))}
                       />
                     )}
                   </>

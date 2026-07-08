@@ -20,6 +20,7 @@ export type WhatsAppAlertMessageInput = {
   splitShareInstallmentAmount?: string | null
   splitPaidAmount?: string | null
   splitRemainingAmount?: string | null
+  splitParticipantCount?: number | null
   kind?: string
   overdueDays?: number | null
   installmentNumber?: number | null
@@ -103,6 +104,20 @@ export function buildSplitInstallmentSummaryLine(input: {
   })
 }
 
+export function buildSplitPurchaseContextLine(input: {
+  transactionTotalAmount?: string | null
+  splitParticipantCount?: number | null
+}): string | null {
+  const purchaseTotal = formatAmountBRL(input.transactionTotalAmount)
+  const participantCount =
+    input.splitParticipantCount != null && input.splitParticipantCount >= 2
+      ? input.splitParticipantCount
+      : 2
+
+  if (!purchaseTotal) return `Dividido pra ${participantCount}`
+  return `Compra ${purchaseTotal} · Dividido pra ${participantCount}`
+}
+
 export function buildSummaryLine(input: {
   amount?: string | null
   transactionTotalAmount?: string | null
@@ -111,6 +126,7 @@ export function buildSummaryLine(input: {
   splitShareInstallmentAmount?: string | null
   splitPaidAmount?: string | null
   splitRemainingAmount?: string | null
+  splitParticipantCount?: number | null
   installmentNumber?: number | null
   installmentsTotal?: number | null
   isSplit?: boolean
@@ -125,15 +141,29 @@ export function buildSummaryLine(input: {
   )
   const isSplit = !!input.isSplit
   const hasPartialPayment = isSplit && moneyStringToCentavos(input.splitPaidAmount) > 0n
+  const splitContextLine = isSplit
+    ? buildSplitPurchaseContextLine({
+        transactionTotalAmount: input.transactionTotalAmount,
+        splitParticipantCount: input.splitParticipantCount,
+      })
+    : null
+
+  const withSplitContext = (line: string | null): string | null => {
+    if (!line) return splitContextLine
+    if (!splitContextLine) return line
+    return `${line}\n${splitContextLine}`
+  }
 
   if (hasInstallments && input.installmentsTotal && input.installmentNumber) {
     if (isSplit) {
-      return buildInstallmentSummaryLine({
-        installmentNumber: input.installmentNumber,
-        installmentsTotal: input.installmentsTotal,
-        installmentAmount: input.splitShareInstallmentAmount,
-        totalAmount: input.splitAmount,
-      })
+      return withSplitContext(
+        buildInstallmentSummaryLine({
+          installmentNumber: input.installmentNumber,
+          installmentsTotal: input.installmentsTotal,
+          installmentAmount: input.splitShareInstallmentAmount,
+          totalAmount: input.splitAmount,
+        })
+      )
     }
 
     return buildInstallmentSummaryLine({
@@ -146,10 +176,10 @@ export function buildSummaryLine(input: {
 
   if (isSplit) {
     if (hasPartialPayment && splitRemaining && splitTotal) {
-      return `Falta ${splitRemaining} de ${splitTotal}`
+      return withSplitContext(`Falta ${splitRemaining} de ${splitTotal}`)
     }
 
-    return splitTotal ? `Sua parte: ${splitTotal}` : dueAmount
+    return withSplitContext(splitTotal ? `Sua parte: ${splitTotal}` : dueAmount)
   }
 
   return dueAmount
@@ -175,7 +205,7 @@ export function buildValueLines(input: {
 function moneyStringToCentavos(value: string | null | undefined): bigint {
   if (!value) return 0n
   const [integerPart, fractionalPart = '00'] = value.split('.')
-  const cents = (fractionalPart + '00').slice(0, 2)
+  const cents = `${fractionalPart}00`.slice(0, 2)
   return BigInt(integerPart) * 100n + BigInt(cents)
 }
 
@@ -227,6 +257,7 @@ export function buildWhatsAppAlertMessage(
           splitShareInstallmentAmount: input.splitShareInstallmentAmount,
           splitPaidAmount: input.splitPaidAmount,
           splitRemainingAmount: input.splitRemainingAmount,
+          splitParticipantCount: input.splitParticipantCount,
           note: input.note,
           daysUntilDue: input.daysUntilDue,
           dueDate: input.dueDate,
@@ -260,6 +291,7 @@ export type WhatsAppAlertBatchItem = {
   splitShareInstallmentAmount?: string | null
   splitPaidAmount?: string | null
   splitRemainingAmount?: string | null
+  splitParticipantCount?: number | null
   installmentNumber?: number | null
   installmentsTotal?: number | null
   isSplit?: boolean
@@ -313,7 +345,7 @@ export function buildWhatsAppBatchRenderUnits(
     usedGroups.add(key)
     units.push({
       type: 'credit_card_group',
-      accountName: item.accountName!.trim(),
+      accountName: item.accountName?.trim() ?? '',
       dueLine: item.dueLine,
       items: groups.get(key) ?? [item],
     })
@@ -334,6 +366,7 @@ function resolveItemSummaryLine(item: WhatsAppAlertBatchItem): string | null {
       splitShareInstallmentAmount: item.splitShareInstallmentAmount,
       splitPaidAmount: item.splitPaidAmount,
       splitRemainingAmount: item.splitRemainingAmount,
+      splitParticipantCount: item.splitParticipantCount,
       installmentNumber: item.installmentNumber,
       installmentsTotal: item.installmentsTotal,
       isSplit: item.isSplit,
@@ -390,6 +423,7 @@ export function toWhatsAppBatchItem(input: {
   splitShareInstallmentAmount?: string | null
   splitPaidAmount?: string | null
   splitRemainingAmount?: string | null
+  splitParticipantCount?: number | null
   note?: string | null
   daysUntilDue: number
   dueDate: Date | string
@@ -411,6 +445,7 @@ export function toWhatsAppBatchItem(input: {
       splitShareInstallmentAmount: input.splitShareInstallmentAmount,
       splitPaidAmount: input.splitPaidAmount,
       splitRemainingAmount: input.splitRemainingAmount,
+      splitParticipantCount: input.splitParticipantCount,
       installmentNumber: input.installmentNumber,
       installmentsTotal: input.installmentsTotal,
       isSplit: input.isSplit,
@@ -437,6 +472,7 @@ export function toWhatsAppBatchItem(input: {
     splitShareInstallmentAmount: input.splitShareInstallmentAmount,
     splitPaidAmount: input.splitPaidAmount,
     splitRemainingAmount: input.splitRemainingAmount,
+    splitParticipantCount: input.splitParticipantCount,
     installmentNumber: input.installmentNumber,
     installmentsTotal: input.installmentsTotal,
     isSplit: input.isSplit,

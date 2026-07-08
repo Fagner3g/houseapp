@@ -47,7 +47,7 @@ import { useAuthStore } from '@/stores/auth'
 import { getSplitTransactionIdsQueryKey } from '@/features/credit-cards/hooks/use-split-transaction-ids'
 import { useQueryClient } from '@tanstack/react-query'
 
-import { hasInstallmentSplitDebt, formatPersonShareInstallmentAmount, resolveSplitInstallmentRemainingReais } from '../split-debt-summary.utils'
+import { hasInstallmentSplitDebt, formatPersonShareInstallmentAmount, inferPurchaseSplitPercent, resolveSplitInstallmentRemainingReais } from '../split-debt-summary.utils'
 import { PersonSplitDebtDetails, SplitDebtSummary } from './split-debt-summary'
 import { SplitPaymentsList } from './split-payments-list'
 
@@ -71,12 +71,18 @@ const STATUS_VARIANT: Record<
 type PersonMode = 'member' | 'contact'
 type AmountMode = 'fixed' | 'percent'
 
+type InstallmentSibling = {
+  id: string
+  amount: string
+}
+
 interface TransactionSplitsSectionProps {
   transactionId: string
   transactionAmount: string
   installmentsTotal?: number | null
   installmentNumber?: number | null
   debtSummary?: GetSplitDebtSummary200
+  installmentSiblings?: InstallmentSibling[]
 }
 
 export function TransactionSplitsSection({
@@ -85,6 +91,7 @@ export function TransactionSplitsSection({
   installmentsTotal,
   installmentNumber,
   debtSummary,
+  installmentSiblings,
 }: TransactionSplitsSectionProps) {
   const { slug } = useActiveOrganization()
   const currentUserId = useAuthStore(s => s.user?.id)
@@ -142,15 +149,20 @@ export function TransactionSplitsSection({
   }, [selectedUserId, currentUserId])
 
   const transactionTotalReais = moneyStringToReais(transactionAmount)
+  const parcelInstallmentsTotal = debtSummary?.installmentsTotal ?? installmentsTotal ?? 0
+  const parcelCount = parcelInstallmentsTotal
+  const isParceledPurchase = parcelCount > 1
+  const purchaseTotalReais = debtSummary?.purchaseTotal
+    ? moneyStringToReais(debtSummary.purchaseTotal)
+    : isParceledPurchase
+      ? transactionTotalReais * parcelCount
+      : transactionTotalReais
   const splitsTotalReais = splits.reduce(
     (sum, split) => sum + moneyStringToReais(split.amount),
     0
   )
   const myShareReais = Math.max(0, transactionTotalReais - splitsTotalReais)
-  const parcelInstallmentsTotal = debtSummary?.installmentsTotal ?? installmentsTotal ?? 0
   const showInstallmentDebtSummary = hasInstallmentSplitDebt(debtSummary)
-  const parcelCount = parcelInstallmentsTotal
-  const isParceledPurchase = parcelCount > 1
   const currentParcelLabel =
     installmentNumber != null && parcelCount > 0
       ? `${installmentNumber}/${parcelCount}`
@@ -180,7 +192,13 @@ export function TransactionSplitsSection({
   }
 
   const previewSplitReais =
-    amountMode === 'percent' ? (transactionTotalReais * splitPercent) / 100 : splitAmount
+    amountMode === 'percent'
+      ? (purchaseTotalReais * splitPercent) / 100
+      : splitAmount
+  const previewInstallmentSplitReais =
+    amountMode === 'percent' && isParceledPurchase
+      ? previewSplitReais / parcelCount
+      : previewSplitReais
 
   const splitPersonLabel = (split: (typeof splits)[number]) => {
     if (split.userId) {
@@ -234,9 +252,14 @@ export function TransactionSplitsSection({
       return
     }
 
+    const splitTargets =
+      amountMode === 'percent' && isParceledPurchase && installmentSiblings?.length
+        ? installmentSiblings
+        : [{ id: transactionId, amount: transactionAmount }]
+
     const amountReais =
       amountMode === 'percent'
-        ? (transactionTotalReais * splitPercent) / 100
+        ? (purchaseTotalReais * splitPercent) / 100
         : splitAmount
 
     if (amountMode === 'percent') {
@@ -254,18 +277,33 @@ export function TransactionSplitsSection({
       return
     }
 
+    const splitData = {
+      userId: personMode === 'member' ? selectedUserId : null,
+      contactName: personMode === 'contact' ? contactName.trim() : null,
+      contactPhone:
+        personMode === 'contact' ? normalizePhoneDigits(contactPhone) || null : null,
+      description: 'Divisão da despesa',
+      notifyEnabled,
+    }
+
     try {
-      await createSplit({
-        slug,
-        transactionId,
-        data: {
-          userId: personMode === 'member' ? selectedUserId : null,
-          contactName: personMode === 'contact' ? contactName.trim() : null,
-          contactPhone: personMode === 'contact' ? normalizePhoneDigits(contactPhone) || null : null,
-          amount: reaisToMoneyString(amountReais),
-          notifyEnabled,
-        },
-      })
+      for (const target of splitTargets) {
+        const targetAmountReais =
+          amountMode === 'percent' && isParceledPurchase
+            ? (moneyStringToReais(target.amount) * splitPercent) / 100
+            : amountReais
+
+        if (targetAmountReais <= 0) continue
+
+        await createSplit({
+          slug,
+          transactionId: target.id,
+          data: {
+            ...splitData,
+            amount: reaisToMoneyString(targetAmountReais),
+          },
+        })
+      }
       toast.success('Divisão adicionada')
       setSelectedUserId('')
       setContactName('')
@@ -356,6 +394,13 @@ export function TransactionSplitsSection({
                 installmentsTotal,
               })
               const personDebt = findPersonForSplit(split)
+              const purchaseSplitPercent =
+                personDebt && debtSummary
+                  ? inferPurchaseSplitPercent(
+                      moneyStringToReais(personDebt.totalOwed),
+                      moneyStringToReais(debtSummary.purchaseTotal)
+                    )
+                  : null
               const currentInstallment = personDebt?.installments.find(
                 item => item.splitId === split.id
               )
@@ -380,7 +425,14 @@ export function TransactionSplitsSection({
                 <div key={split.id} className="rounded-lg bg-slate-50 p-3">
                   <div className="flex items-start justify-between gap-3">
                     <div className="min-w-0">
-                      <p className="font-medium text-slate-900">{splitPersonLabel(split)}</p>
+                      <p className="font-medium text-slate-900">
+                        {splitPersonLabel(split)}
+                        {purchaseSplitPercent != null && (
+                          <span className="ml-2 text-xs font-normal text-slate-500">
+                            {purchaseSplitPercent}% da compra
+                          </span>
+                        )}
+                      </p>
                       <div className="mt-1 text-sm tabular-nums text-slate-700">
                         {showPersonDebtDetails && (
                           <p className="mb-1 text-xs text-slate-500">
@@ -486,7 +538,9 @@ export function TransactionSplitsSection({
                 <p className="rounded-md bg-amber-50 px-3 py-2 text-xs text-amber-800">
                   Esta compra tem {parcelCount} parcelas
                   {currentParcelLabel ? ` — você está na parcela ${currentParcelLabel}` : ''}.
-                  A divisão adicionada aqui vale apenas para esta parcela.
+                  {amountMode === 'percent'
+                    ? ` A divisão em % será aplicada em todas as parcelas da compra (total estimado: ${formatCurrency(purchaseTotalReais)}).`
+                    : ' A divisão em valor fixo vale apenas para esta parcela.'}
                 </p>
               )}
               <div className="space-y-2">
@@ -577,6 +631,13 @@ export function TransactionSplitsSection({
                     {splitPercent > 0 && (
                       <p className="text-xs text-slate-500">
                         = {formatMoneyString(reaisToMoneyString(previewSplitReais))}
+                        {isParceledPurchase && (
+                          <>
+                            {' '}
+                            da compra · {formatMoneyString(reaisToMoneyString(previewInstallmentSplitReais))}{' '}
+                            por parcela
+                          </>
+                        )}
                       </p>
                     )}
                   </div>

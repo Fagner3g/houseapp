@@ -9,7 +9,8 @@
     ".": "./src/index.ts",
     "./money": "./src/money/index.ts",
     "./billing-cycle": "./src/billing-cycle/index.ts",
-    "./invoice": "./src/invoice/index.ts"
+    "./invoice": "./src/invoice/index.ts",
+    "./splits": "./src/splits/index.ts"
   },
   "scripts": {
     "test": "vitest run"

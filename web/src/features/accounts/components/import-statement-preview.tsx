@@ -20,6 +20,7 @@ import {
   buildItemsFromParsedTransactions,
   type ImportReviewRowState,
 } from './import-review-types'
+import { isCardStatementCreditTitle } from '@houseapp/finance-core'
 import { getInvoiceStatusDisplay, resolveInvoiceKind } from './invoice-status-labels'
 import { ImportStatementReviewTable } from './import-statement-review-table'
 
@@ -87,7 +88,9 @@ export function ImportStatementPreview({
 
   const newItems = items.filter(item => !item.isDuplicate)
   const existingItems = items.filter(item => item.isDuplicate)
-  const categorizedCount = newItems.filter(item => initializedRows[item.id]?.categoryId).length
+  const categorizedCount = newItems.filter(
+    item => initializedRows[item.id]?.categoryId && !isCardStatementCreditTitle(item.title)
+  ).length
   const splitCount = newItems.filter(item => initializedRows[item.id]?.splitMode !== 'none').length
   const approvedCount = newItems.filter(item => initializedRows[item.id]?.validated).length
   const allApproved =
@@ -223,7 +226,7 @@ export function ImportStatementPreview({
               {invoiceDisplay.cycleLabel}
             </Badge>
             {invoiceDisplay.paymentLabel ? (
-              <Badge variant="outline" className={invoiceDisplay.paymentClassName!}>
+              <Badge variant="outline" className={invoiceDisplay.paymentClassName ?? undefined}>
                 {invoiceDisplay.paymentLabel}
               </Badge>
             ) : null}

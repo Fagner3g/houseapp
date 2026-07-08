@@ -5,7 +5,9 @@ import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import { useListCards, useListStatements } from '@/api/generated/api'
 import type { ListTransactions200TransactionsItem } from '@/api/generated/model'
 import { Button } from '@/components/ui/button'
+import type { ListViewMode } from '@/components/list-view-mode-toggle'
 import { ImportStatementDialog } from '@/features/accounts/components/import-statement-dialog'
+import { CreditCardStatementGroups } from './credit-card-statement-groups'
 import { TransactionList } from '@/features/transactions/components/transaction-list'
 import { toTransactionListItem } from '@/features/transactions/types'
 import type { BillingCycle } from '@/lib/billing-cycle'
@@ -27,6 +29,7 @@ import {
   computeInvoiceFilterCounts,
   defaultInvoiceStatementFilters,
   filterInvoiceTransactions,
+  resolveInvoiceQuickFilter,
   type InvoiceQuickFilter,
   type InvoiceStatementFilters,
 } from './credit-card-statement-filter-utils'
@@ -83,6 +86,7 @@ export function CreditCardStatementSection({
     ...defaultInvoiceStatementFilters(),
     quickFilter: initialQuickFilter ?? 'all',
   }))
+  const [viewMode, setViewMode] = useState<ListViewMode>('list')
 
   const { data: statementsData } = useListStatements(slug, accountId, {
     query: { enabled: !!slug && !!accountId },
@@ -152,10 +156,14 @@ export function CreditCardStatementSection({
     [baseItems, dividedTransactionIds]
   )
 
-  const filteredItems = useMemo(
-    () => filterInvoiceTransactions(baseItems, filters, dividedTransactionIds),
-    [baseItems, filters, dividedTransactionIds]
-  )
+  const filteredItems = useMemo(() => {
+    const quickFilter = resolveInvoiceQuickFilter(filters.quickFilter, filterCounts)
+    return filterInvoiceTransactions(
+      baseItems,
+      { ...filters, quickFilter },
+      dividedTransactionIds
+    )
+  }, [baseItems, filters, filterCounts, dividedTransactionIds])
 
   const updateFilters = useCallback((patch: Partial<InvoiceStatementFilters>) => {
     setFilters(current => ({ ...current, ...patch }))
@@ -238,15 +246,26 @@ export function CreditCardStatementSection({
           <CreditCardStatementFilters
             filters={filters}
             counts={filterCounts}
+            viewMode={viewMode}
             showCardFilter={showCardFilter}
             cards={activeCards}
             onChange={updateFilters}
+            onViewModeChange={setViewMode}
           />
         )}
       </div>
 
       {cyclePending ? (
         <CreditCardStatementTableSkeleton />
+      ) : viewMode === 'grouped' ? (
+        <CreditCardStatementGroups
+          transactions={filteredItems}
+          accountId={accountId}
+          cards={showCardFilter ? activeCards : undefined}
+          fullyDelegatedById={fullyDelegatedById}
+          partiallyDividedById={partiallyDividedById}
+          dividedTransactionIds={dividedTransactionIds}
+        />
       ) : (
         <TransactionList
           items={filteredItems.map(toTransactionListItem)}

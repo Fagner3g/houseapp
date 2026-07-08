@@ -58,6 +58,7 @@ export type ResolvedWhatsAppAlertContent = {
   splitShareInstallmentAmount: string | null
   splitPaidAmount: string | null
   splitRemainingAmount: string | null
+  splitParticipantCount: number | null
   kind?: string
   overdueDays?: number | null
   installmentNumber: number | null
@@ -94,6 +95,7 @@ export async function resolveWhatsAppAlertContentForNotification(
   let splitShareInstallmentAmount: string | null = null
   let splitPaidAmount: string | null = null
   let splitRemainingAmount: string | null = null
+  let splitParticipantCount: number | null = null
 
   if (notification.transactionId) {
     const [transaction] = await db
@@ -187,6 +189,7 @@ export async function resolveWhatsAppAlertContentForNotification(
       splitShareInstallmentAmount = amounts.splitShareInstallmentAmount ?? null
       splitPaidAmount = amounts.splitPaidAmount ?? null
       splitRemainingAmount = amounts.splitRemainingAmount ?? null
+      splitParticipantCount = amounts.splitParticipantCount ?? null
     }
   }
 
@@ -211,6 +214,7 @@ export async function resolveWhatsAppAlertContentForNotification(
     splitShareInstallmentAmount,
     splitPaidAmount,
     splitRemainingAmount,
+    splitParticipantCount,
     kind,
     overdueDays,
     installmentNumber,
@@ -233,6 +237,7 @@ export function toWhatsAppBatchItemFromContent(
     splitShareInstallmentAmount: content.splitShareInstallmentAmount,
     splitPaidAmount: content.splitPaidAmount,
     splitRemainingAmount: content.splitRemainingAmount,
+    splitParticipantCount: content.splitParticipantCount,
     note: content.note,
     daysUntilDue: content.daysUntilDue,
     dueDate: content.dueDate,
@@ -264,6 +269,7 @@ export async function buildWhatsAppMessageForNotification(
     splitShareInstallmentAmount: content.splitShareInstallmentAmount,
     splitPaidAmount: content.splitPaidAmount,
     splitRemainingAmount: content.splitRemainingAmount,
+    splitParticipantCount: content.splitParticipantCount,
     kind: content.kind,
     overdueDays: content.overdueDays,
     installmentNumber: content.installmentNumber,

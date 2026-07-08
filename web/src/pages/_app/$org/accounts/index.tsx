@@ -183,7 +183,7 @@ function AccountsPage() {
       title="Erro ao carregar cartões"
       description="Não foi possível carregar os cartões."
     >
-      <div className="flex min-h-0 flex-col">
+      <div className="flex min-h-0 flex-1 flex-col overflow-hidden">
         {!creditCards.length ? (
           <div className="flex flex-1 flex-col items-center justify-center px-6 py-24 text-center">
             <p className="text-slate-500">Nenhum cartão cadastrado.</p>
@@ -199,7 +199,7 @@ function AccountsPage() {
             </div>
           </div>
         ) : (
-          <div className="flex flex-col lg:min-h-[calc(100vh-8rem)] lg:flex-row">
+          <div className="flex min-h-0 flex-1 flex-col overflow-hidden lg:flex-row">
             <AccountTypeSidebar
               sections={sections}
               selectedId={selectedId}
@@ -210,7 +210,7 @@ function AccountsPage() {
             />
 
             {selectedAccount && (
-              <div className="min-w-0 flex-1 pb-24 md:pb-6">
+              <div className="min-h-0 min-w-0 flex-1 overflow-y-auto pb-24 md:pb-6">
                 <CreditCardSubNav view={currentView} onViewChange={handleViewChange} />
 
                 {isSettingsView ? (
@@ -290,31 +290,31 @@ function AccountsPage() {
             )}
           </div>
         )}
+
+        <DeleteCreditCardDialog
+          account={accountToDelete}
+          open={accountToDelete != null}
+          onOpenChange={open => {
+            if (!open && !isDeletingAccount) setAccountToDelete(null)
+          }}
+          onConfirm={confirmDelete}
+          isDeleting={isDeletingAccount}
+        />
+
+        <ImportStatementDialog
+          open={onboardingImportOpen}
+          onOpenChange={setOnboardingImportOpen}
+          showTrigger={false}
+          onImported={importedAccountId => {
+            invalidateAccounts()
+            updateSearch({
+              accountId: importedAccountId,
+              month: currentBillingMonthKey(),
+            })
+          }}
+          onViewExistingStatement={handleViewExistingStatement}
+        />
       </div>
-
-      <DeleteCreditCardDialog
-        account={accountToDelete}
-        open={accountToDelete != null}
-        onOpenChange={open => {
-          if (!open && !isDeletingAccount) setAccountToDelete(null)
-        }}
-        onConfirm={confirmDelete}
-        isDeleting={isDeletingAccount}
-      />
-
-      <ImportStatementDialog
-        open={onboardingImportOpen}
-        onOpenChange={setOnboardingImportOpen}
-        showTrigger={false}
-        onImported={importedAccountId => {
-          invalidateAccounts()
-          updateSearch({
-            accountId: importedAccountId,
-            month: currentBillingMonthKey(),
-          })
-        }}
-        onViewExistingStatement={handleViewExistingStatement}
-      />
     </LoadingErrorState>
   )
 }

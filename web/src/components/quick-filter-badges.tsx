@@ -1,3 +1,5 @@
+import { useEffect, useMemo } from 'react'
+
 import { cn } from '@/lib/utils'
 
 export type QuickFilterBadgeOption<T extends string> = {
@@ -13,30 +15,50 @@ type QuickFilterBadgesProps<T extends string> = {
   className?: string
 }
 
+function isVisibleQuickFilterOption<T extends string>(option: QuickFilterBadgeOption<T>) {
+  return option.id === 'all' || option.count == null || option.count > 0
+}
+
+export function resolveQuickFilterValue<T extends string>(
+  value: T,
+  options: Array<QuickFilterBadgeOption<T>>
+): T {
+  const visibleOptions = options.filter(isVisibleQuickFilterOption)
+  if (visibleOptions.some(option => option.id === value)) return value
+  return (visibleOptions.find(option => option.id === 'all') ?? visibleOptions[0])?.id ?? value
+}
+
 export function QuickFilterBadges<T extends string>({
   value,
   options,
   onChange,
   className,
 }: QuickFilterBadgesProps<T>) {
+  const visibleOptions = useMemo(
+    () => options.filter(isVisibleQuickFilterOption),
+    [options]
+  )
+
+  useEffect(() => {
+    const resolved = resolveQuickFilterValue(value, options)
+    if (resolved !== value) onChange(resolved)
+  }, [options, value, onChange])
+
   return (
     <div className={cn('flex flex-wrap items-center gap-2', className)}>
-      {options.map(option => {
+      {visibleOptions.map(option => {
         const isActive = value === option.id
-        const isDisabled = option.id !== 'all' && option.count === 0
 
         return (
           <button
             key={option.id}
             type="button"
-            disabled={isDisabled}
             onClick={() => onChange(option.id)}
             className={cn(
               'inline-flex h-7 cursor-pointer items-center gap-1.5 rounded-full border px-2.5 text-xs font-medium transition-colors',
               isActive
                 ? 'border-slate-900 bg-slate-900 text-white'
-                : 'border-slate-200 bg-white text-slate-600 hover:border-slate-300 hover:bg-slate-50',
-              isDisabled && 'cursor-not-allowed opacity-40 hover:border-slate-200 hover:bg-white'
+                : 'border-slate-200 bg-white text-slate-600 hover:border-slate-300 hover:bg-slate-50'
             )}
           >
             {option.label}

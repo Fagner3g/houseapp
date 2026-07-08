@@ -1,4 +1,5 @@
 import type { ImportStatementBody } from '@/api/generated/model'
+import { isCardStatementCreditTitle } from '@houseapp/finance-core'
 import { divideReais } from '@/features/transactions/installment-preview'
 import { moneyStringToReais, reaisToMoneyString } from '@/lib/currency'
 import { normalizePhoneDigits } from '@/lib/phone'
@@ -113,7 +114,9 @@ export function buildItemsFromParsedTransactions(
           : undefined,
       installmentNumber: tx.installmentNumber,
       installmentsTotal: tx.installmentsTotal,
-      categoryId: tx.categoryIds?.[0] ?? null,
+      categoryId: isCardStatementCreditTitle(tx.title)
+        ? null
+        : (tx.categoryIds?.[0] ?? null),
       splitHint: splitHint ?? null,
       isDuplicate: (tx as { isDuplicate?: boolean }).isDuplicate ?? false,
       duplicateTransactionId:
@@ -159,7 +162,8 @@ export function buildInitialReviewRows(
   const rows: Record<string, ImportReviewRowState> = {}
 
   for (const item of items) {
-    const id = item.id ?? item.transactionId!
+    const id = item.id ?? item.transactionId
+    if (!id) continue
     const baseRow: ImportReviewRowState = {
       id,
       categoryId: item.categoryId ?? item.categoryIds?.[0] ?? null,
@@ -213,9 +217,14 @@ export function applyReviewToImportBody(
     transactions: parsed.transactions.map((tx, index) => {
       const item = items[index]
       const row = item ? rows[item.id] : undefined
+      const exemptFromCategory = item ? isCardStatementCreditTitle(item.title) : false
       return {
         ...tx,
-        categoryIds: row?.categoryId ? [row.categoryId] : tx.categoryIds,
+        categoryIds: exemptFromCategory
+          ? undefined
+          : row?.categoryId
+            ? [row.categoryId]
+            : tx.categoryIds,
       }
     }),
   }
@@ -340,7 +349,7 @@ export function buildPostImportUpdates(
       const split = buildSplitPayload(item, row)
       const update: BulkReviewImportUpdate = { transactionId }
 
-      if (row.categoryId) {
+      if (row.categoryId && !isCardStatementCreditTitle(item.title)) {
         update.categoryIds = [row.categoryId]
       }
 

@@ -5,7 +5,7 @@ import {
 } from '@/domain/ai/providers'
 
 import type { ImportStatementBody } from './statement.schema'
-import { isCardStatementCreditTitle } from './invoice-status'
+import { isCardStatementCreditTitle } from '@houseapp/finance-core'
 
 type CategoryRow = { id: string; name: string; type: string }
 
@@ -24,7 +24,17 @@ const HEURISTIC_RULES: Array<{ pattern: RegExp; categoryName: string }> = [
   },
   {
     pattern:
-      /ifood|ifd\*|99food|delivery|restaur|burger|japa|bar |boteco|subway|ze delivery|nadinhos|santo japa|zigpay|zig\*|temaki|churrasc|pizzar|bistro|lanches|cervejaria|esfirra|hotdog|doceria|panificadora|peixe|caldo de cana|biscoit|mep\*|marukai|santorini|tatu bola|trem bom|cappta|bolota|silvinhos|frigideira de minas|chico do peixe|canabrava|vila para restaurante|teresa cafe/i,
+      /cervejaria|choperia|boteco|\bbar\b|\bpub\b|adega|\bbalada\b|chopp|tap house|\bdrinks\b/i,
+    categoryName: 'Bares',
+  },
+  {
+    pattern:
+      /shopee|amazonmktplc|\bamazon\b|mercado ?livre|aliexpress|shein|\bolx\b|nupay|zp\*olx|magalu|americanas|submarino|tiktok shop|\btemu\b/i,
+    categoryName: 'Compras Online & Marketplaces',
+  },
+  {
+    pattern:
+      /ifood|ifd\*|99food|delivery|restaur|burger|japa|subway|ze delivery|nadinhos|santo japa|zigpay|zig\*|temaki|churrasc|pizzar|bistro|lanches|esfirra|hotdog|doceria|panificadora|peixe|caldo de cana|biscoit|mep\*|marukai|santorini|tatu bola|trem bom|cappta|bolota|silvinhos|frigideira de minas|chico do peixe|canabrava|vila para restaurante|teresa cafe/i,
     categoryName: 'Restaurantes & Delivery',
   },
   {
@@ -54,7 +64,7 @@ const HEURISTIC_RULES: Array<{ pattern: RegExp; categoryName: string }> = [
   },
   {
     pattern:
-      /renner|constance|boutiq|cea |moda|vestuário|vestuario|roupa|calçado|calcado|ruivasstores|meu prata|joia|prata lj|shopee|amazonmktplc|amazon|mercado ?livre|aliexpress|olx|nupay|zp\*olx|shein|zara|riachuelo/i,
+      /renner|constance|boutiq|cea |moda|vestuário|vestuario|roupa|calçado|calcado|ruivasstores|meu prata|joia|prata lj|zara|riachuelo/i,
     categoryName: 'Vestuário & Acessórios',
   },
   {
@@ -198,7 +208,8 @@ ${txList}
 
 Regras:
 - Use o histórico acima quando o título/estabelecimento for similar a transações já categorizadas.
-- Supermercado = mercado/feira; Restaurantes & Delivery = comer fora ou delivery.
+- Supermercado = mercado/feira; Restaurantes & Delivery = comer fora ou delivery; Bares = bar, boteco, cervejaria, pub, balada.
+- Compras Online & Marketplaces = Shopee, Mercado Livre, Amazon marketplace, Shein, AliExpress, OLX, Temu.
 - Moradia / Contas & Manutenção = aluguel, condomínio, luz, água, gás, internet fixa, reforma.
 - Assinaturas & Streaming = Netflix, Spotify, software recorrente.
 - Se NÃO houver correspondência clara, NÃO inclua a transação no resultado — deixe sem categoria para revisão manual.
@@ -252,6 +263,10 @@ export async function categorizeStatementTransactions(
 
   transactions.forEach((transaction, index) => {
     const type = (transaction.type ?? 'expense') as 'income' | 'expense'
+
+    if (isCardStatementCreditTitle(transaction.title)) {
+      return
+    }
 
     const historicalMatch = historicalExamples.find(
       example =>

@@ -21,6 +21,7 @@ import {
   type ImportReviewRowState,
   type ParsedTransactionReviewItem,
 } from './import-review-types'
+import { isCardStatementCreditTitle } from '@houseapp/finance-core'
 import { ImportStatementReviewTable } from './import-statement-review-table'
 
 interface ImportStatementReviewDialogProps {
@@ -38,7 +39,9 @@ function toPreviewItems(items: ImportReviewItem[]): ParsedTransactionReviewItem[
     amount: item.amount,
     date: new Date().toISOString(),
     type: item.type,
-    categoryId: item.categoryIds[0] ?? null,
+    categoryId: isCardStatementCreditTitle(item.title)
+      ? null
+      : (item.categoryIds[0] ?? null),
   }))
 }
 
@@ -78,7 +81,7 @@ export function ImportStatementReviewDialog({
           split?: NonNullable<ReturnType<typeof buildSplitPayload>>
         } = { transactionId: item.transactionId }
 
-        if (row.categoryId) {
+        if (row.categoryId && !isCardStatementCreditTitle(item.title)) {
           update.categoryIds = [row.categoryId]
         }
 

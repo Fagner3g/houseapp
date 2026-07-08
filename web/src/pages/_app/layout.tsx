@@ -8,7 +8,7 @@ import { CategoryDrawer } from '@/features/categories/components/category-drawer
 import { PayInvoiceDrawer } from '@/features/credit-cards/components/pay-invoice-drawer'
 import { AnalyticsGroupDrawer } from '@/features/credit-cards/components/analytics-group-drawer'
 import { TransactionDrawer } from '@/features/transactions/components/transaction-drawer'
-import { BottomNav, HeaderNewTransactionButton, AiChatFab } from '@/components/layout/app-chrome'
+import { BottomNav, AiChatFab } from '@/components/layout/app-chrome'
 import { Header } from '@/components/layout/header'
 import { SidebarCollapseTrigger } from '@/components/layout/sidebar/sidebar-collapse-trigger'
 import { AppSidebar } from '@/components/layout/sidebar'
@@ -46,7 +46,7 @@ function RouteComponent() {
       <SidebarInset className="app-content-panel m-2 border-0 bg-white md:my-3 md:mr-3 md:ml-0 md:rounded-lg md:peer-data-[state=collapsed]:ml-0">
         <SidebarCollapseTrigger />
         <Header />
-        <div className="flex-1 overflow-auto rounded-lg">
+        <div className="flex min-h-0 flex-1 flex-col overflow-auto rounded-lg">
           {orgAccessBlocked ? (
             <div className="flex items-center justify-center p-12">
               <div className="flex flex-col items-center gap-3">

@@ -12,6 +12,7 @@ import type { GetSplitDebtSummary200PersonsItem } from "./getSplitDebtSummary200
 
 export type GetSplitDebtSummary200 = {
   purchaseTotal: string;
+  purchaseTotalIsEstimate: boolean;
   myShareTotal: string;
   installmentsTotal: GetSplitDebtSummary200InstallmentsTotal;
   currentInstallmentNumber: GetSplitDebtSummary200CurrentInstallmentNumber;

@@ -15,6 +15,13 @@ export function isImportedBillPaymentTitle(title: string | null | undefined): bo
   return /pagamento recebido/i.test(title ?? '')
 }
 
+/** OFX/CSV card credits that should not receive spending categories (bill payment, refunds, etc.). */
+export function isCardStatementCreditTitle(title: string | null | undefined): boolean {
+  return /pagamento recebido|pagamento em|crédito de confiança|credito de confianca|estorno|reversão|reversao|iof de volta/i.test(
+    title ?? ''
+  )
+}
+
 export function isImportedBillPayment(tx: { title?: string | null }): boolean {
   return isImportedBillPaymentTitle(tx.title)
 }

@@ -7,6 +7,7 @@ import {
   getSplitRemainingReais,
   getUnsettledSplits,
   hasUnsettledSplits,
+  inferPurchaseSplitPercent,
   resolvePersonShareInstallmentAmountReais,
   resolveSplitInstallmentRemainingReais,
 } from './split-debt-summary.utils'
@@ -244,6 +245,18 @@ describe('hasUnsettledSplits', () => {
   it('returns true when there is remaining debt on unsettled splits', () => {
     expect(hasUnsettledSplits([makeSplit({ status: 'pending' })])).toBe(true)
     expect(hasUnsettledSplits([makeSplit({ status: 'paid', paidAmount: '150.00' })])).toBe(false)
+  })
+})
+
+describe('inferPurchaseSplitPercent', () => {
+  it('returns rounded purchase share percent', () => {
+    expect(inferPurchaseSplitPercent(837.5, 1675.1)).toBe(50)
+    expect(inferPurchaseSplitPercent(450, 900)).toBe(50)
+  })
+
+  it('returns null for invalid ratios', () => {
+    expect(inferPurchaseSplitPercent(0, 900)).toBeNull()
+    expect(inferPurchaseSplitPercent(950, 900)).toBeNull()
   })
 })
 

@@ -5,7 +5,6 @@ import {
   buildDueLine,
   buildGreeting,
   buildSummaryLine,
-  buildValueLines,
   buildWhatsAppAlertMessage,
   buildWhatsAppBatchAlertMessage,
   cleanTransactionTitle,
@@ -83,14 +82,17 @@ describe('whatsapp-alert-message', () => {
 
     expect(
       buildSummaryLine({
+        transactionTotalAmount: '8000.00',
         splitAmount: '4000.00',
         amount: '4000.00',
         isSplit: true,
+        splitParticipantCount: 2,
       })
-    ).toBe('Sua parte: R$ 4000,00')
+    ).toBe(['Sua parte: R$ 4000,00', 'Compra R$ 8000,00 · Dividido pra 2'].join('\n'))
 
     expect(
       buildSummaryLine({
+        transactionTotalAmount: '900.00',
         splitAmount: '450.00',
         splitShareInstallmentAmount: '150.00',
         splitPaidAmount: '150.00',
@@ -99,8 +101,24 @@ describe('whatsapp-alert-message', () => {
         installmentNumber: 1,
         installmentsTotal: 3,
         isSplit: true,
+        splitParticipantCount: 2,
       })
-    ).toBe('1/3: R$ 150,00')
+    ).toBe(['1/3: R$ 150,00', 'Compra R$ 900,00 · Dividido pra 2'].join('\n'))
+
+    expect(
+      buildSummaryLine({
+        transactionTotalAmount: '1675.10',
+        splitAmount: '837.50',
+        splitShareInstallmentAmount: '83.75',
+        splitPaidAmount: '0.00',
+        splitRemainingAmount: '837.50',
+        amount: '837.50',
+        installmentNumber: 1,
+        installmentsTotal: 10,
+        isSplit: true,
+        splitParticipantCount: 2,
+      })
+    ).toBe(['1/10: R$ 83,75', 'Compra R$ 1675,10 · Dividido pra 2'].join('\n'))
   })
 
   it('formats credit card invoice due line', () => {
@@ -186,6 +204,7 @@ describe('whatsapp-alert-message', () => {
         '',
         '🧾 Mp *Ruivasstores',
         'Sua parte: R$ 4000,00',
+        'Compra R$ 8000,00 · Dividido pra 2',
       ].join('\n')
     )
   })
@@ -203,6 +222,7 @@ describe('whatsapp-alert-message', () => {
         splitShareInstallmentAmount: '150.00',
         splitPaidAmount: '150.00',
         splitRemainingAmount: '300.00',
+        splitParticipantCount: 2,
         daysUntilDue: 0,
         dueDate: '2026-07-06T12:00:00.000Z',
         amount: '300.00',
@@ -218,7 +238,46 @@ describe('whatsapp-alert-message', () => {
         '',
         '📅 Pia da cozinha',
         '1/3: R$ 150,00',
+        'Compra R$ 900,00 · Dividido pra 2',
         'Vence hoje · 06/07/2026',
+      ].join('\n')
+    )
+  })
+
+  it('builds imported split installment alert with purchase total', () => {
+    const message = buildWhatsAppAlertMessage(
+      {
+        recipientName: 'Karoline',
+        transactionTitle: 'Casas Bahia - NuPay - Parcela 1/10',
+        accountName: 'Nubank Ultravioleta',
+        installmentNumber: 1,
+        installmentsTotal: 10,
+        transactionTotalAmount: '1675.10',
+        splitAmount: '837.50',
+        splitShareInstallmentAmount: '83.75',
+        splitPaidAmount: '0.00',
+        splitRemainingAmount: '837.50',
+        splitParticipantCount: 2,
+        daysUntilDue: 9,
+        dueDate: '2026-07-17T12:00:00.000Z',
+        amount: '837.50',
+        kind: 'split_upcoming',
+        isSplit: true,
+        isCreditCardInvoice: true,
+      },
+      new Date('2026-07-08T11:00:00.000Z')
+    )
+
+    expect(message).toBe(
+      [
+        'Bom dia, Karoline!',
+        '',
+        '💳 Nubank Ultravioleta',
+        'Fatura Vence em 9 dias · 17/07/2026',
+        '',
+        '🧾 Casas Bahia - NuPay',
+        '1/10: R$ 83,75',
+        'Compra R$ 1675,10 · Dividido pra 2',
       ].join('\n')
     )
   })
@@ -294,7 +353,9 @@ describe('whatsapp-alert-message', () => {
             accountName: 'Nubank Empresa',
             isCreditCardInvoice: true,
             amount: '4000.00',
+            transactionTotalAmount: '8000.00',
             splitAmount: '4000.00',
+            splitParticipantCount: 2,
             isSplit: true,
             dueLine: 'Fatura Vence em 2 dias · 08/07/2026',
             daysUntilDue: 2,
@@ -317,6 +378,7 @@ describe('whatsapp-alert-message', () => {
         '',
         '🧾 Mp *Ruivasstores',
         'Sua parte: R$ 4000,00',
+        'Compra R$ 8000,00 · Dividido pra 2',
         '',
         WHATSAPP_BATCH_SEPARATOR,
         '',

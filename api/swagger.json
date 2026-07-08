@@ -12792,6 +12792,9 @@
                     "purchaseTotal": {
                       "type": "string"
                     },
+                    "purchaseTotalIsEstimate": {
+                      "type": "boolean"
+                    },
                     "myShareTotal": {
                       "type": "string"
                     },
@@ -12966,6 +12969,7 @@
                   },
                   "required": [
                     "purchaseTotal",
+                    "purchaseTotalIsEstimate",
                     "myShareTotal",
                     "installmentsTotal",
                     "currentInstallmentNumber",

@@ -3,7 +3,6 @@ import type { ReactNode } from 'react'
 import type { GetSplitDebtSummary200 } from '@/api/generated/model'
 import { Badge } from '@/components/ui/badge'
 import {
-  formatCurrency,
   formatMoneyString,
   moneyStringToReais,
   reaisToMoneyString,
@@ -111,7 +110,9 @@ export function TransactionFooterSummary({
             emphasize
           />
           <SummaryMetric
-            label="Compra total"
+            label={
+              splitDebtSummary.purchaseTotalIsEstimate ? 'Compra total (estimado)' : 'Compra total'
+            }
             value={formatMoneyString(splitDebtSummary.purchaseTotal)}
           />
           {hasInstallments && currentInstallment != null && totalInstallments != null ? (
@@ -181,6 +182,15 @@ export function TransactionFooterSummary({
     )
   }
 
+  const installmentAmount =
+    hasInstallments && installmentContext?.currentTransactionAmount
+      ? installmentContext.currentTransactionAmount
+      : reaisToMoneyString(amount)
+  const purchaseTotal = installmentContext?.purchaseTotal
+  const purchaseTotalIsEstimate = installmentContext?.purchaseTotalIsEstimate ?? false
+  const showPurchaseTotal =
+    hasInstallments && purchaseTotal != null && purchaseTotal !== installmentAmount
+
   return (
     <div className="mb-3 rounded-lg border border-slate-200 bg-slate-50/70 px-4 py-3">
       <div className="grid grid-cols-2 gap-x-4 gap-y-3 sm:grid-cols-3">
@@ -190,13 +200,15 @@ export function TransactionFooterSummary({
               ? `Parcela ${currentInstallment} de ${totalInstallments}`
               : 'Total'
           }
-          value={
-            hasInstallments && installmentContext?.currentTransactionAmount
-              ? formatMoneyString(installmentContext.currentTransactionAmount)
-              : formatCurrency(amount)
-          }
+          value={formatMoneyString(installmentAmount)}
           emphasize
         />
+        {showPurchaseTotal && (
+          <SummaryMetric
+            label={purchaseTotalIsEstimate ? 'Compra total (estimado)' : 'Compra total'}
+            value={formatMoneyString(purchaseTotal)}
+          />
+        )}
         {showStatus && (
           <div>
             <p className="text-xs text-slate-500">Status</p>

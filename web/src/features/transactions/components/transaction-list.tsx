@@ -1,6 +1,6 @@
 import { useQueryClient } from '@tanstack/react-query'
 import dayjs from 'dayjs'
-import { Check, CreditCard, Loader2, Tag, Trash2, X } from 'lucide-react'
+import { Check, ChevronRight, CreditCard, Loader2, Tag, Trash2, X } from 'lucide-react'
 import { useEffect, useMemo, useState } from 'react'
 import { useNavigate, useSearch } from '@tanstack/react-router'
 import { toast } from 'sonner'
@@ -474,6 +474,21 @@ function TransactionTable({
             const tx = item
             const overdue = mode === 'overdue' && isOverdue(tx)
             const creditCardExpense = isCreditCardExpense(tx, accounts?.accounts)
+            const showPayButton =
+              showPayActionColumn && tx.status === 'pending' && !creditCardExpense
+            const showDeleteButton = showDeleteActionColumn && canDeleteTransaction(tx)
+            const showDetailsButton =
+              isCreditCardStatement || (!showPayButton && !showDeleteButton)
+            const openTransactionDetails = () =>
+              openDrawer(
+                {
+                  categoryIds: tx.categoryIds,
+                  accountId: tx.accountId ?? undefined,
+                  cardId: tx.cardId ?? undefined,
+                },
+                tx.id,
+                accountId ? { lockAccountId: accountId } : undefined
+              )
             return (
             <TableRow
               key={tx.id}
@@ -482,17 +497,7 @@ function TransactionTable({
                 'cursor-pointer',
                 overdue && 'bg-amber-50/60 hover:bg-amber-50'
               )}
-              onClick={() =>
-                openDrawer(
-                  {
-                    categoryIds: tx.categoryIds,
-                    accountId: tx.accountId ?? undefined,
-                    cardId: tx.cardId ?? undefined,
-                  },
-                  tx.id,
-                  accountId ? { lockAccountId: accountId } : undefined
-                )
-              }
+              onClick={openTransactionDetails}
             >
               <TableCell onClick={e => e.stopPropagation()}>
                 <Checkbox
@@ -587,30 +592,44 @@ function TransactionTable({
               )}
               {showActionsColumn && (
                 <TableCell onClick={e => e.stopPropagation()}>
-                  {showPayActionColumn && tx.status === 'pending' && !creditCardExpense && (
-                    <Button
-                      type="button"
-                      variant="ghost"
-                      size="icon"
-                      className="size-8 rounded-lg text-slate-500 hover:text-emerald-600"
-                      onClick={() => openPayDrawer(tx.id)}
-                      aria-label="Confirmar pagamento"
-                    >
-                      <Check className="size-4" />
-                    </Button>
-                  )}
-                  {showDeleteActionColumn && canDeleteTransaction(tx) && (
-                    <Button
-                      type="button"
-                      variant="ghost"
-                      size="icon"
-                      className="size-8 rounded-lg text-slate-500 hover:text-red-600"
-                      onClick={() => setDeleteTarget(tx)}
-                      aria-label="Excluir lançamento"
-                    >
-                      <Trash2 className="size-4" />
-                    </Button>
-                  )}
+                  <div className="flex items-center justify-end gap-0.5">
+                    {showPayButton && (
+                      <Button
+                        type="button"
+                        variant="ghost"
+                        size="icon"
+                        className="size-8 rounded-lg text-slate-500 hover:text-emerald-600"
+                        onClick={() => openPayDrawer(tx.id)}
+                        aria-label="Confirmar pagamento"
+                      >
+                        <Check className="size-4" />
+                      </Button>
+                    )}
+                    {showDeleteButton && (
+                      <Button
+                        type="button"
+                        variant="ghost"
+                        size="icon"
+                        className="size-8 rounded-lg text-slate-500 hover:text-red-600"
+                        onClick={() => setDeleteTarget(tx)}
+                        aria-label="Excluir lançamento"
+                      >
+                        <Trash2 className="size-4" />
+                      </Button>
+                    )}
+                    {showDetailsButton && (
+                      <Button
+                        type="button"
+                        variant="ghost"
+                        size="icon"
+                        className="size-8 rounded-lg text-slate-500 hover:text-violet-600"
+                        onClick={openTransactionDetails}
+                        aria-label="Ver detalhes"
+                      >
+                        <ChevronRight className="size-4" />
+                      </Button>
+                    )}
+                  </div>
                 </TableCell>
               )}
             </TableRow>

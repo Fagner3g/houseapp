@@ -26,6 +26,8 @@ export const DEFAULT_CATEGORIES: DefaultCategory[] = [
   { name: 'Moradia / Contas & Manutenção', type: 'expense', color: '#8B5CF6' },
   { name: 'Supermercado', type: 'expense', color: '#F59E0B' },
   { name: 'Restaurantes & Delivery', type: 'expense', color: '#D97706' },
+  { name: 'Bares', type: 'expense', color: '#C2410C' },
+  { name: 'Compras Online & Marketplaces', type: 'expense', color: '#DB2777' },
   { name: 'Transporte', type: 'expense', color: '#3B82F6' },
   { name: 'Saúde', type: 'expense', color: '#EC4899' },
   { name: 'Educação', type: 'expense', color: '#6366F1' },
@@ -61,7 +63,7 @@ const DEPRECATED_CATEGORY_MIGRATIONS: Array<{
   { from: 'Saúde, Farmácia & Bem-estar', to: 'Saúde', type: 'expense' },
   { from: 'Lazer & Hobbies', to: 'Lazer & Entretenimento', type: 'expense' },
   { from: 'Casa & Utilidades', to: 'Moradia / Contas & Manutenção', type: 'expense' },
-  { from: 'Compras Online', to: 'Vestuário & Acessórios', type: 'expense' },
+  { from: 'Compras Online', to: 'Compras Online & Marketplaces', type: 'expense' },
   { from: 'Material & Ferragens', to: 'Moradia / Contas & Manutenção', type: 'expense' },
 
   // Legado v2/v3/v4 → canônicas atuais

@@ -1,6 +1,6 @@
 import { and, eq, inArray } from 'drizzle-orm'
 
-import { centavosToString } from '@/core/money'
+import { centavosToString, parseCentavos } from '@/core/money'
 import { db } from '@/db'
 import { transactionSplits } from '@/db/schemas/transactionSplits'
 import { transactions } from '@/db/schemas/transactions'
@@ -99,8 +99,8 @@ export async function resolveWhatsAppSplitAlertAmounts(
 
   if (!person) return null
 
-  const totalOwedCentavos = personSplits.reduce((sum, split) => sum + split.amount, 0n)
-  const totalPaidCentavos = personSplits.reduce((sum, split) => sum + split.paidAmount, 0n)
+  const totalOwedCentavos = parseCentavos(person.totalOwed)
+  const totalPaidCentavos = parseCentavos(person.totalPaid)
   const shareInstallmentCentavos = resolvePersonShareInstallmentAmountCentavos({
     totalOwedCentavos,
     installmentsTotal: anchor.installmentsTotal,
@@ -116,15 +116,16 @@ export async function resolveWhatsAppSplitAlertAmounts(
   })
 
   const totalRemainingCentavos = totalOwedCentavos - totalPaidCentavos
+  const distinctDebtors = new Set(relevantSplits.map(split => personKey(split))).size
 
   return {
     ...baseAmounts,
-    splitAmount: centavosToString(totalOwedCentavos),
+    splitAmount: person.totalOwed,
     splitShareInstallmentAmount: centavosToString(shareInstallmentCentavos),
-    splitPaidAmount: centavosToString(totalPaidCentavos),
-    splitRemainingAmount: centavosToString(
-      totalRemainingCentavos < 0n ? 0n : totalRemainingCentavos
-    ),
+    splitPaidAmount: person.totalPaid,
+    splitRemainingAmount: person.totalRemaining,
     amount: centavosToString(totalRemainingCentavos < 0n ? 0n : totalRemainingCentavos),
+    // Owner keeps a share + each distinct debtor.
+    splitParticipantCount: distinctDebtors + 1,
   }
 }

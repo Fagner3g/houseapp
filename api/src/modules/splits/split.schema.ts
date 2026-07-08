@@ -211,6 +211,7 @@ export const getSplitDebtSummarySchema = {
   response: {
     200: z.object({
       purchaseTotal: z.string(),
+      purchaseTotalIsEstimate: z.boolean(),
       myShareTotal: z.string(),
       installmentsTotal: z.number().nullable(),
       currentInstallmentNumber: z.number().nullable(),

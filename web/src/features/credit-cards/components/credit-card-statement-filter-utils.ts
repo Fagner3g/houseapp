@@ -64,6 +64,24 @@ export function computeInvoiceFilterCounts(
   }
 }
 
+export function resolveInvoiceQuickFilter(
+  quickFilter: InvoiceQuickFilter,
+  counts: InvoiceFilterCounts
+): InvoiceQuickFilter {
+  if (quickFilter === 'all') return 'all'
+
+  const countByFilter: Record<Exclude<InvoiceQuickFilter, 'all'>, number> = {
+    purchases: counts.purchases,
+    payments: counts.payments,
+    credits: counts.credits,
+    uncategorized: counts.uncategorized,
+    installments: counts.installments,
+    divided: counts.divided,
+  }
+
+  return countByFilter[quickFilter] === 0 ? 'all' : quickFilter
+}
+
 export function filterInvoiceTransactions(
   transactions: ListTransactions200TransactionsItem[],
   filters: InvoiceStatementFilters,

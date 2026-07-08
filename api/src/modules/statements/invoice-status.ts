@@ -215,11 +215,7 @@ export function shouldCreateSyntheticPaymentOnImport(
   return importSource === 'pdf'
 }
 
-export function isCardStatementCreditTitle(title: string): boolean {
-  return /pagamento recebido|pagamento em|crédito de confiança|credito de confianca|estorno|reversão|reversao|iof de volta/i.test(
-    title
-  )
-}
+export { isCardStatementCreditTitle } from '@houseapp/finance-core'
 
 export function computeStatementPaymentRemaining(
   totalAmount: bigint,

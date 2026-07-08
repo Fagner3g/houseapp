@@ -37,15 +37,17 @@ export function CategorySelect({
   enabled = true,
   instanceKey,
   creatable = true,
+  clearable = false,
 }: {
   value?: string
   type: 'income' | 'expense'
-  onChange: (categoryId: string) => void
+  onChange: (categoryId: string | null) => void
   className?: string
   placeholder?: string
   enabled?: boolean
   instanceKey?: string
   creatable?: boolean
+  clearable?: boolean
 }) {
   const { slug } = useActiveOrganization()
   const queryClient = useQueryClient()
@@ -158,6 +160,19 @@ export function CategorySelect({
               <CommandEmpty>Nenhuma categoria encontrada</CommandEmpty>
             ) : null}
             <CommandGroup>
+              {clearable && value ? (
+                <CommandItem
+                  value="__clear__"
+                  keywords={['sem categoria', 'limpar', 'nenhuma']}
+                  onSelect={() => {
+                    onChange(null)
+                    setOpen(false)
+                    setSearch('')
+                  }}
+                >
+                  Sem categoria
+                </CommandItem>
+              ) : null}
               {categories.map(category => (
                 <CommandItem
                   key={category.id}

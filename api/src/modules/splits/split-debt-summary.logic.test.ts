@@ -7,6 +7,7 @@ import {
   matchesInstallmentSeries,
   personKey,
   resolvePersonShareInstallmentAmountCentavos,
+  shouldUseAnchorInstallmentAmount,
 } from './split-debt-summary.logic'
 import type { SplitWithTransaction } from './split-debt-summary.logic'
 
@@ -187,6 +188,165 @@ describe('buildSplitDebtSummary', () => {
     expect(summary.currentTransactionAmount).toBe('300.00')
     expect(summary.myShareTotal).toBe('450.00')
   })
+
+  it('extrapolates 50% split on first imported parcel across the full purchase', () => {
+    const anchor = tx({
+      id: 'tx-1',
+      title: 'Compra - Parcela 1/10',
+      amount: 16751n,
+      installmentNumber: 1,
+      installmentsTotal: 10,
+      source: 'import',
+      statementId: 'stmt-1',
+    })
+
+    const splits: SplitWithTransaction[] = [
+      split({
+        id: 'split-1',
+        transactionId: 'tx-1',
+        amount: 8375n,
+        installmentNumber: 1,
+        transactionAmount: 16751n,
+        userName: 'Karoline',
+      }),
+    ]
+
+    const summary = buildSplitDebtSummary({
+      anchorTransaction: anchor,
+      siblingTransactions: [anchor],
+      splits,
+      resolvePersonName: item => item.userName ?? 'Membro',
+    })
+
+    expect(summary.purchaseTotal).toBe('1675.10')
+    expect(summary.purchaseTotalIsEstimate).toBe(true)
+    expect(summary.myShareTotal).toBe('837.60')
+    expect(summary.persons[0]).toMatchObject({
+      name: 'Karoline',
+      totalOwed: '837.50',
+      totalRemaining: '837.50',
+    })
+  })
+
+  it('uses statement installment amount for imported purchases with unequal parcels', () => {
+    const anchor = tx({
+      id: 'tx-1',
+      title: 'Supermercados Bh - Parcela 1/3',
+      amount: 27479n,
+      installmentNumber: 1,
+      installmentsTotal: 3,
+      source: 'import',
+      statementId: 'stmt-1',
+    })
+
+    const siblings = [
+      anchor,
+      tx({
+        id: 'tx-2',
+        title: 'Supermercados Bh - Parcela 2/3',
+        amount: 70519n,
+        installmentNumber: 2,
+        installmentsTotal: 3,
+        source: 'import',
+        statementId: 'stmt-1',
+      }),
+      tx({
+        id: 'tx-3',
+        title: 'Supermercados Bh - Parcela 3/3',
+        amount: 35259n,
+        installmentNumber: 3,
+        installmentsTotal: 3,
+        source: 'import',
+        statementId: 'stmt-1',
+      }),
+    ]
+
+    const summary = buildSplitDebtSummary({
+      anchorTransaction: anchor,
+      siblingTransactions: siblings,
+      splits: [],
+      resolvePersonName: item => item.userName ?? 'Membro',
+    })
+
+    expect(summary.purchaseTotal).toBe('1332.57')
+    expect(summary.purchaseTotalIsEstimate).toBe(false)
+    expect(summary.currentTransactionAmount).toBe('274.79')
+  })
+
+  it('estimates purchase total from installmentsTotal when only the first imported parcel exists', () => {
+    const anchor = tx({
+      id: 'tx-1',
+      title: 'Supermercados Bh - Parcela 1/3',
+      amount: 27479n,
+      installmentNumber: 1,
+      installmentsTotal: 3,
+      source: 'import',
+      statementId: 'stmt-1',
+    })
+
+    const summary = buildSplitDebtSummary({
+      anchorTransaction: anchor,
+      siblingTransactions: [anchor],
+      splits: [],
+      resolvePersonName: item => item.userName ?? 'Membro',
+    })
+
+    expect(summary.purchaseTotal).toBe('824.37')
+    expect(summary.purchaseTotalIsEstimate).toBe(true)
+    expect(summary.currentTransactionAmount).toBe('274.79')
+  })
+
+  it('estimates equal installment purchases from installmentsTotal metadata', () => {
+    const anchor = tx({
+      id: 'tx-1',
+      title: 'Pg *Constance - Parcela 1/6',
+      amount: 5169n,
+      installmentNumber: 1,
+      installmentsTotal: 6,
+      source: 'import',
+      statementId: 'stmt-1',
+    })
+
+    const summary = buildSplitDebtSummary({
+      anchorTransaction: anchor,
+      siblingTransactions: [anchor],
+      splits: [],
+      resolvePersonName: item => item.userName ?? 'Membro',
+    })
+
+    expect(summary.purchaseTotal).toBe('310.14')
+    expect(summary.purchaseTotalIsEstimate).toBe(true)
+    expect(summary.currentTransactionAmount).toBe('51.69')
+  })
+})
+
+describe('shouldUseAnchorInstallmentAmount', () => {
+  it('returns true for imported statement transactions', () => {
+    expect(
+      shouldUseAnchorInstallmentAmount(
+        { source: 'import', statementId: 'stmt-1' },
+        [{ amount: 27479n }]
+      )
+    ).toBe(true)
+  })
+
+  it('returns true when sibling installments have different amounts', () => {
+    expect(
+      shouldUseAnchorInstallmentAmount(
+        { source: 'manual', statementId: null },
+        [{ amount: 27479n }, { amount: 35259n }]
+      )
+    ).toBe(true)
+  })
+
+  it('returns false for manual purchases with equal installments', () => {
+    expect(
+      shouldUseAnchorInstallmentAmount(
+        { source: 'manual', statementId: null },
+        [{ amount: 45000n }, { amount: 45000n }]
+      )
+    ).toBe(false)
+  })
 })
 
 describe('resolvePersonShareInstallmentAmountCentavos', () => {
@@ -212,5 +372,17 @@ describe('resolvePersonShareInstallmentAmountCentavos', () => {
         materializedInstallmentSplits: 1,
       })
     ).toBe(15000n)
+  })
+
+  it('uses extrapolated share for imported 50% split on first parcel', () => {
+    expect(
+      resolvePersonShareInstallmentAmountCentavos({
+        totalOwedCentavos: 83750n,
+        installmentsTotal: 10,
+        installmentNumber: 1,
+        currentSplitAmountCentavos: 8375n,
+        materializedInstallmentSplits: 1,
+      })
+    ).toBe(8375n)
   })
 })

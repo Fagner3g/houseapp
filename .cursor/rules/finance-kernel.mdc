@@ -41,7 +41,7 @@ packages/finance-core/src/
   money/                 # centavos + string parsing
   billing-cycle/         # billing cycle dates
   invoice/               # invoice metrics and classifiers
-  splits/                # future
+  splits/                # installment split share / extrapolation
 ```
 
 Each domain exposes an `index.ts`. Only infra files stay flat at the root (`errors.ts`).

@@ -10,13 +10,14 @@ import {
   SelectTrigger,
   SelectValue,
 } from '@/components/ui/select'
+import { ListViewModeToggle, type ListViewMode } from '@/components/list-view-mode-toggle'
+import { QuickFilterBadges } from '@/components/quick-filter-badges'
 import { useActiveOrganization } from '@/hooks/use-active-organization'
-import { cn } from '@/lib/utils'
 
-import {
-  type InvoiceFilterCounts,
-  type InvoiceQuickFilter,
-  type InvoiceStatementFilters,
+import type {
+  InvoiceFilterCounts,
+  InvoiceQuickFilter,
+  InvoiceStatementFilters,
 } from './credit-card-statement-filter-utils'
 
 const QUICK_FILTERS: Array<{
@@ -36,17 +37,21 @@ const QUICK_FILTERS: Array<{
 type CreditCardStatementFiltersProps = {
   filters: InvoiceStatementFilters
   counts: InvoiceFilterCounts
+  viewMode: ListViewMode
   showCardFilter: boolean
   cards: Array<{ id: string; label: string; lastFourDigits?: string | null }>
   onChange: (patch: Partial<InvoiceStatementFilters>) => void
+  onViewModeChange: (viewMode: ListViewMode) => void
 }
 
 export function CreditCardStatementFilters({
   filters,
   counts,
+  viewMode,
   showCardFilter,
   cards,
   onChange,
+  onViewModeChange,
 }: CreditCardStatementFiltersProps) {
   const { slug } = useActiveOrganization()
   const [searchInput, setSearchInput] = useState(filters.search)
@@ -122,34 +127,21 @@ export function CreditCardStatementFilters({
       </div>
 
       <div className="flex flex-wrap items-center gap-2">
-        {QUICK_FILTERS.map(filter => {
-          const count = filter.count?.(counts)
-          const isActive = filters.quickFilter === filter.id
-          const isDisabled = filter.id !== 'all' && count === 0
-
-          return (
-            <button
-              key={filter.id}
-              type="button"
-              disabled={isDisabled}
-              onClick={() => onChange({ quickFilter: filter.id })}
-              className={cn(
-                'inline-flex h-7 cursor-pointer items-center gap-1.5 rounded-full border px-2.5 text-xs font-medium transition-colors',
-                isActive
-                  ? 'border-slate-900 bg-slate-900 text-white'
-                  : 'border-slate-200 bg-white text-slate-600 hover:border-slate-300 hover:bg-slate-50',
-                isDisabled && 'cursor-not-allowed opacity-40 hover:border-slate-200 hover:bg-white'
-              )}
-            >
-              {filter.label}
-              {count != null && filter.id !== 'all' ? (
-                <span className={cn('tabular-nums', isActive ? 'text-white/80' : 'text-slate-400')}>
-                  {count}
-                </span>
-              ) : null}
-            </button>
-          )
-        })}
+        <QuickFilterBadges
+          className="min-w-0 flex-1"
+          value={filters.quickFilter}
+          options={QUICK_FILTERS.map(filter => ({
+            id: filter.id,
+            label: filter.label,
+            count: filter.count?.(counts),
+          }))}
+          onChange={quickFilter => onChange({ quickFilter })}
+        />
+        <ListViewModeToggle
+          className="ml-auto shrink-0"
+          value={viewMode}
+          onChange={onViewModeChange}
+        />
       </div>
     </div>
   )

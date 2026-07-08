@@ -1,5 +1,6 @@
 import type { GetSplitDebtSummary200, ListSplits200SplitsItem } from '@/api/generated/model'
-import { moneyStringToReais, reaisToMoneyString } from '@/lib/currency'
+import { moneyStringToReais, reaisToMoneyString, reaisToCents, centsToReais } from '@/lib/currency'
+import { resolvePersonShareInstallmentAmountCentavos } from '@houseapp/finance-core'
 
 import { divideReais } from './installment-preview'
 
@@ -8,6 +9,18 @@ export type SplitDebtProgress = {
   paidReais: number
   remainingReais: number
   paidPercent: number
+}
+
+export function inferPurchaseSplitPercent(
+  personTotalOwedReais: number,
+  purchaseTotalReais: number
+): number | null {
+  if (purchaseTotalReais <= 0 || personTotalOwedReais <= 0) return null
+
+  const percent = Math.round((personTotalOwedReais / purchaseTotalReais) * 100)
+  if (percent <= 0 || percent > 100) return null
+
+  return percent
 }
 
 export function computeSplitDebtProgress(
@@ -41,29 +54,17 @@ export function resolvePersonShareInstallmentAmountReais(input: {
   currentSplitAmountReais: number
   materializedInstallmentSplits: number
 }): number {
-  const {
-    totalOwedReais,
-    installmentsTotal,
-    installmentNumber,
-    currentSplitAmountReais,
-    materializedInstallmentSplits,
-  } = input
-
-  if (installmentsTotal == null || installmentsTotal < 2 || totalOwedReais <= 0) {
-    return currentSplitAmountReais
-  }
-
-  const sharePerInstallment = divideReais(totalOwedReais, installmentsTotal)
-  const index = Math.max(0, (installmentNumber ?? 1) - 1)
-  const installmentShare = sharePerInstallment[index] ?? currentSplitAmountReais
-
-  // Vários splits (um por parcela) já trazem o valor correto da parcela.
-  if (materializedInstallmentSplits > 1) {
-    return currentSplitAmountReais
-  }
-
-  // Um único split com o total da dívida em compra parcelada → dividir.
-  return installmentShare
+  return centsToReais(
+    Number(
+      resolvePersonShareInstallmentAmountCentavos({
+        totalOwedCentavos: BigInt(reaisToCents(input.totalOwedReais)),
+        installmentsTotal: input.installmentsTotal ?? null,
+        installmentNumber: input.installmentNumber ?? null,
+        currentSplitAmountCentavos: BigInt(reaisToCents(input.currentSplitAmountReais)),
+        materializedInstallmentSplits: input.materializedInstallmentSplits,
+      })
+    )
+  )
 }
 
 export function formatPersonShareInstallmentAmount(

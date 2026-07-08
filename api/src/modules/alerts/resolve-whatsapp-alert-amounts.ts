@@ -14,11 +14,13 @@ export type WhatsAppAlertAmounts = {
   splitShareInstallmentAmount?: string | null
   splitPaidAmount?: string | null
   splitRemainingAmount?: string | null
+  /** Debtors + owner when the purchase is split. */
+  splitParticipantCount?: number | null
 }
 
 type TransactionAmountInput = Pick<
   TransactionRecord,
-  'amount' | 'installmentNumber' | 'installmentsTotal'
+  'amount' | 'installmentNumber' | 'installmentsTotal' | 'source' | 'statementId'
 >
 
 export function resolveWhatsAppAlertAmounts(input: {
@@ -31,10 +33,12 @@ export function resolveWhatsAppAlertAmounts(input: {
 
   const purchaseTotalCentavos = resolveInstallmentPurchaseTotalCentavos(
     siblingTransactions,
-    transaction.installmentsTotal
+    transaction.installmentsTotal,
+    transaction
   )
   const installmentAmountCentavos = resolveInstallmentAmountCentavos(
     transaction,
+    siblingTransactions,
     purchaseTotalCentavos,
     transaction.installmentsTotal
   )
