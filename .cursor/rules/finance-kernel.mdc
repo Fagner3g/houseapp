@@ -33,6 +33,12 @@ alwaysApply: false
 3. Presentation only → `components/` or `hooks/`
 4. I/O or file parser → `api/src/modules/<feature>/`
 
+## Before creating a function
+
+1. **Search `@houseapp/finance-core` first** (`money/`, `billing-cycle/`, `invoice/`, `splits/`, package `index.ts`). Reuse or extend; do not reimplement.
+2. Then search the current module / feature `lib/` for an existing helper.
+3. Only create a new function when nothing fits. Prefer centavos/`bigint` APIs already in the kernel over local `string`/`number` duplicates.
+
 ## Package layout
 
 ```
@@ -48,11 +54,19 @@ Each domain exposes an `index.ts`. Only infra files stay flat at the root (`erro
 
 ## Complex domains
 
-Split by **role**, not arbitrary size (~150 lines/file):
+Split by **role** into a **folder** with `index.ts`, not a heap of sibling files (~150 lines/file):
 
 `types.ts` · `classifiers.ts` · `periods.ts` · `filters.ts` · `metrics.ts` · `index.ts`
 
-Example: `packages/finance-core/src/invoice/`
+Example: `packages/finance-core/src/invoice/` · `api/src/modules/alerts/whatsapp-alert-message/`
+
+## On every refactor (required cleanup)
+
+When you touch or extract a slice:
+
+- **Remove obsolete code** — unused exports, `@deprecated` wrappers, dead fields, duplicate helpers, and tests that only covered the dead API.
+- **Do not keep compatibility shims** unless an external consumer still needs them; if kept, document why and delete on the next touch once unused.
+- Prefer a folder + `index.ts` barrel over many `foo.bar.ts` files beside the module root.
 
 ## Money
 
@@ -67,6 +81,8 @@ Example: `packages/finance-core/src/invoice/`
 - Duplicate rules between API and web — extract to the kernel
 - New business logic in `components/` or `api/src/domain/`
 - Expand large legacy files — extract the changed slice
+- Create a local money/date helper that already exists in `finance-core`
+- Leave dead `@deprecated` or unused exports after a split/extract
 - pt-BR display strings in `finance-core`
 
 ## Gradual migration (on touch)

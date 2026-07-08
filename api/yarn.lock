@@ -604,6 +604,11 @@
     bluebird "^3.5.0"
     rewire "^7.0.0"
 
+"@houseapp/finance-core@file:../packages/finance-core":
+  version "0.0.0"
+  dependencies:
+    dayjs "^1.11.13"
+
 "@humanwhocodes/config-array@^0.13.0":
   version "0.13.0"
   resolved "https://registry.npmjs.org/@humanwhocodes/config-array/-/config-array-0.13.0.tgz"

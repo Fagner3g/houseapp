@@ -1,7 +1,6 @@
 import { describe, expect, it } from 'vitest'
 
 import {
-  buildDetailLine,
   buildDueLine,
   buildGreeting,
   buildSummaryLine,
@@ -9,7 +8,6 @@ import {
   buildWhatsAppBatchAlertMessage,
   cleanTransactionTitle,
   formatAmountBRL,
-  formatInstallmentLine,
   WHATSAPP_BATCH_SEPARATOR,
 } from './whatsapp-alert-message'
 import { resolveWhatsAppAlertAmounts } from './resolve-whatsapp-alert-amounts'
@@ -43,21 +41,12 @@ describe('whatsapp-alert-message', () => {
   it('formats amount in BRL', () => {
     expect(formatAmountBRL('64.00')).toBe('R$ 64,00')
     expect(formatAmountBRL('287.5')).toBe('R$ 287,50')
+    expect(formatAmountBRL('1675.10')).toBe('R$ 1.675,10')
   })
 
   it('cleans parcela suffix and alert prefixes from title', () => {
     expect(cleanTransactionTitle('Amazon - Parcela 7/12')).toBe('Amazon')
     expect(cleanTransactionTitle('Vencido há 31 dias: Bar do Rodrigo')).toBe('Bar do Rodrigo')
-  })
-
-  it('formats installment line', () => {
-    expect(formatInstallmentLine(7, 12)).toBe('Parcela 7 de 12')
-    expect(formatInstallmentLine(1, 1)).toBeNull()
-  })
-
-  it('builds detail line with account name only', () => {
-    expect(buildDetailLine({ accountName: 'Nubank Ultravioleta' })).toBe('Nubank Ultravioleta')
-    expect(buildDetailLine({})).toBeNull()
   })
 
   it('builds summary line for installments, splits and simple transactions', () => {
@@ -88,7 +77,7 @@ describe('whatsapp-alert-message', () => {
         isSplit: true,
         splitParticipantCount: 2,
       })
-    ).toBe(['Sua parte: R$ 4000,00', 'Compra R$ 8000,00 · Dividido pra 2'].join('\n'))
+    ).toBe('Sua parte: R$ 4.000,00')
 
     expect(
       buildSummaryLine({
@@ -103,7 +92,7 @@ describe('whatsapp-alert-message', () => {
         isSplit: true,
         splitParticipantCount: 2,
       })
-    ).toBe(['1/3: R$ 150,00', 'Compra R$ 900,00 · Dividido pra 2'].join('\n'))
+    ).toBe('Sua parte: R$ 150,00 (1/3) · 450,00')
 
     expect(
       buildSummaryLine({
@@ -118,7 +107,7 @@ describe('whatsapp-alert-message', () => {
         isSplit: true,
         splitParticipantCount: 2,
       })
-    ).toBe(['1/10: R$ 83,75', 'Compra R$ 1675,10 · Dividido pra 2'].join('\n'))
+    ).toBe('Sua parte: R$ 83,75 (1/10) · 837,50')
   })
 
   it('formats credit card invoice due line', () => {
@@ -128,7 +117,7 @@ describe('whatsapp-alert-message', () => {
         dueDate: '2026-08-18T12:00:00.000Z',
         isCreditCardInvoice: true,
       })
-    ).toBe('Fatura Vence em 47 dias · 18/08/2026')
+    ).toBe('Fatura vence em 47 dias · 18/08/2026')
   })
 
   it('formats due line for upcoming alerts', () => {
@@ -199,12 +188,11 @@ describe('whatsapp-alert-message', () => {
       [
         'Boa tarde, Aline!',
         '',
-        '💳 Nubank Empresa',
-        'Fatura Vence em 2 dias · 08/07/2026',
+        '💳 Cartão de crédito',
+        'Fatura vence em 2 dias · 08/07/2026',
         '',
-        '🧾 Mp *Ruivasstores',
-        'Sua parte: R$ 4000,00',
-        'Compra R$ 8000,00 · Dividido pra 2',
+        '🧾 Mp *Ruivasstores · R$ 8.000,00',
+        'Sua parte: R$ 4.000,00',
       ].join('\n')
     )
   })
@@ -236,9 +224,8 @@ describe('whatsapp-alert-message', () => {
       [
         'Boa tarde, Karoline!',
         '',
-        '📅 Pia da cozinha',
-        '1/3: R$ 150,00',
-        'Compra R$ 900,00 · Dividido pra 2',
+        '📅 Pia da cozinha · R$ 900,00',
+        'Sua parte: R$ 150,00 (1/3) · 450,00',
         'Vence hoje · 06/07/2026',
       ].join('\n')
     )
@@ -272,12 +259,11 @@ describe('whatsapp-alert-message', () => {
       [
         'Bom dia, Karoline!',
         '',
-        '💳 Nubank Ultravioleta',
-        'Fatura Vence em 9 dias · 17/07/2026',
+        '💳 Cartão de crédito',
+        'Fatura vence em 9 dias · 17/07/2026',
         '',
-        '🧾 Casas Bahia - NuPay',
-        '1/10: R$ 83,75',
-        'Compra R$ 1675,10 · Dividido pra 2',
+        '🧾 Casas Bahia - NuPay · R$ 1.675,10',
+        'Sua parte: R$ 83,75 (1/10) · 837,50',
       ].join('\n')
     )
   })
@@ -334,7 +320,7 @@ describe('whatsapp-alert-message', () => {
             accountName: 'Nubank Empresa',
             isCreditCardInvoice: true,
             amount: '1350.00',
-            dueLine: 'Fatura Vence em 2 dias · 08/07/2026',
+            dueLine: 'Fatura vence em 2 dias · 08/07/2026',
             daysUntilDue: 2,
             kind: 'upcoming',
           },
@@ -357,7 +343,7 @@ describe('whatsapp-alert-message', () => {
             splitAmount: '4000.00',
             splitParticipantCount: 2,
             isSplit: true,
-            dueLine: 'Fatura Vence em 2 dias · 08/07/2026',
+            dueLine: 'Fatura vence em 2 dias · 08/07/2026',
             daysUntilDue: 2,
             kind: 'split_upcoming',
           },
@@ -370,15 +356,14 @@ describe('whatsapp-alert-message', () => {
       [
         'Boa tarde, Aline!',
         '',
-        '💳 Nubank Empresa',
-        'Fatura Vence em 2 dias · 08/07/2026',
+        '💳 Cartão de crédito',
+        'Fatura vence em 2 dias · 08/07/2026',
         '',
         '🧾 Asa*Casaldentistabh',
-        'R$ 1350,00',
+        'R$ 1.350,00',
         '',
-        '🧾 Mp *Ruivasstores',
-        'Sua parte: R$ 4000,00',
-        'Compra R$ 8000,00 · Dividido pra 2',
+        '🧾 Mp *Ruivasstores · R$ 8.000,00',
+        'Sua parte: R$ 4.000,00',
         '',
         WHATSAPP_BATCH_SEPARATOR,
         '',
@@ -399,7 +384,7 @@ describe('whatsapp-alert-message', () => {
             accountName: 'Nubank Cartão',
             isCreditCardInvoice: true,
             summaryLine: 'Sua parte: R$ 3,00',
-            dueLine: 'Fatura Vence em 11 dias · 17/07/2026',
+            dueLine: 'Fatura vence em 11 dias · 17/07/2026',
             amount: '3.00',
             daysUntilDue: 11,
             kind: 'split_upcoming',
@@ -409,7 +394,7 @@ describe('whatsapp-alert-message', () => {
             accountName: 'Nubank Cartão',
             isCreditCardInvoice: true,
             summaryLine: 'Sua parte: R$ 12,50',
-            dueLine: 'Fatura Vence em 11 dias · 17/07/2026',
+            dueLine: 'Fatura vence em 11 dias · 17/07/2026',
             amount: '12.50',
             daysUntilDue: 11,
             kind: 'split_upcoming',
@@ -423,8 +408,8 @@ describe('whatsapp-alert-message', () => {
       [
         'Bom dia, Karoline!',
         '',
-        '💳 Nubank Cartão',
-        'Fatura Vence em 11 dias · 17/07/2026',
+        '💳 Cartão de crédito',
+        'Fatura vence em 11 dias · 17/07/2026',
         '',
         '🧾 Papelaria Santa Ines',
         'Sua parte: R$ 3,00',

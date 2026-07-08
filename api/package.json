@@ -19,7 +19,7 @@
     "test:split-whatsapp": "tsx --env-file ./.env src/scripts/test-split-whatsapp.ts",
     "db:up": "docker compose up pg -d",
     "db:down": "docker compose down",
-    "build": "tsup src/http/server.ts --format cjs --target node20 --out-dir dist --sourcemap --clean",
+    "build": "tsup",
     "start": "node dist/server.js"
   },
   "keywords": [],
@@ -38,7 +38,7 @@
     "vitest": "^2.1.3"
   },
   "dependencies": {
-    "@houseapp/finance-core": "0.0.0",
+    "@houseapp/finance-core": "file:../packages/finance-core",
     "@fastify/cors": "^11.0.1",
     "@fastify/jwt": "^9.1.0",
     "@fastify/multipart": "^10.0.0",
