@@ -2,7 +2,7 @@ import { zodResolver } from '@hookform/resolvers/zod'
 import { useQueryClient } from '@tanstack/react-query'
 import dayjs from 'dayjs'
 import { ArrowLeft, Plus } from 'lucide-react'
-import { useEffect, useMemo } from 'react'
+import { useEffect, useMemo, useId } from 'react'
 import { useForm } from 'react-hook-form'
 import { toast } from 'sonner'
 import { z } from 'zod'
@@ -38,7 +38,7 @@ import {
   SelectValue,
 } from '@/components/ui/select'
 import { AccountAppearanceFields } from '@/features/accounts/components/account-appearance-fields'
-import { ImportStatementDialog } from '@/features/accounts/components/import-statement-dialog'
+import { ImportStatementTriggerButton } from '@/features/accounts/components/import-statement-trigger-button'
 import { PaymentAccountField } from '@/features/accounts/components/payment-account-field'
 import { CARD_BRANDS, institutionLabel } from '@/features/accounts/constants'
 import { useActiveOrganization } from '@/hooks/use-active-organization'
@@ -195,6 +195,8 @@ export function CreditCardSettingsSection({
     }
   }
 
+  const formId = useId()
+
   return (
     <div className="space-y-6 py-3">
       <div className="flex flex-col gap-3 border-b border-slate-100 px-4 pb-4 lg:px-6">
@@ -212,10 +214,13 @@ export function CreditCardSettingsSection({
             <p className="mt-0.5 text-sm text-slate-500">{account.name}</p>
           </div>
           <div className="flex shrink-0 flex-col gap-2 sm:flex-row sm:items-center">
-            <Button type="submit" form="credit-card-settings-form" disabled={isPending}>
+            <Button type="submit" form={formId} disabled={isPending}>
               {isPending ? 'Salvando…' : 'Salvar alterações'}
             </Button>
-            <ImportStatementDialog accountId={account.id} onImported={handleImported} />
+            <ImportStatementTriggerButton
+              context={{ accountId: account.id }}
+              onImported={handleImported}
+            />
           </div>
         </div>
       </div>
@@ -223,7 +228,7 @@ export function CreditCardSettingsSection({
       <div className="space-y-6 px-4 lg:px-6">
         <Form {...form}>
           <form
-            id="credit-card-settings-form"
+            id={formId}
             onSubmit={form.handleSubmit(onSubmit)}
             className="space-y-6"
           >

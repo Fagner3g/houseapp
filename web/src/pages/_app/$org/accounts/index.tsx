@@ -1,6 +1,5 @@
 import { createFileRoute, useNavigate } from '@tanstack/react-router'
 import { keepPreviousData, useQueryClient } from '@tanstack/react-query'
-import { Upload } from 'lucide-react'
 import { useEffect, useMemo, useState } from 'react'
 import { toast } from 'sonner'
 import z from 'zod'
@@ -12,9 +11,8 @@ import {
 } from '@/api/generated/api'
 import type { CreateAccountBodyType, ListAccounts200AccountsItem } from '@/api/generated/model'
 import { LoadingErrorState } from '@/components/loading-error-state'
-import { Button } from '@/components/ui/button'
 import { AccountTypeSidebar } from '@/features/accounts/components/account-type-sidebar'
-import { ImportStatementDialog } from '@/features/accounts/components/import-statement-dialog'
+import { ImportStatementTriggerButton } from '@/features/accounts/components/import-statement-trigger-button'
 import { groupCreditCardsForSidebar } from '@/features/accounts/constants'
 import { DeleteCreditCardDialog } from '@/features/credit-cards/components/delete-credit-card-dialog'
 import { CreditCardAnalyticsSection } from '@/features/credit-cards/components/credit-card-analytics-section'
@@ -71,7 +69,6 @@ function AccountsPage() {
   })
   const { mutateAsync: deleteAccount, isPending: isDeletingAccount } = useDeleteAccount()
   const [accountToDelete, setAccountToDelete] = useState<ListAccounts200AccountsItem | null>(null)
-  const [onboardingImportOpen, setOnboardingImportOpen] = useState(false)
 
   const accounts = useMemo(() => data?.accounts ?? [], [data?.accounts])
   const creditCards = useMemo(
@@ -192,10 +189,16 @@ function AccountsPage() {
               gastos.
             </p>
             <div className="mt-6">
-              <Button className="bg-slate-900" onClick={() => setOnboardingImportOpen(true)}>
-                <Upload className="mr-2 size-4" />
-                Importar fatura
-              </Button>
+              <ImportStatementTriggerButton
+                onImported={importedAccountId => {
+                  invalidateAccounts()
+                  updateSearch({
+                    accountId: importedAccountId,
+                    month: currentBillingMonthKey(),
+                  })
+                }}
+                onViewExistingStatement={handleViewExistingStatement}
+              />
             </div>
           </div>
         ) : (
@@ -299,20 +302,6 @@ function AccountsPage() {
           }}
           onConfirm={confirmDelete}
           isDeleting={isDeletingAccount}
-        />
-
-        <ImportStatementDialog
-          open={onboardingImportOpen}
-          onOpenChange={setOnboardingImportOpen}
-          showTrigger={false}
-          onImported={importedAccountId => {
-            invalidateAccounts()
-            updateSearch({
-              accountId: importedAccountId,
-              month: currentBillingMonthKey(),
-            })
-          }}
-          onViewExistingStatement={handleViewExistingStatement}
         />
       </div>
     </LoadingErrorState>

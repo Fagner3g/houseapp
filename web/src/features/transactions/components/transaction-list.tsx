@@ -68,6 +68,8 @@ interface TransactionListProps {
   fullyDelegatedById?: Map<string, string>
   /** Map of transaction id → partial split info for badge labels. */
   partiallyDividedById?: Map<string, PartialSplitBadgeInfo>
+  /** When false, hides the inline create row (e.g. credit card after first statement import). */
+  allowInlineCreate?: boolean
   containerClassName?: string
 }
 
@@ -118,6 +120,7 @@ function TransactionTable({
   cards,
   fullyDelegatedById,
   partiallyDividedById,
+  allowInlineCreate = true,
   containerClassName,
 }: TransactionListProps) {
   const isCreditCardStatement = variant === 'credit_card_statement'
@@ -318,11 +321,13 @@ function TransactionTable({
           <Table>
             {tableHeader}
             <TableBody>
-              <TransactionInlineCreateBar
-                accountId={accountId}
-                showStatusColumn={showStatusColumn}
-                showActionsColumn={showActionsColumn}
-              />
+              {allowInlineCreate && (
+                <TransactionInlineCreateBar
+                  accountId={accountId}
+                  showStatusColumn={showStatusColumn}
+                  showActionsColumn={showActionsColumn}
+                />
+              )}
             </TableBody>
           </Table>
           <div className="border-t border-slate-100 px-4 py-12 text-center text-slate-500">
@@ -403,11 +408,13 @@ function TransactionTable({
         <Table>
           {tableHeader}
           <TableBody>
-            <TransactionInlineCreateBar
-              accountId={accountId}
-              showStatusColumn={showStatusColumn}
-              showActionsColumn={showActionsColumn}
-            />
+            {allowInlineCreate && (
+              <TransactionInlineCreateBar
+                accountId={accountId}
+                showStatusColumn={showStatusColumn}
+                showActionsColumn={showActionsColumn}
+              />
+            )}
             {items.map(item => {
             if (isInvoiceSummary(item)) {
               const overdue =
@@ -762,6 +769,7 @@ export function TransactionList({
   cards,
   fullyDelegatedById: fullyDelegatedByIdProp,
   partiallyDividedById: partiallyDividedByIdProp,
+  allowInlineCreate = true,
   containerClassName,
 }: TransactionListProps) {
   const { slug } = useActiveOrganization()
@@ -801,6 +809,7 @@ export function TransactionList({
       cards={cards}
       fullyDelegatedById={fullyDelegatedById}
       partiallyDividedById={partiallyDividedById}
+      allowInlineCreate={allowInlineCreate}
       containerClassName={containerClassName}
     />
   )

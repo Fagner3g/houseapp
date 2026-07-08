@@ -87,6 +87,7 @@ export type ImportStatementContext = {
 }
 
 export interface StatementRepository {
+  hasAnyForAccount(organizationId: string, accountId: string): Promise<boolean>
   findByAccountId(organizationId: string, accountId: string): Promise<StatementRecord[]>
   findById(organizationId: string, accountId: string, id: string): Promise<StatementRecord | null>
   findByFileHash(accountId: string, fileHash: string): Promise<StatementRecord | null>
@@ -127,6 +128,18 @@ export interface StatementRepository {
 }
 
 export class DrizzleStatementRepository implements StatementRepository {
+  async hasAnyForAccount(organizationId: string, accountId: string): Promise<boolean> {
+    const [row] = await db
+      .select({ exists: sql<boolean>`true` })
+      .from(statements)
+      .where(
+        and(eq(statements.organizationId, organizationId), eq(statements.accountId, accountId))
+      )
+      .limit(1)
+
+    return row != null
+  }
+
   async findByAccountId(organizationId: string, accountId: string): Promise<StatementRecord[]> {
     return db
       .select()

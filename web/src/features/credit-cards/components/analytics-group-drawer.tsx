@@ -1,7 +1,8 @@
 import dayjs from 'dayjs'
 import { X } from 'lucide-react'
-import { useMemo } from 'react'
+import { useEffect, useMemo, useRef, useState } from 'react'
 
+import { ListViewModeToggle, type ListViewMode } from '@/components/list-view-mode-toggle'
 import { Badge } from '@/components/ui/badge'
 import {
   Dialog,
@@ -12,14 +13,16 @@ import {
 import { TransactionList } from '@/features/transactions/components/transaction-list'
 import { toTransactionListItem } from '@/features/transactions/types'
 import { useActiveOrganization } from '@/hooks/use-active-organization'
-import { formatCentsString } from '@/lib/currency'
+import { formatCentsString, moneyStringToReais, reaisToMoneyString } from '@/lib/currency'
 import { cn } from '@/lib/utils'
 import { useDrawerStore } from '@/stores/drawers'
 
 import { useInvoiceCycleTransactions } from '../hooks/use-invoice-cycle-transactions'
 import { useSplitTransactionIds } from '../hooks/use-split-transaction-ids'
+import { useAllowsManualCreditCardTransactions } from '../hooks/use-allows-manual-credit-card-transactions'
 import { filterAnalyticsGroupTransactions } from '../lib/filter-analytics-group-transactions'
 import type { PartialSplitBadgeInfo } from '@/features/transactions/lib/split-badge-label'
+import { CreditCardStatementGroups } from './credit-card-statement-groups'
 
 export function AnalyticsGroupDrawer() {
   const { slug } = useActiveOrganization()
@@ -27,6 +30,7 @@ export function AnalyticsGroupDrawer() {
   const context = useDrawerStore(s => s.analyticsGroupContext)
   const transactionDrawerOpen = useDrawerStore(s => s.transactionDrawerOpen)
   const close = useDrawerStore(s => s.closeAnalyticsGroupDrawer)
+  const [viewMode, setViewMode] = useState<ListViewMode>('list')
 
   const dateFrom = context
     ? dayjs(context.purchasesPeriod.start).startOf('day').toISOString()
@@ -35,7 +39,7 @@ export function AnalyticsGroupDrawer() {
     ? dayjs(context.purchasesPeriod.end).endOf('day').toISOString()
     : undefined
 
-  const { transactions, isPending } = useInvoiceCycleTransactions(
+  const { transactions, isPending, isFetching, refetch } = useInvoiceCycleTransactions(
     slug,
     context
       ? {
@@ -59,6 +63,30 @@ export function AnalyticsGroupDrawer() {
     )
   }, [context, transactions])
 
+  const wasTransactionDrawerOpen = useRef(false)
+  useEffect(() => {
+    if (wasTransactionDrawerOpen.current && !transactionDrawerOpen && open) {
+      void refetch()
+    }
+    wasTransactionDrawerOpen.current = transactionDrawerOpen
+  }, [transactionDrawerOpen, open, refetch])
+
+  useEffect(() => {
+    setViewMode('list')
+  }, [])
+
+  const groupTotal = useMemo(() => {
+    const totalReais = filteredTransactions.reduce(
+      (sum, transaction) => sum + moneyStringToReais(transaction.amount),
+      0
+    )
+    return reaisToMoneyString(totalReais)
+  }, [filteredTransactions])
+
+  const purchaseCount = filteredTransactions.length
+  const purchaseLabel =
+    purchaseCount === 1 ? '1 compra nesta fatura' : `${purchaseCount} compras nesta fatura`
+
   const filteredTransactionIds = useMemo(
     () => filteredTransactions.map(transaction => transaction.id),
     [filteredTransactions]
@@ -67,10 +95,9 @@ export function AnalyticsGroupDrawer() {
   const fullyDelegatedById = splitData?.fullyDelegatedById ?? new Map<string, string>()
   const partiallyDividedById =
     splitData?.partiallyDividedById ?? new Map<string, PartialSplitBadgeInfo>()
+  const dividedTransactionIds = splitData?.transactionIds ?? new Set<string>()
 
-  const purchaseCount = context?.occurrenceCount ?? filteredTransactions.length
-  const purchaseLabel =
-    purchaseCount === 1 ? '1 compra nesta fatura' : `${purchaseCount} compras nesta fatura`
+  const { allowsManual } = useAllowsManualCreditCardTransactions(context?.accountId ?? '')
 
   return (
     <Dialog
@@ -125,7 +152,10 @@ export function AnalyticsGroupDrawer() {
                     {context.accountName} · Fatura de {context.cycleLabel}
                   </p>
                   <p className="mt-2 text-2xl font-bold tabular-nums text-slate-900">
-                    {formatCentsString(context.total)}
+                    {formatCentsString(groupTotal)}
+                    {isFetching && !isPending ? (
+                      <span className="ml-2 text-sm font-normal text-slate-400">atualizando…</span>
+                    ) : null}
                   </p>
                 </div>
                 <button
@@ -142,6 +172,12 @@ export function AnalyticsGroupDrawer() {
               </div>
             </DialogHeader>
 
+            {!isPending && filteredTransactions.length > 0 ? (
+              <div className="flex shrink-0 justify-end border-b border-slate-100 px-4 py-2 md:px-6">
+                <ListViewModeToggle value={viewMode} onChange={setViewMode} />
+              </div>
+            ) : null}
+
             <div className="min-h-0 flex-1 overflow-auto py-3">
               {isPending ? (
                 <div className="flex min-h-40 items-center justify-center px-6 text-sm text-slate-500">
@@ -151,11 +187,20 @@ export function AnalyticsGroupDrawer() {
                 <div className="flex min-h-40 items-center justify-center px-6 text-center text-sm text-slate-500">
                   Nenhuma compra encontrada para este agrupamento.
                 </div>
+              ) : viewMode === 'grouped' ? (
+                <CreditCardStatementGroups
+                  transactions={filteredTransactions}
+                  accountId={context.accountId}
+                  fullyDelegatedById={fullyDelegatedById}
+                  partiallyDividedById={partiallyDividedById}
+                  dividedTransactionIds={dividedTransactionIds}
+                />
               ) : (
                 <TransactionList
                   items={filteredTransactions.map(toTransactionListItem)}
                   variant="credit_card_statement"
                   accountId={context.accountId}
+                  allowInlineCreate={allowsManual}
                   fullyDelegatedById={fullyDelegatedById}
                   partiallyDividedById={partiallyDividedById}
                   containerClassName="mx-4 overflow-x-auto lg:mx-6"

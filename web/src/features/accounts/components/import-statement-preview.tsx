@@ -1,6 +1,6 @@
 import dayjs from 'dayjs'
 import { AlertTriangle } from 'lucide-react'
-import { useMemo, useState } from 'react'
+import { useMemo } from 'react'
 import { toast } from 'sonner'
 
 import type { ImportStatementBody } from '@/api/generated/model'
@@ -35,7 +35,14 @@ type ImportStatementPreviewProps = {
   invoiceStatus: ParseStatementFileResponse['invoiceStatus']
   provider: string | null
   isPending: boolean
+  rows: Record<string, ImportReviewRowState>
+  onRowsChange: (
+    rows:
+      | Record<string, ImportReviewRowState>
+      | ((prev: Record<string, ImportReviewRowState>) => Record<string, ImportReviewRowState>)
+  ) => void
   onReset: () => void
+  onDiscard: () => void
   onViewExistingStatement?: (params: { accountId: string; monthKey: string }) => void
   onConfirm: (data: {
     parsedWithReview: ImportStatementBody
@@ -66,14 +73,14 @@ export function ImportStatementPreview({
   invoiceStatus,
   provider,
   isPending,
+  rows,
+  onRowsChange,
   onReset,
+  onDiscard,
   onViewExistingStatement,
   onConfirm,
 }: ImportStatementPreviewProps) {
   const items = useMemo(() => buildItemsFromParsedTransactions(parsed.transactions), [parsed.transactions])
-  const [rows, setRows] = useState<Record<string, ImportReviewRowState>>(() =>
-    buildInitialReviewRows(items)
-  )
 
   const invoiceKind = resolveInvoiceKind(invoiceStatus)
   const invoiceDisplay = getInvoiceStatusDisplay(invoiceKind, invoiceStatus, parsed.totalAmount)
@@ -266,7 +273,7 @@ export function ImportStatementPreview({
       </p>
 
       <div className="flex min-h-0 flex-1 flex-col overflow-hidden">
-        <ImportStatementReviewTable items={items} rows={rows} onRowsChange={setRows} />
+        <ImportStatementReviewTable items={items} rows={rows} onRowsChange={onRowsChange} />
       </div>
 
       <div className="flex shrink-0 flex-col gap-2 border-t border-slate-200 bg-white pt-3">
@@ -295,6 +302,9 @@ export function ImportStatementPreview({
               Aprove os lançamentos restantes ({remainingCount}) para importar
             </p>
           ) : null}
+          <Button variant="ghost" className="text-slate-500" onClick={onDiscard}>
+            Descartar
+          </Button>
           <Button variant="outline" onClick={onReset}>
             Trocar arquivo
           </Button>

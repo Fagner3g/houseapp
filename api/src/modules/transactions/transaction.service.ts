@@ -19,6 +19,7 @@ import {
 import type { CategoryRepository } from '@/modules/categories/category.repository'
 import type { AccountRepository } from '@/modules/accounts/account.repository'
 import type { SplitService } from '@/modules/splits/split.service'
+import type { StatementRepository } from '@/modules/statements/statement.repository'
 import { matchesInstallmentSeries } from '@/modules/splits/split-debt-summary.logic'
 
 import type {
@@ -184,7 +185,8 @@ export class TransactionService {
     private readonly transactionRepository: TransactionRepository,
     private readonly accountRepository: AccountRepository,
     private readonly categoryRepository: CategoryRepository,
-    private readonly splitService: SplitService
+    private readonly splitService: SplitService,
+    private readonly statementRepository: StatementRepository
   ) {}
 
   async list(organizationId: string, filter: Omit<ListTransactionsFilter, 'organizationId'>) {
@@ -259,6 +261,13 @@ export class TransactionService {
     input: CreateTransactionInput
   ): Promise<CreateTransactionResult> {
     await this.validateReferences(organizationId, input)
+    if (input.accountId) {
+      await this.assertManualCreditCardCreateAllowed(
+        organizationId,
+        input.accountId,
+        input.source ?? 'manual'
+      )
+    }
     const notifyTarget = await this.resolveNotifyFields(organizationId, input)
 
     const installmentRows = await this.buildCreditCardInstallmentRows(organizationId, input)
@@ -312,6 +321,13 @@ export class TransactionService {
 
     for (const input of inputs) {
       await this.validateReferences(organizationId, input)
+      if (input.accountId) {
+        await this.assertManualCreditCardCreateAllowed(
+          organizationId,
+          input.accountId,
+          input.source ?? 'manual'
+        )
+      }
       notifyTargets.push(await this.resolveNotifyFields(organizationId, input))
     }
 
@@ -1178,7 +1194,6 @@ export class TransactionService {
       cardId?: string | null
       categoryIds?: string[]
       type?: TransactionType
-      source?: TransactionSource
     }
   ): Promise<void> {
     if (input.accountId) {
@@ -1190,17 +1205,6 @@ export class TransactionService {
 
       if (!account.isActive) {
         throw badRequest('Conta inativa — selecione outra conta')
-      }
-
-      const source = input.source ?? 'manual'
-      if (
-        account.type === 'credit_card' &&
-        source !== 'import' &&
-        source !== 'recurring'
-      ) {
-        throw badRequest(
-          'Lançamentos manuais não podem ser criados em cartão de crédito. Use contas bancárias, carteira ou poupança, ou importe o extrato do cartão.'
-        )
       }
     }
 
@@ -1246,6 +1250,24 @@ export class TransactionService {
           )
         }
       }
+    }
+  }
+
+  private async assertManualCreditCardCreateAllowed(
+    organizationId: string,
+    accountId: string,
+    source: TransactionSource
+  ): Promise<void> {
+    if (source === 'import' || source === 'recurring') return
+
+    const account = await this.accountRepository.findById(organizationId, accountId)
+    if (!account || account.type !== 'credit_card') return
+
+    const hasImported = await this.statementRepository.hasAnyForAccount(organizationId, accountId)
+    if (hasImported) {
+      throw badRequest(
+        'Lançamentos manuais não estão disponíveis após importar o extrato do cartão. Use Importar fatura para adicionar compras.'
+      )
     }
   }
 }

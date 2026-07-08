@@ -2,6 +2,8 @@ import { createFileRoute, Outlet, redirect, useNavigate, useSearch } from '@tans
 import { useEffect } from 'react'
 
 import { AiChatPanel } from '@/features/ai/ai-chat-panel'
+import { ImportDraftResumeBanner } from '@/features/accounts/components/import-draft-resume-banner'
+import { ImportStatementDialog } from '@/features/accounts/components/import-statement-dialog'
 import { AccountDrawer } from '@/features/accounts/components/account-drawer'
 import { CardDrawer } from '@/features/accounts/components/card-drawer'
 import { CategoryDrawer } from '@/features/categories/components/category-drawer'
@@ -72,6 +74,8 @@ function RouteComponent() {
       <AccountDrawer />
       <CategoryDrawer />
       <CardDrawer />
+      <ImportStatementDialog />
+      <ImportDraftResumeBanner />
       <AiChatPanel />
     </SidebarProvider>
   )

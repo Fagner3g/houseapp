@@ -49,7 +49,8 @@ const transactionService = new TransactionService(
   transactionRepository,
   accountRepository,
   categoryRepository,
-  splitService
+  splitService,
+  statementRepository
 )
 const recurringService = new RecurringService(
   recurringRepository,

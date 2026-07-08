@@ -9,6 +9,9 @@ import { z } from 'zod'
 import {
   getGetSplitDebtSummaryQueryKey,
   getGetTransactionQueryKey,
+  getGetReportByCategoryQueryKey,
+  getGetReportTopMerchantsQueryKey,
+  getListAccountsQueryKey,
   getListSplitsQueryKey,
   getListTransactionsQueryKey,
   useCancelTransactionPayment,
@@ -873,9 +876,14 @@ export function TransactionDrawer() {
       )
     : null
 
-  const invalidateAll = () => {
-    queryClient.invalidateQueries({ queryKey: getListTransactionsQueryKey(slug) })
-    queryClient.invalidateQueries()
+  const invalidateAll = async () => {
+    if (!slug) return
+    await Promise.all([
+      queryClient.invalidateQueries({ queryKey: getListTransactionsQueryKey(slug) }),
+      queryClient.invalidateQueries({ queryKey: getGetReportByCategoryQueryKey(slug) }),
+      queryClient.invalidateQueries({ queryKey: getGetReportTopMerchantsQueryKey(slug) }),
+      queryClient.invalidateQueries({ queryKey: getListAccountsQueryKey(slug) }),
+    ])
   }
 
   const uploadPendingFiles = async (transactionId: string) => {
@@ -969,6 +977,11 @@ export function TransactionDrawer() {
   const onSubmit = async (values: TransactionFormValues) => {
     if (!slug) return
     if (isPaidLocked) return
+
+    if (editingId && (isEdit || isPay) && !tx) {
+      toast.error('Aguarde o carregamento do lançamento')
+      return
+    }
 
     const notifyPayload = buildNotifyApiPayload(notifyState)
     if (notifyState.notifyEnabled && !notifyPayload.notifyEnabled) {
@@ -1095,7 +1108,7 @@ export function TransactionDrawer() {
             })
             if (pendingFiles.length) await uploadPendingFiles(editingId)
             toast.success('Pagamento registrado')
-            invalidateAll()
+            await invalidateAll()
             close()
           })
           return
@@ -1112,8 +1125,13 @@ export function TransactionDrawer() {
         })
         if (pendingFiles.length) await uploadPendingFiles(editingId)
         toast.success(registeringPayment ? 'Pagamento registrado' : 'Lançamento atualizado')
-        invalidateAll()
+        await invalidateAll()
         close()
+        return
+      }
+
+      if (editingId) {
+        toast.error('Não foi possível atualizar o lançamento')
         return
       }
 

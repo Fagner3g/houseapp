@@ -6,7 +6,7 @@ import { useListCards, useListStatements } from '@/api/generated/api'
 import type { ListTransactions200TransactionsItem } from '@/api/generated/model'
 import { Button } from '@/components/ui/button'
 import type { ListViewMode } from '@/components/list-view-mode-toggle'
-import { ImportStatementDialog } from '@/features/accounts/components/import-statement-dialog'
+import { ImportStatementTriggerButton } from '@/features/accounts/components/import-statement-trigger-button'
 import { CreditCardStatementGroups } from './credit-card-statement-groups'
 import { TransactionList } from '@/features/transactions/components/transaction-list'
 import { toTransactionListItem } from '@/features/transactions/types'
@@ -92,6 +92,9 @@ export function CreditCardStatementSection({
   const { data: statementsData } = useListStatements(slug, accountId, {
     query: { enabled: !!slug && !!accountId },
   })
+
+  const hasAnyImportedStatement = (statementsData?.statements?.length ?? 0) > 0
+  const allowsManual = !hasAnyImportedStatement
 
   const matchedStatement = useMemo(
     () =>
@@ -203,41 +206,43 @@ export function CreditCardStatementSection({
           </p>
           {!hasImportedStatement && (
             <p className="mt-1 text-xs text-amber-800">
-              Sem fatura importada para este mês — a lista abaixo vem dos lançamentos registrados.
+              {hasAnyImportedStatement
+                ? 'Sem fatura importada para este mês — a lista abaixo vem dos lançamentos registrados.'
+                : 'Adicione compras manualmente ou importe a fatura do banco.'}
             </p>
           )}
         </div>
         <div className="flex flex-wrap items-center gap-2">
-          <ImportStatementDialog
-            accountId={accountId}
-            closingDay={closingDay}
-            dueDay={dueDay}
+          <ImportStatementTriggerButton
+            context={{ accountId, closingDay, dueDay }}
             onImported={onImported}
             onViewExistingStatement={onViewExistingStatement}
           />
-          <Button
-            type="button"
-            variant="outline"
-            size="sm"
-            className="rounded-lg"
-            onClick={() =>
-              openTransactionDrawer(
-                {
-                  accountId,
-                  type: 'expense',
-                  date: dayjs().toISOString(),
-                  ...(filters.cardId !== 'all' && filters.cardId !== 'unassigned'
-                    ? { cardId: filters.cardId }
-                    : {}),
-                },
-                null,
-                { lockAccountId: accountId }
-              )
-            }
-          >
-            <Plus className="mr-1.5 size-4" />
-            Adicionar lançamento
-          </Button>
+          {allowsManual && (
+            <Button
+              type="button"
+              variant="outline"
+              size="sm"
+              className="rounded-lg"
+              onClick={() =>
+                openTransactionDrawer(
+                  {
+                    accountId,
+                    type: 'expense',
+                    date: dayjs().toISOString(),
+                    ...(filters.cardId !== 'all' && filters.cardId !== 'unassigned'
+                      ? { cardId: filters.cardId }
+                      : {}),
+                  },
+                  null,
+                  { lockAccountId: accountId }
+                )
+              }
+            >
+              <Plus className="mr-1.5 size-4" />
+              Adicionar lançamento
+            </Button>
+          )}
         </div>
       </div>
 
@@ -273,6 +278,7 @@ export function CreditCardStatementSection({
           items={filteredItems.map(toTransactionListItem)}
           variant="credit_card_statement"
           accountId={accountId}
+          allowInlineCreate={allowsManual}
           cards={showCardFilter ? activeCards : undefined}
           fullyDelegatedById={fullyDelegatedById}
           partiallyDividedById={partiallyDividedById}

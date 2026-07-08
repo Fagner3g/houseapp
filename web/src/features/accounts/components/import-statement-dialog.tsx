@@ -1,14 +1,5 @@
-import { FileUp, Loader2, Upload } from 'lucide-react'
-import { useState } from 'react'
-import { toast } from 'sonner'
+import { FileUp, Loader2 } from 'lucide-react'
 
-import {
-  getListAccountsQueryKey,
-  getListStatementsQueryKey,
-  getListTransactionsQueryKey,
-  useImportStatement,
-} from '@/api/generated/api'
-import type { ImportStatementBody } from '@/api/generated/model'
 import { Button } from '@/components/ui/button'
 import {
   Dialog,
@@ -16,258 +7,38 @@ import {
   DialogDescription,
   DialogHeader,
   DialogTitle,
-  DialogTrigger,
 } from '@/components/ui/dialog'
-import { useActiveOrganization } from '@/hooks/use-active-organization'
-import { bulkReviewImport } from '@/lib/bulk-review-import'
-import {
-  hasStatementAccountResolution,
-  parseStatementOfx,
-  parseStatementOfxOrg,
-  parseStatementXlsx,
-  type ParseStatementFileResponse,
-  type ParseStatementWithResolutionResponse,
-} from '@/lib/parse-statement'
-import { useQueryClient } from '@tanstack/react-query'
+import { useImportStatementFlow } from '@/features/accounts/hooks/use-import-statement-flow'
+import { useImportStatementDraftStore } from '@/stores/import-statement-draft'
 
 import { ImportOfxAccountSetup } from './import-ofx-account-setup'
-import type { ImportReviewRowState, ParsedTransactionReviewItem } from './import-review-types'
-import { buildPostImportUpdates } from './import-review-types'
 import { ImportStatementPreview } from './import-statement-preview'
 
-type StatementFileKind = 'ofx' | 'xlsx'
-
-function detectStatementFileKind(file: File): StatementFileKind | null {
-  const name = file.name.toLowerCase()
-  if (name.endsWith('.ofx')) return 'ofx'
-  if (name.endsWith('.xlsx')) return 'xlsx'
-  if (file.type === 'application/x-ofx' || file.type.includes('ofx')) return 'ofx'
-  if (
-    file.type.includes('spreadsheet') ||
-    file.type.includes('excel') ||
-    file.type.includes('officedocument')
-  ) {
-    return 'xlsx'
-  }
-  return null
-}
-
-interface ImportStatementDialogProps {
-  accountId?: string
-  closingDay?: number
-  dueDay?: number
-  onImported?: (accountId: string) => void
-  onViewExistingStatement?: (params: { accountId: string; monthKey: string }) => void
-  open?: boolean
-  onOpenChange?: (open: boolean) => void
-  showTrigger?: boolean
-}
-
-export function ImportStatementDialog({
-  accountId: initialAccountId,
-  closingDay,
-  dueDay,
-  onImported,
-  onViewExistingStatement,
-  open: controlledOpen,
-  onOpenChange: controlledOnOpenChange,
-  showTrigger = true,
-}: ImportStatementDialogProps) {
-  const ofxOnly = initialAccountId == null
-  const { slug } = useActiveOrganization()
-  const queryClient = useQueryClient()
-  const [internalOpen, setInternalOpen] = useState(false)
-  const open = controlledOpen ?? internalOpen
-  const setOpen = controlledOnOpenChange ?? setInternalOpen
-  const [fileParsing, setFileParsing] = useState(false)
-  const [parseResult, setParseResult] = useState<ParseStatementFileResponse | null>(null)
-  const [resolvedAccountId, setResolvedAccountId] = useState<string | null>(initialAccountId ?? null)
-  const [accountSetupCompleted, setAccountSetupCompleted] = useState(false)
-  const [mismatchAccepted, setMismatchAccepted] = useState(false)
-  const { mutateAsync: importStatement, isPending } = useImportStatement()
-
-  const resetFileState = () => {
-    setParseResult(null)
-    setFileParsing(false)
-    setResolvedAccountId(initialAccountId ?? null)
-    setAccountSetupCompleted(false)
-    setMismatchAccepted(false)
-  }
-
-  const invalidateAfterImport = (accountId: string) => {
-    const orgSlug = slug ?? ''
-    queryClient.invalidateQueries({ queryKey: getListStatementsQueryKey(orgSlug, accountId) })
-    queryClient.invalidateQueries({ queryKey: getListTransactionsQueryKey(orgSlug) })
-    queryClient.invalidateQueries({ queryKey: getListAccountsQueryKey(orgSlug) })
-  }
-
-  const finishFileImport = (
-    accountId: string,
-    result: {
-      transactionsCreated: number
-      transactionsSkipped?: number
-    },
-    splitsCreated = 0
-  ) => {
-    toast.success(
-      `${result.transactionsCreated} transações importadas` +
-        (result.transactionsSkipped ? ` (${result.transactionsSkipped} ignoradas)` : '') +
-        (splitsCreated > 0 ? ` · ${splitsCreated} divisão(ões)` : '')
-    )
-    invalidateAfterImport(accountId)
-    setOpen(false)
-    resetFileState()
-    onImported?.(accountId)
-  }
-
-  const showParseSuccessToast = (kind: StatementFileKind, result: ParseStatementFileResponse) => {
-    if (result.duplicate.mode === 'blocked') {
-      toast.warning('Esta fatura já foi importada nesta conta')
-      return
-    }
-
-    if (result.duplicate.mode === 'update') {
-      toast.message(
-        `Atualização detectada: ${result.duplicate.newTransactionsCount} novo(s), ${result.duplicate.duplicateTransactionsCount} já importado(s)`
-      )
-      return
-    }
-
-    toast.success(
-      `Fatura interpretada: ${result.transactionsCount} transações, ${result.categorizedCount} categorizadas` +
-        (result.splitsInferredCount > 0
-          ? `, ${result.splitsInferredCount} com divisão sugerida`
-          : '') +
-        (kind === 'ofx' ? ' (OFX)' : ' (XLSX)')
-    )
-
-    if (result.cardMismatchWarning) {
-      toast.warning(result.cardMismatchWarning)
-    }
-  }
-
-  const parsedFileKind: StatementFileKind | null = parseResult?.provider ?? null
-
-  const accountResolution = parseResult && hasStatementAccountResolution(parseResult)
-    ? parseResult.accountResolution
-    : null
-
-  const reviewAccountId =
-    resolvedAccountId ??
-    (accountResolution?.mode === 'existing' ? accountResolution.accountId : null) ??
-    initialAccountId ??
-    null
-
-  const missingResolution =
-    parseResult && !accountSetupCompleted && accountResolution?.mode === 'missing'
-      ? accountResolution
-      : null
-
-  const mismatchResolution =
-    parseResult && !mismatchAccepted && accountResolution?.mode === 'mismatch'
-      ? accountResolution
-      : null
-
-  const showStatementReview =
-    !!parseResult &&
-    !!reviewAccountId &&
-    (accountResolution?.mode !== 'missing' || accountSetupCompleted) &&
-    (accountResolution?.mode !== 'mismatch' || mismatchAccepted)
-
-  const handleAccountResolution = (result: ParseStatementWithResolutionResponse) => {
-    if (result.accountResolution.mode === 'existing') {
-      setResolvedAccountId(result.accountResolution.accountId)
-
-      if (initialAccountId && initialAccountId !== result.accountResolution.accountId) {
-        toast.message(
-          `${result.provider === 'ofx' ? 'OFX' : 'XLSX'} vinculado à conta "${result.accountResolution.accountName}"`
-        )
-      }
-    }
-  }
-
-  const handleFileUpload = async (file: File) => {
-    const kind = detectStatementFileKind(file)
-    if (!kind) {
-      toast.error('Formato não suportado. Use arquivos .ofx ou .xlsx')
-      return
-    }
-
-    if (!slug) return
-
-    if (ofxOnly && kind !== 'ofx') {
-      toast.error('Cadastre o cartão importando um arquivo OFX do Nubank')
-      return
-    }
-
-    if (kind === 'xlsx' && !initialAccountId) {
-      toast.error('Selecione uma conta de cartão Itaú antes de importar o XLSX')
-      return
-    }
-
-    setFileParsing(true)
-    setParseResult(null)
-    setResolvedAccountId(initialAccountId ?? null)
-
-    try {
-      if (kind === 'ofx') {
-        const result = initialAccountId
-          ? await parseStatementOfx(slug, initialAccountId, file)
-          : await parseStatementOfxOrg(slug, file)
-        setParseResult(result)
-        handleAccountResolution(result)
-        if (result.accountResolution.mode === 'existing') {
-          showParseSuccessToast(kind, result)
-        }
-      } else {
-        const result = await parseStatementXlsx(slug, initialAccountId ?? '', file)
-        setParseResult(result)
-        handleAccountResolution(result)
-        if (result.accountResolution.mode === 'existing') {
-          showParseSuccessToast(kind, result)
-        }
-      }
-    } catch (error) {
-      const message =
-        error instanceof Error
-          ? error.message
-          : kind === 'ofx'
-            ? 'Erro ao interpretar OFX'
-            : 'Erro ao interpretar XLSX'
-      toast.error(message)
-    } finally {
-      setFileParsing(false)
-    }
-  }
-
-  const handleFileImport = async (data: {
-    parsedWithReview: ImportStatementBody
-    rows: Record<string, ImportReviewRowState>
-    items: ParsedTransactionReviewItem[]
-  }) => {
-    if (!slug || !parseResult || !reviewAccountId || parseResult.duplicate.mode === 'blocked') return
-
-    try {
-      const result = await importStatement({
-        slug,
-        accountId: reviewAccountId,
-        data: data.parsedWithReview,
-      })
-
-      let splitsCreated = 0
-      if (result.transactionIds?.length) {
-        const updates = buildPostImportUpdates(data.items, data.rows, result.transactionIds)
-        if (updates.length) {
-          const reviewResult = await bulkReviewImport(slug, updates)
-          splitsCreated = reviewResult.splitsCreated
-        }
-      }
-
-      finishFileImport(reviewAccountId, result, splitsCreated)
-    } catch {
-      toast.error('Erro ao importar fatura interpretada')
-    }
-  }
+export function ImportStatementDialog() {
+  const open = useImportStatementDraftStore(s => s.open)
+  const closeImportStatement = useImportStatementDraftStore(s => s.closeImportStatement)
+  const {
+    ofxOnly,
+    fileParsing,
+    isPending,
+    parseResult,
+    parsedFileKind,
+    closingDay,
+    dueDay,
+    reviewAccountId,
+    missingResolution,
+    mismatchResolution,
+    showStatementReview,
+    rows,
+    setRows,
+    discardParseDraft,
+    discardImportStatementDraft,
+    handleFileUpload,
+    handleFileImport,
+    handleViewExistingStatement,
+    acceptMismatch,
+    completeAccountSetup,
+  } = useImportStatementFlow()
 
   const isWidePreview = showStatementReview
 
@@ -275,18 +46,9 @@ export function ImportStatementDialog({
     <Dialog
       open={open}
       onOpenChange={value => {
-        setOpen(value)
-        if (!value) resetFileState()
+        if (!value) closeImportStatement()
       }}
     >
-      {showTrigger ? (
-        <DialogTrigger asChild>
-          <Button className="bg-slate-900">
-            <Upload className="mr-2 size-4" />
-            Importar fatura
-          </Button>
-        </DialogTrigger>
-      ) : null}
       <DialogContent
         className={
           isWidePreview
@@ -324,17 +86,13 @@ export function ImportStatementDialog({
             </p>
 
             <div className="flex flex-col-reverse gap-2 border-t border-slate-100 pt-4 sm:flex-row sm:justify-end">
-              <Button type="button" variant="outline" onClick={resetFileState}>
+              <Button type="button" variant="outline" onClick={discardParseDraft}>
                 Cancelar
               </Button>
               <Button
                 type="button"
                 className="bg-violet-600 hover:bg-violet-700"
-                onClick={() => {
-                  setResolvedAccountId(mismatchResolution.expectedAccountId)
-                  setMismatchAccepted(true)
-                  showParseSuccessToast(parsedFileKind ?? 'ofx', parseResult as ParseStatementFileResponse)
-                }}
+                onClick={acceptMismatch}
               >
                 Importar em {mismatchResolution.expectedAccountName}
               </Button>
@@ -367,12 +125,8 @@ export function ImportStatementDialog({
             <ImportOfxAccountSetup
               resolution={missingResolution}
               importSource={parsedFileKind === 'xlsx' ? 'xlsx' : 'ofx'}
-              onCancel={resetFileState}
-              onCreated={accountId => {
-                setResolvedAccountId(accountId)
-                setAccountSetupCompleted(true)
-                showParseSuccessToast(parsedFileKind ?? 'ofx', parseResult as ParseStatementFileResponse)
-              }}
+              onCancel={discardParseDraft}
+              onCreated={completeAccountSetup}
             />
           </div>
         ) : showStatementReview && parseResult ? (
@@ -391,12 +145,11 @@ export function ImportStatementDialog({
               provider={parseResult.provider}
               cardMismatchWarning={parseResult.cardMismatchWarning}
               isPending={isPending}
-              onReset={resetFileState}
-              onViewExistingStatement={params => {
-                onViewExistingStatement?.(params)
-                setOpen(false)
-                resetFileState()
-              }}
+              rows={rows}
+              onRowsChange={setRows}
+              onReset={discardParseDraft}
+              onDiscard={discardImportStatementDraft}
+              onViewExistingStatement={handleViewExistingStatement}
               onConfirm={data => void handleFileImport(data)}
             />
           </div>
