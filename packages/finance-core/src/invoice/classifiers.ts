@@ -7,19 +7,23 @@ import type { TransactionLike } from './types'
 
 dayjs.extend(customParseFormat)
 
+const IMPORTED_BILL_PAYMENT_TITLE_PATTERN =
+  /pagamento recebido|pagamento debito automatico|pagamento efetuado/i
+
+const CARD_STATEMENT_CREDIT_TITLE_PATTERN =
+  /pagamento recebido|pagamento em|pagamento debito automatico|pagamento efetuado|crédito de confiança|credito de confianca|estorno|reversão|reversao|iof de volta/i
+
 export function isInvoicePaymentTitle(title: string): boolean {
   return /pagamento fatura/i.test(title)
 }
 
 export function isImportedBillPaymentTitle(title: string | null | undefined): boolean {
-  return /pagamento recebido/i.test(title ?? '')
+  return IMPORTED_BILL_PAYMENT_TITLE_PATTERN.test(title ?? '')
 }
 
-/** OFX/CSV card credits that should not receive spending categories (bill payment, refunds, etc.). */
+/** OFX/CSV/XLSX card credits that should not receive spending categories (bill payment, refunds, etc.). */
 export function isCardStatementCreditTitle(title: string | null | undefined): boolean {
-  return /pagamento recebido|pagamento em|crédito de confiança|credito de confianca|estorno|reversão|reversao|iof de volta/i.test(
-    title ?? ''
-  )
+  return CARD_STATEMENT_CREDIT_TITLE_PATTERN.test(title ?? '')
 }
 
 export function isImportedBillPayment(tx: { title?: string | null }): boolean {
@@ -28,7 +32,8 @@ export function isImportedBillPayment(tx: { title?: string | null }): boolean {
 
 export function isInvoiceSettlementCreditTitle(title: string | null | undefined): boolean {
   const normalized = title ?? ''
-  if (/pagamento recebido|pagamento em/i.test(normalized)) return false
+  if (IMPORTED_BILL_PAYMENT_TITLE_PATTERN.test(normalized)) return false
+  if (/pagamento em/i.test(normalized)) return false
   if (/reversão do crédito|reversao do credito/i.test(normalized)) return false
 
   return /crédito de confiança|credito de confianca|estorno|reversão|reversao|iof de volta/i.test(

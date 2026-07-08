@@ -1,4 +1,4 @@
-import { Bot, Loader2, Paperclip, Send, Sparkles, Trash2 } from 'lucide-react'
+import { Bot, Loader2, Send, Sparkles, Trash2 } from 'lucide-react'
 import { useEffect, useRef, useState } from 'react'
 
 import { useListAiProviders } from '@/api/generated/api'
@@ -32,7 +32,6 @@ export function AiChatPanel() {
   const [input, setInput] = useState('')
   const [provider, setProvider] = useState<AiChatBodyProvider | undefined>()
   const scrollRef = useRef<HTMLDivElement>(null)
-  const fileInputRef = useRef<HTMLInputElement>(null)
 
   const { data: providersData } = useListAiProviders(slug, {
     query: { enabled: !!slug && open },
@@ -57,7 +56,7 @@ export function AiChatPanel() {
 
   useEffect(() => {
     scrollRef.current?.scrollTo({ top: scrollRef.current.scrollHeight, behavior: 'smooth' })
-  }, [timeline, isStreaming])
+  })
 
   const handleSend = async () => {
     const text = input.trim()
@@ -71,31 +70,6 @@ export function AiChatPanel() {
       e.preventDefault()
       void handleSend()
     }
-  }
-
-  const handleFile = async (file: File) => {
-    if (file.type !== 'application/pdf') {
-      setInput(prev => `${prev}\nAnexei o arquivo: ${file.name}`.trim())
-      return
-    }
-
-    if (file.size > 512_000) {
-      setInput(prev =>
-        `${prev}\nTenho um PDF "${file.name}" para importar como fatura.`.trim()
-      )
-      return
-    }
-
-    const buffer = await file.arrayBuffer()
-    const bytes = new Uint8Array(buffer)
-    let binary = ''
-    for (let i = 0; i < bytes.length; i++) {
-      binary += String.fromCharCode(bytes[i]!)
-    }
-    const base64 = btoa(binary)
-    setInput(prev =>
-      `${prev}\n[PDF:${file.name}]\n${base64}`.trim()
-    )
   }
 
   return (
@@ -174,26 +148,6 @@ export function AiChatPanel() {
 
         <div className="border-t border-slate-100 p-4">
           <div className="flex gap-2">
-            <input
-              ref={fileInputRef}
-              type="file"
-              className="hidden"
-              accept=".pdf,application/pdf"
-              onChange={e => {
-                const file = e.target.files?.[0]
-                if (file) void handleFile(file)
-                e.target.value = ''
-              }}
-            />
-            <Button
-              type="button"
-              variant="outline"
-              size="icon"
-              onClick={() => fileInputRef.current?.click()}
-              aria-label="Anexar PDF"
-            >
-              <Paperclip className="size-4" />
-            </Button>
             <Textarea
               value={input}
               onChange={e => setInput(e.target.value)}

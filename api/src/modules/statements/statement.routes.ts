@@ -7,19 +7,17 @@ import {
   getStatementController,
   importStatementController,
   listStatementsController,
-  parseStatementCsvController,
   parseStatementOfxController,
   parseStatementOfxOrgController,
-  parseStatementPdfController,
+  parseStatementXlsxController,
 } from './statement.controller'
 import {
   getStatementSchema,
   importStatementSchema,
   listStatementsSchema,
-  parseStatementCsvSchema,
   parseStatementOfxOrgSchema,
   parseStatementOfxSchema,
-  parseStatementPdfSchema,
+  parseStatementXlsxSchema,
 } from './statement.schema'
 
 export const statementsRoutes: FastifyPluginAsyncZod = async app => {
@@ -37,18 +35,11 @@ export const statementsRoutes: FastifyPluginAsyncZod = async app => {
     handler: importStatementController,
   })
 
-  app.post('/organizations/:slug/accounts/:accountId/statements/parse-pdf', {
+  app.post('/organizations/:slug/accounts/:accountId/statements/parse-xlsx', {
     onRequest: [authenticateUserHook],
     preHandler: [verifyOrgAccessHook],
-    schema: parseStatementPdfSchema,
-    handler: parseStatementPdfController,
-  })
-
-  app.post('/organizations/:slug/accounts/:accountId/statements/parse-csv', {
-    onRequest: [authenticateUserHook],
-    preHandler: [verifyOrgAccessHook],
-    schema: parseStatementCsvSchema,
-    handler: parseStatementCsvController,
+    schema: parseStatementXlsxSchema,
+    handler: parseStatementXlsxController,
   })
 
   app.post('/organizations/:slug/statements/parse-ofx', {

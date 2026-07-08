@@ -78,7 +78,7 @@ export function CreditCardKpiRow({
   const invoiceTotalLabel = formatCurrency(metrics.invoiceTotal)
 
   const supportsManualPayment =
-    matchedStatement?.importSource !== 'ofx' && matchedStatement?.importSource !== 'csv'
+    matchedStatement?.importSource !== 'ofx' && matchedStatement?.importSource !== 'xlsx'
 
   const heroAmount = isPaid
     ? metrics.invoiceTotal

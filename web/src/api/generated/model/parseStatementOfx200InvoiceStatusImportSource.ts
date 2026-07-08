@@ -11,7 +11,6 @@ export type ParseStatementOfx200InvoiceStatusImportSource =
 
 // eslint-disable-next-line @typescript-eslint/no-redeclare
 export const ParseStatementOfx200InvoiceStatusImportSource = {
-  pdf: "pdf",
-  csv: "csv",
   ofx: "ofx",
+  xlsx: "xlsx",
 } as const;

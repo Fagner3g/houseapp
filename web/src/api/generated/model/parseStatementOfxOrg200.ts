@@ -10,6 +10,7 @@ import type { ParseStatementOfxOrg200Provider } from "./parseStatementOfxOrg200P
 import type { ParseStatementOfxOrg200Summary } from "./parseStatementOfxOrg200Summary";
 import type { ParseStatementOfxOrg200Duplicate } from "./parseStatementOfxOrg200Duplicate";
 import type { ParseStatementOfxOrg200InvoiceStatus } from "./parseStatementOfxOrg200InvoiceStatus";
+import type { ParseStatementOfxOrg200CardMismatchWarning } from "./parseStatementOfxOrg200CardMismatchWarning";
 import type { ParseStatementOfxOrg200AccountResolution } from "./parseStatementOfxOrg200AccountResolution";
 
 export type ParseStatementOfxOrg200 = {
@@ -22,5 +23,6 @@ export type ParseStatementOfxOrg200 = {
   summary: ParseStatementOfxOrg200Summary;
   duplicate: ParseStatementOfxOrg200Duplicate;
   invoiceStatus: ParseStatementOfxOrg200InvoiceStatus;
+  cardMismatchWarning?: ParseStatementOfxOrg200CardMismatchWarning;
   accountResolution: ParseStatementOfxOrg200AccountResolution;
 };

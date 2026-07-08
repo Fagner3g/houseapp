@@ -46,7 +46,7 @@ const importStatementBody = z
     otherCharges: z.string().optional(),
     nextInvoiceBalance: z.string().optional(),
     totalOpenBalance: z.string().optional(),
-    importSource: z.enum(['pdf', 'csv', 'ofx']).optional(),
+    importSource: z.enum(['ofx', 'xlsx']).optional(),
     isClosed: z.boolean().optional().default(false),
     isPaid: z.boolean().optional().default(false),
     paymentSourceAccountId: z.string().optional(),
@@ -82,7 +82,7 @@ export const statementResponseSchema = z.object({
   transactionsCount: z.number(),
   fileHash: z.string(),
   fileName: z.string().nullable(),
-  importSource: z.enum(['pdf', 'csv', 'ofx']).nullable(),
+  importSource: z.enum(['pdf', 'csv', 'ofx', 'xlsx']).nullable(),
   isClosed: z.boolean(),
   isPaid: z.boolean(),
   importedBy: z.string().nullable(),
@@ -161,14 +161,14 @@ const statementInvoiceStatusSchema = z.object({
   closedConfidence: z.enum(['high', 'manual']),
   suggestedPaid: z.boolean(),
   suggestedPaidReason: z.string(),
-  importSource: z.enum(['pdf', 'csv', 'ofx']),
+  importSource: z.enum(['ofx', 'xlsx']),
   defaultIsClosed: z.boolean(),
   defaultIsPaid: z.boolean(),
 })
 
 const parseStatementFileResponseSchema = z.object({
   parsed: importStatementBody,
-  provider: z.enum(['groq', 'gemini', 'deepseek', 'regex', 'csv', 'ofx']),
+  provider: z.enum(['ofx', 'xlsx']),
   transactionsCount: z.number(),
   extractedTextLength: z.number(),
   categorizedCount: z.number(),
@@ -176,6 +176,7 @@ const parseStatementFileResponseSchema = z.object({
   summary: statementImportSummarySchema,
   duplicate: statementDuplicateCheckSchema,
   invoiceStatus: statementInvoiceStatusSchema,
+  cardMismatchWarning: z.string().nullable().optional(),
 })
 
 const suggestedCreditCardAccountSchema = z.object({
@@ -187,7 +188,7 @@ const suggestedCreditCardAccountSchema = z.object({
   creditLimit: z.string().nullable().optional(),
 })
 
-const ofxAccountResolutionSchema = z.discriminatedUnion('mode', [
+const statementAccountResolutionSchema = z.discriminatedUnion('mode', [
   z.object({
     mode: z.literal('existing'),
     accountId: z.string(),
@@ -197,13 +198,15 @@ const ofxAccountResolutionSchema = z.discriminatedUnion('mode', [
   }),
   z.object({
     mode: z.literal('missing'),
-    ofxAccountId: z.string(),
+    ofxAccountId: z.string().optional(),
+    cardLastFour: z.string().length(4).optional(),
     suggestedAccount: suggestedCreditCardAccountSchema,
     uploadedOnAccountName: z.string().optional(),
   }),
   z.object({
     mode: z.literal('mismatch'),
-    ofxAccountId: z.string(),
+    ofxAccountId: z.string().optional(),
+    cardLastFour: z.string().length(4).optional(),
     expectedAccountId: z.string(),
     expectedAccountName: z.string(),
     uploadedOnAccountId: z.string(),
@@ -211,31 +214,25 @@ const ofxAccountResolutionSchema = z.discriminatedUnion('mode', [
   }),
 ])
 
-const parseStatementOfxResponseSchema = parseStatementFileResponseSchema.extend({
-  accountResolution: ofxAccountResolutionSchema,
+/** @deprecated Use statementAccountResolutionSchema */
+// eslint-disable-next-line @typescript-eslint/no-unused-vars
+const _ofxAccountResolutionSchema = statementAccountResolutionSchema
+
+const parseStatementWithResolutionResponseSchema = parseStatementFileResponseSchema.extend({
+  accountResolution: statementAccountResolutionSchema,
 })
 
-const parseStatementPdfResponseSchema = parseStatementFileResponseSchema
+const parseStatementOfxResponseSchema = parseStatementWithResolutionResponseSchema
+const parseStatementXlsxResponseSchema = parseStatementWithResolutionResponseSchema
 
-export const parseStatementPdfSchema = {
+export const parseStatementXlsxSchema = {
   tags: ['Statements'],
-  description: 'Parse credit card statement PDF with LLM (multipart/form-data, field: file)',
-  operationId: 'parseStatementPdf',
+  description: 'Parse Itaú paid-invoice XLSX export (multipart/form-data, field: file)',
+  operationId: 'parseStatementXlsx',
   consumes: ['multipart/form-data'],
   params: accountParams,
   response: {
-    200: parseStatementPdfResponseSchema,
-  },
-}
-
-export const parseStatementCsvSchema = {
-  tags: ['Statements'],
-  description: 'Parse Nubank open-invoice CSV export (multipart/form-data, field: file)',
-  operationId: 'parseStatementCsv',
-  consumes: ['multipart/form-data'],
-  params: accountParams,
-  response: {
-    200: parseStatementFileResponseSchema,
+    200: parseStatementXlsxResponseSchema,
   },
 }
 

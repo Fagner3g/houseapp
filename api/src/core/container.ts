@@ -81,7 +81,8 @@ const statementService = new StatementService(
   statementRepository,
   accountRepository,
   categoryRepository,
-  transactionRepository
+  transactionRepository,
+  cardRepository
 )
 
 export const container = {

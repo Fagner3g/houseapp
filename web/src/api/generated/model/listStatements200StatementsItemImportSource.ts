@@ -10,6 +10,7 @@
 export const ListStatements200StatementsItemImportSource = {  pdf: 'pdf',
   csv: 'csv',
   ofx: 'ofx',
+  xlsx: 'xlsx',
   '': ,
   null: null,
 } as const

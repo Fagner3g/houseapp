@@ -13,11 +13,11 @@ import {
 } from './classifiers'
 import type { InvoiceStatementLike, PaymentPeriodContext, TransactionLike } from './types'
 
-/** OFX/PDF totals are authoritative even mid-cycle; CSV exports stay provisional until closed. */
+/** OFX/XLSX totals are authoritative even mid-cycle. */
 export function hasImportedInvoiceTotal(statement: InvoiceStatementLike | null): boolean {
   if (!statement?.totalAmount) return false
   if (statement.isClosed) return true
-  return statement.importSource === 'ofx' || statement.importSource === 'pdf'
+  return statement.importSource === 'ofx' || statement.importSource === 'xlsx'
 }
 
 /** Purchase window: OFX period when imported, otherwise the account billing cycle. */

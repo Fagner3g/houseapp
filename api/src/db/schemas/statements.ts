@@ -5,7 +5,7 @@ import { accounts } from './accounts'
 import { organizations } from './organizations'
 import { users } from './users'
 
-export type StatementImportSource = 'pdf' | 'csv' | 'ofx'
+export type StatementImportSource = 'pdf' | 'csv' | 'ofx' | 'xlsx'
 
 export const statements = pgTable(
   'statements',

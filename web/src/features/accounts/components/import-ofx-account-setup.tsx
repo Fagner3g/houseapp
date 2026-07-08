@@ -21,7 +21,7 @@ import { Input } from '@/components/ui/input'
 import { useActiveOrganization } from '@/hooks/use-active-organization'
 import { centsStringToNumber, reaisToMoneyString } from '@/lib/currency'
 import { readHttpErrorMessage } from '@/lib/http'
-import type { OfxAccountResolution, SuggestedCreditCardAccount } from '@/lib/parse-statement-pdf'
+import type { StatementAccountResolution, SuggestedCreditCardAccount } from '@/lib/parse-statement'
 import { useQueryClient } from '@tanstack/react-query'
 
 import {
@@ -47,7 +47,8 @@ const formSchema = z.object({
 type FormValues = z.infer<typeof formSchema>
 
 type ImportOfxAccountSetupProps = {
-  resolution: Extract<OfxAccountResolution, { mode: 'missing' }>
+  resolution: Extract<StatementAccountResolution, { mode: 'missing' }>
+  importSource?: 'ofx' | 'xlsx'
   onCreated: (accountId: string) => void
   onCancel: () => void
 }
@@ -73,13 +74,14 @@ function buildDefaultValues(
 
 export function ImportOfxAccountSetup({
   resolution,
+  importSource = 'ofx',
   onCreated,
   onCancel,
 }: ImportOfxAccountSetupProps) {
   const { slug } = useActiveOrganization()
   const queryClient = useQueryClient()
   const { mutateAsync: createAccount, isPending } = useCreateAccount()
-  const { data: accountsData } = useListAccounts(slug!, { query: { enabled: !!slug } })
+  const { data: accountsData } = useListAccounts(slug ?? '', { query: { enabled: !!slug } })
 
   const suggested = resolution.suggestedAccount
   const accounts = accountsData?.accounts ?? []
@@ -103,6 +105,14 @@ export function ImportOfxAccountSetup({
     }
   }, [defaultValues, form.formState.isDirty, form.reset])
 
+  const isXlsx = importSource === 'xlsx'
+  const fileLabel = isXlsx ? 'XLSX' : 'OFX'
+  const detectedSuffix = isXlsx
+    ? resolution.cardLastFour
+      ? ` (final ${resolution.cardLastFour})`
+      : ''
+    : ''
+
   const handleCreate = async (values: FormValues) => {
     if (!slug) return
 
@@ -114,11 +124,12 @@ export function ImportOfxAccountSetup({
           type: 'credit_card',
           institution: suggested.institution,
           currency: suggested.currency,
-          creditLimit: reaisToMoneyString(values.creditLimit!),
+          creditLimit: reaisToMoneyString(values.creditLimit ?? 0),
           closingDay: values.closingDay,
           dueDay: values.dueDay,
           paymentAccountId: values.paymentAccountId,
           ofxAccountId: resolution.ofxAccountId,
+          ...(resolution.cardLastFour ? { lastFourDigits: resolution.cardLastFour } : {}),
         },
       })
 
@@ -140,14 +151,20 @@ export function ImportOfxAccountSetup({
             <p>
               {resolution.uploadedOnAccountName ? (
                 <>
-                  Este OFX não é do cartão{' '}
+                  Este {fileLabel} não é do cartão{' '}
                   <span className="font-medium">{resolution.uploadedOnAccountName}</span> selecionado.
-                  Cadastre o cartão identificado no arquivo para continuar.
+                  Cadastre o cartão identificado no arquivo{detectedSuffix} para continuar.
                 </>
               ) : (
                 <>
-                  Este OFX pertence a um cartão{' '}
-                  <span className="font-medium">{institutionLabel(suggested.institution)}</span>{' '}
+                  Este {fileLabel} pertence a um cartão{' '}
+                  <span className="font-medium">{institutionLabel(suggested.institution)}</span>
+                  {detectedSuffix ? (
+                    <>
+                      {' '}
+                      <span className="font-medium">{detectedSuffix.trim()}</span>
+                    </>
+                  ) : null}{' '}
                   ainda não cadastrado.
                 </>
               )}
@@ -166,7 +183,7 @@ export function ImportOfxAccountSetup({
             >
               {institutionLabel(suggested.institution)}
             </span>
-            <span className="text-sm text-slate-500">detectada no arquivo OFX</span>
+            <span className="text-sm text-slate-500">detectada no arquivo {fileLabel}</span>
           </p>
         </div>
 
@@ -209,7 +226,11 @@ export function ImportOfxAccountSetup({
                   />
                 </FormControl>
                 {suggested.creditLimit != null ? (
-                  <FormDescription>Valor detectado no arquivo OFX.</FormDescription>
+                  <FormDescription>Valor detectado no arquivo {fileLabel}.</FormDescription>
+                ) : isXlsx ? (
+                  <FormDescription>
+                    A exportação XLSX do Itaú geralmente não traz o limite — informe manualmente.
+                  </FormDescription>
                 ) : (
                   <FormDescription>
                     O OFX do Nubank geralmente não traz o limite — informe manualmente.
@@ -230,7 +251,9 @@ export function ImportOfxAccountSetup({
                   <Input type="number" min={1} max={31} {...field} />
                 </FormControl>
                 {suggested.closingDay != null && (
-                  <FormDescription>Detectado no período da fatura (OFX).</FormDescription>
+                  <FormDescription>
+                    Detectado no período da fatura ({fileLabel}).
+                  </FormDescription>
                 )}
                 <FormMessage />
               </FormItem>
@@ -247,7 +270,9 @@ export function ImportOfxAccountSetup({
                   <Input type="number" min={1} max={31} {...field} />
                 </FormControl>
                 {suggested.dueDay != null ? (
-                  <FormDescription>Detectado no nome do arquivo OFX.</FormDescription>
+                  <FormDescription>
+                    Detectado no arquivo {fileLabel}.
+                  </FormDescription>
                 ) : (
                   <FormDescription>Informe o dia em que a fatura vence todo mês.</FormDescription>
                 )}

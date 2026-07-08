@@ -11,10 +11,6 @@ export type ParseStatementOfx200Provider =
 
 // eslint-disable-next-line @typescript-eslint/no-redeclare
 export const ParseStatementOfx200Provider = {
-  groq: "groq",
-  gemini: "gemini",
-  deepseek: "deepseek",
-  regex: "regex",
-  csv: "csv",
   ofx: "ofx",
+  xlsx: "xlsx",
 } as const;

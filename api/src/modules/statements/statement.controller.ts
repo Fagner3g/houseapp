@@ -47,7 +47,7 @@ export async function importStatementController(
   return reply.status(StatusCodes.CREATED).send(result)
 }
 
-export async function parseStatementPdfController(
+export async function parseStatementXlsxController(
   request: FastifyRequest<{ Params: AccountParams }>,
   reply: FastifyReply
 ) {
@@ -58,52 +58,23 @@ export async function parseStatementPdfController(
   }
 
   const buffer = await file.toBuffer()
-  const fileName = file.filename ?? 'fatura.pdf'
+  const fileName = file.filename ?? 'fatura.xlsx'
+  const lowerName = fileName.toLowerCase()
 
-  if (!file.mimetype?.includes('pdf') && !fileName.toLowerCase().endsWith('.pdf')) {
-    return reply.status(StatusCodes.BAD_REQUEST).send({ message: 'File must be a PDF' })
+  if (
+    !file.mimetype?.includes('spreadsheet') &&
+    !file.mimetype?.includes('excel') &&
+    !file.mimetype?.includes('officedocument') &&
+    !lowerName.endsWith('.xlsx')
+  ) {
+    return reply.status(StatusCodes.BAD_REQUEST).send({ message: 'File must be an XLSX' })
   }
 
-  const result = await container.statementService.parsePdf(
+  const result = await container.statementService.parseXlsx(
     request.organization.id,
     request.params.accountId,
     request.user.sub,
     buffer,
-    fileName
-  )
-
-  return reply.send(result)
-}
-
-export async function parseStatementCsvController(
-  request: FastifyRequest<{ Params: AccountParams }>,
-  reply: FastifyReply
-) {
-  const file = await request.file()
-
-  if (!file) {
-    return reply.status(StatusCodes.BAD_REQUEST).send({ message: 'No file uploaded' })
-  }
-
-  const buffer = await file.toBuffer()
-  const fileName = file.filename ?? 'fatura.csv'
-  const lowerName = fileName.toLowerCase()
-
-  if (
-    !file.mimetype?.includes('csv') &&
-    !file.mimetype?.includes('text/plain') &&
-    !lowerName.endsWith('.csv')
-  ) {
-    return reply.status(StatusCodes.BAD_REQUEST).send({ message: 'File must be a CSV' })
-  }
-
-  const content = buffer.toString('utf8')
-
-  const result = await container.statementService.parseCsv(
-    request.organization.id,
-    request.params.accountId,
-    request.user.sub,
-    content,
     fileName
   )
 

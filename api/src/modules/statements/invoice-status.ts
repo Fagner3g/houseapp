@@ -22,7 +22,7 @@ export type InvoiceStatusDetection = {
   closedConfidence: 'high' | 'manual'
   suggestedPaid: boolean
   suggestedPaidReason: string
-  importSource: 'pdf' | 'csv' | 'ofx'
+  importSource: 'ofx' | 'xlsx'
   defaultIsClosed: boolean
   defaultIsPaid: boolean
 }
@@ -31,14 +31,6 @@ export type StatementPaymentLine = {
   type: 'income' | 'expense'
   amount: string
   date: string
-}
-
-export function detectClosedFromPdfText(text: string): boolean {
-  return (
-    /RESUMO DA FATURA ATUAL/i.test(text) &&
-    /Total a pagar/i.test(text) &&
-    /Período vigente/i.test(text)
-  )
 }
 
 export function isWithinPaymentWindow(date: Date, periodEnd: Date, dueDate: Date): boolean {
@@ -70,7 +62,7 @@ export function suggestPaidFromStatement(input: {
   if (!Number.isFinite(total) || total <= 0) {
     return {
       suggestedPaid: true,
-      reason: 'Fatura quitada — total a pagar é R$ 0,00 no PDF',
+      reason: 'Fatura quitada — total a pagar é R$ 0,00',
     }
   }
 
@@ -103,22 +95,35 @@ export function suggestPaidFromTotalAmount(totalAmount: string | undefined): {
 
 export function detectInvoiceStatus(input: {
   provider: string
-  extractedText?: string
   totalAmount: string
   periodEnd?: string | null
   dueDate?: string | null
   transactions?: StatementPaymentLine[]
+  xlsxVariant?: 'paid' | 'open'
 }): InvoiceStatusDetection {
-  if (input.provider === 'csv') {
+  if (input.provider === 'xlsx') {
+    if (input.xlsxVariant === 'open') {
+      return {
+        kind: 'partial',
+        detectedClosed: false,
+        closedConfidence: 'high',
+        suggestedPaid: false,
+        suggestedPaidReason: 'Exportação XLSX — fatura aberta do Itaú',
+        importSource: 'xlsx',
+        defaultIsClosed: false,
+        defaultIsPaid: false,
+      }
+    }
+
     return {
-      kind: 'partial',
-      detectedClosed: false,
+      kind: 'closed_paid',
+      detectedClosed: true,
       closedConfidence: 'high',
-      suggestedPaid: false,
-      suggestedPaidReason: 'CSV do ciclo atual — compras ainda podem entrar nesta fatura',
-      importSource: 'csv',
-      defaultIsClosed: false,
-      defaultIsPaid: false,
+      suggestedPaid: true,
+      suggestedPaidReason: 'Exportação XLSX — fatura paga do Itaú',
+      importSource: 'xlsx',
+      defaultIsClosed: true,
+      defaultIsPaid: true,
     }
   }
 
@@ -161,42 +166,10 @@ export function detectInvoiceStatus(input: {
     }
   }
 
-  const closed = input.extractedText ? detectClosedFromPdfText(input.extractedText) : false
-  const { suggestedPaid, reason } = suggestPaidFromStatement({
-    totalAmount: input.totalAmount,
-    periodEnd: input.periodEnd,
-    dueDate: input.dueDate,
-    transactions: input.transactions,
-  })
-
-  if (!closed) {
-    return {
-      kind: 'partial',
-      detectedClosed: null,
-      closedConfidence: 'manual',
-      suggestedPaid: false,
-      suggestedPaidReason: 'PDF sem fatura fechada — o ciclo pode ainda estar em andamento',
-      importSource: 'pdf',
-      defaultIsClosed: false,
-      defaultIsPaid: false,
-    }
-  }
-
-  const kind: InvoiceKind = suggestedPaid ? 'closed_paid' : 'closed_unpaid'
-
-  return {
-    kind,
-    detectedClosed: true,
-    closedConfidence: 'high',
-    suggestedPaid,
-    suggestedPaidReason: reason,
-    importSource: 'pdf',
-    defaultIsClosed: true,
-    defaultIsPaid: suggestedPaid,
-  }
+  throw new Error(`Unsupported statement provider: ${input.provider}`)
 }
 
-/** Credits on a closed invoice PDF already happened — never leave them as pending receivables. */
+/** Credits on a closed invoice already happened — never leave them as pending receivables. */
 export function shouldMarkImportedIncomePaid(input: {
   type: 'income' | 'expense'
   isClosed: boolean
@@ -206,13 +179,6 @@ export function shouldMarkImportedIncomePaid(input: {
   if (input.type !== 'income') return false
   if (input.isClosed) return true
   return input.markPaymentsAsPaid && input.inPaymentWindow
-}
-
-/** OFX/CSV already include "Pagamento recebido" lines — only PDF may need a synthetic transfer. */
-export function shouldCreateSyntheticPaymentOnImport(
-  importSource: 'pdf' | 'csv' | 'ofx' | null | undefined
-): boolean {
-  return importSource === 'pdf'
 }
 
 export { isCardStatementCreditTitle } from '@houseapp/finance-core'

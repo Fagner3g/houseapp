@@ -115,10 +115,9 @@ import type {
   ListTransactionsParams,
   ListUsersByOrg200,
   MarkNotificationRead200,
-  ParseStatementCsv200,
   ParseStatementOfx200,
   ParseStatementOfxOrg200,
-  ParseStatementPdf200,
+  ParseStatementXlsx200,
   PatchOrgSlugUsers200,
   PatchOrgSlugUsersBody,
   PatchOrgSlugUsersNotifications200,
@@ -9319,41 +9318,44 @@ export const useImportStatement = <TError = unknown, TContext = unknown>(
 };
 
 /**
- * Parse credit card statement PDF with LLM (multipart/form-data, field: file)
+ * Parse Itaú paid-invoice XLSX export (multipart/form-data, field: file)
  */
-export const getParseStatementPdfUrl = (slug: string, accountId: string) => {
-  return `/organizations/${slug}/accounts/${accountId}/statements/parse-pdf`;
+export const getParseStatementXlsxUrl = (slug: string, accountId: string) => {
+  return `/organizations/${slug}/accounts/${accountId}/statements/parse-xlsx`;
 };
 
-export const parseStatementPdf = async (
+export const parseStatementXlsx = async (
   slug: string,
   accountId: string,
   options?: RequestInit,
-): Promise<ParseStatementPdf200> => {
-  return http<ParseStatementPdf200>(getParseStatementPdfUrl(slug, accountId), {
-    ...options,
-    method: "POST",
-  });
+): Promise<ParseStatementXlsx200> => {
+  return http<ParseStatementXlsx200>(
+    getParseStatementXlsxUrl(slug, accountId),
+    {
+      ...options,
+      method: "POST",
+    },
+  );
 };
 
-export const getParseStatementPdfMutationOptions = <
+export const getParseStatementXlsxMutationOptions = <
   TError = unknown,
   TContext = unknown,
 >(options?: {
   mutation?: UseMutationOptions<
-    Awaited<ReturnType<typeof parseStatementPdf>>,
+    Awaited<ReturnType<typeof parseStatementXlsx>>,
     TError,
     { slug: string; accountId: string },
     TContext
   >;
   request?: SecondParameter<typeof http>;
 }): UseMutationOptions<
-  Awaited<ReturnType<typeof parseStatementPdf>>,
+  Awaited<ReturnType<typeof parseStatementXlsx>>,
   TError,
   { slug: string; accountId: string },
   TContext
 > => {
-  const mutationKey = ["parseStatementPdf"];
+  const mutationKey = ["parseStatementXlsx"];
   const { mutation: mutationOptions, request: requestOptions } = options
     ? options.mutation &&
       "mutationKey" in options.mutation &&
@@ -9363,27 +9365,27 @@ export const getParseStatementPdfMutationOptions = <
     : { mutation: { mutationKey }, request: undefined };
 
   const mutationFn: MutationFunction<
-    Awaited<ReturnType<typeof parseStatementPdf>>,
+    Awaited<ReturnType<typeof parseStatementXlsx>>,
     { slug: string; accountId: string }
   > = (props) => {
     const { slug, accountId } = props ?? {};
 
-    return parseStatementPdf(slug, accountId, requestOptions);
+    return parseStatementXlsx(slug, accountId, requestOptions);
   };
 
   return { mutationFn, ...mutationOptions };
 };
 
-export type ParseStatementPdfMutationResult = NonNullable<
-  Awaited<ReturnType<typeof parseStatementPdf>>
+export type ParseStatementXlsxMutationResult = NonNullable<
+  Awaited<ReturnType<typeof parseStatementXlsx>>
 >;
 
-export type ParseStatementPdfMutationError = unknown;
+export type ParseStatementXlsxMutationError = unknown;
 
-export const useParseStatementPdf = <TError = unknown, TContext = unknown>(
+export const useParseStatementXlsx = <TError = unknown, TContext = unknown>(
   options?: {
     mutation?: UseMutationOptions<
-      Awaited<ReturnType<typeof parseStatementPdf>>,
+      Awaited<ReturnType<typeof parseStatementXlsx>>,
       TError,
       { slug: string; accountId: string },
       TContext
@@ -9392,96 +9394,12 @@ export const useParseStatementPdf = <TError = unknown, TContext = unknown>(
   },
   queryClient?: QueryClient,
 ): UseMutationResult<
-  Awaited<ReturnType<typeof parseStatementPdf>>,
+  Awaited<ReturnType<typeof parseStatementXlsx>>,
   TError,
   { slug: string; accountId: string },
   TContext
 > => {
-  const mutationOptions = getParseStatementPdfMutationOptions(options);
-
-  return useMutation(mutationOptions, queryClient);
-};
-
-/**
- * Parse Nubank open-invoice CSV export (multipart/form-data, field: file)
- */
-export const getParseStatementCsvUrl = (slug: string, accountId: string) => {
-  return `/organizations/${slug}/accounts/${accountId}/statements/parse-csv`;
-};
-
-export const parseStatementCsv = async (
-  slug: string,
-  accountId: string,
-  options?: RequestInit,
-): Promise<ParseStatementCsv200> => {
-  return http<ParseStatementCsv200>(getParseStatementCsvUrl(slug, accountId), {
-    ...options,
-    method: "POST",
-  });
-};
-
-export const getParseStatementCsvMutationOptions = <
-  TError = unknown,
-  TContext = unknown,
->(options?: {
-  mutation?: UseMutationOptions<
-    Awaited<ReturnType<typeof parseStatementCsv>>,
-    TError,
-    { slug: string; accountId: string },
-    TContext
-  >;
-  request?: SecondParameter<typeof http>;
-}): UseMutationOptions<
-  Awaited<ReturnType<typeof parseStatementCsv>>,
-  TError,
-  { slug: string; accountId: string },
-  TContext
-> => {
-  const mutationKey = ["parseStatementCsv"];
-  const { mutation: mutationOptions, request: requestOptions } = options
-    ? options.mutation &&
-      "mutationKey" in options.mutation &&
-      options.mutation.mutationKey
-      ? options
-      : { ...options, mutation: { ...options.mutation, mutationKey } }
-    : { mutation: { mutationKey }, request: undefined };
-
-  const mutationFn: MutationFunction<
-    Awaited<ReturnType<typeof parseStatementCsv>>,
-    { slug: string; accountId: string }
-  > = (props) => {
-    const { slug, accountId } = props ?? {};
-
-    return parseStatementCsv(slug, accountId, requestOptions);
-  };
-
-  return { mutationFn, ...mutationOptions };
-};
-
-export type ParseStatementCsvMutationResult = NonNullable<
-  Awaited<ReturnType<typeof parseStatementCsv>>
->;
-
-export type ParseStatementCsvMutationError = unknown;
-
-export const useParseStatementCsv = <TError = unknown, TContext = unknown>(
-  options?: {
-    mutation?: UseMutationOptions<
-      Awaited<ReturnType<typeof parseStatementCsv>>,
-      TError,
-      { slug: string; accountId: string },
-      TContext
-    >;
-    request?: SecondParameter<typeof http>;
-  },
-  queryClient?: QueryClient,
-): UseMutationResult<
-  Awaited<ReturnType<typeof parseStatementCsv>>,
-  TError,
-  { slug: string; accountId: string },
-  TContext
-> => {
-  const mutationOptions = getParseStatementCsvMutationOptions(options);
+  const mutationOptions = getParseStatementXlsxMutationOptions(options);
 
   return useMutation(mutationOptions, queryClient);
 };

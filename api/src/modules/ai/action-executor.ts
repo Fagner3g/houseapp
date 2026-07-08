@@ -122,7 +122,7 @@ async function executeImportStatement(action: PendingAction): Promise<ActionExec
     otherCharges: data.otherCharges,
     nextInvoiceBalance: data.nextInvoiceBalance,
     totalOpenBalance: data.totalOpenBalance,
-    importSource: 'pdf',
+    importSource: undefined,
     isClosed: true,
     isPaid: false,
     transactions: data.transactions,

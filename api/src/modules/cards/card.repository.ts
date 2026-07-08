@@ -1,6 +1,7 @@
 import { and, count, eq, inArray, ne } from 'drizzle-orm'
 
 import { db } from '@/db'
+import { accounts } from '@/db/schemas/accounts'
 import {
   cards,
   type CardBlockedReason,
@@ -28,10 +29,19 @@ export type UpdateCardData = Partial<
   Omit<CreateCardData, 'accountId' | 'type'> & { type?: CardType }
 >
 
+export type CardAccountRef = {
+  accountId: string
+  accountName: string
+}
+
 export interface CardRepository {
   findByAccountId(accountId: string): Promise<CardRecord[]>
   findPrimaryByAccountIds(accountIds: string[]): Promise<Map<string, CardRecord>>
   countActiveByAccountIds(accountIds: string[]): Promise<Map<string, number>>
+  findActiveAccountByLastFourDigits(
+    organizationId: string,
+    lastFourDigits: string
+  ): Promise<CardAccountRef | null>
   findById(accountId: string, id: string): Promise<CardRecord | null>
   create(data: CreateCardData): Promise<CardRecord>
   update(id: string, data: UpdateCardData): Promise<CardRecord | null>
@@ -80,6 +90,30 @@ export class DrizzleCardRepository implements CardRepository {
     }
 
     return map
+  }
+
+  async findActiveAccountByLastFourDigits(
+    organizationId: string,
+    lastFourDigits: string
+  ): Promise<CardAccountRef | null> {
+    const [row] = await db
+      .select({
+        accountId: accounts.id,
+        accountName: accounts.name,
+      })
+      .from(cards)
+      .innerJoin(accounts, eq(cards.accountId, accounts.id))
+      .where(
+        and(
+          eq(accounts.organizationId, organizationId),
+          eq(accounts.isActive, true),
+          eq(cards.lastFourDigits, lastFourDigits),
+          ne(cards.status, 'canceled')
+        )
+      )
+      .limit(1)
+
+    return row ?? null
   }
 
   async countActiveByAccountIds(accountIds: string[]): Promise<Map<string, number>> {

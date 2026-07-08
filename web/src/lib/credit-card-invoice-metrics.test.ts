@@ -97,7 +97,7 @@ describe('computeInvoiceMetrics', () => {
     expect(metrics.remaining).toBe(0)
   })
 
-  it('ignores statement totalAmount for open CSV imports', () => {
+  it('uses OFX total for open mid-cycle imports', () => {
     const cycle = getBillingCycle(1, 8, '2026-07')
 
     const metrics = computeInvoiceMetrics(
@@ -105,7 +105,7 @@ describe('computeInvoiceMetrics', () => {
       {
         totalAmount: '9999.99',
         isClosed: false,
-        importSource: 'csv',
+        importSource: 'ofx',
       },
       [
         {
@@ -116,8 +116,7 @@ describe('computeInvoiceMetrics', () => {
       ]
     )
 
-    expect(metrics.invoiceTotal).toBe(120)
-    expect(metrics.remaining).toBe(120)
+    expect(metrics.invoiceTotal).toBe(9999.99)
   })
 
   it('uses OFX total and period for open mid-cycle imports', () => {
@@ -253,6 +252,81 @@ describe('computeInvoiceMetrics', () => {
     expect(metrics.payments).toBe(5828.84)
   })
 
+  it('counts cross-statement Itaú XLSX bill payment for the previous invoice', () => {
+    const juneCycle = getBillingCycle(1, 8, '2026-06')
+    const juneStatement = {
+      id: 'st-june',
+      totalAmount: '4307.66',
+      isClosed: true,
+      isPaid: false,
+      importSource: 'xlsx',
+      periodStart: '2026-05-02T12:00:00.000Z',
+      periodEnd: '2026-06-01T12:00:00.000Z',
+      dueDate: '2026-06-17T12:00:00.000Z',
+      purchasesTotal: '4307.66',
+      previousBalance: '0.00',
+    }
+
+    const metrics = computeInvoiceMetrics(
+      juneCycle,
+      juneStatement,
+      [
+        {
+          type: 'income',
+          title: 'Pagamento Debito Automatico',
+          amount: '4307.66',
+          date: '2026-06-17T12:00:00.000Z',
+          statementId: 'st-july',
+        },
+      ],
+      { closingDay: 1, dueDay: 8, previousStatement: { dueDate: '2026-05-18T12:00:00.000Z' } }
+    )
+
+    expect(metrics.payments).toBe(4307.66)
+    expect(metrics.remaining).toBe(0)
+  })
+
+  it('does not count Itaú payment from the previous cycle against the open invoice', () => {
+    const julyCycle = getBillingCycle(1, 8, '2026-07')
+    const julyStatement = {
+      id: 'st-july',
+      totalAmount: '112.00',
+      isClosed: false,
+      isPaid: false,
+      importSource: 'xlsx',
+      periodStart: '2026-06-02T12:00:00.000Z',
+      periodEnd: '2026-07-01T12:00:00.000Z',
+      dueDate: '2026-07-17T12:00:00.000Z',
+      purchasesTotal: '112.00',
+      previousBalance: '0.00',
+    }
+
+    const metrics = computeInvoiceMetrics(
+      julyCycle,
+      julyStatement,
+      [
+        {
+          type: 'income',
+          title: 'Pagamento Debito Automatico',
+          amount: '4307.66',
+          date: '2026-06-17T12:00:00.000Z',
+          statementId: 'st-july',
+        },
+        {
+          type: 'expense',
+          title: 'Brs*sheincomsao Paulobr',
+          amount: '4.34',
+          date: '2026-06-11T12:00:00.000Z',
+          statementId: 'st-july',
+        },
+      ],
+      { closingDay: 1, dueDay: 8, previousStatement: { dueDate: '2026-06-17T12:00:00.000Z' } }
+    )
+
+    expect(metrics.payments).toBe(0)
+    expect(metrics.remaining).toBe(112)
+  })
+
   it('shows partial remaining on closed OFX invoice with cross-statement payments', () => {
     const juneCycle = getBillingCycle(10, 17, '2026-06')
     const juneStatement = {
@@ -309,7 +383,7 @@ describe('computeInvoiceMetrics', () => {
 
   it('does not count imported purchases in a misaligned billing cycle', () => {
     const marchCycle = getBillingCycle(10, 17, '2026-03')
-    const aprilStatement = {
+    const _aprilStatement = {
       id: 'st-april',
       totalAmount: '5828.83',
       isClosed: true,

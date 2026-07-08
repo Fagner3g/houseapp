@@ -117,15 +117,15 @@ export function computeInvoiceMetrics(
         : allPaymentsFromTx
     : allPaymentsFromTx
 
-  const isNetOfxTotal =
+  const isNetImportedTotal =
     imported &&
-    statement?.importSource === 'ofx' &&
+    (statement?.importSource === 'ofx' || statement?.importSource === 'xlsx') &&
     isNetImportedInvoiceTotal(resolvedInvoiceTotal, purchases, previousBalance, payments)
 
   let paymentsToDeduct: bigint
-  if (statement?.isClosed && !statement?.isPaid && payments > 0n && !isNetOfxTotal) {
+  if (statement?.isClosed && !statement?.isPaid && payments > 0n && !isNetImportedTotal) {
     paymentsToDeduct = payments
-  } else if (imported && (statement?.importSource === 'ofx' || isNetOfxTotal)) {
+  } else if (imported && (statement?.importSource === 'ofx' || statement?.importSource === 'xlsx' || isNetImportedTotal)) {
     paymentsToDeduct = sumPaymentsNotInStatement(
       ownedTransactions,
       purchasesPeriod,

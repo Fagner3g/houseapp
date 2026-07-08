@@ -10,6 +10,7 @@
 export const ImportStatement201StatementImportSource = {  pdf: 'pdf',
   csv: 'csv',
   ofx: 'ofx',
+  xlsx: 'xlsx',
   '': ,
   null: null,
 } as const

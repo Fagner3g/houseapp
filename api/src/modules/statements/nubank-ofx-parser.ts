@@ -5,8 +5,10 @@ import utc from 'dayjs/plugin/utc'
 
 import { badRequest } from '@/core/errors'
 
-import { getBillingCycle, toIsoDateFromYmd } from './nubank-csv-parser'
-import type { ParsedLineTransaction } from './nubank-text-parser'
+import { getBillingCycle } from '@/core/billing-cycle'
+
+import type { ParsedLineTransaction } from './statement-parser-types'
+import { toIsoDateFromYmd } from './statement-parser-types'
 import type { ImportStatementBody } from './statement.schema'
 import { isBillingCycleClosed, suggestPaidFromStatement } from './invoice-status'
 import { deriveImportedStatementSummary } from './statement-invoice-summary'
@@ -25,8 +27,10 @@ function extractStmtTrnBlocks(content: string): string[] {
   const regex = /<STMTTRN>([\s\S]*?)<\/STMTTRN>/gi
   let match: RegExpExecArray | null
 
-  while ((match = regex.exec(content)) !== null) {
-    blocks.push(match[1]!)
+  for (;;) {
+    match = regex.exec(content)
+    if (match === null) break
+    blocks.push(match[1] as string)
   }
 
   return blocks
@@ -55,8 +59,8 @@ function parseInstallment(title: string): { installmentNumber?: number; installm
   if (!match) return {}
 
   return {
-    installmentNumber: Number.parseInt(match[1]!, 10),
-    installmentsTotal: Number.parseInt(match[2]!, 10),
+    installmentNumber: Number.parseInt(match[1] as string, 10),
+    installmentsTotal: Number.parseInt(match[2] as string, 10),
   }
 }
 
@@ -76,7 +80,7 @@ function extractDueDateFromFileName(fileName: string): string | null {
   const match = fileName.match(/Nubank_(\d{4}-\d{2}-\d{2})(?:[^.]*)?\.ofx/i)
   if (!match) return null
 
-  return toIsoDateFromYmd(match[1]!)
+  return toIsoDateFromYmd(match[1] as string)
 }
 
 function extractDayFromOfxDateTag(raw: string): number {

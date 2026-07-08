@@ -12,7 +12,7 @@ import {
   formatInvoiceLabel,
   resolveStatementViewMonthKey,
 } from '@/lib/billing-cycle'
-import type { ParseStatementPdfResponse } from '@/lib/parse-statement-pdf'
+import type { ParseStatementFileResponse } from '@/lib/parse-statement'
 
 import {
   applyReviewToImportBody,
@@ -29,9 +29,10 @@ type ImportStatementPreviewProps = {
   closingDay?: number
   dueDay?: number
   parsed: ImportStatementBody
-  summary: ParseStatementPdfResponse['summary']
-  duplicate: ParseStatementPdfResponse['duplicate']
-  invoiceStatus: ParseStatementPdfResponse['invoiceStatus']
+  summary: ParseStatementFileResponse['summary']
+  duplicate: ParseStatementFileResponse['duplicate']
+  cardMismatchWarning?: string | null
+  invoiceStatus: ParseStatementFileResponse['invoiceStatus']
   provider: string | null
   isPending: boolean
   onReset: () => void
@@ -51,7 +52,7 @@ function money(value: string | null | undefined) {
 function formatProviderLabel(provider: string | null): string | null {
   if (!provider) return null
   if (provider === 'ofx') return 'OFX Nubank'
-  if (provider === 'csv') return 'CSV Nubank'
+  if (provider === 'xlsx') return 'XLSX Itaú'
   return provider
 }
 
@@ -61,6 +62,7 @@ export function ImportStatementPreview({
   dueDay,
   parsed,
   duplicate,
+  cardMismatchWarning,
   invoiceStatus,
   provider,
   isPending,
@@ -133,6 +135,13 @@ export function ImportStatementPreview({
 
   return (
     <div className="flex min-h-0 flex-1 flex-col gap-3 overflow-hidden">
+      {cardMismatchWarning ? (
+        <div className="flex shrink-0 gap-3 rounded-lg border border-amber-300 bg-amber-50 p-3 text-sm text-amber-950">
+          <AlertTriangle className="mt-0.5 size-4 shrink-0 text-amber-600" />
+          <p>{cardMismatchWarning}</p>
+        </div>
+      ) : null}
+
       {duplicate.mode === 'blocked' && existingStatement ? (
         <div className="flex shrink-0 gap-3 rounded-lg border border-amber-300 bg-amber-50 p-3 text-sm text-amber-950">
           <AlertTriangle className="mt-0.5 size-4 shrink-0 text-amber-600" />

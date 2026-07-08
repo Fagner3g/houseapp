@@ -1,4 +1,4 @@
-import { eq } from 'drizzle-orm'
+
 
 import { db } from '@/db'
 import { accounts, type AccountType, type PixKeyType } from '@/db/schemas/accounts'
@@ -6,7 +6,7 @@ import { cards, type CardBrand } from '@/db/schemas/cards'
 import { badRequest, conflict, notFound } from '@/core/errors'
 import { centavosToString, parseCentavos } from '@/core/money'
 import type { CardRecord } from '@/modules/cards/card.repository'
-import { CardService } from '@/modules/cards/card.service'
+import type { CardService } from '@/modules/cards/card.service'
 
 import type { AccountRecord, AccountRepository } from './account.repository'
 import type { SuggestedCreditCardAccount } from '@/modules/statements/nubank-ofx-parser'
@@ -105,6 +105,7 @@ export type CreateAccountInput = {
   brand?: CardBrand | null
   holderName?: string | null
   ofxAccountId?: string | null
+  lastFourDigits?: string | null
 }
 
 export type UpdateAccountInput = Partial<
@@ -204,6 +205,7 @@ export class AccountService {
             type: 'physical',
             brand: input.brand ?? null,
             holderName: input.holderName ?? null,
+            lastFourDigits: input.lastFourDigits ?? null,
           })
           .returning()
 

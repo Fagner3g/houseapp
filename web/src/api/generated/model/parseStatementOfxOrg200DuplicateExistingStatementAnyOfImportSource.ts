@@ -10,6 +10,7 @@
 export const ParseStatementOfxOrg200DuplicateExistingStatementAnyOfImportSource = {  pdf: 'pdf',
   csv: 'csv',
   ofx: 'ofx',
+  xlsx: 'xlsx',
   '': ,
   null: null,
 } as const

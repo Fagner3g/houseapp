@@ -1,14 +1,12 @@
-import type { ParseStatementPdfResponse } from '@/lib/parse-statement-pdf'
+import type { ParseStatementFileResponse } from '@/lib/parse-statement'
 import { formatCurrency } from '@/lib/currency'
 
 export type InvoiceKind = 'partial' | 'closed_unpaid' | 'closed_paid'
 
 export function resolveInvoiceKind(
-  invoiceStatus: ParseStatementPdfResponse['invoiceStatus']
+  invoiceStatus: ParseStatementFileResponse['invoiceStatus']
 ): InvoiceKind {
   if (invoiceStatus.kind) return invoiceStatus.kind
-
-  if (invoiceStatus.importSource === 'csv') return 'partial'
 
   if (invoiceStatus.defaultIsPaid) return 'closed_paid'
   if (invoiceStatus.defaultIsClosed) return 'closed_unpaid'
@@ -26,18 +24,16 @@ type InvoiceStatusDisplay = {
 export function getInvoiceStatusDisplay(
   kind: InvoiceKind,
   invoiceStatus: Pick<
-    ParseStatementPdfResponse['invoiceStatus'],
+    ParseStatementFileResponse['invoiceStatus'],
     'importSource' | 'suggestedPaidReason'
   >,
   totalAmount?: string | null
 ): InvoiceStatusDisplay {
   if (kind === 'partial') {
     const explanation =
-      invoiceStatus.importSource === 'csv'
-        ? 'Exportação do ciclo atual — compras ainda podem entrar nesta fatura.'
-        : invoiceStatus.importSource === 'ofx'
-          ? 'OFX do ciclo atual — o fechamento ainda não ocorreu.'
-          : 'PDF sem fatura fechada — o ciclo pode ainda estar em andamento.'
+      invoiceStatus.importSource === 'ofx'
+        ? 'OFX do ciclo atual — o fechamento ainda não ocorreu.'
+        : 'Exportação do ciclo atual — o fechamento ainda não ocorreu.'
 
     return {
       cycleLabel: 'Ciclo atual',
@@ -50,9 +46,11 @@ export function getInvoiceStatusDisplay(
 
   if (kind === 'closed_paid') {
     const explanation =
-      invoiceStatus.importSource === 'ofx'
-        ? 'Exportação OFX — fatura fechada com identificadores do banco.'
-        : invoiceStatus.suggestedPaidReason
+      invoiceStatus.importSource === 'xlsx'
+        ? 'Exportação XLSX — fatura paga do Itaú.'
+        : invoiceStatus.importSource === 'ofx'
+          ? 'Exportação OFX — fatura fechada com identificadores do banco.'
+          : invoiceStatus.suggestedPaidReason
 
     return {
       cycleLabel: 'Fatura fechada',

@@ -1,7 +1,7 @@
 ---
 description: Finance Kernel — shared domain logic in @houseapp/finance-core, layered features (app-wide)
-globs: "{web/src/features/**,web/src/lib/**,api/src/modules/**,api/src/core/**,api/src/domain/**,packages/finance-core/**}"
-alwaysApply: false
+globs: "{web/src/**,api/src/**,packages/**}"
+alwaysApply: true
 ---
 
 # Finance Kernel Pattern
@@ -52,13 +52,18 @@ packages/finance-core/src/
 
 Each domain exposes an `index.ts`. Only infra files stay flat at the root (`errors.ts`).
 
+## File size (hard limit)
+
+- **Never** create or grow a file beyond ~150 lines without splitting first.
+- Parsers and complex modules must use a **folder + `index.ts` barrel** from day one.
+- **Never** create monolithic `*-parser.ts` files at module root — e.g. `api/src/modules/statements/itau-xlsx/`, not `itau-xlsx-parser.ts`.
+- Good examples: `packages/finance-core/src/invoice/` · `api/src/modules/alerts/whatsapp-alert-message/`
+
 ## Complex domains
 
-Split by **role** into a **folder** with `index.ts`, not a heap of sibling files (~150 lines/file):
+Split by **role** into a **folder** with `index.ts`:
 
 `types.ts` · `classifiers.ts` · `periods.ts` · `filters.ts` · `metrics.ts` · `index.ts`
-
-Example: `packages/finance-core/src/invoice/` · `api/src/modules/alerts/whatsapp-alert-message/`
 
 ## On every refactor (required cleanup)
 
@@ -84,6 +89,8 @@ When you touch or extract a slice:
 - Create a local money/date helper that already exists in `finance-core`
 - Leave dead `@deprecated` or unused exports after a split/extract
 - pt-BR display strings in `finance-core`
+- Create or grow files past ~150 lines without splitting
+- Add monolithic `*-parser.ts` at module root — use a folder + `index.ts` barrel
 
 ## Gradual migration (on touch)
 

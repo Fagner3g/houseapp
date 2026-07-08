@@ -10,6 +10,7 @@ import type { ParseStatementOfx200Provider } from "./parseStatementOfx200Provide
 import type { ParseStatementOfx200Summary } from "./parseStatementOfx200Summary";
 import type { ParseStatementOfx200Duplicate } from "./parseStatementOfx200Duplicate";
 import type { ParseStatementOfx200InvoiceStatus } from "./parseStatementOfx200InvoiceStatus";
+import type { ParseStatementOfx200CardMismatchWarning } from "./parseStatementOfx200CardMismatchWarning";
 import type { ParseStatementOfx200AccountResolution } from "./parseStatementOfx200AccountResolution";
 
 export type ParseStatementOfx200 = {
@@ -22,5 +23,6 @@ export type ParseStatementOfx200 = {
   summary: ParseStatementOfx200Summary;
   duplicate: ParseStatementOfx200Duplicate;
   invoiceStatus: ParseStatementOfx200InvoiceStatus;
+  cardMismatchWarning?: ParseStatementOfx200CardMismatchWarning;
   accountResolution: ParseStatementOfx200AccountResolution;
 };

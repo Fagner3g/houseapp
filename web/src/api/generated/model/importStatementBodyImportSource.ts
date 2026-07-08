@@ -11,7 +11,6 @@ export type ImportStatementBodyImportSource =
 
 // eslint-disable-next-line @typescript-eslint/no-redeclare
 export const ImportStatementBodyImportSource = {
-  pdf: "pdf",
-  csv: "csv",
   ofx: "ofx",
+  xlsx: "xlsx",
 } as const;

@@ -21,14 +21,13 @@ import {
 import { useActiveOrganization } from '@/hooks/use-active-organization'
 import { bulkReviewImport } from '@/lib/bulk-review-import'
 import {
-  isParseStatementOfxResponse,
-  parseStatementCsv,
+  hasStatementAccountResolution,
   parseStatementOfx,
   parseStatementOfxOrg,
-  parseStatementPdf,
+  parseStatementXlsx,
   type ParseStatementFileResponse,
-  type ParseStatementOfxResponse,
-} from '@/lib/parse-statement-pdf'
+  type ParseStatementWithResolutionResponse,
+} from '@/lib/parse-statement'
 import { useQueryClient } from '@tanstack/react-query'
 
 import { ImportOfxAccountSetup } from './import-ofx-account-setup'
@@ -36,16 +35,20 @@ import type { ImportReviewRowState, ParsedTransactionReviewItem } from './import
 import { buildPostImportUpdates } from './import-review-types'
 import { ImportStatementPreview } from './import-statement-preview'
 
-type StatementFileKind = 'ofx' | 'csv' | 'pdf'
+type StatementFileKind = 'ofx' | 'xlsx'
 
 function detectStatementFileKind(file: File): StatementFileKind | null {
   const name = file.name.toLowerCase()
   if (name.endsWith('.ofx')) return 'ofx'
-  if (name.endsWith('.csv')) return 'csv'
-  if (name.endsWith('.pdf')) return 'pdf'
+  if (name.endsWith('.xlsx')) return 'xlsx'
   if (file.type === 'application/x-ofx' || file.type.includes('ofx')) return 'ofx'
-  if (file.type === 'application/pdf') return 'pdf'
-  if (file.type === 'text/csv') return 'csv'
+  if (
+    file.type.includes('spreadsheet') ||
+    file.type.includes('excel') ||
+    file.type.includes('officedocument')
+  ) {
+    return 'xlsx'
+  }
   return null
 }
 
@@ -79,22 +82,23 @@ export function ImportStatementDialog({
   const [fileParsing, setFileParsing] = useState(false)
   const [parseResult, setParseResult] = useState<ParseStatementFileResponse | null>(null)
   const [resolvedAccountId, setResolvedAccountId] = useState<string | null>(initialAccountId ?? null)
-  const [ofxAccountCreated, setOfxAccountCreated] = useState(false)
-  const [ofxMismatchAccepted, setOfxMismatchAccepted] = useState(false)
+  const [accountSetupCompleted, setAccountSetupCompleted] = useState(false)
+  const [mismatchAccepted, setMismatchAccepted] = useState(false)
   const { mutateAsync: importStatement, isPending } = useImportStatement()
 
   const resetFileState = () => {
     setParseResult(null)
     setFileParsing(false)
     setResolvedAccountId(initialAccountId ?? null)
-    setOfxAccountCreated(false)
-    setOfxMismatchAccepted(false)
+    setAccountSetupCompleted(false)
+    setMismatchAccepted(false)
   }
 
   const invalidateAfterImport = (accountId: string) => {
-    queryClient.invalidateQueries({ queryKey: getListStatementsQueryKey(slug!, accountId) })
-    queryClient.invalidateQueries({ queryKey: getListTransactionsQueryKey(slug!) })
-    queryClient.invalidateQueries({ queryKey: getListAccountsQueryKey(slug!) })
+    const orgSlug = slug ?? ''
+    queryClient.invalidateQueries({ queryKey: getListStatementsQueryKey(orgSlug, accountId) })
+    queryClient.invalidateQueries({ queryKey: getListTransactionsQueryKey(orgSlug) })
+    queryClient.invalidateQueries({ queryKey: getListAccountsQueryKey(orgSlug) })
   }
 
   const finishFileImport = (
@@ -134,50 +138,49 @@ export function ImportStatementDialog({
         (result.splitsInferredCount > 0
           ? `, ${result.splitsInferredCount} com divisão sugerida`
           : '') +
-        (kind === 'ofx' ? ' (OFX)' : kind === 'pdf' ? ` (${result.provider})` : '')
+        (kind === 'ofx' ? ' (OFX)' : ' (XLSX)')
     )
 
-    if (kind === 'pdf') {
-      toast.message('Importado via PDF. Para maior precisão na próxima, prefira OFX.')
+    if (result.cardMismatchWarning) {
+      toast.warning(result.cardMismatchWarning)
     }
   }
 
-  const ofxResolution =
-    parseResult && isParseStatementOfxResponse(parseResult)
-      ? parseResult.accountResolution
-      : null
+  const parsedFileKind: StatementFileKind | null = parseResult?.provider ?? null
+
+  const accountResolution = parseResult && hasStatementAccountResolution(parseResult)
+    ? parseResult.accountResolution
+    : null
 
   const reviewAccountId =
     resolvedAccountId ??
-    (ofxResolution?.mode === 'existing' ? ofxResolution.accountId : null) ??
+    (accountResolution?.mode === 'existing' ? accountResolution.accountId : null) ??
     initialAccountId ??
     null
 
-  const ofxMissingResolution =
-    parseResult &&
-    !ofxAccountCreated &&
-    ofxResolution?.mode === 'missing'
-      ? ofxResolution
+  const missingResolution =
+    parseResult && !accountSetupCompleted && accountResolution?.mode === 'missing'
+      ? accountResolution
       : null
 
-  const ofxMismatchResolution =
-    parseResult && !ofxMismatchAccepted && ofxResolution?.mode === 'mismatch'
-      ? ofxResolution
+  const mismatchResolution =
+    parseResult && !mismatchAccepted && accountResolution?.mode === 'mismatch'
+      ? accountResolution
       : null
 
-  const showOfxReview =
+  const showStatementReview =
     !!parseResult &&
     !!reviewAccountId &&
-    (ofxResolution?.mode !== 'missing' || ofxAccountCreated) &&
-    (ofxResolution?.mode !== 'mismatch' || ofxMismatchAccepted)
+    (accountResolution?.mode !== 'missing' || accountSetupCompleted) &&
+    (accountResolution?.mode !== 'mismatch' || mismatchAccepted)
 
-  const handleOfxResolution = (result: ParseStatementOfxResponse) => {
+  const handleAccountResolution = (result: ParseStatementWithResolutionResponse) => {
     if (result.accountResolution.mode === 'existing') {
       setResolvedAccountId(result.accountResolution.accountId)
 
       if (initialAccountId && initialAccountId !== result.accountResolution.accountId) {
         toast.message(
-          `OFX vinculado à conta "${result.accountResolution.accountName}" (identificador Nubank)`
+          `${result.provider === 'ofx' ? 'OFX' : 'XLSX'} vinculado à conta "${result.accountResolution.accountName}"`
         )
       }
     }
@@ -186,7 +189,7 @@ export function ImportStatementDialog({
   const handleFileUpload = async (file: File) => {
     const kind = detectStatementFileKind(file)
     if (!kind) {
-      toast.error('Formato não suportado. Use arquivos .ofx, .csv ou .pdf')
+      toast.error('Formato não suportado. Use arquivos .ofx ou .xlsx')
       return
     }
 
@@ -197,8 +200,8 @@ export function ImportStatementDialog({
       return
     }
 
-    if ((kind === 'csv' || kind === 'pdf') && !initialAccountId) {
-      toast.error('Selecione uma conta de cartão antes de importar CSV ou PDF')
+    if (kind === 'xlsx' && !initialAccountId) {
+      toast.error('Selecione uma conta de cartão Itaú antes de importar o XLSX')
       return
     }
 
@@ -212,18 +215,17 @@ export function ImportStatementDialog({
           ? await parseStatementOfx(slug, initialAccountId, file)
           : await parseStatementOfxOrg(slug, file)
         setParseResult(result)
-        handleOfxResolution(result)
+        handleAccountResolution(result)
         if (result.accountResolution.mode === 'existing') {
           showParseSuccessToast(kind, result)
         }
-      } else if (kind === 'csv') {
-        const result = await parseStatementCsv(slug, initialAccountId!, file)
-        setParseResult(result)
-        showParseSuccessToast(kind, result)
       } else {
-        const result = await parseStatementPdf(slug, initialAccountId!, file)
+        const result = await parseStatementXlsx(slug, initialAccountId ?? '', file)
         setParseResult(result)
-        showParseSuccessToast(kind, result)
+        handleAccountResolution(result)
+        if (result.accountResolution.mode === 'existing') {
+          showParseSuccessToast(kind, result)
+        }
       }
     } catch (error) {
       const message =
@@ -231,9 +233,7 @@ export function ImportStatementDialog({
           ? error.message
           : kind === 'ofx'
             ? 'Erro ao interpretar OFX'
-            : kind === 'csv'
-              ? 'Erro ao interpretar CSV'
-              : 'Erro ao interpretar PDF'
+            : 'Erro ao interpretar XLSX'
       toast.error(message)
     } finally {
       setFileParsing(false)
@@ -269,7 +269,7 @@ export function ImportStatementDialog({
     }
   }
 
-  const isWidePreview = showOfxReview
+  const isWidePreview = showStatementReview
 
   return (
     <Dialog
@@ -294,18 +294,26 @@ export function ImportStatementDialog({
             : 'max-w-2xl'
         }
       >
-        {ofxMismatchResolution ? (
+        {mismatchResolution ? (
           <div className="space-y-6 p-6">
             <DialogHeader>
-              <DialogTitle>OFX de outro cartão</DialogTitle>
+              <DialogTitle>
+                {parsedFileKind === 'xlsx' ? 'XLSX de outro cartão' : 'OFX de outro cartão'}
+              </DialogTitle>
               <DialogDescription>
                 Este arquivo pertence ao cartão{' '}
                 <span className="font-medium text-slate-900">
-                  {ofxMismatchResolution.expectedAccountName}
+                  {mismatchResolution.expectedAccountName}
                 </span>
+                {mismatchResolution.cardLastFour ? (
+                  <>
+                    {' '}
+                    (final {mismatchResolution.cardLastFour})
+                  </>
+                ) : null}
                 , não ao cartão selecionado (
                 <span className="font-medium text-slate-900">
-                  {ofxMismatchResolution.uploadedOnAccountName}
+                  {mismatchResolution.uploadedOnAccountName}
                 </span>
                 ).
               </DialogDescription>
@@ -323,29 +331,31 @@ export function ImportStatementDialog({
                 type="button"
                 className="bg-violet-600 hover:bg-violet-700"
                 onClick={() => {
-                  setResolvedAccountId(ofxMismatchResolution.expectedAccountId)
-                  setOfxMismatchAccepted(true)
-                  showParseSuccessToast('ofx', parseResult!)
+                  setResolvedAccountId(mismatchResolution.expectedAccountId)
+                  setMismatchAccepted(true)
+                  showParseSuccessToast(parsedFileKind ?? 'ofx', parseResult as ParseStatementFileResponse)
                 }}
               >
-                Importar em {ofxMismatchResolution.expectedAccountName}
+                Importar em {mismatchResolution.expectedAccountName}
               </Button>
             </div>
           </div>
-        ) : ofxMissingResolution ? (
+        ) : missingResolution ? (
           <div className="space-y-6 p-6">
             <DialogHeader>
               <DialogTitle>
-                {ofxMissingResolution.uploadedOnAccountName
-                  ? 'Cadastrar cartão do OFX'
+                {missingResolution.uploadedOnAccountName
+                  ? parsedFileKind === 'xlsx'
+                    ? 'Cadastrar cartão do XLSX'
+                    : 'Cadastrar cartão do OFX'
                   : 'Completar cadastro do cartão'}
               </DialogTitle>
               <DialogDescription>
-                {ofxMissingResolution.uploadedOnAccountName ? (
+                {missingResolution.uploadedOnAccountName ? (
                   <>
-                    Este OFX não pertence ao cartão{' '}
+                    Este {parsedFileKind === 'xlsx' ? 'XLSX' : 'OFX'} não pertence ao cartão{' '}
                     <span className="font-medium text-slate-900">
-                      {ofxMissingResolution.uploadedOnAccountName}
+                      {missingResolution.uploadedOnAccountName}
                     </span>
                     . Cadastre o cartão identificado no arquivo para continuar a importação.
                   </>
@@ -355,22 +365,23 @@ export function ImportStatementDialog({
               </DialogDescription>
             </DialogHeader>
             <ImportOfxAccountSetup
-              resolution={ofxMissingResolution}
+              resolution={missingResolution}
+              importSource={parsedFileKind === 'xlsx' ? 'xlsx' : 'ofx'}
               onCancel={resetFileState}
               onCreated={accountId => {
                 setResolvedAccountId(accountId)
-                setOfxAccountCreated(true)
-                showParseSuccessToast('ofx', parseResult!)
+                setAccountSetupCompleted(true)
+                showParseSuccessToast(parsedFileKind ?? 'ofx', parseResult as ParseStatementFileResponse)
               }}
             />
           </div>
-        ) : showOfxReview && parseResult ? (
+        ) : showStatementReview && parseResult ? (
           <div className="flex min-h-0 flex-1 flex-col overflow-hidden p-6 pb-4">
             <DialogHeader className="shrink-0 pb-4">
               <DialogTitle>Conferir fatura</DialogTitle>
             </DialogHeader>
             <ImportStatementPreview
-              accountId={reviewAccountId!}
+              accountId={reviewAccountId ?? ''}
               closingDay={closingDay}
               dueDay={dueDay}
               parsed={parseResult.parsed}
@@ -378,6 +389,7 @@ export function ImportStatementDialog({
               duplicate={parseResult.duplicate}
               invoiceStatus={parseResult.invoiceStatus}
               provider={parseResult.provider}
+              cardMismatchWarning={parseResult.cardMismatchWarning}
               isPending={isPending}
               onReset={resetFileState}
               onViewExistingStatement={params => {
@@ -404,21 +416,17 @@ export function ImportStatementDialog({
                 ) : (
                   <>
                     <p>
-                      <span className="font-medium text-slate-700">Recomendado:</span> exporte a
-                      fatura em OFX pelo app Nubank. Mais preciso, processado localmente e com
-                      identificação estável das transações.
+                      Importe apenas faturas fechadas — exportações oficiais do banco com totais
+                      confiáveis.
                     </p>
                     <ul className="list-inside list-disc space-y-1 pl-1">
                       <li>
-                        <span className="font-medium text-slate-700">OFX</span> — fatura fechada
-                        (recomendado)
+                        <span className="font-medium text-slate-700">OFX</span> — Nubank, fatura
+                        fechada
                       </li>
                       <li>
-                        <span className="font-medium text-slate-700">CSV</span> — ciclo em aberto
-                      </li>
-                      <li>
-                        <span className="font-medium text-slate-700">PDF</span> — alternativa quando
-                        não houver OFX
+                        <span className="font-medium text-slate-700">XLSX</span> — Itaú, fatura
+                        paga
                       </li>
                     </ul>
                   </>
@@ -443,7 +451,7 @@ export function ImportStatementDialog({
                   accept={
                     ofxOnly
                       ? '.ofx,application/x-ofx'
-                      : '.ofx,.csv,.pdf,application/x-ofx,text/csv,application/pdf'
+                      : '.ofx,.xlsx,application/x-ofx,application/vnd.openxmlformats-officedocument.spreadsheetml.sheet'
                   }
                   className="hidden"
                   disabled={fileParsing || isPending}

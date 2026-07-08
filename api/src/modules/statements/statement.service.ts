@@ -10,6 +10,7 @@ import { centavosToString, parseCentavos } from '@/core/money'
 import type { AccountRecord, AccountRepository } from '@/modules/accounts/account.repository'
 import { suggestCreditCardAccountName } from '@/modules/accounts/suggest-credit-card-account-name'
 import type { CategoryRepository } from '@/modules/categories/category.repository'
+import type { CardRepository } from '@/modules/cards/card.repository'
 import type { TransactionRepository } from '@/modules/transactions/transaction.repository'
 
 import type {
@@ -31,18 +32,18 @@ import {
   inferStatementSplits,
 } from './statement-split-inferrer'
 import { loadCategorizationHistory } from './categorization-history'
-import { parseNubankCsv } from './nubank-csv-parser'
+import { parseItauXlsx } from './itau-xlsx'
+import { buildItauSuggestedAccount } from './itau-xlsx/suggested-account'
 import { parseNubankOfx, type SuggestedCreditCardAccount } from './nubank-ofx-parser'
-import { parseStatementPdf } from './statement-pdf-parser'
 import {
   computeStatementPaymentRemaining,
   detectInvoiceStatus,
   type InvoiceStatusDetection,
-  shouldCreateSyntheticPaymentOnImport,
 } from './invoice-status'
 import { annotateTransactionDuplicates } from './statement-duplicate-detection'
 import { resolveImportedSummaryForImport } from './statement-invoice-summary'
 import { resolveOfxAccountForUpload as resolveOfxAccountUpload } from './statement-ofx-account-resolution'
+import { resolveXlsxAccountForUpload } from './statement-xlsx-account-resolution'
 
 dayjs.extend(utc)
 
@@ -57,7 +58,7 @@ export type StatementDuplicateCheck = {
 
 export type ParseStatementFileResult = {
   parsed: ImportStatementBody
-  provider: 'groq' | 'gemini' | 'deepseek' | 'regex' | 'csv' | 'ofx'
+  provider: 'ofx' | 'xlsx'
   transactionsCount: number
   extractedTextLength: number
   categorizedCount: number
@@ -65,11 +66,10 @@ export type ParseStatementFileResult = {
   summary: StatementImportSummary
   duplicate: StatementDuplicateCheck
   invoiceStatus: InvoiceStatusDetection
+  cardMismatchWarning?: string | null
 }
 
-export type ParseStatementPdfResult = ParseStatementFileResult
-
-export type OfxAccountResolution =
+export type StatementAccountResolution =
   | {
       mode: 'existing'
       accountId: string
@@ -79,22 +79,30 @@ export type OfxAccountResolution =
     }
   | {
       mode: 'missing'
-      ofxAccountId: string
       suggestedAccount: SuggestedCreditCardAccount
       uploadedOnAccountName?: string
+      ofxAccountId?: string
+      cardLastFour?: string
     }
   | {
       mode: 'mismatch'
-      ofxAccountId: string
       expectedAccountId: string
       expectedAccountName: string
       uploadedOnAccountId: string
       uploadedOnAccountName: string
+      ofxAccountId?: string
+      cardLastFour?: string
     }
 
-export type ParseStatementOfxResult = ParseStatementFileResult & {
-  accountResolution: OfxAccountResolution
+/** @deprecated Use StatementAccountResolution */
+export type OfxAccountResolution = StatementAccountResolution
+
+export type ParseStatementWithResolutionResult = ParseStatementFileResult & {
+  accountResolution: StatementAccountResolution
 }
+
+export type ParseStatementOfxResult = ParseStatementWithResolutionResult
+export type ParseStatementXlsxResult = ParseStatementWithResolutionResult
 
 export type StatementDto = {
   id: string
@@ -115,7 +123,7 @@ export type StatementDto = {
   transactionsCount: number
   fileHash: string
   fileName: string | null
-  importSource: 'pdf' | 'csv' | 'ofx' | null
+  importSource: 'pdf' | 'csv' | 'ofx' | 'xlsx' | null
   isClosed: boolean
   isPaid: boolean
   importedBy: string | null
@@ -155,7 +163,8 @@ export class StatementService {
     private readonly statementRepository: StatementRepository,
     private readonly accountRepository: AccountRepository,
     private readonly categoryRepository: CategoryRepository,
-    private readonly transactionRepository: TransactionRepository
+    private readonly transactionRepository: TransactionRepository,
+    private readonly cardRepository: CardRepository
   ) {}
 
   async list(organizationId: string, accountId: string): Promise<StatementDto[]> {
@@ -197,7 +206,7 @@ export class StatementService {
       throw badRequest('Somente faturas fechadas podem ser marcadas como pagas')
     }
 
-    if (isPaid && shouldCreateSyntheticPaymentOnImport(input.importSource)) {
+    if (isPaid) {
       const periodEnd = new Date(input.periodEnd)
       const dueDateForRemaining = new Date(input.dueDate)
       const totalAmount = parseCentavos(input.totalAmount)
@@ -248,7 +257,7 @@ export class StatementService {
 
     const dueDate = new Date(input.dueDate)
 
-    if (input.importSource === 'pdf' || input.importSource === 'ofx') {
+    if (input.importSource === 'ofx' || input.importSource === 'xlsx') {
       await this.syncAccountBillingCycleFromStatement(account, {
         closingDate: new Date(input.closingDate),
         dueDate,
@@ -306,18 +315,12 @@ export class StatementService {
       importedBy,
     }
 
-    const createSyntheticPayment = shouldCreateSyntheticPaymentOnImport(input.importSource)
-    const paymentSourceAccountId =
-      createSyntheticPayment
-        ? (input.paymentSourceAccountId ?? account.paymentAccountId ?? null)
-        : null
-
     const paymentOptions = isClosed
       ? {
           isClosed,
           isPaid,
-          createSyntheticPayment,
-          paymentSourceAccountId,
+          createSyntheticPayment: false,
+          paymentSourceAccountId: null,
           paymentDate,
           paymentTitle,
         }
@@ -330,7 +333,7 @@ export class StatementService {
     }
 
     const importContext =
-      input.importSource === 'ofx' && isClosed
+      (input.importSource === 'ofx' || input.importSource === 'xlsx') && isClosed
         ? {
             previousStatement: await this.statementRepository.findPreviousStatementByPeriodEnd(
               accountId,
@@ -355,7 +358,7 @@ export class StatementService {
           importContext
         )
 
-    if (input.importSource === 'ofx') {
+    if (input.importSource === 'ofx' || input.importSource === 'xlsx') {
       await this.statementRepository.reconcileCrossInvoicePayments(accountId)
     }
 
@@ -374,46 +377,88 @@ export class StatementService {
     }
   }
 
-  async parsePdf(
+  async parseXlsx(
     organizationId: string,
     accountId: string,
     userId: string,
     buffer: Buffer,
     fileName: string
-  ): Promise<ParseStatementPdfResult> {
-    await this.ensureAccount(organizationId, accountId)
-
-    const result = await parseStatementPdf({ buffer, fileName })
-
-    return this.enrichParsedStatement(organizationId, accountId, userId, result.parsed, {
-      provider: result.provider,
-      extractedTextLength: result.extractedTextLength,
-      transactionsCount: result.transactionsCount,
-      extractedText: result.extractedText,
-    })
-  }
-
-  async parseCsv(
-    organizationId: string,
-    accountId: string,
-    userId: string,
-    content: string,
-    fileName: string
-  ): Promise<ParseStatementFileResult> {
+  ): Promise<ParseStatementXlsxResult> {
     const account = await this.ensureAccount(organizationId, accountId)
 
-    const result = parseNubankCsv({
-      content,
+    const result = parseItauXlsx({
+      buffer,
       fileName,
       closingDay: account.closingDay,
       dueDay: account.dueDay,
     })
 
-    return this.enrichParsedStatement(organizationId, accountId, userId, result.parsed, {
-      provider: 'csv',
-      extractedTextLength: content.length,
+    const cardMap = await this.buildCardMap(accountId)
+    const cardOnTargetAccount = result.cardLastFour ? cardMap.has(result.cardLastFour) : true
+    const ownerByCard = result.cardLastFour
+      ? await this.cardRepository.findActiveAccountByLastFourDigits(
+          organizationId,
+          result.cardLastFour
+        )
+      : null
+
+    const uploadResolution = resolveXlsxAccountForUpload(
+      { id: account.id, name: account.name },
+      result.cardLastFour,
+      cardOnTargetAccount,
+      ownerByCard
+    )
+
+    let accountResolution: StatementAccountResolution
+
+    if (uploadResolution.mode === 'missing') {
+      const allAccounts =
+        await this.accountRepository.findAllByOrganizationIncludingInactive(organizationId)
+      const suggested = buildItauSuggestedAccount({
+        cardName: result.cardName,
+        cardLastFour: result.cardLastFour,
+        closingDate: result.parsed.closingDate,
+        dueDate: result.parsed.dueDate,
+      })
+
+      accountResolution = {
+        mode: 'missing',
+        cardLastFour: uploadResolution.cardLastFour,
+        suggestedAccount: {
+          ...suggested,
+          name: suggestCreditCardAccountName(
+            suggested.name,
+            suggested.institution,
+            allAccounts
+          ),
+        },
+        uploadedOnAccountName: account.name,
+      }
+    } else {
+      accountResolution = uploadResolution
+    }
+
+    const enrichAccountId =
+      accountResolution.mode === 'existing'
+        ? accountResolution.accountId
+        : accountResolution.mode === 'missing'
+          ? '__pending_xlsx_account__'
+          : accountResolution.mode === 'mismatch'
+            ? accountResolution.expectedAccountId
+            : accountId
+
+    const enriched = await this.enrichParsedStatement(organizationId, enrichAccountId, userId, result.parsed, {
+      provider: 'xlsx',
+      xlsxVariant: result.invoiceKind,
+      extractedTextLength: buffer.length,
       transactionsCount: result.transactionsCount,
+      skipDuplicateCheck: accountResolution.mode === 'missing',
     })
+
+    return {
+      ...enriched,
+      accountResolution,
+    }
   }
 
   async parseOfx(
@@ -437,7 +482,7 @@ export class StatementService {
       result.ofxAccountId
     )
 
-    let accountResolution: OfxAccountResolution
+    let accountResolution: StatementAccountResolution
 
     if (
       !ownerByOfx?.isActive &&
@@ -557,7 +602,7 @@ export class StatementService {
 
   private toOfxAccountResolution(
     resolution: ReturnType<typeof resolveOfxAccountUpload>
-  ): OfxAccountResolution {
+  ): StatementAccountResolution {
     if (resolution.mode === 'mismatch') {
       return resolution
     }
@@ -578,8 +623,8 @@ export class StatementService {
       provider: ParseStatementFileResult['provider']
       extractedTextLength: number
       transactionsCount: number
-      extractedText?: string
       skipDuplicateCheck?: boolean
+      xlsxVariant?: 'paid' | 'open'
     }
   ): Promise<ParseStatementFileResult> {
     const categories = await this.categoryRepository.findAllByOrganization(organizationId)
@@ -647,10 +692,10 @@ export class StatementService {
 
     const invoiceStatus = detectInvoiceStatus({
       provider: meta.provider,
-      extractedText: meta.extractedText,
       totalAmount: parsed.totalAmount,
       periodEnd: parsed.periodEnd,
       dueDate: parsed.dueDate,
+      xlsxVariant: meta.xlsxVariant,
       transactions: parsed.transactions.map(tx => ({
         type: (tx.type ?? 'expense') as 'income' | 'expense',
         amount: tx.amount,
@@ -690,7 +735,7 @@ export class StatementService {
   }
 
   private async checkDuplicate(
-    organizationId: string,
+    _organizationId: string,
     accountId: string,
     parsed: ImportStatementBody,
     counts: { newTransactionsCount: number; duplicateTransactionsCount: number }
@@ -819,7 +864,7 @@ export class StatementService {
     return mapped
   }
 
-  /** PDF faturas are authoritative — keep account billing days in sync with the bank. */
+  /** Closed invoice imports are authoritative — keep account billing days in sync with the bank. */
   private async syncAccountBillingCycleFromStatement(
     account: AccountRecord,
     dates: { closingDate: Date; dueDate: Date }

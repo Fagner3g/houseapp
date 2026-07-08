@@ -59,6 +59,7 @@ const accountBodyFields = z.object({
   brand: cardBrandSchema.nullable().optional(),
   holderName: z.string().nullable().optional(),
   ofxAccountId: z.string().nullable().optional(),
+  lastFourDigits: z.string().length(4).nullable().optional(),
 })
 
 const createAccountBody = accountBodyFields.superRefine((body, ctx) => {
