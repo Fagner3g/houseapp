@@ -4,11 +4,6 @@
   "main": "index.js",
   "scripts": {
     "dev": "tsx watch --env-file ./.env src/http/server.ts",
-    "seed": "tsx --env-file ./.env src/db/seed.ts",
-    "seed:reset": "tsx --env-file ./.env src/db/seed-reset.ts",
-    "seed:sync-dev-phone": "tsx --env-file ./.env src/db/seed-sync-dev-phone.ts",
-    "seed:scenarios": "tsx --env-file ./.env src/db/seed-scenarios.ts",
-    "seed:clear-transactions": "tsx --env-file ./.env src/db/clear-transactions.ts",
     "db:repair-imported-statements": "tsx --env-file ./.env src/db/repair-imported-statements.ts",
     "db:backfill-statement-summaries": "tsx --env-file ./.env src/db/backfill-statement-summaries.ts",
     "db:repair-split-amounts": "tsx --env-file ./.env src/db/repair-split-amounts.ts",

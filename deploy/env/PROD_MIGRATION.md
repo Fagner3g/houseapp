@@ -52,7 +52,7 @@ docker exec postgres_postgres.1.<id> psql -U postgres -c "
   CREATE DATABASE houseapp;
 "
 
-# Migrações + seed (ver deploy/env/README.md)
+# Migrações (ver deploy/env/README.md)
 ```
 
 ## Checklist pós-migração
