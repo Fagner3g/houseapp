@@ -9,4 +9,6 @@
 export type ListSplitTransactionIds200PartiallyDividedItem = {
   transactionId: string;
   splitWithName: string;
+  splitAmount: string;
+  transactionAmount: string;
 };

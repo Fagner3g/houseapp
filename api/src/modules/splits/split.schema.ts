@@ -174,6 +174,8 @@ export const listSplitTransactionIdsSchema = {
         z.object({
           transactionId: z.string(),
           splitWithName: z.string(),
+          splitAmount: z.string(),
+          transactionAmount: z.string(),
         })
       ),
     }),

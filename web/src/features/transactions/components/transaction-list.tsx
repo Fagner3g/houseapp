@@ -41,6 +41,12 @@ import { useActiveOrganization } from '@/hooks/use-active-organization'
 import { useDrawerStore } from '@/stores/drawers'
 import { cn } from '@/lib/utils'
 import { CategorySelect } from '@/features/categories/components/category-select'
+import { useSplitTransactionIds } from '@/features/credit-cards/hooks/use-split-transaction-ids'
+import {
+  formatDelegatedSplitBadge,
+  formatPartialSplitBadge,
+  type PartialSplitBadgeInfo,
+} from '@/features/transactions/lib/split-badge-label'
 import { isInvoiceSummary, type TransactionListItem } from '@/features/transactions/types'
 import { TransactionInlineCreateBar } from './transaction-inline-create-bar'
 import { DeleteTransactionDialog } from './delete-transaction-dialog'
@@ -60,8 +66,8 @@ interface TransactionListProps {
   cards?: Array<{ id: string; label: string; lastFourDigits?: string | null }>
   /** Map of transaction id → delegate name for fully delegated purchases. */
   fullyDelegatedById?: Map<string, string>
-  /** Map of transaction id → split partner name for partially divided purchases. */
-  partiallyDividedById?: Map<string, string>
+  /** Map of transaction id → partial split info for badge labels. */
+  partiallyDividedById?: Map<string, PartialSplitBadgeInfo>
   containerClassName?: string
 }
 
@@ -522,21 +528,31 @@ function TransactionTable({
                     <span className="max-w-[200px] truncate font-medium text-slate-900 lg:max-w-xs">
                       {tx.title}
                     </span>
-                    {fullyDelegatedById?.get(tx.id) ? (
-                      <Badge
-                        variant="secondary"
-                        className="shrink-0 border-amber-200 bg-amber-50 text-[10px] font-medium text-amber-800"
-                      >
-                        Delegada · {fullyDelegatedById.get(tx.id)}
-                      </Badge>
-                    ) : partiallyDividedById?.get(tx.id) ? (
-                      <Badge
-                        variant="secondary"
-                        className="shrink-0 border-sky-200 bg-sky-50 text-[10px] font-medium text-sky-800"
-                      >
-                        Dividida · {partiallyDividedById.get(tx.id)}
-                      </Badge>
-                    ) : null}
+                    {(() => {
+                      const delegatedName = fullyDelegatedById?.get(tx.id)
+                      if (delegatedName) {
+                        return (
+                          <Badge
+                            variant="secondary"
+                            className="shrink-0 border-amber-200 bg-amber-50 text-[10px] font-medium text-amber-800"
+                          >
+                            {formatDelegatedSplitBadge(delegatedName)}
+                          </Badge>
+                        )
+                      }
+                      const partialInfo = partiallyDividedById?.get(tx.id)
+                      if (partialInfo) {
+                        return (
+                          <Badge
+                            variant="secondary"
+                            className="shrink-0 border-sky-200 bg-sky-50 text-[10px] font-medium text-sky-800"
+                          >
+                            {formatPartialSplitBadge(partialInfo)}
+                          </Badge>
+                        )
+                      }
+                      return null
+                    })()}
                   </div>
                   {tx.installmentsTotal != null && tx.installmentsTotal > 1 && (
                     <p className="text-xs text-slate-500">
@@ -717,10 +733,11 @@ export function TransactionList({
   mode = 'default',
   accountId,
   cards,
-  fullyDelegatedById,
-  partiallyDividedById,
+  fullyDelegatedById: fullyDelegatedByIdProp,
+  partiallyDividedById: partiallyDividedByIdProp,
   containerClassName,
 }: TransactionListProps) {
+  const { slug } = useActiveOrganization()
   const search = useSearch({ strict: false }) as {
     recurring?: 'all' | 'recurring' | 'single'
   }
@@ -736,28 +753,23 @@ export function TransactionList({
     })
   }, [items, search.recurring])
 
-  if (mode === 'overdue') {
-    return (
-      <TransactionTable
-        items={items}
-        showPayAction={showPayAction}
-        variant={variant}
-        mode="overdue"
-        accountId={accountId}
-        cards={cards}
-        fullyDelegatedById={fullyDelegatedById}
-        partiallyDividedById={partiallyDividedById}
-        containerClassName={containerClassName}
-      />
-    )
-  }
+  const listItems = mode === 'overdue' ? items : filtered
+  const splitMapsProvided =
+    fullyDelegatedByIdProp != null && partiallyDividedByIdProp != null
+  const transactionIds = useMemo(() => {
+    if (splitMapsProvided) return []
+    return listItems.filter((item): item is TransactionRow => !isInvoiceSummary(item)).map(item => item.id)
+  }, [listItems, splitMapsProvided])
+  const { data: splitData } = useSplitTransactionIds(slug, transactionIds)
+  const fullyDelegatedById = fullyDelegatedByIdProp ?? splitData?.fullyDelegatedById
+  const partiallyDividedById = partiallyDividedByIdProp ?? splitData?.partiallyDividedById
 
   return (
     <TransactionTable
-      items={filtered}
+      items={listItems}
       showPayAction={showPayAction}
       variant={variant}
-      mode="default"
+      mode={mode}
       accountId={accountId}
       cards={cards}
       fullyDelegatedById={fullyDelegatedById}

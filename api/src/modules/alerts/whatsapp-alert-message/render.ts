@@ -1,5 +1,11 @@
 import { pickWhatsAppItemEmoji } from './format'
-import { buildSplitTransactionTitleLine, buildSummaryLine } from './summary'
+import {
+  buildCreditCardShareTotalLine,
+  buildGrandShareTotalLine,
+  buildSplitTransactionTitleLine,
+  buildSummaryLine,
+  sumDueShareCentavos,
+} from './summary'
 import {
   WHATSAPP_CREDIT_CARD_LABEL,
   type WhatsAppAlertBatchItem,
@@ -86,7 +92,10 @@ function renderWhatsAppBatchItemLines(
   return lines
 }
 
-export function renderWhatsAppBatchUnitLines(unit: WhatsAppBatchRenderUnit): string[] {
+export function renderWhatsAppBatchUnitLines(
+  unit: WhatsAppBatchRenderUnit,
+  options?: { includeShareTotal?: boolean; shareTotalAsGrand?: boolean }
+): string[] {
   if (unit.type === 'single') {
     const lines = renderWhatsAppBatchItemLines(unit.item, { includeNote: false })
     lines.push(unit.item.dueLine)
@@ -99,5 +108,17 @@ export function renderWhatsAppBatchUnitLines(unit: WhatsAppBatchRenderUnit): str
     if (index > 0) lines.push('')
     lines.push(...renderWhatsAppBatchItemLines(item))
   })
+
+  if (options?.includeShareTotal) {
+    const shareTotal = sumDueShareCentavos(unit.items)
+    const totalLine = options.shareTotalAsGrand
+      ? buildGrandShareTotalLine(shareTotal)
+      : buildCreditCardShareTotalLine(shareTotal)
+    if (totalLine) {
+      lines.push('')
+      lines.push(totalLine)
+    }
+  }
+
   return lines
 }

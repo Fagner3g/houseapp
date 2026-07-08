@@ -4,6 +4,7 @@ import type { GetReportByCategory200CategoriesItem } from '@/api/generated/model
 import type { ListTransactions200TransactionsItem } from '@/api/generated/model'
 import { moneyStringToReais, reaisToMoneyString } from '@/lib/currency'
 import { transactionPurchaseDate } from '@/lib/credit-card-invoice-metrics'
+import type { PartialSplitBadgeInfo } from '@/features/transactions/lib/split-badge-label'
 import { normalizeMerchantTitle } from '@/lib/normalize-merchant-title'
 
 export type DividedAnalyticsMerchant = {
@@ -72,7 +73,7 @@ export function aggregateCategoriesFromTransactions(
 export function aggregateMerchantsFromTransactions(
   transactions: ListTransactions200TransactionsItem[],
   fullyDelegatedById: Map<string, string>,
-  partiallyDividedById: Map<string, string> = new Map()
+  partiallyDividedById: Map<string, PartialSplitBadgeInfo> = new Map()
 ): {
   merchants: DividedAnalyticsMerchant[]
   merchantCount: number
@@ -99,7 +100,7 @@ export function aggregateMerchantsFromTransactions(
     const isFullyDelegated = fullyDelegatedById.has(transaction.id)
     const delegatedName = fullyDelegatedById.get(transaction.id) ?? null
     const isPartiallyDivided = partiallyDividedById.has(transaction.id)
-    const dividedName = partiallyDividedById.get(transaction.id) ?? null
+    const dividedName = partiallyDividedById.get(transaction.id)?.splitWithName ?? null
     const hasInstallments = (transaction.installmentsTotal ?? 0) > 1
     const existing = byKey.get(key)
 

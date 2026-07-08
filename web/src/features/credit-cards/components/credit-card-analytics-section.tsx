@@ -43,6 +43,7 @@ import {
 import { useCreditCardInvoiceMetrics } from '../hooks/use-credit-card-invoice-metrics'
 import { useSplitTransactionIds } from '../hooks/use-split-transaction-ids'
 import { CreditCardAnalyticsSkeleton } from './credit-card-invoice-skeletons'
+import type { PartialSplitBadgeInfo } from '@/features/transactions/lib/split-badge-label'
 
 interface CreditCardAnalyticsSectionProps {
   accountId: string
@@ -541,7 +542,8 @@ export function CreditCardAnalyticsSection({
   const dividedTransactionIds = splitData?.transactionIds ?? new Set<string>()
   const fullyDelegatedById = splitData?.fullyDelegatedById ?? new Map<string, string>()
   const fullyDelegatedCount = splitData?.fullyDelegatedCount ?? 0
-  const partiallyDividedById = splitData?.partiallyDividedById ?? new Map<string, string>()
+  const partiallyDividedById =
+    splitData?.partiallyDividedById ?? new Map<string, PartialSplitBadgeInfo>()
   const dividedCount = useMemo(
     () => cycleTransactions.filter(transaction => dividedTransactionIds.has(transaction.id)).length,
     [cycleTransactions, dividedTransactionIds]

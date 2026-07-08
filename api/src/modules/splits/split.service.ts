@@ -276,13 +276,25 @@ export class SplitService {
   ): Promise<{
     transactionIds: string[]
     fullyDelegated: Array<{ transactionId: string; delegateName: string }>
-    partiallyDivided: Array<{ transactionId: string; splitWithName: string }>
+    partiallyDivided: Array<{
+      transactionId: string
+      splitWithName: string
+      splitAmount: string
+      transactionAmount: string
+    }>
   }> {
-    const [transactionIdsWithSplits, fullyDelegated, partiallyDivided] = await Promise.all([
+    const [transactionIdsWithSplits, fullyDelegated, partiallyDividedRows] = await Promise.all([
       this.splitRepository.listTransactionIdsWithSplits(organizationId, transactionIds),
       this.splitRepository.listFullyDelegatedTransactions(organizationId, transactionIds),
       this.splitRepository.listPartiallyDividedTransactions(organizationId, transactionIds),
     ])
+
+    const partiallyDivided = partiallyDividedRows.map(row => ({
+      transactionId: row.transactionId,
+      splitWithName: row.splitWithName,
+      splitAmount: centavosToString(row.splitAmount),
+      transactionAmount: centavosToString(row.transactionAmount),
+    }))
 
     return { transactionIds: transactionIdsWithSplits, fullyDelegated, partiallyDivided }
   }

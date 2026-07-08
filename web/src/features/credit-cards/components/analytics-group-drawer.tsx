@@ -19,6 +19,7 @@ import { useDrawerStore } from '@/stores/drawers'
 import { useInvoiceCycleTransactions } from '../hooks/use-invoice-cycle-transactions'
 import { useSplitTransactionIds } from '../hooks/use-split-transaction-ids'
 import { filterAnalyticsGroupTransactions } from '../lib/filter-analytics-group-transactions'
+import type { PartialSplitBadgeInfo } from '@/features/transactions/lib/split-badge-label'
 
 export function AnalyticsGroupDrawer() {
   const { slug } = useActiveOrganization()
@@ -64,7 +65,8 @@ export function AnalyticsGroupDrawer() {
   )
   const { data: splitData } = useSplitTransactionIds(slug, filteredTransactionIds)
   const fullyDelegatedById = splitData?.fullyDelegatedById ?? new Map<string, string>()
-  const partiallyDividedById = splitData?.partiallyDividedById ?? new Map<string, string>()
+  const partiallyDividedById =
+    splitData?.partiallyDividedById ?? new Map<string, PartialSplitBadgeInfo>()
 
   const purchaseCount = context?.occurrenceCount ?? filteredTransactions.length
   const purchaseLabel =

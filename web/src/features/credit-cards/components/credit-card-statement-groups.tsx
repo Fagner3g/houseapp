@@ -16,6 +16,11 @@ import { Button } from '@/components/ui/button'
 import { Checkbox } from '@/components/ui/checkbox'
 import { Label } from '@/components/ui/label'
 import { CategorySelect } from '@/features/categories/components/category-select'
+import {
+  formatDelegatedSplitBadge,
+  formatPartialSplitBadge,
+  type PartialSplitBadgeInfo,
+} from '@/features/transactions/lib/split-badge-label'
 import { formatCentsString } from '@/lib/currency'
 import { transactionPurchaseDate } from '@/lib/credit-card-invoice-metrics'
 import { useActiveOrganization } from '@/hooks/use-active-organization'
@@ -37,7 +42,7 @@ type CreditCardStatementGroupsProps = {
   accountId: string
   cards?: Array<{ id: string; label: string; lastFourDigits?: string | null }>
   fullyDelegatedById?: Map<string, string>
-  partiallyDividedById?: Map<string, string>
+  partiallyDividedById?: Map<string, PartialSplitBadgeInfo>
   dividedTransactionIds?: Set<string>
 }
 
@@ -69,7 +74,7 @@ function StatementCompactRow({
   categoryLabel: (categoryIds?: string[] | null) => string | null
   cardLabel: (cardId?: string | null) => string | null
   fullyDelegatedById?: Map<string, string>
-  partiallyDividedById?: Map<string, string>
+  partiallyDividedById?: Map<string, PartialSplitBadgeInfo>
   onOpen: () => void
 }) {
   const hasSplit =
@@ -98,21 +103,31 @@ function StatementCompactRow({
       <div className="min-w-0 flex-1">
         <div className="flex flex-wrap items-center gap-1.5">
           <p className="truncate text-sm font-medium text-slate-800">{transaction.title}</p>
-          {fullyDelegatedById?.get(transaction.id) ? (
-            <Badge
-              variant="secondary"
-              className="h-5 shrink-0 border-amber-200 bg-amber-50 px-1.5 text-[10px] font-medium text-amber-800"
-            >
-              Delegada · {fullyDelegatedById.get(transaction.id)}
-            </Badge>
-          ) : partiallyDividedById?.get(transaction.id) ? (
-            <Badge
-              variant="secondary"
-              className="h-5 shrink-0 border-sky-200 bg-sky-50 px-1.5 text-[10px] font-medium text-sky-800"
-            >
-              Dividida · {partiallyDividedById.get(transaction.id)}
-            </Badge>
-          ) : null}
+          {(() => {
+            const delegatedName = fullyDelegatedById?.get(transaction.id)
+            if (delegatedName) {
+              return (
+                <Badge
+                  variant="secondary"
+                  className="h-5 shrink-0 border-amber-200 bg-amber-50 px-1.5 text-[10px] font-medium text-amber-800"
+                >
+                  {formatDelegatedSplitBadge(delegatedName)}
+                </Badge>
+              )
+            }
+            const partialInfo = partiallyDividedById?.get(transaction.id)
+            if (partialInfo) {
+              return (
+                <Badge
+                  variant="secondary"
+                  className="h-5 shrink-0 border-sky-200 bg-sky-50 px-1.5 text-[10px] font-medium text-sky-800"
+                >
+                  {formatPartialSplitBadge(partialInfo)}
+                </Badge>
+              )
+            }
+            return null
+          })()}
         </div>
         {transaction.installmentsTotal != null && transaction.installmentsTotal > 1 ? (
           <p className="text-xs text-slate-500">
@@ -184,7 +199,7 @@ function StatementMerchantGroupCard({
   transactions: ListTransactions200TransactionsItem[]
   cards?: Array<{ id: string; label: string; lastFourDigits?: string | null }>
   fullyDelegatedById?: Map<string, string>
-  partiallyDividedById?: Map<string, string>
+  partiallyDividedById?: Map<string, PartialSplitBadgeInfo>
   expanded: boolean
   selectedIds: Set<string>
   isUpdatingCategory: boolean

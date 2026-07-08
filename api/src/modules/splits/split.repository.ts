@@ -83,7 +83,14 @@ export interface SplitRepository {
   listPartiallyDividedTransactions(
     organizationId: string,
     transactionIds: string[]
-  ): Promise<Array<{ transactionId: string; splitWithName: string }>>
+  ): Promise<
+    Array<{
+      transactionId: string
+      splitWithName: string
+      splitAmount: bigint
+      transactionAmount: bigint
+    }>
+  >
   findSplitsWithTransactions(
     transactionIds: string[]
   ): Promise<
@@ -443,12 +450,21 @@ export class DrizzleSplitRepository implements SplitRepository {
   async listPartiallyDividedTransactions(
     organizationId: string,
     transactionIds: string[]
-  ): Promise<Array<{ transactionId: string; splitWithName: string }>> {
+  ): Promise<
+    Array<{
+      transactionId: string
+      splitWithName: string
+      splitAmount: bigint
+      transactionAmount: bigint
+    }>
+  > {
     if (transactionIds.length === 0) return []
 
     const rows = await db
       .select({
         transactionId: transactions.id,
+        transactionAmount: transactions.amount,
+        splitAmount: sql<bigint>`SUM(${transactionSplits.amount})`,
         splitWithName: sql<string>`(
           array_agg(COALESCE(${users.name}, ${transactionSplits.contactName}) ORDER BY ${transactionSplits.amount} DESC)
         )[1]`,
@@ -472,6 +488,8 @@ export class DrizzleSplitRepository implements SplitRepository {
       .map(row => ({
         transactionId: row.transactionId,
         splitWithName: row.splitWithName,
+        splitAmount: BigInt(row.splitAmount),
+        transactionAmount: row.transactionAmount ?? 0n,
       }))
   }
 

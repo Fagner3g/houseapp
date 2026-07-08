@@ -1,13 +1,14 @@
 import { useQuery } from '@tanstack/react-query'
 
 import type { ListSplitTransactionIds200 } from '@/api/generated/model'
+import type { PartialSplitBadgeInfo } from '@/features/transactions/lib/split-badge-label'
 import { http } from '@/lib/http'
 
 export type SplitTransactionIdsResult = {
   transactionIds: Set<string>
   fullyDelegatedById: Map<string, string>
   fullyDelegatedCount: number
-  partiallyDividedById: Map<string, string>
+  partiallyDividedById: Map<string, PartialSplitBadgeInfo>
   partiallyDividedCount: number
 }
 
@@ -19,7 +20,14 @@ function toSplitTransactionIdsResult(data: ListSplitTransactionIds200): SplitTra
     ),
     fullyDelegatedCount: data.fullyDelegated.length,
     partiallyDividedById: new Map(
-      data.partiallyDivided.map(item => [item.transactionId, item.splitWithName])
+      data.partiallyDivided.map(item => [
+        item.transactionId,
+        {
+          splitWithName: item.splitWithName,
+          splitAmount: item.splitAmount,
+          transactionAmount: item.transactionAmount,
+        },
+      ])
     ),
     partiallyDividedCount: data.partiallyDivided.length,
   }

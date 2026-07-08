@@ -45,18 +45,20 @@ function RouteComponent() {
       <AppSidebar variant="inset" className="hidden md:flex" />
       <SidebarInset className="app-content-panel m-2 border-0 bg-white md:my-3 md:mr-3 md:ml-0 md:rounded-lg md:peer-data-[state=collapsed]:ml-0">
         <SidebarCollapseTrigger />
-        <Header />
-        <div className="flex min-h-0 flex-1 flex-col overflow-auto rounded-lg">
-          {orgAccessBlocked ? (
-            <div className="flex items-center justify-center p-12">
-              <div className="flex flex-col items-center gap-3">
-                <div className="size-8 animate-spin rounded-full border-2 border-slate-200 border-t-slate-600" />
-                <p className="text-sm text-slate-500">Carregando organização...</p>
+        <div className="flex min-h-0 flex-1 flex-col overflow-hidden rounded-lg">
+          <Header />
+          <div className="flex min-h-0 flex-1 flex-col overflow-auto">
+            {orgAccessBlocked ? (
+              <div className="flex items-center justify-center p-12">
+                <div className="flex flex-col items-center gap-3">
+                  <div className="size-8 animate-spin rounded-full border-2 border-slate-200 border-t-slate-600" />
+                  <p className="text-sm text-slate-500">Carregando organização...</p>
+                </div>
               </div>
-            </div>
-          ) : (
-            <Outlet />
-          )}
+            ) : (
+              <Outlet />
+            )}
+          </div>
         </div>
         <ModalNewOrganization open={!!createOrg} onOpenChange={() => {}} />
         <BottomNav />

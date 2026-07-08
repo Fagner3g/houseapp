@@ -239,28 +239,6 @@ export function groupAccountsByInstitution<T extends { institution?: string | nu
     }))
 }
 
-export function groupAccountsForSelect<
-  T extends { institution?: string | null; type: string; name: string },
->(accounts: T[]): { key: string; label: string; accounts: T[] }[] {
-  const cashAccounts = sortByName(accounts.filter(account => account.type === 'cash'))
-  const nonCash = accounts.filter(account => account.type !== 'cash')
-  const sections = groupAccountsByInstitution(nonCash).map(group => ({
-    key: group.key || '__other__',
-    label: group.label,
-    accounts: group.accounts,
-  }))
-
-  if (cashAccounts.length > 0) {
-    sections.push({
-      key: '__cash__',
-      label: 'Carteira',
-      accounts: cashAccounts,
-    })
-  }
-
-  return sections
-}
-
 export function accountTypeIcon(type: string): LucideIcon {
   const found = ACCOUNT_TYPES.find(t => t.type === type)
   if (found) return found.icon
@@ -339,6 +317,31 @@ const TYPE_SECTION_DEFS: {
     createType: 'cash',
   },
 ]
+
+export function groupAccountsForSelect<
+  T extends { institution?: string | null; type: string; name: string },
+>(accounts: T[]): { key: string; label: string; accounts: T[] }[] {
+  return TYPE_SECTION_DEFS.map(section => ({
+    key: section.id,
+    label: section.label,
+    accounts: sortAccountsForSelect(
+      accounts.filter(account => section.types.includes(account.type))
+    ),
+  })).filter(section => section.accounts.length > 0)
+}
+
+function sortAccountsForSelect<T extends { institution?: string | null; name: string }>(
+  accounts: T[]
+): T[] {
+  return [...accounts].sort((a, b) => {
+    const institutionDiff = institutionLabel(a.institution).localeCompare(
+      institutionLabel(b.institution),
+      'pt-BR'
+    )
+    if (institutionDiff !== 0) return institutionDiff
+    return a.name.localeCompare(b.name, 'pt-BR')
+  })
+}
 
 export function groupCreditCardsForSidebar<
   T extends { type: string; name: string; institution?: string | null },

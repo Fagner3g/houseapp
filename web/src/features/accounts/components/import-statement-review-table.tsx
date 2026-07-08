@@ -86,9 +86,12 @@ export function ImportStatementReviewTable({
 
   const reviewItems = useMemo(() => items.filter(isImportReviewItem), [items])
   const existingItems = useMemo(() => items.filter(item => item.isDuplicate), [items])
+  const approvedCount = useMemo(
+    () => reviewItems.filter(item => initializedRows[item.id]?.validated).length,
+    [reviewItems, initializedRows]
+  )
 
   const filterCounts = useMemo((): FilterCounts => {
-    const approvedCount = reviewItems.filter(item => initializedRows[item.id]?.validated).length
     const categorizedCount = reviewItems.filter(item => {
       const row = initializedRows[item.id]
       return !!row?.categoryId && !isCardStatementCreditTitle(item.title)
@@ -106,7 +109,7 @@ export function ImportStatementReviewTable({
       installments: installmentCount,
       unapproved: reviewItems.length - approvedCount,
     }
-  }, [reviewItems, existingItems, initializedRows, items])
+  }, [reviewItems, existingItems, initializedRows, items, approvedCount])
 
   const quickFilterOptions = useMemo(
     () =>

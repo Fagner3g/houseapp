@@ -6,7 +6,13 @@ export {
   type WhatsAppBatchRenderUnit,
 } from './types'
 export { buildGreeting, cleanTransactionTitle, formatAmountBRL } from './format'
-export { buildSummaryLine } from './summary'
+export {
+  buildCreditCardShareTotalLine,
+  buildGrandShareTotalLine,
+  buildSummaryLine,
+  resolveDueShareAmount,
+  sumDueShareCentavos,
+} from './summary'
 export { buildDueLine } from './due'
 export {
   buildWhatsAppAlertMessage,
