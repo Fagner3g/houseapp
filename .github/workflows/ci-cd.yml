@@ -261,18 +261,49 @@ jobs:
             docker pull ghcr.io/fagner3g/houseapp-web:$TAG
 
             # Run database migrations before starting API traffic.
-            # The migrate container must join network_swarm_public so DB_HOST=postgres
-            # from api.env resolves (overlay IPs like 10.0.1.x are not reachable from bridge).
+            # network_swarm_public is a Swarm overlay and is not manually attachable, so
+            # `docker run --network` fails with PermissionDenied. Use a one-shot service
+            # instead so DB_HOST=postgres from api.env resolves on the overlay.
             if ! docker network inspect network_swarm_public >/dev/null 2>&1; then
               echo "ERROR: Docker network network_swarm_public not found"
               exit 1
             fi
 
-            docker run --rm \
+            MIGRATE_SVC="${STACK_NAME}_migrate"
+            docker service rm "$MIGRATE_SVC" >/dev/null 2>&1 || true
+
+            docker service create \
+              --name "$MIGRATE_SVC" \
               --network network_swarm_public \
+              --restart-condition none \
               --env-file "$STACK_DIR/api.env" \
-              ghcr.io/fagner3g/houseapp-api:$TAG \
+              --with-registry-auth \
+              "ghcr.io/fagner3g/houseapp-api:$TAG" \
               sh -c "yarn db:migrate"
+
+            MIGRATE_OK=false
+            for _ in $(seq 1 60); do
+              STATE=$(docker service ps "$MIGRATE_SVC" --format '{{.CurrentState}}' 2>/dev/null | head -1)
+              echo "Migrate state: ${STATE:-pending}"
+              case "$STATE" in
+                Complete*)
+                  MIGRATE_OK=true
+                  break
+                  ;;
+                Failed*|Rejected*|Shutdown*)
+                  break
+                  ;;
+              esac
+              sleep 5
+            done
+
+            docker service logs --raw "$MIGRATE_SVC" 2>&1 || true
+            docker service rm "$MIGRATE_SVC" >/dev/null 2>&1 || true
+
+            if [ "$MIGRATE_OK" != true ]; then
+              echo "ERROR: database migration failed (last state: ${STATE:-unknown})"
+              exit 1
+            fi
 
             # Deploy stack
             docker stack deploy --with-registry-auth --resolve-image changed --prune -c "$STACK_DIR/stack.yml" "$STACK_NAME"

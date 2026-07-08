@@ -17,13 +17,21 @@ Produção (`houseapp`) ainda usa o schema legado (`invites.user_id`, `user_orga
    ```bash
    DB_NAME=houseapp_v2
    ```
-3. Rodar migrações (na mesma rede overlay do Postgres; use `DB_HOST=postgres` no api.env):
+3. Rodar migrações (na mesma rede overlay do Postgres; use `DB_HOST=postgres` no api.env).
+   `network_swarm_public` não é attachable para `docker run` — use um service one-shot:
    ```bash
-   docker run --rm \
+   MIGRATE_SVC=houseapp_migrate
+   docker service rm "$MIGRATE_SVC" 2>/dev/null || true
+   docker service create \
+     --name "$MIGRATE_SVC" \
      --network network_swarm_public \
+     --restart-condition none \
      --env-file /opt/stacks/houseapp/prod/api.env \
+     --with-registry-auth \
      ghcr.io/fagner3g/houseapp-api:<TAG> \
      sh -c "yarn db:migrate"
+   # Aguardar CurrentState=Complete, conferir logs, depois:
+   docker service rm "$MIGRATE_SVC"
    ```
 4. Migrar dados do legado com script dedicado (usuários, organizações, transações) ou importar dump transformado
 5. Deploy da stack prod com a nova imagem
