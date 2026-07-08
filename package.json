@@ -5,7 +5,7 @@
   "workspaces": [
     "api",
     "web",
-    "packages/*"
+    "packages/finance-core"
   ],
   "scripts": {
     "prepare": "husky install",
