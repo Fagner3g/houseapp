@@ -5,16 +5,18 @@ import { tanstackRouter } from '@tanstack/router-plugin/vite'
 import react from '@vitejs/plugin-react'
 import { defineConfig } from 'vite'
 
-// Define versão priorizando variável de ambiente (útil no Docker/CI)
-let appVersion = process.env.VITE_APP_VERSION || '0.0.0'
-try {
-  const rootPackageJson = JSON.parse(
-    readFileSync(path.resolve(__dirname, '../package.json'), 'utf-8')
-  )
-  appVersion = rootPackageJson.version
-} catch {
-  // Se não conseguir ler o package.json raiz, usa o fallback
-  console.warn('Could not read root package.json, using env/fallback version:', appVersion)
+// CI/Docker injects VITE_APP_VERSION (e.g. 2.0.0-98d9bc7-develop); local dev falls back to package.json.
+let appVersion = process.env.VITE_APP_VERSION ?? ''
+if (!appVersion) {
+  try {
+    const rootPackageJson = JSON.parse(
+      readFileSync(path.resolve(__dirname, '../package.json'), 'utf-8')
+    )
+    appVersion = rootPackageJson.version
+  } catch {
+    appVersion = '0.0.0'
+    console.warn('Could not read root package.json, using fallback version:', appVersion)
+  }
 }
 
 // https://vite.dev/config/

@@ -4,13 +4,15 @@ import { Info } from 'lucide-react'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
 import { Separator } from '@/components/ui/separator'
 import { SettingsPageShell } from '@/features/settings/components/settings-page-shell'
+import { getAppEnvironmentLabel, getAppVersion } from '@/lib/app-info'
 
 export const Route = createFileRoute('/_app/$org/settings/general')({
   component: SettingsGeneralPage,
 })
 
 function SettingsGeneralPage() {
-  const appVersion = import.meta.env.VITE_APP_VERSION || '1.0.6'
+  const appVersion = getAppVersion()
+  const appEnvironment = getAppEnvironmentLabel()
 
   return (
     <SettingsPageShell title="Geral" subtitle="Informações do sistema">
@@ -30,9 +32,7 @@ function SettingsGeneralPage() {
           <Separator />
           <div className="flex items-center justify-between">
             <p className="font-medium">Ambiente</p>
-            <p className="font-mono text-sm">
-              {import.meta.env.MODE === 'development' ? 'Desenvolvimento' : 'Produção'}
-            </p>
+            <p className="font-mono text-sm">{appEnvironment}</p>
           </div>
         </CardContent>
       </Card>
