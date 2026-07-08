@@ -541,6 +541,7 @@ export function CreditCardAnalyticsSection({
   const dividedTransactionIds = splitData?.transactionIds ?? new Set<string>()
   const fullyDelegatedById = splitData?.fullyDelegatedById ?? new Map<string, string>()
   const fullyDelegatedCount = splitData?.fullyDelegatedCount ?? 0
+  const partiallyDividedById = splitData?.partiallyDividedById ?? new Map<string, string>()
   const dividedCount = useMemo(
     () => cycleTransactions.filter(transaction => dividedTransactionIds.has(transaction.id)).length,
     [cycleTransactions, dividedTransactionIds]
@@ -607,7 +608,8 @@ export function CreditCardAnalyticsSection({
     )
     const aggregatedMerchants = aggregateMerchantsFromTransactions(
       dividedExpenses,
-      fullyDelegatedById
+      fullyDelegatedById,
+      partiallyDividedById
     )
 
     return {
@@ -622,6 +624,7 @@ export function CreditCardAnalyticsSection({
     byCategoryAll.data?.categories,
     baseCategories,
     fullyDelegatedById,
+    partiallyDividedById,
   ])
 
   const isLoading =
@@ -1045,6 +1048,10 @@ export function CreditCardAnalyticsSection({
                   delegatedToName:
                     !showPersonal && merchant.hasFullyDelegated
                       ? merchant.delegatedToName
+                      : undefined,
+                  dividedWithName:
+                    !showPersonal && merchant.hasDivided
+                      ? merchant.dividedWithName
                       : undefined,
                   subtitle: formatMerchantSubtitle(
                     merchant.occurrenceCount,

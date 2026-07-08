@@ -1,10 +1,11 @@
-type TransactionLike = {
-  source: string
-  statementId?: string | null
-}
+import {
+  isImportedStatementTransaction,
+  type ImportedStatementTransactionLike,
+} from './is-imported-statement-transaction'
 
-export function canDeleteTransaction(transaction: TransactionLike | null | undefined) {
+export function canDeleteTransaction(
+  transaction: ImportedStatementTransactionLike | null | undefined
+) {
   if (!transaction) return false
-  if (transaction.source === 'import' && transaction.statementId) return false
-  return true
+  return !isImportedStatementTransaction(transaction)
 }

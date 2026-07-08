@@ -14,7 +14,6 @@ import { alertRules } from './schemas/alertRules'
 import { cards } from './schemas/cards'
 import { categories } from './schemas/categories'
 import { notifications } from './schemas/notifications'
-import { organizationMembers } from './schemas/organizationMembers'
 import { organizations } from './schemas/organizations'
 import { recurringTransactions } from './schemas/recurringTransactions'
 import { splitPayments } from './schemas/splitPayments'
@@ -100,14 +99,13 @@ async function seedScenarios() {
   const mercado = getCategoryIdByName(categoryRows, 'Supermercado', 'expense')
   const transporte = getCategoryIdByName(categoryRows, 'Transporte', 'expense')
   const restaurantes = getCategoryIdByName(categoryRows, 'Restaurantes & Delivery', 'expense')
-  const compras = getCategoryIdByName(categoryRows, 'Compras Pessoais', 'expense')
+  const compras = getCategoryIdByName(categoryRows, 'Vestuário & Acessórios', 'expense')
   const salario = getCategoryIdByName(categoryRows, 'Salário', 'income')
-  const moradia = getCategoryIdByName(categoryRows, 'Moradia', 'expense')
-  const internet = getCategoryIdByName(categoryRows, 'Contas da Casa', 'expense')
+  const moradia = getCategoryIdByName(categoryRows, 'Moradia / Contas & Manutenção', 'expense')
   const lazer = getCategoryIdByName(categoryRows, 'Lazer & Entretenimento', 'expense')
   const saude = getCategoryIdByName(categoryRows, 'Saúde', 'expense')
 
-  const [nubank, itauChecking, cash] = await db
+  const [nubank, itauChecking] = await db
     .insert(accounts)
     .values([
       {
@@ -358,16 +356,16 @@ async function seedScenarios() {
     .returning()
 
   await db.insert(transactionCategories).values([
-    { transactionId: nubankJulPurchases[0].id, categoryId: internet },
+    { transactionId: nubankJulPurchases[0].id, categoryId: moradia },
     { transactionId: nubankJulPurchases[1].id, categoryId: transporte },
     { transactionId: nubankJulPurchases[2].id, categoryId: mercado },
     { transactionId: nubankJulPurchases[3].id, categoryId: restaurantes },
-    { transactionId: nubankJulPurchases[4].id, categoryId: internet },
+    { transactionId: nubankJulPurchases[4].id, categoryId: moradia },
     { transactionId: nubankJulPurchases[5].id, categoryId: lazer },
     { transactionId: nubankJulPurchases[6].id, categoryId: saude },
     { transactionId: nubankJulPurchases[7].id, categoryId: compras },
     { transactionId: salaryTx.id, categoryId: salario },
-    { transactionId: overdueTx.id, categoryId: internet },
+    { transactionId: overdueTx.id, categoryId: moradia },
     { transactionId: dueSoonTx.id, categoryId: moradia },
     { transactionId: futureTx1.id, categoryId: moradia },
     { transactionId: futureTx2.id, categoryId: moradia },

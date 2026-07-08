@@ -80,6 +80,10 @@ export interface SplitRepository {
     organizationId: string,
     transactionIds: string[]
   ): Promise<Array<{ transactionId: string; delegateName: string }>>
+  listPartiallyDividedTransactions(
+    organizationId: string,
+    transactionIds: string[]
+  ): Promise<Array<{ transactionId: string; splitWithName: string }>>
   findSplitsWithTransactions(
     transactionIds: string[]
   ): Promise<
@@ -124,9 +128,12 @@ function resolveSplitPaidAt(
 ): Date | null {
   if (status === 'pending' || payments.length === 0) return null
 
+  const [firstPayment] = payments
+  if (!firstPayment) return null
+
   return payments.reduce(
     (latest, payment) => (payment.paidAt > latest ? payment.paidAt : latest),
-    payments[0]!.paidAt
+    firstPayment.paidAt
   )
 }
 
@@ -430,6 +437,41 @@ export class DrizzleSplitRepository implements SplitRepository {
       .map(row => ({
         transactionId: row.transactionId,
         delegateName: row.delegateName,
+      }))
+  }
+
+  async listPartiallyDividedTransactions(
+    organizationId: string,
+    transactionIds: string[]
+  ): Promise<Array<{ transactionId: string; splitWithName: string }>> {
+    if (transactionIds.length === 0) return []
+
+    const rows = await db
+      .select({
+        transactionId: transactions.id,
+        splitWithName: sql<string>`(
+          array_agg(COALESCE(${users.name}, ${transactionSplits.contactName}) ORDER BY ${transactionSplits.amount} DESC)
+        )[1]`,
+      })
+      .from(transactions)
+      .innerJoin(transactionSplits, eq(transactionSplits.transactionId, transactions.id))
+      .leftJoin(users, eq(transactionSplits.userId, users.id))
+      .where(
+        and(
+          eq(transactions.organizationId, organizationId),
+          inArray(transactions.id, transactionIds)
+        )
+      )
+      .groupBy(transactions.id, transactions.amount)
+      .having(
+        sql`SUM(${transactionSplits.amount}) > 0 AND SUM(${transactionSplits.amount}) < ${transactions.amount}`
+      )
+
+    return rows
+      .filter(row => row.splitWithName)
+      .map(row => ({
+        transactionId: row.transactionId,
+        splitWithName: row.splitWithName,
       }))
   }
 

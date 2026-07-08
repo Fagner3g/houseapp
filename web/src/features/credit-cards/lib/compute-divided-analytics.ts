@@ -17,6 +17,8 @@ export type DividedAnalyticsMerchant = {
   hasInstallments: boolean
   hasFullyDelegated: boolean
   delegatedToName: string | null
+  hasDivided: boolean
+  dividedWithName: string | null
 }
 
 export function filterDividedExpenseTransactions(
@@ -69,7 +71,8 @@ export function aggregateCategoriesFromTransactions(
 
 export function aggregateMerchantsFromTransactions(
   transactions: ListTransactions200TransactionsItem[],
-  fullyDelegatedById: Map<string, string>
+  fullyDelegatedById: Map<string, string>,
+  partiallyDividedById: Map<string, string> = new Map()
 ): {
   merchants: DividedAnalyticsMerchant[]
   merchantCount: number
@@ -83,6 +86,8 @@ export function aggregateMerchantsFromTransactions(
     hasInstallments: boolean
     hasFullyDelegated: boolean
     delegatedToName: string | null
+    hasDivided: boolean
+    dividedWithName: string | null
   }
 
   const byKey = new Map<string, MerchantAccumulator>()
@@ -93,6 +98,8 @@ export function aggregateMerchantsFromTransactions(
     const purchaseDate = transactionPurchaseDate(transaction)
     const isFullyDelegated = fullyDelegatedById.has(transaction.id)
     const delegatedName = fullyDelegatedById.get(transaction.id) ?? null
+    const isPartiallyDivided = partiallyDividedById.has(transaction.id)
+    const dividedName = partiallyDividedById.get(transaction.id) ?? null
     const hasInstallments = (transaction.installmentsTotal ?? 0) > 1
     const existing = byKey.get(key)
 
@@ -108,6 +115,10 @@ export function aggregateMerchantsFromTransactions(
       if (isFullyDelegated && delegatedName) {
         existing.delegatedToName = delegatedName
       }
+      existing.hasDivided = existing.hasDivided || isPartiallyDivided
+      if (isPartiallyDivided && dividedName) {
+        existing.dividedWithName = dividedName
+      }
       continue
     }
 
@@ -119,6 +130,8 @@ export function aggregateMerchantsFromTransactions(
       hasInstallments,
       hasFullyDelegated: isFullyDelegated,
       delegatedToName: isFullyDelegated ? delegatedName : null,
+      hasDivided: isPartiallyDivided,
+      dividedWithName: isPartiallyDivided ? dividedName : null,
     })
   }
 
@@ -139,6 +152,8 @@ export function aggregateMerchantsFromTransactions(
       hasInstallments: accumulator.hasInstallments,
       hasFullyDelegated: accumulator.hasFullyDelegated,
       delegatedToName: accumulator.delegatedToName,
+      hasDivided: accumulator.hasDivided,
+      dividedWithName: accumulator.dividedWithName,
     }))
     .sort((left, right) => moneyStringToReais(right.total) - moneyStringToReais(left.total))
 

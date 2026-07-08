@@ -127,6 +127,8 @@ export type TopMerchantReportRow = {
   hasInstallments: boolean
   hasFullyDelegated: boolean
   delegatedToName: string | null
+  hasDivided: boolean
+  dividedWithName: string | null
 }
 
 export type TopMerchantsReportResult = {
@@ -186,6 +188,10 @@ function myExpenseAmountExpr() {
 
 function fullyDelegatedCondition() {
   return sql`${splitSumExpr()} >= ${reportExpenseAmountExpr} AND ${reportExpenseAmountExpr} > 0`
+}
+
+function partiallyDividedCondition() {
+  return sql`${splitSumExpr()} > 0 AND ${splitSumExpr()} < ${reportExpenseAmountExpr} AND ${reportExpenseAmountExpr} > 0`
 }
 
 function delegateNameExpr() {
@@ -586,6 +592,7 @@ export class DrizzleReportRepository implements ReportRepository {
     const amountExpr = personal ? myExpenseAmountExpr() : reportExpenseAmountExpr
     const normalizedTitle = normalizedTitleExpr()
     const fullyDelegated = fullyDelegatedCondition()
+    const partiallyDivided = partiallyDividedCondition()
     const expenseWhere = and(
       eq(transactions.organizationId, organizationId),
       expenseRangeCondition(range, scopeOptions?.scope),
@@ -620,6 +627,8 @@ export class DrizzleReportRepository implements ReportRepository {
         hasInstallments: sql<boolean>`BOOL_OR(COALESCE(${transactions.installmentsTotal}, 0) > 1 OR ${transactions.title} ~* 'parcela \\d+/\\d+')`,
         hasFullyDelegated: sql<boolean>`BOOL_OR(${fullyDelegated})`,
         delegatedToName: sql<string | null>`MAX(CASE WHEN ${fullyDelegated} THEN ${delegateNameExpr()} END)`,
+        hasDivided: sql<boolean>`BOOL_OR(${partiallyDivided})`,
+        dividedWithName: sql<string | null>`MAX(CASE WHEN ${partiallyDivided} THEN ${delegateNameExpr()} END)`,
       })
       .from(transactions)
       .leftJoin(accounts, eq(transactions.accountId, accounts.id))
@@ -655,6 +664,8 @@ export class DrizzleReportRepository implements ReportRepository {
           hasInstallments: Boolean(row.hasInstallments),
           hasFullyDelegated: Boolean(row.hasFullyDelegated),
           delegatedToName: row.delegatedToName ?? null,
+          hasDivided: Boolean(row.hasDivided),
+          dividedWithName: row.dividedWithName ?? null,
         }
       }),
       grandTotal,

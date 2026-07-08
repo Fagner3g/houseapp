@@ -61,10 +61,10 @@ function toSplitDto(split: SplitRecord): SplitDto {
     contactName: split.contactName,
     contactPhone: split.contactPhone,
     contactEmail: split.contactEmail,
-    amount: centavosToString(split.amount)!,
+    amount: centavosToString(split.amount) ?? '0.00',
     description: split.description,
     status: split.status,
-    paidAmount: centavosToString(split.paidAmount)!,
+    paidAmount: centavosToString(split.paidAmount) ?? '0.00',
     paidAt: split.paidAt?.toISOString() ?? null,
     isNotified: split.isNotified,
     lastNotifiedAt: split.lastNotifiedAt?.toISOString() ?? null,
@@ -78,7 +78,7 @@ function toPaymentDto(payment: SplitPaymentRecord): SplitPaymentDto {
   return {
     id: payment.id,
     splitId: payment.splitId,
-    amount: centavosToString(payment.amount)!,
+    amount: centavosToString(payment.amount) ?? '0.00',
     paidAt: payment.paidAt.toISOString(),
     method: payment.method,
     note: payment.note,
@@ -276,13 +276,15 @@ export class SplitService {
   ): Promise<{
     transactionIds: string[]
     fullyDelegated: Array<{ transactionId: string; delegateName: string }>
+    partiallyDivided: Array<{ transactionId: string; splitWithName: string }>
   }> {
-    const [transactionIdsWithSplits, fullyDelegated] = await Promise.all([
+    const [transactionIdsWithSplits, fullyDelegated, partiallyDivided] = await Promise.all([
       this.splitRepository.listTransactionIdsWithSplits(organizationId, transactionIds),
       this.splitRepository.listFullyDelegatedTransactions(organizationId, transactionIds),
+      this.splitRepository.listPartiallyDividedTransactions(organizationId, transactionIds),
     ])
 
-    return { transactionIds: transactionIdsWithSplits, fullyDelegated }
+    return { transactionIds: transactionIdsWithSplits, fullyDelegated, partiallyDivided }
   }
 
   async getSplitDebtSummary(

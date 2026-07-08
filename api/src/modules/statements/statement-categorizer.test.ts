@@ -9,7 +9,7 @@ import { categorizeStatementTransactions } from './statement-categorizer'
 
 const categories = [
   { id: 'income-salary', name: 'Salário', type: 'income' },
-  { id: 'expense-shopping', name: 'Compras Pessoais', type: 'expense' },
+  { id: 'expense-shopping', name: 'Vestuário & Acessórios', type: 'expense' },
 ]
 
 describe('categorizeStatementTransactions', () => {
@@ -55,7 +55,7 @@ describe('categorizeStatementTransactions', () => {
           {
             title: 'ZP*OLX - NuPay - Parcela 2/3',
             categoryId: 'expense-shopping',
-            categoryName: 'Compras Pessoais',
+            categoryName: 'Vestuário & Acessórios',
             categoryType: 'expense',
           },
         ],

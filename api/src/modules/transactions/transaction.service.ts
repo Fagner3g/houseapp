@@ -34,6 +34,10 @@ import {
 } from './notify-target'
 import { buildCreditCardInstallments } from './credit-card-installments.logic'
 import {
+  assertImportedStatementUpdateAllowed,
+  isImportedStatementTransaction,
+} from './imported-statement-transaction.logic'
+import {
   buildInstallmentSeriesRepairPlan,
   groupManualInstallmentSeries,
   isIncompleteInstallmentSeries,
@@ -265,7 +269,8 @@ export class TransactionService {
 
       const categoryIds = input.categoryIds ?? []
       const transactions = createdRows.map(row => toTransactionDto(row, categoryIds))
-      const first = transactions[0]!
+      const first = transactions.at(0)
+      if (!first) throw badRequest('Failed to create installment transaction')
 
       return {
         transaction: first,
@@ -282,7 +287,8 @@ export class TransactionService {
 
       const categoryIds = input.categoryIds ?? []
       const transactions = createdRows.map(row => toTransactionDto(row, categoryIds))
-      const first = transactions[0]!
+      const first = transactions.at(0)
+      if (!first) throw badRequest('Failed to create installment transaction')
 
       return {
         transaction: first,
@@ -310,9 +316,11 @@ export class TransactionService {
     }
 
     const createdRows = await this.transactionRepository.createMany(
-      inputs.map((input, index) =>
-        this.toCreateData(organizationId, input, notifyTargets[index]!)
-      )
+      inputs.map((input, index) => {
+        const notifyTarget = notifyTargets[index]
+        if (!notifyTarget) throw badRequest('Missing notify target for transaction')
+        return this.toCreateData(organizationId, input, notifyTarget)
+      })
     )
 
     return createdRows.map((row, index) => toTransactionDto(row, inputs[index]?.categoryIds ?? []))
@@ -332,6 +340,8 @@ export class TransactionService {
     if (existing.status === 'paid') {
       throw badRequest('Paid transactions cannot be edited. Cancel the payment first.')
     }
+
+    assertImportedStatementUpdateAllowed(existing, input)
 
     await this.validateReferences(organizationId, {
       accountId: input.accountId ?? existing.accountId,
@@ -666,7 +676,7 @@ export class TransactionService {
       throw notFound('Transaction not found')
     }
 
-    if (transaction.source === 'import' && transaction.statementId) {
+    if (isImportedStatementTransaction(transaction)) {
       throw badRequest('Imported statement lines cannot be deleted')
     }
 
@@ -676,7 +686,7 @@ export class TransactionService {
         transaction.transferPairId
       )
 
-      if (pair?.source === 'import' && pair.statementId) {
+      if (pair && isImportedStatementTransaction(pair)) {
         throw badRequest('Imported statement lines cannot be deleted')
       }
     }
@@ -809,7 +819,7 @@ export class TransactionService {
       ...input,
       accountId,
       title: row.title,
-      amount: centavosToString(row.amount)!,
+      amount: centavosToString(row.amount) ?? '0.00',
       date: row.date.toISOString(),
       competenceDate: row.competenceDate.toISOString(),
       installmentNumber: row.installmentNumber,
@@ -853,7 +863,7 @@ export class TransactionService {
       ...input,
       accountId,
       title: row.title,
-      amount: centavosToString(row.amount)!,
+      amount: centavosToString(row.amount) ?? '0.00',
       date: row.date.toISOString(),
       competenceDate: row.competenceDate.toISOString(),
       installmentNumber: row.installmentNumber,
@@ -890,7 +900,8 @@ export class TransactionService {
       if (!isIncompleteInstallmentSeries(group)) continue
 
       const plan = buildPeriodicInstallmentSeriesRepairPlan(group)
-      const seed = group.rows[0]!
+      const seed = group.rows.at(0)
+      if (!seed) continue
       const categoryMap = await this.transactionRepository.getCategoryIds([seed.id])
       const categoryIds = categoryMap.get(seed.id) ?? []
 
@@ -967,9 +978,9 @@ export class TransactionService {
       id: transaction.id,
       installmentNumber: transaction.installmentNumber ?? 1,
       date: transaction.date.toISOString(),
-      amount: centavosToString(transaction.amount)!,
+      amount: centavosToString(transaction.amount) ?? '0.00',
       paidAmount: centavosToString(transaction.paidAmount),
-      remaining: centavosToString(remaining)!,
+      remaining: centavosToString(remaining) ?? '0.00',
       status: transaction.status,
     }
   }
@@ -996,7 +1007,8 @@ export class TransactionService {
         account.closingDay,
         account.dueDay
       )
-      const seed = group.rows[0]!
+      const seed = group.rows.at(0)
+      if (!seed) continue
       const categoryMap = await this.transactionRepository.getCategoryIds([seed.id])
       const categoryIds = categoryMap.get(seed.id) ?? []
 

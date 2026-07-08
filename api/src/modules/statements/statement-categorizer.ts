@@ -34,13 +34,8 @@ const HEURISTIC_RULES: Array<{ pattern: RegExp; categoryName: string }> = [
   },
   {
     pattern:
-      /condomínio|condominio|aluguel|iptu|financiamento imob|imobiliária|imobiliaria|taxa de incêndio|incendio/i,
-    categoryName: 'Moradia',
-  },
-  {
-    pattern:
-      /luz |energia|cemig|cpfl|enel|light |água|agua|sabesp|copasa|gás|gas |internet|vivo|claro|tim fibra|oi fibra|starlink|band ?larga|telefone|telefonia/i,
-    categoryName: 'Contas da Casa',
+      /condomínio|condominio|aluguel|iptu|financiamento imob|imobiliária|imobiliaria|taxa de incêndio|incendio|luz |energia|cemig|cpfl|enel|light |água|agua|sabesp|copasa|gás|gas |internet|vivo|claro|tim fibra|oi fibra|starlink|band ?larga|telefone|telefonia|leroy merlin|casas bahia|casas lealtex|utilidades|decoração|decoracao|móveis|moveis|eletrodomést|eletrodomest|parafuso|obracom|ferragem|material de construção|terraplana|depósito|deposito estancia|ferrament/i,
+    categoryName: 'Moradia / Contas & Manutenção',
   },
   {
     pattern:
@@ -49,7 +44,7 @@ const HEURISTIC_RULES: Array<{ pattern: RegExp; categoryName: string }> = [
   },
   {
     pattern:
-      /seguro|justos|academia|fit|lifebox|saúde|imede|diagnost|drogaria|droga mix|dentist|odonto|hospital|farmácia|farmacia|asa\*casal|unimed|amil|sulamerica|consulta médica|consulta medica|laborat/i,
+      /seguro|justos|academia|fit|lifebox|saúde|imede|diagnost|drogaria|droga mix|dentist|odonto|hospital|farmácia|farmacia|asa\*casal|unimed|amil|sulamerica|consulta médica|consulta medica|laborat|veterin/i,
     categoryName: 'Saúde',
   },
   {
@@ -60,12 +55,7 @@ const HEURISTIC_RULES: Array<{ pattern: RegExp; categoryName: string }> = [
   {
     pattern:
       /renner|constance|boutiq|cea |moda|vestuário|vestuario|roupa|calçado|calcado|ruivasstores|meu prata|joia|prata lj|shopee|amazonmktplc|amazon|mercado ?livre|aliexpress|olx|nupay|zp\*olx|shein|zara|riachuelo/i,
-    categoryName: 'Compras Pessoais',
-  },
-  {
-    pattern:
-      /leroy merlin|casas bahia|casas lealtex|utilidades|decoração|decoracao|móveis|moveis|eletrodomést|eletrodomest|parafuso|obracom|ferragem|material de construção|terraplana|depósito|deposito estancia|papelaria|ferrament|paodapracafestas/i,
-    categoryName: 'Casa & Manutenção',
+    categoryName: 'Vestuário & Acessórios',
   },
   {
     pattern:
@@ -74,18 +64,13 @@ const HEURISTIC_RULES: Array<{ pattern: RegExp; categoryName: string }> = [
   },
   {
     pattern:
-      /educa|curso|faculdade|escola|udemy|coursera|livro|universidade|colégio|colegio|material escolar|duolingo/i,
+      /educa|curso|faculdade|escola|udemy|coursera|livro|universidade|colégio|colegio|material escolar|duolingo|papelaria|paodapracafestas/i,
     categoryName: 'Educação',
   },
   {
     pattern:
-      /petz|cobasi|pet shop|petshop|veterin|banho e tosa|ração|racao/i,
-    categoryName: 'Pets',
-  },
-  {
-    pattern:
       /organizacoes junqueira|gennius|comercial e|empreendimento|trabalho|serviço profissional|icaroiannisouza|carlos cesar|valdinei marcos|edercarlospereira|cassiosonio|65651968|62464341|m a p comercio|raimunda lopes/i,
-    categoryName: 'Negócio & Trabalho',
+    categoryName: 'Serviços & Profissionais',
   },
   {
     pattern:
@@ -213,8 +198,8 @@ ${txList}
 
 Regras:
 - Use o histórico acima quando o título/estabelecimento for similar a transações já categorizadas.
-- Supermercado = compras de mercado/feira; Restaurantes & Delivery = comer fora.
-- Moradia = aluguel/condomínio; Contas da Casa = luz/água/gás/internet fixa.
+- Supermercado = mercado/feira; Restaurantes & Delivery = comer fora ou delivery.
+- Moradia / Contas & Manutenção = aluguel, condomínio, luz, água, gás, internet fixa, reforma.
 - Assinaturas & Streaming = Netflix, Spotify, software recorrente.
 - Se NÃO houver correspondência clara, NÃO inclua a transação no resultado — deixe sem categoria para revisão manual.
 - JAMAIS invente ou chute uma categoria.

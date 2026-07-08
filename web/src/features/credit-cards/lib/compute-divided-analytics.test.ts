@@ -105,4 +105,19 @@ describe('aggregateMerchantsFromTransactions', () => {
       delegatedToName: 'Maria',
     })
   })
+
+  it('marks partially divided merchants with split partner name', () => {
+    const { merchants } = aggregateMerchantsFromTransactions(
+      [makeTransaction({ id: 'tx-1', title: 'Restaurante', amount: '200.00' })],
+      new Map(),
+      new Map([['tx-1', 'João']])
+    )
+
+    expect(merchants[0]).toMatchObject({
+      hasDivided: true,
+      dividedWithName: 'João',
+      hasFullyDelegated: false,
+      delegatedToName: null,
+    })
+  })
 })

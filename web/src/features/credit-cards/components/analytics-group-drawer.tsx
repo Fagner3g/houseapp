@@ -64,6 +64,7 @@ export function AnalyticsGroupDrawer() {
   )
   const { data: splitData } = useSplitTransactionIds(slug, filteredTransactionIds)
   const fullyDelegatedById = splitData?.fullyDelegatedById ?? new Map<string, string>()
+  const partiallyDividedById = splitData?.partiallyDividedById ?? new Map<string, string>()
 
   const purchaseCount = context?.occurrenceCount ?? filteredTransactions.length
   const purchaseLabel =
@@ -154,6 +155,7 @@ export function AnalyticsGroupDrawer() {
                   variant="credit_card_statement"
                   accountId={context.accountId}
                   fullyDelegatedById={fullyDelegatedById}
+                  partiallyDividedById={partiallyDividedById}
                   containerClassName="mx-4 overflow-x-auto lg:mx-6"
                 />
               )}

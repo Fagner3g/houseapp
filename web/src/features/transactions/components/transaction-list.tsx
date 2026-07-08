@@ -1,12 +1,32 @@
+import { useQueryClient } from '@tanstack/react-query'
 import dayjs from 'dayjs'
-import { Check, CreditCard, Tag, Trash2 } from 'lucide-react'
-import { useMemo, useState } from 'react'
+import { Check, CreditCard, Loader2, Tag, Trash2, X } from 'lucide-react'
+import { useEffect, useMemo, useState } from 'react'
 import { useNavigate, useSearch } from '@tanstack/react-router'
+import { toast } from 'sonner'
 
-import { useListAccounts, useListCategories } from '@/api/generated/api'
+import {
+  getListAccountsQueryKey,
+  getListTransactionsQueryKey,
+  useDeleteTransaction,
+  useListAccounts,
+  useListCategories,
+  useUpdateTransaction,
+} from '@/api/generated/api'
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from '@/components/ui/alert-dialog'
 import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
 import { Checkbox } from '@/components/ui/checkbox'
+import { Label } from '@/components/ui/label'
 import {
   Table,
   TableBody,
@@ -20,10 +40,13 @@ import { transactionPurchaseDate } from '@/lib/credit-card-invoice-metrics'
 import { useActiveOrganization } from '@/hooks/use-active-organization'
 import { useDrawerStore } from '@/stores/drawers'
 import { cn } from '@/lib/utils'
+import { CategorySelect } from '@/features/categories/components/category-select'
 import { isInvoiceSummary, type TransactionListItem } from '@/features/transactions/types'
 import { TransactionInlineCreateBar } from './transaction-inline-create-bar'
 import { DeleteTransactionDialog } from './delete-transaction-dialog'
 import { canDeleteTransaction } from '@/features/transactions/utils/can-delete-transaction'
+
+type TransactionRow = Extract<TransactionListItem, { kind: 'transaction' }>
 
 interface TransactionListProps {
   items: TransactionListItem[]
@@ -37,6 +60,8 @@ interface TransactionListProps {
   cards?: Array<{ id: string; label: string; lastFourDigits?: string | null }>
   /** Map of transaction id → delegate name for fully delegated purchases. */
   fullyDelegatedById?: Map<string, string>
+  /** Map of transaction id → split partner name for partially divided purchases. */
+  partiallyDividedById?: Map<string, string>
   containerClassName?: string
 }
 
@@ -86,6 +111,7 @@ function TransactionTable({
   accountId,
   cards,
   fullyDelegatedById,
+  partiallyDividedById,
   containerClassName,
 }: TransactionListProps) {
   const isCreditCardStatement = variant === 'credit_card_statement'
@@ -95,13 +121,18 @@ function TransactionTable({
   const showDeleteActionColumn = isCreditCardStatement
   const showActionsColumn = showPayActionColumn || showDeleteActionColumn
   const { slug } = useActiveOrganization()
+  const queryClient = useQueryClient()
   const navigate = useNavigate()
   const { data: accounts } = useListAccounts(slug, { query: { enabled: !!slug } })
   const { data: categories } = useListCategories(slug, { query: { enabled: !!slug } })
+  const { mutateAsync: updateTransaction, isPending: isUpdatingCategory } = useUpdateTransaction()
+  const { mutateAsync: deleteTransaction, isPending: isDeletingBulk } = useDeleteTransaction()
   const openDrawer = useDrawerStore(s => s.openTransactionDrawer)
   const openPayDrawer = useDrawerStore(s => s.openTransactionPayDrawer)
   const [selected, setSelected] = useState<Set<string>>(new Set())
-  const [deleteTarget, setDeleteTarget] = useState<Extract<TransactionListItem, { kind: 'transaction' }> | null>(null)
+  const [bulkCategoryId, setBulkCategoryId] = useState<string>('')
+  const [bulkDeleteOpen, setBulkDeleteOpen] = useState(false)
+  const [deleteTarget, setDeleteTarget] = useState<TransactionRow | null>(null)
 
   const accountName = (id: string | null) =>
     accounts?.accounts?.find(a => a.id === id)?.name ?? '—'
@@ -119,13 +150,103 @@ function TransactionTable({
     return card.lastFourDigits ? `${card.label} · ${card.lastFourDigits}` : card.label
   }
 
-  const allSelected = items.length > 0 && selected.size === items.length
+  const selectableItems = useMemo(
+    () => items.filter((item): item is TransactionRow => !isInvoiceSummary(item)),
+    [items]
+  )
+
+  const selectedTransactions = useMemo(
+    () => selectableItems.filter(item => selected.has(item.id)),
+    [selectableItems, selected]
+  )
+
+  const deletableSelected = useMemo(
+    () => selectedTransactions.filter(canDeleteTransaction),
+    [selectedTransactions]
+  )
+
+  const bulkCategoryType = useMemo(() => {
+    const types = new Set(selectedTransactions.map(item => item.type))
+    if (types.size !== 1) return null
+    const [type] = types
+    return type === 'income' || type === 'expense' ? type : null
+  }, [selectedTransactions])
+
+  useEffect(() => {
+    setSelected(prev => {
+      const validIds = new Set(items.map(item => item.id))
+      const next = new Set([...prev].filter(id => validIds.has(id)))
+      return next.size === prev.size ? prev : next
+    })
+  }, [items])
+
+  const allSelected =
+    selectableItems.length > 0 && selectableItems.every(item => selected.has(item.id))
+
+  const invalidateTransactionQueries = async () => {
+    if (!slug) return
+    await queryClient.invalidateQueries({ queryKey: getListTransactionsQueryKey(slug) })
+    await queryClient.invalidateQueries({ queryKey: getListAccountsQueryKey(slug) })
+  }
+
+  const applyBulkCategory = async () => {
+    if (!slug || selectedTransactions.length === 0) return
+    if (!bulkCategoryId) {
+      toast.error('Selecione uma categoria')
+      return
+    }
+    if (!bulkCategoryType) {
+      toast.error('Selecione lançamentos do mesmo tipo (despesa ou receita)')
+      return
+    }
+
+    try {
+      await Promise.all(
+        selectedTransactions.map(item =>
+          updateTransaction({
+            slug,
+            id: item.id,
+            data: { categoryIds: [bulkCategoryId] },
+          })
+        )
+      )
+      await invalidateTransactionQueries()
+      toast.success(
+        selectedTransactions.length === 1
+          ? 'Categoria aplicada'
+          : `Categoria aplicada em ${selectedTransactions.length} lançamentos`
+      )
+      setSelected(new Set())
+    } catch {
+      toast.error('Erro ao aplicar categoria')
+    }
+  }
+
+  const confirmBulkDelete = async () => {
+    if (!slug || deletableSelected.length === 0) return
+
+    try {
+      await Promise.all(
+        deletableSelected.map(item => deleteTransaction({ slug, id: item.id }))
+      )
+      await invalidateTransactionQueries()
+      toast.success(
+        deletableSelected.length === 1
+          ? 'Lançamento excluído'
+          : `${deletableSelected.length} lançamentos excluídos`
+      )
+      setSelected(new Set())
+      setBulkDeleteOpen(false)
+    } catch {
+      toast.error('Erro ao excluir lançamentos')
+    }
+  }
 
   const toggleAll = () => {
     if (allSelected) {
       setSelected(new Set())
     } else {
-      setSelected(new Set(items.map(t => t.id)))
+      setSelected(new Set(selectableItems.map(item => item.id)))
     }
   }
 
@@ -142,7 +263,7 @@ function TransactionTable({
     <TableHeader>
       <TableRow className="hover:bg-transparent">
         <TableHead className="w-10">
-          {items.length > 0 ? (
+          {selectableItems.length > 0 ? (
             <Checkbox checked={allSelected} onCheckedChange={toggleAll} aria-label="Selecionar todos" />
           ) : null}
         </TableHead>
@@ -177,34 +298,101 @@ function TransactionTable({
     </TableHeader>
   )
 
+  const listWrapperClass = cn(containerClassName ?? 'mx-4 lg:mx-6')
   const tableContainerClass = cn(
     'overflow-hidden rounded-lg border border-slate-200/80 bg-white',
-    containerClassName ?? 'mx-4 lg:mx-6'
+    containerClassName?.includes('overflow-x-auto') ? 'overflow-x-auto' : undefined
   )
 
   if (!items.length) {
     return (
-      <div className={tableContainerClass}>
-        <Table>
-          {tableHeader}
-          <TableBody>
-            <TransactionInlineCreateBar
-              accountId={accountId}
-              showStatusColumn={showStatusColumn}
-              showActionsColumn={showActionsColumn}
-            />
-          </TableBody>
-        </Table>
-        <div className="border-t border-slate-100 px-4 py-12 text-center text-slate-500">
-          Nenhuma transação encontrada.
+      <div className={listWrapperClass}>
+        <div className={tableContainerClass}>
+          <Table>
+            {tableHeader}
+            <TableBody>
+              <TransactionInlineCreateBar
+                accountId={accountId}
+                showStatusColumn={showStatusColumn}
+                showActionsColumn={showActionsColumn}
+              />
+            </TableBody>
+          </Table>
+          <div className="border-t border-slate-100 px-4 py-12 text-center text-slate-500">
+            Nenhuma transação encontrada.
+          </div>
         </div>
       </div>
     )
   }
 
+  const bulkActionsBar =
+    selectedTransactions.length > 0 ? (
+      <div className="mb-3 flex flex-wrap items-end gap-2 rounded-lg border border-violet-200 bg-violet-50/60 p-2.5">
+        <p className="mr-auto text-sm font-medium text-violet-900">
+          {selectedTransactions.length === 1
+            ? '1 lançamento selecionado'
+            : `${selectedTransactions.length} lançamentos selecionados`}
+        </p>
+        <div className="min-w-[160px] flex-1 space-y-1 sm:max-w-xs">
+          <Label className="text-xs text-slate-600">Aplicar categoria</Label>
+          <CategorySelect
+            value={bulkCategoryId || undefined}
+            type={bulkCategoryType ?? 'expense'}
+            onChange={setBulkCategoryId}
+            enabled={bulkCategoryType != null}
+            placeholder={
+              bulkCategoryType ? 'Selecione' : 'Tipos mistos'
+            }
+          />
+        </div>
+        <Button
+          type="button"
+          variant="outline"
+          size="sm"
+          className="border-violet-200 bg-white"
+          disabled={isUpdatingCategory || bulkCategoryType == null}
+          onClick={applyBulkCategory}
+        >
+          {isUpdatingCategory ? (
+            <>
+              <Loader2 className="mr-1.5 size-3.5 animate-spin" />
+              Aplicando...
+            </>
+          ) : (
+            'Aplicar categoria'
+          )}
+        </Button>
+        {deletableSelected.length > 0 ? (
+          <Button
+            type="button"
+            variant="outline"
+            size="sm"
+            className="border-red-200 bg-white text-red-700 hover:bg-red-50 hover:text-red-800"
+            onClick={() => setBulkDeleteOpen(true)}
+          >
+            <Trash2 className="mr-1.5 size-3.5" />
+            Excluir ({deletableSelected.length})
+          </Button>
+        ) : null}
+        <Button
+          type="button"
+          variant="ghost"
+          size="sm"
+          className="text-slate-600"
+          onClick={() => setSelected(new Set())}
+        >
+          <X className="mr-1.5 size-3.5" />
+          Limpar
+        </Button>
+      </div>
+    ) : null
+
   return (
     <>
-      <div className={tableContainerClass}>
+      <div className={listWrapperClass}>
+        {bulkActionsBar}
+        <div className={tableContainerClass}>
         <Table>
           {tableHeader}
           <TableBody>
@@ -336,6 +524,13 @@ function TransactionTable({
                       >
                         Delegada · {fullyDelegatedById.get(tx.id)}
                       </Badge>
+                    ) : partiallyDividedById?.get(tx.id) ? (
+                      <Badge
+                        variant="secondary"
+                        className="shrink-0 border-sky-200 bg-sky-50 text-[10px] font-medium text-sky-800"
+                      >
+                        Dividida · {partiallyDividedById.get(tx.id)}
+                      </Badge>
                     ) : null}
                   </div>
                   {tx.installmentsTotal != null && tx.installmentsTotal > 1 && (
@@ -423,6 +618,7 @@ function TransactionTable({
           })}
         </TableBody>
       </Table>
+        </div>
       </div>
       <DeleteTransactionDialog
         transaction={
@@ -440,6 +636,57 @@ function TransactionTable({
           if (!open) setDeleteTarget(null)
         }}
       />
+      <AlertDialog open={bulkDeleteOpen} onOpenChange={setBulkDeleteOpen}>
+        <AlertDialogContent className="sm:max-w-md">
+          <AlertDialogHeader className="space-y-3">
+            <div className="flex items-center gap-3">
+              <div className="flex size-10 items-center justify-center rounded-full bg-red-100">
+                <Trash2 className="size-5 text-red-600" />
+              </div>
+              <div>
+                <AlertDialogTitle className="text-xl">Excluir lançamentos</AlertDialogTitle>
+                <AlertDialogDescription className="text-sm text-muted-foreground">
+                  Esta ação não pode ser desfeita.
+                </AlertDialogDescription>
+              </div>
+            </div>
+          </AlertDialogHeader>
+          <p className="text-sm text-foreground">
+            Excluir{' '}
+            <span className="font-semibold">
+              {deletableSelected.length === 1
+                ? '1 lançamento selecionado'
+                : `${deletableSelected.length} lançamentos selecionados`}
+            </span>
+            ?
+          </p>
+          <AlertDialogFooter className="flex flex-col gap-2 sm:flex-row sm:justify-end">
+            <AlertDialogCancel className="w-full sm:w-auto" disabled={isDeletingBulk}>
+              Cancelar
+            </AlertDialogCancel>
+            <AlertDialogAction
+              onClick={async event => {
+                event.preventDefault()
+                await confirmBulkDelete()
+              }}
+              className="w-full bg-red-600 hover:bg-red-700 focus:ring-red-600 sm:w-auto"
+              disabled={isDeletingBulk}
+            >
+              {isDeletingBulk ? (
+                <>
+                  <Loader2 className="mr-2 size-4 animate-spin" />
+                  Excluindo...
+                </>
+              ) : (
+                <>
+                  <Trash2 className="mr-2 size-4" />
+                  Excluir
+                </>
+              )}
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </>
   )
 }
@@ -452,6 +699,7 @@ export function TransactionList({
   accountId,
   cards,
   fullyDelegatedById,
+  partiallyDividedById,
   containerClassName,
 }: TransactionListProps) {
   const search = useSearch({ strict: false }) as {
@@ -479,6 +727,7 @@ export function TransactionList({
         accountId={accountId}
         cards={cards}
         fullyDelegatedById={fullyDelegatedById}
+        partiallyDividedById={partiallyDividedById}
         containerClassName={containerClassName}
       />
     )
@@ -493,6 +742,7 @@ export function TransactionList({
       accountId={accountId}
       cards={cards}
       fullyDelegatedById={fullyDelegatedById}
+      partiallyDividedById={partiallyDividedById}
       containerClassName={containerClassName}
     />
   )

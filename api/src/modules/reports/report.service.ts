@@ -108,6 +108,8 @@ export type TopMerchantReportDto = {
   percentage: string
   hasFullyDelegated: boolean
   delegatedToName: string | null
+  hasDivided: boolean
+  dividedWithName: string | null
 }
 
 export type TopMerchantsReportDto = {
@@ -248,6 +250,8 @@ function toTopMerchantsDto(result: TopMerchantsReportResult): TopMerchantsReport
         percentage,
         hasFullyDelegated: row.hasFullyDelegated,
         delegatedToName: row.delegatedToName,
+        hasDivided: row.hasDivided,
+        dividedWithName: row.dividedWithName,
       }
     }),
     grandTotal: centavosToString(grandTotal) ?? '0.00',

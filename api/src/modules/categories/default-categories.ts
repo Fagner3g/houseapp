@@ -12,8 +12,8 @@ export type DefaultCategory = {
 }
 
 /**
- * Categorias padrão inspiradas em apps profissionais (GuiaBolso, Mobills, Organizze).
- * Cobrem os grupos essenciais sem ser genéricas demais — o usuário pode criar outras depois.
+ * Categorias padrão com nomes compostos (ex.: "Restaurantes & Delivery", "Renda Extra / Freelance").
+ * Moradia unificada; alimentação separada (mercado vs restaurante).
  */
 export const DEFAULT_CATEGORIES: DefaultCategory[] = [
   // Receitas
@@ -22,31 +22,18 @@ export const DEFAULT_CATEGORIES: DefaultCategory[] = [
   { name: 'Rendimentos', type: 'income', color: '#34D399' },
   { name: 'Outras Receitas', type: 'income', color: '#6EE7B7' },
 
-  // Despesas fixas
-  { name: 'Moradia', type: 'expense', color: '#8B5CF6' },
-  { name: 'Contas da Casa', type: 'expense', color: '#7C3AED' },
-
-  // Alimentação (separação crítica em apps BR)
+  // Despesas
+  { name: 'Moradia / Contas & Manutenção', type: 'expense', color: '#8B5CF6' },
   { name: 'Supermercado', type: 'expense', color: '#F59E0B' },
   { name: 'Restaurantes & Delivery', type: 'expense', color: '#D97706' },
-
-  // Mobilidade e saúde
   { name: 'Transporte', type: 'expense', color: '#3B82F6' },
   { name: 'Saúde', type: 'expense', color: '#EC4899' },
-
-  // Estilo de vida
   { name: 'Educação', type: 'expense', color: '#6366F1' },
   { name: 'Assinaturas & Streaming', type: 'expense', color: '#A855F7' },
   { name: 'Lazer & Entretenimento', type: 'expense', color: '#F97316' },
-
-  // Compras e casa
-  { name: 'Compras Pessoais', type: 'expense', color: '#EF4444' },
-  { name: 'Casa & Manutenção', type: 'expense', color: '#78716C' },
-  { name: 'Pets', type: 'expense', color: '#84CC16' },
+  { name: 'Vestuário & Acessórios', type: 'expense', color: '#EF4444' },
   { name: 'Eletrônicos & Tecnologia', type: 'expense', color: '#0EA5E9' },
-
-  // Trabalho e dívidas
-  { name: 'Negócio & Trabalho', type: 'expense', color: '#57534E' },
+  { name: 'Serviços & Profissionais', type: 'expense', color: '#57534E' },
   { name: 'Empréstimos & Dívidas', type: 'expense', color: '#9333EA' },
 ]
 
@@ -56,17 +43,15 @@ const DEPRECATED_CATEGORY_MIGRATIONS: Array<{
   to: string
   type: CategoryType
 }> = [
-  // Consolidação genérica anterior → novas específicas
+  // Legado v1 → canônicas atuais
   { from: 'Salário / Renda Principal', to: 'Salário', type: 'income' },
-  { from: 'Moradia & Contas Fixas', to: 'Contas da Casa', type: 'expense' },
+  { from: 'Moradia & Contas Fixas', to: 'Moradia / Contas & Manutenção', type: 'expense' },
   { from: 'Alimentação', to: 'Supermercado', type: 'expense' },
   { from: 'Transporte & Mobilidade', to: 'Transporte', type: 'expense' },
   { from: 'Saúde & Bem-estar', to: 'Saúde', type: 'expense' },
-  { from: 'Compras & Lazer', to: 'Compras Pessoais', type: 'expense' },
+  { from: 'Compras & Lazer', to: 'Vestuário & Acessórios', type: 'expense' },
   { from: 'Empréstimo', to: 'Empréstimos & Dívidas', type: 'expense' },
-
-  // Categorias detalhadas anteriores → novas canônicas
-  { from: 'Moradia (Aluguel, Luz, Condomínio)', to: 'Moradia', type: 'expense' },
+  { from: 'Moradia (Aluguel, Luz, Condomínio)', to: 'Moradia / Contas & Manutenção', type: 'expense' },
   { from: 'Internet & Assinaturas', to: 'Assinaturas & Streaming', type: 'expense' },
   { from: 'Internet, TV & Streaming', to: 'Assinaturas & Streaming', type: 'expense' },
   { from: 'Software & Ferramentas', to: 'Assinaturas & Streaming', type: 'expense' },
@@ -75,10 +60,30 @@ const DEPRECATED_CATEGORY_MIGRATIONS: Array<{
   { from: 'Transporte (Uber, Combustível)', to: 'Transporte', type: 'expense' },
   { from: 'Saúde, Farmácia & Bem-estar', to: 'Saúde', type: 'expense' },
   { from: 'Lazer & Hobbies', to: 'Lazer & Entretenimento', type: 'expense' },
-  { from: 'Vestuário & Acessórios', to: 'Compras Pessoais', type: 'expense' },
-  { from: 'Casa & Utilidades', to: 'Casa & Manutenção', type: 'expense' },
-  { from: 'Compras Online', to: 'Compras Pessoais', type: 'expense' },
-  { from: 'Material & Ferragens', to: 'Casa & Manutenção', type: 'expense' },
+  { from: 'Casa & Utilidades', to: 'Moradia / Contas & Manutenção', type: 'expense' },
+  { from: 'Compras Online', to: 'Vestuário & Acessórios', type: 'expense' },
+  { from: 'Material & Ferragens', to: 'Moradia / Contas & Manutenção', type: 'expense' },
+
+  // Legado v2/v3/v4 → canônicas atuais
+  { from: 'Contas da Casa', to: 'Moradia / Contas & Manutenção', type: 'expense' },
+  { from: 'Compras Pessoais', to: 'Vestuário & Acessórios', type: 'expense' },
+  { from: 'Casa & Manutenção', to: 'Moradia / Contas & Manutenção', type: 'expense' },
+  { from: 'Negócio & Trabalho', to: 'Serviços & Profissionais', type: 'expense' },
+  { from: 'Aluguel', to: 'Moradia / Contas & Manutenção', type: 'expense' },
+  { from: 'Contas', to: 'Moradia / Contas & Manutenção', type: 'expense' },
+  { from: 'Manutenção', to: 'Moradia / Contas & Manutenção', type: 'expense' },
+  { from: 'Moradia', to: 'Moradia / Contas & Manutenção', type: 'expense' },
+  { from: 'Pets', to: 'Supermercado', type: 'expense' },
+  { from: 'Freelance', to: 'Renda Extra / Freelance', type: 'income' },
+  { from: 'Investimentos', to: 'Rendimentos', type: 'income' },
+  { from: 'Outros', to: 'Outras Receitas', type: 'income' },
+  { from: 'Restaurante', to: 'Restaurantes & Delivery', type: 'expense' },
+  { from: 'Assinaturas', to: 'Assinaturas & Streaming', type: 'expense' },
+  { from: 'Lazer', to: 'Lazer & Entretenimento', type: 'expense' },
+  { from: 'Vestuário', to: 'Vestuário & Acessórios', type: 'expense' },
+  { from: 'Eletrônicos', to: 'Eletrônicos & Tecnologia', type: 'expense' },
+  { from: 'Serviços', to: 'Serviços & Profissionais', type: 'expense' },
+  { from: 'Dívidas', to: 'Empréstimos & Dívidas', type: 'expense' },
 ]
 
 function categoryKey(name: string, type: CategoryType) {

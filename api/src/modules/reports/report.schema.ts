@@ -215,6 +215,8 @@ export const topMerchantsReportSchema = {
           percentage: z.string(),
           hasFullyDelegated: z.boolean(),
           delegatedToName: z.string().nullable(),
+          hasDivided: z.boolean(),
+          dividedWithName: z.string().nullable(),
         })
       ),
       merchantCount: z.number(),

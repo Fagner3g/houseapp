@@ -170,6 +170,12 @@ export const listSplitTransactionIdsSchema = {
           delegateName: z.string(),
         })
       ),
+      partiallyDivided: z.array(
+        z.object({
+          transactionId: z.string(),
+          splitWithName: z.string(),
+        })
+      ),
     }),
   },
 }

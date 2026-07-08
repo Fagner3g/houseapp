@@ -13,6 +13,7 @@ export type ExpenseRankingItem = {
   subtitle?: string
   isRecurring?: boolean
   delegatedToName?: string | null
+  dividedWithName?: string | null
   color?: string | null
   occurrenceCount?: number
 }
@@ -93,6 +94,14 @@ export function ExpenseRankingList({
                         className="shrink-0 border-amber-200 bg-amber-50 text-[10px] font-medium text-amber-800"
                       >
                         Delegada · {item.delegatedToName}
+                      </Badge>
+                    ) : null}
+                    {item.dividedWithName ? (
+                      <Badge
+                        variant="secondary"
+                        className="shrink-0 border-sky-200 bg-sky-50 text-[10px] font-medium text-sky-800"
+                      >
+                        Dividida · {item.dividedWithName}
                       </Badge>
                     ) : null}
                   </div>

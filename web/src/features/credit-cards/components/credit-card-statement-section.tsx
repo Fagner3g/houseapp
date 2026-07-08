@@ -143,6 +143,8 @@ export function CreditCardStatementSection({
 
   const transactionIds = useMemo(() => baseItems.map(item => item.id), [baseItems])
   const { data: splitData } = useSplitTransactionIds(slug, transactionIds)
+  const fullyDelegatedById = splitData?.fullyDelegatedById ?? new Map<string, string>()
+  const partiallyDividedById = splitData?.partiallyDividedById ?? new Map<string, string>()
   const dividedTransactionIds = splitData?.transactionIds ?? new Set<string>()
 
   const filterCounts = useMemo(
@@ -159,6 +161,7 @@ export function CreditCardStatementSection({
     setFilters(current => ({ ...current, ...patch }))
   }, [])
 
+  // biome-ignore lint/correctness/useExhaustiveDependencies: reset filters when account or billing cycle changes
   useEffect(() => {
     setFilters({
       ...defaultInvoiceStatementFilters(),
@@ -166,6 +169,7 @@ export function CreditCardStatementSection({
     })
   }, [accountId, cycle.monthKey, initialQuickFilter])
 
+  // biome-ignore lint/correctness/useExhaustiveDependencies: scroll when navigating to divided filter on another cycle
   useEffect(() => {
     if (initialQuickFilter !== 'divided') return
     sectionRef.current?.scrollIntoView({ behavior: 'smooth', block: 'start' })
@@ -249,6 +253,8 @@ export function CreditCardStatementSection({
           variant="credit_card_statement"
           accountId={accountId}
           cards={showCardFilter ? activeCards : undefined}
+          fullyDelegatedById={fullyDelegatedById}
+          partiallyDividedById={partiallyDividedById}
         />
       )}
     </section>

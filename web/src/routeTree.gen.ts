@@ -167,7 +167,7 @@ export interface FileRoutesByFullPath {
   '/$org/accounts': typeof AppOrgAccountsRouteWithChildren
   '/$org/credit-cards': typeof AppOrgCreditCardsRoute
   '/$org/profile': typeof AppOrgProfileRoute
-  '/$org': typeof AppOrgIndexRoute
+  '/$org/': typeof AppOrgIndexRoute
   '/$org/dashboard': typeof AppOrgdashboardDashboardRoute
   '/$org/users': typeof AppOrguserUsersRoute
   '/$org/accounts/$id': typeof AppOrgAccountsIdRoute
@@ -177,9 +177,9 @@ export interface FileRoutesByFullPath {
   '/$org/settings/general': typeof AppOrgSettingsGeneralRoute
   '/$org/settings/members': typeof AppOrgSettingsMembersRoute
   '/$org/accounts/': typeof AppOrgAccountsIndexRoute
-  '/$org/settings': typeof AppOrgSettingsIndexRoute
+  '/$org/settings/': typeof AppOrgSettingsIndexRoute
   '/$org/transactions/overdue': typeof AppOrgtransactionsTransactionsOverdueRoute
-  '/$org/transactions': typeof AppOrgtransactionsTransactionsIndexRoute
+  '/$org/transactions/': typeof AppOrgtransactionsTransactionsIndexRoute
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
@@ -243,7 +243,7 @@ export interface FileRouteTypes {
     | '/$org/accounts'
     | '/$org/credit-cards'
     | '/$org/profile'
-    | '/$org'
+    | '/$org/'
     | '/$org/dashboard'
     | '/$org/users'
     | '/$org/accounts/$id'
@@ -253,9 +253,9 @@ export interface FileRouteTypes {
     | '/$org/settings/general'
     | '/$org/settings/members'
     | '/$org/accounts/'
-    | '/$org/settings'
+    | '/$org/settings/'
     | '/$org/transactions/overdue'
-    | '/$org/transactions'
+    | '/$org/transactions/'
   fileRoutesByTo: FileRoutesByTo
   to:
     | '/'
@@ -318,14 +318,14 @@ declare module '@tanstack/react-router' {
     '/_auth': {
       id: '/_auth'
       path: ''
-      fullPath: ''
+      fullPath: '/'
       preLoaderRoute: typeof AuthLayoutRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/_app': {
       id: '/_app'
       path: ''
-      fullPath: ''
+      fullPath: '/'
       preLoaderRoute: typeof AppLayoutRouteImport
       parentRoute: typeof rootRouteImport
     }
@@ -374,7 +374,7 @@ declare module '@tanstack/react-router' {
     '/_app/$org/': {
       id: '/_app/$org/'
       path: '/$org'
-      fullPath: '/$org'
+      fullPath: '/$org/'
       preLoaderRoute: typeof AppOrgIndexRouteImport
       parentRoute: typeof AppLayoutRoute
     }
@@ -402,7 +402,7 @@ declare module '@tanstack/react-router' {
     '/_app/$org/settings/': {
       id: '/_app/$org/settings/'
       path: '/$org/settings'
-      fullPath: '/$org/settings'
+      fullPath: '/$org/settings/'
       preLoaderRoute: typeof AppOrgSettingsIndexRouteImport
       parentRoute: typeof AppLayoutRoute
     }
@@ -472,7 +472,7 @@ declare module '@tanstack/react-router' {
     '/_app/$org/(transactions)/transactions/': {
       id: '/_app/$org/(transactions)/transactions/'
       path: '/$org/transactions'
-      fullPath: '/$org/transactions'
+      fullPath: '/$org/transactions/'
       preLoaderRoute: typeof AppOrgtransactionsTransactionsIndexRouteImport
       parentRoute: typeof AppLayoutRoute
     }

@@ -1,5 +1,5 @@
 import { ChevronDown, Plus, Trash2, Wallet } from 'lucide-react'
-import { useEffect, useMemo, useState } from 'react'
+import { useEffect, useId, useMemo, useState } from 'react'
 import { toast } from 'sonner'
 
 import {
@@ -44,6 +44,7 @@ import { getSplitEligibleOrgUsers } from '@/lib/org-users'
 import { normalizePhoneDigits } from '@/lib/phone'
 import { cn } from '@/lib/utils'
 import { useAuthStore } from '@/stores/auth'
+import { getSplitTransactionIdsQueryKey } from '@/features/credit-cards/hooks/use-split-transaction-ids'
 import { useQueryClient } from '@tanstack/react-query'
 
 import { hasInstallmentSplitDebt, formatPersonShareInstallmentAmount, resolveSplitInstallmentRemainingReais } from '../split-debt-summary.utils'
@@ -101,6 +102,7 @@ export function TransactionSplitsSection({
   const [paymentSplitId, setPaymentSplitId] = useState<string | null>(null)
   const [paymentAmount, setPaymentAmount] = useState(0)
   const [paymentMethod, setPaymentMethod] = useState<'pix' | 'cash' | 'transfer' | 'other'>('pix')
+  const splitNotifyId = useId()
 
   const { data: membersData } = useListUsersByOrg(slug, {
     query: { enabled: !!slug && open },
@@ -115,11 +117,13 @@ export function TransactionSplitsSection({
 
   const splits = data?.splits ?? []
 
+  // biome-ignore lint/correctness/useExhaustiveDependencies: reset panel when switching transactions
   useEffect(() => {
     setOpen(false)
     setShowAddForm(false)
   }, [transactionId])
 
+  // biome-ignore lint/correctness/useExhaustiveDependencies: reopen when splits load for a new transaction
   useEffect(() => {
     if (splits.length > 0) {
       setOpen(true)
@@ -172,6 +176,7 @@ export function TransactionSplitsSection({
     queryClient.invalidateQueries({
       queryKey: getGetSplitDebtSummaryQueryKey(slug, transactionId),
     })
+    queryClient.invalidateQueries({ queryKey: getSplitTransactionIdsQueryKey(slug) })
   }
 
   const previewSplitReais =
@@ -579,11 +584,11 @@ export function TransactionSplitsSection({
               </div>
 
               <div className="flex items-center justify-between gap-3">
-                <Label htmlFor="split-notify" className="text-sm text-slate-600">
+                <Label htmlFor={splitNotifyId} className="text-sm text-slate-600">
                   Notificar esta pessoa
                 </Label>
                 <Switch
-                  id="split-notify"
+                  id={splitNotifyId}
                   checked={notifyEnabled}
                   onCheckedChange={setNotifyEnabled}
                 />

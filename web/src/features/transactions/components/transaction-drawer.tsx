@@ -103,9 +103,7 @@ import {
   stackyDrawerHeader,
   stackyDrawerTitle,
   stackyDrawerCloseButton,
-  stackyDrawerLabel,
   stackyDrawerForm,
-  stackyDrawerPanel,
   stackyDrawerFormRow,
   stackyDrawerFormItem,
   stackyDrawerPanelMuted,
@@ -128,6 +126,7 @@ import {
 import { useQueryClient } from '@tanstack/react-query'
 import { toast } from 'sonner'
 
+import { getSplitTransactionIdsQueryKey } from '@/features/credit-cards/hooks/use-split-transaction-ids'
 import { buildSplitCreateBody } from '@/features/accounts/components/import-review-types'
 import {
   defaultSplitDraftState,
@@ -139,6 +138,7 @@ import { TransactionFooterSummary } from './transaction-footer-summary'
 import { TransactionSplitsSection } from './transaction-splits-section'
 import { DeleteTransactionDialog } from './delete-transaction-dialog'
 import { canDeleteTransaction } from '@/features/transactions/utils/can-delete-transaction'
+import { isImportedStatementTransaction } from '@/features/transactions/utils/is-imported-statement-transaction'
 import {
   buildNotifyApiPayload,
   defaultNotifyState,
@@ -326,6 +326,51 @@ function resolveFormAccountId(
   if (options.lockedAccountId) return options.lockedAccountId
 
   return undefined
+}
+
+function buildTransactionEditPayload(
+  values: TransactionFormValues,
+  isImportedLocked: boolean,
+  options: {
+    registeringPayment: boolean
+    txStatus: string | undefined
+    notifyPayload: ReturnType<typeof buildNotifyApiPayload>
+  }
+) {
+  const metadata = {
+    description: values.description || null,
+    categoryIds: values.categoryId ? [values.categoryId] : [],
+    ...(options.registeringPayment || options.txStatus === 'paid'
+      ? { notifyEnabled: false as const }
+      : values.status === 'pending' && !options.registeringPayment
+        ? options.notifyPayload
+        : { notifyEnabled: false as const }),
+  }
+
+  const status =
+    options.registeringPayment || options.txStatus === 'paid'
+      ? undefined
+      : values.status === 'pending'
+        ? ('pending' as const)
+        : undefined
+
+  if (isImportedLocked) {
+    return { ...metadata, status }
+  }
+
+  return {
+    title: values.title,
+    type: values.type,
+    amount: reaisToMoneyString(values.amount),
+    date: dayjs(values.date).toISOString(),
+    competenceDate: values.competenceDate
+      ? dayjs(values.competenceDate).toISOString()
+      : null,
+    accountId: values.accountId ?? null,
+    cardId: values.cardId ?? null,
+    status,
+    ...metadata,
+  }
 }
 
 export function TransactionDrawer() {
@@ -517,6 +562,9 @@ export function TransactionDrawer() {
   )
 
   const isAccountLocked = !!effectiveLockedAccountId
+  const isImportedLocked = isEdit && isImportedStatementTransaction(tx)
+  const isAccountFieldLocked = isAccountLocked || isImportedLocked
+  const isBankFieldsLocked = isImportedLocked
   const waitingForTransaction = (isEdit || isPay) && (isLoadingTx || (!tx && !isTxError))
 
   useEffect(() => {
@@ -644,8 +692,9 @@ export function TransactionDrawer() {
 
   useEffect(() => {
     if (!open || !isCreditCard || selectableCards.length !== 1) return
-    if (!form.getValues('cardId')) {
-      form.setValue('cardId', selectableCards[0]!.id)
+    const soleCard = selectableCards[0]
+    if (soleCard && !form.getValues('cardId')) {
+      form.setValue('cardId', soleCard.id)
     }
   }, [open, isCreditCard, selectableCards, form])
 
@@ -816,8 +865,9 @@ export function TransactionDrawer() {
   }
 
   const uploadPendingFiles = async (transactionId: string) => {
+    if (!slug) return
     for (const file of pendingFiles) {
-      await uploadTransactionAttachment(slug!, transactionId, file)
+      await uploadTransactionAttachment(slug, transactionId, file)
     }
     setPendingFiles([])
   }
@@ -830,7 +880,7 @@ export function TransactionDrawer() {
       installmentsTotal?: number | null
     }>
   ): Promise<number> => {
-    if (splitDraft.splitMode === 'none') return 0
+    if (splitDraft.splitMode === 'none' || !slug) return 0
 
     let created = 0
     for (const transaction of transactions) {
@@ -841,7 +891,7 @@ export function TransactionDrawer() {
       })
       if (!body) continue
       await createSplit({
-        slug: slug!,
+        slug,
         transactionId: transaction.id,
         data: body,
       })
@@ -854,6 +904,7 @@ export function TransactionDrawer() {
     if (!slug || !editingId) return
     queryClient.invalidateQueries({ queryKey: getListSplitsQueryKey(slug, editingId) })
     queryClient.invalidateQueries({ queryKey: getGetSplitDebtSummaryQueryKey(slug, editingId) })
+    queryClient.invalidateQueries({ queryKey: getSplitTransactionIdsQueryKey(slug) })
   }
 
   const registerUnsettledSplitPayments = async (items: UnsettledSplitItem[]) => {
@@ -1022,21 +1073,11 @@ export function TransactionDrawer() {
             await updateTransaction({
               slug,
               id: editingId,
-              data: {
-                title: values.title,
-                type: values.type,
-                amount: reaisToMoneyString(values.amount),
-                date: dayjs(values.date).toISOString(),
-                competenceDate: values.competenceDate
-                  ? dayjs(values.competenceDate).toISOString()
-                  : null,
-                accountId: values.accountId ?? null,
-                cardId: values.cardId ?? null,
-                status: undefined,
-                description: values.description || null,
-                categoryIds: values.categoryId ? [values.categoryId] : [],
-                notifyEnabled: false,
-              },
+              data: buildTransactionEditPayload(values, isImportedLocked, {
+                registeringPayment: true,
+                txStatus: tx.status,
+                notifyPayload,
+              }),
             })
             if (pendingFiles.length) await uploadPendingFiles(editingId)
             toast.success('Pagamento registrado')
@@ -1049,28 +1090,11 @@ export function TransactionDrawer() {
         await updateTransaction({
           slug,
           id: editingId,
-          data: {
-            title: values.title,
-            type: values.type,
-            amount: reaisToMoneyString(values.amount),
-            date: dayjs(values.date).toISOString(),
-            competenceDate: values.competenceDate
-              ? dayjs(values.competenceDate).toISOString()
-              : null,
-            accountId: values.accountId ?? null,
-            cardId: values.cardId ?? null,
-            status:
-              registeringPayment || tx.status === 'paid'
-                ? undefined
-                : values.status === 'pending'
-                  ? 'pending'
-                  : undefined,
-            description: values.description || null,
-            categoryIds: values.categoryId ? [values.categoryId] : [],
-            ...(values.status === 'pending' && !registeringPayment
-              ? notifyPayload
-              : { notifyEnabled: false }),
-          },
+          data: buildTransactionEditPayload(values, isImportedLocked, {
+            registeringPayment,
+            txStatus: tx.status,
+            notifyPayload,
+          }),
         })
         if (pendingFiles.length) await uploadPendingFiles(editingId)
         toast.success(registeringPayment ? 'Pagamento registrado' : 'Lançamento atualizado')
@@ -1274,6 +1298,12 @@ export function TransactionDrawer() {
               className="flex min-h-0 flex-1 flex-col overflow-hidden"
             >
               <div className={cn('min-h-0 flex-1 space-y-5 overflow-y-auto p-6', stackyDrawerForm)}>
+                {isImportedLocked && (
+                  <div className="rounded-lg border border-slate-200 bg-slate-50/80 px-4 py-3 text-sm text-slate-700">
+                    Lançamento importado do extrato. Descrição, valor, data e conta vêm do banco e
+                    não podem ser alterados. Você pode editar categoria, divisões e observações.
+                  </div>
+                )}
                 {isPaidLocked && (
                   <div className="rounded-lg border border-violet-200 bg-violet-50/80 px-4 py-3 text-sm text-violet-900">
                     Esta transação está paga e não pode ser editada. Para alterar, cancele o
@@ -1447,7 +1477,11 @@ export function TransactionDrawer() {
                               </FormLabel>
                             </div>
                             <FormControl>
-                              <Input placeholder="Ex: Mercado, Salário..." {...field} />
+                              <Input
+                                placeholder="Ex: Mercado, Salário..."
+                                disabled={isBankFieldsLocked}
+                                {...field}
+                              />
                             </FormControl>
                           </FormItem>
                         )}
@@ -1463,7 +1497,11 @@ export function TransactionDrawer() {
                               </FormLabel>
                             </div>
                             <FormControl>
-                              <CurrencyInput value={field.value} onValueChange={field.onChange} />
+                              <CurrencyInput
+                                value={field.value}
+                                onValueChange={field.onChange}
+                                disabled={isBankFieldsLocked}
+                              />
                             </FormControl>
                           </FormItem>
                         )}
@@ -1483,6 +1521,7 @@ export function TransactionDrawer() {
                                     value={field.value}
                                     onChange={field.onChange}
                                     placeholder="dd/mm/aaaa"
+                                    disabled={isBankFieldsLocked}
                                   />
                                 </FormControl>
                               </FormItem>
@@ -1502,6 +1541,7 @@ export function TransactionDrawer() {
                                     value={field.value}
                                     onChange={field.onChange}
                                     placeholder="dd/mm/aaaa"
+                                    disabled={isBankFieldsLocked}
                                   />
                                 </FormControl>
                               </FormItem>
@@ -1522,6 +1562,7 @@ export function TransactionDrawer() {
                                   value={field.value}
                                   onChange={field.onChange}
                                   placeholder="dd/mm/aaaa"
+                                  disabled={isBankFieldsLocked}
                                 />
                               </FormControl>
                             </FormItem>
@@ -1628,7 +1669,7 @@ export function TransactionDrawer() {
                                 <FormLabel>
                                   Conta / Cartão <FormRequiredMark />
                                 </FormLabel>
-                                {!isAccountLocked && (
+                                {!isAccountFieldLocked && (
                                   <button
                                     type="button"
                                     aria-label="Novo produto financeiro"
@@ -1649,7 +1690,7 @@ export function TransactionDrawer() {
                                     field.onChange(v)
                                     form.setValue('cardId', undefined)
                                   }}
-                                  disabled={isAccountLocked}
+                                  disabled={isAccountFieldLocked}
                                   instanceKey={editingId ?? 'create'}
                                   className={stackySelectTrigger}
                                   itemClassName={stackySelectItem}
@@ -1668,9 +1709,9 @@ export function TransactionDrawer() {
                         </FormItem>
                       </div>
                     ) : (
-                      (!isAccountLocked || !isCreditCardExpense) && (
+                      (!isAccountFieldLocked || !isCreditCardExpense) && (
                       <div className={stackyDrawerFormRow}>
-                        {!isAccountLocked && (
+                        {!isAccountFieldLocked && (
                         <FormField
                           control={form.control}
                           name="accountId"
@@ -1722,6 +1763,7 @@ export function TransactionDrawer() {
                                     value={field.value}
                                     onChange={field.onChange}
                                     placeholder="dd/mm/aaaa"
+                                    disabled={isBankFieldsLocked}
                                   />
                                 </FormControl>
                               </FormItem>
@@ -1839,7 +1881,7 @@ export function TransactionDrawer() {
                         render={({ field }) => (
                           <FormItem>
                             <FormLabel>Cartão</FormLabel>
-                            <Select value={field.value} onValueChange={field.onChange}>
+                            <Select value={field.value} onValueChange={field.onChange} disabled={isImportedLocked}>
                               <FormControl>
                                 <SelectTrigger>
                                   <SelectValue placeholder="Selecione o cartão" />
@@ -1976,14 +2018,15 @@ export function TransactionDrawer() {
                                     type="button"
                                     variant="ghost"
                                     size="icon"
-                                    onClick={() =>
+                                    onClick={() => {
+                                      if (!slug || !editingId) return
                                       downloadTransactionAttachment(
-                                        slug!,
-                                        editingId!,
+                                        slug,
+                                        editingId,
                                         att.id,
                                         att.fileName
                                       ).catch(() => toast.error('Erro ao baixar anexo'))
-                                    }
+                                    }}
                                   >
                                     <Download className="size-4" />
                                   </Button>
