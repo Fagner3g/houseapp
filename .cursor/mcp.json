@@ -1,8 +1,9 @@
 {
   "mcpServers": {
     "houseapp-postgres-local": {
-      "command": "/home/fagner/.local/share/pnpm/pnpx",
+      "command": "npx",
       "args": [
+        "-y",
         "@modelcontextprotocol/server-postgres",
         "postgresql://postgres:postgres@127.0.0.1:5433/houseapp_v2"
       ]
