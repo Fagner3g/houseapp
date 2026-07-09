@@ -1,4 +1,3 @@
-import type { ListSplits200SplitsItemStatus } from '@/api/generated/model'
 import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
 import {
@@ -13,23 +12,7 @@ import { formatCurrency } from '@/lib/currency'
 import { cn } from '@/lib/utils'
 
 import type { UnsettledSplitItem } from '../split-debt-summary.utils'
-
-const STATUS_LABELS: Record<ListSplits200SplitsItemStatus, string> = {
-  pending: 'Pendente',
-  partial: 'Parcial',
-  paid: 'Pago',
-  forgiven: 'Perdoado',
-}
-
-const STATUS_VARIANT: Record<
-  ListSplits200SplitsItemStatus,
-  'warning' | 'partial' | 'default' | 'outline'
-> = {
-  pending: 'warning',
-  partial: 'partial',
-  paid: 'default',
-  forgiven: 'outline',
-}
+import { SPLIT_STATUS_LABELS, SPLIT_STATUS_VARIANT } from './splits/split-status'
 
 interface SplitPaymentConfirmDialogProps {
   open: boolean
@@ -74,8 +57,8 @@ export function SplitPaymentConfirmDialog({
                   Falta {formatCurrency(item.remainingReais)}
                 </p>
               </div>
-              <Badge variant={STATUS_VARIANT[item.split.status]} className="shrink-0 text-[10px] uppercase">
-                {STATUS_LABELS[item.split.status]}
+              <Badge variant={SPLIT_STATUS_VARIANT[item.split.status]} className="shrink-0 text-[10px] uppercase">
+                {SPLIT_STATUS_LABELS[item.split.status]}
               </Badge>
             </div>
           ))}
@@ -139,8 +122,8 @@ export function SplitPaymentPayBanner({ items, className }: SplitPaymentPayBanne
               <span className="tabular-nums text-amber-800">
                 Falta {formatCurrency(item.remainingReais)}
               </span>
-              <Badge variant={STATUS_VARIANT[item.split.status]} className="text-[10px] uppercase">
-                {STATUS_LABELS[item.split.status]}
+              <Badge variant={SPLIT_STATUS_VARIANT[item.split.status]} className="text-[10px] uppercase">
+                {SPLIT_STATUS_LABELS[item.split.status]}
               </Badge>
             </span>
           </li>

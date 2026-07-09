@@ -90,28 +90,51 @@ async function fetchPendingNotifications(apiUrl, token) {
   return res.json()
 }
 
-async function fetchOrgAlerts(apiUrl, token, org) {
+async function fetchOrgAlerts(apiUrl, token, org, upcomingPeriod) {
   const dateTo = alertItems.yesterdayEndIso()
-  const params = new URLSearchParams({
+  const overdueParams = new URLSearchParams({
     status: 'pending',
     dateTo,
     payableOnly: 'true',
     perPage: '100',
   })
+  const upcomingParams = alertItems.buildUpcomingParams(upcomingPeriod)
+  const scheduledParams = new URLSearchParams({
+    status: 'pending',
+    payableOnly: 'true',
+    scheduledOnly: 'true',
+    perPage: '100',
+  })
   const headers = authHeaders(token)
-  const [overdueRes, summaryRes] = await Promise.all([
-    fetch(`${apiUrl}/organizations/${org.slug}/transactions?${params}`, { headers }),
-    fetch(`${apiUrl}/organizations/${org.slug}/reports/summary`, { headers }),
+  const [overdueRes, upcomingRes, scheduledRes] = await Promise.all([
+    fetch(`${apiUrl}/organizations/${org.slug}/transactions?${overdueParams}`, { headers }),
+    fetch(`${apiUrl}/organizations/${org.slug}/transactions?${upcomingParams}`, { headers }),
+    fetch(`${apiUrl}/organizations/${org.slug}/transactions?${scheduledParams}`, { headers }),
   ])
-  if (!overdueRes.ok || !summaryRes.ok) {
-    return { orgId: org.id, overdueTransactions: [], upcomingTransactions: [] }
+  if (!overdueRes.ok || !upcomingRes.ok) {
+    return { orgId: org.id, overdueTransactions: [], upcomingTransactions: [], scheduledTransactions: [] }
   }
   const overdue = await overdueRes.json()
-  const summary = await summaryRes.json()
+  const upcoming = await upcomingRes.json()
+  const scheduled = scheduledRes.ok ? await scheduledRes.json() : { transactions: [] }
+  const allTransactions = [
+    ...(overdue.transactions || []),
+    ...(upcoming.transactions || []),
+    ...(scheduled.transactions || []),
+  ]
+  const transactionIds = [...new Set(allTransactions.map(tx => tx.id))]
+  const splitPaidById = await alertItems.fetchSplitPaidTotals(
+    apiUrl,
+    token,
+    org.slug,
+    transactionIds
+  )
   return {
     orgId: org.id,
     overdueTransactions: overdue.transactions || [],
-    upcomingTransactions: summary.upcoming || [],
+    upcomingTransactions: upcoming.transactions || [],
+    scheduledTransactions: scheduled.transactions || [],
+    splitPaidById,
   }
 }
 
@@ -199,7 +222,7 @@ async function poll() {
     const token = await getToken()
     if (!token) { setBadge(0); return }
 
-    const { apiUrl } = await chrome.storage.local.get('apiUrl')
+    const { apiUrl, upcomingPeriod } = await chrome.storage.local.get(['apiUrl', 'upcomingPeriod'])
     if (!apiUrl) { setBadge(0); return }
 
     try {
@@ -224,7 +247,9 @@ async function poll() {
     try {
       pending = await fetchPendingNotifications(apiUrl, token)
       const notifications = pending.notifications || []
-      const orgDataList = await Promise.all(orgs.map(org => fetchOrgAlerts(apiUrl, token, org)))
+      const orgDataList = await Promise.all(
+        orgs.map(org => fetchOrgAlerts(apiUrl, token, org, upcomingPeriod))
+      )
       const allItems = alertItems.buildAllOrgAlertItems({ orgDataList, notifications, orgs })
       totalOverdue = notify.countByKind(allItems).overdue
 

@@ -732,6 +732,7 @@ export * from "./listSplitPayments200PaymentsItemNote";
 export * from "./listSplitTransactionIds200";
 export * from "./listSplitTransactionIds200FullyDelegatedItem";
 export * from "./listSplitTransactionIds200PartiallyDividedItem";
+export * from "./listSplitTransactionIds200SplitPaidTotalsItem";
 export * from "./listSplitTransactionIdsBody";
 export * from "./listSplits200";
 export * from "./listSplits200SplitsItem";

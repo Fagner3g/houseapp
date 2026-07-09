@@ -30,6 +30,7 @@ export async function listTransactionsController(
     page: request.query.page,
     perPage: request.query.perPage,
     payableOnly: request.query.payableOnly,
+    scheduledOnly: request.query.scheduledOnly,
   })
 
   return reply.send(result)

@@ -1,4 +1,4 @@
-import { and, eq, gte, inArray, isNotNull, isNull, lte, ne, or, sql, type SQL } from 'drizzle-orm'
+import { and, eq, gt, gte, inArray, isNotNull, isNull, lte, ne, or, sql, type SQL } from 'drizzle-orm'
 
 import { accounts } from '@/db/schemas/accounts'
 import { transactions } from '@/db/schemas/transactions'
@@ -67,12 +67,23 @@ export function matchesPayablePeriodCondition(dateFrom?: Date, dateTo?: Date): S
 /** Overdue queries use dateTo-only; keep hiding future-scheduled items there. */
 export function shouldExcludeFutureScheduled(filter: {
   payableOnly?: boolean
+  scheduledOnly?: boolean
   dateFrom?: Date
   dateTo?: Date
 }): boolean {
+  if (filter.scheduledOnly) return false
   if (!filter.payableOnly || !filter.dateTo || filter.dateFrom) return false
 
   const todayStart = new Date()
   todayStart.setHours(0, 0, 0, 0)
   return filter.dateTo < todayStart
+}
+
+/** Pending/partial payables with a future scheduled debit date. */
+export function isScheduledOnlyCondition(): SQL {
+  return and(
+    inArray(transactions.status, ['pending', 'partial']),
+    isNotNull(transactions.paymentScheduledAt),
+    gt(transactions.paymentScheduledAt, sql`now()`)
+  ) as SQL
 }

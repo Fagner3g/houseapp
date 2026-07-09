@@ -22,12 +22,13 @@ function setStatus(msg, type = '') {
 
 // ── Load saved settings ───────────────────────────────────────────────────────
 
-chrome.storage.local.get(['apiUrl', 'webUrl', 'pollMinutes'], (data) => {
+chrome.storage.local.get(['apiUrl', 'webUrl', 'pollMinutes', 'upcomingPeriod'], (data) => {
   if (data.apiUrl)     document.getElementById('api-url').value = data.apiUrl
   if (data.webUrl)     document.getElementById('web-url').value = data.webUrl
   if (data.pollMinutes) {
     document.getElementById('poll-minutes').value = String(data.pollMinutes)
   }
+  document.getElementById('upcoming-period').value = data.upcomingPeriod || '7'
   // highlight active env button based on saved apiUrl
   const savedApi = data.apiUrl || ''
   const activeEnv = savedApi.includes('localhost') ? 'dev' : 'prod'
@@ -41,11 +42,12 @@ document.getElementById('btn-save').addEventListener('click', async () => {
   const apiUrl     = document.getElementById('api-url').value.trim().replace(/\/$/, '')
   const webUrl     = document.getElementById('web-url').value.trim().replace(/\/$/, '')
   const pollMinutes = Number(document.getElementById('poll-minutes').value)
+  const upcomingPeriod = document.getElementById('upcoming-period').value
 
   if (!apiUrl) { setStatus('Informe a URL da API.', 'err'); return }
   if (!webUrl) { setStatus('Informe a URL do App Web.', 'err'); return }
 
-  await chrome.storage.local.set({ apiUrl, webUrl, pollMinutes })
+  await chrome.storage.local.set({ apiUrl, webUrl, pollMinutes, upcomingPeriod })
 
   // Recreate alarm with new interval
   chrome.alarms.clear('houseapp-poll', () => {

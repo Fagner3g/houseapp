@@ -27,6 +27,7 @@ export const Route = createFileRoute('/_app/$org/(transactions)/transactions/')(
     type: z.enum(['expense', 'income', 'transfer']).optional(),
     search: z.string().optional(),
     recurring: z.enum(['all', 'recurring', 'single']).optional(),
+    scheduled: z.enum(['scheduled', 'unscheduled']).optional(),
     view: z
       .enum(['list', 'calendar', 'statement'])
       .optional()

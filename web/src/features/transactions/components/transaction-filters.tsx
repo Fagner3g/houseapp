@@ -18,6 +18,7 @@ import { useTransactionListQueryStore } from '@/stores/transaction-list-query'
 import { cn } from '@/lib/utils'
 
 type RecurringFilter = 'all' | 'recurring' | 'single'
+type ScheduledFilter = 'scheduled' | 'unscheduled'
 type ViewMode = 'list' | 'calendar' | 'statement'
 
 export function TransactionFilters() {
@@ -30,6 +31,7 @@ export function TransactionFilters() {
     type?: ListTransactionsType
     search?: string
     recurring?: RecurringFilter
+    scheduled?: ScheduledFilter
     view?: ViewMode
   }
 
@@ -139,6 +141,22 @@ export function TransactionFilters() {
                 <SelectItem value="all">Recorrência</SelectItem>
                 <SelectItem value="recurring">Recorrentes</SelectItem>
                 <SelectItem value="single">Avulsas</SelectItem>
+              </SelectContent>
+            </Select>
+
+            <Select
+              value={search.scheduled ?? 'all'}
+              onValueChange={v =>
+                update({ scheduled: v === 'all' ? undefined : (v as ScheduledFilter) })
+              }
+            >
+              <SelectTrigger className="h-9 w-auto min-w-[130px] rounded-lg border-slate-200 text-sm">
+                <SelectValue placeholder="Agendamento" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="all">Agendamento</SelectItem>
+                <SelectItem value="scheduled">Agendadas</SelectItem>
+                <SelectItem value="unscheduled">Não agendadas</SelectItem>
               </SelectContent>
             </Select>
 

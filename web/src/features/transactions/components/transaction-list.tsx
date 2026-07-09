@@ -34,7 +34,7 @@ import {
   TableHeader,
   TableRow,
 } from '@/components/ui/table'
-import { formatCentsString } from '@/lib/currency'
+import { formatCentsString, reaisToMoneyString } from '@/lib/currency'
 import { transactionPurchaseDate } from '@/lib/credit-card-invoice-metrics'
 import { useActiveOrganization } from '@/hooks/use-active-organization'
 import { useDrawerStore } from '@/stores/drawers'
@@ -50,6 +50,12 @@ import { isInvoiceSummary, type TransactionListItem } from '@/features/transacti
 import { TransactionInlineCreateBar } from './transaction-inline-create-bar'
 import { DeleteTransactionDialog } from './delete-transaction-dialog'
 import { canDeleteTransaction } from '@/features/transactions/utils/can-delete-transaction'
+import {
+  getPayableStatusBadges,
+  isFutureScheduled,
+  isOverduePayable,
+} from '@/features/transactions/lib/payable-status'
+import { resolveTransactionListAmountReais, isTransactionPartiallyPaid } from '@/features/transactions/installment-amount.utils'
 
 type TransactionRow = Extract<TransactionListItem, { kind: 'transaction' }>
 
@@ -67,6 +73,8 @@ interface TransactionListProps {
   fullyDelegatedById?: Map<string, string>
   /** Map of transaction id → partial split info for badge labels. */
   partiallyDividedById?: Map<string, PartialSplitBadgeInfo>
+  /** Map of transaction id → total paid on splits. */
+  splitPaidById?: Map<string, number>
   /** When false, hides the inline create row (e.g. credit card after first statement import). */
   allowInlineCreate?: boolean
   containerClassName?: string
@@ -81,7 +89,7 @@ function isCreditCardExpense(
 }
 
 function isOverdue(tx: Extract<TransactionListItem, { kind: 'transaction' }>) {
-  return tx.status === 'pending' && dayjs(tx.date).isBefore(dayjs().startOf('day'))
+  return isOverduePayable(tx) && !isFutureScheduled(tx)
 }
 
 function getPayableListDate(tx: TransactionRow) {
@@ -98,10 +106,18 @@ function getPayableListDate(tx: TransactionRow) {
     }
   }
 
+  if (scheduledDay?.isValid()) {
+    return {
+      displayDay: scheduledDay,
+      dueSubtext: null,
+      showScheduledBadge: false,
+    }
+  }
+
   return {
     displayDay: dueDay,
     dueSubtext: null,
-    showScheduledBadge: Boolean(scheduledDay?.isValid()),
+    showScheduledBadge: false,
   }
 }
 
@@ -116,6 +132,7 @@ function getStatusLabel(item: TransactionListItem): string {
   const tx = item
   if (tx.status === 'canceled') return 'Cancelado'
   if (tx.status === 'paid') return tx.type === 'income' ? 'Recebido' : 'Pago'
+  if (tx.status === 'partial') return 'Parcial'
   return 'Pendente'
 }
 
@@ -140,6 +157,7 @@ function TransactionTable({
   cards,
   fullyDelegatedById,
   partiallyDividedById,
+  splitPaidById,
   allowInlineCreate = true,
   containerClassName,
 }: TransactionListProps) {
@@ -559,14 +577,6 @@ function TransactionTable({
                     <span className="max-w-[200px] truncate font-medium text-slate-900 lg:max-w-xs">
                       {tx.title}
                     </span>
-                    {payableListDate?.showScheduledBadge && (
-                      <Badge
-                        variant="secondary"
-                        className="shrink-0 border-sky-200 bg-sky-50 text-[10px] font-medium text-sky-800"
-                      >
-                        Agendado
-                      </Badge>
-                    )}
                     {(() => {
                       const delegatedName = fullyDelegatedById?.get(tx.id)
                       if (delegatedName) {
@@ -637,13 +647,41 @@ function TransactionTable({
                   )}
                 >
                   {tx.type === 'income' ? '+ ' : '- '}
-                  {formatCentsString(tx.amount)}
+                  {formatCentsString(
+                    tx.status === 'paid'
+                      ? tx.amount
+                      : reaisToMoneyString(
+                          resolveTransactionListAmountReais(
+                            tx.amount,
+                            tx.paidAmount,
+                            splitPaidById?.get(tx.id) ?? 0
+                          )
+                        )
+                  )}
                 </span>
               </TableCell>
               {showStatusColumn && (
                 <TableCell>
                   {creditCardExpense ? (
                     <span className="text-sm text-slate-400">—</span>
+                  ) : tx.status === 'pending' || tx.status === 'partial' ? (
+                    <div className="flex flex-wrap gap-1">
+                      {getPayableStatusBadges(tx, {
+                        isPartiallyPaid: isTransactionPartiallyPaid(
+                          tx.amount,
+                          tx.paidAmount,
+                          splitPaidById?.get(tx.id) ?? 0
+                        ),
+                      }).map(badge => (
+                        <Badge
+                          key={badge.key}
+                          variant="outline"
+                          className={cn('text-xs', badge.className)}
+                        >
+                          {badge.label}
+                        </Badge>
+                      ))}
+                    </div>
                   ) : (
                     <Badge
                       variant={getStatusVariant(tx)}
@@ -808,29 +846,49 @@ export function TransactionList({
   const { slug } = useActiveOrganization()
   const search = useSearch({ strict: false }) as {
     recurring?: 'all' | 'recurring' | 'single'
+    scheduled?: 'scheduled' | 'unscheduled'
   }
 
   const filtered = useMemo(() => {
-    if (!search.recurring || search.recurring === 'all') return items
-    return items.filter(item => {
-      if (isInvoiceSummary(item)) return true
-      if (search.recurring === 'recurring') {
-        return item.recurringTransactionId != null
-      }
-      return item.recurringTransactionId == null
-    })
-  }, [items, search.recurring])
+    let result = items
+
+    if (search.recurring && search.recurring !== 'all') {
+      result = result.filter(item => {
+        if (isInvoiceSummary(item)) return true
+        if (search.recurring === 'recurring') {
+          return item.recurringTransactionId != null
+        }
+        return item.recurringTransactionId == null
+      })
+    }
+
+    if (search.scheduled === 'scheduled') {
+      result = result.filter(item => {
+        if (isInvoiceSummary(item)) return false
+        return isFutureScheduled(item)
+      })
+    } else if (search.scheduled === 'unscheduled') {
+      result = result.filter(item => {
+        if (isInvoiceSummary(item)) return true
+        return !isFutureScheduled(item)
+      })
+    }
+
+    return result
+  }, [items, search.recurring, search.scheduled])
 
   const listItems = mode === 'overdue' ? items : filtered
-  const splitMapsProvided =
-    fullyDelegatedByIdProp != null && partiallyDividedByIdProp != null
-  const transactionIds = useMemo(() => {
-    if (splitMapsProvided) return []
-    return listItems.filter((item): item is TransactionRow => !isInvoiceSummary(item)).map(item => item.id)
-  }, [listItems, splitMapsProvided])
+  const transactionIds = useMemo(
+    () =>
+      listItems
+        .filter((item): item is TransactionRow => !isInvoiceSummary(item))
+        .map(item => item.id),
+    [listItems]
+  )
   const { data: splitData } = useSplitTransactionIds(slug, transactionIds)
   const fullyDelegatedById = fullyDelegatedByIdProp ?? splitData?.fullyDelegatedById
   const partiallyDividedById = partiallyDividedByIdProp ?? splitData?.partiallyDividedById
+  const splitPaidById = splitData?.splitPaidById
 
   return (
     <TransactionTable
@@ -842,6 +900,7 @@ export function TransactionList({
       cards={cards}
       fullyDelegatedById={fullyDelegatedById}
       partiallyDividedById={partiallyDividedById}
+      splitPaidById={splitPaidById}
       allowInlineCreate={allowInlineCreate}
       containerClassName={containerClassName}
     />

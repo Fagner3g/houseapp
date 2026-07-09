@@ -10,6 +10,7 @@ const {
   parseNotificationAmount,
   formatAmount,
   formatStatusLabel,
+  getStatusBadges,
   statusBadgeClass,
   dedupeNotifications,
   processPendingNotifications,
@@ -100,6 +101,44 @@ const items = processPendingNotifications(
 assert.equal(items.length, 1)
 assert.equal(items[0].orgSlug, 'casa')
 assert.equal(items[0].amountReais, 100)
-assert.deepEqual(countByKind(items), { overdue: 0, upcoming: 1 })
+assert.deepEqual(countByKind(items), { overdue: 0, upcoming: 1, scheduled: 0 })
+
+const scheduledItem = {
+  kind: 'scheduled',
+  date: '2026-07-20T23:59:59.999Z',
+  paymentScheduledAt: '2026-07-20T23:59:59.999Z',
+  dueDate: '2026-06-17T00:00:00.000Z',
+  overdueDays: 22,
+}
+const scheduledBadges = getStatusBadges(scheduledItem)
+assert.equal(scheduledBadges.length, 2)
+assert.equal(scheduledBadges[0].key, 'scheduled')
+assert.equal(scheduledBadges[0].badgeClass, 'badge-scheduled')
+assert.match(scheduledBadges[0].label, /Agendado para/)
+assert.equal(scheduledBadges[1].key, 'overdue')
+assert.match(scheduledBadges[1].label, /Vencida há 22 dias/)
+assert.match(formatStatusLabel(scheduledItem), /Agendado para/)
+assert.equal(statusBadgeClass('scheduled'), 'badge-scheduled')
+
+const overdueBadges = getStatusBadges(overdueItem)
+assert.equal(overdueBadges.length, 1)
+assert.equal(overdueBadges[0].badgeClass, 'badge-overdue')
+
+const upcomingBadges = getStatusBadges(upcomingItem)
+assert.equal(upcomingBadges.length, 1)
+assert.equal(upcomingBadges[0].badgeClass, 'badge-upcoming')
+assert.match(upcomingBadges[0].label, /Vence amanhã/)
+
+const partialItem = {
+  kind: 'overdue',
+  overdueDays: 22,
+  isPartiallyPaid: true,
+  txStatus: 'pending',
+}
+const partialBadges = getStatusBadges(partialItem)
+assert.equal(partialBadges[0].key, 'partial')
+assert.equal(partialBadges[0].badgeClass, 'badge-partial')
+assert.equal(partialBadges[1].key, 'overdue')
+assert.equal(statusBadgeClass('partial'), 'badge-partial')
 
 console.log('notification-utils.test.js: all passed')

@@ -178,6 +178,12 @@ export const listSplitTransactionIdsSchema = {
           transactionAmount: z.string(),
         })
       ),
+      splitPaidTotals: z.array(
+        z.object({
+          transactionId: z.string(),
+          paidAmount: z.string(),
+        })
+      ),
     }),
   },
 }

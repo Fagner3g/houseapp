@@ -26,6 +26,7 @@ import {
 import {
   isPayableTransactionCondition,
   isNotScheduledForFutureCondition,
+  isScheduledOnlyCondition,
   matchesPayablePeriodCondition,
   shouldExcludeFutureScheduled,
 } from './payable-transaction'
@@ -86,6 +87,8 @@ export type ListTransactionsFilter = {
   perPage?: number
   /** Excludes credit card purchases (pay the invoice instead). */
   payableOnly?: boolean
+  /** Only pending/partial with future paymentScheduledAt. Implies payableOnly. */
+  scheduledOnly?: boolean
   sortBy?: TransactionSortBy
   sortOrder?: TransactionSortOrder
 }
@@ -224,10 +227,15 @@ export class DrizzleTransactionRepository implements TransactionRepository {
     const payableWhere = and(
       whereClause,
       isPayableTransactionCondition(),
-      shouldExcludeFutureScheduled(filter) ? isNotScheduledForFutureCondition() : undefined
+      filter.scheduledOnly ? isScheduledOnlyCondition() : undefined,
+      !filter.scheduledOnly && shouldExcludeFutureScheduled(filter)
+        ? isNotScheduledForFutureCondition()
+        : undefined
     )
 
-    const [countRow] = filter.payableOnly
+    const usePayableQuery = filter.payableOnly || filter.scheduledOnly
+
+    const [countRow] = usePayableQuery
       ? await db
           .select({ total: count() })
           .from(transactions)
@@ -238,7 +246,7 @@ export class DrizzleTransactionRepository implements TransactionRepository {
           .from(transactions)
           .where(whereClause)
 
-    const rows = filter.payableOnly
+    const rows = usePayableQuery
       ? await db
           .select({
             id: transactions.id,

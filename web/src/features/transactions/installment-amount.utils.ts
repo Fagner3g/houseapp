@@ -10,6 +10,26 @@ export function transactionRemainingReais(
   return Math.max(0, moneyStringToReais(amount) - moneyStringToReais(paidAmount))
 }
 
+export function resolveTransactionListAmountReais(
+  amount: string | null | undefined,
+  paidAmount: string | null | undefined,
+  splitPaidReais = 0
+): number {
+  return Math.max(0, transactionRemainingReais(amount, paidAmount) - splitPaidReais)
+}
+
+export function isTransactionPartiallyPaid(
+  amount: string | null | undefined,
+  paidAmount: string | null | undefined,
+  splitPaidReais = 0
+): boolean {
+  const totalReais = moneyStringToReais(amount)
+  if (totalReais <= 0) return false
+
+  const remainingReais = resolveTransactionListAmountReais(amount, paidAmount, splitPaidReais)
+  return remainingReais > 0 && remainingReais < totalReais
+}
+
 export function resolveTransactionInstallmentAmountReais(
   tx: Pick<GetTransaction200Transaction, 'amount' | 'installmentNumber' | 'installmentsTotal'> | null | undefined,
   summary?: Pick<GetSplitDebtSummary200, 'currentTransactionAmount' | 'purchaseTotal'> | null

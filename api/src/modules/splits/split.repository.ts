@@ -91,6 +91,10 @@ export interface SplitRepository {
       transactionAmount: bigint
     }>
   >
+  listSplitPaidTotals(
+    organizationId: string,
+    transactionIds: string[]
+  ): Promise<Array<{ transactionId: string; paidTotal: bigint }>>
   findSplitsWithTransactions(
     transactionIds: string[]
   ): Promise<
@@ -491,6 +495,33 @@ export class DrizzleSplitRepository implements SplitRepository {
         splitAmount: BigInt(row.splitAmount),
         transactionAmount: row.transactionAmount ?? 0n,
       }))
+  }
+
+  async listSplitPaidTotals(
+    organizationId: string,
+    transactionIds: string[]
+  ): Promise<Array<{ transactionId: string; paidTotal: bigint }>> {
+    if (transactionIds.length === 0) return []
+
+    const rows = await db
+      .select({
+        transactionId: transactionSplits.transactionId,
+        paidTotal: sql<bigint>`COALESCE(SUM(${transactionSplits.paidAmount}), 0)`,
+      })
+      .from(transactionSplits)
+      .innerJoin(transactions, eq(transactionSplits.transactionId, transactions.id))
+      .where(
+        and(
+          eq(transactions.organizationId, organizationId),
+          inArray(transactionSplits.transactionId, transactionIds)
+        )
+      )
+      .groupBy(transactionSplits.transactionId)
+
+    return rows.map(row => ({
+      transactionId: row.transactionId,
+      paidTotal: BigInt(row.paidTotal),
+    }))
   }
 
   async findSplitsWithTransactions(

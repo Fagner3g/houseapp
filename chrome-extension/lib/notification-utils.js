@@ -37,23 +37,80 @@ function resolveAlertKind(metadata = {}, dueDateIso) {
   return due < today ? 'overdue' : 'upcoming'
 }
 
-function formatStatusLabel(item) {
-  const datePart = fmtDateShort(item.date)
-  if (item.kind === 'overdue') {
-    const days = item.overdueDays
-    if (days === 1) return `Vencida há 1 dia · ${datePart}`
-    if (days != null && days > 0) return `Vencida há ${days} dias · ${datePart}`
-    return `Vencida · ${datePart}`
+function formatOverdueLabel(days) {
+  if (days === 1) return 'Vencida há 1 dia'
+  if (days != null && days > 0) return `Vencida há ${days} dias`
+  return 'Vencida'
+}
+
+function formatUpcomingLabel(days) {
+  if (days === 0) return 'Vence hoje'
+  if (days === 1) return 'Vence amanhã'
+  if (days != null && days > 0) return `Vence em ${days} dias`
+  return 'Próxima'
+}
+
+function isFutureScheduled(paymentScheduledAt) {
+  if (!paymentScheduledAt) return false
+  return new Date(paymentScheduledAt).getTime() > Date.now()
+}
+
+function getStatusBadges(item) {
+  const badges = []
+  const isPartiallyPaid = item.isPartiallyPaid || item.txStatus === 'partial'
+
+  if (isPartiallyPaid) {
+    badges.push({
+      key: 'partial',
+      label: 'Pagamento parcial',
+      badgeClass: 'badge-partial',
+    })
   }
-  const days = item.daysUntilDue
-  if (days === 0) return `Vence hoje · ${datePart}`
-  if (days === 1) return `Vence amanhã · ${datePart}`
-  if (days != null && days > 0) return `Vence em ${days} dias · ${datePart}`
-  return `Próxima · ${datePart}`
+
+  if (item.kind === 'scheduled' && isFutureScheduled(item.paymentScheduledAt)) {
+    badges.push({
+      key: 'scheduled',
+      label: `Agendado para ${fmtDateShort(item.paymentScheduledAt || item.date)}`,
+      badgeClass: 'badge-scheduled',
+    })
+    if (item.overdueDays != null && item.overdueDays > 0) {
+      badges.push({
+        key: 'overdue',
+        label: formatOverdueLabel(item.overdueDays),
+        badgeClass: 'badge-overdue',
+      })
+    }
+    return badges
+  }
+
+  if (item.kind === 'overdue') {
+    badges.push({
+      key: 'overdue',
+      label: formatOverdueLabel(item.overdueDays),
+      badgeClass: 'badge-overdue',
+    })
+    return badges
+  }
+
+  badges.push({
+    key: 'upcoming',
+    label: formatUpcomingLabel(item.daysUntilDue),
+    badgeClass: 'badge-upcoming',
+  })
+  return badges
+}
+
+function formatStatusLabel(item) {
+  return getStatusBadges(item)
+    .map(badge => badge.label)
+    .join(' · ')
 }
 
 function statusBadgeClass(kind) {
-  return kind === 'overdue' ? 'badge-overdue' : 'badge-upcoming'
+  if (kind === 'overdue') return 'badge-overdue'
+  if (kind === 'scheduled') return 'badge-scheduled'
+  if (kind === 'partial') return 'badge-partial'
+  return 'badge-upcoming'
 }
 
 function dedupeNotifications(notifications) {
@@ -109,7 +166,10 @@ function processPendingNotifications(notifications, orgs, selectedOrgId) {
   return dedupeNotifications(filterExtensionNotifications(notifications, selectedOrgId))
     .map(n => mapNotificationToItem(n, orgById))
     .sort((a, b) => {
-      if (a.kind !== b.kind) return a.kind === 'overdue' ? -1 : 1
+      const order = { overdue: 0, scheduled: 1, upcoming: 2 }
+      const orderA = order[a.kind] ?? 9
+      const orderB = order[b.kind] ?? 9
+      if (orderA !== orderB) return orderA - orderB
       return new Date(a.date) - new Date(b.date)
     })
 }
@@ -117,11 +177,13 @@ function processPendingNotifications(notifications, orgs, selectedOrgId) {
 function countByKind(items) {
   let overdue = 0
   let upcoming = 0
+  let scheduled = 0
   for (const item of items) {
     if (item.kind === 'overdue') overdue += 1
+    else if (item.kind === 'scheduled') scheduled += 1
     else upcoming += 1
   }
-  return { overdue, upcoming }
+  return { overdue, upcoming, scheduled }
 }
 
 function formatRelativeTime(iso) {
@@ -142,6 +204,7 @@ globalThis.HouseAppNotify = {
   countByKind,
   formatAmount,
   formatStatusLabel,
+  getStatusBadges,
   statusBadgeClass,
   formatRelativeTime,
   filterExtensionNotifications,

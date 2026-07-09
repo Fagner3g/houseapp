@@ -7,9 +7,11 @@
  */
 import type { ListSplitTransactionIds200FullyDelegatedItem } from "./listSplitTransactionIds200FullyDelegatedItem";
 import type { ListSplitTransactionIds200PartiallyDividedItem } from "./listSplitTransactionIds200PartiallyDividedItem";
+import type { ListSplitTransactionIds200SplitPaidTotalsItem } from "./listSplitTransactionIds200SplitPaidTotalsItem";
 
 export type ListSplitTransactionIds200 = {
   transactionIds: string[];
   fullyDelegated: ListSplitTransactionIds200FullyDelegatedItem[];
   partiallyDivided: ListSplitTransactionIds200PartiallyDividedItem[];
+  splitPaidTotals: ListSplitTransactionIds200SplitPaidTotalsItem[];
 };

@@ -83,6 +83,7 @@ function getVisibleItems() {
   let items = state.allItems
   const activeFilter = state.kpiFilter || state.filter
   if (activeFilter === 'overdue') items = items.filter(i => i.kind === 'overdue')
+  if (activeFilter === 'scheduled') items = items.filter(i => i.kind === 'scheduled')
   if (activeFilter === 'upcoming') items = items.filter(i => i.kind === 'upcoming')
   return items.slice(0, 10)
 }
@@ -90,8 +91,10 @@ function getVisibleItems() {
 function renderKpis() {
   const counts = notify.countByKind(state.allItems)
   document.getElementById('count-overdue').textContent = String(counts.overdue)
+  document.getElementById('count-scheduled').textContent = String(counts.scheduled)
   document.getElementById('count-upcoming').textContent = String(counts.upcoming)
   document.getElementById('pill-overdue').classList.toggle('active', state.kpiFilter === 'overdue')
+  document.getElementById('pill-scheduled').classList.toggle('active', state.kpiFilter === 'scheduled')
   document.getElementById('pill-upcoming').classList.toggle('active', state.kpiFilter === 'upcoming')
 }
 
@@ -104,10 +107,11 @@ function renderTabs() {
 
 function emptyMessage() {
   const active = state.kpiFilter || state.filter
-  if (state.allItems.length === 0) return 'Nenhuma conta vencida ou próxima no momento.'
+  if (state.allItems.length === 0) return 'Nenhuma conta vencida, agendada ou próxima no momento.'
   if (active === 'overdue') return 'Nenhuma conta vencida.'
+  if (active === 'scheduled') return 'Nenhuma conta agendada.'
   if (active === 'upcoming') return 'Nenhuma conta próxima.'
-  return 'Nenhuma conta vencida ou próxima.'
+  return 'Nenhuma conta vencida, agendada ou próxima.'
 }
 
 function renderList() {
@@ -129,18 +133,25 @@ function renderList() {
     li.className = `alert-card ${item.kind}`
     const amountClass = item.hasAmount ? '' : ' unknown'
     const amountText = notify.formatAmount(item.amountReais, item.hasAmount)
+    const isScheduled = item.kind === 'scheduled'
+    const badges = notify.getStatusBadges(item)
+    const badgesHtml = badges
+      .map(
+        badge =>
+          `<span class="badge ${badge.badgeClass}">${escapeHtml(badge.label)}</span>`
+      )
+      .join('')
     li.innerHTML = `
       ${showOrg && item.orgName ? `<div class="card-org">${escapeHtml(item.orgName)}</div>` : ''}
       <div class="card-top">
         <span class="card-title">${escapeHtml(item.title)}</span>
         <span class="card-amount${amountClass}">${escapeHtml(amountText)}</span>
       </div>
-      <div class="card-meta">
-        <span class="badge ${notify.statusBadgeClass(item.kind)}">${escapeHtml(notify.formatStatusLabel(item))}</span>
-      </div>
+      <div class="card-meta">${badgesHtml}</div>
       <div class="card-actions">
         ${item.transactionId ? '<button class="btn-pay" type="button">Pagar</button>' : ''}
-        ${item.transactionId ? '<button class="btn-schedule" type="button">Agendar</button>' : ''}
+        ${item.transactionId && isScheduled ? '<button class="btn-cancel-schedule" type="button">Cancelar agendamento</button>' : ''}
+        ${item.transactionId && !isScheduled ? '<button class="btn-schedule" type="button">Agendar</button>' : ''}
         ${item.notificationId ? '<button class="btn-dismiss" type="button">Dispensar</button>' : ''}
         <button class="btn-icon" type="button" title="Ver no web">↗</button>
       </div>
@@ -153,6 +164,10 @@ function renderList() {
     li.querySelector('.btn-schedule')?.addEventListener('click', e => {
       e.stopPropagation()
       handleSchedule(item, li)
+    })
+    li.querySelector('.btn-cancel-schedule')?.addEventListener('click', e => {
+      e.stopPropagation()
+      handleCancelSchedule(item, li)
     })
     li.querySelector('.btn-dismiss')?.addEventListener('click', e => {
       e.stopPropagation()
@@ -324,20 +339,67 @@ async function handleDismiss(notificationId, liEl) {
   }
 }
 
+async function handleCancelSchedule(item, liEl) {
+  const btn = liEl.querySelector('.btn-cancel-schedule')
+  if (btn) { btn.disabled = true; btn.textContent = '...' }
+  try {
+    await payUtil.cancelScheduledPayment(
+      state.apiUrl,
+      state.token,
+      item.orgSlug,
+      item.transactionId
+    )
+    await loadData({ silent: true })
+    chrome.runtime.sendMessage({ type: 'poll-now' }).catch(() => {})
+  } catch (err) {
+    console.error('[HouseApp] cancel schedule error:', err)
+    if (btn) { btn.disabled = false; btn.textContent = 'Cancelar agendamento' }
+  }
+}
+
 async function fetchOrgAlerts(orgSlug) {
+  const { upcomingPeriod } = await chrome.storage.local.get('upcomingPeriod')
   const dateTo = alertItems.yesterdayEndIso()
-  const params = new URLSearchParams({
+  const overdueParams = new URLSearchParams({
     status: 'pending',
     dateTo,
     payableOnly: 'true',
     perPage: '100',
   })
-  const [pendingRes, overdueRes, summaryRes] = await Promise.all([
+  const upcomingParams = alertItems.buildUpcomingParams(upcomingPeriod)
+  const scheduledParams = new URLSearchParams({
+    status: 'pending',
+    payableOnly: 'true',
+    scheduledOnly: 'true',
+    perPage: '100',
+  })
+  const [pendingRes, overdueRes, upcomingRes, scheduledRes] = await Promise.all([
     apiFetch('/notifications/pending'),
-    apiFetch(`/organizations/${orgSlug}/transactions?${params}`),
-    apiFetch(`/organizations/${orgSlug}/reports/summary`),
+    apiFetch(`/organizations/${orgSlug}/transactions?${overdueParams}`),
+    apiFetch(`/organizations/${orgSlug}/transactions?${upcomingParams}`),
+    apiFetch(`/organizations/${orgSlug}/transactions?${scheduledParams}`),
   ])
-  return { pendingRes, overdueRes, summaryRes }
+  const overdueTransactions = overdueRes?.transactions || []
+  const upcomingTransactions = upcomingRes?.transactions || []
+  const scheduledTransactions = scheduledRes?.transactions || []
+  const transactionIds = [
+    ...new Set(
+      [...overdueTransactions, ...upcomingTransactions, ...scheduledTransactions].map(tx => tx.id)
+    ),
+  ]
+  const splitPaidRes = transactionIds.length
+    ? await apiFetch(`/organizations/${orgSlug}/splits/transaction-ids`, {
+        method: 'POST',
+        body: JSON.stringify({ transactionIds }),
+      })
+    : null
+  return {
+    pendingRes,
+    overdueTransactions,
+    upcomingTransactions,
+    scheduledTransactions,
+    splitPaidById: alertItems.indexSplitPaidTotals(splitPaidRes?.splitPaidTotals || []),
+  }
 }
 
 async function loadData({ silent = false } = {}) {
@@ -346,15 +408,23 @@ async function loadData({ silent = false } = {}) {
   else refreshBtn?.classList.add('spinning')
 
   try {
-    const { pendingRes, overdueRes, summaryRes } = await fetchOrgAlerts(state.orgSlug)
+    const {
+      pendingRes,
+      overdueTransactions,
+      upcomingTransactions,
+      scheduledTransactions,
+      splitPaidById,
+    } = await fetchOrgAlerts(state.orgSlug)
     const org = state.orgs.find(o => o.slug === state.orgSlug)
     state.orgId = org?.id || ''
     state.allItems = alertItems.buildOrgAlertItems({
-      overdueTransactions: overdueRes?.transactions || [],
-      upcomingTransactions: summaryRes?.upcoming || [],
+      overdueTransactions,
+      upcomingTransactions,
+      scheduledTransactions,
       notifications: pendingRes?.notifications || [],
       orgs: state.orgs,
       orgId: state.orgId,
+      splitPaidById,
     })
     state.lastUpdated = new Date().toISOString()
     renderAll()
@@ -458,6 +528,11 @@ document.getElementById('pill-overdue').addEventListener('click', () => {
   if (state.kpiFilter) state.filter = 'all'
   renderAll()
 })
+document.getElementById('pill-scheduled').addEventListener('click', () => {
+  state.kpiFilter = state.kpiFilter === 'scheduled' ? null : 'scheduled'
+  if (state.kpiFilter) state.filter = 'all'
+  renderAll()
+})
 document.getElementById('pill-upcoming').addEventListener('click', () => {
   state.kpiFilter = state.kpiFilter === 'upcoming' ? null : 'upcoming'
   if (state.kpiFilter) state.filter = 'all'
@@ -481,6 +556,12 @@ document.getElementById('org-select').addEventListener('change', async e => {
 
 chrome.runtime.onMessage.addListener(msg => {
   if (msg.type === 'data-updated') loadData({ silent: true })
+})
+
+chrome.storage.onChanged.addListener((changes, area) => {
+  if (area === 'local' && changes.upcomingPeriod) {
+    loadData({ silent: true })
+  }
 })
 
 init()

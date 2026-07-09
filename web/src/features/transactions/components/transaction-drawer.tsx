@@ -518,7 +518,10 @@ export function TransactionDrawer() {
 
   const installmentSummary =
     splitDebtSummaryData && (tx?.installmentsTotal ?? 0) > 1 ? splitDebtSummaryData : undefined
-  const splitDebtSummary = installmentSummary?.persons.length ? installmentSummary : undefined
+  const splitDebtSummary =
+    splitDebtSummaryData && splitDebtSummaryData.persons.length > 0
+      ? splitDebtSummaryData
+      : undefined
 
   const splitInstallmentContext = useMemo(
     () => ({

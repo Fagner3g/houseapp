@@ -7541,6 +7541,14 @@
           },
           {
             "schema": {
+              "type": "boolean"
+            },
+            "in": "query",
+            "name": "scheduledOnly",
+            "required": false
+          },
+          {
+            "schema": {
               "type": "string"
             },
             "in": "path",
@@ -14593,12 +14601,32 @@
                         ],
                         "additionalProperties": false
                       }
+                    },
+                    "splitPaidTotals": {
+                      "type": "array",
+                      "items": {
+                        "type": "object",
+                        "properties": {
+                          "transactionId": {
+                            "type": "string"
+                          },
+                          "paidAmount": {
+                            "type": "string"
+                          }
+                        },
+                        "required": [
+                          "transactionId",
+                          "paidAmount"
+                        ],
+                        "additionalProperties": false
+                      }
                     }
                   },
                   "required": [
                     "transactionIds",
                     "fullyDelegated",
-                    "partiallyDivided"
+                    "partiallyDivided",
+                    "splitPaidTotals"
                   ],
                   "additionalProperties": false
                 }

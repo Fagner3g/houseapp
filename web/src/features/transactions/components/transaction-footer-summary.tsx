@@ -9,19 +9,7 @@ import {
 } from '@/lib/currency'
 import { cn } from '@/lib/utils'
 
-const SPLIT_STATUS_LABELS = {
-  pending: 'Pendente',
-  partial: 'Parcial',
-  paid: 'Pago',
-  forgiven: 'Perdoado',
-} as const
-
-const SPLIT_STATUS_VARIANT = {
-  pending: 'warning',
-  partial: 'partial',
-  paid: 'default',
-  forgiven: 'outline',
-} as const
+import { SPLIT_STATUS_LABELS, SPLIT_STATUS_VARIANT } from './splits/split-status'
 
 const TRANSACTION_STATUS_LABELS = {
   paid: 'Pago',

@@ -123,6 +123,7 @@ const listTransactionsQuery = z.object({
   page: z.coerce.number().int().min(1).optional(),
   perPage: z.coerce.number().int().min(1).max(500).optional(),
   payableOnly: z.coerce.boolean().optional(),
+  scheduledOnly: z.coerce.boolean().optional(),
 })
 
 export const listTransactionsSchema = {

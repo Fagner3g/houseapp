@@ -44,4 +44,17 @@ describe('shouldExcludeFutureScheduled', () => {
       })
     ).toBe(false)
   })
+
+  it('returns false when scheduledOnly is on', () => {
+    const yesterday = new Date()
+    yesterday.setDate(yesterday.getDate() - 1)
+
+    expect(
+      shouldExcludeFutureScheduled({
+        payableOnly: true,
+        scheduledOnly: true,
+        dateTo: yesterday,
+      })
+    ).toBe(false)
+  })
 })
