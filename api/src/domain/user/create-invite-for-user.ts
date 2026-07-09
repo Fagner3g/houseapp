@@ -1,5 +1,5 @@
 import { db } from '@/db'
-import { userOrganizations } from '@/db/schemas/userOrganization'
+import { organizationMembers } from '@/db/schemas/organizationMembers'
 import { users } from '@/db/schemas/users'
 
 // Removido: não criar organização automática ao aceitar convite
@@ -27,13 +27,13 @@ export async function createForUserInvite({
     })
     .returning()
 
-  await db.insert(userOrganizations).values({
+  await db.insert(organizationMembers).values({
     userId: user.id,
     organizationId: orgIdInvite,
   })
 
   await db
-    .insert(userOrganizations)
+    .insert(organizationMembers)
     .values({
       userId: user.id,
       organizationId: orgIdInvite,

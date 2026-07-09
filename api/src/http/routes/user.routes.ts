@@ -3,7 +3,6 @@ import type { FastifyPluginAsyncZod } from 'fastify-type-provider-zod'
 import {
   createUserWithInviteController,
   getProfileController,
-  removeUserController,
   updateUserController,
   updateUserNotificationsController,
 } from '../controllers/user'
@@ -12,7 +11,6 @@ import { verifyOrgAccessHook } from '../hooks/verify-user-belongs-to-org'
 import {
   createUserWithInviteSchema,
   getProfileSchema,
-  removeUserSchema,
   updateUserNotificationsSchema,
   updateUserSchema,
 } from '../schemas/user'
@@ -52,11 +50,4 @@ export const updateUserNotificationsRoute: FastifyPluginAsyncZod = async app => 
   })
 }
 
-export const removeUserRoute: FastifyPluginAsyncZod = async app => {
-  app.delete('/org/:slug/users', {
-    onRequest: [authenticateUserHook],
-    preHandler: [verifyOrgAccessHook],
-    schema: removeUserSchema,
-    handler: removeUserController,
-  })
-}
+// removeUserRoute disabled during greenfield rebuild

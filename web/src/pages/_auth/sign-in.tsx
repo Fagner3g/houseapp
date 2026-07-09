@@ -1,14 +1,17 @@
-import { createFileRoute, useNavigate } from '@tanstack/react-router'
+import { createFileRoute, isRedirect, redirect, useNavigate } from '@tanstack/react-router'
 import { Mail, Phone } from 'lucide-react'
 import { useEffect, useMemo, useState } from 'react'
 
 // import { useForm } from 'react-hook-form'
 // import { useHookFormMask } from 'use-mask-input'
 
-import { useSignIn } from '@/api/generated/api'
+import { getProfile, listOrganizations, useSignIn } from '@/api/generated/api'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { ToggleGroup, ToggleGroupItem } from '@/components/ui/toggle-group'
+import { getAuthToken } from '@/lib/auth'
+import { useAuthStore } from '@/stores/auth'
+import { useOrgStore } from '@/stores/org'
 
 enum Status {
   Pending = 'pending',
@@ -17,6 +20,27 @@ enum Status {
 }
 
 export const Route = createFileRoute('/_auth/sign-in')({
+  beforeLoad: async () => {
+    const token = getAuthToken()
+    if (!token) return
+
+    try {
+      const profile = await getProfile()
+      useAuthStore.getState().setUser(profile.user)
+
+      const { organizations } = await listOrganizations()
+      const slug = organizations[0]?.slug
+
+      if (slug) {
+        useOrgStore.getState().setSlug(slug)
+        throw redirect({ to: '/$org', params: { org: slug } })
+      }
+
+      throw redirect({ to: '/new-org' })
+    } catch (error) {
+      if (isRedirect(error)) throw error
+    }
+  },
   component: Index,
   head: () => ({
     meta: [{ title: 'Sign-in | House App' }],
@@ -70,7 +94,7 @@ function Index() {
   if (status === Status.Success) {
     return (
       <div className="h-full grid place-items-center px-4">
-        <div className="w-full max-w-sm rounded-xl border bg-card p-6 shadow-sm">
+        <div className="w-full max-w-sm rounded-lg border bg-card p-6 shadow-sm">
           <div className="mb-4 flex items-center justify-center gap-2 text-center">
             {channel === 'email' ? (
               <Mail className="h-5 w-5 text-primary" />
@@ -109,7 +133,7 @@ function Index() {
   if (status === Status.Error) {
     return (
       <div className="h-full grid place-items-center px-4">
-        <div className="w-full max-w-sm rounded-xl border bg-card p-6 shadow-sm text-center">
+        <div className="w-full max-w-sm rounded-lg border bg-card p-6 shadow-sm text-center">
           <h1 className="text-lg font-semibold mb-1">Não foi possível enviar</h1>
           <p className="text-sm text-muted-foreground mb-4">
             Tente novamente em instantes. Se o problema persistir, contate o suporte.
@@ -122,7 +146,7 @@ function Index() {
 
   return (
     <div className="h-full grid place-items-center px-4">
-      <div className="w-full max-w-sm rounded-xl border bg-card p-6 shadow-sm">
+      <div className="w-full max-w-sm rounded-lg border bg-card p-6 shadow-sm">
         <div className="mb-4 text-center">
           <h1 className="text-xl font-semibold tracking-tight">Entrar</h1>
           <p className="text-sm text-muted-foreground">

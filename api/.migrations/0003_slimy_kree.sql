@@ -1,1 +1,0 @@
-ALTER TABLE "user_organizations" ADD COLUMN "can_receive_notifications" boolean DEFAULT true NOT NULL;

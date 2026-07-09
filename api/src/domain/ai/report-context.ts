@@ -35,7 +35,7 @@ Formatação disponível no WhatsApp:
 
 Comece sempre com saudação: "Olá, *nome*! Aqui é o HouseBot. 🏠" (ou sem nome: "Olá! Aqui é o HouseBot. 🏠")
 
-Use os dados fornecidos. Não invente nada. Seja visual e organizado.`
+Use os dados fornecidos. JAMAIS invente valores, categorias ou informações que não estejam nos dados. Se algo não estiver disponível, omita. Seja visual e organizado.`
 
 export function buildMonthlySummaryPrompt(data: MonthlySummaryData): string {
   const expensesStr = data.topExpenses

@@ -17,13 +17,22 @@ import { Route as AuthSignUpRouteImport } from './pages/_auth/sign-up'
 import { Route as AuthSignInRouteImport } from './pages/_auth/sign-in'
 import { Route as AuthInviteRouteImport } from './pages/_auth/invite'
 import { Route as AppNewOrgRouteImport } from './pages/_app/new-org'
-import { Route as AppInvestmentsRouteImport } from './pages/_app/investments'
-import { Route as AppOrgsettingsLayoutRouteImport } from './pages/_app/$org/(settings)/layout'
+import { Route as AppOrgIndexRouteImport } from './pages/_app/$org/index'
+import { Route as AppOrgProfileRouteImport } from './pages/_app/$org/profile'
+import { Route as AppOrgCreditCardsRouteImport } from './pages/_app/$org/credit-cards'
+import { Route as AppOrgAccountsRouteImport } from './pages/_app/$org/accounts'
+import { Route as AppOrgSettingsIndexRouteImport } from './pages/_app/$org/settings/index'
+import { Route as AppOrgAccountsIndexRouteImport } from './pages/_app/$org/accounts/index'
+import { Route as AppOrgSettingsMembersRouteImport } from './pages/_app/$org/settings/members'
+import { Route as AppOrgSettingsGeneralRouteImport } from './pages/_app/$org/settings/general'
+import { Route as AppOrgSettingsCategoriesRouteImport } from './pages/_app/$org/settings/categories'
+import { Route as AppOrgSettingsAlertsRouteImport } from './pages/_app/$org/settings/alerts'
+import { Route as AppOrgSettingsAccountsRouteImport } from './pages/_app/$org/settings/accounts'
+import { Route as AppOrgAccountsIdRouteImport } from './pages/_app/$org/accounts/$id'
 import { Route as AppOrguserUsersRouteImport } from './pages/_app/$org/(user)/users'
-import { Route as AppOrgtransactionsTransactionsRouteImport } from './pages/_app/$org/(transactions)/transactions'
-import { Route as AppOrgsettingsSettingsRouteImport } from './pages/_app/$org/(settings)/settings'
 import { Route as AppOrgdashboardDashboardRouteImport } from './pages/_app/$org/(dashboard)/dashboard'
-import { Route as AppOrgadminAlertsRouteImport } from './pages/_app/$org/(admin)/alerts'
+import { Route as AppOrgtransactionsTransactionsIndexRouteImport } from './pages/_app/$org/(transactions)/transactions/index'
+import { Route as AppOrgtransactionsTransactionsOverdueRouteImport } from './pages/_app/$org/(transactions)/transactions/overdue'
 
 const AuthLayoutRoute = AuthLayoutRouteImport.update({
   id: '/_auth',
@@ -63,31 +72,71 @@ const AppNewOrgRoute = AppNewOrgRouteImport.update({
   path: '/new-org',
   getParentRoute: () => AppLayoutRoute,
 } as any)
-const AppInvestmentsRoute = AppInvestmentsRouteImport.update({
-  id: '/investments',
-  path: '/investments',
-  getParentRoute: () => AppLayoutRoute,
-} as any)
-const AppOrgsettingsLayoutRoute = AppOrgsettingsLayoutRouteImport.update({
-  id: '/$org/(settings)',
+const AppOrgIndexRoute = AppOrgIndexRouteImport.update({
+  id: '/$org/',
   path: '/$org/',
   getParentRoute: () => AppLayoutRoute,
+} as any)
+const AppOrgProfileRoute = AppOrgProfileRouteImport.update({
+  id: '/$org/profile',
+  path: '/$org/profile',
+  getParentRoute: () => AppLayoutRoute,
+} as any)
+const AppOrgCreditCardsRoute = AppOrgCreditCardsRouteImport.update({
+  id: '/$org/credit-cards',
+  path: '/$org/credit-cards',
+  getParentRoute: () => AppLayoutRoute,
+} as any)
+const AppOrgAccountsRoute = AppOrgAccountsRouteImport.update({
+  id: '/$org/accounts',
+  path: '/$org/accounts',
+  getParentRoute: () => AppLayoutRoute,
+} as any)
+const AppOrgSettingsIndexRoute = AppOrgSettingsIndexRouteImport.update({
+  id: '/$org/settings/',
+  path: '/$org/settings/',
+  getParentRoute: () => AppLayoutRoute,
+} as any)
+const AppOrgAccountsIndexRoute = AppOrgAccountsIndexRouteImport.update({
+  id: '/',
+  path: '/',
+  getParentRoute: () => AppOrgAccountsRoute,
+} as any)
+const AppOrgSettingsMembersRoute = AppOrgSettingsMembersRouteImport.update({
+  id: '/$org/settings/members',
+  path: '/$org/settings/members',
+  getParentRoute: () => AppLayoutRoute,
+} as any)
+const AppOrgSettingsGeneralRoute = AppOrgSettingsGeneralRouteImport.update({
+  id: '/$org/settings/general',
+  path: '/$org/settings/general',
+  getParentRoute: () => AppLayoutRoute,
+} as any)
+const AppOrgSettingsCategoriesRoute =
+  AppOrgSettingsCategoriesRouteImport.update({
+    id: '/$org/settings/categories',
+    path: '/$org/settings/categories',
+    getParentRoute: () => AppLayoutRoute,
+  } as any)
+const AppOrgSettingsAlertsRoute = AppOrgSettingsAlertsRouteImport.update({
+  id: '/$org/settings/alerts',
+  path: '/$org/settings/alerts',
+  getParentRoute: () => AppLayoutRoute,
+} as any)
+const AppOrgSettingsAccountsRoute = AppOrgSettingsAccountsRouteImport.update({
+  id: '/$org/settings/accounts',
+  path: '/$org/settings/accounts',
+  getParentRoute: () => AppLayoutRoute,
+} as any)
+const AppOrgAccountsIdRoute = AppOrgAccountsIdRouteImport.update({
+  id: '/$id',
+  path: '/$id',
+  getParentRoute: () => AppOrgAccountsRoute,
 } as any)
 const AppOrguserUsersRoute = AppOrguserUsersRouteImport.update({
   id: '/$org/(user)/users',
   path: '/$org/users',
   getParentRoute: () => AppLayoutRoute,
-} as any)
-const AppOrgtransactionsTransactionsRoute =
-  AppOrgtransactionsTransactionsRouteImport.update({
-    id: '/$org/(transactions)/transactions',
-    path: '/$org/transactions',
-    getParentRoute: () => AppLayoutRoute,
-  } as any)
-const AppOrgsettingsSettingsRoute = AppOrgsettingsSettingsRouteImport.update({
-  id: '/settings',
-  path: '/settings',
-  getParentRoute: () => AppOrgsettingsLayoutRoute,
 } as any)
 const AppOrgdashboardDashboardRoute =
   AppOrgdashboardDashboardRouteImport.update({
@@ -95,108 +144,167 @@ const AppOrgdashboardDashboardRoute =
     path: '/$org/dashboard',
     getParentRoute: () => AppLayoutRoute,
   } as any)
-const AppOrgadminAlertsRoute = AppOrgadminAlertsRouteImport.update({
-  id: '/$org/(admin)/alerts',
-  path: '/$org/alerts',
-  getParentRoute: () => AppLayoutRoute,
-} as any)
+const AppOrgtransactionsTransactionsIndexRoute =
+  AppOrgtransactionsTransactionsIndexRouteImport.update({
+    id: '/$org/(transactions)/transactions/',
+    path: '/$org/transactions/',
+    getParentRoute: () => AppLayoutRoute,
+  } as any)
+const AppOrgtransactionsTransactionsOverdueRoute =
+  AppOrgtransactionsTransactionsOverdueRouteImport.update({
+    id: '/$org/(transactions)/transactions/overdue',
+    path: '/$org/transactions/overdue',
+    getParentRoute: () => AppLayoutRoute,
+  } as any)
 
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
-  '/investments': typeof AppInvestmentsRoute
   '/new-org': typeof AppNewOrgRoute
   '/invite': typeof AuthInviteRoute
   '/sign-in': typeof AuthSignInRoute
   '/sign-up': typeof AuthSignUpRoute
   '/validate': typeof AuthValidateRoute
-  '/$org': typeof AppOrgsettingsLayoutRouteWithChildren
-  '/$org/alerts': typeof AppOrgadminAlertsRoute
+  '/$org/accounts': typeof AppOrgAccountsRouteWithChildren
+  '/$org/credit-cards': typeof AppOrgCreditCardsRoute
+  '/$org/profile': typeof AppOrgProfileRoute
+  '/$org/': typeof AppOrgIndexRoute
   '/$org/dashboard': typeof AppOrgdashboardDashboardRoute
-  '/$org/settings': typeof AppOrgsettingsSettingsRoute
-  '/$org/transactions': typeof AppOrgtransactionsTransactionsRoute
   '/$org/users': typeof AppOrguserUsersRoute
+  '/$org/accounts/$id': typeof AppOrgAccountsIdRoute
+  '/$org/settings/accounts': typeof AppOrgSettingsAccountsRoute
+  '/$org/settings/alerts': typeof AppOrgSettingsAlertsRoute
+  '/$org/settings/categories': typeof AppOrgSettingsCategoriesRoute
+  '/$org/settings/general': typeof AppOrgSettingsGeneralRoute
+  '/$org/settings/members': typeof AppOrgSettingsMembersRoute
+  '/$org/accounts/': typeof AppOrgAccountsIndexRoute
+  '/$org/settings/': typeof AppOrgSettingsIndexRoute
+  '/$org/transactions/overdue': typeof AppOrgtransactionsTransactionsOverdueRoute
+  '/$org/transactions/': typeof AppOrgtransactionsTransactionsIndexRoute
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
-  '/investments': typeof AppInvestmentsRoute
   '/new-org': typeof AppNewOrgRoute
   '/invite': typeof AuthInviteRoute
   '/sign-in': typeof AuthSignInRoute
   '/sign-up': typeof AuthSignUpRoute
   '/validate': typeof AuthValidateRoute
-  '/$org': typeof AppOrgsettingsLayoutRouteWithChildren
-  '/$org/alerts': typeof AppOrgadminAlertsRoute
+  '/$org/credit-cards': typeof AppOrgCreditCardsRoute
+  '/$org/profile': typeof AppOrgProfileRoute
+  '/$org': typeof AppOrgIndexRoute
   '/$org/dashboard': typeof AppOrgdashboardDashboardRoute
-  '/$org/settings': typeof AppOrgsettingsSettingsRoute
-  '/$org/transactions': typeof AppOrgtransactionsTransactionsRoute
   '/$org/users': typeof AppOrguserUsersRoute
+  '/$org/accounts/$id': typeof AppOrgAccountsIdRoute
+  '/$org/settings/accounts': typeof AppOrgSettingsAccountsRoute
+  '/$org/settings/alerts': typeof AppOrgSettingsAlertsRoute
+  '/$org/settings/categories': typeof AppOrgSettingsCategoriesRoute
+  '/$org/settings/general': typeof AppOrgSettingsGeneralRoute
+  '/$org/settings/members': typeof AppOrgSettingsMembersRoute
+  '/$org/accounts': typeof AppOrgAccountsIndexRoute
+  '/$org/settings': typeof AppOrgSettingsIndexRoute
+  '/$org/transactions/overdue': typeof AppOrgtransactionsTransactionsOverdueRoute
+  '/$org/transactions': typeof AppOrgtransactionsTransactionsIndexRoute
 }
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
   '/': typeof IndexRoute
   '/_app': typeof AppLayoutRouteWithChildren
   '/_auth': typeof AuthLayoutRouteWithChildren
-  '/_app/investments': typeof AppInvestmentsRoute
   '/_app/new-org': typeof AppNewOrgRoute
   '/_auth/invite': typeof AuthInviteRoute
   '/_auth/sign-in': typeof AuthSignInRoute
   '/_auth/sign-up': typeof AuthSignUpRoute
   '/_auth/validate': typeof AuthValidateRoute
-  '/_app/$org/(settings)': typeof AppOrgsettingsLayoutRouteWithChildren
-  '/_app/$org/(admin)/alerts': typeof AppOrgadminAlertsRoute
+  '/_app/$org/accounts': typeof AppOrgAccountsRouteWithChildren
+  '/_app/$org/credit-cards': typeof AppOrgCreditCardsRoute
+  '/_app/$org/profile': typeof AppOrgProfileRoute
+  '/_app/$org/': typeof AppOrgIndexRoute
   '/_app/$org/(dashboard)/dashboard': typeof AppOrgdashboardDashboardRoute
-  '/_app/$org/(settings)/settings': typeof AppOrgsettingsSettingsRoute
-  '/_app/$org/(transactions)/transactions': typeof AppOrgtransactionsTransactionsRoute
   '/_app/$org/(user)/users': typeof AppOrguserUsersRoute
+  '/_app/$org/accounts/$id': typeof AppOrgAccountsIdRoute
+  '/_app/$org/settings/accounts': typeof AppOrgSettingsAccountsRoute
+  '/_app/$org/settings/alerts': typeof AppOrgSettingsAlertsRoute
+  '/_app/$org/settings/categories': typeof AppOrgSettingsCategoriesRoute
+  '/_app/$org/settings/general': typeof AppOrgSettingsGeneralRoute
+  '/_app/$org/settings/members': typeof AppOrgSettingsMembersRoute
+  '/_app/$org/accounts/': typeof AppOrgAccountsIndexRoute
+  '/_app/$org/settings/': typeof AppOrgSettingsIndexRoute
+  '/_app/$org/(transactions)/transactions/overdue': typeof AppOrgtransactionsTransactionsOverdueRoute
+  '/_app/$org/(transactions)/transactions/': typeof AppOrgtransactionsTransactionsIndexRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
   fullPaths:
     | '/'
-    | '/investments'
     | '/new-org'
     | '/invite'
     | '/sign-in'
     | '/sign-up'
     | '/validate'
-    | '/$org'
-    | '/$org/alerts'
+    | '/$org/accounts'
+    | '/$org/credit-cards'
+    | '/$org/profile'
+    | '/$org/'
     | '/$org/dashboard'
-    | '/$org/settings'
-    | '/$org/transactions'
     | '/$org/users'
+    | '/$org/accounts/$id'
+    | '/$org/settings/accounts'
+    | '/$org/settings/alerts'
+    | '/$org/settings/categories'
+    | '/$org/settings/general'
+    | '/$org/settings/members'
+    | '/$org/accounts/'
+    | '/$org/settings/'
+    | '/$org/transactions/overdue'
+    | '/$org/transactions/'
   fileRoutesByTo: FileRoutesByTo
   to:
     | '/'
-    | '/investments'
     | '/new-org'
     | '/invite'
     | '/sign-in'
     | '/sign-up'
     | '/validate'
+    | '/$org/credit-cards'
+    | '/$org/profile'
     | '/$org'
-    | '/$org/alerts'
     | '/$org/dashboard'
-    | '/$org/settings'
-    | '/$org/transactions'
     | '/$org/users'
+    | '/$org/accounts/$id'
+    | '/$org/settings/accounts'
+    | '/$org/settings/alerts'
+    | '/$org/settings/categories'
+    | '/$org/settings/general'
+    | '/$org/settings/members'
+    | '/$org/accounts'
+    | '/$org/settings'
+    | '/$org/transactions/overdue'
+    | '/$org/transactions'
   id:
     | '__root__'
     | '/'
     | '/_app'
     | '/_auth'
-    | '/_app/investments'
     | '/_app/new-org'
     | '/_auth/invite'
     | '/_auth/sign-in'
     | '/_auth/sign-up'
     | '/_auth/validate'
-    | '/_app/$org/(settings)'
-    | '/_app/$org/(admin)/alerts'
+    | '/_app/$org/accounts'
+    | '/_app/$org/credit-cards'
+    | '/_app/$org/profile'
+    | '/_app/$org/'
     | '/_app/$org/(dashboard)/dashboard'
-    | '/_app/$org/(settings)/settings'
-    | '/_app/$org/(transactions)/transactions'
     | '/_app/$org/(user)/users'
+    | '/_app/$org/accounts/$id'
+    | '/_app/$org/settings/accounts'
+    | '/_app/$org/settings/alerts'
+    | '/_app/$org/settings/categories'
+    | '/_app/$org/settings/general'
+    | '/_app/$org/settings/members'
+    | '/_app/$org/accounts/'
+    | '/_app/$org/settings/'
+    | '/_app/$org/(transactions)/transactions/overdue'
+    | '/_app/$org/(transactions)/transactions/'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
@@ -210,14 +318,14 @@ declare module '@tanstack/react-router' {
     '/_auth': {
       id: '/_auth'
       path: ''
-      fullPath: ''
+      fullPath: '/'
       preLoaderRoute: typeof AuthLayoutRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/_app': {
       id: '/_app'
       path: ''
-      fullPath: ''
+      fullPath: '/'
       preLoaderRoute: typeof AppLayoutRouteImport
       parentRoute: typeof rootRouteImport
     }
@@ -263,19 +371,89 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AppNewOrgRouteImport
       parentRoute: typeof AppLayoutRoute
     }
-    '/_app/investments': {
-      id: '/_app/investments'
-      path: '/investments'
-      fullPath: '/investments'
-      preLoaderRoute: typeof AppInvestmentsRouteImport
+    '/_app/$org/': {
+      id: '/_app/$org/'
+      path: '/$org'
+      fullPath: '/$org/'
+      preLoaderRoute: typeof AppOrgIndexRouteImport
       parentRoute: typeof AppLayoutRoute
     }
-    '/_app/$org/(settings)': {
-      id: '/_app/$org/(settings)'
-      path: '/$org'
-      fullPath: '/$org'
-      preLoaderRoute: typeof AppOrgsettingsLayoutRouteImport
+    '/_app/$org/profile': {
+      id: '/_app/$org/profile'
+      path: '/$org/profile'
+      fullPath: '/$org/profile'
+      preLoaderRoute: typeof AppOrgProfileRouteImport
       parentRoute: typeof AppLayoutRoute
+    }
+    '/_app/$org/credit-cards': {
+      id: '/_app/$org/credit-cards'
+      path: '/$org/credit-cards'
+      fullPath: '/$org/credit-cards'
+      preLoaderRoute: typeof AppOrgCreditCardsRouteImport
+      parentRoute: typeof AppLayoutRoute
+    }
+    '/_app/$org/accounts': {
+      id: '/_app/$org/accounts'
+      path: '/$org/accounts'
+      fullPath: '/$org/accounts'
+      preLoaderRoute: typeof AppOrgAccountsRouteImport
+      parentRoute: typeof AppLayoutRoute
+    }
+    '/_app/$org/settings/': {
+      id: '/_app/$org/settings/'
+      path: '/$org/settings'
+      fullPath: '/$org/settings/'
+      preLoaderRoute: typeof AppOrgSettingsIndexRouteImport
+      parentRoute: typeof AppLayoutRoute
+    }
+    '/_app/$org/accounts/': {
+      id: '/_app/$org/accounts/'
+      path: '/'
+      fullPath: '/$org/accounts/'
+      preLoaderRoute: typeof AppOrgAccountsIndexRouteImport
+      parentRoute: typeof AppOrgAccountsRoute
+    }
+    '/_app/$org/settings/members': {
+      id: '/_app/$org/settings/members'
+      path: '/$org/settings/members'
+      fullPath: '/$org/settings/members'
+      preLoaderRoute: typeof AppOrgSettingsMembersRouteImport
+      parentRoute: typeof AppLayoutRoute
+    }
+    '/_app/$org/settings/general': {
+      id: '/_app/$org/settings/general'
+      path: '/$org/settings/general'
+      fullPath: '/$org/settings/general'
+      preLoaderRoute: typeof AppOrgSettingsGeneralRouteImport
+      parentRoute: typeof AppLayoutRoute
+    }
+    '/_app/$org/settings/categories': {
+      id: '/_app/$org/settings/categories'
+      path: '/$org/settings/categories'
+      fullPath: '/$org/settings/categories'
+      preLoaderRoute: typeof AppOrgSettingsCategoriesRouteImport
+      parentRoute: typeof AppLayoutRoute
+    }
+    '/_app/$org/settings/alerts': {
+      id: '/_app/$org/settings/alerts'
+      path: '/$org/settings/alerts'
+      fullPath: '/$org/settings/alerts'
+      preLoaderRoute: typeof AppOrgSettingsAlertsRouteImport
+      parentRoute: typeof AppLayoutRoute
+    }
+    '/_app/$org/settings/accounts': {
+      id: '/_app/$org/settings/accounts'
+      path: '/$org/settings/accounts'
+      fullPath: '/$org/settings/accounts'
+      preLoaderRoute: typeof AppOrgSettingsAccountsRouteImport
+      parentRoute: typeof AppLayoutRoute
+    }
+    '/_app/$org/accounts/$id': {
+      id: '/_app/$org/accounts/$id'
+      path: '/$id'
+      fullPath: '/$org/accounts/$id'
+      preLoaderRoute: typeof AppOrgAccountsIdRouteImport
+      parentRoute: typeof AppOrgAccountsRoute
     }
     '/_app/$org/(user)/users': {
       id: '/_app/$org/(user)/users'
@@ -284,20 +462,6 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AppOrguserUsersRouteImport
       parentRoute: typeof AppLayoutRoute
     }
-    '/_app/$org/(transactions)/transactions': {
-      id: '/_app/$org/(transactions)/transactions'
-      path: '/$org/transactions'
-      fullPath: '/$org/transactions'
-      preLoaderRoute: typeof AppOrgtransactionsTransactionsRouteImport
-      parentRoute: typeof AppLayoutRoute
-    }
-    '/_app/$org/(settings)/settings': {
-      id: '/_app/$org/(settings)/settings'
-      path: '/settings'
-      fullPath: '/$org/settings'
-      preLoaderRoute: typeof AppOrgsettingsSettingsRouteImport
-      parentRoute: typeof AppOrgsettingsLayoutRoute
-    }
     '/_app/$org/(dashboard)/dashboard': {
       id: '/_app/$org/(dashboard)/dashboard'
       path: '/$org/dashboard'
@@ -305,45 +469,73 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AppOrgdashboardDashboardRouteImport
       parentRoute: typeof AppLayoutRoute
     }
-    '/_app/$org/(admin)/alerts': {
-      id: '/_app/$org/(admin)/alerts'
-      path: '/$org/alerts'
-      fullPath: '/$org/alerts'
-      preLoaderRoute: typeof AppOrgadminAlertsRouteImport
+    '/_app/$org/(transactions)/transactions/': {
+      id: '/_app/$org/(transactions)/transactions/'
+      path: '/$org/transactions'
+      fullPath: '/$org/transactions/'
+      preLoaderRoute: typeof AppOrgtransactionsTransactionsIndexRouteImport
+      parentRoute: typeof AppLayoutRoute
+    }
+    '/_app/$org/(transactions)/transactions/overdue': {
+      id: '/_app/$org/(transactions)/transactions/overdue'
+      path: '/$org/transactions/overdue'
+      fullPath: '/$org/transactions/overdue'
+      preLoaderRoute: typeof AppOrgtransactionsTransactionsOverdueRouteImport
       parentRoute: typeof AppLayoutRoute
     }
   }
 }
 
-interface AppOrgsettingsLayoutRouteChildren {
-  AppOrgsettingsSettingsRoute: typeof AppOrgsettingsSettingsRoute
+interface AppOrgAccountsRouteChildren {
+  AppOrgAccountsIdRoute: typeof AppOrgAccountsIdRoute
+  AppOrgAccountsIndexRoute: typeof AppOrgAccountsIndexRoute
 }
 
-const AppOrgsettingsLayoutRouteChildren: AppOrgsettingsLayoutRouteChildren = {
-  AppOrgsettingsSettingsRoute: AppOrgsettingsSettingsRoute,
+const AppOrgAccountsRouteChildren: AppOrgAccountsRouteChildren = {
+  AppOrgAccountsIdRoute: AppOrgAccountsIdRoute,
+  AppOrgAccountsIndexRoute: AppOrgAccountsIndexRoute,
 }
 
-const AppOrgsettingsLayoutRouteWithChildren =
-  AppOrgsettingsLayoutRoute._addFileChildren(AppOrgsettingsLayoutRouteChildren)
+const AppOrgAccountsRouteWithChildren = AppOrgAccountsRoute._addFileChildren(
+  AppOrgAccountsRouteChildren,
+)
 
 interface AppLayoutRouteChildren {
-  AppInvestmentsRoute: typeof AppInvestmentsRoute
   AppNewOrgRoute: typeof AppNewOrgRoute
-  AppOrgsettingsLayoutRoute: typeof AppOrgsettingsLayoutRouteWithChildren
-  AppOrgadminAlertsRoute: typeof AppOrgadminAlertsRoute
+  AppOrgAccountsRoute: typeof AppOrgAccountsRouteWithChildren
+  AppOrgCreditCardsRoute: typeof AppOrgCreditCardsRoute
+  AppOrgProfileRoute: typeof AppOrgProfileRoute
+  AppOrgIndexRoute: typeof AppOrgIndexRoute
   AppOrgdashboardDashboardRoute: typeof AppOrgdashboardDashboardRoute
-  AppOrgtransactionsTransactionsRoute: typeof AppOrgtransactionsTransactionsRoute
   AppOrguserUsersRoute: typeof AppOrguserUsersRoute
+  AppOrgSettingsAccountsRoute: typeof AppOrgSettingsAccountsRoute
+  AppOrgSettingsAlertsRoute: typeof AppOrgSettingsAlertsRoute
+  AppOrgSettingsCategoriesRoute: typeof AppOrgSettingsCategoriesRoute
+  AppOrgSettingsGeneralRoute: typeof AppOrgSettingsGeneralRoute
+  AppOrgSettingsMembersRoute: typeof AppOrgSettingsMembersRoute
+  AppOrgSettingsIndexRoute: typeof AppOrgSettingsIndexRoute
+  AppOrgtransactionsTransactionsOverdueRoute: typeof AppOrgtransactionsTransactionsOverdueRoute
+  AppOrgtransactionsTransactionsIndexRoute: typeof AppOrgtransactionsTransactionsIndexRoute
 }
 
 const AppLayoutRouteChildren: AppLayoutRouteChildren = {
-  AppInvestmentsRoute: AppInvestmentsRoute,
   AppNewOrgRoute: AppNewOrgRoute,
-  AppOrgsettingsLayoutRoute: AppOrgsettingsLayoutRouteWithChildren,
-  AppOrgadminAlertsRoute: AppOrgadminAlertsRoute,
+  AppOrgAccountsRoute: AppOrgAccountsRouteWithChildren,
+  AppOrgCreditCardsRoute: AppOrgCreditCardsRoute,
+  AppOrgProfileRoute: AppOrgProfileRoute,
+  AppOrgIndexRoute: AppOrgIndexRoute,
   AppOrgdashboardDashboardRoute: AppOrgdashboardDashboardRoute,
-  AppOrgtransactionsTransactionsRoute: AppOrgtransactionsTransactionsRoute,
   AppOrguserUsersRoute: AppOrguserUsersRoute,
+  AppOrgSettingsAccountsRoute: AppOrgSettingsAccountsRoute,
+  AppOrgSettingsAlertsRoute: AppOrgSettingsAlertsRoute,
+  AppOrgSettingsCategoriesRoute: AppOrgSettingsCategoriesRoute,
+  AppOrgSettingsGeneralRoute: AppOrgSettingsGeneralRoute,
+  AppOrgSettingsMembersRoute: AppOrgSettingsMembersRoute,
+  AppOrgSettingsIndexRoute: AppOrgSettingsIndexRoute,
+  AppOrgtransactionsTransactionsOverdueRoute:
+    AppOrgtransactionsTransactionsOverdueRoute,
+  AppOrgtransactionsTransactionsIndexRoute:
+    AppOrgtransactionsTransactionsIndexRoute,
 }
 
 const AppLayoutRouteWithChildren = AppLayoutRoute._addFileChildren(

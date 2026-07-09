@@ -1,8 +1,8 @@
 import { and, eq } from 'drizzle-orm'
 
 import { db } from '@/db'
-import { organizations } from '@/db/schemas/organization'
-import { userOrganizations } from '@/db/schemas/userOrganization'
+import { organizations } from '@/db/schemas/organizations'
+import { organizationMembers } from '@/db/schemas/organizationMembers'
 
 type DeleteOrg = {
   orgId: string
@@ -11,8 +11,8 @@ type DeleteOrg = {
 
 export async function deleteOrg({ orgId, userId }: DeleteOrg) {
   await db
-    .delete(userOrganizations)
-    .where(and(eq(userOrganizations.userId, userId), eq(userOrganizations.organizationId, orgId)))
+    .delete(organizationMembers)
+    .where(and(eq(organizationMembers.userId, userId), eq(organizationMembers.organizationId, orgId)))
     .returning()
 
   await db.delete(organizations).where(eq(organizations.id, orgId))

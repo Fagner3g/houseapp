@@ -1,21 +1,27 @@
 {
   "name": "houseapp-monorepo",
-  "version": "1.5.2",
+  "version": "2.0.0",
   "private": true,
+  "workspaces": [
+    "api",
+    "web",
+    "packages/finance-core"
+  ],
   "scripts": {
     "prepare": "husky install",
-    "test": "npm test --prefix api",
+    "test": "npm test --prefix api && npm test --prefix packages/finance-core",
     "precommit": "lint-staged",
-    "dev": "./web/node_modules/.bin/concurrently -n api,web -c blue,green \"cd api && TZ=UTC npx tsx watch --env-file ./.env src/http/server.ts\" \"cd web && yarn dev\""
+    "dev": "concurrently -n api,web -c blue,green \"cd api && TZ=UTC npx tsx watch --env-file ./.env src/http/server.ts\" \"cd web && yarn dev\""
   },
   "devDependencies": {
     "@biomejs/biome": "^2.1.2",
     "@commitlint/cli": "^19.3.0",
     "@commitlint/config-conventional": "^19.2.2",
+    "concurrently": "^9.2.0",
     "husky": "^9.0.11",
     "lint-staged": "^15.2.0"
   },
   "lint-staged": {
-    "**/*.{js,ts,tsx,jsx,json,md}": "biome lint --fix"
+    "**/*.{js,ts,tsx,jsx,json}": "biome lint --fix"
   }
 }

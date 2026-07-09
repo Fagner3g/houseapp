@@ -757,6 +757,11 @@
     "@shikijs/types" "^3.9.2"
     "@shikijs/vscode-textmate" "^10.0.2"
 
+"@houseapp/finance-core@file:../packages/finance-core":
+  version "0.0.0"
+  dependencies:
+    dayjs "^1.11.13"
+
 "@hookform/resolvers@^5.2.1":
   version "5.2.1"
   resolved "https://registry.npmjs.org/@hookform/resolvers/-/resolvers-5.2.1.tgz"

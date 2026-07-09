@@ -1,8 +1,8 @@
 import { eq } from 'drizzle-orm'
 
 import { db } from '@/db'
-import { organizations } from '@/db/schemas/organization'
-import { userOrganizations } from '@/db/schemas/userOrganization'
+import { organizations } from '@/db/schemas/organizations'
+import { organizationMembers } from '@/db/schemas/organizationMembers'
 
 interface ListOrganizations {
   userId: string
@@ -17,8 +17,8 @@ export async function listOrganizations({ userId }: ListOrganizations) {
       createdAt: organizations.createdAt,
     })
     .from(organizations)
-    .innerJoin(userOrganizations, eq(organizations.id, userOrganizations.organizationId))
-    .where(eq(userOrganizations.userId, userId))
+    .innerJoin(organizationMembers, eq(organizations.id, organizationMembers.organizationId))
+    .where(eq(organizationMembers.userId, userId))
 
   return { organizations: result }
 }

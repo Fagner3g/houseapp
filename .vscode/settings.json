@@ -1,5 +1,22 @@
 {
   "editor.formatOnSave": true,
+  "editor.showUnused": false,
+  "typescript.showUnused": false,
+  "javascript.showUnused": false,
+  "biome.enabled": true,
+  "biome.configurationPath": "./biome.json",
+  "biome.lsp.bin": "./node_modules/@biomejs/biome/bin/biome",
+  "biome.inlineConfig": {
+    "linter": {
+      "rules": {
+        "correctness": {
+          "noUnusedVariables": "error",
+          "noUnusedImports": "error",
+          "noUnusedFunctionParameters": "error"
+        }
+      }
+    }
+  },
   "editor.defaultFormatter": "biomejs.biome",
   "[javascript]": { "editor.defaultFormatter": "biomejs.biome" },
   "[typescript]": { "editor.defaultFormatter": "biomejs.biome" },

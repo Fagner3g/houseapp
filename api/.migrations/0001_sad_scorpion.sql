@@ -1,0 +1,1 @@
+-- No-op: cards.user_id and idx_transactions_status already exist in 0000_init.sql

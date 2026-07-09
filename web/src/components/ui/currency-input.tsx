@@ -22,7 +22,8 @@ export const CurrencyInput = forwardRef<HTMLInputElement, CurrencyInputProps>(
       onChange?.(e)
     }
 
-    const displayValue = allowEmpty && value == null ? '' : formatCurrency(value ?? 0)
+    const numericValue = typeof value === 'number' && !Number.isNaN(value) ? value : 0
+    const displayValue = allowEmpty && value == null ? '' : formatCurrency(numericValue)
 
     return (
       <Input

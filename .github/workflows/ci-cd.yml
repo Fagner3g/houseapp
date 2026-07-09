@@ -6,7 +6,9 @@ on:
     paths:
       - 'api/**'
       - 'web/**'
+      - 'packages/**'
       - 'deploy/stacks/**'
+      - '.github/workflows/ci-cd.yml'
   workflow_dispatch:
     inputs:
       version:
@@ -71,7 +73,8 @@ jobs:
       - name: Build and push Docker image
         uses: docker/build-push-action@v5
         with:
-          context: ./${{ matrix.app }}
+          context: .
+          file: ./${{ matrix.app }}/Dockerfile
           push: true
           tags: |
             ghcr.io/fagner3g/houseapp-${{ matrix.app }}:${{ steps.version.outputs.version }}
@@ -218,6 +221,7 @@ jobs:
           host: ${{ secrets.VPS_HOST }}
           username: ${{ secrets.VPS_USER }}
           key: ${{ secrets.VPS_SSH_KEY }}
+          command_timeout: 8m
           script: |
             set -e
             
@@ -256,6 +260,53 @@ jobs:
             # Pull images
             docker pull ghcr.io/fagner3g/houseapp-api:$TAG
             docker pull ghcr.io/fagner3g/houseapp-web:$TAG
+
+            # Run database migrations before starting API traffic.
+            # network_swarm_public is a Swarm overlay and is not manually attachable, so
+            # `docker run --network` fails with PermissionDenied. Use a one-shot service
+            # instead so DB_HOST=postgres from api.env resolves on the overlay.
+            if ! docker network inspect network_swarm_public >/dev/null 2>&1; then
+              echo "ERROR: Docker network network_swarm_public not found"
+              exit 1
+            fi
+
+            MIGRATE_SVC="${STACK_NAME}_migrate"
+            docker service rm "$MIGRATE_SVC" >/dev/null 2>&1 || true
+
+            docker service create \
+              --detach \
+              --name "$MIGRATE_SVC" \
+              --network network_swarm_public \
+              --restart-condition none \
+              --restart-max-attempts 0 \
+              --env-file "$STACK_DIR/api.env" \
+              --with-registry-auth \
+              "ghcr.io/fagner3g/houseapp-api:$TAG" \
+              sh -c "yarn db:migrate"
+
+            MIGRATE_OK=false
+            for _ in $(seq 1 60); do
+              STATE=$(docker service ps "$MIGRATE_SVC" --format '{{.CurrentState}}' 2>/dev/null | head -1)
+              echo "Migrate state: ${STATE:-pending}"
+              case "$STATE" in
+                Complete*)
+                  MIGRATE_OK=true
+                  break
+                  ;;
+                Failed*|Rejected*|Shutdown*)
+                  break
+                  ;;
+              esac
+              sleep 5
+            done
+
+            docker service logs --raw "$MIGRATE_SVC" 2>&1 || true
+            docker service rm "$MIGRATE_SVC" >/dev/null 2>&1 || true
+
+            if [ "$MIGRATE_OK" != true ]; then
+              echo "ERROR: database migration failed (last state: ${STATE:-unknown})"
+              exit 1
+            fi
 
             # Deploy stack
             docker stack deploy --with-registry-auth --resolve-image changed --prune -c "$STACK_DIR/stack.yml" "$STACK_NAME"

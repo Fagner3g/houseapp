@@ -1,5 +1,6 @@
 import { env } from '@/config/env'
 import { createMailClient, sendEmail } from '@/lib/mail'
+import { logger } from '@/lib/logger'
 
 interface SendMailRequest {
   name: string
@@ -8,16 +9,31 @@ interface SendMailRequest {
   url: string
 }
 
+function logDevMagicLink(email: string, url: string, reason: string) {
+  logger.warn({ email, url, reason }, 'Email delivery skipped in development')
+  console.log(`\n[dev] Magic link for ${email}: ${url}\n`)
+}
+
 export async function SendMail({ email, name, phone, url }: SendMailRequest) {
+  if (!env.BREVO_API_KEY) {
+    if (env.NODE_ENV === 'development') {
+      logDevMagicLink(email, url, 'BREVO_API_KEY is not set')
+      return
+    }
+    throw new Error('BREVO_API_KEY is not set')
+  }
+
   const client = createMailClient()
-  const resp = await sendEmail(client, {
-    from: {
-      email: env.MAIL_FROM_EMAIL || 'no-reply@jarvis.dev.br',
-      name: env.MAIL_FROM_NAME || 'HouseApp',
-    },
-    to: email,
-    subject: 'Seu link de acesso',
-    html: `
+
+  try {
+    const resp = await sendEmail(client, {
+      from: {
+        email: env.MAIL_FROM_EMAIL || 'no-reply@jarvis.dev.br',
+        name: env.MAIL_FROM_NAME || 'HouseApp',
+      },
+      to: email,
+      subject: 'Seu link de acesso',
+      html: `
           <body style="margin:0;background-color:#f4f4f7;font-family:Arial,sans-serif;">
             <table role="presentation" width="100%" cellpadding="0" cellspacing="0">
               <tr>
@@ -61,7 +77,14 @@ export async function SendMail({ email, name, phone, url }: SendMailRequest) {
             </table>
           </body>
           </html>
-    `,
-  })
-  return resp
+      `,
+    })
+    return resp
+  } catch (error) {
+    if (env.NODE_ENV === 'development') {
+      logDevMagicLink(email, url, error instanceof Error ? error.message : 'email delivery failed')
+      return
+    }
+    throw error
+  }
 }

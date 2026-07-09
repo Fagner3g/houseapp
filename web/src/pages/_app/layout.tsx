@@ -1,8 +1,19 @@
 import { createFileRoute, Outlet, redirect, useNavigate, useSearch } from '@tanstack/react-router'
 import { useEffect } from 'react'
 
-import { TransactionDrawerProvider } from '@/components/drawer-transaction/transaction-drawer-context'
+import { AiChatPanel } from '@/features/ai/ai-chat-panel'
+import { ImportDraftResumeBanner } from '@/features/accounts/components/import-draft-resume-banner'
+import { ImportStatementDialog } from '@/features/accounts/components/import-statement-dialog'
+import { AccountDrawer } from '@/features/accounts/components/account-drawer'
+import { CardDrawer } from '@/features/accounts/components/card-drawer'
+import { CategoryDrawer } from '@/features/categories/components/category-drawer'
+import { PayInvoiceDrawer } from '@/features/credit-cards/components/pay-invoice-drawer'
+import { AnalyticsGroupDrawer } from '@/features/credit-cards/components/analytics-group-drawer'
+import { RecurringContractDrawer } from '@/features/recurring/components/recurring-contract-drawer'
+import { TransactionDrawer } from '@/features/transactions/components/transaction-drawer'
+import { BottomNav, AiChatFab } from '@/components/layout/app-chrome'
 import { Header } from '@/components/layout/header'
+import { SidebarCollapseTrigger } from '@/components/layout/sidebar/sidebar-collapse-trigger'
 import { AppSidebar } from '@/components/layout/sidebar'
 import { ModalNewOrganization } from '@/components/modal-new-organization'
 import { SidebarInset, SidebarProvider } from '@/components/ui/sidebar'
@@ -33,15 +44,39 @@ function RouteComponent() {
   }, [isAuthed, isLoading, navigate])
 
   return (
-    <TransactionDrawerProvider>
-      <SidebarProvider defaultOpen={false}>
-        <AppSidebar variant="floating" collapsible="icon" />
-        <SidebarInset>
+    <SidebarProvider defaultOpen>
+      <AppSidebar variant="inset" className="hidden md:flex" />
+      <SidebarInset className="app-content-panel m-2 border-0 bg-white md:my-3 md:mr-3 md:ml-0 md:rounded-lg md:peer-data-[state=collapsed]:ml-0">
+        <SidebarCollapseTrigger />
+        <div className="flex min-h-0 flex-1 flex-col overflow-hidden rounded-lg">
           <Header />
-          {orgAccessBlocked ? null : <Outlet />}
-          <ModalNewOrganization open={!!createOrg} onOpenChange={() => {}} />
-        </SidebarInset>
-      </SidebarProvider>
-    </TransactionDrawerProvider>
+          <div className="flex min-h-0 flex-1 flex-col overflow-auto">
+            {orgAccessBlocked ? (
+              <div className="flex items-center justify-center p-12">
+                <div className="flex flex-col items-center gap-3">
+                  <div className="size-8 animate-spin rounded-full border-2 border-slate-200 border-t-slate-600" />
+                  <p className="text-sm text-slate-500">Carregando organização...</p>
+                </div>
+              </div>
+            ) : (
+              <Outlet />
+            )}
+          </div>
+        </div>
+        <ModalNewOrganization open={!!createOrg} onOpenChange={() => {}} />
+        <BottomNav />
+        <AiChatFab />
+      </SidebarInset>
+      <TransactionDrawer />
+      <RecurringContractDrawer />
+      <PayInvoiceDrawer />
+      <AnalyticsGroupDrawer />
+      <AccountDrawer />
+      <CategoryDrawer />
+      <CardDrawer />
+      <ImportStatementDialog />
+      <ImportDraftResumeBanner />
+      <AiChatPanel />
+    </SidebarProvider>
   )
 }

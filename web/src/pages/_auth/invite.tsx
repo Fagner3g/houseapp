@@ -24,11 +24,11 @@ function InvitePage() {
       acceptInvite({ slug, token })
         .then(() => {
           toast.success('Convite aceito!')
-          navigate({ to: '/$org/dashboard', params: { org: slug } })
+          navigate({ to: '/$org', params: { org: slug } })
         })
         .catch(() => {
           toast.info('Você já pertence a esta organização')
-          navigate({ to: '/$org/dashboard', params: { org: slug } })
+          navigate({ to: '/$org', params: { org: slug } })
         })
     }
   }, [authToken, token, slug, acceptInvite, navigate])

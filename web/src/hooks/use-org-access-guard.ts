@@ -3,6 +3,7 @@ import { useEffect } from 'react'
 
 import { useListOrganizations } from '@/api/generated/api'
 import { useOrgStore } from '@/stores/org'
+import { useAuthStore } from '@/stores/auth'
 
 import { getOrgFromMatches } from './use-active-organization'
 
@@ -26,10 +27,20 @@ export function useOrgAccessGuard() {
   const hasOrgList = Array.isArray(orgs)
   const isAllowed =
     !routeSlug || (hasOrgList && orgs.some(org => org.slug === routeSlug))
-  const isDenied = Boolean(routeSlug && hasOrgList && orgs.length > 0 && !isAllowed)
+  const isDenied =
+    Boolean(routeSlug && hasOrgList && orgs.length > 0 && !isAllowed) ||
+    Boolean(routeSlug && hasOrgList && orgs.length === 0)
   const blocked = Boolean(routeSlug && (isResolvingOrgs || isDenied))
 
   useEffect(() => {
+    if (!hasOrgList || isResolvingOrgs) return
+
+    if (routeSlug && orgs.length === 0) {
+      useAuthStore.getState().logout()
+      navigate({ to: '/sign-in', replace: true })
+      return
+    }
+
     if (!isDenied || !orgs?.length) return
 
     const fallbackSlug = orgs[0].slug
@@ -37,7 +48,7 @@ export function useOrgAccessGuard() {
 
     const segments = pathname.split('/').filter(Boolean)
     const [, ...rest] = segments
-    const suffix = rest.length > 0 ? `/${rest.join('/')}` : '/dashboard'
+    const suffix = rest.length > 0 ? `/${rest.join('/')}` : ''
 
     navigate({ to: `/${fallbackSlug}${suffix}`, replace: true })
   }, [isDenied, orgs, pathname, navigate, setSlug])

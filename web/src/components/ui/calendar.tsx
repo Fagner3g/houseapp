@@ -5,6 +5,10 @@ import { type DayButton, DayPicker, getDefaultClassNames } from 'react-day-picke
 import { Button, buttonVariants } from '@/components/ui/button'
 import { cn } from '@/lib/utils'
 
+type CalendarTone = 'default' | 'neutral'
+
+const CalendarToneContext = React.createContext<CalendarTone>('default')
+
 function Calendar({
   className,
   classNames,
@@ -15,14 +19,18 @@ function Calendar({
   components,
   fromYear = 1970,
   toYear = 2100,
+  tone = 'default',
   ...props
 }: React.ComponentProps<typeof DayPicker> & {
   buttonVariant?: React.ComponentProps<typeof Button>['variant']
+  tone?: CalendarTone
 }) {
   const defaultClassNames = getDefaultClassNames()
+  const isNeutral = tone === 'neutral'
 
   return (
-    <DayPicker
+    <CalendarToneContext.Provider value={tone}>
+      <DayPicker
       showOutsideDays={showOutsideDays}
       className={cn(
         'bg-background group/calendar p-3 [--cell-size:--spacing(8)] [[data-slot=card-content]_&]:bg-transparent [[data-slot=popover-content]_&]:bg-transparent',
@@ -65,6 +73,8 @@ function Calendar({
         ),
         dropdown_root: cn(
           'relative has-focus:border-ring border border-input shadow-xs has-focus:ring-ring/50 has-focus:ring-[3px] rounded-md',
+          isNeutral &&
+            'has-focus:border-slate-400 has-focus:ring-slate-400/30',
           defaultClassNames.dropdown_root
         ),
         dropdown: cn('absolute bg-popover inset-0 opacity-0', defaultClassNames.dropdown),
@@ -91,11 +101,19 @@ function Calendar({
           'relative w-full h-full p-0 text-center [&:first-child[data-selected=true]_button]:rounded-l-md [&:last-child[data-selected=true]_button]:rounded-r-md group/day aspect-square select-none',
           defaultClassNames.day
         ),
-        range_start: cn('rounded-l-md bg-accent', defaultClassNames.range_start),
+        range_start: cn(
+          isNeutral ? 'rounded-l-md bg-slate-200' : 'rounded-l-md bg-accent',
+          defaultClassNames.range_start
+        ),
         range_middle: cn('rounded-none', defaultClassNames.range_middle),
-        range_end: cn('rounded-r-md bg-accent', defaultClassNames.range_end),
+        range_end: cn(
+          isNeutral ? 'rounded-r-md bg-slate-200' : 'rounded-r-md bg-accent',
+          defaultClassNames.range_end
+        ),
         today: cn(
-          'bg-accent text-accent-foreground rounded-md data-[selected=true]:rounded-none',
+          isNeutral
+            ? 'bg-slate-100 text-slate-900 rounded-md data-[selected=true]:rounded-none'
+            : 'bg-accent text-accent-foreground rounded-md data-[selected=true]:rounded-none',
           defaultClassNames.today
         ),
         outside: cn(
@@ -118,6 +136,7 @@ function Calendar({
       }}
       {...props}
     />
+    </CalendarToneContext.Provider>
   )
 }
 
@@ -128,6 +147,8 @@ function CalendarDayButton({
   ...props
 }: React.ComponentProps<typeof DayButton>) {
   const defaultClassNames = getDefaultClassNames()
+  const tone = React.useContext(CalendarToneContext)
+  const isNeutral = tone === 'neutral'
 
   const ref = React.useRef<HTMLButtonElement>(null)
   React.useEffect(() => {
@@ -151,7 +172,10 @@ function CalendarDayButton({
       data-range-end={modifiers.range_end}
       data-range-middle={modifiers.range_middle}
       className={cn(
-        'data-[selected-single=true]:bg-primary data-[selected-single=true]:text-primary-foreground data-[range-middle=true]:bg-accent data-[range-middle=true]:text-accent-foreground data-[range-start=true]:bg-primary data-[range-start=true]:text-primary-foreground data-[range-end=true]:bg-primary data-[range-end=true]:text-primary-foreground group-data-[focused=true]/day:border-ring group-data-[focused=true]/day:ring-ring/50 dark:hover:text-accent-foreground flex aspect-square size-auto w-full min-w-(--cell-size) flex-col gap-1 leading-none font-normal group-data-[focused=true]/day:relative group-data-[focused=true]/day:z-10 group-data-[focused=true]/day:ring-[3px] data-[range-end=true]:rounded-md data-[range-end=true]:rounded-r-md data-[range-middle=true]:rounded-none data-[range-start=true]:rounded-md data-[range-start=true]:rounded-l-md [&>span]:text-xs [&>span]:opacity-70',
+        isNeutral
+          ? 'data-[selected-single=true]:bg-slate-800 data-[selected-single=true]:text-white data-[range-middle=true]:bg-slate-200 data-[range-middle=true]:text-slate-900 data-[range-start=true]:bg-slate-800 data-[range-start=true]:text-white data-[range-end=true]:bg-slate-800 data-[range-end=true]:text-white group-data-[focused=true]/day:border-slate-400 group-data-[focused=true]/day:ring-slate-400/30 hover:bg-slate-100 hover:text-slate-900'
+          : 'data-[selected-single=true]:bg-primary data-[selected-single=true]:text-primary-foreground data-[range-middle=true]:bg-accent data-[range-middle=true]:text-accent-foreground data-[range-start=true]:bg-primary data-[range-start=true]:text-primary-foreground data-[range-end=true]:bg-primary data-[range-end=true]:text-primary-foreground group-data-[focused=true]/day:border-ring group-data-[focused=true]/day:ring-ring/50 dark:hover:text-accent-foreground',
+        'flex aspect-square size-auto w-full min-w-(--cell-size) flex-col gap-1 leading-none font-normal group-data-[focused=true]/day:relative group-data-[focused=true]/day:z-10 group-data-[focused=true]/day:ring-[3px] data-[range-end=true]:rounded-md data-[range-end=true]:rounded-r-md data-[range-middle=true]:rounded-none data-[range-start=true]:rounded-md data-[range-start=true]:rounded-l-md [&>span]:text-xs [&>span]:opacity-70',
         modifiers.disabled && 'opacity-50 cursor-not-allowed line-through',
         defaultClassNames.day,
         className

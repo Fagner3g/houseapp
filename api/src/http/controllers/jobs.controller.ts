@@ -1,6 +1,7 @@
 import { eq } from 'drizzle-orm'
 import type { FastifyReply, FastifyRequest, RouteHandler } from 'fastify'
 
+import { container } from '@/core/container'
 import { db } from '@/db'
 import { users } from '@/db/schemas/users'
 import { normalizePhone, sendWhatsAppMessage } from '@/domain/whatsapp'
@@ -251,11 +252,6 @@ export const sendMonthlySummaryController: RouteHandler<SendMonthlySummaryRoute>
     const { id: orgId } = request.organization
     const { userId: targetUserId } = request.body
 
-    // Buscar relatórios do mês atual para o usuário selecionado
-    const { getTransactionReports } = await import('@/domain/reports/dashboard')
-    const reports = await getTransactionReports(orgId, targetUserId)
-
-    // Buscar telefone e nome do usuário alvo
     const userRow = await db.query.users.findFirst({ where: eq(users.id, targetUserId) })
     const phone = normalizePhone(userRow?.phone)
 
@@ -263,35 +259,12 @@ export const sendMonthlySummaryController: RouteHandler<SendMonthlySummaryRoute>
       return reply.status(400).send({ error: 'Bad Request', message: 'Telefone do usuário vazio' })
     }
 
-    // Formatar relatório com IA
     const { formatReport } = await import('@/domain/ai/report-formatter')
-    const k = reports.reports.kpis
 
-    const now = new Date()
-    const headerMonth = now.toLocaleDateString('pt-BR', { month: 'long', year: 'numeric' })
-
-    const overdueSummary = reports.reports.overdueTransactions
-    const overdueTotal = overdueSummary.transactions.reduce(
-      (sum: number, t: { amount: number }) => sum + t.amount,
-      0
+    const message = await formatReport(
+      'monthly-summary',
+      await container.reportService.buildMonthlySummaryData(orgId, targetUserId, userRow?.name ?? undefined)
     )
-
-    const message = await formatReport('monthly-summary', {
-      personName: userRow?.name ?? undefined,
-      headerMonth,
-      kpis: {
-        incomeRegistered: k?.incomeRegistered ?? 0,
-        expenseRegistered: k?.expenseRegistered ?? 0,
-        receivedTotal: k?.receivedTotal ?? 0,
-        toReceiveTotal: k?.toReceiveTotal ?? 0,
-        toSpendTotal: k?.toSpendTotal ?? 0,
-      },
-      balance: (k?.incomeRegistered ?? 0) - (k?.expenseRegistered ?? 0),
-      topExpenses: reports.reports.counterparties.toPay.slice(0, 5),
-      topReceivables: reports.reports.counterparties.toReceive.slice(0, 5),
-      overdueCount: overdueSummary.summary.total,
-      overdueTotal,
-    })
 
     const result = await sendWhatsAppMessage({ phone, message })
 

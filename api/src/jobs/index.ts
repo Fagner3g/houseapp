@@ -2,6 +2,7 @@
 import './materialize-occurrences'
 import './monthly-summary'
 import './evaluate-alerts'
+import './send-whatsapp-alerts'
 
 // Importar o registry
 import { jobRegistry } from './registry'

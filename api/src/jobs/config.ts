@@ -1,3 +1,5 @@
+import { env } from '@/config/env'
+
 import type { JobConfig } from './types'
 
 export const JOB_CONFIGS: Record<string, JobConfig> = {
@@ -19,9 +21,18 @@ export const JOB_CONFIGS: Record<string, JobConfig> = {
 
   EVALUATE_ALERTS: {
     key: 'alerts:evaluate',
-    schedule: '* * * * *', // A cada minuto
+    schedule: '* * * * *',
     timezone: 'America/Sao_Paulo',
     description: 'Avalia lembretes personalizados e dispara alertas',
+    enabled: env.jobsAlertsEnabled,
+  },
+
+  SEND_WHATSAPP_ALERTS: {
+    key: 'alerts:send-whatsapp',
+    schedule: '*/2 * * * *',
+    timezone: 'America/Sao_Paulo',
+    description: 'Envia alertas WhatsApp pendentes (membros e contatos externos)',
+    enabled: env.jobsAlertsEnabled,
   },
 }
 

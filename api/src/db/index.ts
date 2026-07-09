@@ -2,41 +2,41 @@ import { drizzle } from 'drizzle-orm/postgres-js'
 import postgres from 'postgres'
 
 import { env } from '@/config/env'
-import { alertDeliveries } from './schemas/alertDeliveries'
+import { accounts } from './schemas/accounts'
 import { alertRules } from './schemas/alertRules'
-import { customReminders } from './schemas/customReminders'
-import { reminderOccurrenceTransactions } from './schemas/reminderOccurrenceTransactions'
-import { investmentAssets } from './schemas/investmentAssets'
-import { investmentExecutions } from './schemas/investmentExecutions'
-import { investmentPlans } from './schemas/investmentPlans'
-import { investmentQuotes } from './schemas/investmentQuotes'
+import { cards } from './schemas/cards'
+import { categories } from './schemas/categories'
 import { invites } from './schemas/invites'
-import { organizations } from './schemas/organization'
-import { transactionChatMessages } from './schemas/transactionChatMessages'
-import { transactionOccurrences } from './schemas/transactionOccurrences'
-import { transactionSeries } from './schemas/transactionSeries'
-import { transactionTags } from './schemas/transactionTags'
-import { userOrganizations } from './schemas/userOrganization'
+import { notifications } from './schemas/notifications'
+import { organizationMembers } from './schemas/organizationMembers'
+import { organizations } from './schemas/organizations'
+import { recurringTransactions } from './schemas/recurringTransactions'
+import { splitPayments } from './schemas/splitPayments'
+import { statements } from './schemas/statements'
+import { transactionAttachments } from './schemas/transactionAttachments'
+import { transactionCategories } from './schemas/transactionCategories'
+import { transactionSplits } from './schemas/transactionSplits'
+import { transactions } from './schemas/transactions'
 import { users } from './schemas/users'
 import { getDatabaseString } from './setup'
 
 const schema = {
-  invites,
   users,
   organizations,
-  userOrganizations,
-  customReminders,
-  reminderOccurrenceTransactions,
-  alertDeliveries,
+  organizationMembers,
+  invites,
+  accounts,
+  cards,
+  categories,
+  transactions,
+  recurringTransactions,
+  transactionSplits,
+  splitPayments,
+  transactionCategories,
+  statements,
+  transactionAttachments,
   alertRules,
-  investmentAssets,
-  investmentPlans,
-  investmentExecutions,
-  investmentQuotes,
-  transactionTags,
-  transactionSeries,
-  transactionOccurrences,
-  transactionChatMessages,
+  notifications,
 }
 
 const { baseUrl } = getDatabaseString()

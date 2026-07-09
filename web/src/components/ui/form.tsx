@@ -1,9 +1,11 @@
 import type * as LabelPrimitive from '@radix-ui/react-label'
 import { Slot } from '@radix-ui/react-slot'
+import { AlertCircle } from 'lucide-react'
 import * as React from 'react'
 import {
   Controller,
   type ControllerProps,
+  type FieldErrors,
   type FieldPath,
   type FieldValues,
   FormProvider,
@@ -94,6 +96,53 @@ function FormLabel({ className, ...props }: React.ComponentProps<typeof LabelPri
   )
 }
 
+function FormRequiredMark({ className }: { className?: string }) {
+  const { showError } = useFormField()
+
+  return (
+    <span
+      aria-hidden="true"
+      className={cn('text-gray-500', showError && 'text-destructive', className)}
+    >
+      *
+    </span>
+  )
+}
+
+function FormErrorBanner({
+  message,
+  className,
+}: {
+  message?: string | null
+  className?: string
+}) {
+  const { isSubmitted } = useFormState()
+  if (!isSubmitted || !message) return null
+
+  return (
+    <div
+      role="alert"
+      className={cn(
+        'flex items-start gap-2.5 rounded-lg border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-700',
+        className
+      )}
+    >
+      <AlertCircle className="mt-0.5 size-4 shrink-0" aria-hidden="true" />
+      <p>{message}</p>
+    </div>
+  )
+}
+
+function buildRequiredFieldsMessage(
+  errors: FieldErrors,
+  labels: Record<string, string>
+): string | null {
+  const missing = Object.keys(labels).filter(key => errors[key])
+  if (missing.length === 0) return null
+  const list = missing.map(key => labels[key!]).join(', ')
+  return `Preencha os campos obrigatórios (${list}).`
+}
+
 function FormControl({ ...props }: React.ComponentProps<typeof Slot>) {
   const { showError, formItemId, formDescriptionId, formMessageId } = useFormField()
 
@@ -145,9 +194,12 @@ function FormMessage({ className, ...props }: React.ComponentProps<'p'>) {
 
 export {
   useFormField,
+  buildRequiredFieldsMessage,
   Form,
   FormItem,
   FormLabel,
+  FormRequiredMark,
+  FormErrorBanner,
   FormControl,
   FormDescription,
   FormMessage,

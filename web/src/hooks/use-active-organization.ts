@@ -43,7 +43,7 @@ export function useActiveOrganization() {
 
     setSlug(newSlug)
     if (!onOrgRoute) {
-      router.navigate({ to: `/${newSlug}/dashboard` })
+      router.navigate({ to: `/${newSlug}` })
       return
     }
 

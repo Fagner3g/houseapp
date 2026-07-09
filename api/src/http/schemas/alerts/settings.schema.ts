@@ -1,4 +1,3 @@
-import { StatusCodes } from 'http-status-codes'
 import z from 'zod'
 
 export const getAlertSettingsSchema = {
@@ -7,9 +6,11 @@ export const getAlertSettingsSchema = {
   operationId: 'getAlertSettings',
   params: z.object({ slug: z.string().nonempty() }),
   response: {
-    [StatusCodes.OK]: z.object({
+    200: z.object({
       defaultNotifyHour: z.number().int().min(0).max(23),
       defaultNotifyMinute: z.number().int().min(0).max(59),
+      timezone: z.literal('America/Sao_Paulo'),
+      notifyTimeLabel: z.string(),
     }),
   },
 }
@@ -24,9 +25,11 @@ export const updateAlertSettingsSchema = {
     defaultNotifyMinute: z.number().int().min(0).max(59),
   }),
   response: {
-    [StatusCodes.OK]: z.object({
+    200: z.object({
       defaultNotifyHour: z.number().int().min(0).max(23),
       defaultNotifyMinute: z.number().int().min(0).max(59),
+      timezone: z.literal('America/Sao_Paulo'),
+      notifyTimeLabel: z.string(),
     }),
   },
 }

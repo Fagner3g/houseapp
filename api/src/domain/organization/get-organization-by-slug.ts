@@ -1,7 +1,7 @@
 import { eq } from 'drizzle-orm'
 
 import { db } from '@/db'
-import { organizations } from '@/db/schemas/organization'
+import { organizations } from '@/db/schemas/organizations'
 
 interface GetOrganizationById {
   orgId: string

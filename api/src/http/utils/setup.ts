@@ -2,6 +2,7 @@ import { rename, writeFile } from 'node:fs/promises'
 import { resolve } from 'node:path'
 import fastifyCors from '@fastify/cors'
 import fastifyJwt from '@fastify/jwt'
+import fastifyMultipart from '@fastify/multipart'
 import fastifySwagger from '@fastify/swagger'
 import fastifySwaggerUI from '@fastify/swagger-ui'
 import fastify from 'fastify'
@@ -36,7 +37,7 @@ export async function buildServer() {
           },
           bodyLimit: 10 * 1024 * 1024, // 10MB (imagens base64)
         }
-      : { bodyLimit: 10 * 1024 * 1024 }
+      : { bodyLimit: 16 * 1024 * 1024 }
   ).withTypeProvider<ZodTypeProvider>()
 
   // add reply serializer (BigInt -> string). For monetary fields (amount), serialize as decimal with 2 casas.
@@ -90,6 +91,13 @@ export async function buildServer() {
   })
 
   app.register(fastifyJwt, { secret: env.JWT_SECRET })
+
+  app.register(fastifyMultipart, {
+    limits: {
+      fileSize: 15 * 1024 * 1024,
+      files: 1,
+    },
+  })
 
   // Mail (SMTP)
   app.register(mailPlugin)

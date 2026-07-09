@@ -1,62 +1,123 @@
-import { useRouterState } from '@tanstack/react-router'
-import { Bell } from 'lucide-react'
+import { useNavigate, useRouterState } from '@tanstack/react-router'
+import { useQueryClient } from '@tanstack/react-query'
+import dayjs from 'dayjs'
+import { Bell, Settings } from 'lucide-react'
 
+import { HeaderNewTransactionButton } from '@/components/layout/app-chrome'
+
+import {
+  getListPendingNotificationsQueryKey,
+  useListPendingNotifications,
+  useMarkNotificationRead,
+} from '@/api/generated/api'
 import {
   DropdownMenu,
   DropdownMenuContent,
+  DropdownMenuItem,
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu'
-import { Separator } from '@/components/ui/separator'
-import { SidebarTrigger } from '@/components/ui/sidebar'
-import { useInvestmentReminders } from '@/features/investments/api'
-import { useActiveOrganization } from '@/hooks/use-active-organization'
 import { useSidebar } from '@/hooks/use-sidebar'
-import { useGetInvite } from '@/api/generated/api'
-import { ModeToggle } from '../mode-toggle'
+import { useActiveOrganization } from '@/hooks/use-active-organization'
+import { cn } from '@/lib/utils'
 import { Button } from '../ui/button'
 
 export function Header() {
+  const navigate = useNavigate()
+  const pathname = useRouterState({ select: s => s.location.pathname })
   const { route } = useSidebar()
   const { slug } = useActiveOrganization()
-  const pathname = useRouterState({ select: s => s.location.pathname })
-  const isInvestmentsRoute = pathname.startsWith('/investments')
-  const { data } = useGetInvite(slug, { query: { enabled: !isInvestmentsRoute && !!slug } })
-  const { data: reminders } = useInvestmentReminders(isInvestmentsRoute)
-  const count = isInvestmentsRoute ? reminders?.summary.total ?? 0 : data?.invites.length ?? 0
+  const queryClient = useQueryClient()
+
+  const { data, isLoading } = useListPendingNotifications({
+    query: { refetchInterval: 60_000 },
+  })
+  const { mutateAsync: markRead } = useMarkNotificationRead()
+
+  const notifications = data?.notifications ?? []
+  const unreadCount = notifications.filter(n => !n.readAt).length
+
+  const handleNotificationClick = async (id: string) => {
+    try {
+      await markRead({ id })
+      queryClient.invalidateQueries({ queryKey: getListPendingNotificationsQueryKey() })
+    } catch {
+      // ignore mark-read errors in header
+    }
+  }
+
+  const isOverdueTransactions = pathname.endsWith('/transactions/overdue')
+  const isAccountsPage = pathname.includes('/accounts')
 
   return (
-    <header className="bg-background sticky top-0 flex shrink-0 items-center gap-2 border-b p-1 z-50">
-      <div className="flex w-full items-center gap-1 px-4 lg:gap-2 lg:px-6 group-data-[collapsible=icon]:hidden">
-        <SidebarTrigger className="-ml-1" />
-        <Separator orientation="vertical" className="mx-2 data-[orientation=vertical]:h-4" />
-        <p>{route?.title}</p>
+    <header
+      className={cn(
+        'flex shrink-0 items-center gap-3 px-5 lg:px-8',
+        isAccountsPage ? 'py-3 lg:py-4' : 'py-5 lg:py-6'
+      )}
+    >
+      <div className="flex min-w-0 flex-1 items-center gap-2">
+        {!isOverdueTransactions && (
+          <h1 className="truncate text-2xl font-semibold tracking-tight text-slate-900">
+            {route?.title ?? 'Dashboard'}
+          </h1>
+        )}
       </div>
-      <DropdownMenu>
-        <DropdownMenuTrigger asChild>
-          <Button variant="ghost" className="p-2" aria-label="Notificações">
-            <Bell className="size-5" />
-            {count}
+      <div className="flex items-center gap-2">
+        <HeaderNewTransactionButton />
+        {slug && (
+          <Button
+            variant="ghost"
+            size="icon"
+            className="rounded-lg md:hidden"
+            aria-label="Configurações"
+            onClick={() => navigate({ to: '/$org/settings/categories', params: { org: slug } })}
+          >
+            <Settings className="size-5 text-slate-500" />
           </Button>
-        </DropdownMenuTrigger>
-        <DropdownMenuContent className="p-2 text-sm">
-          {isInvestmentsRoute ? (
-            reminders?.items?.length ? (
-              <div className="space-y-2">
-                {reminders.items.slice(0, 5).map(item => (
-                  <p key={`${item.planId}-${item.referenceMonth}`}>
-                    {item.assetSymbol}: {item.plannedAmount ? `R$ ${item.plannedAmount.toFixed(2)}` : `${item.plannedQuantity} un.`}
+        )}
+        <DropdownMenu>
+          <DropdownMenuTrigger asChild>
+            <Button
+              variant="ghost"
+              size="icon"
+              className="relative rounded-lg"
+              aria-label="Notificações"
+            >
+              <span className="relative inline-flex">
+                <Bell className="size-5 text-slate-500" />
+                {unreadCount > 0 && (
+                  <span className="absolute -right-1 -top-1 flex size-4 items-center justify-center rounded-full bg-violet-600 text-[10px] font-bold text-white">
+                    {unreadCount > 9 ? '9+' : unreadCount}
+                  </span>
+                )}
+              </span>
+            </Button>
+          </DropdownMenuTrigger>
+          <DropdownMenuContent align="end" className="w-80 rounded-lg p-2">
+            {isLoading ? (
+              <p className="px-2 py-3 text-sm text-muted-foreground">Carregando...</p>
+            ) : notifications.length ? (
+              notifications.slice(0, 8).map(notification => (
+                <DropdownMenuItem
+                  key={notification.id}
+                  className="flex cursor-pointer flex-col items-start gap-1 rounded-lg py-2"
+                  onClick={() => void handleNotificationClick(notification.id)}
+                >
+                  <p className="font-medium">{notification.title}</p>
+                  {notification.body && (
+                    <p className="text-xs text-muted-foreground">{notification.body}</p>
+                  )}
+                  <p className="text-[10px] text-muted-foreground">
+                    {dayjs(notification.createdAt).format('DD/MM HH:mm')}
                   </p>
-                ))}
-              </div>
+                </DropdownMenuItem>
+              ))
             ) : (
-              <p>Nenhum aporte pendente</p>
-            )
-          ) : (
-            <p>Nenhuma notificação</p>
-          )}
-        </DropdownMenuContent>
-      </DropdownMenu>
-      <ModeToggle />
+              <p className="px-2 py-3 text-sm text-muted-foreground">Nenhuma notificação pendente</p>
+            )}
+          </DropdownMenuContent>
+        </DropdownMenu>
+      </div>
     </header>
   )
 }

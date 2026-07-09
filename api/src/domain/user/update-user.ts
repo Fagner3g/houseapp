@@ -1,8 +1,8 @@
 import { and, eq } from 'drizzle-orm'
 
 import { db } from '@/db'
-import { organizations } from '@/db/schemas/organization'
-import { userOrganizations } from '@/db/schemas/userOrganization'
+import { organizations } from '@/db/schemas/organizations'
+import { organizationMembers } from '@/db/schemas/organizationMembers'
 import { users } from '@/db/schemas/users'
 
 interface UpdateUserInput {
@@ -18,8 +18,8 @@ export async function updateUser({ orgId, userId, email, name, phone }: UpdateUs
   const toUpdate = await db
     .select({ id: users.id })
     .from(users)
-    .innerJoin(userOrganizations, eq(users.id, userOrganizations.userId))
-    .where(and(eq(userOrganizations.organizationId, orgId), eq(users.id, userId)))
+    .innerJoin(organizationMembers, eq(users.id, organizationMembers.userId))
+    .where(and(eq(organizationMembers.organizationId, orgId), eq(users.id, userId)))
     .limit(1)
 
   if (toUpdate.length === 0) return null
@@ -43,8 +43,8 @@ export async function updateUser({ orgId, userId, email, name, phone }: UpdateUs
       isOwner: organizations.ownerId,
     })
     .from(users)
-    .innerJoin(userOrganizations, eq(users.id, userOrganizations.userId))
-    .innerJoin(organizations, eq(organizations.id, userOrganizations.organizationId))
+    .innerJoin(organizationMembers, eq(users.id, organizationMembers.userId))
+    .innerJoin(organizations, eq(organizations.id, organizationMembers.organizationId))
     .where(eq(users.id, userId))
     .limit(1)
 

@@ -1,7 +1,7 @@
 import { createId } from '@paralleldrive/cuid2'
 import { pgTable, text, timestamp } from 'drizzle-orm/pg-core'
 
-import { organizations } from './organization'
+import { organizations } from './organizations'
 import { users } from './users'
 
 export const invites = pgTable('invites', {
@@ -10,9 +10,9 @@ export const invites = pgTable('invites', {
     .$defaultFn(() => createId()),
   organizationId: text('organization_id')
     .notNull()
-    .references(() => organizations.id),
+    .references(() => organizations.id, { onDelete: 'cascade' }),
   email: text('email').notNull(),
-  userId: text('user_id')
+  invitedBy: text('invited_by')
     .notNull()
     .references(() => users.id),
   acceptedAt: timestamp('accepted_at', { withTimezone: true }),

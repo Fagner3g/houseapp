@@ -1,25 +1,9 @@
-import {
-  IconCreditCard,
-  IconDotsVertical,
-  IconLogout,
-  IconNotification,
-  IconSettings,
-  IconUserCircle,
-} from '@tabler/icons-react'
+import { ChevronRight, LogOut } from 'lucide-react'
 import { useNavigate } from '@tanstack/react-router'
 
 import { useSignOut } from '@/api/generated/api'
 import type { GetProfile200User } from '@/api/generated/model'
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar'
-import {
-  DropdownMenu,
-  DropdownMenuContent,
-  DropdownMenuGroup,
-  DropdownMenuItem,
-  DropdownMenuLabel,
-  DropdownMenuSeparator,
-  DropdownMenuTrigger,
-} from '@/components/ui/dropdown-menu'
 import {
   SidebarMenu,
   SidebarMenuButton,
@@ -28,18 +12,18 @@ import {
 } from '@/components/ui/sidebar'
 import { useActiveOrganization } from '@/hooks/use-active-organization'
 import { useAuthStore } from '@/stores/auth'
+import { cn } from '@/lib/utils'
 
 interface NavUserProps {
   user: GetProfile200User
 }
 
 export function NavUser({ user }: NavUserProps) {
-  const { isMobile } = useSidebar()
   const navigate = useNavigate()
   const logout = useAuthStore(s => s.logout)
   const { mutateAsync: signOutRequest } = useSignOut()
+  const { isMobile, setOpenMobile } = useSidebar()
   const { slug } = useActiveOrganization()
-  const canOpenSettings = Boolean(slug)
 
   const handleLogout = async () => {
     await signOutRequest()
@@ -47,76 +31,48 @@ export function NavUser({ user }: NavUserProps) {
     navigate({ to: '/sign-in' })
   }
 
+  const openProfile = () => {
+    if (!slug) return
+    navigate({ to: '/$org/profile', params: { org: slug } })
+    if (isMobile) setOpenMobile(false)
+  }
+
+  const iconBtnClass =
+    'sidebar-icon-btn sidebar-footer-btn h-10 rounded-lg px-3 text-[13px] font-medium text-slate-700 hover:text-slate-900'
+
   return (
-    <SidebarMenu>
+    <SidebarMenu className="gap-1 group-data-[collapsible=icon]:items-center">
       <SidebarMenuItem>
-        <DropdownMenu>
-          <DropdownMenuTrigger asChild>
-            <SidebarMenuButton
-              size="lg"
-              className="data-[state=open]:bg-sidebar-accent data-[state=open]:text-sidebar-accent-foreground"
-            >
-              <Avatar className="h-8 w-8 rounded-lg">
-                <AvatarImage src={user.avatarUrl} alt={user.name} />
-                <AvatarFallback className="rounded-lg">{user.name.charAt(0)}</AvatarFallback>
-              </Avatar>
-              <div className="grid flex-1 text-left text-sm leading-tight">
-                <span className="truncate font-medium">{user.name}</span>
-                <span className="text-muted-foreground truncate text-xs">{user.email}</span>
-              </div>
-              <IconDotsVertical className="ml-auto size-4" />
-            </SidebarMenuButton>
-          </DropdownMenuTrigger>
-          <DropdownMenuContent
-            className="w-(--radix-dropdown-menu-trigger-width) min-w-56 rounded-lg"
-            side={isMobile ? 'bottom' : 'right'}
-            align="end"
-            sideOffset={4}
-          >
-            <DropdownMenuLabel className="p-0 font-normal">
-              <div className="flex items-center gap-2 px-1 py-1.5 text-left text-sm">
-                <Avatar className="h-8 w-8 rounded-lg">
-                  <AvatarImage src={user.avatarUrl} alt={user.name} />
-                  <AvatarFallback className="rounded-lg">{user.name}</AvatarFallback>
-                </Avatar>
-                <div className="grid flex-1 text-left text-sm leading-tight">
-                  <span className="truncate font-medium">{user.name}</span>
-                  <span className="text-muted-foreground truncate text-xs">{user.email}</span>
-                </div>
-              </div>
-            </DropdownMenuLabel>
-            <DropdownMenuSeparator />
-            <DropdownMenuGroup>
-              <DropdownMenuItem>
-                <IconUserCircle />
-                Account
-              </DropdownMenuItem>
-              <DropdownMenuItem>
-                <IconCreditCard />
-                Billing
-              </DropdownMenuItem>
-              <DropdownMenuItem>
-                <IconNotification />
-                Notifications
-              </DropdownMenuItem>
-              <DropdownMenuItem
-                disabled={!canOpenSettings}
-                onClick={() => {
-                  if (!canOpenSettings) return
-                  navigate({ to: `/${slug}/settings` })
-                }}
-              >
-                <IconSettings />
-                Configurações
-              </DropdownMenuItem>
-            </DropdownMenuGroup>
-            <DropdownMenuSeparator />
-            <DropdownMenuItem onClick={handleLogout}>
-              <IconLogout />
-              Log out
-            </DropdownMenuItem>
-          </DropdownMenuContent>
-        </DropdownMenu>
+        <SidebarMenuButton
+          tooltip={user.name}
+          className={cn(iconBtnClass, 'hover:bg-white/70 group-data-[collapsible=icon]:overflow-visible')}
+          onClick={openProfile}
+        >
+          <Avatar className="size-7 rounded-full">
+            <AvatarImage src={user.avatarUrl} alt={user.name} />
+            <AvatarFallback className="rounded-full bg-gradient-to-br from-orange-400 via-violet-500 to-rose-400 text-xs font-semibold text-white">
+              {user.name.charAt(0)}
+            </AvatarFallback>
+          </Avatar>
+          <span className="truncate text-sm font-medium text-slate-900 group-data-[collapsible=icon]:hidden">
+            {user.name}
+          </span>
+          <ChevronRight className="ml-auto size-4 text-slate-400 group-data-[collapsible=icon]:hidden" />
+        </SidebarMenuButton>
+      </SidebarMenuItem>
+
+      <SidebarMenuItem>
+        <SidebarMenuButton
+          tooltip="Sair"
+          className={cn(
+            iconBtnClass,
+            'text-[#d32f2f] hover:bg-red-50 hover:text-[#c62828] [&_svg]:text-[#d32f2f]'
+          )}
+          onClick={handleLogout}
+        >
+          <LogOut className="size-[18px] stroke-[1.75]" />
+          <span className="group-data-[collapsible=icon]:hidden">Sair</span>
+        </SidebarMenuButton>
       </SidebarMenuItem>
     </SidebarMenu>
   )

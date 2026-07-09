@@ -44,13 +44,13 @@ DB_HOST=postgres          # Host do PostgreSQL
 DB_PORT=5432             # Porta do PostgreSQL
 DB_USER=postgres         # Usuário do banco
 DB_PASSWORD=sua_senha    # Senha do banco
-DB_NAME=houseapp         # Nome do banco
+DB_NAME=houseapp_v2      # Nome do banco (v2 — schema incompatível com houseapp legado)
 ```
 
 ### URL Completa (Legacy)
 ```bash
 # Legacy Database URL (opcional - para compatibilidade)
-DATABASE_URL=postgresql://postgres:senha@host:5432/houseapp
+DATABASE_URL=postgresql://postgres:senha@host:5432/houseapp_v2
 ```
 
 **Nota:** O sistema prioriza as variáveis individuais. Se `DATABASE_URL` estiver definida, ela será usada para compatibilidade.
@@ -90,3 +90,7 @@ sudo cp deploy/env/web.env /opt/stacks/houseapp/web.env
 - [ ] Configurar valores reais nos arquivos
 - [ ] Verificar se PostgreSQL está na rede `network_swarm_public`
 - [ ] Fazer deploy da stack
+
+## 🔄 Migração de produção (schema v2)
+
+Antes de deployar o código v2 em `main`, siga o guia em [`PROD_MIGRATION.md`](./PROD_MIGRATION.md).

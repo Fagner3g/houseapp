@@ -8,7 +8,6 @@
 </head>
 <body>
   <div id="app">
-    <!-- Header -->
     <header>
       <span class="logo">🏠 HouseApp</span>
       <select id="org-select" class="org-select hidden" title="Organização"></select>
@@ -19,190 +18,38 @@
       </div>
     </header>
 
-    <!-- Login screen -->
     <div id="screen-login" class="screen hidden">
       <p class="login-msg">Faça login no HouseApp para continuar.</p>
       <button id="btn-login" class="btn-primary">Abrir HouseApp</button>
     </div>
 
-    <!-- Loading screen -->
     <div id="screen-loading" class="screen hidden">
-      <div class="skeleton skeleton-kpi"></div>
       <div class="skeleton skeleton-list"></div>
     </div>
 
-    <!-- Error screen -->
     <div id="screen-error" class="screen hidden">
       <p class="error-msg">Erro ao carregar dados.</p>
       <button id="btn-retry" class="btn-primary">Tentar novamente</button>
     </div>
 
-    <!-- Main screen -->
     <div id="screen-main" class="screen hidden">
-      <!-- Month navigator -->
-      <div class="month-nav">
-        <button id="btn-prev-month">‹</button>
-        <span id="month-label"></span>
-        <button id="btn-next-month">›</button>
-      </div>
-
-      <!-- KPIs -->
-      <div class="kpi-grid">
-        <div class="kpi">
-          <span class="kpi-label" id="label-income">A receber</span>
-          <span class="kpi-value income" id="kpi-income">—</span>
-        </div>
-        <div class="kpi">
-          <span class="kpi-label" id="label-expense">A pagar</span>
-          <span class="kpi-value expense" id="kpi-expense">—</span>
-        </div>
-        <div class="kpi">
-          <span class="kpi-label">Saldo</span>
-          <span class="kpi-value balance" id="kpi-balance">—</span>
-        </div>
-      </div>
-
-      <section id="section-investments">
-        <div class="section-header invest-header">
-          <span class="dot dot-blue"></span>
-          <span id="investments-title">Aportes do mês</span>
-        </div>
-        <ul id="list-investments" class="tx-list"></ul>
-        <p id="investments-empty" class="empty-msg hidden">Nenhum aporte pendente</p>
-      </section>
-
-      <section id="section-reminders">
-        <div class="section-header reminders-header">
-          <span class="dot dot-purple"></span>
-          <span id="reminders-title">Lembretes</span>
-        </div>
-        <ul id="list-reminders" class="tx-list"></ul>
-        <p id="reminders-empty" class="empty-msg hidden">Nenhum lembrete ativo</p>
-      </section>
-
-      <!-- Overdue transactions (hidden for future months) -->
-      <section id="section-overdue">
-        <div class="section-header overdue-header">
-          <span class="dot dot-red"></span>
-          <span id="overdue-title">Vencidas</span>
-        </div>
-        <ul id="list-overdue" class="tx-list"></ul>
-        <p id="overdue-empty" class="empty-msg hidden">Nenhuma transação vencida</p>
-      </section>
-
-      <!-- Upcoming alerts (current month only) -->
-      <section id="section-upcoming">
-        <div class="section-header upcoming-header">
-          <span class="dot dot-yellow"></span>
-          <span id="upcoming-title">Próximas</span>
-        </div>
-        <ul id="list-upcoming" class="tx-list"></ul>
-        <p id="upcoming-empty" class="empty-msg hidden">Nenhum alerta próximo</p>
-      </section>
-
-      <!-- Open transbordo (due before view month, still pending/partial) -->
-      <section id="section-transbordo">
-        <div class="section-header transbordo-header">
-          <span class="dot dot-orange"></span>
-          <span id="transbordo-title">Transbordo</span>
-        </div>
-        <ul id="list-transbordo" class="tx-list"></ul>
-        <p id="transbordo-empty" class="empty-msg hidden">Nenhum transbordo aberto</p>
-      </section>
-
-      <!-- All transactions of the month -->
-      <section id="section-all">
-        <div class="section-header all-header">
-          <span class="dot dot-gray"></span>
-          <span id="all-title">Todas do mês</span>
-        </div>
-        <ul id="list-all" class="tx-list tx-list-scroll"></ul>
-        <p id="all-empty" class="empty-msg hidden">Nenhuma transação no mês</p>
-      </section>
+      <div id="summary-badge" class="summary-badge"></div>
+      <ul id="list-actions" class="tx-list"></ul>
+      <p id="list-empty" class="empty-msg hidden">Nenhuma pendência no momento.</p>
     </div>
-  </div>
 
-  <!-- Snooze reminder modal -->
-  <div id="snooze-modal" class="modal-backdrop hidden">
-    <div class="modal">
-      <p class="modal-title">Adiar lembrete</p>
-      <label class="modal-label">Adiar até
-        <input type="date" id="snooze-date" class="modal-input" />
-      </label>
-      <p id="snooze-hint" class="modal-hint"></p>
-      <div class="modal-actions">
-        <button id="snooze-cancel" class="btn-secondary">Cancelar</button>
-        <button id="snooze-confirm" class="btn-primary">Confirmar</button>
+    <div id="pay-modal" class="modal hidden">
+      <div class="modal-content">
+        <h3>Pagar transação</h3>
+        <label>Valor pago<input id="pay-amount" type="text" inputmode="numeric" /></label>
+        <label>Data<input id="pay-date" type="date" /></label>
+        <div class="modal-actions">
+          <button id="pay-cancel">Cancelar</button>
+          <button id="pay-confirm" class="btn-primary">Confirmar</button>
+        </div>
       </div>
     </div>
   </div>
-
-  <!-- Confirm / alert modal -->
-  <div id="confirm-modal" class="modal-backdrop hidden">
-    <div class="modal">
-      <p id="confirm-message" class="modal-title"></p>
-      <div class="modal-actions">
-        <button id="confirm-cancel" class="btn-secondary">Cancelar</button>
-        <button id="confirm-ok" class="btn-primary">Confirmar</button>
-      </div>
-    </div>
-  </div>
-
-  <!-- Complete reminder with transaction modal -->
-  <div id="complete-reminder-modal" class="modal-backdrop hidden">
-    <div class="modal modal-complete-reminder">
-      <p class="modal-title">Concluir e registrar transação</p>
-      <p class="modal-desc">Informe o valor real para registrar no relatório e concluir o período.</p>
-      <div class="complete-reminder-summary">
-        <span class="complete-reminder-icon" aria-hidden="true">🧾</span>
-        <div class="complete-reminder-summary-text">
-          <p id="complete-reminder-title" class="complete-reminder-name"></p>
-          <p id="complete-reminder-amount-hint" class="modal-hint"></p>
-        </div>
-      </div>
-      <label class="modal-label">Valor
-        <input type="text" id="complete-reminder-amount" class="modal-input" inputmode="numeric" placeholder="0,00" />
-      </label>
-      <p id="complete-reminder-amount-error" class="modal-error hidden" role="alert">Informe um valor maior que zero</p>
-      <p id="complete-reminder-amount-hint-form" class="modal-hint hidden"></p>
-      <label class="modal-label">Data da transação
-        <div class="modal-date-row">
-          <input type="date" id="complete-reminder-date" class="modal-input" />
-          <button type="button" id="btn-complete-reminder-today" class="btn-today">Hoje</button>
-        </div>
-      </label>
-      <label class="modal-label">Descrição (opcional)
-        <input type="text" id="complete-reminder-description" class="modal-input" />
-      </label>
-      <div class="modal-actions">
-        <button id="complete-reminder-cancel" class="btn-secondary">Cancelar</button>
-        <button id="complete-reminder-confirm" class="btn-primary">Registrar e concluir</button>
-      </div>
-    </div>
-  </div>
-
-  <!-- Pay modal -->
-  <div id="pay-modal" class="modal-backdrop hidden">
-    <div class="modal">
-      <p class="modal-title">Confirmar pagamento</p>
-      <label class="modal-label">Data do pagamento
-        <div class="modal-date-row">
-          <input type="date" id="pay-date" class="modal-input" />
-          <button type="button" id="btn-today" class="btn-today">Hoje</button>
-        </div>
-      </label>
-      <label class="modal-label">Valor pago (R$)
-        <input type="text" id="pay-amount" class="modal-input" inputmode="numeric" placeholder="0,00" />
-      </label>
-      <div class="modal-actions">
-        <button id="pay-cancel" class="btn-secondary">Cancelar</button>
-        <button id="pay-confirm" class="btn-primary">Confirmar</button>
-      </div>
-    </div>
-  </div>
-
-  <script src="transaction-display.js"></script>
-  <script src="reminder-display.js"></script>
   <script src="popup.js"></script>
 </body>
 </html>

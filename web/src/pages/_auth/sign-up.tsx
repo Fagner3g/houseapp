@@ -17,6 +17,7 @@ import {
   FormMessage,
 } from '@/components/ui/form'
 import { Input } from '@/components/ui/input'
+import { readHttpErrorMessage } from '@/lib/http'
 
 export const Route = createFileRoute('/_auth/sign-up')({
   component: Index,
@@ -52,8 +53,8 @@ function Index() {
       await createUser({ data: { ...values, inviteToken } })
       toast.success('Cadastro realizado! Verifique seu e-mail.')
       navigate({ to: '/sign-in' })
-    } catch {
-      toast.error('Erro ao cadastrar')
+    } catch (error) {
+      toast.error(await readHttpErrorMessage(error, 'Erro ao cadastrar'))
     } finally {
       setIsSubmitting(false)
     }
@@ -61,7 +62,7 @@ function Index() {
 
   return (
     <div className="h-full grid place-items-center px-4">
-      <div className="w-full max-w-sm rounded-xl border bg-card p-6 shadow-sm">
+      <div className="w-full max-w-sm rounded-lg border bg-card p-6 shadow-sm">
         <div className="mb-4 text-center">
           <h1 className="text-xl font-semibold tracking-tight">Criar conta</h1>
           <p className="text-sm text-muted-foreground">Preencha seus dados para começar</p>

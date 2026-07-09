@@ -1,0 +1,101 @@
+---
+description: Finance Kernel — shared domain logic in @houseapp/finance-core, layered features (app-wide)
+globs: "{web/src/**,api/src/**,packages/**}"
+alwaysApply: true
+---
+
+# Finance Kernel Pattern
+
+**App-wide** scope (web + API + legacy). Apply to **new code** and **any refactor that touches a file**. Untouched legacy files stay as-is until edited.
+
+## Language
+
+- Use **English** for identifiers, comments, docs, rules, and kernel error messages.
+- **pt-BR user-facing copy** (labels, hints, formatted titles) belongs in the **web layer** (`web/src/lib/`, components), not in `finance-core`.
+- Regex patterns may match Portuguese bank/OFX strings — that is data, not UI copy.
+
+## Layers
+
+| Layer | Location | Contains |
+|-------|----------|----------|
+| Kernel | `packages/finance-core/` | Pure functions, centavos (`bigint`), classifiers, periods, metrics |
+| Feature lib | `features/<domain>/lib/` | Screen glue, API→kernel mapping |
+| Hooks | `features/<domain>/hooks/` | React Query, `useMemo`, orchestration |
+| Components | `features/<domain>/components/` | JSX, local UI state |
+| API service | `api/src/modules/*/*.service.ts` | Validation, I/O, coordination |
+| API logic | `api/src/modules/*/*.logic.ts` | Legacy — extract to `finance-core` when refactoring |
+| API domain | `api/src/domain/` | Legacy — no new financial code here |
+
+## Where to put new code
+
+1. Rule used in API + Web → `@houseapp/finance-core`
+2. Rule used in one feature only → `features/<domain>/lib/`
+3. Presentation only → `components/` or `hooks/`
+4. I/O or file parser → `api/src/modules/<feature>/`
+
+## Before creating a function
+
+1. **Search `@houseapp/finance-core` first** (`money/`, `billing-cycle/`, `invoice/`, `splits/`, package `index.ts`). Reuse or extend; do not reimplement.
+2. Then search the current module / feature `lib/` for an existing helper.
+3. Only create a new function when nothing fits. Prefer centavos/`bigint` APIs already in the kernel over local `string`/`number` duplicates.
+
+## Package layout
+
+```
+packages/finance-core/src/
+  errors.ts              # shared infra (exceptions)
+  money/                 # centavos + string parsing
+  billing-cycle/         # billing cycle dates
+  invoice/               # invoice metrics and classifiers
+  splits/                # installment split share / extrapolation
+```
+
+Each domain exposes an `index.ts`. Only infra files stay flat at the root (`errors.ts`).
+
+## File size (hard limit)
+
+- **Never** create or grow a file beyond ~150 lines without splitting first.
+- Parsers and complex modules must use a **folder + `index.ts` barrel** from day one.
+- **Never** create monolithic `*-parser.ts` files at module root — e.g. `api/src/modules/statements/itau-xlsx/`, not `itau-xlsx-parser.ts`.
+- Good examples: `packages/finance-core/src/invoice/` · `api/src/modules/alerts/whatsapp-alert-message/`
+
+## Complex domains
+
+Split by **role** into a **folder** with `index.ts`:
+
+`types.ts` · `classifiers.ts` · `periods.ts` · `filters.ts` · `metrics.ts` · `index.ts`
+
+## On every refactor (required cleanup)
+
+When you touch or extract a slice:
+
+- **Remove obsolete code** — unused exports, `@deprecated` wrappers, dead fields, duplicate helpers, and tests that only covered the dead API.
+- **Do not keep compatibility shims** unless an external consumer still needs them; if kept, document why and delete on the next touch once unused.
+- Prefer a folder + `index.ts` barrel over many `foo.bar.ts` files beside the module root.
+
+## Money
+
+- Kernel and API: centavos (`bigint`)
+- Web UI: convert at the hook boundary (`reaisToCents` / `centsToReais`)
+- Never duplicate the same rule with `number` in the kernel and `bigint` in the API
+
+## Don't
+
+- React, Drizzle, or HTTP in `finance-core`
+- `lib/` or `finance-core` importing `features/`
+- Duplicate rules between API and web — extract to the kernel
+- New business logic in `components/` or `api/src/domain/`
+- Expand large legacy files — extract the changed slice
+- Create a local money/date helper that already exists in `finance-core`
+- Leave dead `@deprecated` or unused exports after a split/extract
+- pt-BR display strings in `finance-core`
+- Create or grow files past ~150 lines without splitting
+- Add monolithic `*-parser.ts` at module root — use a folder + `index.ts` barrel
+
+## Gradual migration (on touch)
+
+Suggested order: `money` + `billing-cycle` → `invoice/*` → `splits/` + `installments/` → `reports/` → feature layout + legacy `domain/`.
+
+Web candidates: `lib/billing-cycle`, `lib/credit-card-invoice-metrics`, `lib/transaction-kpi`, `features/transactions/split-debt-summary.utils`, `features/accounts/constants`, `import-review-types`.
+
+API candidates: `core/money`, `core/billing-cycle`, `modules/statements/*`, `modules/splits/split-debt-summary.logic`, `modules/transactions/credit-card-installments.logic`, `modules/reports/report-*.ts`, `domain/` → `modules/` on touch.
