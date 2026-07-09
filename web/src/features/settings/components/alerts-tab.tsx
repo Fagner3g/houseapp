@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react'
+import { useEffect, useId, useState } from 'react'
 import { toast } from 'sonner'
 
 import {
@@ -11,7 +11,7 @@ import {
 import { CreateAlertRuleBodyChannelsItem } from '@/api/generated/model/createAlertRuleBodyChannelsItem'
 import { CreateAlertRuleBodyScope } from '@/api/generated/model/createAlertRuleBodyScope'
 import type { ListAlertRules200RulesItem } from '@/api/generated/model/listAlertRules200RulesItem'
-import { UpdateAlertRuleBodyChannelsItem } from '@/api/generated/model/updateAlertRuleBodyChannelsItem'
+import type { UpdateAlertRuleBodyChannelsItem } from '@/api/generated/model/updateAlertRuleBodyChannelsItem'
 import { Button } from '@/components/ui/button'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
 import { Input } from '@/components/ui/input'
@@ -112,6 +112,7 @@ function defaultFormForType(ruleType: RuleType) {
 export function AlertsSettingsTab() {
   const { slug } = useActiveOrganization()
   const queryClient = useQueryClient()
+  const alertFormId = useId()
   const { data, isLoading } = useListAlertRules(slug, { query: { enabled: !!slug } })
   const { mutateAsync: createRule, isPending: isCreating } = useCreateAlertRule()
   const { mutateAsync: updateRule, isPending: isUpdating } = useUpdateAlertRule()
@@ -147,7 +148,7 @@ export function AlertsSettingsTab() {
     setOverdueFrequency(defaults.overdueFrequency)
     setOverdueInterval(defaults.overdueInterval)
     setChannels(defaults.channels)
-  }, [data, ruleType])
+  }, [data, ruleType, activeOrgRules])
 
   const toggleDay = (day: number) => {
     setSelectedDays(prev =>
@@ -237,7 +238,7 @@ export function AlertsSettingsTab() {
       <AlertsScheduleCard />
       <AlertsOperationsCard />
 
-      <Card id="alert-rule-form">
+      <Card id={alertFormId}>
         <CardHeader>
           <CardTitle>Regra de alerta</CardTitle>
           <CardDescription>

@@ -8,6 +8,7 @@ import type {
   TransactionStatus,
   TransactionType,
   NotifyTargetType,
+  TransactionNotifyOverdueConfig,
 } from '@/db/schemas/transactions'
 import { badRequest, notFound } from '@/core/errors'
 import { centavosToString, parseCentavos } from '@/core/money'
@@ -45,6 +46,7 @@ import {
 } from './credit-card-installment-repair.logic'
 import { buildPeriodicInstallments } from './periodic-installments.logic'
 import { buildPeriodicInstallmentSeriesRepairPlan } from './periodic-installment-repair.logic'
+import { normalizeScheduledAt } from './schedule-payment'
 
 export type CreateTransactionResult = {
   transaction: TransactionDto
@@ -68,6 +70,7 @@ export type TransactionDto = {
   status: TransactionStatus
   paidAt: string | null
   paidAmount: string | null
+  paymentScheduledAt: string | null
   counterparty: string | null
   installmentNumber: number | null
   installmentsTotal: number | null
@@ -80,6 +83,7 @@ export type TransactionDto = {
   notifyContactName: string | null
   notifyContactPhone: string | null
   notifyDaysBefore: number[] | null
+  notifyOverdueConfig: TransactionNotifyOverdueConfig | null
   createdAt: string
   updatedAt: string
 }
@@ -104,6 +108,7 @@ function toTransactionDto(
     status: transaction.status,
     paidAt: transaction.paidAt?.toISOString() ?? null,
     paidAmount: centavosToString(transaction.paidAmount),
+    paymentScheduledAt: transaction.paymentScheduledAt?.toISOString() ?? null,
     counterparty: transaction.counterparty,
     installmentNumber: transaction.installmentNumber,
     installmentsTotal: transaction.installmentsTotal,
@@ -116,6 +121,7 @@ function toTransactionDto(
     notifyContactName: transaction.notifyContactName,
     notifyContactPhone: transaction.notifyContactPhone,
     notifyDaysBefore: transaction.notifyDaysBefore ?? undefined,
+    notifyOverdueConfig: transaction.notifyOverdueConfig ?? undefined,
     createdAt: transaction.createdAt.toISOString(),
     updatedAt: transaction.updatedAt.toISOString(),
   }
@@ -542,6 +548,7 @@ export class TransactionService {
       status,
       paidAt,
       paidAmount: newPaidAmount,
+      paymentScheduledAt: null,
     })
 
     if (!updated) {
@@ -550,6 +557,53 @@ export class TransactionService {
 
     const categoryMap = await this.transactionRepository.getCategoryIds([updated.id])
 
+    return toTransactionDto(updated, categoryMap.get(updated.id) ?? [])
+  }
+
+  async schedulePayment(
+    organizationId: string,
+    id: string,
+    input: { scheduledAt: string }
+  ): Promise<TransactionDto> {
+    const existing = await this.transactionRepository.findById(organizationId, id)
+
+    if (!existing) {
+      throw notFound('Transaction not found')
+    }
+
+    if (existing.status === 'paid' || existing.status === 'canceled') {
+      throw badRequest('Cannot schedule payment on a paid or canceled transaction')
+    }
+
+    const paymentScheduledAt = normalizeScheduledAt(input.scheduledAt)
+    const updated = await this.transactionRepository.update(id, { paymentScheduledAt })
+
+    if (!updated) {
+      throw notFound('Transaction not found')
+    }
+
+    const categoryMap = await this.transactionRepository.getCategoryIds([updated.id])
+    return toTransactionDto(updated, categoryMap.get(updated.id) ?? [])
+  }
+
+  async cancelScheduledPayment(organizationId: string, id: string): Promise<TransactionDto> {
+    const existing = await this.transactionRepository.findById(organizationId, id)
+
+    if (!existing) {
+      throw notFound('Transaction not found')
+    }
+
+    if (!existing.paymentScheduledAt) {
+      throw badRequest('Transaction has no scheduled payment')
+    }
+
+    const updated = await this.transactionRepository.update(id, { paymentScheduledAt: null })
+
+    if (!updated) {
+      throw notFound('Transaction not found')
+    }
+
+    const categoryMap = await this.transactionRepository.getCategoryIds([updated.id])
     return toTransactionDto(updated, categoryMap.get(updated.id) ?? [])
   }
 
@@ -661,6 +715,7 @@ export class TransactionService {
             status,
             paidAt,
             paidAmount: newPaidAmount,
+            paymentScheduledAt: null,
             updatedAt: new Date(),
           })
           .where(
@@ -1172,7 +1227,8 @@ export class TransactionService {
       input.notifyUserId !== undefined ||
       input.notifyContactName !== undefined ||
       input.notifyContactPhone !== undefined ||
-      input.notifyDaysBefore !== undefined
+      input.notifyDaysBefore !== undefined ||
+      input.notifyOverdueConfig !== undefined
 
     if (!hasNotifyInput) {
       return existing ?? resolveNotifyTarget({ notifyEnabled: false })

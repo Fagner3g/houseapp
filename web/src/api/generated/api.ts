@@ -31,6 +31,7 @@ import type {
   BulkNotifyTargetBody,
   BulkReviewImport200,
   BulkReviewImportBody,
+  CancelScheduledTransactionPayment200,
   CancelSplitPayment200,
   CancelTransactionPayment200,
   ConfirmAiAction200,
@@ -145,6 +146,8 @@ import type {
   RejectAiActionBody,
   RenameOrg200,
   RenameOrgBody,
+  ScheduleTransactionPayment200,
+  ScheduleTransactionPaymentBody,
   SendManualAlert200,
   SendManualAlertBody,
   SignIn200,
@@ -7039,6 +7042,194 @@ export const useCancelTransactionPayment = <
   TContext
 > => {
   const mutationOptions = getCancelTransactionPaymentMutationOptions(options);
+
+  return useMutation(mutationOptions, queryClient);
+};
+
+/**
+ * Schedule a pending transaction payment (suppresses alerts until date)
+ */
+export const getScheduleTransactionPaymentUrl = (slug: string, id: string) => {
+  return `/organizations/${slug}/transactions/${id}/schedule-payment`;
+};
+
+export const scheduleTransactionPayment = async (
+  slug: string,
+  id: string,
+  scheduleTransactionPaymentBody: ScheduleTransactionPaymentBody,
+  options?: RequestInit,
+): Promise<ScheduleTransactionPayment200> => {
+  return http<ScheduleTransactionPayment200>(
+    getScheduleTransactionPaymentUrl(slug, id),
+    {
+      ...options,
+      method: "PATCH",
+      headers: { "Content-Type": "application/json", ...options?.headers },
+      body: JSON.stringify(scheduleTransactionPaymentBody),
+    },
+  );
+};
+
+export const getScheduleTransactionPaymentMutationOptions = <
+  TError = unknown,
+  TContext = unknown,
+>(options?: {
+  mutation?: UseMutationOptions<
+    Awaited<ReturnType<typeof scheduleTransactionPayment>>,
+    TError,
+    { slug: string; id: string; data: ScheduleTransactionPaymentBody },
+    TContext
+  >;
+  request?: SecondParameter<typeof http>;
+}): UseMutationOptions<
+  Awaited<ReturnType<typeof scheduleTransactionPayment>>,
+  TError,
+  { slug: string; id: string; data: ScheduleTransactionPaymentBody },
+  TContext
+> => {
+  const mutationKey = ["scheduleTransactionPayment"];
+  const { mutation: mutationOptions, request: requestOptions } = options
+    ? options.mutation &&
+      "mutationKey" in options.mutation &&
+      options.mutation.mutationKey
+      ? options
+      : { ...options, mutation: { ...options.mutation, mutationKey } }
+    : { mutation: { mutationKey }, request: undefined };
+
+  const mutationFn: MutationFunction<
+    Awaited<ReturnType<typeof scheduleTransactionPayment>>,
+    { slug: string; id: string; data: ScheduleTransactionPaymentBody }
+  > = (props) => {
+    const { slug, id, data } = props ?? {};
+
+    return scheduleTransactionPayment(slug, id, data, requestOptions);
+  };
+
+  return { mutationFn, ...mutationOptions };
+};
+
+export type ScheduleTransactionPaymentMutationResult = NonNullable<
+  Awaited<ReturnType<typeof scheduleTransactionPayment>>
+>;
+export type ScheduleTransactionPaymentMutationBody =
+  ScheduleTransactionPaymentBody;
+export type ScheduleTransactionPaymentMutationError = unknown;
+
+export const useScheduleTransactionPayment = <
+  TError = unknown,
+  TContext = unknown,
+>(
+  options?: {
+    mutation?: UseMutationOptions<
+      Awaited<ReturnType<typeof scheduleTransactionPayment>>,
+      TError,
+      { slug: string; id: string; data: ScheduleTransactionPaymentBody },
+      TContext
+    >;
+    request?: SecondParameter<typeof http>;
+  },
+  queryClient?: QueryClient,
+): UseMutationResult<
+  Awaited<ReturnType<typeof scheduleTransactionPayment>>,
+  TError,
+  { slug: string; id: string; data: ScheduleTransactionPaymentBody },
+  TContext
+> => {
+  const mutationOptions = getScheduleTransactionPaymentMutationOptions(options);
+
+  return useMutation(mutationOptions, queryClient);
+};
+
+/**
+ * Cancel a scheduled payment on a pending transaction
+ */
+export const getCancelScheduledTransactionPaymentUrl = (
+  slug: string,
+  id: string,
+) => {
+  return `/organizations/${slug}/transactions/${id}/cancel-scheduled-payment`;
+};
+
+export const cancelScheduledTransactionPayment = async (
+  slug: string,
+  id: string,
+  options?: RequestInit,
+): Promise<CancelScheduledTransactionPayment200> => {
+  return http<CancelScheduledTransactionPayment200>(
+    getCancelScheduledTransactionPaymentUrl(slug, id),
+    {
+      ...options,
+      method: "PATCH",
+    },
+  );
+};
+
+export const getCancelScheduledTransactionPaymentMutationOptions = <
+  TError = unknown,
+  TContext = unknown,
+>(options?: {
+  mutation?: UseMutationOptions<
+    Awaited<ReturnType<typeof cancelScheduledTransactionPayment>>,
+    TError,
+    { slug: string; id: string },
+    TContext
+  >;
+  request?: SecondParameter<typeof http>;
+}): UseMutationOptions<
+  Awaited<ReturnType<typeof cancelScheduledTransactionPayment>>,
+  TError,
+  { slug: string; id: string },
+  TContext
+> => {
+  const mutationKey = ["cancelScheduledTransactionPayment"];
+  const { mutation: mutationOptions, request: requestOptions } = options
+    ? options.mutation &&
+      "mutationKey" in options.mutation &&
+      options.mutation.mutationKey
+      ? options
+      : { ...options, mutation: { ...options.mutation, mutationKey } }
+    : { mutation: { mutationKey }, request: undefined };
+
+  const mutationFn: MutationFunction<
+    Awaited<ReturnType<typeof cancelScheduledTransactionPayment>>,
+    { slug: string; id: string }
+  > = (props) => {
+    const { slug, id } = props ?? {};
+
+    return cancelScheduledTransactionPayment(slug, id, requestOptions);
+  };
+
+  return { mutationFn, ...mutationOptions };
+};
+
+export type CancelScheduledTransactionPaymentMutationResult = NonNullable<
+  Awaited<ReturnType<typeof cancelScheduledTransactionPayment>>
+>;
+
+export type CancelScheduledTransactionPaymentMutationError = unknown;
+
+export const useCancelScheduledTransactionPayment = <
+  TError = unknown,
+  TContext = unknown,
+>(
+  options?: {
+    mutation?: UseMutationOptions<
+      Awaited<ReturnType<typeof cancelScheduledTransactionPayment>>,
+      TError,
+      { slug: string; id: string },
+      TContext
+    >;
+    request?: SecondParameter<typeof http>;
+  },
+  queryClient?: QueryClient,
+): UseMutationResult<
+  Awaited<ReturnType<typeof cancelScheduledTransactionPayment>>,
+  TError,
+  { slug: string; id: string },
+  TContext
+> => {
+  const mutationOptions =
+    getCancelScheduledTransactionPaymentMutationOptions(options);
 
   return useMutation(mutationOptions, queryClient);
 };

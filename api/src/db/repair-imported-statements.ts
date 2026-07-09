@@ -26,8 +26,8 @@ function paymentDateFromTitle(title: string, fallbackYear: number): Date | null 
   const match = title.match(/Pagamento em (\d{2})\s+(JAN|FEV|MAR|ABR|MAI|JUN|JUL|AGO|SET|OUT|NOV|DEZ)/i)
   if (!match) return null
 
-  const day = Number.parseInt(match[1]!, 10)
-  const month = MONTH_MAP[match[2]!.toUpperCase()]
+  const day = Number.parseInt(match[1] as string, 10)
+  const month = MONTH_MAP[(match[2] as string).toUpperCase()]
   if (!month) return null
 
   return new Date(Date.UTC(fallbackYear, month - 1, day, 12, 0, 0))
@@ -288,8 +288,6 @@ async function repairImportedStatements() {
             .where(eq(transactions.id, row.id))
           incomeMarkedPaid += 1
         }
-
-        continue
       }
     }
   }

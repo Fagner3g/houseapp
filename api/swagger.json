@@ -7707,6 +7707,19 @@
                               }
                             ]
                           },
+                          "paymentScheduledAt": {
+                            "anyOf": [
+                              {
+                                "type": "string"
+                              },
+                              {
+                                "nullable": true,
+                                "enum": [
+                                  null
+                                ]
+                              }
+                            ]
+                          },
                           "counterparty": {
                             "anyOf": [
                               {
@@ -7841,6 +7854,58 @@
                               "maximum": 9007199254740991
                             }
                           },
+                          "notifyOverdueConfig": {
+                            "anyOf": [
+                              {
+                                "anyOf": [
+                                  {
+                                    "type": "object",
+                                    "properties": {
+                                      "disabled": {
+                                        "type": "boolean",
+                                        "enum": [
+                                          true
+                                        ]
+                                      }
+                                    },
+                                    "required": [
+                                      "disabled"
+                                    ],
+                                    "additionalProperties": false
+                                  },
+                                  {
+                                    "type": "object",
+                                    "properties": {
+                                      "frequency": {
+                                        "type": "string",
+                                        "enum": [
+                                          "daily",
+                                          "weekly",
+                                          "monthly"
+                                        ]
+                                      },
+                                      "interval": {
+                                        "type": "integer",
+                                        "minimum": 1,
+                                        "maximum": 9007199254740991
+                                      }
+                                    },
+                                    "required": [
+                                      "frequency",
+                                      "interval"
+                                    ],
+                                    "additionalProperties": false
+                                  }
+                                ]
+                              },
+                              {
+                                "nullable": true,
+                                "enum": [
+                                  null
+                                ]
+                              }
+                            ]
+                          },
                           "createdAt": {
                             "type": "string"
                           },
@@ -7864,6 +7929,7 @@
                           "status",
                           "paidAt",
                           "paidAmount",
+                          "paymentScheduledAt",
                           "counterparty",
                           "installmentNumber",
                           "installmentsTotal",
@@ -8221,12 +8287,72 @@
                     ]
                   },
                   "notifyDaysBefore": {
-                    "type": "array",
-                    "items": {
-                      "type": "integer",
-                      "minimum": 0,
-                      "maximum": 9007199254740991
-                    }
+                    "anyOf": [
+                      {
+                        "type": "array",
+                        "items": {
+                          "type": "integer",
+                          "minimum": 0,
+                          "maximum": 9007199254740991
+                        }
+                      },
+                      {
+                        "nullable": true,
+                        "enum": [
+                          null
+                        ]
+                      }
+                    ]
+                  },
+                  "notifyOverdueConfig": {
+                    "anyOf": [
+                      {
+                        "anyOf": [
+                          {
+                            "type": "object",
+                            "properties": {
+                              "disabled": {
+                                "type": "boolean",
+                                "enum": [
+                                  true
+                                ]
+                              }
+                            },
+                            "required": [
+                              "disabled"
+                            ]
+                          },
+                          {
+                            "type": "object",
+                            "properties": {
+                              "frequency": {
+                                "type": "string",
+                                "enum": [
+                                  "daily",
+                                  "weekly",
+                                  "monthly"
+                                ]
+                              },
+                              "interval": {
+                                "type": "integer",
+                                "minimum": 1,
+                                "maximum": 9007199254740991
+                              }
+                            },
+                            "required": [
+                              "frequency",
+                              "interval"
+                            ]
+                          }
+                        ]
+                      },
+                      {
+                        "nullable": true,
+                        "enum": [
+                          null
+                        ]
+                      }
+                    ]
                   }
                 },
                 "required": [
@@ -8405,6 +8531,19 @@
                             }
                           ]
                         },
+                        "paymentScheduledAt": {
+                          "anyOf": [
+                            {
+                              "type": "string"
+                            },
+                            {
+                              "nullable": true,
+                              "enum": [
+                                null
+                              ]
+                            }
+                          ]
+                        },
                         "counterparty": {
                           "anyOf": [
                             {
@@ -8539,6 +8678,58 @@
                             "maximum": 9007199254740991
                           }
                         },
+                        "notifyOverdueConfig": {
+                          "anyOf": [
+                            {
+                              "anyOf": [
+                                {
+                                  "type": "object",
+                                  "properties": {
+                                    "disabled": {
+                                      "type": "boolean",
+                                      "enum": [
+                                        true
+                                      ]
+                                    }
+                                  },
+                                  "required": [
+                                    "disabled"
+                                  ],
+                                  "additionalProperties": false
+                                },
+                                {
+                                  "type": "object",
+                                  "properties": {
+                                    "frequency": {
+                                      "type": "string",
+                                      "enum": [
+                                        "daily",
+                                        "weekly",
+                                        "monthly"
+                                      ]
+                                    },
+                                    "interval": {
+                                      "type": "integer",
+                                      "minimum": 1,
+                                      "maximum": 9007199254740991
+                                    }
+                                  },
+                                  "required": [
+                                    "frequency",
+                                    "interval"
+                                  ],
+                                  "additionalProperties": false
+                                }
+                              ]
+                            },
+                            {
+                              "nullable": true,
+                              "enum": [
+                                null
+                              ]
+                            }
+                          ]
+                        },
                         "createdAt": {
                           "type": "string"
                         },
@@ -8562,6 +8753,7 @@
                         "status",
                         "paidAt",
                         "paidAmount",
+                        "paymentScheduledAt",
                         "counterparty",
                         "installmentNumber",
                         "installmentsTotal",
@@ -8734,6 +8926,19 @@
                               }
                             ]
                           },
+                          "paymentScheduledAt": {
+                            "anyOf": [
+                              {
+                                "type": "string"
+                              },
+                              {
+                                "nullable": true,
+                                "enum": [
+                                  null
+                                ]
+                              }
+                            ]
+                          },
                           "counterparty": {
                             "anyOf": [
                               {
@@ -8868,6 +9073,58 @@
                               "maximum": 9007199254740991
                             }
                           },
+                          "notifyOverdueConfig": {
+                            "anyOf": [
+                              {
+                                "anyOf": [
+                                  {
+                                    "type": "object",
+                                    "properties": {
+                                      "disabled": {
+                                        "type": "boolean",
+                                        "enum": [
+                                          true
+                                        ]
+                                      }
+                                    },
+                                    "required": [
+                                      "disabled"
+                                    ],
+                                    "additionalProperties": false
+                                  },
+                                  {
+                                    "type": "object",
+                                    "properties": {
+                                      "frequency": {
+                                        "type": "string",
+                                        "enum": [
+                                          "daily",
+                                          "weekly",
+                                          "monthly"
+                                        ]
+                                      },
+                                      "interval": {
+                                        "type": "integer",
+                                        "minimum": 1,
+                                        "maximum": 9007199254740991
+                                      }
+                                    },
+                                    "required": [
+                                      "frequency",
+                                      "interval"
+                                    ],
+                                    "additionalProperties": false
+                                  }
+                                ]
+                              },
+                              {
+                                "nullable": true,
+                                "enum": [
+                                  null
+                                ]
+                              }
+                            ]
+                          },
                           "createdAt": {
                             "type": "string"
                           },
@@ -8891,6 +9148,7 @@
                           "status",
                           "paidAt",
                           "paidAmount",
+                          "paymentScheduledAt",
                           "counterparty",
                           "installmentNumber",
                           "installmentsTotal",
@@ -9231,12 +9489,72 @@
                           ]
                         },
                         "notifyDaysBefore": {
-                          "type": "array",
-                          "items": {
-                            "type": "integer",
-                            "minimum": 0,
-                            "maximum": 9007199254740991
-                          }
+                          "anyOf": [
+                            {
+                              "type": "array",
+                              "items": {
+                                "type": "integer",
+                                "minimum": 0,
+                                "maximum": 9007199254740991
+                              }
+                            },
+                            {
+                              "nullable": true,
+                              "enum": [
+                                null
+                              ]
+                            }
+                          ]
+                        },
+                        "notifyOverdueConfig": {
+                          "anyOf": [
+                            {
+                              "anyOf": [
+                                {
+                                  "type": "object",
+                                  "properties": {
+                                    "disabled": {
+                                      "type": "boolean",
+                                      "enum": [
+                                        true
+                                      ]
+                                    }
+                                  },
+                                  "required": [
+                                    "disabled"
+                                  ]
+                                },
+                                {
+                                  "type": "object",
+                                  "properties": {
+                                    "frequency": {
+                                      "type": "string",
+                                      "enum": [
+                                        "daily",
+                                        "weekly",
+                                        "monthly"
+                                      ]
+                                    },
+                                    "interval": {
+                                      "type": "integer",
+                                      "minimum": 1,
+                                      "maximum": 9007199254740991
+                                    }
+                                  },
+                                  "required": [
+                                    "frequency",
+                                    "interval"
+                                  ]
+                                }
+                              ]
+                            },
+                            {
+                              "nullable": true,
+                              "enum": [
+                                null
+                              ]
+                            }
+                          ]
                         }
                       },
                       "required": [
@@ -9423,6 +9741,19 @@
                               }
                             ]
                           },
+                          "paymentScheduledAt": {
+                            "anyOf": [
+                              {
+                                "type": "string"
+                              },
+                              {
+                                "nullable": true,
+                                "enum": [
+                                  null
+                                ]
+                              }
+                            ]
+                          },
                           "counterparty": {
                             "anyOf": [
                               {
@@ -9557,6 +9888,58 @@
                               "maximum": 9007199254740991
                             }
                           },
+                          "notifyOverdueConfig": {
+                            "anyOf": [
+                              {
+                                "anyOf": [
+                                  {
+                                    "type": "object",
+                                    "properties": {
+                                      "disabled": {
+                                        "type": "boolean",
+                                        "enum": [
+                                          true
+                                        ]
+                                      }
+                                    },
+                                    "required": [
+                                      "disabled"
+                                    ],
+                                    "additionalProperties": false
+                                  },
+                                  {
+                                    "type": "object",
+                                    "properties": {
+                                      "frequency": {
+                                        "type": "string",
+                                        "enum": [
+                                          "daily",
+                                          "weekly",
+                                          "monthly"
+                                        ]
+                                      },
+                                      "interval": {
+                                        "type": "integer",
+                                        "minimum": 1,
+                                        "maximum": 9007199254740991
+                                      }
+                                    },
+                                    "required": [
+                                      "frequency",
+                                      "interval"
+                                    ],
+                                    "additionalProperties": false
+                                  }
+                                ]
+                              },
+                              {
+                                "nullable": true,
+                                "enum": [
+                                  null
+                                ]
+                              }
+                            ]
+                          },
                           "createdAt": {
                             "type": "string"
                           },
@@ -9580,6 +9963,7 @@
                           "status",
                           "paidAt",
                           "paidAmount",
+                          "paymentScheduledAt",
                           "counterparty",
                           "installmentNumber",
                           "installmentsTotal",
@@ -9692,12 +10076,72 @@
                           ]
                         },
                         "notifyDaysBefore": {
-                          "type": "array",
-                          "items": {
-                            "type": "integer",
-                            "minimum": 0,
-                            "maximum": 9007199254740991
-                          }
+                          "anyOf": [
+                            {
+                              "type": "array",
+                              "items": {
+                                "type": "integer",
+                                "minimum": 0,
+                                "maximum": 9007199254740991
+                              }
+                            },
+                            {
+                              "nullable": true,
+                              "enum": [
+                                null
+                              ]
+                            }
+                          ]
+                        },
+                        "notifyOverdueConfig": {
+                          "anyOf": [
+                            {
+                              "anyOf": [
+                                {
+                                  "type": "object",
+                                  "properties": {
+                                    "disabled": {
+                                      "type": "boolean",
+                                      "enum": [
+                                        true
+                                      ]
+                                    }
+                                  },
+                                  "required": [
+                                    "disabled"
+                                  ]
+                                },
+                                {
+                                  "type": "object",
+                                  "properties": {
+                                    "frequency": {
+                                      "type": "string",
+                                      "enum": [
+                                        "daily",
+                                        "weekly",
+                                        "monthly"
+                                      ]
+                                    },
+                                    "interval": {
+                                      "type": "integer",
+                                      "minimum": 1,
+                                      "maximum": 9007199254740991
+                                    }
+                                  },
+                                  "required": [
+                                    "frequency",
+                                    "interval"
+                                  ]
+                                }
+                              ]
+                            },
+                            {
+                              "nullable": true,
+                              "enum": [
+                                null
+                              ]
+                            }
+                          ]
                         }
                       },
                       "required": [
@@ -9882,6 +10326,19 @@
                               }
                             ]
                           },
+                          "paymentScheduledAt": {
+                            "anyOf": [
+                              {
+                                "type": "string"
+                              },
+                              {
+                                "nullable": true,
+                                "enum": [
+                                  null
+                                ]
+                              }
+                            ]
+                          },
                           "counterparty": {
                             "anyOf": [
                               {
@@ -10016,6 +10473,58 @@
                               "maximum": 9007199254740991
                             }
                           },
+                          "notifyOverdueConfig": {
+                            "anyOf": [
+                              {
+                                "anyOf": [
+                                  {
+                                    "type": "object",
+                                    "properties": {
+                                      "disabled": {
+                                        "type": "boolean",
+                                        "enum": [
+                                          true
+                                        ]
+                                      }
+                                    },
+                                    "required": [
+                                      "disabled"
+                                    ],
+                                    "additionalProperties": false
+                                  },
+                                  {
+                                    "type": "object",
+                                    "properties": {
+                                      "frequency": {
+                                        "type": "string",
+                                        "enum": [
+                                          "daily",
+                                          "weekly",
+                                          "monthly"
+                                        ]
+                                      },
+                                      "interval": {
+                                        "type": "integer",
+                                        "minimum": 1,
+                                        "maximum": 9007199254740991
+                                      }
+                                    },
+                                    "required": [
+                                      "frequency",
+                                      "interval"
+                                    ],
+                                    "additionalProperties": false
+                                  }
+                                ]
+                              },
+                              {
+                                "nullable": true,
+                                "enum": [
+                                  null
+                                ]
+                              }
+                            ]
+                          },
                           "createdAt": {
                             "type": "string"
                           },
@@ -10039,6 +10548,7 @@
                           "status",
                           "paidAt",
                           "paidAmount",
+                          "paymentScheduledAt",
                           "counterparty",
                           "installmentNumber",
                           "installmentsTotal",
@@ -10343,6 +10853,19 @@
                               }
                             ]
                           },
+                          "paymentScheduledAt": {
+                            "anyOf": [
+                              {
+                                "type": "string"
+                              },
+                              {
+                                "nullable": true,
+                                "enum": [
+                                  null
+                                ]
+                              }
+                            ]
+                          },
                           "counterparty": {
                             "anyOf": [
                               {
@@ -10477,6 +11000,58 @@
                               "maximum": 9007199254740991
                             }
                           },
+                          "notifyOverdueConfig": {
+                            "anyOf": [
+                              {
+                                "anyOf": [
+                                  {
+                                    "type": "object",
+                                    "properties": {
+                                      "disabled": {
+                                        "type": "boolean",
+                                        "enum": [
+                                          true
+                                        ]
+                                      }
+                                    },
+                                    "required": [
+                                      "disabled"
+                                    ],
+                                    "additionalProperties": false
+                                  },
+                                  {
+                                    "type": "object",
+                                    "properties": {
+                                      "frequency": {
+                                        "type": "string",
+                                        "enum": [
+                                          "daily",
+                                          "weekly",
+                                          "monthly"
+                                        ]
+                                      },
+                                      "interval": {
+                                        "type": "integer",
+                                        "minimum": 1,
+                                        "maximum": 9007199254740991
+                                      }
+                                    },
+                                    "required": [
+                                      "frequency",
+                                      "interval"
+                                    ],
+                                    "additionalProperties": false
+                                  }
+                                ]
+                              },
+                              {
+                                "nullable": true,
+                                "enum": [
+                                  null
+                                ]
+                              }
+                            ]
+                          },
                           "createdAt": {
                             "type": "string"
                           },
@@ -10500,6 +11075,7 @@
                           "status",
                           "paidAt",
                           "paidAmount",
+                          "paymentScheduledAt",
                           "counterparty",
                           "installmentNumber",
                           "installmentsTotal",
@@ -10815,6 +11391,19 @@
                             }
                           ]
                         },
+                        "paymentScheduledAt": {
+                          "anyOf": [
+                            {
+                              "type": "string"
+                            },
+                            {
+                              "nullable": true,
+                              "enum": [
+                                null
+                              ]
+                            }
+                          ]
+                        },
                         "counterparty": {
                           "anyOf": [
                             {
@@ -10949,6 +11538,58 @@
                             "maximum": 9007199254740991
                           }
                         },
+                        "notifyOverdueConfig": {
+                          "anyOf": [
+                            {
+                              "anyOf": [
+                                {
+                                  "type": "object",
+                                  "properties": {
+                                    "disabled": {
+                                      "type": "boolean",
+                                      "enum": [
+                                        true
+                                      ]
+                                    }
+                                  },
+                                  "required": [
+                                    "disabled"
+                                  ],
+                                  "additionalProperties": false
+                                },
+                                {
+                                  "type": "object",
+                                  "properties": {
+                                    "frequency": {
+                                      "type": "string",
+                                      "enum": [
+                                        "daily",
+                                        "weekly",
+                                        "monthly"
+                                      ]
+                                    },
+                                    "interval": {
+                                      "type": "integer",
+                                      "minimum": 1,
+                                      "maximum": 9007199254740991
+                                    }
+                                  },
+                                  "required": [
+                                    "frequency",
+                                    "interval"
+                                  ],
+                                  "additionalProperties": false
+                                }
+                              ]
+                            },
+                            {
+                              "nullable": true,
+                              "enum": [
+                                null
+                              ]
+                            }
+                          ]
+                        },
                         "createdAt": {
                           "type": "string"
                         },
@@ -10972,6 +11613,7 @@
                         "status",
                         "paidAt",
                         "paidAmount",
+                        "paymentScheduledAt",
                         "counterparty",
                         "installmentNumber",
                         "installmentsTotal",
@@ -11303,12 +11945,72 @@
                     ]
                   },
                   "notifyDaysBefore": {
-                    "type": "array",
-                    "items": {
-                      "type": "integer",
-                      "minimum": 0,
-                      "maximum": 9007199254740991
-                    }
+                    "anyOf": [
+                      {
+                        "type": "array",
+                        "items": {
+                          "type": "integer",
+                          "minimum": 0,
+                          "maximum": 9007199254740991
+                        }
+                      },
+                      {
+                        "nullable": true,
+                        "enum": [
+                          null
+                        ]
+                      }
+                    ]
+                  },
+                  "notifyOverdueConfig": {
+                    "anyOf": [
+                      {
+                        "anyOf": [
+                          {
+                            "type": "object",
+                            "properties": {
+                              "disabled": {
+                                "type": "boolean",
+                                "enum": [
+                                  true
+                                ]
+                              }
+                            },
+                            "required": [
+                              "disabled"
+                            ]
+                          },
+                          {
+                            "type": "object",
+                            "properties": {
+                              "frequency": {
+                                "type": "string",
+                                "enum": [
+                                  "daily",
+                                  "weekly",
+                                  "monthly"
+                                ]
+                              },
+                              "interval": {
+                                "type": "integer",
+                                "minimum": 1,
+                                "maximum": 9007199254740991
+                              }
+                            },
+                            "required": [
+                              "frequency",
+                              "interval"
+                            ]
+                          }
+                        ]
+                      },
+                      {
+                        "nullable": true,
+                        "enum": [
+                          null
+                        ]
+                      }
+                    ]
                   }
                 }
               }
@@ -11490,6 +12192,19 @@
                             }
                           ]
                         },
+                        "paymentScheduledAt": {
+                          "anyOf": [
+                            {
+                              "type": "string"
+                            },
+                            {
+                              "nullable": true,
+                              "enum": [
+                                null
+                              ]
+                            }
+                          ]
+                        },
                         "counterparty": {
                           "anyOf": [
                             {
@@ -11624,6 +12339,58 @@
                             "maximum": 9007199254740991
                           }
                         },
+                        "notifyOverdueConfig": {
+                          "anyOf": [
+                            {
+                              "anyOf": [
+                                {
+                                  "type": "object",
+                                  "properties": {
+                                    "disabled": {
+                                      "type": "boolean",
+                                      "enum": [
+                                        true
+                                      ]
+                                    }
+                                  },
+                                  "required": [
+                                    "disabled"
+                                  ],
+                                  "additionalProperties": false
+                                },
+                                {
+                                  "type": "object",
+                                  "properties": {
+                                    "frequency": {
+                                      "type": "string",
+                                      "enum": [
+                                        "daily",
+                                        "weekly",
+                                        "monthly"
+                                      ]
+                                    },
+                                    "interval": {
+                                      "type": "integer",
+                                      "minimum": 1,
+                                      "maximum": 9007199254740991
+                                    }
+                                  },
+                                  "required": [
+                                    "frequency",
+                                    "interval"
+                                  ],
+                                  "additionalProperties": false
+                                }
+                              ]
+                            },
+                            {
+                              "nullable": true,
+                              "enum": [
+                                null
+                              ]
+                            }
+                          ]
+                        },
                         "createdAt": {
                           "type": "string"
                         },
@@ -11647,6 +12414,7 @@
                         "status",
                         "paidAt",
                         "paidAmount",
+                        "paymentScheduledAt",
                         "counterparty",
                         "installmentNumber",
                         "installmentsTotal",
@@ -11933,6 +12701,19 @@
                             }
                           ]
                         },
+                        "paymentScheduledAt": {
+                          "anyOf": [
+                            {
+                              "type": "string"
+                            },
+                            {
+                              "nullable": true,
+                              "enum": [
+                                null
+                              ]
+                            }
+                          ]
+                        },
                         "counterparty": {
                           "anyOf": [
                             {
@@ -12067,6 +12848,58 @@
                             "maximum": 9007199254740991
                           }
                         },
+                        "notifyOverdueConfig": {
+                          "anyOf": [
+                            {
+                              "anyOf": [
+                                {
+                                  "type": "object",
+                                  "properties": {
+                                    "disabled": {
+                                      "type": "boolean",
+                                      "enum": [
+                                        true
+                                      ]
+                                    }
+                                  },
+                                  "required": [
+                                    "disabled"
+                                  ],
+                                  "additionalProperties": false
+                                },
+                                {
+                                  "type": "object",
+                                  "properties": {
+                                    "frequency": {
+                                      "type": "string",
+                                      "enum": [
+                                        "daily",
+                                        "weekly",
+                                        "monthly"
+                                      ]
+                                    },
+                                    "interval": {
+                                      "type": "integer",
+                                      "minimum": 1,
+                                      "maximum": 9007199254740991
+                                    }
+                                  },
+                                  "required": [
+                                    "frequency",
+                                    "interval"
+                                  ],
+                                  "additionalProperties": false
+                                }
+                              ]
+                            },
+                            {
+                              "nullable": true,
+                              "enum": [
+                                null
+                              ]
+                            }
+                          ]
+                        },
                         "createdAt": {
                           "type": "string"
                         },
@@ -12090,6 +12923,7 @@
                         "status",
                         "paidAt",
                         "paidAmount",
+                        "paymentScheduledAt",
                         "counterparty",
                         "installmentNumber",
                         "installmentsTotal",
@@ -12300,6 +13134,19 @@
                             }
                           ]
                         },
+                        "paymentScheduledAt": {
+                          "anyOf": [
+                            {
+                              "type": "string"
+                            },
+                            {
+                              "nullable": true,
+                              "enum": [
+                                null
+                              ]
+                            }
+                          ]
+                        },
                         "counterparty": {
                           "anyOf": [
                             {
@@ -12434,6 +13281,58 @@
                             "maximum": 9007199254740991
                           }
                         },
+                        "notifyOverdueConfig": {
+                          "anyOf": [
+                            {
+                              "anyOf": [
+                                {
+                                  "type": "object",
+                                  "properties": {
+                                    "disabled": {
+                                      "type": "boolean",
+                                      "enum": [
+                                        true
+                                      ]
+                                    }
+                                  },
+                                  "required": [
+                                    "disabled"
+                                  ],
+                                  "additionalProperties": false
+                                },
+                                {
+                                  "type": "object",
+                                  "properties": {
+                                    "frequency": {
+                                      "type": "string",
+                                      "enum": [
+                                        "daily",
+                                        "weekly",
+                                        "monthly"
+                                      ]
+                                    },
+                                    "interval": {
+                                      "type": "integer",
+                                      "minimum": 1,
+                                      "maximum": 9007199254740991
+                                    }
+                                  },
+                                  "required": [
+                                    "frequency",
+                                    "interval"
+                                  ],
+                                  "additionalProperties": false
+                                }
+                              ]
+                            },
+                            {
+                              "nullable": true,
+                              "enum": [
+                                null
+                              ]
+                            }
+                          ]
+                        },
                         "createdAt": {
                           "type": "string"
                         },
@@ -12457,6 +13356,893 @@
                         "status",
                         "paidAt",
                         "paidAmount",
+                        "paymentScheduledAt",
+                        "counterparty",
+                        "installmentNumber",
+                        "installmentsTotal",
+                        "source",
+                        "categoryIds",
+                        "transferPairId",
+                        "notifyEnabled",
+                        "notifyTargetType",
+                        "notifyUserId",
+                        "notifyContactName",
+                        "notifyContactPhone",
+                        "createdAt",
+                        "updatedAt"
+                      ],
+                      "additionalProperties": false
+                    }
+                  },
+                  "required": [
+                    "transaction"
+                  ],
+                  "additionalProperties": false
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/organizations/{slug}/transactions/{id}/schedule-payment": {
+      "patch": {
+        "operationId": "scheduleTransactionPayment",
+        "tags": [
+          "Transactions"
+        ],
+        "description": "Schedule a pending transaction payment (suppresses alerts until date)",
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "scheduledAt": {
+                    "type": "string",
+                    "format": "date-time",
+                    "pattern": "^(?:(?:\\d\\d[2468][048]|\\d\\d[13579][26]|\\d\\d0[48]|[02468][048]00|[13579][26]00)-02-29|\\d{4}-(?:(?:0[13578]|1[02])-(?:0[1-9]|[12]\\d|3[01])|(?:0[469]|11)-(?:0[1-9]|[12]\\d|30)|(?:02)-(?:0[1-9]|1\\d|2[0-8])))T(?:(?:[01]\\d|2[0-3]):[0-5]\\d(?::[0-5]\\d(?:\\.\\d+)?)?(?:Z))$"
+                  }
+                },
+                "required": [
+                  "scheduledAt"
+                ]
+              }
+            }
+          }
+        },
+        "parameters": [
+          {
+            "schema": {
+              "type": "string"
+            },
+            "in": "path",
+            "name": "slug",
+            "required": true
+          },
+          {
+            "schema": {
+              "type": "string"
+            },
+            "in": "path",
+            "name": "id",
+            "required": true
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Default Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "transaction": {
+                      "type": "object",
+                      "properties": {
+                        "id": {
+                          "type": "string"
+                        },
+                        "organizationId": {
+                          "type": "string"
+                        },
+                        "accountId": {
+                          "anyOf": [
+                            {
+                              "type": "string"
+                            },
+                            {
+                              "nullable": true,
+                              "enum": [
+                                null
+                              ]
+                            }
+                          ]
+                        },
+                        "cardId": {
+                          "anyOf": [
+                            {
+                              "type": "string"
+                            },
+                            {
+                              "nullable": true,
+                              "enum": [
+                                null
+                              ]
+                            }
+                          ]
+                        },
+                        "recurringTransactionId": {
+                          "anyOf": [
+                            {
+                              "type": "string"
+                            },
+                            {
+                              "nullable": true,
+                              "enum": [
+                                null
+                              ]
+                            }
+                          ]
+                        },
+                        "statementId": {
+                          "anyOf": [
+                            {
+                              "type": "string"
+                            },
+                            {
+                              "nullable": true,
+                              "enum": [
+                                null
+                              ]
+                            }
+                          ]
+                        },
+                        "title": {
+                          "type": "string"
+                        },
+                        "description": {
+                          "anyOf": [
+                            {
+                              "type": "string"
+                            },
+                            {
+                              "nullable": true,
+                              "enum": [
+                                null
+                              ]
+                            }
+                          ]
+                        },
+                        "amount": {
+                          "anyOf": [
+                            {
+                              "type": "string"
+                            },
+                            {
+                              "nullable": true,
+                              "enum": [
+                                null
+                              ]
+                            }
+                          ]
+                        },
+                        "type": {
+                          "type": "string",
+                          "enum": [
+                            "income",
+                            "expense",
+                            "transfer"
+                          ]
+                        },
+                        "date": {
+                          "type": "string"
+                        },
+                        "competenceDate": {
+                          "anyOf": [
+                            {
+                              "type": "string"
+                            },
+                            {
+                              "nullable": true,
+                              "enum": [
+                                null
+                              ]
+                            }
+                          ]
+                        },
+                        "status": {
+                          "type": "string",
+                          "enum": [
+                            "pending",
+                            "partial",
+                            "paid",
+                            "canceled"
+                          ]
+                        },
+                        "paidAt": {
+                          "anyOf": [
+                            {
+                              "type": "string"
+                            },
+                            {
+                              "nullable": true,
+                              "enum": [
+                                null
+                              ]
+                            }
+                          ]
+                        },
+                        "paidAmount": {
+                          "anyOf": [
+                            {
+                              "type": "string"
+                            },
+                            {
+                              "nullable": true,
+                              "enum": [
+                                null
+                              ]
+                            }
+                          ]
+                        },
+                        "paymentScheduledAt": {
+                          "anyOf": [
+                            {
+                              "type": "string"
+                            },
+                            {
+                              "nullable": true,
+                              "enum": [
+                                null
+                              ]
+                            }
+                          ]
+                        },
+                        "counterparty": {
+                          "anyOf": [
+                            {
+                              "type": "string"
+                            },
+                            {
+                              "nullable": true,
+                              "enum": [
+                                null
+                              ]
+                            }
+                          ]
+                        },
+                        "installmentNumber": {
+                          "anyOf": [
+                            {
+                              "type": "number"
+                            },
+                            {
+                              "nullable": true,
+                              "enum": [
+                                null
+                              ]
+                            }
+                          ]
+                        },
+                        "installmentsTotal": {
+                          "anyOf": [
+                            {
+                              "type": "number"
+                            },
+                            {
+                              "nullable": true,
+                              "enum": [
+                                null
+                              ]
+                            }
+                          ]
+                        },
+                        "source": {
+                          "type": "string",
+                          "enum": [
+                            "manual",
+                            "import",
+                            "recurring",
+                            "ai_chat"
+                          ]
+                        },
+                        "categoryIds": {
+                          "type": "array",
+                          "items": {
+                            "type": "string"
+                          }
+                        },
+                        "transferPairId": {
+                          "anyOf": [
+                            {
+                              "type": "string"
+                            },
+                            {
+                              "nullable": true,
+                              "enum": [
+                                null
+                              ]
+                            }
+                          ]
+                        },
+                        "notifyEnabled": {
+                          "type": "boolean"
+                        },
+                        "notifyTargetType": {
+                          "anyOf": [
+                            {
+                              "type": "string",
+                              "enum": [
+                                "member",
+                                "contact"
+                              ]
+                            },
+                            {
+                              "nullable": true,
+                              "enum": [
+                                null
+                              ]
+                            }
+                          ]
+                        },
+                        "notifyUserId": {
+                          "anyOf": [
+                            {
+                              "type": "string"
+                            },
+                            {
+                              "nullable": true,
+                              "enum": [
+                                null
+                              ]
+                            }
+                          ]
+                        },
+                        "notifyContactName": {
+                          "anyOf": [
+                            {
+                              "type": "string"
+                            },
+                            {
+                              "nullable": true,
+                              "enum": [
+                                null
+                              ]
+                            }
+                          ]
+                        },
+                        "notifyContactPhone": {
+                          "anyOf": [
+                            {
+                              "type": "string"
+                            },
+                            {
+                              "nullable": true,
+                              "enum": [
+                                null
+                              ]
+                            }
+                          ]
+                        },
+                        "notifyDaysBefore": {
+                          "type": "array",
+                          "items": {
+                            "type": "integer",
+                            "minimum": 0,
+                            "maximum": 9007199254740991
+                          }
+                        },
+                        "notifyOverdueConfig": {
+                          "anyOf": [
+                            {
+                              "anyOf": [
+                                {
+                                  "type": "object",
+                                  "properties": {
+                                    "disabled": {
+                                      "type": "boolean",
+                                      "enum": [
+                                        true
+                                      ]
+                                    }
+                                  },
+                                  "required": [
+                                    "disabled"
+                                  ],
+                                  "additionalProperties": false
+                                },
+                                {
+                                  "type": "object",
+                                  "properties": {
+                                    "frequency": {
+                                      "type": "string",
+                                      "enum": [
+                                        "daily",
+                                        "weekly",
+                                        "monthly"
+                                      ]
+                                    },
+                                    "interval": {
+                                      "type": "integer",
+                                      "minimum": 1,
+                                      "maximum": 9007199254740991
+                                    }
+                                  },
+                                  "required": [
+                                    "frequency",
+                                    "interval"
+                                  ],
+                                  "additionalProperties": false
+                                }
+                              ]
+                            },
+                            {
+                              "nullable": true,
+                              "enum": [
+                                null
+                              ]
+                            }
+                          ]
+                        },
+                        "createdAt": {
+                          "type": "string"
+                        },
+                        "updatedAt": {
+                          "type": "string"
+                        }
+                      },
+                      "required": [
+                        "id",
+                        "organizationId",
+                        "accountId",
+                        "cardId",
+                        "recurringTransactionId",
+                        "statementId",
+                        "title",
+                        "description",
+                        "amount",
+                        "type",
+                        "date",
+                        "competenceDate",
+                        "status",
+                        "paidAt",
+                        "paidAmount",
+                        "paymentScheduledAt",
+                        "counterparty",
+                        "installmentNumber",
+                        "installmentsTotal",
+                        "source",
+                        "categoryIds",
+                        "transferPairId",
+                        "notifyEnabled",
+                        "notifyTargetType",
+                        "notifyUserId",
+                        "notifyContactName",
+                        "notifyContactPhone",
+                        "createdAt",
+                        "updatedAt"
+                      ],
+                      "additionalProperties": false
+                    }
+                  },
+                  "required": [
+                    "transaction"
+                  ],
+                  "additionalProperties": false
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/organizations/{slug}/transactions/{id}/cancel-scheduled-payment": {
+      "patch": {
+        "operationId": "cancelScheduledTransactionPayment",
+        "tags": [
+          "Transactions"
+        ],
+        "description": "Cancel a scheduled payment on a pending transaction",
+        "parameters": [
+          {
+            "schema": {
+              "type": "string"
+            },
+            "in": "path",
+            "name": "slug",
+            "required": true
+          },
+          {
+            "schema": {
+              "type": "string"
+            },
+            "in": "path",
+            "name": "id",
+            "required": true
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Default Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "transaction": {
+                      "type": "object",
+                      "properties": {
+                        "id": {
+                          "type": "string"
+                        },
+                        "organizationId": {
+                          "type": "string"
+                        },
+                        "accountId": {
+                          "anyOf": [
+                            {
+                              "type": "string"
+                            },
+                            {
+                              "nullable": true,
+                              "enum": [
+                                null
+                              ]
+                            }
+                          ]
+                        },
+                        "cardId": {
+                          "anyOf": [
+                            {
+                              "type": "string"
+                            },
+                            {
+                              "nullable": true,
+                              "enum": [
+                                null
+                              ]
+                            }
+                          ]
+                        },
+                        "recurringTransactionId": {
+                          "anyOf": [
+                            {
+                              "type": "string"
+                            },
+                            {
+                              "nullable": true,
+                              "enum": [
+                                null
+                              ]
+                            }
+                          ]
+                        },
+                        "statementId": {
+                          "anyOf": [
+                            {
+                              "type": "string"
+                            },
+                            {
+                              "nullable": true,
+                              "enum": [
+                                null
+                              ]
+                            }
+                          ]
+                        },
+                        "title": {
+                          "type": "string"
+                        },
+                        "description": {
+                          "anyOf": [
+                            {
+                              "type": "string"
+                            },
+                            {
+                              "nullable": true,
+                              "enum": [
+                                null
+                              ]
+                            }
+                          ]
+                        },
+                        "amount": {
+                          "anyOf": [
+                            {
+                              "type": "string"
+                            },
+                            {
+                              "nullable": true,
+                              "enum": [
+                                null
+                              ]
+                            }
+                          ]
+                        },
+                        "type": {
+                          "type": "string",
+                          "enum": [
+                            "income",
+                            "expense",
+                            "transfer"
+                          ]
+                        },
+                        "date": {
+                          "type": "string"
+                        },
+                        "competenceDate": {
+                          "anyOf": [
+                            {
+                              "type": "string"
+                            },
+                            {
+                              "nullable": true,
+                              "enum": [
+                                null
+                              ]
+                            }
+                          ]
+                        },
+                        "status": {
+                          "type": "string",
+                          "enum": [
+                            "pending",
+                            "partial",
+                            "paid",
+                            "canceled"
+                          ]
+                        },
+                        "paidAt": {
+                          "anyOf": [
+                            {
+                              "type": "string"
+                            },
+                            {
+                              "nullable": true,
+                              "enum": [
+                                null
+                              ]
+                            }
+                          ]
+                        },
+                        "paidAmount": {
+                          "anyOf": [
+                            {
+                              "type": "string"
+                            },
+                            {
+                              "nullable": true,
+                              "enum": [
+                                null
+                              ]
+                            }
+                          ]
+                        },
+                        "paymentScheduledAt": {
+                          "anyOf": [
+                            {
+                              "type": "string"
+                            },
+                            {
+                              "nullable": true,
+                              "enum": [
+                                null
+                              ]
+                            }
+                          ]
+                        },
+                        "counterparty": {
+                          "anyOf": [
+                            {
+                              "type": "string"
+                            },
+                            {
+                              "nullable": true,
+                              "enum": [
+                                null
+                              ]
+                            }
+                          ]
+                        },
+                        "installmentNumber": {
+                          "anyOf": [
+                            {
+                              "type": "number"
+                            },
+                            {
+                              "nullable": true,
+                              "enum": [
+                                null
+                              ]
+                            }
+                          ]
+                        },
+                        "installmentsTotal": {
+                          "anyOf": [
+                            {
+                              "type": "number"
+                            },
+                            {
+                              "nullable": true,
+                              "enum": [
+                                null
+                              ]
+                            }
+                          ]
+                        },
+                        "source": {
+                          "type": "string",
+                          "enum": [
+                            "manual",
+                            "import",
+                            "recurring",
+                            "ai_chat"
+                          ]
+                        },
+                        "categoryIds": {
+                          "type": "array",
+                          "items": {
+                            "type": "string"
+                          }
+                        },
+                        "transferPairId": {
+                          "anyOf": [
+                            {
+                              "type": "string"
+                            },
+                            {
+                              "nullable": true,
+                              "enum": [
+                                null
+                              ]
+                            }
+                          ]
+                        },
+                        "notifyEnabled": {
+                          "type": "boolean"
+                        },
+                        "notifyTargetType": {
+                          "anyOf": [
+                            {
+                              "type": "string",
+                              "enum": [
+                                "member",
+                                "contact"
+                              ]
+                            },
+                            {
+                              "nullable": true,
+                              "enum": [
+                                null
+                              ]
+                            }
+                          ]
+                        },
+                        "notifyUserId": {
+                          "anyOf": [
+                            {
+                              "type": "string"
+                            },
+                            {
+                              "nullable": true,
+                              "enum": [
+                                null
+                              ]
+                            }
+                          ]
+                        },
+                        "notifyContactName": {
+                          "anyOf": [
+                            {
+                              "type": "string"
+                            },
+                            {
+                              "nullable": true,
+                              "enum": [
+                                null
+                              ]
+                            }
+                          ]
+                        },
+                        "notifyContactPhone": {
+                          "anyOf": [
+                            {
+                              "type": "string"
+                            },
+                            {
+                              "nullable": true,
+                              "enum": [
+                                null
+                              ]
+                            }
+                          ]
+                        },
+                        "notifyDaysBefore": {
+                          "type": "array",
+                          "items": {
+                            "type": "integer",
+                            "minimum": 0,
+                            "maximum": 9007199254740991
+                          }
+                        },
+                        "notifyOverdueConfig": {
+                          "anyOf": [
+                            {
+                              "anyOf": [
+                                {
+                                  "type": "object",
+                                  "properties": {
+                                    "disabled": {
+                                      "type": "boolean",
+                                      "enum": [
+                                        true
+                                      ]
+                                    }
+                                  },
+                                  "required": [
+                                    "disabled"
+                                  ],
+                                  "additionalProperties": false
+                                },
+                                {
+                                  "type": "object",
+                                  "properties": {
+                                    "frequency": {
+                                      "type": "string",
+                                      "enum": [
+                                        "daily",
+                                        "weekly",
+                                        "monthly"
+                                      ]
+                                    },
+                                    "interval": {
+                                      "type": "integer",
+                                      "minimum": 1,
+                                      "maximum": 9007199254740991
+                                    }
+                                  },
+                                  "required": [
+                                    "frequency",
+                                    "interval"
+                                  ],
+                                  "additionalProperties": false
+                                }
+                              ]
+                            },
+                            {
+                              "nullable": true,
+                              "enum": [
+                                null
+                              ]
+                            }
+                          ]
+                        },
+                        "createdAt": {
+                          "type": "string"
+                        },
+                        "updatedAt": {
+                          "type": "string"
+                        }
+                      },
+                      "required": [
+                        "id",
+                        "organizationId",
+                        "accountId",
+                        "cardId",
+                        "recurringTransactionId",
+                        "statementId",
+                        "title",
+                        "description",
+                        "amount",
+                        "type",
+                        "date",
+                        "competenceDate",
+                        "status",
+                        "paidAt",
+                        "paidAmount",
+                        "paymentScheduledAt",
                         "counterparty",
                         "installmentNumber",
                         "installmentsTotal",

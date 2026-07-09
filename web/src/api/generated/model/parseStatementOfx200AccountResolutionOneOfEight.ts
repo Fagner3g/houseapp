@@ -9,7 +9,12 @@ import type { ParseStatementOfx200AccountResolutionOneOfEightMode } from "./pars
 
 export type ParseStatementOfx200AccountResolutionOneOfEight = {
   mode: ParseStatementOfx200AccountResolutionOneOfEightMode;
-  ofxAccountId: string;
+  ofxAccountId?: string;
+  /**
+   * @minLength 4
+   * @maxLength 4
+   */
+  cardLastFour?: string;
   expectedAccountId: string;
   expectedAccountName: string;
   uploadedOnAccountId: string;

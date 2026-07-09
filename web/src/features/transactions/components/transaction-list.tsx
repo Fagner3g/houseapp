@@ -6,8 +6,6 @@ import { useNavigate, useSearch } from '@tanstack/react-router'
 import { toast } from 'sonner'
 
 import {
-  getListAccountsQueryKey,
-  getListTransactionsQueryKey,
   useDeleteTransaction,
   useListAccounts,
   useListCategories,
@@ -23,6 +21,7 @@ import {
   AlertDialogHeader,
   AlertDialogTitle,
 } from '@/components/ui/alert-dialog'
+import { invalidateTransactionQueries } from '@/features/transactions/lib/invalidate-transaction-queries'
 import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
 import { Checkbox } from '@/components/ui/checkbox'
@@ -83,6 +82,27 @@ function isCreditCardExpense(
 
 function isOverdue(tx: Extract<TransactionListItem, { kind: 'transaction' }>) {
   return tx.status === 'pending' && dayjs(tx.date).isBefore(dayjs().startOf('day'))
+}
+
+function getPayableListDate(tx: TransactionRow) {
+  const dueDay = dayjs(tx.date).startOf('day')
+  const scheduledDay = tx.paymentScheduledAt
+    ? dayjs(tx.paymentScheduledAt).startOf('day')
+    : null
+
+  if (scheduledDay?.isValid() && !scheduledDay.isSame(dueDay, 'day')) {
+    return {
+      displayDay: scheduledDay,
+      dueSubtext: `Venc. ${dueDay.format('DD/MM/YYYY')}`,
+      showScheduledBadge: true,
+    }
+  }
+
+  return {
+    displayDay: dueDay,
+    dueSubtext: null,
+    showScheduledBadge: Boolean(scheduledDay?.isValid()),
+  }
 }
 
 function getStatusLabel(item: TransactionListItem): string {
@@ -193,10 +213,9 @@ function TransactionTable({
   const allSelected =
     selectableItems.length > 0 && selectableItems.every(item => selected.has(item.id))
 
-  const invalidateTransactionQueries = async () => {
+  const invalidateQueries = async () => {
     if (!slug) return
-    await queryClient.invalidateQueries({ queryKey: getListTransactionsQueryKey(slug) })
-    await queryClient.invalidateQueries({ queryKey: getListAccountsQueryKey(slug) })
+    await invalidateTransactionQueries(queryClient, slug)
   }
 
   const applyBulkCategory = async () => {
@@ -220,7 +239,7 @@ function TransactionTable({
           })
         )
       )
-      await invalidateTransactionQueries()
+      await invalidateQueries()
       toast.success(
         selectedTransactions.length === 1
           ? 'Categoria aplicada'
@@ -239,7 +258,7 @@ function TransactionTable({
       await Promise.all(
         deletableSelected.map(item => deleteTransaction({ slug, id: item.id }))
       )
-      await invalidateTransactionQueries()
+      await invalidateQueries()
       toast.success(
         deletableSelected.length === 1
           ? 'Lançamento excluído'
@@ -487,6 +506,7 @@ function TransactionTable({
 
             const tx = item
             const overdue = mode === 'overdue' && isOverdue(tx)
+            const payableListDate = !isCreditCardStatement ? getPayableListDate(tx) : null
             const creditCardExpense = isCreditCardExpense(tx, accounts?.accounts)
             const showRecurringContractButton = tx.recurringTransactionId != null
             const showPayButton =
@@ -528,7 +548,9 @@ function TransactionTable({
                 )}
               >
                 {dayjs(
-                  isCreditCardStatement ? transactionPurchaseDate(tx) : tx.date
+                  isCreditCardStatement
+                    ? transactionPurchaseDate(tx)
+                    : (payableListDate?.displayDay ?? tx.date)
                 ).format('DD/MM/YYYY')}
               </TableCell>
               <TableCell>
@@ -537,6 +559,14 @@ function TransactionTable({
                     <span className="max-w-[200px] truncate font-medium text-slate-900 lg:max-w-xs">
                       {tx.title}
                     </span>
+                    {payableListDate?.showScheduledBadge && (
+                      <Badge
+                        variant="secondary"
+                        className="shrink-0 border-sky-200 bg-sky-50 text-[10px] font-medium text-sky-800"
+                      >
+                        Agendado
+                      </Badge>
+                    )}
                     {(() => {
                       const delegatedName = fullyDelegatedById?.get(tx.id)
                       if (delegatedName) {
@@ -577,6 +607,9 @@ function TransactionTable({
                     <p className="text-xs text-slate-500">
                       Parcela {tx.installmentNumber ?? '?'}/{tx.installmentsTotal}
                     </p>
+                  )}
+                  {payableListDate?.dueSubtext && (
+                    <p className="text-xs text-slate-500">{payableListDate.dueSubtext}</p>
                   )}
                   {showCardLabel && tx.type === 'expense' && (
                     <p className="text-xs text-slate-500">

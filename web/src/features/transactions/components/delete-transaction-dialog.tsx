@@ -3,10 +3,9 @@ import { Loader2, Trash2 } from 'lucide-react'
 import { toast } from 'sonner'
 
 import {
-  getListAccountsQueryKey,
-  getListTransactionsQueryKey,
   useDeleteTransaction,
 } from '@/api/generated/api'
+import { invalidateTransactionQueries } from '@/features/transactions/lib/invalidate-transaction-queries'
 import {
   AlertDialog,
   AlertDialogAction,
@@ -49,8 +48,7 @@ export function DeleteTransactionDialog({
 
     try {
       await deleteTransaction({ slug, id: transaction.id })
-      await queryClient.invalidateQueries({ queryKey: getListTransactionsQueryKey(slug) })
-      await queryClient.invalidateQueries({ queryKey: getListAccountsQueryKey(slug) })
+      await invalidateTransactionQueries(queryClient, slug)
       toast.success('Lançamento excluído')
       onOpenChange(false)
       onDeleted?.()

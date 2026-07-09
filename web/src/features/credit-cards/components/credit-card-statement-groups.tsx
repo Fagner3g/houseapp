@@ -5,11 +5,10 @@ import { useMemo, useState } from 'react'
 import { toast } from 'sonner'
 
 import {
-  getListAccountsQueryKey,
-  getListTransactionsQueryKey,
   useListCategories,
   useUpdateTransaction,
 } from '@/api/generated/api'
+import { invalidateTransactionQueries } from '@/features/transactions/lib/invalidate-transaction-queries'
 import type { ListTransactions200TransactionsItem } from '@/api/generated/model'
 import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
@@ -402,10 +401,9 @@ export function CreditCardStatementGroups({
     return card.lastFourDigits ? `${card.label} · ${card.lastFourDigits}` : card.label
   }
 
-  const invalidateTransactionQueries = async () => {
+  const invalidateQueries = async () => {
     if (!slug) return
-    await queryClient.invalidateQueries({ queryKey: getListTransactionsQueryKey(slug) })
-    await queryClient.invalidateQueries({ queryKey: getListAccountsQueryKey(slug) })
+    await invalidateTransactionQueries(queryClient, slug)
   }
 
   const applyCategoryToTransactions = async (
@@ -424,7 +422,7 @@ export function CreditCardStatementGroups({
           })
         )
       )
-      await invalidateTransactionQueries()
+      await invalidateQueries()
       toast.success(
         targets.length === 1
           ? 'Categoria aplicada'

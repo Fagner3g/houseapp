@@ -16,6 +16,7 @@ import type { GetTransaction200TransactionCompetenceDate } from "./getTransactio
 import type { GetTransaction200TransactionStatus } from "./getTransaction200TransactionStatus";
 import type { GetTransaction200TransactionPaidAt } from "./getTransaction200TransactionPaidAt";
 import type { GetTransaction200TransactionPaidAmount } from "./getTransaction200TransactionPaidAmount";
+import type { GetTransaction200TransactionPaymentScheduledAt } from "./getTransaction200TransactionPaymentScheduledAt";
 import type { GetTransaction200TransactionCounterparty } from "./getTransaction200TransactionCounterparty";
 import type { GetTransaction200TransactionInstallmentNumber } from "./getTransaction200TransactionInstallmentNumber";
 import type { GetTransaction200TransactionInstallmentsTotal } from "./getTransaction200TransactionInstallmentsTotal";
@@ -25,6 +26,7 @@ import type { GetTransaction200TransactionNotifyTargetType } from "./getTransact
 import type { GetTransaction200TransactionNotifyUserId } from "./getTransaction200TransactionNotifyUserId";
 import type { GetTransaction200TransactionNotifyContactName } from "./getTransaction200TransactionNotifyContactName";
 import type { GetTransaction200TransactionNotifyContactPhone } from "./getTransaction200TransactionNotifyContactPhone";
+import type { GetTransaction200TransactionNotifyOverdueConfig } from "./getTransaction200TransactionNotifyOverdueConfig";
 
 export type GetTransaction200Transaction = {
   id: string;
@@ -42,6 +44,7 @@ export type GetTransaction200Transaction = {
   status: GetTransaction200TransactionStatus;
   paidAt: GetTransaction200TransactionPaidAt;
   paidAmount: GetTransaction200TransactionPaidAmount;
+  paymentScheduledAt: GetTransaction200TransactionPaymentScheduledAt;
   counterparty: GetTransaction200TransactionCounterparty;
   installmentNumber: GetTransaction200TransactionInstallmentNumber;
   installmentsTotal: GetTransaction200TransactionInstallmentsTotal;
@@ -54,6 +57,7 @@ export type GetTransaction200Transaction = {
   notifyContactName: GetTransaction200TransactionNotifyContactName;
   notifyContactPhone: GetTransaction200TransactionNotifyContactPhone;
   notifyDaysBefore?: number[];
+  notifyOverdueConfig?: GetTransaction200TransactionNotifyOverdueConfig;
   createdAt: string;
   updatedAt: string;
 };

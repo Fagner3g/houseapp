@@ -8,6 +8,7 @@ import type {
   CreateTransactionBody,
   ListTransactionsQuery,
   PayTransactionBody,
+  SchedulePaymentBody,
   UpdateTransactionBody,
 } from './transaction.schema'
 
@@ -113,6 +114,31 @@ export async function cancelTransactionPaymentController(
   reply: FastifyReply
 ) {
   const transaction = await container.transactionService.cancelPayment(
+    request.organization.id,
+    request.params.id
+  )
+
+  return reply.send({ transaction })
+}
+
+export async function scheduleTransactionPaymentController(
+  request: FastifyRequest<{ Params: TransactionParams; Body: SchedulePaymentBody }>,
+  reply: FastifyReply
+) {
+  const transaction = await container.transactionService.schedulePayment(
+    request.organization.id,
+    request.params.id,
+    request.body
+  )
+
+  return reply.send({ transaction })
+}
+
+export async function cancelScheduledTransactionPaymentController(
+  request: FastifyRequest<{ Params: TransactionParams }>,
+  reply: FastifyReply
+) {
+  const transaction = await container.transactionService.cancelScheduledPayment(
     request.organization.id,
     request.params.id
   )

@@ -1,4 +1,4 @@
-import { and, eq, isNull, ne, or, type SQL } from 'drizzle-orm'
+import { and, eq, gte, inArray, isNotNull, isNull, lte, ne, or, sql, type SQL } from 'drizzle-orm'
 
 import { accounts } from '@/db/schemas/accounts'
 import { transactions } from '@/db/schemas/transactions'
@@ -9,7 +9,7 @@ export function isPayableTransactionCondition(): SQL {
     isNull(transactions.accountId),
     isNull(accounts.type),
     ne(accounts.type, 'credit_card')
-  )!
+  ) as SQL
 }
 
 export function payableTransactionJoin() {
@@ -21,4 +21,58 @@ export function payableTransactionJoin() {
 
 export function payableTransactionWhere(extra?: SQL) {
   return extra ? and(extra, isPayableTransactionCondition()) : isPayableTransactionCondition()
+}
+
+/** Hide transactions with a future scheduled payment from urgency lists and alerts. */
+export function isNotScheduledForFutureCondition(): SQL {
+  return or(
+    isNull(transactions.paymentScheduledAt),
+    lte(transactions.paymentScheduledAt, sql`now()`)
+  ) as SQL
+}
+
+/** Payable list period: due date in range OR pending/partial with scheduled debit in range. */
+export function matchesPayablePeriodCondition(dateFrom?: Date, dateTo?: Date): SQL | undefined {
+  if (!dateFrom && !dateTo) return undefined
+
+  const dueRange: SQL[] = []
+  if (dateFrom) {
+    dueRange.push(gte(transactions.date, sql`${dateFrom.toISOString()}::timestamptz`))
+  }
+  if (dateTo) {
+    dueRange.push(lte(transactions.date, sql`${dateTo.toISOString()}::timestamptz`))
+  }
+
+  const scheduledRange: SQL[] = [
+    inArray(transactions.status, ['pending', 'partial']),
+    isNotNull(transactions.paymentScheduledAt),
+  ]
+  if (dateFrom) {
+    scheduledRange.push(
+      gte(transactions.paymentScheduledAt, sql`${dateFrom.toISOString()}::timestamptz`)
+    )
+  }
+  if (dateTo) {
+    scheduledRange.push(
+      lte(transactions.paymentScheduledAt, sql`${dateTo.toISOString()}::timestamptz`)
+    )
+  }
+
+  const dueMatch = dueRange.length > 0 ? and(...dueRange) : undefined
+  const scheduledMatch = and(...scheduledRange)
+
+  return dueMatch ? (or(dueMatch, scheduledMatch) as SQL) : scheduledMatch
+}
+
+/** Overdue queries use dateTo-only; keep hiding future-scheduled items there. */
+export function shouldExcludeFutureScheduled(filter: {
+  payableOnly?: boolean
+  dateFrom?: Date
+  dateTo?: Date
+}): boolean {
+  if (!filter.payableOnly || !filter.dateTo || filter.dateFrom) return false
+
+  const todayStart = new Date()
+  todayStart.setHours(0, 0, 0, 0)
+  return filter.dateTo < todayStart
 }

@@ -6,14 +6,11 @@ import { useEffect, useLayoutEffect, useMemo, useRef, useState, useCallback } fr
 import { useForm, useFormState } from 'react-hook-form'
 import { z } from 'zod'
 
+import type { CreateTransactionBody } from '@/api/generated/model'
 import {
   getGetSplitDebtSummaryQueryKey,
   getGetTransactionQueryKey,
-  getGetReportByCategoryQueryKey,
-  getGetReportTopMerchantsQueryKey,
-  getListAccountsQueryKey,
   getListSplitsQueryKey,
-  getListTransactionsQueryKey,
   useCancelTransactionPayment,
   useCreateRecurringTransaction,
   useCreateSplit,
@@ -22,6 +19,7 @@ import {
   useGetSplitDebtSummary,
   useGetTransaction,
   useListAccounts,
+  useListAlertRules,
   useListAttachments,
   useListCards,
   useListSplits,
@@ -141,14 +139,18 @@ import { TransactionFooterSummary } from './transaction-footer-summary'
 import { TransactionSplitsSection } from './transaction-splits-section'
 import { DeleteTransactionDialog } from './delete-transaction-dialog'
 import { canDeleteTransaction } from '@/features/transactions/utils/can-delete-transaction'
+import { invalidateTransactionQueries } from '@/features/transactions/lib/invalidate-transaction-queries'
 import { isImportedStatementTransaction } from '@/features/transactions/utils/is-imported-statement-transaction'
 import {
   buildNotifyApiPayload,
   defaultNotifyState,
   notifyStateFromTransaction,
+  orgNotifyDefaultsFromRules,
   TransactionRemindersSection,
+  type OrgNotifyDefaults,
   type TransactionNotifyState,
 } from './transaction-reminders-section'
+import { TransactionSchedulePaymentSection } from './transaction-schedule-payment-section'
 import { AccountDrawer } from '@/features/accounts/components/account-drawer'
 import { AccountSelect } from '@/features/accounts/components/account-select'
 import { filterPaymentAccounts } from '@/features/accounts/constants'
@@ -309,6 +311,19 @@ function defaultFormValues(): TransactionFormValues {
   }
 }
 
+function buildNextCreateDraft(
+  values: TransactionFormValues,
+  lockedAccountId: string | null
+): Partial<CreateTransactionBody> {
+  return {
+    type: values.type === 'transfer' ? 'expense' : values.type,
+    accountId: lockedAccountId ?? values.accountId ?? undefined,
+    cardId: values.cardId ?? undefined,
+    date: dayjs(values.date).toISOString(),
+    status: 'pending',
+  }
+}
+
 type AccountOption = {
   id: string
   type: string
@@ -397,6 +412,7 @@ export function TransactionDrawer() {
   const lockedAccountId = useDrawerStore(s => s.lockedAccountId)
   const editingId = useDrawerStore(s => s.editingTransactionId)
   const close = useDrawerStore(s => s.closeTransactionDrawer)
+  const openTransactionDrawer = useDrawerStore(s => s.openTransactionDrawer)
   const openAccountDrawer = useDrawerStore(s => s.openAccountDrawer)
   const openRecurringContractDrawer = useDrawerStore(s => s.openRecurringContractDrawer)
   const openCategoryDrawer = useDrawerStore(s => s.openCategoryDrawer)
@@ -425,6 +441,15 @@ export function TransactionDrawer() {
   const { data: transactionData, isLoading: isLoadingTx, isError: isTxError } = useGetTransaction(slug, editingId ?? '', {
     query: { enabled: !!slug && !!editingId && open && mode !== 'create' },
   })
+
+  const { data: alertRulesData } = useListAlertRules(slug, {
+    query: { enabled: !!slug && open },
+  })
+
+  const orgNotifyDefaults = useMemo(
+    (): OrgNotifyDefaults => orgNotifyDefaultsFromRules(alertRulesData?.rules),
+    [alertRulesData?.rules]
+  )
 
   const [notesOpen, setNotesOpen] = useState(false)
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false)
@@ -588,7 +613,7 @@ export function TransactionDrawer() {
     if (!open) {
       setPendingFiles([])
       setNotesOpen(false)
-      setNotifyState(defaultNotifyState())
+      setNotifyState(defaultNotifyState(orgNotifyDefaults))
       setSplitDraft(defaultSplitDraftState())
       setAdvancePromptOpen(false)
       setSplitPaymentConfirmOpen(false)
@@ -598,7 +623,7 @@ export function TransactionDrawer() {
       form.reset(defaultFormValues())
       return
     }
-  }, [open, form])
+  }, [open, form, orgNotifyDefaults])
 
   useLayoutEffect(() => {
     if (!open || (!isEdit && !isPay) || !tx || tx.id !== editingId) return
@@ -642,7 +667,7 @@ export function TransactionDrawer() {
       recurrence: tx.installmentsTotal ? 'installment' : 'once',
       installmentsTotal: tx.installmentsTotal ?? undefined,
     })
-    setNotifyState(notifyStateFromTransaction(tx, [1, 3, 7]))
+    setNotifyState(notifyStateFromTransaction(tx, orgNotifyDefaults))
   }, [
     open,
     isEdit,
@@ -655,6 +680,7 @@ export function TransactionDrawer() {
     activeAccounts,
     form,
     installmentSummary,
+    orgNotifyDefaults,
   ])
 
   useEffect(() => {
@@ -878,13 +904,24 @@ export function TransactionDrawer() {
 
   const invalidateAll = async () => {
     if (!slug) return
-    await Promise.all([
-      queryClient.invalidateQueries({ queryKey: getListTransactionsQueryKey(slug) }),
-      queryClient.invalidateQueries({ queryKey: getGetReportByCategoryQueryKey(slug) }),
-      queryClient.invalidateQueries({ queryKey: getGetReportTopMerchantsQueryKey(slug) }),
-      queryClient.invalidateQueries({ queryKey: getListAccountsQueryKey(slug) }),
-    ])
+    await invalidateTransactionQueries(queryClient, slug)
   }
+
+  const resetCreateDraft = useCallback(
+    (values: TransactionFormValues) => {
+      setPendingFiles([])
+      setNotesOpen(false)
+      setNotifyState(defaultNotifyState(orgNotifyDefaults))
+      setSplitDraft(defaultSplitDraftState())
+      openTransactionDrawer(
+        buildNextCreateDraft(values, effectiveLockedAccountId),
+        null,
+        effectiveLockedAccountId ? { lockAccountId: effectiveLockedAccountId } : undefined
+      )
+      form.clearErrors()
+    },
+    [openTransactionDrawer, effectiveLockedAccountId, orgNotifyDefaults, form]
+  )
 
   const uploadPendingFiles = async (transactionId: string) => {
     if (!slug) return
@@ -1249,7 +1286,7 @@ export function TransactionDrawer() {
             : 'Lançamento criado'
       )
       invalidateAll()
-      close()
+      resetCreateDraft(values)
     } catch (error) {
       toast.error(await readHttpErrorMessage(error, 'Erro ao salvar lançamento'))
     }
@@ -1291,7 +1328,6 @@ export function TransactionDrawer() {
       open={open}
       onOpenChange={v => !v && close()}
       direction="right"
-      modal={!nestedDrawerOpen}
     >
       <DrawerContent
         className={stackyDrawerContent}
@@ -1378,6 +1414,19 @@ export function TransactionDrawer() {
                     )}
                   </div>
                 )}
+                {(isEdit || isPay) &&
+                  tx?.status === 'pending' &&
+                  !isTransfer &&
+                  !isCreditCardExpense &&
+                  editingId && (
+                    <TransactionSchedulePaymentSection
+                      slug={slug}
+                      transactionId={editingId}
+                      dueDate={tx.date}
+                      paymentScheduledAt={tx.paymentScheduledAt}
+                      disabled={isPending}
+                    />
+                  )}
                 <fieldset
                   disabled={isPaidLocked}
                   className={cn('min-w-0 space-y-5 border-0 p-0', isPaidLocked && 'opacity-70')}
@@ -1979,6 +2028,7 @@ export function TransactionDrawer() {
                       <TransactionRemindersSection
                         value={notifyState}
                         onChange={setNotifyState}
+                        orgDefaults={orgNotifyDefaults}
                       />
                     )}
 

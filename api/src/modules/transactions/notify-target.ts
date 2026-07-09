@@ -2,8 +2,10 @@ import { and, eq } from 'drizzle-orm'
 
 import { db } from '@/db'
 import { organizationMembers } from '@/db/schemas/organizationMembers'
-import type { NotifyTargetType } from '@/db/schemas/transactions'
+import type { NotifyTargetType, TransactionNotifyOverdueConfig } from '@/db/schemas/transactions'
 import { badRequest } from '@/core/errors'
+
+import { validateNotifyOverdueConfig } from './notify-overdue-config'
 
 export type NotifyTargetInput = {
   notifyEnabled?: boolean
@@ -12,6 +14,7 @@ export type NotifyTargetInput = {
   notifyContactName?: string | null
   notifyContactPhone?: string | null
   notifyDaysBefore?: number[] | null
+  notifyOverdueConfig?: TransactionNotifyOverdueConfig | null
 }
 
 export type ResolvedNotifyTarget = {
@@ -21,6 +24,7 @@ export type ResolvedNotifyTarget = {
   notifyContactName: string | null
   notifyContactPhone: string | null
   notifyDaysBefore: number[] | null
+  notifyOverdueConfig: TransactionNotifyOverdueConfig | null
 }
 
 export function resolveNotifyTarget(
@@ -37,6 +41,7 @@ export function resolveNotifyTarget(
       notifyContactName: null,
       notifyContactPhone: null,
       notifyDaysBefore: null,
+      notifyOverdueConfig: null,
     }
   }
 
@@ -62,6 +67,11 @@ export function resolveNotifyTarget(
     input.notifyDaysBefore !== undefined
       ? input.notifyDaysBefore
       : (existing?.notifyDaysBefore ?? null)
+
+  const notifyOverdueConfig =
+    input.notifyOverdueConfig !== undefined
+      ? validateNotifyOverdueConfig(input.notifyOverdueConfig)
+      : (existing?.notifyOverdueConfig ?? null)
 
   if (!notifyTargetType) {
     throw badRequest('notifyTargetType is required when notifyEnabled is true')
@@ -95,6 +105,7 @@ export function resolveNotifyTarget(
     notifyContactPhone:
       notifyTargetType === 'contact' ? notifyContactPhone?.trim() || null : null,
     notifyDaysBefore,
+    notifyOverdueConfig,
   }
 }
 
@@ -125,6 +136,7 @@ export function notifyTargetFromRecord(record: {
   notifyContactName: string | null
   notifyContactPhone: string | null
   notifyDaysBefore: number[] | null
+  notifyOverdueConfig: TransactionNotifyOverdueConfig | null
 }): ResolvedNotifyTarget {
   return {
     notifyEnabled: record.notifyEnabled,
@@ -133,5 +145,6 @@ export function notifyTargetFromRecord(record: {
     notifyContactName: record.notifyContactName,
     notifyContactPhone: record.notifyContactPhone,
     notifyDaysBefore: record.notifyDaysBefore,
+    notifyOverdueConfig: record.notifyOverdueConfig,
   }
 }

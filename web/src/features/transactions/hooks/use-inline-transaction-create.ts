@@ -4,11 +4,11 @@ import { useEffect, useMemo, useRef, useState } from 'react'
 import { toast } from 'sonner'
 
 import {
-  getListTransactionsQueryKey,
   useCreateTransaction,
   useListAccounts,
 } from '@/api/generated/api'
 import { filterPaymentAccounts } from '@/features/accounts/constants'
+import { invalidateTransactionQueries } from '@/features/transactions/lib/invalidate-transaction-queries'
 import { reaisToMoneyString } from '@/lib/currency'
 import { readHttpErrorMessage } from '@/lib/http'
 import { useActiveOrganization } from '@/hooks/use-active-organization'
@@ -146,7 +146,7 @@ export function useInlineTransactionCreate(lockedAccountId?: string) {
           status: 'pending',
         },
       })
-      await queryClient.invalidateQueries({ queryKey: getListTransactionsQueryKey(slug) })
+      await invalidateTransactionQueries(queryClient, slug)
       toast.success('Lançamento criado')
       reset()
     } catch (error) {

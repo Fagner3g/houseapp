@@ -16,6 +16,7 @@ import type { UpdateAccountBodyPixKeyType } from "./updateAccountBodyPixKeyType"
 import type { UpdateAccountBodyColor } from "./updateAccountBodyColor";
 import type { UpdateAccountBodyIcon } from "./updateAccountBodyIcon";
 import type { UpdateAccountBodyOfxAccountId } from "./updateAccountBodyOfxAccountId";
+import type { UpdateAccountBodyLastFourDigits } from "./updateAccountBodyLastFourDigits";
 
 export type UpdateAccountBody = {
   /** @minLength 1 */
@@ -37,4 +38,5 @@ export type UpdateAccountBody = {
    */
   displayOrder?: number;
   ofxAccountId?: UpdateAccountBodyOfxAccountId;
+  lastFourDigits?: UpdateAccountBodyLastFourDigits;
 };

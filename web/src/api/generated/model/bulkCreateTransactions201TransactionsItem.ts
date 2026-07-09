@@ -16,6 +16,7 @@ import type { BulkCreateTransactions201TransactionsItemCompetenceDate } from "./
 import type { BulkCreateTransactions201TransactionsItemStatus } from "./bulkCreateTransactions201TransactionsItemStatus";
 import type { BulkCreateTransactions201TransactionsItemPaidAt } from "./bulkCreateTransactions201TransactionsItemPaidAt";
 import type { BulkCreateTransactions201TransactionsItemPaidAmount } from "./bulkCreateTransactions201TransactionsItemPaidAmount";
+import type { BulkCreateTransactions201TransactionsItemPaymentScheduledAt } from "./bulkCreateTransactions201TransactionsItemPaymentScheduledAt";
 import type { BulkCreateTransactions201TransactionsItemCounterparty } from "./bulkCreateTransactions201TransactionsItemCounterparty";
 import type { BulkCreateTransactions201TransactionsItemInstallmentNumber } from "./bulkCreateTransactions201TransactionsItemInstallmentNumber";
 import type { BulkCreateTransactions201TransactionsItemInstallmentsTotal } from "./bulkCreateTransactions201TransactionsItemInstallmentsTotal";
@@ -25,6 +26,7 @@ import type { BulkCreateTransactions201TransactionsItemNotifyTargetType } from "
 import type { BulkCreateTransactions201TransactionsItemNotifyUserId } from "./bulkCreateTransactions201TransactionsItemNotifyUserId";
 import type { BulkCreateTransactions201TransactionsItemNotifyContactName } from "./bulkCreateTransactions201TransactionsItemNotifyContactName";
 import type { BulkCreateTransactions201TransactionsItemNotifyContactPhone } from "./bulkCreateTransactions201TransactionsItemNotifyContactPhone";
+import type { BulkCreateTransactions201TransactionsItemNotifyOverdueConfig } from "./bulkCreateTransactions201TransactionsItemNotifyOverdueConfig";
 
 export type BulkCreateTransactions201TransactionsItem = {
   id: string;
@@ -42,6 +44,7 @@ export type BulkCreateTransactions201TransactionsItem = {
   status: BulkCreateTransactions201TransactionsItemStatus;
   paidAt: BulkCreateTransactions201TransactionsItemPaidAt;
   paidAmount: BulkCreateTransactions201TransactionsItemPaidAmount;
+  paymentScheduledAt: BulkCreateTransactions201TransactionsItemPaymentScheduledAt;
   counterparty: BulkCreateTransactions201TransactionsItemCounterparty;
   installmentNumber: BulkCreateTransactions201TransactionsItemInstallmentNumber;
   installmentsTotal: BulkCreateTransactions201TransactionsItemInstallmentsTotal;
@@ -54,6 +57,7 @@ export type BulkCreateTransactions201TransactionsItem = {
   notifyContactName: BulkCreateTransactions201TransactionsItemNotifyContactName;
   notifyContactPhone: BulkCreateTransactions201TransactionsItemNotifyContactPhone;
   notifyDaysBefore?: number[];
+  notifyOverdueConfig?: BulkCreateTransactions201TransactionsItemNotifyOverdueConfig;
   createdAt: string;
   updatedAt: string;
 };

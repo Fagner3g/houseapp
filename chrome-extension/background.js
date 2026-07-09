@@ -1,6 +1,11 @@
+importScripts('lib/notification-utils.js', 'lib/alert-items.js', 'lib/pay-utils.js')
+
 const DEFAULT_POLL_MINUTES = 15
 const ALARM_NAME = 'houseapp-poll'
 const CONFIRM_NOTIFICATION_ID = 'houseapp-confirm-action'
+const notify = globalThis.HouseAppNotify
+const alertItems = globalThis.HouseAppAlertItems
+const payUtil = globalThis.HouseAppPay
 
 chrome.runtime.onInstalled.addListener(async () => {
   const { pollMinutes } = await chrome.storage.local.get('pollMinutes')
@@ -30,8 +35,15 @@ chrome.notifications.onButtonClicked.addListener(async (notificationId, buttonIn
   const payMatch = notificationId.match(/^notify-(.+?)-(.+)$/)
   if (payMatch && buttonIndex === 0) {
     const [, orgSlug, transactionId] = payMatch
-    const title = await getNotificationTitle(transactionId)
-    await requestConfirmAction({ type: 'pay-transaction', orgSlug, transactionId, title })
+    const cached = await getCachedNotification(transactionId)
+    await requestConfirmAction({
+      type: 'pay-transaction',
+      orgSlug,
+      transactionId,
+      title: cached?.title || 'Transação',
+      notificationId: cached?.id || null,
+      paidAmountReais: cached?.amountReais || null,
+    })
     chrome.notifications.clear(notificationId)
   }
 })
@@ -72,43 +84,35 @@ async function fetchOrgs(apiUrl, token) {
   return res.json()
 }
 
-async function fetchSummary(apiUrl, token, slug) {
-  const res = await fetch(`${apiUrl}/organizations/${slug}/reports/summary`, {
-    headers: authHeaders(token),
-  })
-  if (!res.ok) throw new Error('summary fetch failed')
-  return res.json()
-}
-
 async function fetchPendingNotifications(apiUrl, token) {
   const res = await fetch(`${apiUrl}/notifications/pending`, { headers: authHeaders(token) })
   if (!res.ok) throw new Error('pending notifications fetch failed')
   return res.json()
 }
 
-async function payTransaction(orgSlug, transactionId) {
-  const { apiUrl } = await chrome.storage.local.get('apiUrl')
-  const token = await getToken()
-  if (!apiUrl || !orgSlug || !token) return
-
-  await fetch(`${apiUrl}/organizations/${orgSlug}/transactions/${transactionId}/pay`, {
-    method: 'PATCH',
-    headers: authHeaders(token),
-    body: JSON.stringify({ paidAt: new Date().toISOString() }),
+async function fetchOrgAlerts(apiUrl, token, org) {
+  const dateTo = alertItems.yesterdayEndIso()
+  const params = new URLSearchParams({
+    status: 'pending',
+    dateTo,
+    payableOnly: 'true',
+    perPage: '100',
   })
-
-  await chrome.storage.local.remove(['cachedPendingNotifications', 'cachedSummaryByOrg'])
-}
-
-async function markNotificationRead(notificationId) {
-  const { apiUrl } = await chrome.storage.local.get('apiUrl')
-  const token = await getToken()
-  if (!apiUrl || !token) return
-
-  await fetch(`${apiUrl}/notifications/${notificationId}/read`, {
-    method: 'PATCH',
-    headers: authHeaders(token),
-  })
+  const headers = authHeaders(token)
+  const [overdueRes, summaryRes] = await Promise.all([
+    fetch(`${apiUrl}/organizations/${org.slug}/transactions?${params}`, { headers }),
+    fetch(`${apiUrl}/organizations/${org.slug}/reports/summary`, { headers }),
+  ])
+  if (!overdueRes.ok || !summaryRes.ok) {
+    return { orgId: org.id, overdueTransactions: [], upcomingTransactions: [] }
+  }
+  const overdue = await overdueRes.json()
+  const summary = await summaryRes.json()
+  return {
+    orgId: org.id,
+    overdueTransactions: overdue.transactions || [],
+    upcomingTransactions: summary.upcoming || [],
+  }
 }
 
 function setBadge(overdueCount = 0) {
@@ -122,6 +126,7 @@ function setBadge(overdueCount = 0) {
 }
 
 function notifyPendingItem(notification, orgSlug, orgName) {
+  if (!notify.EXTENSION_CHANNELS.has(notification.channel)) return
   const orgSuffix = orgName ? ` [${orgName}]` : ''
   const txId = notification.transactionId
   if (!txId || !orgSlug) return
@@ -136,12 +141,14 @@ function notifyPendingItem(notification, orgSlug, orgName) {
   })
 }
 
-async function getNotificationTitle(transactionId) {
+async function getCachedNotification(transactionId) {
   const { cachedPendingNotifications } = await chrome.storage.local.get('cachedPendingNotifications')
   const found = (cachedPendingNotifications?.notifications || []).find(
     n => n.transactionId === transactionId
   )
-  return found?.title || 'Transação'
+  if (!found) return null
+  const amountInfo = notify.parseNotificationAmount(found.metadata || {})
+  return { id: found.id, title: found.title, amountReais: amountInfo.hasAmount ? amountInfo.reais : null }
 }
 
 async function getPendingConfirmAction() {
@@ -167,8 +174,22 @@ async function requestConfirmAction(action) {
 
 async function executePendingConfirmAction(action) {
   if (action.type === 'pay-transaction') {
-    await payTransaction(action.orgSlug, action.transactionId)
-    if (action.notificationId) await markNotificationRead(action.notificationId)
+    const { apiUrl } = await chrome.storage.local.get('apiUrl')
+    const token = await getToken()
+    if (apiUrl && token) {
+      await payUtil.payTransaction(
+        apiUrl,
+        token,
+        action.orgSlug,
+        action.transactionId,
+        action.paidAmountReais,
+        new Date().toISOString()
+      )
+      if (action.notificationId) {
+        await payUtil.dismissNotification(apiUrl, token, action.notificationId)
+      }
+    }
+    await chrome.storage.local.remove(['cachedPendingNotifications'])
   }
   poll()
 }
@@ -176,16 +197,10 @@ async function executePendingConfirmAction(action) {
 async function poll() {
   try {
     const token = await getToken()
-    if (!token) {
-      setBadge(0)
-      return
-    }
+    if (!token) { setBadge(0); return }
 
     const { apiUrl } = await chrome.storage.local.get('apiUrl')
-    if (!apiUrl) {
-      setBadge(0)
-      return
-    }
+    if (!apiUrl) { setBadge(0); return }
 
     try {
       await fetchProfile(apiUrl, token)
@@ -197,39 +212,25 @@ async function poll() {
 
     const orgsData = await fetchOrgs(apiUrl, token)
     const orgs = orgsData.organizations || orgsData.orgs || orgsData
-    if (!orgs?.length) {
-      setBadge(0)
-      return
-    }
+    if (!orgs?.length) { setBadge(0); return }
 
     const { cachedPendingNotifications: prevPending } = await chrome.storage.local.get(
       'cachedPendingNotifications'
     )
     const prevIds = new Set((prevPending?.notifications || []).map(n => n.id))
 
-    let totalOverdue = 0
-    const summaryCache = {}
-
-    const summaries = await Promise.all(
-      orgs.map(org =>
-        fetchSummary(apiUrl, token, org.slug)
-          .then(data => ({ slug: org.slug, name: org.name, summary: data }))
-          .catch(() => null)
-      )
-    )
-
-    for (const item of summaries.filter(Boolean)) {
-      totalOverdue += item.summary?.overdueCount ?? 0
-      summaryCache[item.slug] = item.summary
-    }
-
     let pending = null
+    let totalOverdue = 0
     try {
       pending = await fetchPendingNotifications(apiUrl, token)
       const notifications = pending.notifications || []
+      const orgDataList = await Promise.all(orgs.map(org => fetchOrgAlerts(apiUrl, token, org)))
+      const allItems = alertItems.buildAllOrgAlertItems({ orgDataList, notifications, orgs })
+      totalOverdue = notify.countByKind(allItems).overdue
 
       for (const notification of notifications) {
         if (!prevIds.has(notification.id) && notification.transactionId) {
+          if (!notify.EXTENSION_CHANNELS.has(notification.channel)) continue
           const org = orgs.find(o => o.id === notification.organizationId)
           notifyPendingItem(notification, org?.slug, org?.name)
         }
@@ -239,9 +240,9 @@ async function poll() {
     setBadge(totalOverdue)
 
     await chrome.storage.local.set({
-      cachedSummaryByOrg: summaryCache,
       cachedPendingNotifications: pending,
       badgeTotals: { overdue: totalOverdue },
+      lastPollAt: new Date().toISOString(),
     })
 
     chrome.runtime.sendMessage({ type: 'data-updated' }).catch(() => {})
@@ -249,5 +250,12 @@ async function poll() {
     console.error('[HouseApp] poll error:', err)
   }
 }
+
+chrome.runtime.onMessage.addListener((msg, _sender, sendResponse) => {
+  if (msg.type === 'poll-now') {
+    poll().then(() => sendResponse({ ok: true })).catch(() => sendResponse({ ok: false }))
+    return true
+  }
+})
 
 poll()

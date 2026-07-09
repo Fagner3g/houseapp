@@ -11,6 +11,7 @@ import type { ParseStatementXlsx200Summary } from "./parseStatementXlsx200Summar
 import type { ParseStatementXlsx200Duplicate } from "./parseStatementXlsx200Duplicate";
 import type { ParseStatementXlsx200InvoiceStatus } from "./parseStatementXlsx200InvoiceStatus";
 import type { ParseStatementXlsx200CardMismatchWarning } from "./parseStatementXlsx200CardMismatchWarning";
+import type { ParseStatementXlsx200AccountResolution } from "./parseStatementXlsx200AccountResolution";
 
 export type ParseStatementXlsx200 = {
   parsed: ParseStatementXlsx200Parsed;
@@ -23,4 +24,5 @@ export type ParseStatementXlsx200 = {
   duplicate: ParseStatementXlsx200Duplicate;
   invoiceStatus: ParseStatementXlsx200InvoiceStatus;
   cardMismatchWarning?: ParseStatementXlsx200CardMismatchWarning;
+  accountResolution: ParseStatementXlsx200AccountResolution;
 };

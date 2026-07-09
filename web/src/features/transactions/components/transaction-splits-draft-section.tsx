@@ -1,5 +1,5 @@
 import { ChevronDown, Wallet } from 'lucide-react'
-import { useMemo, useState } from 'react'
+import { useId, useMemo, useState } from 'react'
 
 import { CurrencyInput } from '@/components/ui/currency-input'
 import { Input } from '@/components/ui/input'
@@ -42,24 +42,26 @@ export function TransactionSplitsDraftSection({
   value,
   onChange,
 }: TransactionSplitsDraftSectionProps) {
+  const splitNotifyId = useId()
   const [open, setOpen] = useState(value.splitMode !== 'none')
 
   const totalReais = moneyStringToReais(amountCents)
   const splitReais = resolveSplitAmountReais(amountCents, value.splitMode, value.splitAmountReais)
   const myShareReais = Math.max(0, totalReais - splitReais)
   const isInstallment = recurrence === 'installment' && (installmentsTotal ?? 0) >= 2
+  const totalInstallments = installmentsTotal ?? 0
 
   const perInstallmentAmounts = useMemo(() => {
     if (!isInstallment || value.splitMode === 'none') return null
 
     if (value.splitMode === 'custom') {
       return {
-        split: divideReais(value.splitAmountReais, installmentsTotal!),
-        myShare: divideReais(myShareReais, installmentsTotal!),
+        split: divideReais(value.splitAmountReais, totalInstallments),
+        myShare: divideReais(myShareReais, totalInstallments),
       }
     }
 
-    const parcelAmounts = divideReais(totalReais, installmentsTotal!)
+    const parcelAmounts = divideReais(totalReais, totalInstallments)
     return {
       split: parcelAmounts.map(parcel =>
         resolveSplitAmountReais(
@@ -81,7 +83,7 @@ export function TransactionSplitsDraftSection({
     isInstallment,
     value.splitMode,
     value.splitAmountReais,
-    installmentsTotal,
+    totalInstallments,
     totalReais,
     myShareReais,
   ])
@@ -163,6 +165,8 @@ export function TransactionSplitsDraftSection({
 
               {value.splitPersonMode === 'member' ? (
                 <MemberSelect
+                  creatable
+                  label="Membro"
                   value={value.splitUserId}
                   onChange={userId => update({ splitUserId: userId })}
                 />
@@ -207,11 +211,11 @@ export function TransactionSplitsDraftSection({
               )}
 
               <div className="flex items-center justify-between gap-3">
-                <Label htmlFor="split-draft-notify" className="text-sm text-slate-600">
+                <Label htmlFor={splitNotifyId} className="text-sm text-slate-600">
                   Notificar esta pessoa
                 </Label>
                 <Switch
-                  id="split-draft-notify"
+                  id={splitNotifyId}
                   checked={value.notifyEnabled}
                   onCheckedChange={notifyEnabled => update({ notifyEnabled })}
                 />

@@ -10,9 +10,10 @@ import type {
 import { accounts } from '@/db/schemas/accounts'
 import { organizationMembers } from '@/db/schemas/organizationMembers'
 import { organizations } from '@/db/schemas/organizations'
-import { transactions } from '@/db/schemas/transactions'
+import { transactions, type TransactionNotifyOverdueConfig } from '@/db/schemas/transactions'
 import { users } from '@/db/schemas/users'
 import { badRequest, conflict, notFound } from '@/core/errors'
+import { isNotScheduledForFutureCondition } from '@/modules/transactions/payable-transaction'
 import { centavosToString } from '@/core/money'
 import { UNPAID_TRANSACTION_STATUSES } from '@/core/transaction-payment'
 import { normalizePhone, sendWhatsAppMessage } from '@/domain/whatsapp'
@@ -37,9 +38,9 @@ export type AlertEvaluateMode = 'all' | 'upcoming' | 'overdue'
 import type {
   AlertRuleRecord,
   AlertRuleRepository,
-  CreateAlertRuleData,
 } from './alert-rule.repository'
 import { isOverdueConfig, isUpcomingConfig } from './alert-rule.repository'
+import { resolveEffectiveOverdueNotify, type ResolvedOverdueNotify } from './resolve-effective-overdue-notify'
 import type { AlertSettingsService } from './alert-settings.service'
 import {
   buildWhatsAppBatchMessageForTransactions,
@@ -148,6 +149,7 @@ type PendingTransactionRow = RuleMatchTransaction & {
   notifyContactName: string | null
   notifyContactPhone: string | null
   notifyDaysBefore: number[] | null
+  notifyOverdueConfig: TransactionNotifyOverdueConfig | null
 }
 
 export class AlertRuleService {
@@ -376,7 +378,7 @@ export class AlertRuleService {
       throw notFound('Contact not found')
     }
 
-    const sample = matchingSplits[0]!
+    const sample = matchingSplits[0] as NonNullable<(typeof matchingSplits)[0]>
     const phone = normalizePhone(sample.contactPhone)
     if (!phone) {
       throw badRequest('Telefone do contato vazio')
@@ -633,10 +635,7 @@ export class AlertRuleService {
             skipDedupe,
           })
         }
-        continue
       }
-
-      continue
     }
 
     if (mode !== 'overdue') {
@@ -682,6 +681,7 @@ export class AlertRuleService {
         notifyContactName: transactions.notifyContactName,
         notifyContactPhone: transactions.notifyContactPhone,
         notifyDaysBefore: transactions.notifyDaysBefore,
+        notifyOverdueConfig: transactions.notifyOverdueConfig,
       })
       .from(transactions)
       .leftJoin(accounts, eq(transactions.accountId, accounts.id))
@@ -689,7 +689,8 @@ export class AlertRuleService {
         and(
           eq(transactions.organizationId, organizationId),
           inArray(transactions.status, [...UNPAID_TRANSACTION_STATUSES]),
-          eq(transactions.notifyEnabled, true)
+          eq(transactions.notifyEnabled, true),
+          isNotScheduledForFutureCondition()
         )
       )
   }
@@ -752,6 +753,26 @@ export class AlertRuleService {
     return scoped.find(rule => rule.scope === 'organization') ?? null
   }
 
+  private buildOverdueDispatchRule(params: {
+    organizationId: string
+    resolved: ResolvedOverdueNotify
+  }): AlertRuleRecord {
+    return {
+      id: params.resolved.ruleId,
+      organizationId: params.organizationId,
+      scope: 'organization',
+      accountId: null,
+      recurringTransactionId: null,
+      triggerType: 'overdue',
+      config: params.resolved.config,
+      channels: params.resolved.channels,
+      isActive: true,
+      createdBy: '',
+      createdAt: new Date(),
+      updatedAt: new Date(),
+    }
+  }
+
   private async evaluateTargetedTransaction(params: {
     rules: AlertRuleRecord[]
     transaction: PendingTransactionRow
@@ -804,11 +825,22 @@ export class AlertRuleService {
       date: params.transaction.date,
     }
 
-    const rule = this.resolveRule(params.rules, pseudoRow, 'overdue')
-    if (!rule || !isOverdueConfig(rule.config)) return 0
+    const orgRule = this.resolveRule(params.rules, pseudoRow, 'overdue')
+    const resolved = resolveEffectiveOverdueNotify({
+      txOverride: params.transaction.notifyOverdueConfig,
+      orgRuleConfig: orgRule?.config,
+      orgRuleId: orgRule?.id,
+      orgRuleChannels: orgRule?.channels,
+    })
+    if (!resolved) return 0
+
+    const rule = this.buildOverdueDispatchRule({
+      organizationId: params.transaction.organizationId,
+      resolved,
+    })
 
     const overdueDays = Math.abs(params.daysUntilDue)
-    const periodKey = getOverduePeriodKey(rule.config.frequency, rule.config.interval)
+    const periodKey = getOverduePeriodKey(resolved.config.frequency, resolved.config.interval)
     const amount = centavosToString(params.transaction.amount)
     const dueDate = this.resolveDueDateForTransaction(params.transaction).toISOString()
     const title = buildOverdueTitle(params.transaction.title, overdueDays)

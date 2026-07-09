@@ -8,7 +8,7 @@ import { categories } from '@/db/schemas/categories'
 import { transactionCategories } from '@/db/schemas/transactionCategories'
 import { transactionSplits } from '@/db/schemas/transactionSplits'
 import { transactions } from '@/db/schemas/transactions'
-import { isPayableTransactionCondition } from '@/modules/transactions/payable-transaction'
+import { isPayableTransactionCondition, isNotScheduledForFutureCondition } from '@/modules/transactions/payable-transaction'
 import { UNPAID_TRANSACTION_STATUSES } from '@/core/transaction-payment'
 import {
   userIsSplitCreditorCondition,
@@ -356,7 +356,8 @@ export class DrizzleReportRepository implements ReportRepository {
           eq(transactions.organizationId, organizationId),
           inArray(transactions.status, [...UNPAID_TRANSACTION_STATUSES]),
           lt(transactions.date, todayStart),
-          isPayableTransactionCondition()
+          isPayableTransactionCondition(),
+          isNotScheduledForFutureCondition()
         )
       )
 
@@ -423,7 +424,8 @@ export class DrizzleReportRepository implements ReportRepository {
           eq(transactions.organizationId, organizationId),
           inArray(transactions.status, [...UNPAID_TRANSACTION_STATUSES]),
           gte(transactions.date, todayStart),
-          lte(transactions.date, until)
+          lte(transactions.date, until),
+          isNotScheduledForFutureCondition()
         )
       )
       .orderBy(asc(transactions.date), asc(transactions.title))
@@ -713,7 +715,8 @@ export class DrizzleReportRepository implements ReportRepository {
           eq(transactions.organizationId, organizationId),
           inArray(transactions.status, [...UNPAID_TRANSACTION_STATUSES]),
           lt(transactions.date, todayStart),
-          isPayableTransactionCondition()
+          isPayableTransactionCondition(),
+          isNotScheduledForFutureCondition()
         )
       )
 

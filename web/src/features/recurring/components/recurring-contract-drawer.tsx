@@ -10,12 +10,12 @@ import { z } from 'zod'
 import {
   getGetRecurringTransactionQueryKey,
   getListRecurringTransactionsQueryKey,
-  getListTransactionsQueryKey,
   useGetRecurringTransaction,
   usePreviewUpdateRecurringTransaction,
   useUpdateRecurringTransaction,
   useListAccounts,
 } from '@/api/generated/api'
+import { invalidateTransactionQueries } from '@/features/transactions/lib/invalidate-transaction-queries'
 import {
   AlertDialog,
   AlertDialogAction,
@@ -180,7 +180,7 @@ export function RecurringContractDrawer() {
 
   const invalidateAll = () => {
     queryClient.invalidateQueries({ queryKey: getListRecurringTransactionsQueryKey(slug) })
-    queryClient.invalidateQueries({ queryKey: getListTransactionsQueryKey(slug) })
+    void invalidateTransactionQueries(queryClient, slug)
     if (recurringId) {
       queryClient.invalidateQueries({
         queryKey: getGetRecurringTransactionQueryKey(slug, recurringId),
