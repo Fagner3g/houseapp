@@ -5,6 +5,7 @@ export {
   type WhatsAppAlertMessageInput,
   type WhatsAppBatchRenderUnit,
 } from './types'
+export { WHATSAPP_ITEM_SEPARATOR } from './org-sections'
 export { buildGreeting, cleanTransactionTitle, formatAmountBRL } from './format'
 export {
   buildCreditCardShareTotalLine,

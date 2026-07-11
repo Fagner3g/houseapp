@@ -27,8 +27,9 @@ export function AlertsAutoRulesCard() {
       <CardHeader>
         <CardTitle>Regras automáticas</CardTitle>
         <CardDescription>
-          Horário e regras de lembretes da organização. Transações com lembretes ativos notificam
-          todos os membros, cada um no seu telefone.
+          Horário e regras de lembretes da organização. O owner recebe obrigações da casa (faturas e
+          despesas sem delegação). Membros recebem só o que foi delegado a eles; lembretes opt-in
+          na transação notificam conforme a configuração.
         </CardDescription>
       </CardHeader>
       <CardContent className="space-y-4">

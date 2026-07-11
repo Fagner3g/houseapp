@@ -15,6 +15,7 @@ import {
   toWhatsAppBatchItem,
 } from './whatsapp-alert-message'
 import { computeDaysUntilDue } from './alert-utils'
+import { isOwnerResidualAlertKind } from './owner-residual-kind'
 import {
   isCreditCardInvoiceAlert,
   resolveTransactionAlertDueDate,
@@ -39,6 +40,10 @@ function isSplitKind(kind: string | undefined): boolean {
   )
 }
 
+function isInvoiceKind(kind: string | null | undefined): boolean {
+  return kind === 'invoice_upcoming' || kind === 'invoice_overdue'
+}
+
 export function getWhatsAppAlertKindCategory(kind: string | null): string {
   if (!kind) return 'alert'
   if (kind.includes('overdue')) return 'overdue'
@@ -49,6 +54,7 @@ export type ResolvedWhatsAppAlertContent = {
   recipientName: string
   transactionTitle: string
   accountName: string | null
+  organizationName: string | null
   daysUntilDue: number
   dueDate: string
   amount: string | null
@@ -80,6 +86,44 @@ export async function resolveWhatsAppAlertContentForNotification(
     .from(users)
     .where(eq(users.id, notification.userId))
     .limit(1)
+
+  const kindEarly = readMetadataString(metadata, 'kind')
+  const organizationNameForOwner = isOwnerResidualAlertKind(kindEarly)
+    ? readMetadataString(metadata, 'organizationName')
+    : null
+
+  if (isInvoiceKind(kindEarly)) {
+    const accountName = readMetadataString(metadata, 'accountName')
+    const amount = readMetadataString(metadata, 'amount')
+    const dueDate = readMetadataString(metadata, 'dueDate') ?? new Date().toISOString()
+    const daysUntilDue = readMetadataNumber(metadata, 'daysUntilDue') ?? 0
+    const overdueDays = readMetadataNumber(metadata, 'overdueDays')
+
+    return {
+      recipientName: externalName ?? user?.name ?? 'você',
+      transactionTitle: accountName ? `Fatura ${accountName}` : notification.title,
+      accountName,
+      organizationName: organizationNameForOwner,
+      daysUntilDue,
+      dueDate,
+      amount,
+      transactionTotalAmount: amount,
+      installmentAmount: null,
+      splitAmount: null,
+      splitShareInstallmentAmount: null,
+      splitPaidAmount: null,
+      splitRemainingAmount: null,
+      splitParticipantCount: null,
+      collectLumpSum: null,
+      kind: kindEarly ?? undefined,
+      overdueDays,
+      installmentNumber: null,
+      installmentsTotal: null,
+      isSplit: false,
+      isCreditCardInvoice: true,
+      note: null,
+    }
+  }
 
   let transactionTitle = notification.title
   let dueDate = readMetadataString(metadata, 'dueDate') ?? new Date().toISOString()
@@ -208,6 +252,9 @@ export async function resolveWhatsAppAlertContentForNotification(
     recipientName: externalName ?? user?.name ?? 'você',
     transactionTitle,
     accountName,
+    organizationName: isOwnerResidualAlertKind(kind)
+      ? readMetadataString(metadata, 'organizationName')
+      : null,
     daysUntilDue,
     dueDate,
     amount,
@@ -252,6 +299,7 @@ export function toWhatsAppBatchItemFromContent(
     installmentNumber: content.installmentNumber,
     installmentsTotal: content.installmentsTotal,
     accountName: content.accountName,
+    organizationName: content.organizationName,
     isSplit: content.isSplit,
   })
 }
@@ -265,6 +313,7 @@ export async function buildWhatsAppMessageForNotification(
     recipientName: content.recipientName,
     transactionTitle: content.transactionTitle,
     accountName: content.accountName,
+    organizationName: content.organizationName,
     daysUntilDue: content.daysUntilDue,
     dueDate: content.dueDate,
     amount: content.amount,
@@ -305,7 +354,11 @@ export function buildWhatsAppBatchGroupKey(
   organizationId: string,
   kind: string | null
 ): string {
-  return `${phone}:${userId}:${organizationId}:${getWhatsAppAlertKindCategory(kind)}`
+  const category = getWhatsAppAlertKindCategory(kind)
+  if (isOwnerResidualAlertKind(kind)) {
+    return `${phone}:${userId}:owner-residual:${category}`
+  }
+  return `${phone}:${userId}:${organizationId}:${category}`
 }
 
 export function buildWhatsAppSendDedupeKey(
@@ -331,5 +384,9 @@ export function buildWhatsAppBatchSendDedupeKey(
   notificationIds: string[]
 ): string {
   const sortedIds = [...notificationIds].sort().join(',')
-  return `${phone}:${userId}:${organizationId}:${getWhatsAppAlertKindCategory(kind)}:batch:${sortedIds}`
+  const category = getWhatsAppAlertKindCategory(kind)
+  if (isOwnerResidualAlertKind(kind)) {
+    return `${phone}:${userId}:owner-residual:${category}:batch:${sortedIds}`
+  }
+  return `${phone}:${userId}:${organizationId}:${category}:batch:${sortedIds}`
 }

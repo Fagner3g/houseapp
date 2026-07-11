@@ -400,6 +400,15 @@ export class DrizzleStatementRepository implements StatementRepository {
           billPaymentsTotal > 0n ? billPaymentsTotal : statement.paymentsReceived,
       })
       .where(eq(statements.id, statementId))
+
+    if (isPaid) {
+      const { markPurchasesPaidForStatement } = await import('./settle-paid-statements')
+      await markPurchasesPaidForStatement({
+        organizationId: statement.organizationId,
+        statementId,
+        paidAt: statement.dueDate ?? new Date(),
+      })
+    }
   }
 
   private resolveImportStatementId(

@@ -24,6 +24,7 @@ export function toWhatsAppBatchItem(input: {
   installmentNumber?: number | null
   installmentsTotal?: number | null
   accountName?: string | null
+  organizationName?: string | null
   isSplit?: boolean
 }): WhatsAppAlertBatchItem {
   const summaryLine = buildSummaryLine({
@@ -54,6 +55,7 @@ export function toWhatsAppBatchItem(input: {
         isCreditCardInvoice: input.isCreditCardInvoice,
       }),
     accountName: input.accountName,
+    organizationName: input.organizationName,
     isCreditCardInvoice: input.isCreditCardInvoice,
     amount: input.amount,
     transactionTotalAmount: input.transactionTotalAmount,

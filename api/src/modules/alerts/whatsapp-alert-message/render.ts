@@ -20,6 +20,9 @@ import {
 } from './types'
 
 function creditCardGroupKey(item: WhatsAppAlertBatchItem): string | null {
+  // Invoice digests are one line for the whole bill — never expand as purchase groups.
+  if (item.kind === 'invoice_upcoming' || item.kind === 'invoice_overdue') return null
+
   const accountName = item.accountName?.trim()
   if (!item.isCreditCardInvoice || !accountName) return null
   return `${accountName}::${item.dueLine}`

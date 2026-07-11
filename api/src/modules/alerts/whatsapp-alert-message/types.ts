@@ -6,6 +6,7 @@ export type WhatsAppAlertMessageInput = {
   recipientName: string
   transactionTitle: string
   accountName?: string | null
+  organizationName?: string | null
   daysUntilDue: number
   dueDate: Date | string
   amount: string | null
@@ -31,6 +32,7 @@ export type WhatsAppAlertBatchItem = {
   summaryLine?: string | null
   dueLine: string
   accountName?: string | null
+  organizationName?: string | null
   isCreditCardInvoice?: boolean
   amount?: string | null
   transactionTotalAmount?: string | null

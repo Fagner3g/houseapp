@@ -319,6 +319,19 @@ export class TransactionService {
       this.toCreateData(organizationId, input, notifyTarget)
     )
 
+    if (input.type === 'income' && input.accountId && input.title) {
+      const { maybeMarkPurchasesAfterInvoicePayment } = await import(
+        '@/modules/statements/settle-after-payment'
+      )
+      await maybeMarkPurchasesAfterInvoicePayment({
+        organizationId,
+        accountId: input.accountId,
+        title: input.title,
+        type: 'income',
+        paidAt: input.paidAt ? new Date(input.paidAt) : created.paidAt,
+      })
+    }
+
     return { transaction: toTransactionDto(created, input.categoryIds ?? []) }
   }
 

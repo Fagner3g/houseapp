@@ -9,6 +9,7 @@ import {
   cleanTransactionTitle,
   formatAmountBRL,
   WHATSAPP_BATCH_SEPARATOR,
+  WHATSAPP_ITEM_SEPARATOR,
 } from './whatsapp-alert-message'
 import { resolveWhatsAppAlertAmounts } from './resolve-whatsapp-alert-amounts'
 
@@ -705,6 +706,122 @@ describe('whatsapp-alert-message', () => {
         '*Vence em 9 dias · 17/07/2026*',
         '',
         '💰 Total da sua parte: *R$ 342,00*',
+      ].join('\n')
+    )
+  })
+
+  it('renders invoice digest as a single fatura line without purchase items', () => {
+    const message = buildWhatsAppBatchAlertMessage(
+      {
+        recipientName: 'Fagner Gomes',
+        items: [
+          {
+            transactionTitle: 'Fatura Nubank',
+            dueLine: 'Fatura vencida há 1 dia · 10/07/2026',
+            accountName: 'Nubank',
+            isCreditCardInvoice: true,
+            amount: '100.00',
+            transactionTotalAmount: '100.00',
+            daysUntilDue: -1,
+            kind: 'invoice_overdue',
+          },
+          {
+            transactionTitle: 'Uber',
+            dueLine: 'Fatura vencida há 1 dia · 10/07/2026',
+            accountName: 'Nubank',
+            isCreditCardInvoice: true,
+            amount: '30.00',
+            transactionTotalAmount: '30.00',
+            daysUntilDue: -1,
+            kind: 'overdue',
+          },
+          {
+            transactionTitle: 'iFood',
+            dueLine: 'Fatura vencida há 1 dia · 10/07/2026',
+            accountName: 'Nubank',
+            isCreditCardInvoice: true,
+            amount: '70.00',
+            transactionTotalAmount: '70.00',
+            daysUntilDue: -1,
+            kind: 'overdue',
+          },
+        ],
+      },
+      new Date('2026-07-11T15:00:00.000Z')
+    )
+
+    expect(message).toContain('⚠️ *Fatura Nubank*')
+    expect(message).toContain('*Fatura vencida há 1 dia · 10/07/2026*')
+    expect(message).toContain('💳 Cartão de crédito')
+    expect(message).toContain('Uber')
+    expect(message).toContain('iFood')
+    // Digest stays outside the purchase group (separator between single + group)
+    const digestIndex = message.indexOf('Fatura Nubank')
+    const cardHeaderIndex = message.indexOf('💳 Cartão de crédito')
+    expect(digestIndex).toBeGreaterThan(-1)
+    expect(cardHeaderIndex).toBeGreaterThan(digestIndex)
+  })
+
+  it('groups owner residual items by organization with lighter item separators', () => {
+    const message = buildWhatsAppBatchAlertMessage(
+      {
+        recipientName: 'Fagner',
+        items: [
+          {
+            transactionTitle: 'Fatura Nubank Ultravioleta',
+            organizationName: 'Casa',
+            amount: '4880.35',
+            dueLine: 'Fatura vence em 6 dias · 17/07/2026',
+            daysUntilDue: 6,
+            kind: 'invoice_upcoming',
+            isCreditCardInvoice: true,
+          },
+          {
+            transactionTitle: 'Internet',
+            organizationName: 'Empresa',
+            amount: '149.90',
+            dueLine: 'Vence em 5 dias · 16/07/2026',
+            daysUntilDue: 5,
+            kind: 'owner_upcoming',
+          },
+          {
+            transactionTitle: 'Aluguel',
+            organizationName: 'Casa',
+            amount: '2500.00',
+            dueLine: 'Vence em 2 dias · 13/07/2026',
+            daysUntilDue: 2,
+            kind: 'owner_upcoming',
+          },
+        ],
+      },
+      new Date('2026-07-11T15:00:00.000Z')
+    )
+
+    expect(message).toBe(
+      [
+        'Boa tarde, Fagner!',
+        '',
+        '⏰ *PRESTES A VENCER*',
+        '',
+        '🏠 *Casa*',
+        '',
+        '🧾 *Aluguel*',
+        '*R$ 2.500,00*',
+        '*Vence em 2 dias · 13/07/2026*',
+        '',
+        WHATSAPP_ITEM_SEPARATOR,
+        '',
+        '🧾 *Fatura Nubank Ultravioleta*',
+        '*R$ 4.880,35*',
+        '*Fatura vence em 6 dias · 17/07/2026*',
+        '',
+        WHATSAPP_BATCH_SEPARATOR,
+        '',
+        '🏢 *Empresa*',
+        '',
+        '🧾 *Internet*',
+        '*R$ 149,90*',
+        '*Vence em 5 dias · 16/07/2026*',
       ].join('\n')
     )
   })

@@ -110,6 +110,7 @@ export async function resolveWhatsAppAlertContentForTransaction(
     recipientName: '',
     transactionTitle: transaction.title,
     accountName,
+    organizationName: null,
     daysUntilDue,
     dueDate: dueDate.toISOString(),
     amount: amounts.amount,
@@ -139,6 +140,7 @@ export async function buildWhatsAppMessageForTransaction(params: {
   overdueDays?: number
   amountOverride?: string | null
   isSplit?: boolean
+  splitId?: string | null
 }): Promise<string | null> {
   const content = await resolveWhatsAppAlertContentForTransaction(params)
   if (!content) return null
