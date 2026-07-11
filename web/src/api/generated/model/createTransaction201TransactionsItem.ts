@@ -5,28 +5,28 @@
  * API for HouseApp
  * OpenAPI spec version: 2.0.0
  */
-import type { CreateTransaction201TransactionsItemAccountId } from './createTransaction201TransactionsItemAccountId';
-import type { CreateTransaction201TransactionsItemCardId } from './createTransaction201TransactionsItemCardId';
-import type { CreateTransaction201TransactionsItemRecurringTransactionId } from './createTransaction201TransactionsItemRecurringTransactionId';
-import type { CreateTransaction201TransactionsItemStatementId } from './createTransaction201TransactionsItemStatementId';
-import type { CreateTransaction201TransactionsItemDescription } from './createTransaction201TransactionsItemDescription';
-import type { CreateTransaction201TransactionsItemAmount } from './createTransaction201TransactionsItemAmount';
-import type { CreateTransaction201TransactionsItemType } from './createTransaction201TransactionsItemType';
-import type { CreateTransaction201TransactionsItemCompetenceDate } from './createTransaction201TransactionsItemCompetenceDate';
-import type { CreateTransaction201TransactionsItemStatus } from './createTransaction201TransactionsItemStatus';
-import type { CreateTransaction201TransactionsItemPaidAt } from './createTransaction201TransactionsItemPaidAt';
-import type { CreateTransaction201TransactionsItemPaidAmount } from './createTransaction201TransactionsItemPaidAmount';
-import type { CreateTransaction201TransactionsItemPaymentScheduledAt } from './createTransaction201TransactionsItemPaymentScheduledAt';
-import type { CreateTransaction201TransactionsItemCounterparty } from './createTransaction201TransactionsItemCounterparty';
-import type { CreateTransaction201TransactionsItemInstallmentNumber } from './createTransaction201TransactionsItemInstallmentNumber';
-import type { CreateTransaction201TransactionsItemInstallmentsTotal } from './createTransaction201TransactionsItemInstallmentsTotal';
-import type { CreateTransaction201TransactionsItemSource } from './createTransaction201TransactionsItemSource';
-import type { CreateTransaction201TransactionsItemTransferPairId } from './createTransaction201TransactionsItemTransferPairId';
-import type { CreateTransaction201TransactionsItemNotifyTargetType } from './createTransaction201TransactionsItemNotifyTargetType';
-import type { CreateTransaction201TransactionsItemNotifyUserId } from './createTransaction201TransactionsItemNotifyUserId';
-import type { CreateTransaction201TransactionsItemNotifyContactName } from './createTransaction201TransactionsItemNotifyContactName';
-import type { CreateTransaction201TransactionsItemNotifyContactPhone } from './createTransaction201TransactionsItemNotifyContactPhone';
-import type { CreateTransaction201TransactionsItemNotifyOverdueConfig } from './createTransaction201TransactionsItemNotifyOverdueConfig';
+import type { CreateTransaction201TransactionsItemAccountId } from "./createTransaction201TransactionsItemAccountId";
+import type { CreateTransaction201TransactionsItemCardId } from "./createTransaction201TransactionsItemCardId";
+import type { CreateTransaction201TransactionsItemRecurringTransactionId } from "./createTransaction201TransactionsItemRecurringTransactionId";
+import type { CreateTransaction201TransactionsItemStatementId } from "./createTransaction201TransactionsItemStatementId";
+import type { CreateTransaction201TransactionsItemDescription } from "./createTransaction201TransactionsItemDescription";
+import type { CreateTransaction201TransactionsItemAmount } from "./createTransaction201TransactionsItemAmount";
+import type { CreateTransaction201TransactionsItemType } from "./createTransaction201TransactionsItemType";
+import type { CreateTransaction201TransactionsItemCompetenceDate } from "./createTransaction201TransactionsItemCompetenceDate";
+import type { CreateTransaction201TransactionsItemStatus } from "./createTransaction201TransactionsItemStatus";
+import type { CreateTransaction201TransactionsItemPaidAt } from "./createTransaction201TransactionsItemPaidAt";
+import type { CreateTransaction201TransactionsItemPaidAmount } from "./createTransaction201TransactionsItemPaidAmount";
+import type { CreateTransaction201TransactionsItemPaymentScheduledAt } from "./createTransaction201TransactionsItemPaymentScheduledAt";
+import type { CreateTransaction201TransactionsItemCounterparty } from "./createTransaction201TransactionsItemCounterparty";
+import type { CreateTransaction201TransactionsItemInstallmentNumber } from "./createTransaction201TransactionsItemInstallmentNumber";
+import type { CreateTransaction201TransactionsItemInstallmentsTotal } from "./createTransaction201TransactionsItemInstallmentsTotal";
+import type { CreateTransaction201TransactionsItemSource } from "./createTransaction201TransactionsItemSource";
+import type { CreateTransaction201TransactionsItemTransferPairId } from "./createTransaction201TransactionsItemTransferPairId";
+import type { CreateTransaction201TransactionsItemNotifyTargetType } from "./createTransaction201TransactionsItemNotifyTargetType";
+import type { CreateTransaction201TransactionsItemNotifyUserId } from "./createTransaction201TransactionsItemNotifyUserId";
+import type { CreateTransaction201TransactionsItemNotifyContactName } from "./createTransaction201TransactionsItemNotifyContactName";
+import type { CreateTransaction201TransactionsItemNotifyContactPhone } from "./createTransaction201TransactionsItemNotifyContactPhone";
+import type { CreateTransaction201TransactionsItemNotifyOverdueConfig } from "./createTransaction201TransactionsItemNotifyOverdueConfig";
 
 export type CreateTransaction201TransactionsItem = {
   id: string;
@@ -52,7 +52,7 @@ export type CreateTransaction201TransactionsItem = {
   categoryIds: string[];
   transferPairId: CreateTransaction201TransactionsItemTransferPairId;
   notifyEnabled: boolean;
-  notifyTargetType: typeof CreateTransaction201TransactionsItemNotifyTargetType[keyof typeof CreateTransaction201TransactionsItemNotifyTargetType] ;
+  notifyTargetType: (typeof CreateTransaction201TransactionsItemNotifyTargetType)[keyof typeof CreateTransaction201TransactionsItemNotifyTargetType];
   notifyUserId: CreateTransaction201TransactionsItemNotifyUserId;
   notifyContactName: CreateTransaction201TransactionsItemNotifyContactName;
   notifyContactPhone: CreateTransaction201TransactionsItemNotifyContactPhone;

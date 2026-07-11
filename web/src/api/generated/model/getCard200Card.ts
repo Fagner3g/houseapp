@@ -5,17 +5,17 @@
  * API for HouseApp
  * OpenAPI spec version: 2.0.0
  */
-import type { GetCard200CardLastFourDigits } from './getCard200CardLastFourDigits';
-import type { GetCard200CardType } from './getCard200CardType';
-import type { GetCard200CardHolderName } from './getCard200CardHolderName';
-import type { GetCard200CardUserId } from './getCard200CardUserId';
-import type { GetCard200CardBrand } from './getCard200CardBrand';
-import type { GetCard200CardStatus } from './getCard200CardStatus';
-import type { GetCard200CardBlockedAt } from './getCard200CardBlockedAt';
-import type { GetCard200CardBlockedReason } from './getCard200CardBlockedReason';
-import type { GetCard200CardCanceledAt } from './getCard200CardCanceledAt';
-import type { GetCard200CardCanceledReason } from './getCard200CardCanceledReason';
-import type { GetCard200CardExpiresAt } from './getCard200CardExpiresAt';
+import type { GetCard200CardLastFourDigits } from "./getCard200CardLastFourDigits";
+import type { GetCard200CardType } from "./getCard200CardType";
+import type { GetCard200CardHolderName } from "./getCard200CardHolderName";
+import type { GetCard200CardUserId } from "./getCard200CardUserId";
+import type { GetCard200CardBrand } from "./getCard200CardBrand";
+import type { GetCard200CardStatus } from "./getCard200CardStatus";
+import type { GetCard200CardBlockedAt } from "./getCard200CardBlockedAt";
+import type { GetCard200CardBlockedReason } from "./getCard200CardBlockedReason";
+import type { GetCard200CardCanceledAt } from "./getCard200CardCanceledAt";
+import type { GetCard200CardCanceledReason } from "./getCard200CardCanceledReason";
+import type { GetCard200CardExpiresAt } from "./getCard200CardExpiresAt";
 
 export type GetCard200Card = {
   id: string;
@@ -25,12 +25,12 @@ export type GetCard200Card = {
   type: GetCard200CardType;
   holderName: GetCard200CardHolderName;
   userId: GetCard200CardUserId;
-  brand: typeof GetCard200CardBrand[keyof typeof GetCard200CardBrand] ;
+  brand: (typeof GetCard200CardBrand)[keyof typeof GetCard200CardBrand];
   status: GetCard200CardStatus;
   blockedAt: GetCard200CardBlockedAt;
-  blockedReason: typeof GetCard200CardBlockedReason[keyof typeof GetCard200CardBlockedReason] ;
+  blockedReason: (typeof GetCard200CardBlockedReason)[keyof typeof GetCard200CardBlockedReason];
   canceledAt: GetCard200CardCanceledAt;
-  canceledReason: typeof GetCard200CardCanceledReason[keyof typeof GetCard200CardCanceledReason] ;
+  canceledReason: (typeof GetCard200CardCanceledReason)[keyof typeof GetCard200CardCanceledReason];
   expiresAt: GetCard200CardExpiresAt;
   isContactless: boolean;
   createdAt: string;

@@ -5,7 +5,7 @@
  * API for HouseApp
  * OpenAPI spec version: 2.0.0
  */
-import type { BulkCreateTransactions201TransactionsItem } from './bulkCreateTransactions201TransactionsItem';
+import type { BulkCreateTransactions201TransactionsItem } from "./bulkCreateTransactions201TransactionsItem";
 
 export type BulkCreateTransactions201 = {
   transactions: BulkCreateTransactions201TransactionsItem[];

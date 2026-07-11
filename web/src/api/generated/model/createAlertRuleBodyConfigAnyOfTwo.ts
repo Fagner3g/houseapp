@@ -5,7 +5,7 @@
  * API for HouseApp
  * OpenAPI spec version: 2.0.0
  */
-import type { CreateAlertRuleBodyConfigAnyOfTwoFrequency } from './createAlertRuleBodyConfigAnyOfTwoFrequency';
+import type { CreateAlertRuleBodyConfigAnyOfTwoFrequency } from "./createAlertRuleBodyConfigAnyOfTwoFrequency";
 
 export type CreateAlertRuleBodyConfigAnyOfTwo = {
   frequency: CreateAlertRuleBodyConfigAnyOfTwoFrequency;

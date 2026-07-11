@@ -5,14 +5,14 @@
  * API for HouseApp
  * OpenAPI spec version: 2.0.0
  */
-import type { CreateRecurringTransaction201RecurringTransactionAccountId } from './createRecurringTransaction201RecurringTransactionAccountId';
-import type { CreateRecurringTransaction201RecurringTransactionType } from './createRecurringTransaction201RecurringTransactionType';
-import type { CreateRecurringTransaction201RecurringTransactionCounterparty } from './createRecurringTransaction201RecurringTransactionCounterparty';
-import type { CreateRecurringTransaction201RecurringTransactionCategoryId } from './createRecurringTransaction201RecurringTransactionCategoryId';
-import type { CreateRecurringTransaction201RecurringTransactionFrequency } from './createRecurringTransaction201RecurringTransactionFrequency';
-import type { CreateRecurringTransaction201RecurringTransactionEndDate } from './createRecurringTransaction201RecurringTransactionEndDate';
-import type { CreateRecurringTransaction201RecurringTransactionInstallmentsTotal } from './createRecurringTransaction201RecurringTransactionInstallmentsTotal';
-import type { CreateRecurringTransaction201RecurringTransactionLastGeneratedDate } from './createRecurringTransaction201RecurringTransactionLastGeneratedDate';
+import type { CreateRecurringTransaction201RecurringTransactionAccountId } from "./createRecurringTransaction201RecurringTransactionAccountId";
+import type { CreateRecurringTransaction201RecurringTransactionType } from "./createRecurringTransaction201RecurringTransactionType";
+import type { CreateRecurringTransaction201RecurringTransactionCounterparty } from "./createRecurringTransaction201RecurringTransactionCounterparty";
+import type { CreateRecurringTransaction201RecurringTransactionCategoryId } from "./createRecurringTransaction201RecurringTransactionCategoryId";
+import type { CreateRecurringTransaction201RecurringTransactionFrequency } from "./createRecurringTransaction201RecurringTransactionFrequency";
+import type { CreateRecurringTransaction201RecurringTransactionEndDate } from "./createRecurringTransaction201RecurringTransactionEndDate";
+import type { CreateRecurringTransaction201RecurringTransactionInstallmentsTotal } from "./createRecurringTransaction201RecurringTransactionInstallmentsTotal";
+import type { CreateRecurringTransaction201RecurringTransactionLastGeneratedDate } from "./createRecurringTransaction201RecurringTransactionLastGeneratedDate";
 
 export type CreateRecurringTransaction201RecurringTransaction = {
   id: string;

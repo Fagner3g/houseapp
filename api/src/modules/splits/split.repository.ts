@@ -28,6 +28,7 @@ export type CreateSplitData = {
   amount: bigint
   description?: string | null
   notifyEnabled?: boolean
+  collectLumpSum?: boolean
 }
 
 export type UpdateSplitData = Partial<
@@ -35,6 +36,7 @@ export type UpdateSplitData = Partial<
     amount: bigint
     status: SplitStatus
     notifyEnabled: boolean
+    collectLumpSum: boolean
     isNotified: boolean
     lastNotifiedAt: Date | null
   }
@@ -234,6 +236,7 @@ export class DrizzleSplitRepository implements SplitRepository {
         status: 'pending',
         paidAmount: 0n,
         notifyEnabled: data.notifyEnabled ?? true,
+        collectLumpSum: data.collectLumpSum ?? false,
       })
       .returning()
 

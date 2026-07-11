@@ -6,12 +6,13 @@
  * OpenAPI spec version: 2.0.0
  */
 
-export type ListTransactions200TransactionsItemNotifyOverdueConfigAnyOfAnyOfTwoFrequency = typeof ListTransactions200TransactionsItemNotifyOverdueConfigAnyOfAnyOfTwoFrequency[keyof typeof ListTransactions200TransactionsItemNotifyOverdueConfigAnyOfAnyOfTwoFrequency];
-
+export type ListTransactions200TransactionsItemNotifyOverdueConfigAnyOfAnyOfTwoFrequency =
+  (typeof ListTransactions200TransactionsItemNotifyOverdueConfigAnyOfAnyOfTwoFrequency)[keyof typeof ListTransactions200TransactionsItemNotifyOverdueConfigAnyOfAnyOfTwoFrequency];
 
 // eslint-disable-next-line @typescript-eslint/no-redeclare
-export const ListTransactions200TransactionsItemNotifyOverdueConfigAnyOfAnyOfTwoFrequency = {
-  daily: 'daily',
-  weekly: 'weekly',
-  monthly: 'monthly',
-} as const;
+export const ListTransactions200TransactionsItemNotifyOverdueConfigAnyOfAnyOfTwoFrequency =
+  {
+    daily: "daily",
+    weekly: "weekly",
+    monthly: "monthly",
+  } as const;

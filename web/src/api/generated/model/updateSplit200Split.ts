@@ -5,14 +5,14 @@
  * API for HouseApp
  * OpenAPI spec version: 2.0.0
  */
-import type { UpdateSplit200SplitUserId } from './updateSplit200SplitUserId';
-import type { UpdateSplit200SplitContactName } from './updateSplit200SplitContactName';
-import type { UpdateSplit200SplitContactPhone } from './updateSplit200SplitContactPhone';
-import type { UpdateSplit200SplitContactEmail } from './updateSplit200SplitContactEmail';
-import type { UpdateSplit200SplitDescription } from './updateSplit200SplitDescription';
-import type { UpdateSplit200SplitStatus } from './updateSplit200SplitStatus';
-import type { UpdateSplit200SplitPaidAt } from './updateSplit200SplitPaidAt';
-import type { UpdateSplit200SplitLastNotifiedAt } from './updateSplit200SplitLastNotifiedAt';
+import type { UpdateSplit200SplitUserId } from "./updateSplit200SplitUserId";
+import type { UpdateSplit200SplitContactName } from "./updateSplit200SplitContactName";
+import type { UpdateSplit200SplitContactPhone } from "./updateSplit200SplitContactPhone";
+import type { UpdateSplit200SplitContactEmail } from "./updateSplit200SplitContactEmail";
+import type { UpdateSplit200SplitDescription } from "./updateSplit200SplitDescription";
+import type { UpdateSplit200SplitStatus } from "./updateSplit200SplitStatus";
+import type { UpdateSplit200SplitPaidAt } from "./updateSplit200SplitPaidAt";
+import type { UpdateSplit200SplitLastNotifiedAt } from "./updateSplit200SplitLastNotifiedAt";
 
 export type UpdateSplit200Split = {
   id: string;
@@ -29,6 +29,7 @@ export type UpdateSplit200Split = {
   isNotified: boolean;
   lastNotifiedAt: UpdateSplit200SplitLastNotifiedAt;
   notifyEnabled: boolean;
+  collectLumpSum: boolean;
   createdAt: string;
   updatedAt: string;
 };

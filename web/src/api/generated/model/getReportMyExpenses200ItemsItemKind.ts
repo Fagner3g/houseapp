@@ -6,11 +6,11 @@
  * OpenAPI spec version: 2.0.0
  */
 
-export type GetReportMyExpenses200ItemsItemKind = typeof GetReportMyExpenses200ItemsItemKind[keyof typeof GetReportMyExpenses200ItemsItemKind];
-
+export type GetReportMyExpenses200ItemsItemKind =
+  (typeof GetReportMyExpenses200ItemsItemKind)[keyof typeof GetReportMyExpenses200ItemsItemKind];
 
 // eslint-disable-next-line @typescript-eslint/no-redeclare
 export const GetReportMyExpenses200ItemsItemKind = {
-  invoice: 'invoice',
-  expense: 'expense',
+  invoice: "invoice",
+  expense: "expense",
 } as const;

@@ -62,6 +62,7 @@ function split(
     isNotified: false,
     lastNotifiedAt: null,
     notifyEnabled: true,
+    collectLumpSum: false,
     createdAt: new Date(),
     updatedAt: new Date(),
     installmentNumber: 1,
@@ -187,6 +188,58 @@ describe('buildSplitDebtSummary', () => {
     expect(summary.purchaseTotal).toBe('900.00')
     expect(summary.currentTransactionAmount).toBe('300.00')
     expect(summary.myShareTotal).toBe('450.00')
+  })
+
+  it('does not extrapolate when collectLumpSum is set (full share due once)', () => {
+    const anchor = tx({
+      id: 'tx-1',
+      title: 'Supermercados Bh - Parcela 1/3',
+      amount: 27479n,
+      installmentNumber: 1,
+      installmentsTotal: 3,
+      source: 'import',
+      statementId: 'stmt-1',
+    })
+
+    const siblings = [
+      anchor,
+      tx({
+        id: 'tx-2',
+        title: 'Supermercados Bh - Parcela 2/3',
+        amount: 27479n,
+        installmentNumber: 2,
+        installmentsTotal: 3,
+        source: 'import',
+        statementId: 'stmt-1',
+      }),
+    ]
+
+    const splits: SplitWithTransaction[] = [
+      split({
+        id: 'split-1',
+        transactionId: 'tx-1',
+        amount: 41219n,
+        installmentNumber: 1,
+        transactionAmount: 27479n,
+        collectLumpSum: true,
+        userName: 'Karoline',
+      }),
+    ]
+
+    const summary = buildSplitDebtSummary({
+      anchorTransaction: anchor,
+      siblingTransactions: siblings,
+      splits,
+      resolvePersonName: item => item.userName ?? 'Membro',
+    })
+
+    expect(summary.purchaseTotal).toBe('824.37')
+    expect(summary.myShareTotal).toBe('412.18')
+    expect(summary.persons[0]).toMatchObject({
+      name: 'Karoline',
+      totalOwed: '412.19',
+      totalRemaining: '412.19',
+    })
   })
 
   it('extrapolates 50% split on first imported parcel across the full purchase', () => {

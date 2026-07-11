@@ -6,11 +6,11 @@
  * OpenAPI spec version: 2.0.0
  */
 
-export type GetCategory200CategoryType = typeof GetCategory200CategoryType[keyof typeof GetCategory200CategoryType];
-
+export type GetCategory200CategoryType =
+  (typeof GetCategory200CategoryType)[keyof typeof GetCategory200CategoryType];
 
 // eslint-disable-next-line @typescript-eslint/no-redeclare
 export const GetCategory200CategoryType = {
-  income: 'income',
-  expense: 'expense',
+  income: "income",
+  expense: "expense",
 } as const;

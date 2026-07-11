@@ -5,10 +5,10 @@
  * API for HouseApp
  * OpenAPI spec version: 2.0.0
  */
-import type { ParseStatementXlsx200ParsedTransactionsItemType } from './parseStatementXlsx200ParsedTransactionsItemType';
-import type { ParseStatementXlsx200ParsedTransactionsItemSplitHint } from './parseStatementXlsx200ParsedTransactionsItemSplitHint';
-import type { ParseStatementXlsx200ParsedTransactionsItemDuplicateTransactionId } from './parseStatementXlsx200ParsedTransactionsItemDuplicateTransactionId';
-import type { ParseStatementXlsx200ParsedTransactionsItemDuplicateTransactionTitle } from './parseStatementXlsx200ParsedTransactionsItemDuplicateTransactionTitle';
+import type { ParseStatementXlsx200ParsedTransactionsItemType } from "./parseStatementXlsx200ParsedTransactionsItemType";
+import type { ParseStatementXlsx200ParsedTransactionsItemSplitHint } from "./parseStatementXlsx200ParsedTransactionsItemSplitHint";
+import type { ParseStatementXlsx200ParsedTransactionsItemDuplicateTransactionId } from "./parseStatementXlsx200ParsedTransactionsItemDuplicateTransactionId";
+import type { ParseStatementXlsx200ParsedTransactionsItemDuplicateTransactionTitle } from "./parseStatementXlsx200ParsedTransactionsItemDuplicateTransactionTitle";
 
 export type ParseStatementXlsx200ParsedTransactionsItem = {
   /** @minLength 1 */

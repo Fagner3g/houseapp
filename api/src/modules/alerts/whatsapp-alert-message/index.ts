@@ -9,10 +9,10 @@ export { buildGreeting, cleanTransactionTitle, formatAmountBRL } from './format'
 export {
   buildCreditCardShareTotalLine,
   buildGrandShareTotalLine,
-  buildSummaryLine,
   resolveDueShareAmount,
   sumDueShareCentavos,
-} from './summary'
+} from './due-share'
+export { buildSummaryLine } from './summary'
 export { buildDueLine } from './due'
 export {
   buildWhatsAppAlertMessage,

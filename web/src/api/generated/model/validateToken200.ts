@@ -5,7 +5,7 @@
  * API for HouseApp
  * OpenAPI spec version: 2.0.0
  */
-import type { ValidateToken200Slug } from './validateToken200Slug';
+import type { ValidateToken200Slug } from "./validateToken200Slug";
 
 export type ValidateToken200 = {
   valid: boolean;

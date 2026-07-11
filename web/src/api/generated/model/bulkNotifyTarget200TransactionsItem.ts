@@ -5,28 +5,28 @@
  * API for HouseApp
  * OpenAPI spec version: 2.0.0
  */
-import type { BulkNotifyTarget200TransactionsItemAccountId } from './bulkNotifyTarget200TransactionsItemAccountId';
-import type { BulkNotifyTarget200TransactionsItemCardId } from './bulkNotifyTarget200TransactionsItemCardId';
-import type { BulkNotifyTarget200TransactionsItemRecurringTransactionId } from './bulkNotifyTarget200TransactionsItemRecurringTransactionId';
-import type { BulkNotifyTarget200TransactionsItemStatementId } from './bulkNotifyTarget200TransactionsItemStatementId';
-import type { BulkNotifyTarget200TransactionsItemDescription } from './bulkNotifyTarget200TransactionsItemDescription';
-import type { BulkNotifyTarget200TransactionsItemAmount } from './bulkNotifyTarget200TransactionsItemAmount';
-import type { BulkNotifyTarget200TransactionsItemType } from './bulkNotifyTarget200TransactionsItemType';
-import type { BulkNotifyTarget200TransactionsItemCompetenceDate } from './bulkNotifyTarget200TransactionsItemCompetenceDate';
-import type { BulkNotifyTarget200TransactionsItemStatus } from './bulkNotifyTarget200TransactionsItemStatus';
-import type { BulkNotifyTarget200TransactionsItemPaidAt } from './bulkNotifyTarget200TransactionsItemPaidAt';
-import type { BulkNotifyTarget200TransactionsItemPaidAmount } from './bulkNotifyTarget200TransactionsItemPaidAmount';
-import type { BulkNotifyTarget200TransactionsItemPaymentScheduledAt } from './bulkNotifyTarget200TransactionsItemPaymentScheduledAt';
-import type { BulkNotifyTarget200TransactionsItemCounterparty } from './bulkNotifyTarget200TransactionsItemCounterparty';
-import type { BulkNotifyTarget200TransactionsItemInstallmentNumber } from './bulkNotifyTarget200TransactionsItemInstallmentNumber';
-import type { BulkNotifyTarget200TransactionsItemInstallmentsTotal } from './bulkNotifyTarget200TransactionsItemInstallmentsTotal';
-import type { BulkNotifyTarget200TransactionsItemSource } from './bulkNotifyTarget200TransactionsItemSource';
-import type { BulkNotifyTarget200TransactionsItemTransferPairId } from './bulkNotifyTarget200TransactionsItemTransferPairId';
-import type { BulkNotifyTarget200TransactionsItemNotifyTargetType } from './bulkNotifyTarget200TransactionsItemNotifyTargetType';
-import type { BulkNotifyTarget200TransactionsItemNotifyUserId } from './bulkNotifyTarget200TransactionsItemNotifyUserId';
-import type { BulkNotifyTarget200TransactionsItemNotifyContactName } from './bulkNotifyTarget200TransactionsItemNotifyContactName';
-import type { BulkNotifyTarget200TransactionsItemNotifyContactPhone } from './bulkNotifyTarget200TransactionsItemNotifyContactPhone';
-import type { BulkNotifyTarget200TransactionsItemNotifyOverdueConfig } from './bulkNotifyTarget200TransactionsItemNotifyOverdueConfig';
+import type { BulkNotifyTarget200TransactionsItemAccountId } from "./bulkNotifyTarget200TransactionsItemAccountId";
+import type { BulkNotifyTarget200TransactionsItemCardId } from "./bulkNotifyTarget200TransactionsItemCardId";
+import type { BulkNotifyTarget200TransactionsItemRecurringTransactionId } from "./bulkNotifyTarget200TransactionsItemRecurringTransactionId";
+import type { BulkNotifyTarget200TransactionsItemStatementId } from "./bulkNotifyTarget200TransactionsItemStatementId";
+import type { BulkNotifyTarget200TransactionsItemDescription } from "./bulkNotifyTarget200TransactionsItemDescription";
+import type { BulkNotifyTarget200TransactionsItemAmount } from "./bulkNotifyTarget200TransactionsItemAmount";
+import type { BulkNotifyTarget200TransactionsItemType } from "./bulkNotifyTarget200TransactionsItemType";
+import type { BulkNotifyTarget200TransactionsItemCompetenceDate } from "./bulkNotifyTarget200TransactionsItemCompetenceDate";
+import type { BulkNotifyTarget200TransactionsItemStatus } from "./bulkNotifyTarget200TransactionsItemStatus";
+import type { BulkNotifyTarget200TransactionsItemPaidAt } from "./bulkNotifyTarget200TransactionsItemPaidAt";
+import type { BulkNotifyTarget200TransactionsItemPaidAmount } from "./bulkNotifyTarget200TransactionsItemPaidAmount";
+import type { BulkNotifyTarget200TransactionsItemPaymentScheduledAt } from "./bulkNotifyTarget200TransactionsItemPaymentScheduledAt";
+import type { BulkNotifyTarget200TransactionsItemCounterparty } from "./bulkNotifyTarget200TransactionsItemCounterparty";
+import type { BulkNotifyTarget200TransactionsItemInstallmentNumber } from "./bulkNotifyTarget200TransactionsItemInstallmentNumber";
+import type { BulkNotifyTarget200TransactionsItemInstallmentsTotal } from "./bulkNotifyTarget200TransactionsItemInstallmentsTotal";
+import type { BulkNotifyTarget200TransactionsItemSource } from "./bulkNotifyTarget200TransactionsItemSource";
+import type { BulkNotifyTarget200TransactionsItemTransferPairId } from "./bulkNotifyTarget200TransactionsItemTransferPairId";
+import type { BulkNotifyTarget200TransactionsItemNotifyTargetType } from "./bulkNotifyTarget200TransactionsItemNotifyTargetType";
+import type { BulkNotifyTarget200TransactionsItemNotifyUserId } from "./bulkNotifyTarget200TransactionsItemNotifyUserId";
+import type { BulkNotifyTarget200TransactionsItemNotifyContactName } from "./bulkNotifyTarget200TransactionsItemNotifyContactName";
+import type { BulkNotifyTarget200TransactionsItemNotifyContactPhone } from "./bulkNotifyTarget200TransactionsItemNotifyContactPhone";
+import type { BulkNotifyTarget200TransactionsItemNotifyOverdueConfig } from "./bulkNotifyTarget200TransactionsItemNotifyOverdueConfig";
 
 export type BulkNotifyTarget200TransactionsItem = {
   id: string;
@@ -52,7 +52,7 @@ export type BulkNotifyTarget200TransactionsItem = {
   categoryIds: string[];
   transferPairId: BulkNotifyTarget200TransactionsItemTransferPairId;
   notifyEnabled: boolean;
-  notifyTargetType: typeof BulkNotifyTarget200TransactionsItemNotifyTargetType[keyof typeof BulkNotifyTarget200TransactionsItemNotifyTargetType] ;
+  notifyTargetType: (typeof BulkNotifyTarget200TransactionsItemNotifyTargetType)[keyof typeof BulkNotifyTarget200TransactionsItemNotifyTargetType];
   notifyUserId: BulkNotifyTarget200TransactionsItemNotifyUserId;
   notifyContactName: BulkNotifyTarget200TransactionsItemNotifyContactName;
   notifyContactPhone: BulkNotifyTarget200TransactionsItemNotifyContactPhone;

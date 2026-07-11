@@ -6,14 +6,14 @@
  * OpenAPI spec version: 2.0.0
  */
 
-export type CreateAccountBodyType = typeof CreateAccountBodyType[keyof typeof CreateAccountBodyType];
-
+export type CreateAccountBodyType =
+  (typeof CreateAccountBodyType)[keyof typeof CreateAccountBodyType];
 
 // eslint-disable-next-line @typescript-eslint/no-redeclare
 export const CreateAccountBodyType = {
-  checking: 'checking',
-  savings: 'savings',
-  credit_card: 'credit_card',
-  cash: 'cash',
-  investment: 'investment',
+  checking: "checking",
+  savings: "savings",
+  credit_card: "credit_card",
+  cash: "cash",
+  investment: "investment",
 } as const;

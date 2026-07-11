@@ -6,12 +6,12 @@
  * OpenAPI spec version: 2.0.0
  */
 
-export type CreateTransactionBodyNotifyOverdueConfigAnyOfAnyOfTwoFrequency = typeof CreateTransactionBodyNotifyOverdueConfigAnyOfAnyOfTwoFrequency[keyof typeof CreateTransactionBodyNotifyOverdueConfigAnyOfAnyOfTwoFrequency];
-
+export type CreateTransactionBodyNotifyOverdueConfigAnyOfAnyOfTwoFrequency =
+  (typeof CreateTransactionBodyNotifyOverdueConfigAnyOfAnyOfTwoFrequency)[keyof typeof CreateTransactionBodyNotifyOverdueConfigAnyOfAnyOfTwoFrequency];
 
 // eslint-disable-next-line @typescript-eslint/no-redeclare
 export const CreateTransactionBodyNotifyOverdueConfigAnyOfAnyOfTwoFrequency = {
-  daily: 'daily',
-  weekly: 'weekly',
-  monthly: 'monthly',
+  daily: "daily",
+  weekly: "weekly",
+  monthly: "monthly",
 } as const;

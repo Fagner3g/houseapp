@@ -6,4 +6,6 @@
  * OpenAPI spec version: 2.0.0
  */
 
-export type MarkNotificationRead200NotificationMetadata = {[key: string]: unknown};
+export type MarkNotificationRead200NotificationMetadata = {
+  [key: string]: unknown;
+};

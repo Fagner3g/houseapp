@@ -14,6 +14,7 @@ export function toWhatsAppBatchItem(input: {
   splitPaidAmount?: string | null
   splitRemainingAmount?: string | null
   splitParticipantCount?: number | null
+  collectLumpSum?: boolean | null
   note?: string | null
   daysUntilDue: number
   dueDate: Date | string
@@ -37,6 +38,7 @@ export function toWhatsAppBatchItem(input: {
     installmentNumber: input.installmentNumber,
     installmentsTotal: input.installmentsTotal,
     isSplit: input.isSplit,
+    collectLumpSum: input.collectLumpSum,
   })
 
   return {
@@ -61,6 +63,7 @@ export function toWhatsAppBatchItem(input: {
     splitPaidAmount: input.splitPaidAmount,
     splitRemainingAmount: input.splitRemainingAmount,
     splitParticipantCount: input.splitParticipantCount,
+    collectLumpSum: input.collectLumpSum,
     installmentNumber: input.installmentNumber,
     installmentsTotal: input.installmentsTotal,
     isSplit: input.isSplit,

@@ -5,12 +5,12 @@
  * API for HouseApp
  * OpenAPI spec version: 2.0.0
  */
-import type { UpdateCardBodyType } from './updateCardBodyType';
-import type { UpdateCardBodyLastFourDigits } from './updateCardBodyLastFourDigits';
-import type { UpdateCardBodyHolderName } from './updateCardBodyHolderName';
-import type { UpdateCardBodyUserId } from './updateCardBodyUserId';
-import type { UpdateCardBodyBrand } from './updateCardBodyBrand';
-import type { UpdateCardBodyExpiresAt } from './updateCardBodyExpiresAt';
+import type { UpdateCardBodyType } from "./updateCardBodyType";
+import type { UpdateCardBodyLastFourDigits } from "./updateCardBodyLastFourDigits";
+import type { UpdateCardBodyHolderName } from "./updateCardBodyHolderName";
+import type { UpdateCardBodyUserId } from "./updateCardBodyUserId";
+import type { UpdateCardBodyBrand } from "./updateCardBodyBrand";
+import type { UpdateCardBodyExpiresAt } from "./updateCardBodyExpiresAt";
 
 export type UpdateCardBody = {
   /** @minLength 1 */
@@ -19,7 +19,7 @@ export type UpdateCardBody = {
   lastFourDigits?: UpdateCardBodyLastFourDigits;
   holderName?: UpdateCardBodyHolderName;
   userId?: UpdateCardBodyUserId;
-  brand?: typeof UpdateCardBodyBrand[keyof typeof UpdateCardBodyBrand] ;
+  brand?: (typeof UpdateCardBodyBrand)[keyof typeof UpdateCardBodyBrand];
   expiresAt?: UpdateCardBodyExpiresAt;
   isContactless?: boolean;
 };

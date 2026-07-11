@@ -5,17 +5,17 @@
  * API for HouseApp
  * OpenAPI spec version: 2.0.0
  */
-import type { CreateCard201CardLastFourDigits } from './createCard201CardLastFourDigits';
-import type { CreateCard201CardType } from './createCard201CardType';
-import type { CreateCard201CardHolderName } from './createCard201CardHolderName';
-import type { CreateCard201CardUserId } from './createCard201CardUserId';
-import type { CreateCard201CardBrand } from './createCard201CardBrand';
-import type { CreateCard201CardStatus } from './createCard201CardStatus';
-import type { CreateCard201CardBlockedAt } from './createCard201CardBlockedAt';
-import type { CreateCard201CardBlockedReason } from './createCard201CardBlockedReason';
-import type { CreateCard201CardCanceledAt } from './createCard201CardCanceledAt';
-import type { CreateCard201CardCanceledReason } from './createCard201CardCanceledReason';
-import type { CreateCard201CardExpiresAt } from './createCard201CardExpiresAt';
+import type { CreateCard201CardLastFourDigits } from "./createCard201CardLastFourDigits";
+import type { CreateCard201CardType } from "./createCard201CardType";
+import type { CreateCard201CardHolderName } from "./createCard201CardHolderName";
+import type { CreateCard201CardUserId } from "./createCard201CardUserId";
+import type { CreateCard201CardBrand } from "./createCard201CardBrand";
+import type { CreateCard201CardStatus } from "./createCard201CardStatus";
+import type { CreateCard201CardBlockedAt } from "./createCard201CardBlockedAt";
+import type { CreateCard201CardBlockedReason } from "./createCard201CardBlockedReason";
+import type { CreateCard201CardCanceledAt } from "./createCard201CardCanceledAt";
+import type { CreateCard201CardCanceledReason } from "./createCard201CardCanceledReason";
+import type { CreateCard201CardExpiresAt } from "./createCard201CardExpiresAt";
 
 export type CreateCard201Card = {
   id: string;
@@ -25,12 +25,12 @@ export type CreateCard201Card = {
   type: CreateCard201CardType;
   holderName: CreateCard201CardHolderName;
   userId: CreateCard201CardUserId;
-  brand: typeof CreateCard201CardBrand[keyof typeof CreateCard201CardBrand] ;
+  brand: (typeof CreateCard201CardBrand)[keyof typeof CreateCard201CardBrand];
   status: CreateCard201CardStatus;
   blockedAt: CreateCard201CardBlockedAt;
-  blockedReason: typeof CreateCard201CardBlockedReason[keyof typeof CreateCard201CardBlockedReason] ;
+  blockedReason: (typeof CreateCard201CardBlockedReason)[keyof typeof CreateCard201CardBlockedReason];
   canceledAt: CreateCard201CardCanceledAt;
-  canceledReason: typeof CreateCard201CardCanceledReason[keyof typeof CreateCard201CardCanceledReason] ;
+  canceledReason: (typeof CreateCard201CardCanceledReason)[keyof typeof CreateCard201CardCanceledReason];
   expiresAt: CreateCard201CardExpiresAt;
   isContactless: boolean;
   createdAt: string;

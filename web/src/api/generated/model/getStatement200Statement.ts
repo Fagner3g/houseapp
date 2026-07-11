@@ -5,21 +5,21 @@
  * API for HouseApp
  * OpenAPI spec version: 2.0.0
  */
-import type { GetStatement200StatementPeriodStart } from './getStatement200StatementPeriodStart';
-import type { GetStatement200StatementPeriodEnd } from './getStatement200StatementPeriodEnd';
-import type { GetStatement200StatementClosingDate } from './getStatement200StatementClosingDate';
-import type { GetStatement200StatementDueDate } from './getStatement200StatementDueDate';
-import type { GetStatement200StatementTotalAmount } from './getStatement200StatementTotalAmount';
-import type { GetStatement200StatementMinimumPayment } from './getStatement200StatementMinimumPayment';
-import type { GetStatement200StatementPreviousBalance } from './getStatement200StatementPreviousBalance';
-import type { GetStatement200StatementPaymentsReceived } from './getStatement200StatementPaymentsReceived';
-import type { GetStatement200StatementPurchasesTotal } from './getStatement200StatementPurchasesTotal';
-import type { GetStatement200StatementOtherCharges } from './getStatement200StatementOtherCharges';
-import type { GetStatement200StatementNextInvoiceBalance } from './getStatement200StatementNextInvoiceBalance';
-import type { GetStatement200StatementTotalOpenBalance } from './getStatement200StatementTotalOpenBalance';
-import type { GetStatement200StatementFileName } from './getStatement200StatementFileName';
-import type { GetStatement200StatementImportSource } from './getStatement200StatementImportSource';
-import type { GetStatement200StatementImportedBy } from './getStatement200StatementImportedBy';
+import type { GetStatement200StatementPeriodStart } from "./getStatement200StatementPeriodStart";
+import type { GetStatement200StatementPeriodEnd } from "./getStatement200StatementPeriodEnd";
+import type { GetStatement200StatementClosingDate } from "./getStatement200StatementClosingDate";
+import type { GetStatement200StatementDueDate } from "./getStatement200StatementDueDate";
+import type { GetStatement200StatementTotalAmount } from "./getStatement200StatementTotalAmount";
+import type { GetStatement200StatementMinimumPayment } from "./getStatement200StatementMinimumPayment";
+import type { GetStatement200StatementPreviousBalance } from "./getStatement200StatementPreviousBalance";
+import type { GetStatement200StatementPaymentsReceived } from "./getStatement200StatementPaymentsReceived";
+import type { GetStatement200StatementPurchasesTotal } from "./getStatement200StatementPurchasesTotal";
+import type { GetStatement200StatementOtherCharges } from "./getStatement200StatementOtherCharges";
+import type { GetStatement200StatementNextInvoiceBalance } from "./getStatement200StatementNextInvoiceBalance";
+import type { GetStatement200StatementTotalOpenBalance } from "./getStatement200StatementTotalOpenBalance";
+import type { GetStatement200StatementFileName } from "./getStatement200StatementFileName";
+import type { GetStatement200StatementImportSource } from "./getStatement200StatementImportSource";
+import type { GetStatement200StatementImportedBy } from "./getStatement200StatementImportedBy";
 
 export type GetStatement200Statement = {
   id: string;
@@ -40,7 +40,7 @@ export type GetStatement200Statement = {
   transactionsCount: number;
   fileHash: string;
   fileName: GetStatement200StatementFileName;
-  importSource: typeof GetStatement200StatementImportSource[keyof typeof GetStatement200StatementImportSource] ;
+  importSource: (typeof GetStatement200StatementImportSource)[keyof typeof GetStatement200StatementImportSource];
   isClosed: boolean;
   isPaid: boolean;
   importedBy: GetStatement200StatementImportedBy;

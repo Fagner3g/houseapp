@@ -6,10 +6,10 @@
  * OpenAPI spec version: 2.0.0
  */
 
-export type UpdateAlertSettings200Timezone = typeof UpdateAlertSettings200Timezone[keyof typeof UpdateAlertSettings200Timezone];
-
+export type UpdateAlertSettings200Timezone =
+  (typeof UpdateAlertSettings200Timezone)[keyof typeof UpdateAlertSettings200Timezone];
 
 // eslint-disable-next-line @typescript-eslint/no-redeclare
 export const UpdateAlertSettings200Timezone = {
-  'America/Sao_Paulo': 'America/Sao_Paulo',
+  "America/Sao_Paulo": "America/Sao_Paulo",
 } as const;

@@ -5,8 +5,8 @@
  * API for HouseApp
  * OpenAPI spec version: 2.0.0
  */
-import type { ListAccounts200AccountsItemCardsItemBrand } from './listAccounts200AccountsItemCardsItemBrand';
-import type { ListAccounts200AccountsItemCardsItemLastFourDigits } from './listAccounts200AccountsItemCardsItemLastFourDigits';
+import type { ListAccounts200AccountsItemCardsItemBrand } from "./listAccounts200AccountsItemCardsItemBrand";
+import type { ListAccounts200AccountsItemCardsItemLastFourDigits } from "./listAccounts200AccountsItemCardsItemLastFourDigits";
 
 export type ListAccounts200AccountsItemCardsItem = {
   id: string;

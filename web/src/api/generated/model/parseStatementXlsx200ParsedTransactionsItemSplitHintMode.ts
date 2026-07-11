@@ -6,12 +6,12 @@
  * OpenAPI spec version: 2.0.0
  */
 
-export type ParseStatementXlsx200ParsedTransactionsItemSplitHintMode = typeof ParseStatementXlsx200ParsedTransactionsItemSplitHintMode[keyof typeof ParseStatementXlsx200ParsedTransactionsItemSplitHintMode];
-
+export type ParseStatementXlsx200ParsedTransactionsItemSplitHintMode =
+  (typeof ParseStatementXlsx200ParsedTransactionsItemSplitHintMode)[keyof typeof ParseStatementXlsx200ParsedTransactionsItemSplitHintMode];
 
 // eslint-disable-next-line @typescript-eslint/no-redeclare
 export const ParseStatementXlsx200ParsedTransactionsItemSplitHintMode = {
-  half: 'half',
-  custom: 'custom',
-  full_other: 'full_other',
+  half: "half",
+  custom: "custom",
+  full_other: "full_other",
 } as const;

@@ -961,6 +961,33 @@ export function TransactionDrawer() {
   ): Promise<number> => {
     if (splitDraft.splitMode === 'none' || !slug) return 0
 
+    if (splitDraft.collectLumpSum) {
+      const withAmount = transactions.filter(transaction => transaction.amount)
+      if (withAmount.length === 0) return 0
+
+      const first =
+        [...withAmount].sort(
+          (a, b) => (a.installmentNumber ?? 1) - (b.installmentNumber ?? 1)
+        )[0] ?? withAmount[0]
+
+      const purchaseTotalReais = withAmount.reduce(
+        (sum, transaction) => sum + moneyStringToReais(transaction.amount ?? '0'),
+        0
+      )
+      const body = buildSplitCreateBody(reaisToMoneyString(purchaseTotalReais), {
+        ...splitDraft,
+        collectLumpSum: true,
+      })
+      if (!body) return 0
+
+      await createSplit({
+        slug,
+        transactionId: first.id,
+        data: body,
+      })
+      return 1
+    }
+
     let created = 0
     for (const transaction of transactions) {
       if (!transaction.amount) continue

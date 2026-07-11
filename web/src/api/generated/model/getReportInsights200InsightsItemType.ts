@@ -6,12 +6,12 @@
  * OpenAPI spec version: 2.0.0
  */
 
-export type GetReportInsights200InsightsItemType = typeof GetReportInsights200InsightsItemType[keyof typeof GetReportInsights200InsightsItemType];
-
+export type GetReportInsights200InsightsItemType =
+  (typeof GetReportInsights200InsightsItemType)[keyof typeof GetReportInsights200InsightsItemType];
 
 // eslint-disable-next-line @typescript-eslint/no-redeclare
 export const GetReportInsights200InsightsItemType = {
-  warning: 'warning',
-  tip: 'tip',
-  positive: 'positive',
+  warning: "warning",
+  tip: "tip",
+  positive: "positive",
 } as const;

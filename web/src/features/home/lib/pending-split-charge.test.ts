@@ -23,6 +23,7 @@ function split(
     isNotified: false,
     lastNotifiedAt: null,
     notifyEnabled: true,
+    collectLumpSum: false,
     createdAt: new Date().toISOString(),
     updatedAt: new Date().toISOString(),
     transactionTitle: 'Compra',

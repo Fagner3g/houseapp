@@ -6,11 +6,11 @@
  * OpenAPI spec version: 2.0.0
  */
 
-export type GetReportInsights200Source = typeof GetReportInsights200Source[keyof typeof GetReportInsights200Source];
-
+export type GetReportInsights200Source =
+  (typeof GetReportInsights200Source)[keyof typeof GetReportInsights200Source];
 
 // eslint-disable-next-line @typescript-eslint/no-redeclare
 export const GetReportInsights200Source = {
-  ai: 'ai',
-  fallback: 'fallback',
+  ai: "ai",
+  fallback: "fallback",
 } as const;

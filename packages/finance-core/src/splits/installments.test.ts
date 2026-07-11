@@ -28,6 +28,18 @@ describe('shouldExtrapolateInstallmentSplitTotals', () => {
     ).toBe(true)
   })
 
+  it('does not extrapolate when collectLumpSum is set', () => {
+    expect(
+      shouldExtrapolateInstallmentSplitTotals({
+        isImportedStatement: true,
+        siblingCount: 1,
+        materializedInstallmentSplitCount: 1,
+        installmentsTotal: 10,
+        collectLumpSum: true,
+      })
+    ).toBe(false)
+  })
+
   it('does not extrapolate manual purchases', () => {
     expect(
       shouldExtrapolateInstallmentSplitTotals({
@@ -75,5 +87,18 @@ describe('resolvePersonShareInstallmentAmountCentavos', () => {
         materializedInstallmentSplits: 3,
       })
     ).toBe(15000n)
+  })
+
+  it('keeps full share when collectLumpSum is set', () => {
+    expect(
+      resolvePersonShareInstallmentAmountCentavos({
+        totalOwedCentavos: 45000n,
+        installmentsTotal: 3,
+        installmentNumber: 1,
+        currentSplitAmountCentavos: 45000n,
+        materializedInstallmentSplits: 1,
+        collectLumpSum: true,
+      })
+    ).toBe(45000n)
   })
 })

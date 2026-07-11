@@ -16,6 +16,7 @@ export type WhatsAppAlertMessageInput = {
   splitPaidAmount?: string | null
   splitRemainingAmount?: string | null
   splitParticipantCount?: number | null
+  collectLumpSum?: boolean | null
   kind?: string
   overdueDays?: number | null
   installmentNumber?: number | null
@@ -39,6 +40,7 @@ export type WhatsAppAlertBatchItem = {
   splitPaidAmount?: string | null
   splitRemainingAmount?: string | null
   splitParticipantCount?: number | null
+  collectLumpSum?: boolean | null
   installmentNumber?: number | null
   installmentsTotal?: number | null
   isSplit?: boolean

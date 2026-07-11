@@ -5,28 +5,28 @@
  * API for HouseApp
  * OpenAPI spec version: 2.0.0
  */
-import type { CreateTransaction201TransactionAccountId } from './createTransaction201TransactionAccountId';
-import type { CreateTransaction201TransactionCardId } from './createTransaction201TransactionCardId';
-import type { CreateTransaction201TransactionRecurringTransactionId } from './createTransaction201TransactionRecurringTransactionId';
-import type { CreateTransaction201TransactionStatementId } from './createTransaction201TransactionStatementId';
-import type { CreateTransaction201TransactionDescription } from './createTransaction201TransactionDescription';
-import type { CreateTransaction201TransactionAmount } from './createTransaction201TransactionAmount';
-import type { CreateTransaction201TransactionType } from './createTransaction201TransactionType';
-import type { CreateTransaction201TransactionCompetenceDate } from './createTransaction201TransactionCompetenceDate';
-import type { CreateTransaction201TransactionStatus } from './createTransaction201TransactionStatus';
-import type { CreateTransaction201TransactionPaidAt } from './createTransaction201TransactionPaidAt';
-import type { CreateTransaction201TransactionPaidAmount } from './createTransaction201TransactionPaidAmount';
-import type { CreateTransaction201TransactionPaymentScheduledAt } from './createTransaction201TransactionPaymentScheduledAt';
-import type { CreateTransaction201TransactionCounterparty } from './createTransaction201TransactionCounterparty';
-import type { CreateTransaction201TransactionInstallmentNumber } from './createTransaction201TransactionInstallmentNumber';
-import type { CreateTransaction201TransactionInstallmentsTotal } from './createTransaction201TransactionInstallmentsTotal';
-import type { CreateTransaction201TransactionSource } from './createTransaction201TransactionSource';
-import type { CreateTransaction201TransactionTransferPairId } from './createTransaction201TransactionTransferPairId';
-import type { CreateTransaction201TransactionNotifyTargetType } from './createTransaction201TransactionNotifyTargetType';
-import type { CreateTransaction201TransactionNotifyUserId } from './createTransaction201TransactionNotifyUserId';
-import type { CreateTransaction201TransactionNotifyContactName } from './createTransaction201TransactionNotifyContactName';
-import type { CreateTransaction201TransactionNotifyContactPhone } from './createTransaction201TransactionNotifyContactPhone';
-import type { CreateTransaction201TransactionNotifyOverdueConfig } from './createTransaction201TransactionNotifyOverdueConfig';
+import type { CreateTransaction201TransactionAccountId } from "./createTransaction201TransactionAccountId";
+import type { CreateTransaction201TransactionCardId } from "./createTransaction201TransactionCardId";
+import type { CreateTransaction201TransactionRecurringTransactionId } from "./createTransaction201TransactionRecurringTransactionId";
+import type { CreateTransaction201TransactionStatementId } from "./createTransaction201TransactionStatementId";
+import type { CreateTransaction201TransactionDescription } from "./createTransaction201TransactionDescription";
+import type { CreateTransaction201TransactionAmount } from "./createTransaction201TransactionAmount";
+import type { CreateTransaction201TransactionType } from "./createTransaction201TransactionType";
+import type { CreateTransaction201TransactionCompetenceDate } from "./createTransaction201TransactionCompetenceDate";
+import type { CreateTransaction201TransactionStatus } from "./createTransaction201TransactionStatus";
+import type { CreateTransaction201TransactionPaidAt } from "./createTransaction201TransactionPaidAt";
+import type { CreateTransaction201TransactionPaidAmount } from "./createTransaction201TransactionPaidAmount";
+import type { CreateTransaction201TransactionPaymentScheduledAt } from "./createTransaction201TransactionPaymentScheduledAt";
+import type { CreateTransaction201TransactionCounterparty } from "./createTransaction201TransactionCounterparty";
+import type { CreateTransaction201TransactionInstallmentNumber } from "./createTransaction201TransactionInstallmentNumber";
+import type { CreateTransaction201TransactionInstallmentsTotal } from "./createTransaction201TransactionInstallmentsTotal";
+import type { CreateTransaction201TransactionSource } from "./createTransaction201TransactionSource";
+import type { CreateTransaction201TransactionTransferPairId } from "./createTransaction201TransactionTransferPairId";
+import type { CreateTransaction201TransactionNotifyTargetType } from "./createTransaction201TransactionNotifyTargetType";
+import type { CreateTransaction201TransactionNotifyUserId } from "./createTransaction201TransactionNotifyUserId";
+import type { CreateTransaction201TransactionNotifyContactName } from "./createTransaction201TransactionNotifyContactName";
+import type { CreateTransaction201TransactionNotifyContactPhone } from "./createTransaction201TransactionNotifyContactPhone";
+import type { CreateTransaction201TransactionNotifyOverdueConfig } from "./createTransaction201TransactionNotifyOverdueConfig";
 
 export type CreateTransaction201Transaction = {
   id: string;
@@ -52,7 +52,7 @@ export type CreateTransaction201Transaction = {
   categoryIds: string[];
   transferPairId: CreateTransaction201TransactionTransferPairId;
   notifyEnabled: boolean;
-  notifyTargetType: typeof CreateTransaction201TransactionNotifyTargetType[keyof typeof CreateTransaction201TransactionNotifyTargetType] ;
+  notifyTargetType: (typeof CreateTransaction201TransactionNotifyTargetType)[keyof typeof CreateTransaction201TransactionNotifyTargetType];
   notifyUserId: CreateTransaction201TransactionNotifyUserId;
   notifyContactName: CreateTransaction201TransactionNotifyContactName;
   notifyContactPhone: CreateTransaction201TransactionNotifyContactPhone;

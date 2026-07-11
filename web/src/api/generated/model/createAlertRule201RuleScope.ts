@@ -6,12 +6,12 @@
  * OpenAPI spec version: 2.0.0
  */
 
-export type CreateAlertRule201RuleScope = typeof CreateAlertRule201RuleScope[keyof typeof CreateAlertRule201RuleScope];
-
+export type CreateAlertRule201RuleScope =
+  (typeof CreateAlertRule201RuleScope)[keyof typeof CreateAlertRule201RuleScope];
 
 // eslint-disable-next-line @typescript-eslint/no-redeclare
 export const CreateAlertRule201RuleScope = {
-  organization: 'organization',
-  account: 'account',
-  recurring: 'recurring',
+  organization: "organization",
+  account: "account",
+  recurring: "recurring",
 } as const;

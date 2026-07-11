@@ -6,14 +6,14 @@
  * OpenAPI spec version: 2.0.0
  */
 
-export type UpdateAccount200AccountType = typeof UpdateAccount200AccountType[keyof typeof UpdateAccount200AccountType];
-
+export type UpdateAccount200AccountType =
+  (typeof UpdateAccount200AccountType)[keyof typeof UpdateAccount200AccountType];
 
 // eslint-disable-next-line @typescript-eslint/no-redeclare
 export const UpdateAccount200AccountType = {
-  checking: 'checking',
-  savings: 'savings',
-  credit_card: 'credit_card',
-  cash: 'cash',
-  investment: 'investment',
+  checking: "checking",
+  savings: "savings",
+  credit_card: "credit_card",
+  cash: "cash",
+  investment: "investment",
 } as const;

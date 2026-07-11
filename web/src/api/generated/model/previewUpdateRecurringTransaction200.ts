@@ -5,9 +5,9 @@
  * API for HouseApp
  * OpenAPI spec version: 2.0.0
  */
-import type { PreviewUpdateRecurringTransaction200Current } from './previewUpdateRecurringTransaction200Current';
-import type { PreviewUpdateRecurringTransaction200Proposed } from './previewUpdateRecurringTransaction200Proposed';
-import type { PreviewUpdateRecurringTransaction200Impact } from './previewUpdateRecurringTransaction200Impact';
+import type { PreviewUpdateRecurringTransaction200Current } from "./previewUpdateRecurringTransaction200Current";
+import type { PreviewUpdateRecurringTransaction200Proposed } from "./previewUpdateRecurringTransaction200Proposed";
+import type { PreviewUpdateRecurringTransaction200Impact } from "./previewUpdateRecurringTransaction200Impact";
 
 export type PreviewUpdateRecurringTransaction200 = {
   current: PreviewUpdateRecurringTransaction200Current;

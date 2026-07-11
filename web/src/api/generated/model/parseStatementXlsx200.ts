@@ -5,13 +5,13 @@
  * API for HouseApp
  * OpenAPI spec version: 2.0.0
  */
-import type { ParseStatementXlsx200Parsed } from './parseStatementXlsx200Parsed';
-import type { ParseStatementXlsx200Provider } from './parseStatementXlsx200Provider';
-import type { ParseStatementXlsx200Summary } from './parseStatementXlsx200Summary';
-import type { ParseStatementXlsx200Duplicate } from './parseStatementXlsx200Duplicate';
-import type { ParseStatementXlsx200InvoiceStatus } from './parseStatementXlsx200InvoiceStatus';
-import type { ParseStatementXlsx200CardMismatchWarning } from './parseStatementXlsx200CardMismatchWarning';
-import type { ParseStatementXlsx200AccountResolution } from './parseStatementXlsx200AccountResolution';
+import type { ParseStatementXlsx200Parsed } from "./parseStatementXlsx200Parsed";
+import type { ParseStatementXlsx200Provider } from "./parseStatementXlsx200Provider";
+import type { ParseStatementXlsx200Summary } from "./parseStatementXlsx200Summary";
+import type { ParseStatementXlsx200Duplicate } from "./parseStatementXlsx200Duplicate";
+import type { ParseStatementXlsx200InvoiceStatus } from "./parseStatementXlsx200InvoiceStatus";
+import type { ParseStatementXlsx200CardMismatchWarning } from "./parseStatementXlsx200CardMismatchWarning";
+import type { ParseStatementXlsx200AccountResolution } from "./parseStatementXlsx200AccountResolution";
 
 export type ParseStatementXlsx200 = {
   parsed: ParseStatementXlsx200Parsed;

@@ -7,9 +7,11 @@ import { pickWhatsAppItemEmoji } from './format'
 import {
   buildCreditCardShareTotalLine,
   buildGrandShareTotalLine,
+  sumDueShareCentavos,
+} from './due-share'
+import {
   buildSplitTransactionTitleLine,
   buildSummaryLine,
-  sumDueShareCentavos,
 } from './summary'
 import {
   WHATSAPP_CREDIT_CARD_LABEL,
@@ -77,6 +79,7 @@ function resolveItemSummaryLine(item: WhatsAppAlertBatchItem): string | null {
       installmentNumber: item.installmentNumber,
       installmentsTotal: item.installmentsTotal,
       isSplit: item.isSplit,
+      collectLumpSum: item.collectLumpSum,
     })
   )
 }

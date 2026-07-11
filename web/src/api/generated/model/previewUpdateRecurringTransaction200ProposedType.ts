@@ -6,11 +6,11 @@
  * OpenAPI spec version: 2.0.0
  */
 
-export type PreviewUpdateRecurringTransaction200ProposedType = typeof PreviewUpdateRecurringTransaction200ProposedType[keyof typeof PreviewUpdateRecurringTransaction200ProposedType];
-
+export type PreviewUpdateRecurringTransaction200ProposedType =
+  (typeof PreviewUpdateRecurringTransaction200ProposedType)[keyof typeof PreviewUpdateRecurringTransaction200ProposedType];
 
 // eslint-disable-next-line @typescript-eslint/no-redeclare
 export const PreviewUpdateRecurringTransaction200ProposedType = {
-  income: 'income',
-  expense: 'expense',
+  income: "income",
+  expense: "expense",
 } as const;

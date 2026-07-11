@@ -5,7 +5,7 @@
  * API for HouseApp
  * OpenAPI spec version: 2.0.0
  */
-import type { BulkNotifyTargetBodyUpdatesItemNotifyOverdueConfigAnyOfAnyOfTwoFrequency } from './bulkNotifyTargetBodyUpdatesItemNotifyOverdueConfigAnyOfAnyOfTwoFrequency';
+import type { BulkNotifyTargetBodyUpdatesItemNotifyOverdueConfigAnyOfAnyOfTwoFrequency } from "./bulkNotifyTargetBodyUpdatesItemNotifyOverdueConfigAnyOfAnyOfTwoFrequency";
 
 export type BulkNotifyTargetBodyUpdatesItemNotifyOverdueConfigAnyOfAnyOfTwo = {
   frequency: BulkNotifyTargetBodyUpdatesItemNotifyOverdueConfigAnyOfAnyOfTwoFrequency;

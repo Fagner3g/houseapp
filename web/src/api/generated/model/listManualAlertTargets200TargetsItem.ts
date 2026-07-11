@@ -5,9 +5,9 @@
  * API for HouseApp
  * OpenAPI spec version: 2.0.0
  */
-import type { ListManualAlertTargets200TargetsItemType } from './listManualAlertTargets200TargetsItemType';
-import type { ListManualAlertTargets200TargetsItemPhone } from './listManualAlertTargets200TargetsItemPhone';
-import type { ListManualAlertTargets200TargetsItemUserId } from './listManualAlertTargets200TargetsItemUserId';
+import type { ListManualAlertTargets200TargetsItemType } from "./listManualAlertTargets200TargetsItemType";
+import type { ListManualAlertTargets200TargetsItemPhone } from "./listManualAlertTargets200TargetsItemPhone";
+import type { ListManualAlertTargets200TargetsItemUserId } from "./listManualAlertTargets200TargetsItemUserId";
 
 export type ListManualAlertTargets200TargetsItem = {
   key: string;

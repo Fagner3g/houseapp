@@ -5,21 +5,21 @@
  * API for HouseApp
  * OpenAPI spec version: 2.0.0
  */
-import type { CreateAccountBodyType } from './createAccountBodyType';
-import type { CreateAccountBodyInstitution } from './createAccountBodyInstitution';
-import type { CreateAccountBodyCreditLimit } from './createAccountBodyCreditLimit';
-import type { CreateAccountBodyClosingDay } from './createAccountBodyClosingDay';
-import type { CreateAccountBodyDueDay } from './createAccountBodyDueDay';
-import type { CreateAccountBodyPaymentAccountId } from './createAccountBodyPaymentAccountId';
-import type { CreateAccountBodyInitialBalance } from './createAccountBodyInitialBalance';
-import type { CreateAccountBodyPixKey } from './createAccountBodyPixKey';
-import type { CreateAccountBodyPixKeyType } from './createAccountBodyPixKeyType';
-import type { CreateAccountBodyColor } from './createAccountBodyColor';
-import type { CreateAccountBodyIcon } from './createAccountBodyIcon';
-import type { CreateAccountBodyBrand } from './createAccountBodyBrand';
-import type { CreateAccountBodyHolderName } from './createAccountBodyHolderName';
-import type { CreateAccountBodyOfxAccountId } from './createAccountBodyOfxAccountId';
-import type { CreateAccountBodyLastFourDigits } from './createAccountBodyLastFourDigits';
+import type { CreateAccountBodyType } from "./createAccountBodyType";
+import type { CreateAccountBodyInstitution } from "./createAccountBodyInstitution";
+import type { CreateAccountBodyCreditLimit } from "./createAccountBodyCreditLimit";
+import type { CreateAccountBodyClosingDay } from "./createAccountBodyClosingDay";
+import type { CreateAccountBodyDueDay } from "./createAccountBodyDueDay";
+import type { CreateAccountBodyPaymentAccountId } from "./createAccountBodyPaymentAccountId";
+import type { CreateAccountBodyInitialBalance } from "./createAccountBodyInitialBalance";
+import type { CreateAccountBodyPixKey } from "./createAccountBodyPixKey";
+import type { CreateAccountBodyPixKeyType } from "./createAccountBodyPixKeyType";
+import type { CreateAccountBodyColor } from "./createAccountBodyColor";
+import type { CreateAccountBodyIcon } from "./createAccountBodyIcon";
+import type { CreateAccountBodyBrand } from "./createAccountBodyBrand";
+import type { CreateAccountBodyHolderName } from "./createAccountBodyHolderName";
+import type { CreateAccountBodyOfxAccountId } from "./createAccountBodyOfxAccountId";
+import type { CreateAccountBodyLastFourDigits } from "./createAccountBodyLastFourDigits";
 
 export type CreateAccountBody = {
   /** @minLength 1 */
@@ -33,7 +33,7 @@ export type CreateAccountBody = {
   paymentAccountId?: CreateAccountBodyPaymentAccountId;
   initialBalance?: CreateAccountBodyInitialBalance;
   pixKey?: CreateAccountBodyPixKey;
-  pixKeyType?: typeof CreateAccountBodyPixKeyType[keyof typeof CreateAccountBodyPixKeyType] ;
+  pixKeyType?: (typeof CreateAccountBodyPixKeyType)[keyof typeof CreateAccountBodyPixKeyType];
   color?: CreateAccountBodyColor;
   icon?: CreateAccountBodyIcon;
   /**
@@ -41,7 +41,7 @@ export type CreateAccountBody = {
    * @maximum 9007199254740991
    */
   displayOrder?: number;
-  brand?: typeof CreateAccountBodyBrand[keyof typeof CreateAccountBodyBrand] ;
+  brand?: (typeof CreateAccountBodyBrand)[keyof typeof CreateAccountBodyBrand];
   holderName?: CreateAccountBodyHolderName;
   ofxAccountId?: CreateAccountBodyOfxAccountId;
   lastFourDigits?: CreateAccountBodyLastFourDigits;

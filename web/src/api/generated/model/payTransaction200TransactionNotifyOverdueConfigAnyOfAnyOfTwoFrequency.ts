@@ -6,12 +6,13 @@
  * OpenAPI spec version: 2.0.0
  */
 
-export type PayTransaction200TransactionNotifyOverdueConfigAnyOfAnyOfTwoFrequency = typeof PayTransaction200TransactionNotifyOverdueConfigAnyOfAnyOfTwoFrequency[keyof typeof PayTransaction200TransactionNotifyOverdueConfigAnyOfAnyOfTwoFrequency];
-
+export type PayTransaction200TransactionNotifyOverdueConfigAnyOfAnyOfTwoFrequency =
+  (typeof PayTransaction200TransactionNotifyOverdueConfigAnyOfAnyOfTwoFrequency)[keyof typeof PayTransaction200TransactionNotifyOverdueConfigAnyOfAnyOfTwoFrequency];
 
 // eslint-disable-next-line @typescript-eslint/no-redeclare
-export const PayTransaction200TransactionNotifyOverdueConfigAnyOfAnyOfTwoFrequency = {
-  daily: 'daily',
-  weekly: 'weekly',
-  monthly: 'monthly',
-} as const;
+export const PayTransaction200TransactionNotifyOverdueConfigAnyOfAnyOfTwoFrequency =
+  {
+    daily: "daily",
+    weekly: "weekly",
+    monthly: "monthly",
+  } as const;

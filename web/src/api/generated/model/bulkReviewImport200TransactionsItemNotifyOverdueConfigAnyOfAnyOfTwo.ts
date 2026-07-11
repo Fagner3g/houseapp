@@ -5,13 +5,14 @@
  * API for HouseApp
  * OpenAPI spec version: 2.0.0
  */
-import type { BulkReviewImport200TransactionsItemNotifyOverdueConfigAnyOfAnyOfTwoFrequency } from './bulkReviewImport200TransactionsItemNotifyOverdueConfigAnyOfAnyOfTwoFrequency';
+import type { BulkReviewImport200TransactionsItemNotifyOverdueConfigAnyOfAnyOfTwoFrequency } from "./bulkReviewImport200TransactionsItemNotifyOverdueConfigAnyOfAnyOfTwoFrequency";
 
-export type BulkReviewImport200TransactionsItemNotifyOverdueConfigAnyOfAnyOfTwo = {
-  frequency: BulkReviewImport200TransactionsItemNotifyOverdueConfigAnyOfAnyOfTwoFrequency;
-  /**
-   * @minimum 1
-   * @maximum 9007199254740991
-   */
-  interval: number;
-};
+export type BulkReviewImport200TransactionsItemNotifyOverdueConfigAnyOfAnyOfTwo =
+  {
+    frequency: BulkReviewImport200TransactionsItemNotifyOverdueConfigAnyOfAnyOfTwoFrequency;
+    /**
+     * @minimum 1
+     * @maximum 9007199254740991
+     */
+    interval: number;
+  };

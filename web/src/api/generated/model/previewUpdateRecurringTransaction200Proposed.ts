@@ -5,14 +5,14 @@
  * API for HouseApp
  * OpenAPI spec version: 2.0.0
  */
-import type { PreviewUpdateRecurringTransaction200ProposedAccountId } from './previewUpdateRecurringTransaction200ProposedAccountId';
-import type { PreviewUpdateRecurringTransaction200ProposedType } from './previewUpdateRecurringTransaction200ProposedType';
-import type { PreviewUpdateRecurringTransaction200ProposedCounterparty } from './previewUpdateRecurringTransaction200ProposedCounterparty';
-import type { PreviewUpdateRecurringTransaction200ProposedCategoryId } from './previewUpdateRecurringTransaction200ProposedCategoryId';
-import type { PreviewUpdateRecurringTransaction200ProposedFrequency } from './previewUpdateRecurringTransaction200ProposedFrequency';
-import type { PreviewUpdateRecurringTransaction200ProposedEndDate } from './previewUpdateRecurringTransaction200ProposedEndDate';
-import type { PreviewUpdateRecurringTransaction200ProposedInstallmentsTotal } from './previewUpdateRecurringTransaction200ProposedInstallmentsTotal';
-import type { PreviewUpdateRecurringTransaction200ProposedLastGeneratedDate } from './previewUpdateRecurringTransaction200ProposedLastGeneratedDate';
+import type { PreviewUpdateRecurringTransaction200ProposedAccountId } from "./previewUpdateRecurringTransaction200ProposedAccountId";
+import type { PreviewUpdateRecurringTransaction200ProposedType } from "./previewUpdateRecurringTransaction200ProposedType";
+import type { PreviewUpdateRecurringTransaction200ProposedCounterparty } from "./previewUpdateRecurringTransaction200ProposedCounterparty";
+import type { PreviewUpdateRecurringTransaction200ProposedCategoryId } from "./previewUpdateRecurringTransaction200ProposedCategoryId";
+import type { PreviewUpdateRecurringTransaction200ProposedFrequency } from "./previewUpdateRecurringTransaction200ProposedFrequency";
+import type { PreviewUpdateRecurringTransaction200ProposedEndDate } from "./previewUpdateRecurringTransaction200ProposedEndDate";
+import type { PreviewUpdateRecurringTransaction200ProposedInstallmentsTotal } from "./previewUpdateRecurringTransaction200ProposedInstallmentsTotal";
+import type { PreviewUpdateRecurringTransaction200ProposedLastGeneratedDate } from "./previewUpdateRecurringTransaction200ProposedLastGeneratedDate";
 
 export type PreviewUpdateRecurringTransaction200Proposed = {
   id: string;

@@ -5,8 +5,8 @@
  * API for HouseApp
  * OpenAPI spec version: 2.0.0
  */
-import type { ParseStatementXlsx200ParsedImportSource } from './parseStatementXlsx200ParsedImportSource';
-import type { ParseStatementXlsx200ParsedTransactionsItem } from './parseStatementXlsx200ParsedTransactionsItem';
+import type { ParseStatementXlsx200ParsedImportSource } from "./parseStatementXlsx200ParsedImportSource";
+import type { ParseStatementXlsx200ParsedTransactionsItem } from "./parseStatementXlsx200ParsedTransactionsItem";
 
 export type ParseStatementXlsx200Parsed = {
   /**

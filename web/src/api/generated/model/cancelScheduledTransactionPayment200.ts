@@ -5,7 +5,7 @@
  * API for HouseApp
  * OpenAPI spec version: 2.0.0
  */
-import type { CancelScheduledTransactionPayment200Transaction } from './cancelScheduledTransactionPayment200Transaction';
+import type { CancelScheduledTransactionPayment200Transaction } from "./cancelScheduledTransactionPayment200Transaction";
 
 export type CancelScheduledTransactionPayment200 = {
   transaction: CancelScheduledTransactionPayment200Transaction;

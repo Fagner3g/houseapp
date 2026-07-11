@@ -21,7 +21,10 @@ import type { CategoryRepository } from '@/modules/categories/category.repositor
 import type { AccountRepository } from '@/modules/accounts/account.repository'
 import type { SplitService } from '@/modules/splits/split.service'
 import type { StatementRepository } from '@/modules/statements/statement.repository'
-import { matchesInstallmentSeries } from '@/modules/splits/split-debt-summary.logic'
+import {
+  matchesInstallmentSeries,
+  selectInstallmentSeriesSiblings,
+} from '@/modules/splits/split-debt-summary.logic'
 
 import type {
   ListTransactionsFilter,
@@ -1037,7 +1040,7 @@ export class TransactionService {
       .where(and(...conditions))
       .orderBy(transactions.installmentNumber)
 
-    const siblings = candidates.filter(candidate => matchesInstallmentSeries(candidate, anchor))
+    const siblings = selectInstallmentSeriesSiblings(candidates, anchor)
 
     return siblings.length > 0 ? siblings : [anchor]
   }

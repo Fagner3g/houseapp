@@ -5,8 +5,11 @@
  * API for HouseApp
  * OpenAPI spec version: 2.0.0
  */
-import type { ParseStatementOfxOrg200AccountResolutionOneOf } from './parseStatementOfxOrg200AccountResolutionOneOf';
-import type { ParseStatementOfxOrg200AccountResolutionOneOfThree } from './parseStatementOfxOrg200AccountResolutionOneOfThree';
-import type { ParseStatementOfxOrg200AccountResolutionOneOfEight } from './parseStatementOfxOrg200AccountResolutionOneOfEight';
+import type { ParseStatementOfxOrg200AccountResolutionOneOf } from "./parseStatementOfxOrg200AccountResolutionOneOf";
+import type { ParseStatementOfxOrg200AccountResolutionOneOfThree } from "./parseStatementOfxOrg200AccountResolutionOneOfThree";
+import type { ParseStatementOfxOrg200AccountResolutionOneOfEight } from "./parseStatementOfxOrg200AccountResolutionOneOfEight";
 
-export type ParseStatementOfxOrg200AccountResolution = ParseStatementOfxOrg200AccountResolutionOneOf | ParseStatementOfxOrg200AccountResolutionOneOfThree | ParseStatementOfxOrg200AccountResolutionOneOfEight;
+export type ParseStatementOfxOrg200AccountResolution =
+  | ParseStatementOfxOrg200AccountResolutionOneOf
+  | ParseStatementOfxOrg200AccountResolutionOneOfThree
+  | ParseStatementOfxOrg200AccountResolutionOneOfEight;

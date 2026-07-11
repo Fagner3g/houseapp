@@ -6,12 +6,12 @@
  * OpenAPI spec version: 2.0.0
  */
 
-export type UpdateAlertRuleBodyConfigAnyOfTwoFrequency = typeof UpdateAlertRuleBodyConfigAnyOfTwoFrequency[keyof typeof UpdateAlertRuleBodyConfigAnyOfTwoFrequency];
-
+export type UpdateAlertRuleBodyConfigAnyOfTwoFrequency =
+  (typeof UpdateAlertRuleBodyConfigAnyOfTwoFrequency)[keyof typeof UpdateAlertRuleBodyConfigAnyOfTwoFrequency];
 
 // eslint-disable-next-line @typescript-eslint/no-redeclare
 export const UpdateAlertRuleBodyConfigAnyOfTwoFrequency = {
-  daily: 'daily',
-  weekly: 'weekly',
-  monthly: 'monthly',
+  daily: "daily",
+  weekly: "weekly",
+  monthly: "monthly",
 } as const;

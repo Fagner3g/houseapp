@@ -5,7 +5,7 @@
  * API for HouseApp
  * OpenAPI spec version: 2.0.0
  */
-import type { RenameOrg200Organization } from './renameOrg200Organization';
+import type { RenameOrg200Organization } from "./renameOrg200Organization";
 
 export type RenameOrg200 = {
   organization: RenameOrg200Organization;

@@ -5,7 +5,6 @@ import {
 } from '@houseapp/finance-core'
 
 import { centavosToString, divideCentavos } from '@/core/money'
-import { stripInstallmentBaseTitle } from '@/modules/transactions/credit-card-installments.logic'
 import type { TransactionRecord } from '@/modules/transactions/transaction.repository'
 
 import type { SplitRecord } from './split.repository'
@@ -14,6 +13,7 @@ export {
   extrapolateInstallmentSeriesTotalCentavos,
   resolvePersonShareInstallmentAmountCentavos,
 }
+export { matchesInstallmentSeries, selectInstallmentSeriesSiblings } from './installment-series'
 
 export type SplitDebtInstallmentRow = {
   installmentNumber: number
@@ -70,27 +70,6 @@ function aggregateStatus(statuses: SplitRecord['status'][]): SplitRecord['status
   }
   if (statuses.some(status => status === 'partial' || status === 'paid')) return 'partial'
   return 'pending'
-}
-
-export function matchesInstallmentSeries(
-  candidate: Pick<
-    TransactionRecord,
-    'title' | 'installmentsTotal' | 'accountId' | 'cardId' | 'organizationId'
-  >,
-  anchor: Pick<
-    TransactionRecord,
-    'title' | 'installmentsTotal' | 'accountId' | 'cardId' | 'organizationId'
-  >
-): boolean {
-  if (candidate.organizationId !== anchor.organizationId) return false
-  if (candidate.installmentsTotal !== anchor.installmentsTotal) return false
-  if (candidate.installmentsTotal == null || candidate.installmentsTotal < 2) return false
-  if (candidate.accountId !== anchor.accountId) return false
-  if (candidate.cardId !== anchor.cardId) return false
-
-  return (
-    stripInstallmentBaseTitle(candidate.title) === stripInstallmentBaseTitle(anchor.title)
-  )
 }
 
 export function isInstallmentPurchaseTotalEstimate(
@@ -184,13 +163,15 @@ export function shouldExtrapolateInstallmentSplitTotals(
   anchorTransaction: Pick<TransactionRecord, 'source' | 'statementId'>,
   siblingTransactions: unknown[],
   materializedInstallmentSplitCount: number,
-  installmentsTotal: number | null
+  installmentsTotal: number | null,
+  collectLumpSum = false
 ): boolean {
   return shouldExtrapolateInstallmentSplitTotalsKernel({
     isImportedStatement: isImportedStatementTransaction(anchorTransaction),
     siblingCount: siblingTransactions.length,
     materializedInstallmentSplitCount,
     installmentsTotal,
+    collectLumpSum,
   })
 }
 
@@ -219,25 +200,35 @@ export function buildSplitDebtSummary(input: {
     installmentsTotal
   )
 
-  const materializedInstallmentSplitCount = new Set(
-    splits.map(split => split.installmentNumber ?? 1)
+  const recurringSplits = splits.filter(split => !split.collectLumpSum)
+  const lumpSumSplits = splits.filter(split => split.collectLumpSum)
+  const recurringInstallmentCount = new Set(
+    recurringSplits.map(split => split.installmentNumber ?? 1)
   ).size
-  const shouldExtrapolate = shouldExtrapolateInstallmentSplitTotals(
-    anchorTransaction,
-    siblingTransactions,
-    materializedInstallmentSplitCount,
-    installmentsTotal
-  )
+  const shouldExtrapolateRecurring =
+    recurringSplits.length > 0 &&
+    shouldExtrapolateInstallmentSplitTotals(
+      anchorTransaction,
+      siblingTransactions,
+      recurringInstallmentCount,
+      installmentsTotal,
+      false
+    )
 
-  const materializedSplitsTotalCentavos = splits.reduce((sum, split) => sum + split.amount, 0n)
-  const extrapolatedSplitsTotalCentavos = shouldExtrapolate
+  const recurringMaterializedCentavos = recurringSplits.reduce(
+    (sum, split) => sum + split.amount,
+    0n
+  )
+  const extrapolatedRecurringCentavos = shouldExtrapolateRecurring
     ? extrapolateInstallmentSeriesTotalCentavos(
-        materializedSplitsTotalCentavos,
-        materializedInstallmentSplitCount,
+        recurringMaterializedCentavos,
+        recurringInstallmentCount,
         installmentsTotal
       )
-    : materializedSplitsTotalCentavos
-  const myShareTotalCentavos = purchaseTotalCentavos - extrapolatedSplitsTotalCentavos
+    : recurringMaterializedCentavos
+  const lumpSumTotalCentavos = lumpSumSplits.reduce((sum, split) => sum + split.amount, 0n)
+  const debtorSharesTotalCentavos = extrapolatedRecurringCentavos + lumpSumTotalCentavos
+  const myShareTotalCentavos = purchaseTotalCentavos - debtorSharesTotalCentavos
 
   const keys = [...new Set(splits.map(split => personKey(split)))]
   const persons = keys.flatMap(key => {
@@ -245,18 +236,23 @@ export function buildSplitDebtSummary(input: {
     const sample = personSplits[0]
     if (!sample) return []
 
-    const materializedOwed = personSplits.reduce((sum, split) => sum + split.amount, 0n)
+    const personRecurring = personSplits.filter(split => !split.collectLumpSum)
+    const personLumpSum = personSplits.filter(split => split.collectLumpSum)
+    const materializedRecurring = personRecurring.reduce((sum, split) => sum + split.amount, 0n)
+    const materializedLumpSum = personLumpSum.reduce((sum, split) => sum + split.amount, 0n)
     const paid = personSplits.reduce((sum, split) => sum + split.paidAmount, 0n)
-    const personMaterializedInstallmentCount = new Set(
-      personSplits.map(split => split.installmentNumber ?? 1)
+    const personRecurringInstallmentCount = new Set(
+      personRecurring.map(split => split.installmentNumber ?? 1)
     ).size
-    const owed = shouldExtrapolate
-      ? extrapolateInstallmentSeriesTotalCentavos(
-          materializedOwed,
-          personMaterializedInstallmentCount,
-          installmentsTotal
-        )
-      : materializedOwed
+    const owedRecurring =
+      shouldExtrapolateRecurring && personRecurring.length > 0
+        ? extrapolateInstallmentSeriesTotalCentavos(
+            materializedRecurring,
+            personRecurringInstallmentCount,
+            installmentsTotal
+          )
+        : materializedRecurring
+    const owed = owedRecurring + materializedLumpSum
 
     return [
       {

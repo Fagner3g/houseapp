@@ -29,6 +29,13 @@
       "when": 1783615680000,
       "tag": "0003_transaction_payment_scheduled_at",
       "breakpoints": true
+    },
+    {
+      "idx": 4,
+      "version": "7",
+      "when": 1783702080000,
+      "tag": "0004_split_collect_lump_sum",
+      "breakpoints": true
     }
   ]
 }

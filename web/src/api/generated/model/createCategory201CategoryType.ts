@@ -6,11 +6,11 @@
  * OpenAPI spec version: 2.0.0
  */
 
-export type CreateCategory201CategoryType = typeof CreateCategory201CategoryType[keyof typeof CreateCategory201CategoryType];
-
+export type CreateCategory201CategoryType =
+  (typeof CreateCategory201CategoryType)[keyof typeof CreateCategory201CategoryType];
 
 // eslint-disable-next-line @typescript-eslint/no-redeclare
 export const CreateCategory201CategoryType = {
-  income: 'income',
-  expense: 'expense',
+  income: "income",
+  expense: "expense",
 } as const;

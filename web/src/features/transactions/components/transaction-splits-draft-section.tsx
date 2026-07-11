@@ -29,6 +29,7 @@ import {
   SplitMemberChipList,
   SplitModePresets,
   SplitMyShareRow,
+  SplitParcelChargeToggle,
   SplitPersonFields,
 } from './splits'
 
@@ -64,6 +65,9 @@ export function TransactionSplitsDraftSection({
   const myShareReais = Math.max(0, totalReais - splitReais)
   const isInstallment = recurrence === 'installment' && (installmentsTotal ?? 0) >= 2
   const totalInstallments = installmentsTotal ?? 0
+  const showParcelChargeToggle =
+    isInstallment && (value.splitMode === 'half' || value.splitMode === 'custom')
+  const chargePerInstallment = showParcelChargeToggle && !value.collectLumpSum
 
   const splitEligibleMembers = useMemo(
     () => getSplitEligibleOrgUsers(membersData?.users ?? [], currentUserId),
@@ -179,6 +183,18 @@ export function TransactionSplitsDraftSection({
 
         {value.splitMode !== 'none' && (
           <>
+            {showParcelChargeToggle && (
+              <SplitParcelChargeToggle
+                checked={!value.collectLumpSum}
+                onCheckedChange={parcelCharge => update({ collectLumpSum: !parcelCharge })}
+                banner={
+                  chargePerInstallment
+                    ? `A divisão será aplicada em todas as ${totalInstallments} parcelas.`
+                    : `A cobrança será à vista na 1ª parcela (valor total da divisão: ${formatCurrency(splitReais)}).`
+                }
+              />
+            )}
+
             <SplitPersonFields
               personMode={value.splitPersonMode}
               onPersonModeChange={personMode => update({ splitPersonMode: personMode })}
@@ -204,13 +220,16 @@ export function TransactionSplitsDraftSection({
                 <strong className="tabular-nums text-slate-800">
                   {formatMoneyString(reaisToMoneyString(splitReais))}
                 </strong>
-                {isInstallment && perInstallmentAmounts && (
+                {chargePerInstallment && perInstallmentAmounts && (
                   <span className="text-slate-500">
                     {' '}
                     ({installmentsTotal}×{' '}
                     {formatMoneyString(reaisToMoneyString(perInstallmentAmounts.split[0] ?? 0))}{' '}
                     por parcela)
                   </span>
+                )}
+                {showParcelChargeToggle && !chargePerInstallment && (
+                  <span className="text-slate-500"> · à vista na 1ª parcela</span>
                 )}
               </p>
             )}
@@ -233,7 +252,7 @@ export function TransactionSplitsDraftSection({
         <SplitMyShareRow
           amountReais={myShareReais}
           suffix={
-            isInstallment && perInstallmentAmounts ? (
+            chargePerInstallment && perInstallmentAmounts ? (
               <span className="ml-1 text-xs font-normal text-slate-500">
                 ({installmentsTotal}× {formatCurrency(perInstallmentAmounts.myShare[0] ?? 0)})
               </span>

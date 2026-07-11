@@ -5,8 +5,8 @@
  * API for HouseApp
  * OpenAPI spec version: 2.0.0
  */
-import type { ListTransactions200TransactionsItem } from './listTransactions200TransactionsItem';
-import type { ListTransactions200Pagination } from './listTransactions200Pagination';
+import type { ListTransactions200TransactionsItem } from "./listTransactions200TransactionsItem";
+import type { ListTransactions200Pagination } from "./listTransactions200Pagination";
 
 export type ListTransactions200 = {
   transactions: ListTransactions200TransactionsItem[];

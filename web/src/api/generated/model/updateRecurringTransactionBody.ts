@@ -5,13 +5,13 @@
  * API for HouseApp
  * OpenAPI spec version: 2.0.0
  */
-import type { UpdateRecurringTransactionBodyType } from './updateRecurringTransactionBodyType';
-import type { UpdateRecurringTransactionBodyCounterparty } from './updateRecurringTransactionBodyCounterparty';
-import type { UpdateRecurringTransactionBodyCategoryId } from './updateRecurringTransactionBodyCategoryId';
-import type { UpdateRecurringTransactionBodyAccountId } from './updateRecurringTransactionBodyAccountId';
-import type { UpdateRecurringTransactionBodyFrequency } from './updateRecurringTransactionBodyFrequency';
-import type { UpdateRecurringTransactionBodyEndDate } from './updateRecurringTransactionBodyEndDate';
-import type { UpdateRecurringTransactionBodyInstallmentsTotal } from './updateRecurringTransactionBodyInstallmentsTotal';
+import type { UpdateRecurringTransactionBodyType } from "./updateRecurringTransactionBodyType";
+import type { UpdateRecurringTransactionBodyCounterparty } from "./updateRecurringTransactionBodyCounterparty";
+import type { UpdateRecurringTransactionBodyCategoryId } from "./updateRecurringTransactionBodyCategoryId";
+import type { UpdateRecurringTransactionBodyAccountId } from "./updateRecurringTransactionBodyAccountId";
+import type { UpdateRecurringTransactionBodyFrequency } from "./updateRecurringTransactionBodyFrequency";
+import type { UpdateRecurringTransactionBodyEndDate } from "./updateRecurringTransactionBodyEndDate";
+import type { UpdateRecurringTransactionBodyInstallmentsTotal } from "./updateRecurringTransactionBodyInstallmentsTotal";
 
 export type UpdateRecurringTransactionBody = {
   /** @minLength 1 */

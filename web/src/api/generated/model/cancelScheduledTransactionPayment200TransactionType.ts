@@ -6,12 +6,12 @@
  * OpenAPI spec version: 2.0.0
  */
 
-export type CancelScheduledTransactionPayment200TransactionType = typeof CancelScheduledTransactionPayment200TransactionType[keyof typeof CancelScheduledTransactionPayment200TransactionType];
-
+export type CancelScheduledTransactionPayment200TransactionType =
+  (typeof CancelScheduledTransactionPayment200TransactionType)[keyof typeof CancelScheduledTransactionPayment200TransactionType];
 
 // eslint-disable-next-line @typescript-eslint/no-redeclare
 export const CancelScheduledTransactionPayment200TransactionType = {
-  income: 'income',
-  expense: 'expense',
-  transfer: 'transfer',
+  income: "income",
+  expense: "expense",
+  transfer: "transfer",
 } as const;

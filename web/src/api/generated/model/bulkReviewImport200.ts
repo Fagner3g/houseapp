@@ -5,7 +5,7 @@
  * API for HouseApp
  * OpenAPI spec version: 2.0.0
  */
-import type { BulkReviewImport200TransactionsItem } from './bulkReviewImport200TransactionsItem';
+import type { BulkReviewImport200TransactionsItem } from "./bulkReviewImport200TransactionsItem";
 
 export type BulkReviewImport200 = {
   transactions: BulkReviewImport200TransactionsItem[];

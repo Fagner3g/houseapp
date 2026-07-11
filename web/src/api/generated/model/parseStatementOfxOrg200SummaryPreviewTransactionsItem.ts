@@ -5,7 +5,7 @@
  * API for HouseApp
  * OpenAPI spec version: 2.0.0
  */
-import type { ParseStatementOfxOrg200SummaryPreviewTransactionsItemType } from './parseStatementOfxOrg200SummaryPreviewTransactionsItemType';
+import type { ParseStatementOfxOrg200SummaryPreviewTransactionsItemType } from "./parseStatementOfxOrg200SummaryPreviewTransactionsItemType";
 
 export type ParseStatementOfxOrg200SummaryPreviewTransactionsItem = {
   title: string;

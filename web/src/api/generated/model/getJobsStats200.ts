@@ -5,7 +5,7 @@
  * API for HouseApp
  * OpenAPI spec version: 2.0.0
  */
-import type { GetJobsStats200Stats } from './getJobsStats200Stats';
+import type { GetJobsStats200Stats } from "./getJobsStats200Stats";
 
 export type GetJobsStats200 = {
   stats: GetJobsStats200Stats;

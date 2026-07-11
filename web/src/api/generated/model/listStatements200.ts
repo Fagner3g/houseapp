@@ -5,7 +5,7 @@
  * API for HouseApp
  * OpenAPI spec version: 2.0.0
  */
-import type { ListStatements200StatementsItem } from './listStatements200StatementsItem';
+import type { ListStatements200StatementsItem } from "./listStatements200StatementsItem";
 
 export type ListStatements200 = {
   statements: ListStatements200StatementsItem[];

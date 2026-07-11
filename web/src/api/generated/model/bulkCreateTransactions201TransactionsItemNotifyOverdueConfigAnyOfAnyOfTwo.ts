@@ -5,13 +5,14 @@
  * API for HouseApp
  * OpenAPI spec version: 2.0.0
  */
-import type { BulkCreateTransactions201TransactionsItemNotifyOverdueConfigAnyOfAnyOfTwoFrequency } from './bulkCreateTransactions201TransactionsItemNotifyOverdueConfigAnyOfAnyOfTwoFrequency';
+import type { BulkCreateTransactions201TransactionsItemNotifyOverdueConfigAnyOfAnyOfTwoFrequency } from "./bulkCreateTransactions201TransactionsItemNotifyOverdueConfigAnyOfAnyOfTwoFrequency";
 
-export type BulkCreateTransactions201TransactionsItemNotifyOverdueConfigAnyOfAnyOfTwo = {
-  frequency: BulkCreateTransactions201TransactionsItemNotifyOverdueConfigAnyOfAnyOfTwoFrequency;
-  /**
-   * @minimum 1
-   * @maximum 9007199254740991
-   */
-  interval: number;
-};
+export type BulkCreateTransactions201TransactionsItemNotifyOverdueConfigAnyOfAnyOfTwo =
+  {
+    frequency: BulkCreateTransactions201TransactionsItemNotifyOverdueConfigAnyOfAnyOfTwoFrequency;
+    /**
+     * @minimum 1
+     * @maximum 9007199254740991
+     */
+    interval: number;
+  };

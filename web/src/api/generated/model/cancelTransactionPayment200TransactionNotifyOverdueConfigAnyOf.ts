@@ -5,7 +5,9 @@
  * API for HouseApp
  * OpenAPI spec version: 2.0.0
  */
-import type { CancelTransactionPayment200TransactionNotifyOverdueConfigAnyOfAnyOf } from './cancelTransactionPayment200TransactionNotifyOverdueConfigAnyOfAnyOf';
-import type { CancelTransactionPayment200TransactionNotifyOverdueConfigAnyOfAnyOfTwo } from './cancelTransactionPayment200TransactionNotifyOverdueConfigAnyOfAnyOfTwo';
+import type { CancelTransactionPayment200TransactionNotifyOverdueConfigAnyOfAnyOf } from "./cancelTransactionPayment200TransactionNotifyOverdueConfigAnyOfAnyOf";
+import type { CancelTransactionPayment200TransactionNotifyOverdueConfigAnyOfAnyOfTwo } from "./cancelTransactionPayment200TransactionNotifyOverdueConfigAnyOfAnyOfTwo";
 
-export type CancelTransactionPayment200TransactionNotifyOverdueConfigAnyOf = CancelTransactionPayment200TransactionNotifyOverdueConfigAnyOfAnyOf | CancelTransactionPayment200TransactionNotifyOverdueConfigAnyOfAnyOfTwo;
+export type CancelTransactionPayment200TransactionNotifyOverdueConfigAnyOf =
+  | CancelTransactionPayment200TransactionNotifyOverdueConfigAnyOfAnyOf
+  | CancelTransactionPayment200TransactionNotifyOverdueConfigAnyOfAnyOfTwo;

@@ -53,6 +53,7 @@ export function resolvePersonShareInstallmentAmountReais(input: {
   installmentNumber: number | null | undefined
   currentSplitAmountReais: number
   materializedInstallmentSplits: number
+  collectLumpSum?: boolean
 }): number {
   return centsToReais(
     Number(
@@ -62,6 +63,7 @@ export function resolvePersonShareInstallmentAmountReais(input: {
         installmentNumber: input.installmentNumber ?? null,
         currentSplitAmountCentavos: BigInt(reaisToCents(input.currentSplitAmountReais)),
         materializedInstallmentSplits: input.materializedInstallmentSplits,
+        collectLumpSum: input.collectLumpSum,
       })
     )
   )
@@ -102,12 +104,16 @@ export type SplitInstallmentContext = {
 export function resolveSplitInstallmentRemainingReais(
   split: Pick<
     ListSplits200SplitsItem,
-    'amount' | 'paidAmount' | 'userId' | 'contactName' | 'contactPhone'
+    'amount' | 'paidAmount' | 'userId' | 'contactName' | 'contactPhone' | 'collectLumpSum'
   >,
   context?: SplitInstallmentContext
 ): number {
   const rawRemaining = getSplitRemainingReais(split)
   if (rawRemaining <= 0) return 0
+
+  if (split.collectLumpSum) {
+    return rawRemaining
+  }
 
   const totalInstallments = context?.debtSummary?.installmentsTotal ?? context?.installmentsTotal ?? null
   const currentInstallment =
@@ -126,6 +132,7 @@ export function resolveSplitInstallmentRemainingReais(
     installmentNumber: currentInstallment,
     currentSplitAmountReais: moneyStringToReais(split.amount),
     materializedInstallmentSplits: 1,
+    collectLumpSum: split.collectLumpSum,
   })
 
   if (person.installments.length > 1) {

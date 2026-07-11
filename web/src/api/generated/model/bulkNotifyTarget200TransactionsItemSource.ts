@@ -6,13 +6,13 @@
  * OpenAPI spec version: 2.0.0
  */
 
-export type BulkNotifyTarget200TransactionsItemSource = typeof BulkNotifyTarget200TransactionsItemSource[keyof typeof BulkNotifyTarget200TransactionsItemSource];
-
+export type BulkNotifyTarget200TransactionsItemSource =
+  (typeof BulkNotifyTarget200TransactionsItemSource)[keyof typeof BulkNotifyTarget200TransactionsItemSource];
 
 // eslint-disable-next-line @typescript-eslint/no-redeclare
 export const BulkNotifyTarget200TransactionsItemSource = {
-  manual: 'manual',
-  import: 'import',
-  recurring: 'recurring',
-  ai_chat: 'ai_chat',
+  manual: "manual",
+  import: "import",
+  recurring: "recurring",
+  ai_chat: "ai_chat",
 } as const;

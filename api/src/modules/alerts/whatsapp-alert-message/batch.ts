@@ -1,7 +1,7 @@
 import { buildUrgencyBanner, emphasizeMoneyInLine } from './emphasis'
 import { buildGreeting } from './format'
 import { buildWhatsAppBatchRenderUnits, renderWhatsAppBatchUnitLines } from './render'
-import { buildGrandShareTotalLine, sumDueShareCentavos } from './summary'
+import { buildGrandShareTotalLine, sumDueShareCentavos } from './due-share'
 import {
   WHATSAPP_BATCH_SEPARATOR,
   type WhatsAppAlertBatchItem,

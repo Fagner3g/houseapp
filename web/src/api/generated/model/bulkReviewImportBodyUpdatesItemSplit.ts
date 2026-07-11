@@ -5,10 +5,10 @@
  * API for HouseApp
  * OpenAPI spec version: 2.0.0
  */
-import type { BulkReviewImportBodyUpdatesItemSplitUserId } from './bulkReviewImportBodyUpdatesItemSplitUserId';
-import type { BulkReviewImportBodyUpdatesItemSplitContactName } from './bulkReviewImportBodyUpdatesItemSplitContactName';
-import type { BulkReviewImportBodyUpdatesItemSplitContactPhone } from './bulkReviewImportBodyUpdatesItemSplitContactPhone';
-import type { BulkReviewImportBodyUpdatesItemSplitDescription } from './bulkReviewImportBodyUpdatesItemSplitDescription';
+import type { BulkReviewImportBodyUpdatesItemSplitUserId } from "./bulkReviewImportBodyUpdatesItemSplitUserId";
+import type { BulkReviewImportBodyUpdatesItemSplitContactName } from "./bulkReviewImportBodyUpdatesItemSplitContactName";
+import type { BulkReviewImportBodyUpdatesItemSplitContactPhone } from "./bulkReviewImportBodyUpdatesItemSplitContactPhone";
+import type { BulkReviewImportBodyUpdatesItemSplitDescription } from "./bulkReviewImportBodyUpdatesItemSplitDescription";
 
 export type BulkReviewImportBodyUpdatesItemSplit = {
   userId?: BulkReviewImportBodyUpdatesItemSplitUserId;

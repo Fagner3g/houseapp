@@ -5,18 +5,18 @@
  * API for HouseApp
  * OpenAPI spec version: 2.0.0
  */
-import type { GetAccount200AccountType } from './getAccount200AccountType';
-import type { GetAccount200AccountInstitution } from './getAccount200AccountInstitution';
-import type { GetAccount200AccountCreditLimit } from './getAccount200AccountCreditLimit';
-import type { GetAccount200AccountClosingDay } from './getAccount200AccountClosingDay';
-import type { GetAccount200AccountDueDay } from './getAccount200AccountDueDay';
-import type { GetAccount200AccountPaymentAccountId } from './getAccount200AccountPaymentAccountId';
-import type { GetAccount200AccountPixKey } from './getAccount200AccountPixKey';
-import type { GetAccount200AccountPixKeyType } from './getAccount200AccountPixKeyType';
-import type { GetAccount200AccountColor } from './getAccount200AccountColor';
-import type { GetAccount200AccountIcon } from './getAccount200AccountIcon';
-import type { GetAccount200AccountOfxAccountId } from './getAccount200AccountOfxAccountId';
-import type { GetAccount200AccountCardsItem } from './getAccount200AccountCardsItem';
+import type { GetAccount200AccountType } from "./getAccount200AccountType";
+import type { GetAccount200AccountInstitution } from "./getAccount200AccountInstitution";
+import type { GetAccount200AccountCreditLimit } from "./getAccount200AccountCreditLimit";
+import type { GetAccount200AccountClosingDay } from "./getAccount200AccountClosingDay";
+import type { GetAccount200AccountDueDay } from "./getAccount200AccountDueDay";
+import type { GetAccount200AccountPaymentAccountId } from "./getAccount200AccountPaymentAccountId";
+import type { GetAccount200AccountPixKey } from "./getAccount200AccountPixKey";
+import type { GetAccount200AccountPixKeyType } from "./getAccount200AccountPixKeyType";
+import type { GetAccount200AccountColor } from "./getAccount200AccountColor";
+import type { GetAccount200AccountIcon } from "./getAccount200AccountIcon";
+import type { GetAccount200AccountOfxAccountId } from "./getAccount200AccountOfxAccountId";
+import type { GetAccount200AccountCardsItem } from "./getAccount200AccountCardsItem";
 
 export type GetAccount200Account = {
   id: string;
@@ -31,7 +31,7 @@ export type GetAccount200Account = {
   paymentAccountId: GetAccount200AccountPaymentAccountId;
   initialBalance: string;
   pixKey: GetAccount200AccountPixKey;
-  pixKeyType: typeof GetAccount200AccountPixKeyType[keyof typeof GetAccount200AccountPixKeyType] ;
+  pixKeyType: (typeof GetAccount200AccountPixKeyType)[keyof typeof GetAccount200AccountPixKeyType];
   color: GetAccount200AccountColor;
   icon: GetAccount200AccountIcon;
   displayOrder: number;

@@ -5,14 +5,14 @@
  * API for HouseApp
  * OpenAPI spec version: 2.0.0
  */
-import type { ListRecurringTransactions200RecurringTransactionsItemAccountId } from './listRecurringTransactions200RecurringTransactionsItemAccountId';
-import type { ListRecurringTransactions200RecurringTransactionsItemType } from './listRecurringTransactions200RecurringTransactionsItemType';
-import type { ListRecurringTransactions200RecurringTransactionsItemCounterparty } from './listRecurringTransactions200RecurringTransactionsItemCounterparty';
-import type { ListRecurringTransactions200RecurringTransactionsItemCategoryId } from './listRecurringTransactions200RecurringTransactionsItemCategoryId';
-import type { ListRecurringTransactions200RecurringTransactionsItemFrequency } from './listRecurringTransactions200RecurringTransactionsItemFrequency';
-import type { ListRecurringTransactions200RecurringTransactionsItemEndDate } from './listRecurringTransactions200RecurringTransactionsItemEndDate';
-import type { ListRecurringTransactions200RecurringTransactionsItemInstallmentsTotal } from './listRecurringTransactions200RecurringTransactionsItemInstallmentsTotal';
-import type { ListRecurringTransactions200RecurringTransactionsItemLastGeneratedDate } from './listRecurringTransactions200RecurringTransactionsItemLastGeneratedDate';
+import type { ListRecurringTransactions200RecurringTransactionsItemAccountId } from "./listRecurringTransactions200RecurringTransactionsItemAccountId";
+import type { ListRecurringTransactions200RecurringTransactionsItemType } from "./listRecurringTransactions200RecurringTransactionsItemType";
+import type { ListRecurringTransactions200RecurringTransactionsItemCounterparty } from "./listRecurringTransactions200RecurringTransactionsItemCounterparty";
+import type { ListRecurringTransactions200RecurringTransactionsItemCategoryId } from "./listRecurringTransactions200RecurringTransactionsItemCategoryId";
+import type { ListRecurringTransactions200RecurringTransactionsItemFrequency } from "./listRecurringTransactions200RecurringTransactionsItemFrequency";
+import type { ListRecurringTransactions200RecurringTransactionsItemEndDate } from "./listRecurringTransactions200RecurringTransactionsItemEndDate";
+import type { ListRecurringTransactions200RecurringTransactionsItemInstallmentsTotal } from "./listRecurringTransactions200RecurringTransactionsItemInstallmentsTotal";
+import type { ListRecurringTransactions200RecurringTransactionsItemLastGeneratedDate } from "./listRecurringTransactions200RecurringTransactionsItemLastGeneratedDate";
 
 export type ListRecurringTransactions200RecurringTransactionsItem = {
   id: string;

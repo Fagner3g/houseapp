@@ -5,9 +5,9 @@
  * API for HouseApp
  * OpenAPI spec version: 2.0.0
  */
-import type { GetReportByCard200TransactionsItemCardId } from './getReportByCard200TransactionsItemCardId';
-import type { GetReportByCard200TransactionsItemCardLabel } from './getReportByCard200TransactionsItemCardLabel';
-import type { GetReportByCard200TransactionsItemLastFourDigits } from './getReportByCard200TransactionsItemLastFourDigits';
+import type { GetReportByCard200TransactionsItemCardId } from "./getReportByCard200TransactionsItemCardId";
+import type { GetReportByCard200TransactionsItemCardLabel } from "./getReportByCard200TransactionsItemCardLabel";
+import type { GetReportByCard200TransactionsItemLastFourDigits } from "./getReportByCard200TransactionsItemLastFourDigits";
 
 export type GetReportByCard200TransactionsItem = {
   transactionId: string;

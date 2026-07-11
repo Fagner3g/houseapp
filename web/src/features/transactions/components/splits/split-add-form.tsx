@@ -12,6 +12,7 @@ import { cn } from '@/lib/utils'
 import { stackyPrimaryButton } from '@/lib/ui-classes'
 
 import { SplitModePresets } from './split-mode-presets'
+import { SplitParcelChargeToggle } from './split-parcel-charge-toggle'
 import { SplitPersonFields } from './split-person-fields'
 
 type PersonMode = 'member' | 'contact'
@@ -23,6 +24,8 @@ export interface SplitAddFormValues {
   contactName: string
   contactPhone: string
   notifyEnabled: boolean
+  /** When true (default), % splits fan out across installment siblings. */
+  parcelCharge: boolean
   amountMode: AmountMode
   splitAmount: number
   splitPercent: number
@@ -57,6 +60,7 @@ export function SplitAddForm({
   const [contactName, setContactName] = useState('')
   const [contactPhone, setContactPhone] = useState('')
   const [notifyEnabled, setNotifyEnabled] = useState(true)
+  const [parcelCharge, setParcelCharge] = useState(true)
   const [amountMode, setAmountMode] = useState<AmountMode>('fixed')
   const [splitAmount, setSplitAmount] = useState(0)
   const [splitPercent, setSplitPercent] = useState(50)
@@ -77,10 +81,10 @@ export function SplitAddForm({
 
   const previewSplitReais =
     amountMode === 'percent' ? (purchaseTotalReais * splitPercent) / 100 : splitAmount
+  const showParcelChargeToggle = isParceledPurchase && amountMode === 'percent'
+  const chargePerInstallment = showParcelChargeToggle && parcelCharge
   const previewInstallmentSplitReais =
-    amountMode === 'percent' && isParceledPurchase
-      ? previewSplitReais / parcelCount
-      : previewSplitReais
+    chargePerInstallment ? previewSplitReais / parcelCount : previewSplitReais
 
   const showAmountFields = presetMode === 'custom' || presetMode === 'half'
   const showPercentOnly = presetMode === 'half'
@@ -98,9 +102,15 @@ export function SplitAddForm({
           Esta compra tem {parcelCount} parcelas
           {currentParcelLabel ? ` — você está na parcela ${currentParcelLabel}` : ''}.
           {amountMode === 'percent'
-            ? ` A divisão em % será aplicada em todas as parcelas da compra (total estimado: ${formatCurrency(purchaseTotalReais)}).`
+            ? chargePerInstallment
+              ? ` A divisão em % será aplicada em todas as parcelas da compra (total estimado: ${formatCurrency(purchaseTotalReais)}).`
+              : ` A cobrança será à vista nesta parcela (valor total da divisão: ${formatCurrency(previewSplitReais)}).`
             : ' A divisão em valor fixo vale apenas para esta parcela.'}
         </p>
+      )}
+
+      {showParcelChargeToggle && (
+        <SplitParcelChargeToggle checked={parcelCharge} onCheckedChange={setParcelCharge} />
       )}
 
       {showFullDelegateHint && (
@@ -166,7 +176,7 @@ export function SplitAddForm({
               {splitPercent > 0 && (
                 <p className="text-xs text-slate-500">
                   = {formatMoneyString(reaisToMoneyString(previewSplitReais))}
-                  {isParceledPurchase && (
+                  {chargePerInstallment && (
                     <>
                       {' '}
                       da compra ·{' '}
@@ -174,6 +184,7 @@ export function SplitAddForm({
                       parcela
                     </>
                   )}
+                  {showParcelChargeToggle && !parcelCharge && ' da compra (à vista)'}
                 </p>
               )}
             </div>
@@ -187,11 +198,14 @@ export function SplitAddForm({
           <strong className="tabular-nums text-slate-800">
             {formatMoneyString(reaisToMoneyString(previewSplitReais))}
           </strong>
-          {isParceledPurchase && (
+          {chargePerInstallment && (
             <span className="text-slate-500">
               {' '}
               · {formatMoneyString(reaisToMoneyString(previewInstallmentSplitReais))} por parcela
             </span>
+          )}
+          {showParcelChargeToggle && !parcelCharge && (
+            <span className="text-slate-500"> · à vista nesta parcela</span>
           )}
         </p>
       )}
@@ -222,6 +236,7 @@ export function SplitAddForm({
               contactName,
               contactPhone,
               notifyEnabled,
+              parcelCharge: showParcelChargeToggle ? parcelCharge : true,
               amountMode: showPercentOnly ? 'percent' : amountMode,
               splitAmount: presetMode === 'full_other' ? remainingReais : splitAmount,
               splitPercent: showPercentOnly ? 50 : splitPercent,

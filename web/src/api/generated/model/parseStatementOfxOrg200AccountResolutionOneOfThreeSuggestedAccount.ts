@@ -5,18 +5,19 @@
  * API for HouseApp
  * OpenAPI spec version: 2.0.0
  */
-import type { ParseStatementOfxOrg200AccountResolutionOneOfThreeSuggestedAccountDueDay } from './parseStatementOfxOrg200AccountResolutionOneOfThreeSuggestedAccountDueDay';
-import type { ParseStatementOfxOrg200AccountResolutionOneOfThreeSuggestedAccountCreditLimit } from './parseStatementOfxOrg200AccountResolutionOneOfThreeSuggestedAccountCreditLimit';
+import type { ParseStatementOfxOrg200AccountResolutionOneOfThreeSuggestedAccountDueDay } from "./parseStatementOfxOrg200AccountResolutionOneOfThreeSuggestedAccountDueDay";
+import type { ParseStatementOfxOrg200AccountResolutionOneOfThreeSuggestedAccountCreditLimit } from "./parseStatementOfxOrg200AccountResolutionOneOfThreeSuggestedAccountCreditLimit";
 
-export type ParseStatementOfxOrg200AccountResolutionOneOfThreeSuggestedAccount = {
-  name: string;
-  institution: string;
-  currency: string;
-  /**
-   * @minimum 1
-   * @maximum 31
-   */
-  closingDay: number;
-  dueDay: ParseStatementOfxOrg200AccountResolutionOneOfThreeSuggestedAccountDueDay;
-  creditLimit?: ParseStatementOfxOrg200AccountResolutionOneOfThreeSuggestedAccountCreditLimit;
-};
+export type ParseStatementOfxOrg200AccountResolutionOneOfThreeSuggestedAccount =
+  {
+    name: string;
+    institution: string;
+    currency: string;
+    /**
+     * @minimum 1
+     * @maximum 31
+     */
+    closingDay: number;
+    dueDay: ParseStatementOfxOrg200AccountResolutionOneOfThreeSuggestedAccountDueDay;
+    creditLimit?: ParseStatementOfxOrg200AccountResolutionOneOfThreeSuggestedAccountCreditLimit;
+  };

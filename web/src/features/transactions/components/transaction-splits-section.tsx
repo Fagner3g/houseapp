@@ -189,8 +189,14 @@ export function TransactionSplitsSection({
       return
     }
 
+    const collectLumpSum =
+      values.amountMode === 'percent' && isParceledPurchase && !values.parcelCharge
+
     const splitTargets =
-      values.amountMode === 'percent' && isParceledPurchase && installmentSiblings?.length
+      values.amountMode === 'percent' &&
+      isParceledPurchase &&
+      values.parcelCharge &&
+      installmentSiblings?.length
         ? installmentSiblings
         : [{ id: transactionId, amount: transactionAmount }]
 
@@ -221,12 +227,14 @@ export function TransactionSplitsSection({
         values.personMode === 'contact' ? normalizePhoneDigits(values.contactPhone) || null : null,
       description: 'Divisão da despesa',
       notifyEnabled: values.notifyEnabled,
+      collectLumpSum,
     }
 
     try {
       for (const target of splitTargets) {
-        const targetAmountReais =
-          values.amountMode === 'percent' && isParceledPurchase
+        const targetAmountReais = collectLumpSum
+          ? amountReais
+          : values.amountMode === 'percent' && isParceledPurchase
             ? (moneyStringToReais(target.amount) * values.splitPercent) / 100
             : amountReais
         if (targetAmountReais <= 0) continue

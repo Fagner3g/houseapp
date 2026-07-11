@@ -6,6 +6,7 @@
  * OpenAPI spec version: 2.0.0
  */
 
-export type CancelTransactionPayment200TransactionNotifyOverdueConfigAnyOfAnyOf = {
-  disabled: boolean;
-};
+export type CancelTransactionPayment200TransactionNotifyOverdueConfigAnyOfAnyOf =
+  {
+    disabled: boolean;
+  };

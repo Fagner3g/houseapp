@@ -5,7 +5,9 @@
  * API for HouseApp
  * OpenAPI spec version: 2.0.0
  */
-import type { BulkReviewImport200TransactionsItemNotifyOverdueConfigAnyOfAnyOf } from './bulkReviewImport200TransactionsItemNotifyOverdueConfigAnyOfAnyOf';
-import type { BulkReviewImport200TransactionsItemNotifyOverdueConfigAnyOfAnyOfTwo } from './bulkReviewImport200TransactionsItemNotifyOverdueConfigAnyOfAnyOfTwo';
+import type { BulkReviewImport200TransactionsItemNotifyOverdueConfigAnyOfAnyOf } from "./bulkReviewImport200TransactionsItemNotifyOverdueConfigAnyOfAnyOf";
+import type { BulkReviewImport200TransactionsItemNotifyOverdueConfigAnyOfAnyOfTwo } from "./bulkReviewImport200TransactionsItemNotifyOverdueConfigAnyOfAnyOfTwo";
 
-export type BulkReviewImport200TransactionsItemNotifyOverdueConfigAnyOf = BulkReviewImport200TransactionsItemNotifyOverdueConfigAnyOfAnyOf | BulkReviewImport200TransactionsItemNotifyOverdueConfigAnyOfAnyOfTwo;
+export type BulkReviewImport200TransactionsItemNotifyOverdueConfigAnyOf =
+  | BulkReviewImport200TransactionsItemNotifyOverdueConfigAnyOfAnyOf
+  | BulkReviewImport200TransactionsItemNotifyOverdueConfigAnyOfAnyOfTwo;

@@ -5,8 +5,8 @@
  * API for HouseApp
  * OpenAPI spec version: 2.0.0
  */
-import type { AiChatBodyHistoryItem } from './aiChatBodyHistoryItem';
-import type { AiChatBodyProvider } from './aiChatBodyProvider';
+import type { AiChatBodyHistoryItem } from "./aiChatBodyHistoryItem";
+import type { AiChatBodyProvider } from "./aiChatBodyProvider";
 
 export type AiChatBody = {
   /** @minLength 1 */

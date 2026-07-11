@@ -5,18 +5,18 @@
  * API for HouseApp
  * OpenAPI spec version: 2.0.0
  */
-import type { CreateAccount201AccountType } from './createAccount201AccountType';
-import type { CreateAccount201AccountInstitution } from './createAccount201AccountInstitution';
-import type { CreateAccount201AccountCreditLimit } from './createAccount201AccountCreditLimit';
-import type { CreateAccount201AccountClosingDay } from './createAccount201AccountClosingDay';
-import type { CreateAccount201AccountDueDay } from './createAccount201AccountDueDay';
-import type { CreateAccount201AccountPaymentAccountId } from './createAccount201AccountPaymentAccountId';
-import type { CreateAccount201AccountPixKey } from './createAccount201AccountPixKey';
-import type { CreateAccount201AccountPixKeyType } from './createAccount201AccountPixKeyType';
-import type { CreateAccount201AccountColor } from './createAccount201AccountColor';
-import type { CreateAccount201AccountIcon } from './createAccount201AccountIcon';
-import type { CreateAccount201AccountOfxAccountId } from './createAccount201AccountOfxAccountId';
-import type { CreateAccount201AccountCardsItem } from './createAccount201AccountCardsItem';
+import type { CreateAccount201AccountType } from "./createAccount201AccountType";
+import type { CreateAccount201AccountInstitution } from "./createAccount201AccountInstitution";
+import type { CreateAccount201AccountCreditLimit } from "./createAccount201AccountCreditLimit";
+import type { CreateAccount201AccountClosingDay } from "./createAccount201AccountClosingDay";
+import type { CreateAccount201AccountDueDay } from "./createAccount201AccountDueDay";
+import type { CreateAccount201AccountPaymentAccountId } from "./createAccount201AccountPaymentAccountId";
+import type { CreateAccount201AccountPixKey } from "./createAccount201AccountPixKey";
+import type { CreateAccount201AccountPixKeyType } from "./createAccount201AccountPixKeyType";
+import type { CreateAccount201AccountColor } from "./createAccount201AccountColor";
+import type { CreateAccount201AccountIcon } from "./createAccount201AccountIcon";
+import type { CreateAccount201AccountOfxAccountId } from "./createAccount201AccountOfxAccountId";
+import type { CreateAccount201AccountCardsItem } from "./createAccount201AccountCardsItem";
 
 export type CreateAccount201Account = {
   id: string;
@@ -31,7 +31,7 @@ export type CreateAccount201Account = {
   paymentAccountId: CreateAccount201AccountPaymentAccountId;
   initialBalance: string;
   pixKey: CreateAccount201AccountPixKey;
-  pixKeyType: typeof CreateAccount201AccountPixKeyType[keyof typeof CreateAccount201AccountPixKeyType] ;
+  pixKeyType: (typeof CreateAccount201AccountPixKeyType)[keyof typeof CreateAccount201AccountPixKeyType];
   color: CreateAccount201AccountColor;
   icon: CreateAccount201AccountIcon;
   displayOrder: number;

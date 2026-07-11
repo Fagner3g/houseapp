@@ -25,6 +25,7 @@ function makeSplit(
     isNotified: false,
     lastNotifiedAt: null,
     notifyEnabled: true,
+    collectLumpSum: false,
     createdAt: '2026-07-06T00:00:00.000Z',
     updatedAt: '2026-07-06T00:00:00.000Z',
     ...overrides,
@@ -57,7 +58,7 @@ describe('split payment confirmation flow', () => {
     expect(registerSplitPayment).toHaveBeenCalledTimes(1)
     expect(payTransaction).toHaveBeenCalledTimes(1)
     expect(registerSplitPayment.mock.invocationCallOrder[0]).toBeLessThan(
-      payTransaction.mock.invocationCallOrder[0]!
+      payTransaction.mock.invocationCallOrder[0] as number
     )
   })
 

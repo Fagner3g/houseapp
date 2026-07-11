@@ -5,21 +5,21 @@
  * API for HouseApp
  * OpenAPI spec version: 2.0.0
  */
-import type { ParseStatementXlsx200DuplicateExistingStatementAnyOfPeriodStart } from './parseStatementXlsx200DuplicateExistingStatementAnyOfPeriodStart';
-import type { ParseStatementXlsx200DuplicateExistingStatementAnyOfPeriodEnd } from './parseStatementXlsx200DuplicateExistingStatementAnyOfPeriodEnd';
-import type { ParseStatementXlsx200DuplicateExistingStatementAnyOfClosingDate } from './parseStatementXlsx200DuplicateExistingStatementAnyOfClosingDate';
-import type { ParseStatementXlsx200DuplicateExistingStatementAnyOfDueDate } from './parseStatementXlsx200DuplicateExistingStatementAnyOfDueDate';
-import type { ParseStatementXlsx200DuplicateExistingStatementAnyOfTotalAmount } from './parseStatementXlsx200DuplicateExistingStatementAnyOfTotalAmount';
-import type { ParseStatementXlsx200DuplicateExistingStatementAnyOfMinimumPayment } from './parseStatementXlsx200DuplicateExistingStatementAnyOfMinimumPayment';
-import type { ParseStatementXlsx200DuplicateExistingStatementAnyOfPreviousBalance } from './parseStatementXlsx200DuplicateExistingStatementAnyOfPreviousBalance';
-import type { ParseStatementXlsx200DuplicateExistingStatementAnyOfPaymentsReceived } from './parseStatementXlsx200DuplicateExistingStatementAnyOfPaymentsReceived';
-import type { ParseStatementXlsx200DuplicateExistingStatementAnyOfPurchasesTotal } from './parseStatementXlsx200DuplicateExistingStatementAnyOfPurchasesTotal';
-import type { ParseStatementXlsx200DuplicateExistingStatementAnyOfOtherCharges } from './parseStatementXlsx200DuplicateExistingStatementAnyOfOtherCharges';
-import type { ParseStatementXlsx200DuplicateExistingStatementAnyOfNextInvoiceBalance } from './parseStatementXlsx200DuplicateExistingStatementAnyOfNextInvoiceBalance';
-import type { ParseStatementXlsx200DuplicateExistingStatementAnyOfTotalOpenBalance } from './parseStatementXlsx200DuplicateExistingStatementAnyOfTotalOpenBalance';
-import type { ParseStatementXlsx200DuplicateExistingStatementAnyOfFileName } from './parseStatementXlsx200DuplicateExistingStatementAnyOfFileName';
-import type { ParseStatementXlsx200DuplicateExistingStatementAnyOfImportSource } from './parseStatementXlsx200DuplicateExistingStatementAnyOfImportSource';
-import type { ParseStatementXlsx200DuplicateExistingStatementAnyOfImportedBy } from './parseStatementXlsx200DuplicateExistingStatementAnyOfImportedBy';
+import type { ParseStatementXlsx200DuplicateExistingStatementAnyOfPeriodStart } from "./parseStatementXlsx200DuplicateExistingStatementAnyOfPeriodStart";
+import type { ParseStatementXlsx200DuplicateExistingStatementAnyOfPeriodEnd } from "./parseStatementXlsx200DuplicateExistingStatementAnyOfPeriodEnd";
+import type { ParseStatementXlsx200DuplicateExistingStatementAnyOfClosingDate } from "./parseStatementXlsx200DuplicateExistingStatementAnyOfClosingDate";
+import type { ParseStatementXlsx200DuplicateExistingStatementAnyOfDueDate } from "./parseStatementXlsx200DuplicateExistingStatementAnyOfDueDate";
+import type { ParseStatementXlsx200DuplicateExistingStatementAnyOfTotalAmount } from "./parseStatementXlsx200DuplicateExistingStatementAnyOfTotalAmount";
+import type { ParseStatementXlsx200DuplicateExistingStatementAnyOfMinimumPayment } from "./parseStatementXlsx200DuplicateExistingStatementAnyOfMinimumPayment";
+import type { ParseStatementXlsx200DuplicateExistingStatementAnyOfPreviousBalance } from "./parseStatementXlsx200DuplicateExistingStatementAnyOfPreviousBalance";
+import type { ParseStatementXlsx200DuplicateExistingStatementAnyOfPaymentsReceived } from "./parseStatementXlsx200DuplicateExistingStatementAnyOfPaymentsReceived";
+import type { ParseStatementXlsx200DuplicateExistingStatementAnyOfPurchasesTotal } from "./parseStatementXlsx200DuplicateExistingStatementAnyOfPurchasesTotal";
+import type { ParseStatementXlsx200DuplicateExistingStatementAnyOfOtherCharges } from "./parseStatementXlsx200DuplicateExistingStatementAnyOfOtherCharges";
+import type { ParseStatementXlsx200DuplicateExistingStatementAnyOfNextInvoiceBalance } from "./parseStatementXlsx200DuplicateExistingStatementAnyOfNextInvoiceBalance";
+import type { ParseStatementXlsx200DuplicateExistingStatementAnyOfTotalOpenBalance } from "./parseStatementXlsx200DuplicateExistingStatementAnyOfTotalOpenBalance";
+import type { ParseStatementXlsx200DuplicateExistingStatementAnyOfFileName } from "./parseStatementXlsx200DuplicateExistingStatementAnyOfFileName";
+import type { ParseStatementXlsx200DuplicateExistingStatementAnyOfImportSource } from "./parseStatementXlsx200DuplicateExistingStatementAnyOfImportSource";
+import type { ParseStatementXlsx200DuplicateExistingStatementAnyOfImportedBy } from "./parseStatementXlsx200DuplicateExistingStatementAnyOfImportedBy";
 
 export type ParseStatementXlsx200DuplicateExistingStatementAnyOf = {
   id: string;
@@ -40,7 +40,7 @@ export type ParseStatementXlsx200DuplicateExistingStatementAnyOf = {
   transactionsCount: number;
   fileHash: string;
   fileName: ParseStatementXlsx200DuplicateExistingStatementAnyOfFileName;
-  importSource: typeof ParseStatementXlsx200DuplicateExistingStatementAnyOfImportSource[keyof typeof ParseStatementXlsx200DuplicateExistingStatementAnyOfImportSource] ;
+  importSource: (typeof ParseStatementXlsx200DuplicateExistingStatementAnyOfImportSource)[keyof typeof ParseStatementXlsx200DuplicateExistingStatementAnyOfImportSource];
   isClosed: boolean;
   isPaid: boolean;
   importedBy: ParseStatementXlsx200DuplicateExistingStatementAnyOfImportedBy;

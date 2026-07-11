@@ -6,13 +6,13 @@
  * OpenAPI spec version: 2.0.0
  */
 
-export type BulkCreateTransactionsBodyTransactionsItemStatus = typeof BulkCreateTransactionsBodyTransactionsItemStatus[keyof typeof BulkCreateTransactionsBodyTransactionsItemStatus];
-
+export type BulkCreateTransactionsBodyTransactionsItemStatus =
+  (typeof BulkCreateTransactionsBodyTransactionsItemStatus)[keyof typeof BulkCreateTransactionsBodyTransactionsItemStatus];
 
 // eslint-disable-next-line @typescript-eslint/no-redeclare
 export const BulkCreateTransactionsBodyTransactionsItemStatus = {
-  pending: 'pending',
-  partial: 'partial',
-  paid: 'paid',
-  canceled: 'canceled',
+  pending: "pending",
+  partial: "partial",
+  paid: "paid",
+  canceled: "canceled",
 } as const;

@@ -6,12 +6,12 @@
  * OpenAPI spec version: 2.0.0
  */
 
-export type AiChatBodyProvider = typeof AiChatBodyProvider[keyof typeof AiChatBodyProvider];
-
+export type AiChatBodyProvider =
+  (typeof AiChatBodyProvider)[keyof typeof AiChatBodyProvider];
 
 // eslint-disable-next-line @typescript-eslint/no-redeclare
 export const AiChatBodyProvider = {
-  groq: 'groq',
-  gemini: 'gemini',
-  deepseek: 'deepseek',
+  groq: "groq",
+  gemini: "gemini",
+  deepseek: "deepseek",
 } as const;

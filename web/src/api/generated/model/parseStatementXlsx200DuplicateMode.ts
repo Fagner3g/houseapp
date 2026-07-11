@@ -6,12 +6,12 @@
  * OpenAPI spec version: 2.0.0
  */
 
-export type ParseStatementXlsx200DuplicateMode = typeof ParseStatementXlsx200DuplicateMode[keyof typeof ParseStatementXlsx200DuplicateMode];
-
+export type ParseStatementXlsx200DuplicateMode =
+  (typeof ParseStatementXlsx200DuplicateMode)[keyof typeof ParseStatementXlsx200DuplicateMode];
 
 // eslint-disable-next-line @typescript-eslint/no-redeclare
 export const ParseStatementXlsx200DuplicateMode = {
-  new: 'new',
-  update: 'update',
-  blocked: 'blocked',
+  new: "new",
+  update: "update",
+  blocked: "blocked",
 } as const;

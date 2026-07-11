@@ -5,7 +5,7 @@
  * API for HouseApp
  * OpenAPI spec version: 2.0.0
  */
-import type { ListAttachments200AttachmentsItem } from './listAttachments200AttachmentsItem';
+import type { ListAttachments200AttachmentsItem } from "./listAttachments200AttachmentsItem";
 
 export type ListAttachments200 = {
   attachments: ListAttachments200AttachmentsItem[];

@@ -5,13 +5,13 @@
  * API for HouseApp
  * OpenAPI spec version: 2.0.0
  */
-import type { MarkNotificationRead200NotificationAlertRuleId } from './markNotificationRead200NotificationAlertRuleId';
-import type { MarkNotificationRead200NotificationTransactionId } from './markNotificationRead200NotificationTransactionId';
-import type { MarkNotificationRead200NotificationAccountId } from './markNotificationRead200NotificationAccountId';
-import type { MarkNotificationRead200NotificationBody } from './markNotificationRead200NotificationBody';
-import type { MarkNotificationRead200NotificationSentAt } from './markNotificationRead200NotificationSentAt';
-import type { MarkNotificationRead200NotificationReadAt } from './markNotificationRead200NotificationReadAt';
-import type { MarkNotificationRead200NotificationMetadata } from './markNotificationRead200NotificationMetadata';
+import type { MarkNotificationRead200NotificationAlertRuleId } from "./markNotificationRead200NotificationAlertRuleId";
+import type { MarkNotificationRead200NotificationTransactionId } from "./markNotificationRead200NotificationTransactionId";
+import type { MarkNotificationRead200NotificationAccountId } from "./markNotificationRead200NotificationAccountId";
+import type { MarkNotificationRead200NotificationBody } from "./markNotificationRead200NotificationBody";
+import type { MarkNotificationRead200NotificationSentAt } from "./markNotificationRead200NotificationSentAt";
+import type { MarkNotificationRead200NotificationReadAt } from "./markNotificationRead200NotificationReadAt";
+import type { MarkNotificationRead200NotificationMetadata } from "./markNotificationRead200NotificationMetadata";
 
 export type MarkNotificationRead200Notification = {
   id: string;

@@ -5,7 +5,7 @@
  * API for HouseApp
  * OpenAPI spec version: 2.0.0
  */
-import type { GetReportByAccount200AccountsItem } from './getReportByAccount200AccountsItem';
+import type { GetReportByAccount200AccountsItem } from "./getReportByAccount200AccountsItem";
 
 export type GetReportByAccount200 = {
   accounts: GetReportByAccount200AccountsItem[];

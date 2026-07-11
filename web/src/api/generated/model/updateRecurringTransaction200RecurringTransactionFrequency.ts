@@ -6,13 +6,13 @@
  * OpenAPI spec version: 2.0.0
  */
 
-export type UpdateRecurringTransaction200RecurringTransactionFrequency = typeof UpdateRecurringTransaction200RecurringTransactionFrequency[keyof typeof UpdateRecurringTransaction200RecurringTransactionFrequency];
-
+export type UpdateRecurringTransaction200RecurringTransactionFrequency =
+  (typeof UpdateRecurringTransaction200RecurringTransactionFrequency)[keyof typeof UpdateRecurringTransaction200RecurringTransactionFrequency];
 
 // eslint-disable-next-line @typescript-eslint/no-redeclare
 export const UpdateRecurringTransaction200RecurringTransactionFrequency = {
-  daily: 'daily',
-  weekly: 'weekly',
-  monthly: 'monthly',
-  yearly: 'yearly',
+  daily: "daily",
+  weekly: "weekly",
+  monthly: "monthly",
+  yearly: "yearly",
 } as const;

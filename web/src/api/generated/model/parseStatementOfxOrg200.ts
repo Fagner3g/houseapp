@@ -5,13 +5,13 @@
  * API for HouseApp
  * OpenAPI spec version: 2.0.0
  */
-import type { ParseStatementOfxOrg200Parsed } from './parseStatementOfxOrg200Parsed';
-import type { ParseStatementOfxOrg200Provider } from './parseStatementOfxOrg200Provider';
-import type { ParseStatementOfxOrg200Summary } from './parseStatementOfxOrg200Summary';
-import type { ParseStatementOfxOrg200Duplicate } from './parseStatementOfxOrg200Duplicate';
-import type { ParseStatementOfxOrg200InvoiceStatus } from './parseStatementOfxOrg200InvoiceStatus';
-import type { ParseStatementOfxOrg200CardMismatchWarning } from './parseStatementOfxOrg200CardMismatchWarning';
-import type { ParseStatementOfxOrg200AccountResolution } from './parseStatementOfxOrg200AccountResolution';
+import type { ParseStatementOfxOrg200Parsed } from "./parseStatementOfxOrg200Parsed";
+import type { ParseStatementOfxOrg200Provider } from "./parseStatementOfxOrg200Provider";
+import type { ParseStatementOfxOrg200Summary } from "./parseStatementOfxOrg200Summary";
+import type { ParseStatementOfxOrg200Duplicate } from "./parseStatementOfxOrg200Duplicate";
+import type { ParseStatementOfxOrg200InvoiceStatus } from "./parseStatementOfxOrg200InvoiceStatus";
+import type { ParseStatementOfxOrg200CardMismatchWarning } from "./parseStatementOfxOrg200CardMismatchWarning";
+import type { ParseStatementOfxOrg200AccountResolution } from "./parseStatementOfxOrg200AccountResolution";
 
 export type ParseStatementOfxOrg200 = {
   parsed: ParseStatementOfxOrg200Parsed;

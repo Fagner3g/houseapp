@@ -5,10 +5,10 @@
  * API for HouseApp
  * OpenAPI spec version: 2.0.0
  */
-import type { ImportStatementBodyTransactionsItemType } from './importStatementBodyTransactionsItemType';
-import type { ImportStatementBodyTransactionsItemSplitHint } from './importStatementBodyTransactionsItemSplitHint';
-import type { ImportStatementBodyTransactionsItemDuplicateTransactionId } from './importStatementBodyTransactionsItemDuplicateTransactionId';
-import type { ImportStatementBodyTransactionsItemDuplicateTransactionTitle } from './importStatementBodyTransactionsItemDuplicateTransactionTitle';
+import type { ImportStatementBodyTransactionsItemType } from "./importStatementBodyTransactionsItemType";
+import type { ImportStatementBodyTransactionsItemSplitHint } from "./importStatementBodyTransactionsItemSplitHint";
+import type { ImportStatementBodyTransactionsItemDuplicateTransactionId } from "./importStatementBodyTransactionsItemDuplicateTransactionId";
+import type { ImportStatementBodyTransactionsItemDuplicateTransactionTitle } from "./importStatementBodyTransactionsItemDuplicateTransactionTitle";
 
 export type ImportStatementBodyTransactionsItem = {
   /** @minLength 1 */

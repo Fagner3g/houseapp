@@ -5,14 +5,14 @@
  * API for HouseApp
  * OpenAPI spec version: 2.0.0
  */
-import type { ParseStatementOfxOrg200DuplicateMode } from './parseStatementOfxOrg200DuplicateMode';
-import type { ParseStatementOfxOrg200DuplicateMatchType } from './parseStatementOfxOrg200DuplicateMatchType';
-import type { ParseStatementOfxOrg200DuplicateExistingStatement } from './parseStatementOfxOrg200DuplicateExistingStatement';
+import type { ParseStatementOfxOrg200DuplicateMode } from "./parseStatementOfxOrg200DuplicateMode";
+import type { ParseStatementOfxOrg200DuplicateMatchType } from "./parseStatementOfxOrg200DuplicateMatchType";
+import type { ParseStatementOfxOrg200DuplicateExistingStatement } from "./parseStatementOfxOrg200DuplicateExistingStatement";
 
 export type ParseStatementOfxOrg200Duplicate = {
   isDuplicate: boolean;
   mode: ParseStatementOfxOrg200DuplicateMode;
-  matchType: typeof ParseStatementOfxOrg200DuplicateMatchType[keyof typeof ParseStatementOfxOrg200DuplicateMatchType] ;
+  matchType: (typeof ParseStatementOfxOrg200DuplicateMatchType)[keyof typeof ParseStatementOfxOrg200DuplicateMatchType];
   existingStatement: ParseStatementOfxOrg200DuplicateExistingStatement;
   newTransactionsCount: number;
   duplicateTransactionsCount: number;

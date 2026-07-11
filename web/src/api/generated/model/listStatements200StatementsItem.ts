@@ -5,21 +5,21 @@
  * API for HouseApp
  * OpenAPI spec version: 2.0.0
  */
-import type { ListStatements200StatementsItemPeriodStart } from './listStatements200StatementsItemPeriodStart';
-import type { ListStatements200StatementsItemPeriodEnd } from './listStatements200StatementsItemPeriodEnd';
-import type { ListStatements200StatementsItemClosingDate } from './listStatements200StatementsItemClosingDate';
-import type { ListStatements200StatementsItemDueDate } from './listStatements200StatementsItemDueDate';
-import type { ListStatements200StatementsItemTotalAmount } from './listStatements200StatementsItemTotalAmount';
-import type { ListStatements200StatementsItemMinimumPayment } from './listStatements200StatementsItemMinimumPayment';
-import type { ListStatements200StatementsItemPreviousBalance } from './listStatements200StatementsItemPreviousBalance';
-import type { ListStatements200StatementsItemPaymentsReceived } from './listStatements200StatementsItemPaymentsReceived';
-import type { ListStatements200StatementsItemPurchasesTotal } from './listStatements200StatementsItemPurchasesTotal';
-import type { ListStatements200StatementsItemOtherCharges } from './listStatements200StatementsItemOtherCharges';
-import type { ListStatements200StatementsItemNextInvoiceBalance } from './listStatements200StatementsItemNextInvoiceBalance';
-import type { ListStatements200StatementsItemTotalOpenBalance } from './listStatements200StatementsItemTotalOpenBalance';
-import type { ListStatements200StatementsItemFileName } from './listStatements200StatementsItemFileName';
-import type { ListStatements200StatementsItemImportSource } from './listStatements200StatementsItemImportSource';
-import type { ListStatements200StatementsItemImportedBy } from './listStatements200StatementsItemImportedBy';
+import type { ListStatements200StatementsItemPeriodStart } from "./listStatements200StatementsItemPeriodStart";
+import type { ListStatements200StatementsItemPeriodEnd } from "./listStatements200StatementsItemPeriodEnd";
+import type { ListStatements200StatementsItemClosingDate } from "./listStatements200StatementsItemClosingDate";
+import type { ListStatements200StatementsItemDueDate } from "./listStatements200StatementsItemDueDate";
+import type { ListStatements200StatementsItemTotalAmount } from "./listStatements200StatementsItemTotalAmount";
+import type { ListStatements200StatementsItemMinimumPayment } from "./listStatements200StatementsItemMinimumPayment";
+import type { ListStatements200StatementsItemPreviousBalance } from "./listStatements200StatementsItemPreviousBalance";
+import type { ListStatements200StatementsItemPaymentsReceived } from "./listStatements200StatementsItemPaymentsReceived";
+import type { ListStatements200StatementsItemPurchasesTotal } from "./listStatements200StatementsItemPurchasesTotal";
+import type { ListStatements200StatementsItemOtherCharges } from "./listStatements200StatementsItemOtherCharges";
+import type { ListStatements200StatementsItemNextInvoiceBalance } from "./listStatements200StatementsItemNextInvoiceBalance";
+import type { ListStatements200StatementsItemTotalOpenBalance } from "./listStatements200StatementsItemTotalOpenBalance";
+import type { ListStatements200StatementsItemFileName } from "./listStatements200StatementsItemFileName";
+import type { ListStatements200StatementsItemImportSource } from "./listStatements200StatementsItemImportSource";
+import type { ListStatements200StatementsItemImportedBy } from "./listStatements200StatementsItemImportedBy";
 
 export type ListStatements200StatementsItem = {
   id: string;
@@ -40,7 +40,7 @@ export type ListStatements200StatementsItem = {
   transactionsCount: number;
   fileHash: string;
   fileName: ListStatements200StatementsItemFileName;
-  importSource: typeof ListStatements200StatementsItemImportSource[keyof typeof ListStatements200StatementsItemImportSource] ;
+  importSource: (typeof ListStatements200StatementsItemImportSource)[keyof typeof ListStatements200StatementsItemImportSource];
   isClosed: boolean;
   isPaid: boolean;
   importedBy: ListStatements200StatementsItemImportedBy;

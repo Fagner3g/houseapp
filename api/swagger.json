@@ -14427,6 +14427,9 @@
                           "notifyEnabled": {
                             "type": "boolean"
                           },
+                          "collectLumpSum": {
+                            "type": "boolean"
+                          },
                           "createdAt": {
                             "type": "string"
                           },
@@ -14481,6 +14484,7 @@
                           "isNotified",
                           "lastNotifiedAt",
                           "notifyEnabled",
+                          "collectLumpSum",
                           "createdAt",
                           "updatedAt",
                           "transactionTitle",
@@ -14812,6 +14816,9 @@
                           "notifyEnabled": {
                             "type": "boolean"
                           },
+                          "collectLumpSum": {
+                            "type": "boolean"
+                          },
                           "createdAt": {
                             "type": "string"
                           },
@@ -14834,6 +14841,7 @@
                           "isNotified",
                           "lastNotifiedAt",
                           "notifyEnabled",
+                          "collectLumpSum",
                           "createdAt",
                           "updatedAt"
                         ],
@@ -14933,6 +14941,9 @@
                     ]
                   },
                   "notifyEnabled": {
+                    "type": "boolean"
+                  },
+                  "collectLumpSum": {
                     "type": "boolean"
                   }
                 },
@@ -15090,6 +15101,9 @@
                         "notifyEnabled": {
                           "type": "boolean"
                         },
+                        "collectLumpSum": {
+                          "type": "boolean"
+                        },
                         "createdAt": {
                           "type": "string"
                         },
@@ -15112,6 +15126,7 @@
                         "isNotified",
                         "lastNotifiedAt",
                         "notifyEnabled",
+                        "collectLumpSum",
                         "createdAt",
                         "updatedAt"
                       ],
@@ -15442,6 +15457,9 @@
                   "notifyEnabled": {
                     "type": "boolean"
                   },
+                  "collectLumpSum": {
+                    "type": "boolean"
+                  },
                   "status": {
                     "type": "string",
                     "enum": [
@@ -15611,6 +15629,9 @@
                         "notifyEnabled": {
                           "type": "boolean"
                         },
+                        "collectLumpSum": {
+                          "type": "boolean"
+                        },
                         "createdAt": {
                           "type": "string"
                         },
@@ -15633,6 +15654,7 @@
                         "isNotified",
                         "lastNotifiedAt",
                         "notifyEnabled",
+                        "collectLumpSum",
                         "createdAt",
                         "updatedAt"
                       ],
@@ -16093,6 +16115,9 @@
                         "notifyEnabled": {
                           "type": "boolean"
                         },
+                        "collectLumpSum": {
+                          "type": "boolean"
+                        },
                         "createdAt": {
                           "type": "string"
                         },
@@ -16115,6 +16140,7 @@
                         "isNotified",
                         "lastNotifiedAt",
                         "notifyEnabled",
+                        "collectLumpSum",
                         "createdAt",
                         "updatedAt"
                       ],
@@ -16303,6 +16329,9 @@
                         "notifyEnabled": {
                           "type": "boolean"
                         },
+                        "collectLumpSum": {
+                          "type": "boolean"
+                        },
                         "createdAt": {
                           "type": "string"
                         },
@@ -16325,6 +16354,7 @@
                         "isNotified",
                         "lastNotifiedAt",
                         "notifyEnabled",
+                        "collectLumpSum",
                         "createdAt",
                         "updatedAt"
                       ],

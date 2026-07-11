@@ -5,13 +5,13 @@
  * API for HouseApp
  * OpenAPI spec version: 2.0.0
  */
-import type { ListPendingNotifications200NotificationsItemAlertRuleId } from './listPendingNotifications200NotificationsItemAlertRuleId';
-import type { ListPendingNotifications200NotificationsItemTransactionId } from './listPendingNotifications200NotificationsItemTransactionId';
-import type { ListPendingNotifications200NotificationsItemAccountId } from './listPendingNotifications200NotificationsItemAccountId';
-import type { ListPendingNotifications200NotificationsItemBody } from './listPendingNotifications200NotificationsItemBody';
-import type { ListPendingNotifications200NotificationsItemSentAt } from './listPendingNotifications200NotificationsItemSentAt';
-import type { ListPendingNotifications200NotificationsItemReadAt } from './listPendingNotifications200NotificationsItemReadAt';
-import type { ListPendingNotifications200NotificationsItemMetadata } from './listPendingNotifications200NotificationsItemMetadata';
+import type { ListPendingNotifications200NotificationsItemAlertRuleId } from "./listPendingNotifications200NotificationsItemAlertRuleId";
+import type { ListPendingNotifications200NotificationsItemTransactionId } from "./listPendingNotifications200NotificationsItemTransactionId";
+import type { ListPendingNotifications200NotificationsItemAccountId } from "./listPendingNotifications200NotificationsItemAccountId";
+import type { ListPendingNotifications200NotificationsItemBody } from "./listPendingNotifications200NotificationsItemBody";
+import type { ListPendingNotifications200NotificationsItemSentAt } from "./listPendingNotifications200NotificationsItemSentAt";
+import type { ListPendingNotifications200NotificationsItemReadAt } from "./listPendingNotifications200NotificationsItemReadAt";
+import type { ListPendingNotifications200NotificationsItemMetadata } from "./listPendingNotifications200NotificationsItemMetadata";
 
 export type ListPendingNotifications200NotificationsItem = {
   id: string;

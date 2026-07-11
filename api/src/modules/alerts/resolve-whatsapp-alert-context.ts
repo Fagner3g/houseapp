@@ -59,6 +59,7 @@ export type ResolvedWhatsAppAlertContent = {
   splitPaidAmount: string | null
   splitRemainingAmount: string | null
   splitParticipantCount: number | null
+  collectLumpSum: boolean | null
   kind?: string
   overdueDays?: number | null
   installmentNumber: number | null
@@ -96,6 +97,7 @@ export async function resolveWhatsAppAlertContentForNotification(
   let splitPaidAmount: string | null = null
   let splitRemainingAmount: string | null = null
   let splitParticipantCount: number | null = null
+  let collectLumpSum: boolean | null = null
 
   if (notification.transactionId) {
     const [transaction] = await db
@@ -190,6 +192,7 @@ export async function resolveWhatsAppAlertContentForNotification(
       splitPaidAmount = amounts.splitPaidAmount ?? null
       splitRemainingAmount = amounts.splitRemainingAmount ?? null
       splitParticipantCount = amounts.splitParticipantCount ?? null
+      collectLumpSum = amounts.collectLumpSum ?? null
     }
   }
 
@@ -215,6 +218,7 @@ export async function resolveWhatsAppAlertContentForNotification(
     splitPaidAmount,
     splitRemainingAmount,
     splitParticipantCount,
+    collectLumpSum,
     kind,
     overdueDays,
     installmentNumber,
@@ -238,6 +242,7 @@ export function toWhatsAppBatchItemFromContent(
     splitPaidAmount: content.splitPaidAmount,
     splitRemainingAmount: content.splitRemainingAmount,
     splitParticipantCount: content.splitParticipantCount,
+    collectLumpSum: content.collectLumpSum,
     note: content.note,
     daysUntilDue: content.daysUntilDue,
     dueDate: content.dueDate,
@@ -270,6 +275,7 @@ export async function buildWhatsAppMessageForNotification(
     splitPaidAmount: content.splitPaidAmount,
     splitRemainingAmount: content.splitRemainingAmount,
     splitParticipantCount: content.splitParticipantCount,
+    collectLumpSum: content.collectLumpSum,
     kind: content.kind,
     overdueDays: content.overdueDays,
     installmentNumber: content.installmentNumber,

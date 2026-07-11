@@ -5,14 +5,14 @@
  * API for HouseApp
  * OpenAPI spec version: 2.0.0
  */
-import type { ListSplits200SplitsItemUserId } from './listSplits200SplitsItemUserId';
-import type { ListSplits200SplitsItemContactName } from './listSplits200SplitsItemContactName';
-import type { ListSplits200SplitsItemContactPhone } from './listSplits200SplitsItemContactPhone';
-import type { ListSplits200SplitsItemContactEmail } from './listSplits200SplitsItemContactEmail';
-import type { ListSplits200SplitsItemDescription } from './listSplits200SplitsItemDescription';
-import type { ListSplits200SplitsItemStatus } from './listSplits200SplitsItemStatus';
-import type { ListSplits200SplitsItemPaidAt } from './listSplits200SplitsItemPaidAt';
-import type { ListSplits200SplitsItemLastNotifiedAt } from './listSplits200SplitsItemLastNotifiedAt';
+import type { ListSplits200SplitsItemUserId } from "./listSplits200SplitsItemUserId";
+import type { ListSplits200SplitsItemContactName } from "./listSplits200SplitsItemContactName";
+import type { ListSplits200SplitsItemContactPhone } from "./listSplits200SplitsItemContactPhone";
+import type { ListSplits200SplitsItemContactEmail } from "./listSplits200SplitsItemContactEmail";
+import type { ListSplits200SplitsItemDescription } from "./listSplits200SplitsItemDescription";
+import type { ListSplits200SplitsItemStatus } from "./listSplits200SplitsItemStatus";
+import type { ListSplits200SplitsItemPaidAt } from "./listSplits200SplitsItemPaidAt";
+import type { ListSplits200SplitsItemLastNotifiedAt } from "./listSplits200SplitsItemLastNotifiedAt";
 
 export type ListSplits200SplitsItem = {
   id: string;
@@ -29,6 +29,7 @@ export type ListSplits200SplitsItem = {
   isNotified: boolean;
   lastNotifiedAt: ListSplits200SplitsItemLastNotifiedAt;
   notifyEnabled: boolean;
+  collectLumpSum: boolean;
   createdAt: string;
   updatedAt: string;
 };

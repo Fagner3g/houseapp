@@ -107,6 +107,7 @@ export async function resolveWhatsAppSplitAlertAmounts(
     installmentNumber: anchor.installmentNumber,
     currentSplitAmountCentavos: targetSplit.amount,
     materializedInstallmentSplits: person.installments.length,
+    collectLumpSum: targetSplit.collectLumpSum,
   })
 
   const baseAmounts = resolveWhatsAppAlertAmounts({
@@ -127,5 +128,6 @@ export async function resolveWhatsAppSplitAlertAmounts(
     amount: centavosToString(totalRemainingCentavos < 0n ? 0n : totalRemainingCentavos),
     // Owner keeps a share + each distinct debtor.
     splitParticipantCount: distinctDebtors + 1,
+    collectLumpSum: targetSplit.collectLumpSum,
   }
 }

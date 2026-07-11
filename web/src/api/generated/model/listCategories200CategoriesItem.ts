@@ -5,10 +5,10 @@
  * API for HouseApp
  * OpenAPI spec version: 2.0.0
  */
-import type { ListCategories200CategoriesItemType } from './listCategories200CategoriesItemType';
-import type { ListCategories200CategoriesItemColor } from './listCategories200CategoriesItemColor';
-import type { ListCategories200CategoriesItemIcon } from './listCategories200CategoriesItemIcon';
-import type { ListCategories200CategoriesItemParentId } from './listCategories200CategoriesItemParentId';
+import type { ListCategories200CategoriesItemType } from "./listCategories200CategoriesItemType";
+import type { ListCategories200CategoriesItemColor } from "./listCategories200CategoriesItemColor";
+import type { ListCategories200CategoriesItemIcon } from "./listCategories200CategoriesItemIcon";
+import type { ListCategories200CategoriesItemParentId } from "./listCategories200CategoriesItemParentId";
 
 export type ListCategories200CategoriesItem = {
   id: string;

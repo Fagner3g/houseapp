@@ -5,7 +5,7 @@
  * API for HouseApp
  * OpenAPI spec version: 2.0.0
  */
-import type { UpdateAlertSettings200Timezone } from './updateAlertSettings200Timezone';
+import type { UpdateAlertSettings200Timezone } from "./updateAlertSettings200Timezone";
 
 export type UpdateAlertSettings200 = {
   /**

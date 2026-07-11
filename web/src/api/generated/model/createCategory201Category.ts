@@ -5,10 +5,10 @@
  * API for HouseApp
  * OpenAPI spec version: 2.0.0
  */
-import type { CreateCategory201CategoryType } from './createCategory201CategoryType';
-import type { CreateCategory201CategoryColor } from './createCategory201CategoryColor';
-import type { CreateCategory201CategoryIcon } from './createCategory201CategoryIcon';
-import type { CreateCategory201CategoryParentId } from './createCategory201CategoryParentId';
+import type { CreateCategory201CategoryType } from "./createCategory201CategoryType";
+import type { CreateCategory201CategoryColor } from "./createCategory201CategoryColor";
+import type { CreateCategory201CategoryIcon } from "./createCategory201CategoryIcon";
+import type { CreateCategory201CategoryParentId } from "./createCategory201CategoryParentId";
 
 export type CreateCategory201Category = {
   id: string;

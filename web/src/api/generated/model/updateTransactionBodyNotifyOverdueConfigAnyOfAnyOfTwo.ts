@@ -5,7 +5,7 @@
  * API for HouseApp
  * OpenAPI spec version: 2.0.0
  */
-import type { UpdateTransactionBodyNotifyOverdueConfigAnyOfAnyOfTwoFrequency } from './updateTransactionBodyNotifyOverdueConfigAnyOfAnyOfTwoFrequency';
+import type { UpdateTransactionBodyNotifyOverdueConfigAnyOfAnyOfTwoFrequency } from "./updateTransactionBodyNotifyOverdueConfigAnyOfAnyOfTwoFrequency";
 
 export type UpdateTransactionBodyNotifyOverdueConfigAnyOfAnyOfTwo = {
   frequency: UpdateTransactionBodyNotifyOverdueConfigAnyOfAnyOfTwoFrequency;

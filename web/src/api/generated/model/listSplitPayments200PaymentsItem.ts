@@ -5,15 +5,15 @@
  * API for HouseApp
  * OpenAPI spec version: 2.0.0
  */
-import type { ListSplitPayments200PaymentsItemMethod } from './listSplitPayments200PaymentsItemMethod';
-import type { ListSplitPayments200PaymentsItemNote } from './listSplitPayments200PaymentsItemNote';
+import type { ListSplitPayments200PaymentsItemMethod } from "./listSplitPayments200PaymentsItemMethod";
+import type { ListSplitPayments200PaymentsItemNote } from "./listSplitPayments200PaymentsItemNote";
 
 export type ListSplitPayments200PaymentsItem = {
   id: string;
   splitId: string;
   amount: string;
   paidAt: string;
-  method: typeof ListSplitPayments200PaymentsItemMethod[keyof typeof ListSplitPayments200PaymentsItemMethod] ;
+  method: (typeof ListSplitPayments200PaymentsItemMethod)[keyof typeof ListSplitPayments200PaymentsItemMethod];
   note: ListSplitPayments200PaymentsItemNote;
   createdAt: string;
 };

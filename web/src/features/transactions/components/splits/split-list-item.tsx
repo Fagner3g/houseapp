@@ -80,8 +80,18 @@ export function SplitListItem({
           installmentNumber: parcelNumber,
           currentSplitAmountReais: moneyStringToReais(split.amount),
           materializedInstallmentSplits: personDebt.installments.length,
+          collectLumpSum: split.collectLumpSum,
         })
       : split.amount
+
+  const amountLabel =
+    split.collectLumpSum
+      ? 'Cobrança à vista'
+      : showPersonDebtDetails
+        ? `Valor desta parcela${
+            parcelInstallmentsTotal > 1 ? ` (${parcelNumber}/${parcelInstallmentsTotal})` : ''
+          }`
+        : null
 
   return (
     <div className="rounded-lg border border-slate-100 bg-slate-50/50 p-3">
@@ -102,16 +112,16 @@ export function SplitListItem({
               )}
             </p>
             <div className="mt-1 text-sm tabular-nums text-slate-700">
-              {showPersonDebtDetails && (
-                <p className="mb-1 text-xs text-slate-500">
-                  Valor desta parcela
-                  {parcelInstallmentsTotal > 1
-                    ? ` (${parcelNumber}/${parcelInstallmentsTotal})`
-                    : ''}
-                </p>
+              {amountLabel && (
+                <p className="mb-1 text-xs text-slate-500">{amountLabel}</p>
               )}
               <span className="inline-flex items-center gap-1.5">
                 {formatMoneyString(displayInstallmentAmount)}
+                {split.collectLumpSum && (
+                  <Badge variant="secondary" className="text-[10px] font-normal">
+                    à vista
+                  </Badge>
+                )}
                 {split.status === 'partial' && (
                   <span className="text-slate-500">
                     · falta {formatMoneyString(reaisToMoneyString(remainingReais))}

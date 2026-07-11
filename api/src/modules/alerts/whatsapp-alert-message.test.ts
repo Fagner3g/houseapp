@@ -124,6 +124,20 @@ describe('whatsapp-alert-message', () => {
         splitParticipantCount: 1,
       })
     ).toBe('Sua parte: R$ 100,00 (1/10)')
+
+    expect(
+      buildSummaryLine({
+        transactionTotalAmount: '824.37',
+        splitAmount: '412.19',
+        splitShareInstallmentAmount: '412.19',
+        amount: '412.19',
+        installmentNumber: 1,
+        installmentsTotal: 3,
+        isSplit: true,
+        collectLumpSum: true,
+        splitParticipantCount: 2,
+      })
+    ).toBe('Sua parte: R$ 412,19')
   })
 
   it('formats credit card invoice due line', () => {
@@ -284,6 +298,44 @@ describe('whatsapp-alert-message', () => {
         '',
         '🧾 *Casas Bahia - NuPay* · *R$ 1.675,10*',
         'Sua parte: *R$ 83,75* (1/10) · 837,50',
+      ].join('\n')
+    )
+  })
+
+  it('builds lump-sum split alert without installment fraction', () => {
+    const message = buildWhatsAppAlertMessage(
+      {
+        recipientName: 'Karoline',
+        transactionTitle: 'Supermercados Bh - Parcela 1/3',
+        accountName: 'Nubank Cartão',
+        installmentNumber: 1,
+        installmentsTotal: 3,
+        transactionTotalAmount: '824.37',
+        splitAmount: '412.19',
+        splitShareInstallmentAmount: '412.19',
+        splitParticipantCount: 2,
+        collectLumpSum: true,
+        daysUntilDue: -24,
+        dueDate: '2026-06-17T12:00:00.000Z',
+        amount: '412.19',
+        kind: 'split_overdue',
+        overdueDays: 24,
+        isSplit: true,
+        isCreditCardInvoice: true,
+      },
+      new Date('2026-07-11T14:00:00.000Z')
+    )
+
+    expect(message).toBe(
+      [
+        'Bom dia, Karoline!',
+        '',
+        '🚨 *CONTAS VENCIDAS*',
+        '💳 Cartão de crédito',
+        '*Fatura vencida há 24 dias · 17/06/2026*',
+        '',
+        '⚠️ *Supermercados Bh* · *R$ 824,37*',
+        'Sua parte: *R$ 412,19*',
       ].join('\n')
     )
   })

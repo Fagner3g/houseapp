@@ -5,7 +5,7 @@
  * API for HouseApp
  * OpenAPI spec version: 2.0.0
  */
-import type { GetReportMyExpenses200ItemsItem } from './getReportMyExpenses200ItemsItem';
+import type { GetReportMyExpenses200ItemsItem } from "./getReportMyExpenses200ItemsItem";
 
 export type GetReportMyExpenses200 = {
   items: GetReportMyExpenses200ItemsItem[];

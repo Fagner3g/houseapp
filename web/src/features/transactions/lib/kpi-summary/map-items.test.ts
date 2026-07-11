@@ -23,6 +23,7 @@ function split(
     isNotified: false,
     lastNotifiedAt: null,
     notifyEnabled: false,
+    collectLumpSum: false,
     createdAt: '2026-01-01T00:00:00.000Z',
     updatedAt: '2026-01-01T00:00:00.000Z',
     transactionAmount: null,

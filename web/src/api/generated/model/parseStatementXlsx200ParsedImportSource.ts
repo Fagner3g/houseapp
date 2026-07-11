@@ -6,11 +6,11 @@
  * OpenAPI spec version: 2.0.0
  */
 
-export type ParseStatementXlsx200ParsedImportSource = typeof ParseStatementXlsx200ParsedImportSource[keyof typeof ParseStatementXlsx200ParsedImportSource];
-
+export type ParseStatementXlsx200ParsedImportSource =
+  (typeof ParseStatementXlsx200ParsedImportSource)[keyof typeof ParseStatementXlsx200ParsedImportSource];
 
 // eslint-disable-next-line @typescript-eslint/no-redeclare
 export const ParseStatementXlsx200ParsedImportSource = {
-  ofx: 'ofx',
-  xlsx: 'xlsx',
+  ofx: "ofx",
+  xlsx: "xlsx",
 } as const;

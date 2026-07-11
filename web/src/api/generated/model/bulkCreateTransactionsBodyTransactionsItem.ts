@@ -5,29 +5,29 @@
  * API for HouseApp
  * OpenAPI spec version: 2.0.0
  */
-import type { BulkCreateTransactionsBodyTransactionsItemAccountId } from './bulkCreateTransactionsBodyTransactionsItemAccountId';
-import type { BulkCreateTransactionsBodyTransactionsItemCardId } from './bulkCreateTransactionsBodyTransactionsItemCardId';
-import type { BulkCreateTransactionsBodyTransactionsItemRecurringTransactionId } from './bulkCreateTransactionsBodyTransactionsItemRecurringTransactionId';
-import type { BulkCreateTransactionsBodyTransactionsItemStatementId } from './bulkCreateTransactionsBodyTransactionsItemStatementId';
-import type { BulkCreateTransactionsBodyTransactionsItemTransferPairId } from './bulkCreateTransactionsBodyTransactionsItemTransferPairId';
-import type { BulkCreateTransactionsBodyTransactionsItemDescription } from './bulkCreateTransactionsBodyTransactionsItemDescription';
-import type { BulkCreateTransactionsBodyTransactionsItemAmount } from './bulkCreateTransactionsBodyTransactionsItemAmount';
-import type { BulkCreateTransactionsBodyTransactionsItemType } from './bulkCreateTransactionsBodyTransactionsItemType';
-import type { BulkCreateTransactionsBodyTransactionsItemCompetenceDate } from './bulkCreateTransactionsBodyTransactionsItemCompetenceDate';
-import type { BulkCreateTransactionsBodyTransactionsItemStatus } from './bulkCreateTransactionsBodyTransactionsItemStatus';
-import type { BulkCreateTransactionsBodyTransactionsItemPaidAt } from './bulkCreateTransactionsBodyTransactionsItemPaidAt';
-import type { BulkCreateTransactionsBodyTransactionsItemPaidAmount } from './bulkCreateTransactionsBodyTransactionsItemPaidAmount';
-import type { BulkCreateTransactionsBodyTransactionsItemCounterparty } from './bulkCreateTransactionsBodyTransactionsItemCounterparty';
-import type { BulkCreateTransactionsBodyTransactionsItemInstallmentNumber } from './bulkCreateTransactionsBodyTransactionsItemInstallmentNumber';
-import type { BulkCreateTransactionsBodyTransactionsItemInstallmentsTotal } from './bulkCreateTransactionsBodyTransactionsItemInstallmentsTotal';
-import type { BulkCreateTransactionsBodyTransactionsItemInstallmentPeriodicity } from './bulkCreateTransactionsBodyTransactionsItemInstallmentPeriodicity';
-import type { BulkCreateTransactionsBodyTransactionsItemSource } from './bulkCreateTransactionsBodyTransactionsItemSource';
-import type { BulkCreateTransactionsBodyTransactionsItemNotifyTargetType } from './bulkCreateTransactionsBodyTransactionsItemNotifyTargetType';
-import type { BulkCreateTransactionsBodyTransactionsItemNotifyUserId } from './bulkCreateTransactionsBodyTransactionsItemNotifyUserId';
-import type { BulkCreateTransactionsBodyTransactionsItemNotifyContactName } from './bulkCreateTransactionsBodyTransactionsItemNotifyContactName';
-import type { BulkCreateTransactionsBodyTransactionsItemNotifyContactPhone } from './bulkCreateTransactionsBodyTransactionsItemNotifyContactPhone';
-import type { BulkCreateTransactionsBodyTransactionsItemNotifyDaysBefore } from './bulkCreateTransactionsBodyTransactionsItemNotifyDaysBefore';
-import type { BulkCreateTransactionsBodyTransactionsItemNotifyOverdueConfig } from './bulkCreateTransactionsBodyTransactionsItemNotifyOverdueConfig';
+import type { BulkCreateTransactionsBodyTransactionsItemAccountId } from "./bulkCreateTransactionsBodyTransactionsItemAccountId";
+import type { BulkCreateTransactionsBodyTransactionsItemCardId } from "./bulkCreateTransactionsBodyTransactionsItemCardId";
+import type { BulkCreateTransactionsBodyTransactionsItemRecurringTransactionId } from "./bulkCreateTransactionsBodyTransactionsItemRecurringTransactionId";
+import type { BulkCreateTransactionsBodyTransactionsItemStatementId } from "./bulkCreateTransactionsBodyTransactionsItemStatementId";
+import type { BulkCreateTransactionsBodyTransactionsItemTransferPairId } from "./bulkCreateTransactionsBodyTransactionsItemTransferPairId";
+import type { BulkCreateTransactionsBodyTransactionsItemDescription } from "./bulkCreateTransactionsBodyTransactionsItemDescription";
+import type { BulkCreateTransactionsBodyTransactionsItemAmount } from "./bulkCreateTransactionsBodyTransactionsItemAmount";
+import type { BulkCreateTransactionsBodyTransactionsItemType } from "./bulkCreateTransactionsBodyTransactionsItemType";
+import type { BulkCreateTransactionsBodyTransactionsItemCompetenceDate } from "./bulkCreateTransactionsBodyTransactionsItemCompetenceDate";
+import type { BulkCreateTransactionsBodyTransactionsItemStatus } from "./bulkCreateTransactionsBodyTransactionsItemStatus";
+import type { BulkCreateTransactionsBodyTransactionsItemPaidAt } from "./bulkCreateTransactionsBodyTransactionsItemPaidAt";
+import type { BulkCreateTransactionsBodyTransactionsItemPaidAmount } from "./bulkCreateTransactionsBodyTransactionsItemPaidAmount";
+import type { BulkCreateTransactionsBodyTransactionsItemCounterparty } from "./bulkCreateTransactionsBodyTransactionsItemCounterparty";
+import type { BulkCreateTransactionsBodyTransactionsItemInstallmentNumber } from "./bulkCreateTransactionsBodyTransactionsItemInstallmentNumber";
+import type { BulkCreateTransactionsBodyTransactionsItemInstallmentsTotal } from "./bulkCreateTransactionsBodyTransactionsItemInstallmentsTotal";
+import type { BulkCreateTransactionsBodyTransactionsItemInstallmentPeriodicity } from "./bulkCreateTransactionsBodyTransactionsItemInstallmentPeriodicity";
+import type { BulkCreateTransactionsBodyTransactionsItemSource } from "./bulkCreateTransactionsBodyTransactionsItemSource";
+import type { BulkCreateTransactionsBodyTransactionsItemNotifyTargetType } from "./bulkCreateTransactionsBodyTransactionsItemNotifyTargetType";
+import type { BulkCreateTransactionsBodyTransactionsItemNotifyUserId } from "./bulkCreateTransactionsBodyTransactionsItemNotifyUserId";
+import type { BulkCreateTransactionsBodyTransactionsItemNotifyContactName } from "./bulkCreateTransactionsBodyTransactionsItemNotifyContactName";
+import type { BulkCreateTransactionsBodyTransactionsItemNotifyContactPhone } from "./bulkCreateTransactionsBodyTransactionsItemNotifyContactPhone";
+import type { BulkCreateTransactionsBodyTransactionsItemNotifyDaysBefore } from "./bulkCreateTransactionsBodyTransactionsItemNotifyDaysBefore";
+import type { BulkCreateTransactionsBodyTransactionsItemNotifyOverdueConfig } from "./bulkCreateTransactionsBodyTransactionsItemNotifyOverdueConfig";
 
 export type BulkCreateTransactionsBodyTransactionsItem = {
   accountId?: BulkCreateTransactionsBodyTransactionsItemAccountId;
@@ -53,7 +53,7 @@ export type BulkCreateTransactionsBodyTransactionsItem = {
   source?: BulkCreateTransactionsBodyTransactionsItemSource;
   categoryIds?: string[];
   notifyEnabled?: boolean;
-  notifyTargetType?: typeof BulkCreateTransactionsBodyTransactionsItemNotifyTargetType[keyof typeof BulkCreateTransactionsBodyTransactionsItemNotifyTargetType] ;
+  notifyTargetType?: (typeof BulkCreateTransactionsBodyTransactionsItemNotifyTargetType)[keyof typeof BulkCreateTransactionsBodyTransactionsItemNotifyTargetType];
   notifyUserId?: BulkCreateTransactionsBodyTransactionsItemNotifyUserId;
   notifyContactName?: BulkCreateTransactionsBodyTransactionsItemNotifyContactName;
   notifyContactPhone?: BulkCreateTransactionsBodyTransactionsItemNotifyContactPhone;

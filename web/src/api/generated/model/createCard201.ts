@@ -5,7 +5,7 @@
  * API for HouseApp
  * OpenAPI spec version: 2.0.0
  */
-import type { CreateCard201Card } from './createCard201Card';
+import type { CreateCard201Card } from "./createCard201Card";
 
 export type CreateCard201 = {
   card: CreateCard201Card;
