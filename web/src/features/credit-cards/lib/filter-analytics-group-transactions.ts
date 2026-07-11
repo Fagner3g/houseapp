@@ -4,6 +4,7 @@ import type { ListTransactions200TransactionsItem } from '@/api/generated/model'
 import {
   isWithinBillingRange,
   transactionPurchaseDate,
+  transactionsOwnedByInvoiceCycle,
 } from '@/lib/credit-card-invoice-metrics'
 import { normalizeMerchantTitle } from '@/lib/normalize-merchant-title'
 
@@ -20,9 +21,12 @@ export type AnalyticsPurchasePeriod = {
 export function filterAnalyticsGroupTransactions(
   transactions: ListTransactions200TransactionsItem[],
   group: AnalyticsGroupFilter,
-  period: AnalyticsPurchasePeriod
+  period: AnalyticsPurchasePeriod,
+  statementId: string | null = null
 ) {
-  return transactions
+  const owned = transactionsOwnedByInvoiceCycle(transactions, statementId ? { id: statementId } : null)
+
+  return owned
     .filter(transaction => {
       if (transaction.type !== 'expense') return false
 

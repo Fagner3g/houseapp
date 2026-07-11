@@ -25,10 +25,13 @@ import {
   computeInvoiceAmountReconciliation,
   computePersonalSpendAdjustment,
   hasImportedInvoiceTotal,
+  isWithinBillingRange,
   listInvoiceAdjustmentCredits,
   listInvoiceBillPayments,
   resolveUnlistedInvoiceCredits,
   getUnlistedInvoiceCreditsCopy,
+  transactionPurchaseDate,
+  transactionsOwnedByInvoiceCycle,
   type InvoiceAdjustmentLine,
 } from '@/lib/credit-card-invoice-metrics'
 import { useActiveOrganization } from '@/hooks/use-active-organization'
@@ -541,13 +544,8 @@ export function CreditCardAnalyticsSection({
   const { data: splitData } = useSplitTransactionIds(slug, cycleTransactionIds)
   const dividedTransactionIds = splitData?.transactionIds ?? new Set<string>()
   const fullyDelegatedById = splitData?.fullyDelegatedById ?? new Map<string, string>()
-  const fullyDelegatedCount = splitData?.fullyDelegatedCount ?? 0
   const partiallyDividedById =
     splitData?.partiallyDividedById ?? new Map<string, PartialSplitBadgeInfo>()
-  const dividedCount = useMemo(
-    () => cycleTransactions.filter(transaction => dividedTransactionIds.has(transaction.id)).length,
-    [cycleTransactions, dividedTransactionIds]
-  )
 
   const hasImportedInvoice = hasImportedInvoiceTotal(matchedStatement)
   const suggestedForeignMonthKey = foreignStatements[0]
@@ -592,9 +590,40 @@ export function CreditCardAnalyticsSection({
   const byCategory = showPersonal ? byCategoryPersonal : byCategoryAll
   const topMerchants = showPersonal ? topMerchantsPersonal : topMerchantsAll
 
+  const invoicePurchaseTransactions = useMemo(() => {
+    const owned = transactionsOwnedByInvoiceCycle(
+      cycleTransactions,
+      matchedStatement?.id ? { id: matchedStatement.id } : null
+    )
+    return owned.filter(
+      transaction =>
+        transaction.type === 'expense' &&
+        isWithinBillingRange(
+          transactionPurchaseDate(transaction),
+          purchasesPeriod.start,
+          purchasesPeriod.end
+        )
+    )
+  }, [cycleTransactions, matchedStatement?.id, purchasesPeriod.start, purchasesPeriod.end])
+
+  const dividedCount = useMemo(
+    () =>
+      invoicePurchaseTransactions.filter(transaction =>
+        dividedTransactionIds.has(transaction.id)
+      ).length,
+    [invoicePurchaseTransactions, dividedTransactionIds]
+  )
+  const fullyDelegatedCount = useMemo(
+    () =>
+      invoicePurchaseTransactions.filter(transaction =>
+        fullyDelegatedById.has(transaction.id)
+      ).length,
+    [invoicePurchaseTransactions, fullyDelegatedById]
+  )
+
   const dividedExpenses = useMemo(
-    () => filterDividedExpenseTransactions(cycleTransactions, dividedTransactionIds),
-    [cycleTransactions, dividedTransactionIds]
+    () => filterDividedExpenseTransactions(invoicePurchaseTransactions, dividedTransactionIds),
+    [invoicePurchaseTransactions, dividedTransactionIds]
   )
 
   const baseCategories = byCategory.data?.categories ?? []
@@ -707,10 +736,10 @@ export function CreditCardAnalyticsSection({
 
   const fullyDelegatedAmount = useMemo(
     () =>
-      cycleTransactions
+      invoicePurchaseTransactions
         .filter(transaction => fullyDelegatedById.has(transaction.id))
         .reduce((sum, transaction) => sum + moneyStringToReais(transaction.amount), 0),
-    [cycleTransactions, fullyDelegatedById]
+    [invoicePurchaseTransactions, fullyDelegatedById]
   )
   const partialSplitAdjustment = Math.max(0, splitAdjustment - fullyDelegatedAmount)
 
@@ -791,6 +820,7 @@ export function CreditCardAnalyticsSection({
         cycleLabel: cycle.label,
         purchasesLabel,
         purchasesPeriod,
+        statementId: matchedStatement?.id ?? null,
         groupType,
         groupKey: item.id,
         label: item.label,

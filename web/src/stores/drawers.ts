@@ -25,6 +25,8 @@ export type AnalyticsGroupContext = {
     start: string
     end: string
   }
+  /** Matched invoice statement id, or null when there is no imported statement. */
+  statementId: string | null
   groupType: 'category' | 'merchant'
   groupKey: string
   label: string

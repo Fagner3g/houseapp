@@ -59,7 +59,8 @@ export function AnalyticsGroupDrawer() {
     return filterAnalyticsGroupTransactions(
       transactions,
       { type: context.groupType, key: context.groupKey },
-      context.purchasesPeriod
+      context.purchasesPeriod,
+      context.statementId
     )
   }, [context, transactions])
 
