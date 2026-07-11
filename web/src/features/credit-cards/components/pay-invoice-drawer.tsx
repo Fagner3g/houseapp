@@ -14,6 +14,7 @@ import {
   useUpdateTransaction,
 } from '@/api/generated/api'
 import { invalidateTransactionQueries } from '@/features/transactions/lib/invalidate-transaction-queries'
+import { calendarDateToIso } from '@/lib/date'
 import { Button } from '@/components/ui/button'
 import { CurrencyInput } from '@/components/ui/currency-input'
 import { DatePickerInput } from '@/components/ui/date-picker-field'
@@ -124,7 +125,7 @@ export function PayInvoiceDrawer() {
     }
 
     try {
-      const isoDate = dayjs(values.date).toISOString()
+      const isoDate = calendarDateToIso(values.date)
       const amount = reaisToMoneyString(values.amount)
 
       const expense = await createTransaction({

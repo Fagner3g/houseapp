@@ -7,12 +7,14 @@ export function buildKpiDialogByKey(input: {
     myExpenseGross: number
     mySplitsInPeriod: number
     myPendingSplits: number
+    myPendingSplitsInPeriod: number
     pendingExpense: number
     pendingIncome: number
   }
   overdueCount: number
   mySpendItems: KpiSummaryItem[]
   splitItems: KpiSummaryItem[]
+  splitSecondaryItems: KpiSummaryItem[]
   toPayItems: KpiSummaryItem[]
   toReceiveItems: KpiSummaryItem[]
   overdueItems: KpiSummaryItem[]
@@ -22,6 +24,7 @@ export function buildKpiDialogByKey(input: {
 }): Record<KpiKey, KpiDialogView> {
   const { kpis, overdueCount } = input
   const showMySpendBreakdown = kpis.mySplitsInPeriod > 0
+  const showPendingSplitsBreakdown = kpis.myPendingSplits > kpis.myPendingSplitsInPeriod
 
   return {
     mySpend: {
@@ -57,13 +60,30 @@ export function buildKpiDialogByKey(input: {
     pendingSplits: {
       title: 'Splits a receber',
       description:
-        'Dinheiro que outras pessoas ainda te devem em divisões. Já foi retirado de Meu gasto; aqui é só o que falta entrar. Não segue o filtro de período da lista.',
-      totalLabel: 'Total em aberto',
-      total: formatCurrency(kpis.myPendingSplits),
+        'Dinheiro que outras pessoas ainda te devem em divisões neste período. Já foi retirado de Meu gasto; aqui é só o que falta entrar.',
+      totalLabel: 'No período',
+      total: formatCurrency(kpis.myPendingSplitsInPeriod),
       totalClassName: 'text-amber-700',
+      breakdown: showPendingSplitsBreakdown
+        ? [
+            {
+              label: 'No período',
+              value: formatCurrency(kpis.myPendingSplitsInPeriod),
+              emphasis: true,
+              className: 'text-amber-700',
+            },
+            {
+              label: 'Total em aberto',
+              value: formatCurrency(kpis.myPendingSplits),
+            },
+          ]
+        : undefined,
       items: input.splitItems,
+      secondaryItemsLabel:
+        input.splitSecondaryItems.length > 0 ? 'Em aberto fora do período' : undefined,
+      secondaryItems: input.splitSecondaryItems,
       isLoading: input.splitsLoading,
-      emptyMessage: 'Nenhum split pendente.',
+      emptyMessage: 'Nenhum split pendente no período.',
       footerHint: 'Toque na pessoa para ver os lançamentos · toque no lançamento para abrir',
     },
     toPay: {

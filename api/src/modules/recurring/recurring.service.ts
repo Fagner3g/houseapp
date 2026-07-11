@@ -558,9 +558,9 @@ function computeNextOccurrenceDate(row: RecurringRecord): string | null {
 }
 
 function startOfDay(date: Date): Date {
-  const d = new Date(date)
-  d.setHours(0, 0, 0, 0)
-  return d
+  return new Date(
+    Date.UTC(date.getUTCFullYear(), date.getUTCMonth(), date.getUTCDate(), 12, 0, 0, 0)
+  )
 }
 
 function addPeriod(date: Date, frequency: RecurringFrequency, interval: number): Date {
@@ -568,16 +568,16 @@ function addPeriod(date: Date, frequency: RecurringFrequency, interval: number):
 
   switch (frequency) {
     case 'daily':
-      result.setDate(result.getDate() + interval)
+      result.setUTCDate(result.getUTCDate() + interval)
       break
     case 'weekly':
-      result.setDate(result.getDate() + 7 * interval)
+      result.setUTCDate(result.getUTCDate() + 7 * interval)
       break
     case 'monthly':
-      result.setMonth(result.getMonth() + interval)
+      result.setUTCMonth(result.getUTCMonth() + interval)
       break
     case 'yearly':
-      result.setFullYear(result.getFullYear() + interval)
+      result.setUTCFullYear(result.getUTCFullYear() + interval)
       break
   }
 

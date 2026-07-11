@@ -38,6 +38,7 @@ export type SummaryReportDto = {
   overdueCount: number
   pendingSplitsTotal: string
   myPendingSplitsTotal: string
+  myPendingSplitsInPeriodTotal: string
   upcoming: UpcomingTransactionDto[]
 }
 
@@ -322,6 +323,8 @@ export class ReportService {
       overdueCount: summary.overdueCount,
       pendingSplitsTotal: centavosToString(summary.pendingSplitsTotal) ?? '0.00',
       myPendingSplitsTotal: centavosToString(summary.myPendingSplitsTotal) ?? '0.00',
+      myPendingSplitsInPeriodTotal:
+        centavosToString(summary.myPendingSplitsInPeriodTotal) ?? '0.00',
       upcoming: upcoming.map(toUpcomingDto),
     }
   }

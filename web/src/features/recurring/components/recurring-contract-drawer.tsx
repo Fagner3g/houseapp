@@ -16,6 +16,7 @@ import {
   useListAccounts,
 } from '@/api/generated/api'
 import { invalidateTransactionQueries } from '@/features/transactions/lib/invalidate-transaction-queries'
+import { calendarDateToIso } from '@/lib/date'
 import {
   AlertDialog,
   AlertDialogAction,
@@ -204,11 +205,11 @@ export function RecurringContractDrawer() {
         values.recurringDuration === 'times' ? values.recurringRepetitions ?? null : null,
       endDate:
         values.recurringDuration === 'until' && values.recurringEndDate
-          ? dayjs(values.recurringEndDate).toISOString()
+          ? calendarDateToIso(values.recurringEndDate)
           : values.recurringDuration === 'until'
             ? null
             : null,
-      effectiveFrom: dayjs().startOf('day').toISOString(),
+      effectiveFrom: calendarDateToIso(dayjs().format('YYYY-MM-DD')),
     }
   }
 

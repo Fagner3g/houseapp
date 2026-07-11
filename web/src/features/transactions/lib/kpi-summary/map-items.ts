@@ -2,14 +2,12 @@ import dayjs from 'dayjs'
 
 import type {
   GetReportMyExpenses200ItemsItem,
-  ListPendingSplits200SplitsItem,
   ListTransactions200TransactionsItem,
 } from '@/api/generated/model'
-import { centsToReais, formatCurrency, moneyStringToReais } from '@/lib/currency'
+import { formatCurrency, moneyStringToReais } from '@/lib/currency'
 import { isInvoicePaymentTitle } from '@/lib/transaction-kpi'
 import { resolveTransactionListAmountReais } from '../../installment-amount.utils'
 import type { InvoiceSummaryRow } from '../../types'
-import { remainingSplitCents } from './money'
 import type { KpiSummaryItem } from './types'
 
 const MAX_DIALOG_ITEMS = 40
@@ -155,78 +153,6 @@ export function mapToReceiveKpiItems(input: {
       onClick: () => input.onOpenTransaction(tx.id),
     })
   )
-}
-
-function pendingSplitPersonKey(split: ListPendingSplits200SplitsItem): string {
-  if (split.userId) return `user:${split.userId}`
-  const name = (split.personName ?? split.contactName ?? 'Contato').trim().toLowerCase()
-  return `name:${name}`
-}
-
-function pendingSplitPersonLabel(split: ListPendingSplits200SplitsItem): string {
-  return split.personName ?? split.contactName ?? 'Contato'
-}
-
-export function mapPendingSplitKpiItems(input: {
-  splits: ListPendingSplits200SplitsItem[]
-  onOpenTransaction: (id: string) => void
-}): KpiSummaryItem[] {
-  const groups = new Map<
-    string,
-    {
-      label: string
-      remainingCents: number
-      children: Array<KpiSummaryItem & { sortDate: string }>
-    }
-  >()
-
-  for (const split of input.splits) {
-    const key = pendingSplitPersonKey(split)
-    const remainingCents = remainingSplitCents(split.amount, split.paidAmount)
-    const child = {
-      id: split.id,
-      title: split.transactionTitle,
-      meta: `${dayjs(split.transactionDate).format('DD/MM/YYYY')}${
-        split.status === 'partial' ? ' · parcial' : ''
-      }`,
-      amountLabel: formatCurrency(centsToReais(remainingCents)),
-      amountClassName: 'text-amber-600',
-      onClick: () => input.onOpenTransaction(split.transactionId),
-      sortDate: split.transactionDate,
-    }
-
-    const existing = groups.get(key)
-    if (existing) {
-      existing.remainingCents += remainingCents
-      existing.children.push(child)
-    } else {
-      groups.set(key, {
-        label: pendingSplitPersonLabel(split),
-        remainingCents,
-        children: [child],
-      })
-    }
-  }
-
-  return [...groups.entries()]
-    .map(([key, group]) => {
-      const children = [...group.children]
-        .sort((a, b) => a.sortDate.localeCompare(b.sortDate))
-        .map(child => {
-          const { sortDate: _sortDate, ...item } = child
-          return item
-        })
-      const count = children.length
-      return {
-        id: key,
-        title: group.label,
-        meta: count === 1 ? '1 lançamento' : `${count} lançamentos`,
-        amountLabel: formatCurrency(centsToReais(group.remainingCents)),
-        amountClassName: 'text-amber-600',
-        children,
-      } satisfies KpiSummaryItem
-    })
-    .sort((a, b) => a.title.localeCompare(b.title, 'pt-BR'))
 }
 
 export function mapOverdueKpiItems(input: {

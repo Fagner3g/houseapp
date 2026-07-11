@@ -7,6 +7,7 @@ import { useForm, useFormState } from 'react-hook-form'
 import { z } from 'zod'
 
 import type { CreateTransactionBody } from '@/api/generated/model'
+import { calendarDateToIso, isoToCalendarDate } from '@/lib/date'
 import {
   getGetSplitDebtSummaryQueryKey,
   getGetTransactionQueryKey,
@@ -337,7 +338,7 @@ function buildNextCreateDraft(
     type: values.type === 'transfer' ? 'expense' : values.type,
     accountId: lockedAccountId ?? values.accountId ?? undefined,
     cardId: values.cardId ?? undefined,
-    date: dayjs(values.date).toISOString(),
+    date: calendarDateToIso(values.date),
     status: 'pending',
   }
 }
@@ -406,9 +407,9 @@ function buildTransactionEditPayload(
     title: values.title,
     type: values.type,
     amount: optionalReaisToApiAmount(values.amount),
-    date: dayjs(values.date).toISOString(),
+    date: calendarDateToIso(values.date),
     competenceDate: values.competenceDate
-      ? dayjs(values.competenceDate).toISOString()
+      ? calendarDateToIso(values.competenceDate)
       : null,
     accountId: values.accountId ?? null,
     cardId: values.cardId ?? null,
@@ -511,6 +512,7 @@ export function TransactionDrawer() {
     editingId ?? '',
     { query: { enabled: !!slug && !!editingId && open && isEdit } }
   )
+  const hasExistingAttachments = (attachmentsData?.attachments?.length ?? 0) > 0
 
   const { data: splitDebtSummaryData } = useGetSplitDebtSummary(slug, editingId ?? '', {
     query: { enabled: !!slug && !!editingId && open && (isEdit || isPay) },
@@ -674,21 +676,25 @@ export function TransactionDrawer() {
       type: tx.type as TransactionFormValues['type'],
       title: tx.title,
       amount: apiAmountToFormReais(tx.amount),
-      date: dayjs(tx.date).format('YYYY-MM-DD'),
+      date: isoToCalendarDate(tx.date),
       competenceDate: tx.competenceDate
-        ? dayjs(tx.competenceDate).format('YYYY-MM-DD')
+        ? isoToCalendarDate(tx.competenceDate)
         : undefined,
       accountId,
       cardId: tx.cardId ?? undefined,
       categoryId: tx.categoryIds?.[0] ?? draft?.categoryIds?.[0],
       status: tx.status === 'paid' ? 'paid' : 'pending',
-      paidAt: tx.paidAt ? dayjs(tx.paidAt).format('YYYY-MM-DD') : dayjs().format('YYYY-MM-DD'),
+      paidAt: tx.paidAt ? isoToCalendarDate(tx.paidAt) : dayjs().format('YYYY-MM-DD'),
       paidAmount: 0,
       description: tx.description ?? '',
-      recurrence: tx.installmentsTotal ? 'installment' : 'once',
+      // Finite recurring contracts also set installmentsTotal on occurrences.
+      // Only true installment purchases should use recurrence=installment (requires amount).
+      recurrence:
+        tx.installmentsTotal && !tx.recurringTransactionId ? 'installment' : 'once',
       installmentsTotal: tx.installmentsTotal ?? undefined,
     })
     setNotifyState(notifyStateFromTransaction(tx, orgNotifyDefaults))
+    setNotesOpen(Boolean(tx.description?.trim()))
   }, [
     open,
     isEdit,
@@ -735,9 +741,9 @@ export function TransactionDrawer() {
       type: (draft?.type as TransactionFormValues['type']) ?? 'expense',
       title: draft?.title ?? '',
       amount: draft?.amount ? apiAmountToFormReais(draft.amount) : null,
-      date: draft?.date ? dayjs(draft.date).format('YYYY-MM-DD') : dayjs().format('YYYY-MM-DD'),
+      date: draft?.date ? isoToCalendarDate(draft.date) : dayjs().format('YYYY-MM-DD'),
       competenceDate: draft?.competenceDate
-        ? dayjs(draft.competenceDate).format('YYYY-MM-DD')
+        ? isoToCalendarDate(draft.competenceDate)
         : undefined,
       accountId: draft?.accountId ?? effectiveLockedAccountId ?? paymentAccounts[0]?.id,
       cardId: draft?.cardId ?? undefined,
@@ -745,7 +751,13 @@ export function TransactionDrawer() {
       status: (draft?.status as TransactionFormValues['status']) ?? 'pending',
       description: draft?.description ?? '',
     })
+    setNotesOpen(Boolean(draft?.description?.trim()))
   }, [open, isEdit, isPay, draft, form, effectiveLockedAccountId, paymentAccounts])
+
+  useEffect(() => {
+    if (!open || !isEdit) return
+    if (hasExistingAttachments) setNotesOpen(true)
+  }, [open, isEdit, hasExistingAttachments])
 
   useEffect(() => {
     if (!open || !effectiveLockedAccountId) return
@@ -1138,7 +1150,7 @@ export function TransactionDrawer() {
               slug,
               id: editingId,
               data: {
-                paidAt: dayjs(values.paidAt).toISOString(),
+                paidAt: calendarDateToIso(values.paidAt),
                 paidAmount: reaisToMoneyString(paymentAmount),
                 advanceTransactionIds: selectedAdvanceIds,
               },
@@ -1155,7 +1167,7 @@ export function TransactionDrawer() {
             slug,
             id: editingId,
             data: {
-              paidAt: dayjs(values.paidAt).toISOString(),
+              paidAt: calendarDateToIso(values.paidAt),
               paidAmount: reaisToMoneyString(values.paidAmount ?? values.amount ?? 0),
             },
           })
@@ -1195,7 +1207,7 @@ export function TransactionDrawer() {
               slug,
               id: editingId,
               data: {
-                paidAt: dayjs(values.paidAt).toISOString(),
+                paidAt: calendarDateToIso(values.paidAt),
                 paidAmount: reaisToMoneyString(paymentAmount),
               },
             })
@@ -1252,12 +1264,12 @@ export function TransactionDrawer() {
             counterparty: values.counterparty?.trim() ? values.counterparty.trim() : null,
             frequency,
             interval,
-            startDate: dayjs(values.date).toISOString(),
+            startDate: calendarDateToIso(values.date),
             installmentsTotal:
               values.recurringDuration === 'times' ? values.recurringRepetitions ?? null : null,
             endDate:
               values.recurringDuration === 'until' && values.recurringEndDate
-                ? dayjs(values.recurringEndDate).toISOString()
+                ? calendarDateToIso(values.recurringEndDate)
                 : null,
           },
         })
@@ -1279,7 +1291,7 @@ export function TransactionDrawer() {
           accountsData?.accounts?.find(a => a.id === values.transferToAccountId)?.name ??
           'Destino'
         const title = values.title || `Transferência: ${fromName} → ${toName}`
-        const isoDate = dayjs(values.date).toISOString()
+        const isoDate = calendarDateToIso(values.date)
         const amount = reaisToMoneyString(values.amount ?? 0)
 
         await createTransaction({
@@ -1320,9 +1332,9 @@ export function TransactionDrawer() {
           title: values.title,
           type: values.type,
           amount: optionalReaisToApiAmount(values.amount),
-          date: dayjs(values.date).toISOString(),
+          date: calendarDateToIso(values.date),
           competenceDate: values.competenceDate
-            ? dayjs(values.competenceDate).toISOString()
+            ? calendarDateToIso(values.competenceDate)
             : null,
           accountId: values.accountId ?? null,
           cardId: values.cardId ?? null,

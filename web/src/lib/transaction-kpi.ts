@@ -1,3 +1,5 @@
+import { isInvoicePaymentTitle } from '@houseapp/finance-core'
+
 import type { InvoiceSummaryRow } from '@/features/transactions/types'
 import { moneyStringToReais } from '@/lib/currency'
 
@@ -11,7 +13,7 @@ function sumAmounts(amounts: (string | null | undefined)[]) {
   return amounts.reduce((sum, value) => sum + moneyStringToReais(value), 0)
 }
 
-export { isInvoicePaymentTitle } from '@houseapp/finance-core'
+export { isInvoicePaymentTitle }
 
 /**
  * Cash-flow KPIs for the transactions page.
@@ -29,6 +31,7 @@ export function computeTransactionKpis({
   reportMyExpenseGross,
   reportMySplitsInPeriod,
   reportMyPendingSplits,
+  reportMyPendingSplitsInPeriod,
   paidPayableExpenses,
   pendingPayableExpenses,
   pendingIncomeAmounts,
@@ -40,6 +43,7 @@ export function computeTransactionKpis({
   reportMyExpenseGross?: number
   reportMySplitsInPeriod?: number
   reportMyPendingSplits?: number
+  reportMyPendingSplitsInPeriod?: number
   paidPayableExpenses: ExpenseLike[]
   pendingPayableExpenses: ExpenseLike[]
   pendingIncomeAmounts: (string | null | undefined)[]
@@ -63,6 +67,7 @@ export function computeTransactionKpis({
   const pendingExpense = pendingPayable + pendingInvoices
   const pendingIncome = sumAmounts(pendingIncomeAmounts)
   const myPendingSplits = reportMyPendingSplits ?? 0
+  const myPendingSplitsInPeriod = reportMyPendingSplitsInPeriod ?? myPendingSplits
 
   const received = reportTotalIncome
   const balance = received - myPaid
@@ -75,6 +80,7 @@ export function computeTransactionKpis({
     myExpenseGross,
     mySplitsInPeriod,
     myPendingSplits,
+    myPendingSplitsInPeriod,
     pendingIncome,
     pendingExpense,
     balance,

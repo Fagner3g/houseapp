@@ -20616,6 +20616,9 @@
                     "myPendingSplitsTotal": {
                       "type": "string"
                     },
+                    "myPendingSplitsInPeriodTotal": {
+                      "type": "string"
+                    },
                     "upcoming": {
                       "type": "array",
                       "items": {
@@ -20687,6 +20690,7 @@
                     "overdueCount",
                     "pendingSplitsTotal",
                     "myPendingSplitsTotal",
+                    "myPendingSplitsInPeriodTotal",
                     "upcoming"
                   ],
                   "additionalProperties": false

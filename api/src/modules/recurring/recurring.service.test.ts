@@ -11,9 +11,9 @@ import type { RecurringRecord, RecurringRepository } from './recurring.repositor
 import { RecurringService } from './recurring.service'
 
 function startOfDay(date: Date): Date {
-  const d = new Date(date)
-  d.setHours(0, 0, 0, 0)
-  return d
+  return new Date(
+    Date.UTC(date.getUTCFullYear(), date.getUTCMonth(), date.getUTCDate(), 12, 0, 0, 0)
+  )
 }
 
 function makeRecurring(overrides: Partial<RecurringRecord> = {}): RecurringRecord {

@@ -36,6 +36,7 @@ import {
 } from '@/components/ui/table'
 import { formatCentsString, reaisToMoneyString } from '@/lib/currency'
 import { transactionPurchaseDate } from '@/lib/credit-card-invoice-metrics'
+import { formatIsoDateLabel, isoToCalendarDate } from '@/lib/date'
 import { useActiveOrganization } from '@/hooks/use-active-organization'
 import { useDrawerStore } from '@/stores/drawers'
 import { cn } from '@/lib/utils'
@@ -98,29 +99,29 @@ function isOverdue(tx: Extract<TransactionListItem, { kind: 'transaction' }>) {
 }
 
 function getPayableListDate(tx: TransactionRow) {
-  const dueDay = dayjs(tx.date).startOf('day')
-  const scheduledDay = tx.paymentScheduledAt
-    ? dayjs(tx.paymentScheduledAt).startOf('day')
+  const dueKey = isoToCalendarDate(tx.date)
+  const scheduledKey = tx.paymentScheduledAt
+    ? isoToCalendarDate(tx.paymentScheduledAt)
     : null
 
-  if (scheduledDay?.isValid() && !scheduledDay.isSame(dueDay, 'day')) {
+  if (scheduledKey && scheduledKey !== dueKey) {
     return {
-      displayDay: scheduledDay,
-      dueSubtext: `Venc. ${dueDay.format('DD/MM/YYYY')}`,
+      displayDay: scheduledKey,
+      dueSubtext: `Venc. ${formatIsoDateLabel(tx.date)}`,
       showScheduledBadge: true,
     }
   }
 
-  if (scheduledDay?.isValid()) {
+  if (scheduledKey) {
     return {
-      displayDay: scheduledDay,
+      displayDay: scheduledKey,
       dueSubtext: null,
       showScheduledBadge: false,
     }
   }
 
   return {
-    displayDay: dueDay,
+    displayDay: dueKey,
     dueSubtext: null,
     showScheduledBadge: false,
   }
@@ -483,7 +484,7 @@ function TransactionTable({
                 >
                   <TableCell />
                   <TableCell className="whitespace-nowrap text-sm text-slate-600">
-                    {dayjs(item.date).format('DD/MM/YYYY')}
+                    {formatIsoDateLabel(item.date)}
                   </TableCell>
                   <TableCell>
                     <span className="max-w-[200px] truncate font-medium text-violet-900 lg:max-w-xs">
@@ -571,11 +572,11 @@ function TransactionTable({
                   overdue ? 'font-medium text-rose-600' : 'text-slate-600'
                 )}
               >
-                {dayjs(
+                {formatIsoDateLabel(
                   isCreditCardStatement
                     ? transactionPurchaseDate(tx)
                     : (payableListDate?.displayDay ?? tx.date)
-                ).format('DD/MM/YYYY')}
+                )}
               </TableCell>
               <TableCell>
                 <div>

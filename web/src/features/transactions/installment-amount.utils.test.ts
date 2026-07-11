@@ -28,8 +28,20 @@ describe('resolveTransactionInstallmentAmountReais', () => {
         amount: '900.00',
         installmentNumber: 1,
         installmentsTotal: 3,
+        source: 'manual',
       })
     ).toBe(300)
+  })
+
+  it('keeps recurring occurrence amount as the installment', () => {
+    expect(
+      resolveTransactionInstallmentAmountReais({
+        amount: '421.11',
+        installmentNumber: 1,
+        installmentsTotal: 4,
+        source: 'recurring',
+      })
+    ).toBe(421.11)
   })
 
   it('returns row amount for non-installment transactions', () => {

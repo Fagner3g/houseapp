@@ -116,6 +116,7 @@ function ExpandableGroup({
           />
           <div className="min-w-0">
             <p className="truncate font-medium text-slate-900">{item.title}</p>
+            {item.subtitle && <p className="truncate text-sm text-slate-500">{item.subtitle}</p>}
             {item.meta && <p className="text-xs text-slate-400">{item.meta}</p>}
           </div>
         </div>
@@ -179,7 +180,7 @@ export function KpiSummaryDialog({
           )}
           {isLoading ? (
             <p className="py-6 text-center text-sm text-slate-500">Carregando…</p>
-          ) : items.length === 0 ? (
+          ) : items.length === 0 && secondaryItems.length === 0 ? (
             <p className="py-6 text-center text-sm text-slate-500">{emptyMessage}</p>
           ) : (
             items.map(item =>
@@ -195,9 +196,13 @@ export function KpiSummaryDialog({
         {secondaryItemsLabel && secondaryItems.length > 0 && (
           <div className="space-y-2 border-t border-slate-100 pt-3">
             <p className="text-xs font-medium text-slate-500">{secondaryItemsLabel}</p>
-            {secondaryItems.map(item => (
-              <ItemRow key={item.id} item={item} onOpenChange={onOpenChange} />
-            ))}
+            {secondaryItems.map(item =>
+              item.children && item.children.length > 0 ? (
+                <ExpandableGroup key={item.id} item={item} onOpenChange={onOpenChange} />
+              ) : (
+                <ItemRow key={item.id} item={item} onOpenChange={onOpenChange} />
+              )
+            )}
           </div>
         )}
 

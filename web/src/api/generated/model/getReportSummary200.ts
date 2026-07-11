@@ -18,5 +18,6 @@ export type GetReportSummary200 = {
   overdueCount: number;
   pendingSplitsTotal: string;
   myPendingSplitsTotal: string;
+  myPendingSplitsInPeriodTotal: string;
   upcoming: GetReportSummary200UpcomingItem[];
 };

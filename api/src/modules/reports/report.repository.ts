@@ -56,6 +56,7 @@ export type SummaryRow = {
   overdueCount: number
   pendingSplitsTotal: bigint
   myPendingSplitsTotal: bigint
+  myPendingSplitsInPeriodTotal: bigint
 }
 
 export type UpcomingTransactionRow = {
@@ -363,6 +364,12 @@ export class DrizzleReportRepository implements ReportRepository {
         )
       )
 
+    const myPendingSplitsBase = and(
+      eq(transactions.organizationId, organizationId),
+      inArray(transactionSplits.status, ['pending', 'partial']),
+      userIsSplitCreditorCondition(userId)
+    )
+
     const [myPendingSplitsRow] = await db
       .select({
         myPendingSplitsTotal: sql<bigint>`COALESCE(SUM(${transactionSplits.amount} - ${transactionSplits.paidAmount}), 0)`,
@@ -370,11 +377,20 @@ export class DrizzleReportRepository implements ReportRepository {
       .from(transactionSplits)
       .innerJoin(transactions, eq(transactionSplits.transactionId, transactions.id))
       .leftJoin(cards, eq(transactions.cardId, cards.id))
+      .where(myPendingSplitsBase)
+
+    const [myPendingSplitsInPeriodRow] = await db
+      .select({
+        myPendingSplitsInPeriodTotal: sql<bigint>`COALESCE(SUM(${transactionSplits.amount} - ${transactionSplits.paidAmount}), 0)`,
+      })
+      .from(transactionSplits)
+      .innerJoin(transactions, eq(transactionSplits.transactionId, transactions.id))
+      .leftJoin(cards, eq(transactions.cardId, cards.id))
       .where(
         and(
-          eq(transactions.organizationId, organizationId),
-          inArray(transactionSplits.status, ['pending', 'partial']),
-          userIsSplitCreditorCondition(userId)
+          myPendingSplitsBase,
+          gte(transactions.date, range.from),
+          lte(transactions.date, range.to)
         )
       )
 
@@ -389,6 +405,9 @@ export class DrizzleReportRepository implements ReportRepository {
       overdueCount: overdueRow?.total ?? 0,
       pendingSplitsTotal: toBigInt(splitsRow?.pendingSplitsTotal),
       myPendingSplitsTotal: toBigInt(myPendingSplitsRow?.myPendingSplitsTotal),
+      myPendingSplitsInPeriodTotal: toBigInt(
+        myPendingSplitsInPeriodRow?.myPendingSplitsInPeriodTotal
+      ),
     }
   }
 

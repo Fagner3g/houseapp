@@ -39,6 +39,7 @@ export const summaryReportSchema = {
       overdueCount: z.number(),
       pendingSplitsTotal: z.string(),
       myPendingSplitsTotal: z.string(),
+      myPendingSplitsInPeriodTotal: z.string(),
       upcoming: z.array(upcomingTransactionSchema),
     }),
   },

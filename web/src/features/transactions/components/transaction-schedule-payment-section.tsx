@@ -23,15 +23,16 @@ import {
   DialogTitle,
 } from '@/components/ui/dialog'
 import { readHttpErrorMessage } from '@/lib/http'
+import { calendarDateToIso, formatIsoDateLabel, isoToCalendarDate } from '@/lib/date'
 
 function defaultScheduleDate(dueDate: string, scheduledAt?: string | null): string {
-  const today = dayjs().startOf('day')
+  const today = dayjs().format('YYYY-MM-DD')
   if (scheduledAt) {
-    const scheduled = dayjs(scheduledAt).startOf('day')
-    return (scheduled.isBefore(today) ? today : scheduled).format('YYYY-MM-DD')
+    const scheduled = isoToCalendarDate(scheduledAt)
+    return scheduled < today ? today : scheduled
   }
-  const due = dayjs(dueDate).startOf('day')
-  return (due.isBefore(today) ? today : due).format('YYYY-MM-DD')
+  const due = isoToCalendarDate(dueDate) || dueDate.slice(0, 10)
+  return due < today ? today : due
 }
 
 function isScheduleDateValid(value: string): boolean {
@@ -78,7 +79,7 @@ export function TransactionSchedulePaymentSection({
       await schedulePayment({
         slug,
         id: transactionId,
-        data: { scheduledAt: dayjs(scheduledDate).startOf('day').toISOString() },
+        data: { scheduledAt: calendarDateToIso(scheduledDate) },
       })
       await invalidate()
       setDialogOpen(false)
@@ -104,7 +105,7 @@ export function TransactionSchedulePaymentSection({
         <div className="flex min-w-0 items-center gap-2">
           <CalendarClock className="size-4 shrink-0 text-sky-600" />
           <Badge variant="outline" className="border-sky-200 bg-white text-sky-800">
-            Pagamento agendado para {dayjs(paymentScheduledAt).format('DD/MM/YYYY')}
+            Pagamento agendado para {formatIsoDateLabel(paymentScheduledAt)}
           </Badge>
         </div>
         <Button

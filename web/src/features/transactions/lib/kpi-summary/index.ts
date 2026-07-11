@@ -3,8 +3,8 @@ export {
   mapMySpendKpiItems,
   mapOverdueKpiItems,
   mapPaidExpenseKpiItems,
-  mapPendingSplitKpiItems,
   mapToPayKpiItems,
   mapToReceiveKpiItems,
 } from './map-items'
+export { mapPendingSplitKpiItems } from './map-pending-splits'
 export type { KpiBreakdownLine, KpiDialogView, KpiKey, KpiSummaryItem } from './types'

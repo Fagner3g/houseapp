@@ -10,6 +10,7 @@ import {
 import { filterPaymentAccounts } from '@/features/accounts/constants'
 import { invalidateTransactionQueries } from '@/features/transactions/lib/invalidate-transaction-queries'
 import { optionalReaisToApiAmount } from '@/lib/currency'
+import { calendarDateToIso } from '@/lib/date'
 import { readHttpErrorMessage } from '@/lib/http'
 import { useActiveOrganization } from '@/hooks/use-active-organization'
 import { useDrawerStore } from '@/stores/drawers'
@@ -95,7 +96,7 @@ export function useInlineTransactionCreate(lockedAccountId?: string) {
         title: draft.title || undefined,
         type: draft.type,
         amount: optionalReaisToApiAmount(draft.amount) ?? undefined,
-        date: dayjs(draft.date).toISOString(),
+        date: calendarDateToIso(draft.date),
         accountId: draft.accountId || undefined,
         categoryIds: draft.categoryId ? [draft.categoryId] : undefined,
         status: 'pending',
@@ -136,7 +137,7 @@ export function useInlineTransactionCreate(lockedAccountId?: string) {
           title: draft.title.trim(),
           type: draft.type,
           amount: optionalReaisToApiAmount(draft.amount),
-          date: dayjs(draft.date).toISOString(),
+          date: calendarDateToIso(draft.date),
           accountId,
           categoryIds: draft.categoryId ? [draft.categoryId] : undefined,
           status: 'pending',

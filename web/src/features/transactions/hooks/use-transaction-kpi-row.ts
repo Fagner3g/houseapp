@@ -125,6 +125,7 @@ export function useTransactionKpiRow() {
         reportMyExpenseGross: moneyStringToReais(data?.myExpenseGrossTotal),
         reportMySplitsInPeriod: moneyStringToReais(data?.mySplitsInPeriodTotal),
         reportMyPendingSplits: moneyStringToReais(data?.myPendingSplitsTotal),
+        reportMyPendingSplitsInPeriod: moneyStringToReais(data?.myPendingSplitsInPeriodTotal),
         paidPayableExpenses: paidExpenseData?.transactions ?? [],
         pendingPayableExpenses: pendingExpenseData?.transactions ?? [],
         pendingIncomeAmounts: pendingIncomeData?.transactions.map(t => t.amount) ?? [],
@@ -217,13 +218,15 @@ export function useTransactionKpiRow() {
     [pendingIncomeData?.transactions, splitPaidById, openTransaction]
   )
 
-  const splitItems = useMemo(
+  const { items: splitItems, secondaryItems: splitSecondaryItems } = useMemo(
     () =>
       mapPendingSplitKpiItems({
         splits: pendingSplitsData?.splits ?? [],
+        dateFrom,
+        dateTo,
         onOpenTransaction: openTransaction,
       }),
-    [pendingSplitsData?.splits, openTransaction]
+    [pendingSplitsData?.splits, dateFrom, dateTo, openTransaction]
   )
 
   const overdueItems = useMemo(
@@ -255,11 +258,14 @@ export function useTransactionKpiRow() {
     {
       key: 'pendingSplits',
       label: 'Splits a receber',
-      value: formatCurrency(kpis.myPendingSplits),
-      subtitle: 'Já descontado acima; falta receber',
+      value: formatCurrency(kpis.myPendingSplitsInPeriod),
+      subtitle:
+        kpis.myPendingSplits > kpis.myPendingSplitsInPeriod
+          ? `Em aberto: ${formatCurrency(kpis.myPendingSplits)}`
+          : 'Já descontado acima; falta receber',
       icon: 'pendingSplits',
       iconClass: 'text-amber-500',
-      valueClass: kpis.myPendingSplits > 0 ? 'text-amber-600' : 'text-slate-900',
+      valueClass: kpis.myPendingSplitsInPeriod > 0 ? 'text-amber-600' : 'text-slate-900',
       clickable: kpis.myPendingSplits > 0,
     },
     {
@@ -299,6 +305,7 @@ export function useTransactionKpiRow() {
     overdueCount,
     mySpendItems,
     splitItems,
+    splitSecondaryItems,
     toPayItems,
     toReceiveItems,
     overdueItems,

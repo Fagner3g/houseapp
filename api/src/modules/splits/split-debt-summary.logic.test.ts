@@ -371,6 +371,29 @@ describe('buildSplitDebtSummary', () => {
     expect(summary.purchaseTotalIsEstimate).toBe(true)
     expect(summary.currentTransactionAmount).toBe('51.69')
   })
+
+  it('extrapolates recurring parcel amount across installmentsTotal', () => {
+    const anchor = tx({
+      id: 'tx-pbh',
+      title: 'PBH',
+      amount: 42111n,
+      installmentNumber: 1,
+      installmentsTotal: 4,
+      source: 'recurring',
+      recurringTransactionId: 'rec-pbh',
+    })
+
+    const summary = buildSplitDebtSummary({
+      anchorTransaction: anchor,
+      siblingTransactions: [anchor],
+      splits: [],
+      resolvePersonName: item => item.userName ?? 'Membro',
+    })
+
+    expect(summary.purchaseTotal).toBe('1684.44')
+    expect(summary.purchaseTotalIsEstimate).toBe(true)
+    expect(summary.currentTransactionAmount).toBe('421.11')
+  })
 })
 
 describe('shouldUseAnchorInstallmentAmount', () => {
@@ -379,6 +402,15 @@ describe('shouldUseAnchorInstallmentAmount', () => {
       shouldUseAnchorInstallmentAmount(
         { source: 'import', statementId: 'stmt-1' },
         [{ amount: 27479n }]
+      )
+    ).toBe(true)
+  })
+
+  it('returns true for recurring occurrences', () => {
+    expect(
+      shouldUseAnchorInstallmentAmount(
+        { source: 'recurring', statementId: null },
+        [{ amount: 42111n }]
       )
     ).toBe(true)
   })

@@ -93,7 +93,8 @@ export function resolveInstallmentPurchaseTotalCentavos(
 
   if (siblingTransactions.length === 1) {
     const single = siblingTransactions[0]?.amount ?? 0n
-    if (anchor && isImportedStatementTransaction(anchor)) {
+    // Import + recurring store the per-parcel amount on each row.
+    if (anchor && storesPerInstallmentAmount(anchor)) {
       return single * BigInt(installmentsTotal)
     }
     return single
@@ -118,12 +119,25 @@ function isImportedStatementTransaction(
   return transaction.source === 'import' && transaction.statementId != null
 }
 
-/** Bank imports store each installment amount on its own row; manual entries may store the full purchase on parcel 1. */
+/**
+ * Row amount is already one installment (not the full purchase):
+ * - bank imports: one statement line per parcel
+ * - recurring: each generated occurrence carries the contract payment amount
+ * Manual installment entries may store the full purchase on parcel 1.
+ */
+export function storesPerInstallmentAmount(
+  transaction: Pick<TransactionRecord, 'source' | 'statementId'>
+): boolean {
+  if (transaction.source === 'recurring') return true
+  return isImportedStatementTransaction(transaction)
+}
+
+/** Bank imports / recurring store each installment amount on its own row; manual entries may store the full purchase on parcel 1. */
 export function shouldUseAnchorInstallmentAmount(
   anchorTransaction: Pick<TransactionRecord, 'source' | 'statementId'>,
   siblingTransactions: Pick<TransactionRecord, 'amount'>[]
 ): boolean {
-  if (isImportedStatementTransaction(anchorTransaction)) {
+  if (storesPerInstallmentAmount(anchorTransaction)) {
     return true
   }
 
