@@ -115,7 +115,12 @@ export const selectNestedDrawerOpen = (s: {
   accountDrawerOpen: boolean
   categoryDrawerOpen: boolean
   cardDrawerOpen: boolean
-}) => s.accountDrawerOpen || s.categoryDrawerOpen || s.cardDrawerOpen
+  recurringContractDrawerOpen: boolean
+}) =>
+  s.accountDrawerOpen ||
+  s.categoryDrawerOpen ||
+  s.cardDrawerOpen ||
+  s.recurringContractDrawerOpen
 
 export const useDrawerStore = create<DrawerStore>(set => ({
   aiChatOpen: false,
@@ -186,6 +191,8 @@ export const useDrawerStore = create<DrawerStore>(set => ({
       cardDrawerAccountId: null,
       payInvoiceDrawerOpen: false,
       payInvoiceContext: null,
+      recurringContractDrawerOpen: false,
+      editingRecurringId: null,
     }),
   openAccountDrawer: (callback, defaultType, defaultInstitution) =>
     set({
@@ -271,5 +278,7 @@ export const useDrawerStore = create<DrawerStore>(set => ({
       payInvoiceContext: null,
       analyticsGroupDrawerOpen: false,
       analyticsGroupContext: null,
+      recurringContractDrawerOpen: false,
+      editingRecurringId: null,
     }),
 }))

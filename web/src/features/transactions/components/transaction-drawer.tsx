@@ -158,6 +158,7 @@ import { AccountSelect } from '@/features/accounts/components/account-select'
 import { filterPaymentAccounts } from '@/features/accounts/constants'
 import { CardDrawer } from '@/features/accounts/components/card-drawer'
 import { CategoryDrawer } from '@/features/categories/components/category-drawer'
+import { RecurringContractDrawer } from '@/features/recurring/components/recurring-contract-drawer'
 import { CategorySelect } from '@/features/categories/components/category-select'
 import {
   resolveTransactionInstallmentAmountReais,
@@ -2548,6 +2549,7 @@ export function TransactionDrawer() {
       <AccountDrawer nested />
       <CategoryDrawer nested />
       <CardDrawer nested />
+      <RecurringContractDrawer nested />
       <DeleteTransactionDialog
         transaction={
           tx

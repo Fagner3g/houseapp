@@ -146,8 +146,12 @@ export class RecurringService {
       installmentsTotal: input.installmentsTotal ?? null,
     })
 
+    // Catch up through today so the UI shows due parcels immediately.
+    // If start_date is in the future, still materialize that first occurrence now.
+    const today = startOfDay(new Date())
+    const startDate = startOfDay(created.startDate)
     const materializedCount = await this.materializeOne(created, {
-      horizonDate: startOfDay(created.startDate),
+      horizonDate: startDate > today ? startDate : today,
     })
 
     const refreshed = await this.recurringRepository.findById(organizationId, created.id)

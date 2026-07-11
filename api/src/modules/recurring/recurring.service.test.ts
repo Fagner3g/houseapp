@@ -123,6 +123,9 @@ describe('RecurringService', () => {
       },
     })
 
+    vi.useFakeTimers()
+    vi.setSystemTime(new Date('2026-07-11T12:00:00.000Z'))
+
     const result = await service.create('org-1', {
       title: 'Salary',
       amount: '10.00',
@@ -146,6 +149,64 @@ describe('RecurringService', () => {
     )
     expect(result.materializedCount).toBe(1)
     expect(result.nextOccurrenceDate).toBeTruthy()
+
+    vi.useRealTimers()
+  })
+
+  it('catches up all due occurrences through today when start_date is in the past', async () => {
+    const created = makeRecurring({
+      title: 'PBH',
+      amount: 42111n,
+      type: 'expense',
+      startDate: new Date('2026-05-10T00:00:00.000Z'),
+      installmentsTotal: 4,
+    })
+
+    const createMany = vi.fn().mockResolvedValue([])
+    const update = vi.fn().mockResolvedValue({
+      ...created,
+      lastGeneratedDate: new Date('2026-07-10T00:00:00.000Z'),
+    })
+
+    const service = buildService({
+      recurringRepository: {
+        create: vi.fn().mockResolvedValue(created),
+        findById: vi.fn().mockResolvedValue({
+          ...created,
+          lastGeneratedDate: new Date('2026-07-10T00:00:00.000Z'),
+        }),
+        update,
+      },
+      transactionRepository: {
+        createMany,
+      },
+    })
+
+    vi.useFakeTimers()
+    vi.setSystemTime(new Date('2026-07-11T15:00:00.000Z'))
+
+    const result = await service.create('org-1', {
+      title: 'PBH',
+      amount: '421.11',
+      type: 'expense',
+      accountId: 'acc-checking',
+      categoryId: 'cat-1',
+      frequency: 'monthly',
+      startDate: created.startDate.toISOString(),
+      installmentsTotal: 4,
+    })
+
+    const createdRows = createMany.mock.calls[0]?.[0] ?? []
+    expect(createdRows).toHaveLength(3)
+    expect(createdRows.map((row: { installmentNumber: number | null }) => row.installmentNumber)).toEqual([
+      1, 2, 3,
+    ])
+    expect(
+      createdRows.map((row: { date: Date }) => startOfDay(row.date).toISOString().slice(0, 10))
+    ).toEqual(['2026-05-10', '2026-06-10', '2026-07-10'])
+    expect(result.materializedCount).toBe(3)
+
+    vi.useRealTimers()
   })
 
   it('rejects create on credit_card accounts', async () => {
