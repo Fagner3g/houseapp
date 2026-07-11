@@ -31,6 +31,8 @@ export const summaryReportSchema = {
     200: z.object({
       totalIncome: z.string(),
       totalExpense: z.string(),
+      myExpenseGrossTotal: z.string(),
+      mySplitsInPeriodTotal: z.string(),
       myExpenseTotal: z.string(),
       netWorth: z.string(),
       pendingCount: z.number(),
@@ -166,6 +168,35 @@ export const dailyReportSchema = {
           expense: z.string(),
         })
       ),
+    }),
+  },
+}
+
+export const myExpensesReportSchema = {
+  tags: ['Reports'],
+  description: 'Invoice and expense lines that compose Meu gasto for a date range',
+  operationId: 'getReportMyExpenses',
+  params: slugParams,
+  querystring: reportDateQuery,
+  response: {
+    200: z.object({
+      items: z.array(
+        z.object({
+          kind: z.enum(['invoice', 'expense']),
+          id: z.string(),
+          title: z.string(),
+          subtitle: z.string().nullable(),
+          date: z.string(),
+          accountId: z.string().nullable(),
+          monthKey: z.string().nullable(),
+          grossAmount: z.string(),
+          splitAmount: z.string(),
+          myAmount: z.string(),
+        })
+      ),
+      grossTotal: z.string(),
+      splitTotal: z.string(),
+      myTotal: z.string(),
     }),
   },
 }

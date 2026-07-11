@@ -1,11 +1,13 @@
 import dayjs from 'dayjs'
 
 import type {
+  GetReportMyExpenses200ItemsItem,
   ListPendingSplits200SplitsItem,
   ListTransactions200TransactionsItem,
 } from '@/api/generated/model'
 import { centsToReais, formatCurrency, moneyStringToReais } from '@/lib/currency'
 import { isInvoicePaymentTitle } from '@/lib/transaction-kpi'
+import { resolveTransactionListAmountReais } from '../../installment-amount.utils'
 import type { InvoiceSummaryRow } from '../../types'
 import { remainingSplitCents } from './money'
 import type { KpiSummaryItem } from './types'
@@ -51,6 +53,40 @@ function transactionItem(
   }
 }
 
+export function mapMySpendKpiItems(input: {
+  items: GetReportMyExpenses200ItemsItem[]
+  onOpenTransaction: (id: string) => void
+  onOpenInvoice: (accountId: string, monthKey: string) => void
+}): KpiSummaryItem[] {
+  return input.items
+    .filter(item => moneyStringToReais(item.grossAmount) > 0)
+    .map(item => {
+      const gross = moneyStringToReais(item.grossAmount)
+      const split = moneyStringToReais(item.splitAmount)
+      const myAmount = moneyStringToReais(item.myAmount)
+      const splitHint =
+        split > 0 ? `Total ${formatCurrency(gross)} · split ${formatCurrency(split)}` : undefined
+
+      return {
+        id: item.id,
+        title: item.title,
+        subtitle: item.subtitle ?? splitHint,
+        meta: dayjs(item.date).format('DD/MM/YYYY'),
+        amountLabel: formatCurrency(myAmount),
+        amountClassName: item.kind === 'invoice' ? 'text-violet-700' : 'text-rose-600',
+        onClick: () => {
+          if (item.kind === 'invoice' && item.accountId && item.monthKey) {
+            input.onOpenInvoice(item.accountId, item.monthKey)
+            return
+          }
+          if (item.kind === 'expense') {
+            input.onOpenTransaction(item.id)
+          }
+        },
+      }
+    })
+}
+
 export function mapPaidExpenseKpiItems(input: {
   transactions: ListTransactions200TransactionsItem[]
   invoiceSummaries: InvoiceSummaryRow[]
@@ -74,15 +110,27 @@ export function mapPaidExpenseKpiItems(input: {
   return [...txs, ...invoices].slice(0, MAX_DIALOG_ITEMS)
 }
 
+function payableRemainingReais(
+  tx: ListTransactions200TransactionsItem,
+  splitPaidById?: Map<string, number>
+): number {
+  return resolveTransactionListAmountReais(
+    tx.amount,
+    tx.paidAmount,
+    splitPaidById?.get(tx.id) ?? 0
+  )
+}
+
 export function mapToPayKpiItems(input: {
   transactions: ListTransactions200TransactionsItem[]
   invoiceSummaries: InvoiceSummaryRow[]
+  splitPaidById?: Map<string, number>
   onOpenTransaction: (id: string) => void
   onOpenInvoice: (inv: InvoiceSummaryRow) => void
 }): KpiSummaryItem[] {
   const txs = input.transactions.map(tx =>
     transactionItem(tx, {
-      amountReais: moneyStringToReais(tx.amount),
+      amountReais: payableRemainingReais(tx, input.splitPaidById),
       amountClassName: 'text-amber-600',
       onClick: () => input.onOpenTransaction(tx.id),
     })
@@ -97,11 +145,12 @@ export function mapToPayKpiItems(input: {
 
 export function mapToReceiveKpiItems(input: {
   transactions: ListTransactions200TransactionsItem[]
+  splitPaidById?: Map<string, number>
   onOpenTransaction: (id: string) => void
 }): KpiSummaryItem[] {
   return input.transactions.map(tx =>
     transactionItem(tx, {
-      amountReais: moneyStringToReais(tx.amount),
+      amountReais: payableRemainingReais(tx, input.splitPaidById),
       amountClassName: 'text-emerald-600',
       onClick: () => input.onOpenTransaction(tx.id),
     })
@@ -182,11 +231,12 @@ export function mapPendingSplitKpiItems(input: {
 
 export function mapOverdueKpiItems(input: {
   transactions: ListTransactions200TransactionsItem[]
+  splitPaidById?: Map<string, number>
   onOpenTransaction: (id: string) => void
 }): KpiSummaryItem[] {
   return input.transactions.map(tx =>
     transactionItem(tx, {
-      amountReais: moneyStringToReais(tx.amount),
+      amountReais: payableRemainingReais(tx, input.splitPaidById),
       amountClassName: 'text-rose-600',
       onClick: () => input.onOpenTransaction(tx.id),
     })

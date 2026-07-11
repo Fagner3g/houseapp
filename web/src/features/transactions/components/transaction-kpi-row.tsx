@@ -61,7 +61,11 @@ export function TransactionKpiRow() {
           totalLabel={activeDialog.totalLabel}
           total={activeDialog.total}
           totalClassName={activeDialog.totalClassName}
+          breakdown={activeDialog.breakdown}
+          itemsLabel={activeDialog.itemsLabel}
           items={activeDialog.items}
+          secondaryItemsLabel={activeDialog.secondaryItemsLabel}
+          secondaryItems={activeDialog.secondaryItems}
           isLoading={activeDialog.isLoading}
           emptyMessage={activeDialog.emptyMessage}
           footerHint={activeDialog.footerHint}

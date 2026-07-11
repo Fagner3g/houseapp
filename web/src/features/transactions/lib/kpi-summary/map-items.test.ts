@@ -1,7 +1,7 @@
 import { describe, expect, it, vi } from 'vitest'
 
-import type { ListPendingSplits200SplitsItem } from '@/api/generated/model'
-import { mapPendingSplitKpiItems } from './map-items'
+import type { ListPendingSplits200SplitsItem, ListTransactions200TransactionsItem } from '@/api/generated/model'
+import { mapOverdueKpiItems, mapPendingSplitKpiItems } from './map-items'
 
 function split(
   overrides: Partial<ListPendingSplits200SplitsItem> &
@@ -30,6 +30,82 @@ function split(
     ...overrides,
   }
 }
+
+function transaction(
+  overrides: Partial<ListTransactions200TransactionsItem> &
+    Pick<ListTransactions200TransactionsItem, 'id' | 'title' | 'date' | 'amount'>
+): ListTransactions200TransactionsItem {
+  return {
+    organizationId: 'org-1',
+    accountId: null,
+    cardId: null,
+    recurringTransactionId: null,
+    statementId: null,
+    description: null,
+    type: 'expense',
+    competenceDate: null,
+    status: 'partial',
+    paidAt: null,
+    paidAmount: '0.00',
+    paymentScheduledAt: null,
+    counterparty: null,
+    installmentNumber: null,
+    installmentsTotal: null,
+    source: 'manual',
+    categoryIds: [],
+    transferPairId: null,
+    notifyEnabled: false,
+    notifyTargetType: 'none',
+    notifyUserId: null,
+    notifyContactName: null,
+    notifyContactPhone: null,
+    createdAt: '2026-01-01T00:00:00.000Z',
+    updatedAt: '2026-01-01T00:00:00.000Z',
+    ...overrides,
+  }
+}
+
+describe('mapOverdueKpiItems', () => {
+  it('shows remaining balance after partial payment', () => {
+    const onOpen = vi.fn()
+    const items = mapOverdueKpiItems({
+      transactions: [
+        transaction({
+          id: 'tx-1',
+          title: 'Empréstimo 4K',
+          date: '2026-06-17',
+          amount: '4000.00',
+          paidAmount: '1500.00',
+        }),
+      ],
+      onOpenTransaction: onOpen,
+    })
+
+    expect(items).toHaveLength(1)
+    expect(items[0]?.amountLabel).toContain('2.500,00')
+  })
+
+  it('shows remaining balance after split payments', () => {
+    const onOpen = vi.fn()
+    const splitPaidById = new Map([['tx-1', 3000]])
+    const items = mapOverdueKpiItems({
+      transactions: [
+        transaction({
+          id: 'tx-1',
+          title: 'Empréstimo 4K',
+          date: '2026-06-17',
+          amount: '4000.00',
+          paidAmount: '0.00',
+        }),
+      ],
+      splitPaidById,
+      onOpenTransaction: onOpen,
+    })
+
+    expect(items).toHaveLength(1)
+    expect(items[0]?.amountLabel).toContain('1.000,00')
+  })
+})
 
 describe('mapPendingSplitKpiItems', () => {
   it('groups by person with date-sorted children and summed amounts', () => {

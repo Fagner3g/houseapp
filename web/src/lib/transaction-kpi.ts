@@ -26,6 +26,8 @@ export function computeTransactionKpis({
   reportTotalIncome,
   reportTotalExpense,
   reportMyExpense,
+  reportMyExpenseGross,
+  reportMySplitsInPeriod,
   reportMyPendingSplits,
   paidPayableExpenses,
   pendingPayableExpenses,
@@ -35,6 +37,8 @@ export function computeTransactionKpis({
   reportTotalIncome: number
   reportTotalExpense: number
   reportMyExpense?: number
+  reportMyExpenseGross?: number
+  reportMySplitsInPeriod?: number
   reportMyPendingSplits?: number
   paidPayableExpenses: ExpenseLike[]
   pendingPayableExpenses: ExpenseLike[]
@@ -51,6 +55,8 @@ export function computeTransactionKpis({
 
   const paid = reportTotalExpense - invoiceCheckingPaid + invoicePayments
   const myPaid = reportMyExpense ?? paid
+  const myExpenseGross = reportMyExpenseGross ?? myPaid
+  const mySplitsInPeriod = reportMySplitsInPeriod ?? Math.max(myExpenseGross - myPaid, 0)
 
   const pendingPayable = sumAmounts(pendingPayableExpenses.map(tx => tx.amount))
   const pendingInvoices = sumAmounts(invoiceSummaries.map(inv => inv.remaining))
@@ -66,6 +72,8 @@ export function computeTransactionKpis({
     received,
     paid,
     myPaid,
+    myExpenseGross,
+    mySplitsInPeriod,
     myPendingSplits,
     pendingIncome,
     pendingExpense,

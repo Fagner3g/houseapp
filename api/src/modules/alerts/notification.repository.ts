@@ -100,7 +100,7 @@ export class DrizzleNotificationRepository implements NotificationRepository {
           body: data.body ?? null,
           channel: data.channel,
           status: data.status ?? 'sent',
-          sentAt: data.sentAt ?? new Date(),
+          sentAt: data.sentAt === undefined ? new Date() : data.sentAt,
           dedupeKey: data.dedupeKey,
           metadata: data.metadata ?? {},
         })

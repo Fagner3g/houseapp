@@ -20542,6 +20542,12 @@
                     "totalExpense": {
                       "type": "string"
                     },
+                    "myExpenseGrossTotal": {
+                      "type": "string"
+                    },
+                    "mySplitsInPeriodTotal": {
+                      "type": "string"
+                    },
                     "myExpenseTotal": {
                       "type": "string"
                     },
@@ -20623,6 +20629,8 @@
                   "required": [
                     "totalIncome",
                     "totalExpense",
+                    "myExpenseGrossTotal",
+                    "mySplitsInPeriodTotal",
                     "myExpenseTotal",
                     "netWorth",
                     "pendingCount",
@@ -20630,6 +20638,160 @@
                     "pendingSplitsTotal",
                     "myPendingSplitsTotal",
                     "upcoming"
+                  ],
+                  "additionalProperties": false
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/organizations/{slug}/reports/my-expenses": {
+      "get": {
+        "operationId": "getReportMyExpenses",
+        "tags": [
+          "Reports"
+        ],
+        "description": "Invoice and expense lines that compose Meu gasto for a date range",
+        "parameters": [
+          {
+            "schema": {
+              "type": "string",
+              "format": "date-time",
+              "pattern": "^(?:(?:\\d\\d[2468][048]|\\d\\d[13579][26]|\\d\\d0[48]|[02468][048]00|[13579][26]00)-02-29|\\d{4}-(?:(?:0[13578]|1[02])-(?:0[1-9]|[12]\\d|3[01])|(?:0[469]|11)-(?:0[1-9]|[12]\\d|30)|(?:02)-(?:0[1-9]|1\\d|2[0-8])))T(?:(?:[01]\\d|2[0-3]):[0-5]\\d(?::[0-5]\\d(?:\\.\\d+)?)?(?:Z))$"
+            },
+            "in": "query",
+            "name": "dateFrom",
+            "required": false
+          },
+          {
+            "schema": {
+              "type": "string",
+              "format": "date-time",
+              "pattern": "^(?:(?:\\d\\d[2468][048]|\\d\\d[13579][26]|\\d\\d0[48]|[02468][048]00|[13579][26]00)-02-29|\\d{4}-(?:(?:0[13578]|1[02])-(?:0[1-9]|[12]\\d|3[01])|(?:0[469]|11)-(?:0[1-9]|[12]\\d|30)|(?:02)-(?:0[1-9]|1\\d|2[0-8])))T(?:(?:[01]\\d|2[0-3]):[0-5]\\d(?::[0-5]\\d(?:\\.\\d+)?)?(?:Z))$"
+            },
+            "in": "query",
+            "name": "dateTo",
+            "required": false
+          },
+          {
+            "schema": {
+              "type": "string"
+            },
+            "in": "path",
+            "name": "slug",
+            "required": true
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Default Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "items": {
+                      "type": "array",
+                      "items": {
+                        "type": "object",
+                        "properties": {
+                          "kind": {
+                            "type": "string",
+                            "enum": [
+                              "invoice",
+                              "expense"
+                            ]
+                          },
+                          "id": {
+                            "type": "string"
+                          },
+                          "title": {
+                            "type": "string"
+                          },
+                          "subtitle": {
+                            "anyOf": [
+                              {
+                                "type": "string"
+                              },
+                              {
+                                "nullable": true,
+                                "enum": [
+                                  null
+                                ]
+                              }
+                            ]
+                          },
+                          "date": {
+                            "type": "string"
+                          },
+                          "accountId": {
+                            "anyOf": [
+                              {
+                                "type": "string"
+                              },
+                              {
+                                "nullable": true,
+                                "enum": [
+                                  null
+                                ]
+                              }
+                            ]
+                          },
+                          "monthKey": {
+                            "anyOf": [
+                              {
+                                "type": "string"
+                              },
+                              {
+                                "nullable": true,
+                                "enum": [
+                                  null
+                                ]
+                              }
+                            ]
+                          },
+                          "grossAmount": {
+                            "type": "string"
+                          },
+                          "splitAmount": {
+                            "type": "string"
+                          },
+                          "myAmount": {
+                            "type": "string"
+                          }
+                        },
+                        "required": [
+                          "kind",
+                          "id",
+                          "title",
+                          "subtitle",
+                          "date",
+                          "accountId",
+                          "monthKey",
+                          "grossAmount",
+                          "splitAmount",
+                          "myAmount"
+                        ],
+                        "additionalProperties": false
+                      }
+                    },
+                    "grossTotal": {
+                      "type": "string"
+                    },
+                    "splitTotal": {
+                      "type": "string"
+                    },
+                    "myTotal": {
+                      "type": "string"
+                    }
+                  },
+                  "required": [
+                    "items",
+                    "grossTotal",
+                    "splitTotal",
+                    "myTotal"
                   ],
                   "additionalProperties": false
                 }

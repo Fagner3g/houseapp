@@ -15,6 +15,7 @@ import type {
   TopMerchantsReportResult,
   UpcomingTransactionRow,
 } from './report.repository'
+import type { MySpendItemRow } from './my-spend'
 
 export type UpcomingTransactionDto = {
   id: string
@@ -29,6 +30,8 @@ export type UpcomingTransactionDto = {
 export type SummaryReportDto = {
   totalIncome: string
   totalExpense: string
+  myExpenseGrossTotal: string
+  mySplitsInPeriodTotal: string
   myExpenseTotal: string
   netWorth: string
   pendingCount: number
@@ -36,6 +39,26 @@ export type SummaryReportDto = {
   pendingSplitsTotal: string
   myPendingSplitsTotal: string
   upcoming: UpcomingTransactionDto[]
+}
+
+export type MySpendItemDto = {
+  kind: 'invoice' | 'expense'
+  id: string
+  title: string
+  subtitle: string | null
+  date: string
+  accountId: string | null
+  monthKey: string | null
+  grossAmount: string
+  splitAmount: string
+  myAmount: string
+}
+
+export type MySpendBreakdownDto = {
+  items: MySpendItemDto[]
+  grossTotal: string
+  splitTotal: string
+  myTotal: string
 }
 
 export type AccountReportDto = {
@@ -258,6 +281,21 @@ function toTopMerchantsDto(result: TopMerchantsReportResult): TopMerchantsReport
   }
 }
 
+function toMySpendItemDto(row: MySpendItemRow): MySpendItemDto {
+  return {
+    kind: row.kind,
+    id: row.id,
+    title: row.title,
+    subtitle: row.subtitle,
+    date: toIsoString(row.date),
+    accountId: row.accountId,
+    monthKey: row.monthKey,
+    grossAmount: centavosToString(row.grossAmount) ?? '0.00',
+    splitAmount: centavosToString(row.splitAmount) ?? '0.00',
+    myAmount: centavosToString(row.myAmount) ?? '0.00',
+  }
+}
+
 export class ReportService {
   constructor(private readonly reportRepository: ReportRepository) {}
 
@@ -276,6 +314,8 @@ export class ReportService {
     return {
       totalIncome: centavosToString(summary.totalIncome) ?? '0.00',
       totalExpense: centavosToString(summary.totalExpense) ?? '0.00',
+      myExpenseGrossTotal: centavosToString(summary.myExpenseGrossTotal) ?? '0.00',
+      mySplitsInPeriodTotal: centavosToString(summary.mySplitsInPeriodTotal) ?? '0.00',
       myExpenseTotal: centavosToString(summary.myExpenseTotal) ?? '0.00',
       netWorth: centavosToString(summary.netWorth) ?? '0.00',
       pendingCount: summary.pendingCount,
@@ -283,6 +323,26 @@ export class ReportService {
       pendingSplitsTotal: centavosToString(summary.pendingSplitsTotal) ?? '0.00',
       myPendingSplitsTotal: centavosToString(summary.myPendingSplitsTotal) ?? '0.00',
       upcoming: upcoming.map(toUpcomingDto),
+    }
+  }
+
+  async getMyExpenses(
+    organizationId: string,
+    userId: string,
+    dateFrom?: string,
+    dateTo?: string
+  ): Promise<MySpendBreakdownDto> {
+    const range = parseDateRange(dateFrom, dateTo)
+    const breakdown = await this.reportRepository.getMySpendBreakdown(
+      organizationId,
+      range,
+      userId
+    )
+    return {
+      items: breakdown.items.map(toMySpendItemDto),
+      grossTotal: centavosToString(breakdown.grossTotal) ?? '0.00',
+      splitTotal: centavosToString(breakdown.splitTotal) ?? '0.00',
+      myTotal: centavosToString(breakdown.myTotal) ?? '0.00',
     }
   }
 

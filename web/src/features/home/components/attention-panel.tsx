@@ -57,7 +57,6 @@ function OverdueList({ overdueCount }: { overdueCount: number }) {
   const { data } = useListTransactions(
     slug,
     {
-      status: 'pending',
       dateTo: dayjs().subtract(1, 'day').endOf('day').toISOString(),
       payableOnly: true,
       perPage: 4,

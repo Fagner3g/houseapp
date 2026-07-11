@@ -41,6 +41,7 @@ import type {
 } from './alert-rule.repository'
 import { isOverdueConfig, isUpcomingConfig } from './alert-rule.repository'
 import { resolveEffectiveOverdueNotify, type ResolvedOverdueNotify } from './resolve-effective-overdue-notify'
+import { ensureDefaultOrgAlertRules } from './default-org-alert-rules'
 import type { AlertSettingsService } from './alert-settings.service'
 import {
   buildWhatsAppBatchMessageForTransactions,
@@ -163,6 +164,7 @@ export class AlertRuleService {
   ) {}
 
   async list(organizationId: string): Promise<AlertRuleDto[]> {
+    await ensureDefaultOrgAlertRules(organizationId)
     const rows = await this.alertRuleRepository.findAllByOrganization(organizationId)
     return rows.map(toAlertRuleDto)
   }
@@ -626,6 +628,7 @@ export class AlertRuleService {
             transaction,
             daysUntilDue,
             skipDedupe,
+            limitToUserId: options?.targetUserId,
           })
         } else if (daysUntilDue < 0 && mode !== 'upcoming') {
           processed += await this.evaluateTargetedOverdueTransaction({
@@ -633,6 +636,7 @@ export class AlertRuleService {
             transaction,
             daysUntilDue,
             skipDedupe,
+            limitToUserId: options?.targetUserId,
           })
         }
       }
@@ -773,11 +777,37 @@ export class AlertRuleService {
     }
   }
 
+  private async listOrganizationMemberIds(organizationId: string): Promise<string[]> {
+    const rows = await db
+      .select({ userId: organizationMembers.userId })
+      .from(organizationMembers)
+      .where(eq(organizationMembers.organizationId, organizationId))
+
+    return rows.map(row => row.userId)
+  }
+
+  private async createNotificationsForOrgMembers(params: {
+    organizationId: string
+    limitToUserId?: string
+    createForUser: (userId: string) => Promise<number>
+  }): Promise<number> {
+    const userIds = params.limitToUserId
+      ? [params.limitToUserId]
+      : await this.listOrganizationMemberIds(params.organizationId)
+
+    let created = 0
+    for (const userId of userIds) {
+      created += await params.createForUser(userId)
+    }
+    return created
+  }
+
   private async evaluateTargetedTransaction(params: {
     rules: AlertRuleRecord[]
     transaction: PendingTransactionRow
     daysUntilDue: number
     skipDedupe?: boolean
+    limitToUserId?: string
   }): Promise<number> {
     if (params.daysUntilDue < 0) return 0
 
@@ -804,6 +834,7 @@ export class AlertRuleService {
       daysUntilDue: params.daysUntilDue,
       daysBefore: matchingDay,
       skipDedupe: params.skipDedupe,
+      limitToUserId: params.limitToUserId,
     })
   }
 
@@ -812,6 +843,7 @@ export class AlertRuleService {
     transaction: PendingTransactionRow
     daysUntilDue: number
     skipDedupe?: boolean
+    limitToUserId?: string
   }): Promise<number> {
     if (params.daysUntilDue >= 0) return 0
 
@@ -846,33 +878,38 @@ export class AlertRuleService {
     const title = buildOverdueTitle(params.transaction.title, overdueDays)
     const body = amount ? `Valor: R$ ${amount} · Vencimento: ${dueDate}` : `Vencimento: ${dueDate}`
 
-    if (params.transaction.notifyTargetType === 'member' && params.transaction.notifyUserId) {
-      return this.createNotificationsForUser({
-        rule,
-        userId: params.transaction.notifyUserId,
-        transactionId: params.transaction.id,
-        accountId: params.transaction.accountId,
+    if (params.transaction.notifyTargetType === 'member') {
+      return this.createNotificationsForOrgMembers({
         organizationId: params.transaction.organizationId,
-        title,
-        body,
-        daysUntilDue: params.daysUntilDue,
-        daysBefore: 0,
-        dedupeKeyBuilder: (userId, channel) =>
-          buildOverdueRuleDedupeKey(
-            rule.id,
-            params.transaction.id,
-            periodKey,
+        limitToUserId: params.limitToUserId,
+        createForUser: userId =>
+          this.createNotificationsForUser({
+            rule,
             userId,
-            channel
-          ),
-        metadata: {
-          kind: 'overdue',
-          daysUntilDue: params.daysUntilDue,
-          overdueDays,
-          amount,
-          dueDate,
-        },
-        skipDedupe: params.skipDedupe,
+            transactionId: params.transaction.id,
+            accountId: params.transaction.accountId,
+            organizationId: params.transaction.organizationId,
+            title,
+            body,
+            daysUntilDue: params.daysUntilDue,
+            daysBefore: 0,
+            dedupeKeyBuilder: (memberId, channel) =>
+              buildOverdueRuleDedupeKey(
+                rule.id,
+                params.transaction.id,
+                periodKey,
+                memberId,
+                channel
+              ),
+            metadata: {
+              kind: 'overdue',
+              daysUntilDue: params.daysUntilDue,
+              overdueDays,
+              amount,
+              dueDate,
+            },
+            skipDedupe: params.skipDedupe,
+          }),
       })
     }
 
@@ -1097,39 +1134,45 @@ export class AlertRuleService {
     daysUntilDue: number
     daysBefore: number
     skipDedupe?: boolean
+    limitToUserId?: string
   }): Promise<number> {
     const amount = centavosToString(params.transaction.amount)
     const dueDate = this.resolveDueDateForTransaction(params.transaction).toISOString()
     const title = buildDebtReminderTitle(params.transaction.title, params.daysUntilDue)
     const body = amount ? `Valor: R$ ${amount} · Vencimento: ${dueDate}` : `Vencimento: ${dueDate}`
 
-    if (params.transaction.notifyTargetType === 'member' && params.transaction.notifyUserId) {
-      return this.createNotificationsForUser({
-        rule: params.rule,
-        userId: params.transaction.notifyUserId,
-        transactionId: params.transaction.id,
-        accountId: params.transaction.accountId,
+    if (params.transaction.notifyTargetType === 'member') {
+      return this.createNotificationsForOrgMembers({
         organizationId: params.transaction.organizationId,
-        title,
-        body,
-        daysUntilDue: params.daysUntilDue,
-        daysBefore: params.daysBefore,
-        dedupeKeyBuilder: (userId, channel) =>
-          buildUpcomingRuleDedupeKey(
-            params.rule.id,
-            params.transaction.id,
-            params.daysBefore,
+        limitToUserId: params.limitToUserId,
+        createForUser: userId =>
+          this.createNotificationsForUser({
+            rule: params.rule,
             userId,
-            channel
-          ),
-        metadata: {
-          kind: 'targeted_upcoming',
-          daysUntilDue: params.daysUntilDue,
-          daysBefore: params.daysBefore,
-          amount,
-          dueDate,
-        },
-        skipDedupe: params.skipDedupe,
+            transactionId: params.transaction.id,
+            accountId: params.transaction.accountId,
+            organizationId: params.transaction.organizationId,
+            title,
+            body,
+            daysUntilDue: params.daysUntilDue,
+            daysBefore: params.daysBefore,
+            dedupeKeyBuilder: (memberId, channel) =>
+              buildUpcomingRuleDedupeKey(
+                params.rule.id,
+                params.transaction.id,
+                params.daysBefore,
+                memberId,
+                channel
+              ),
+            metadata: {
+              kind: 'targeted_upcoming',
+              daysUntilDue: params.daysUntilDue,
+              daysBefore: params.daysBefore,
+              amount,
+              dueDate,
+            },
+            skipDedupe: params.skipDedupe,
+          }),
       })
     }
 

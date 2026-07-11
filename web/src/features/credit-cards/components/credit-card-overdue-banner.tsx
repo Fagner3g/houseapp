@@ -41,7 +41,6 @@ export function CreditCardOverdueBanner({
     slug,
     {
       accountId,
-      status: 'pending',
       dateTo: dayjs().subtract(1, 'day').endOf('day').toISOString(),
       payableOnly: true,
       perPage: 5,
@@ -71,7 +70,7 @@ export function CreditCardOverdueBanner({
   if (viewingOverdue && overdueTransactions.length === 0) {
     if (otherOverdue.length === 0) return null
 
-    const next = otherOverdue[0]!
+    const next = otherOverdue[0] as (typeof otherOverdue)[number]
 
     return (
       <div className="mx-4 lg:mx-6">

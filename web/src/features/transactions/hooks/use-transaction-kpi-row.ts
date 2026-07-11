@@ -3,14 +3,15 @@ import { useNavigate } from '@tanstack/react-router'
 import dayjs from 'dayjs'
 import { useCallback, useMemo, useState } from 'react'
 
-import { useGetReportSummary, useListPendingSplits, useListTransactions } from '@/api/generated/api'
+import { useGetReportMyExpenses, useGetReportSummary, useListPendingSplits, useListTransactions } from '@/api/generated/api'
+import { useSplitTransactionIds } from '@/features/credit-cards/hooks/use-split-transaction-ids'
 import { useInvoiceSummaryRows } from '@/features/transactions/hooks/use-invoice-summary-rows'
 import {
   buildKpiDialogByKey,
   type KpiDialogView,
   type KpiKey,
+  mapMySpendKpiItems,
   mapOverdueKpiItems,
-  mapPaidExpenseKpiItems,
   mapPendingSplitKpiItems,
   mapToPayKpiItems,
   mapToReceiveKpiItems,
@@ -90,14 +91,24 @@ export function useTransactionKpiRow() {
     { query: { enabled: !!slug, placeholderData: keepPreviousData } }
   )
 
+  const { data: myExpenseData, isFetching: mySpendLoading } = useGetReportMyExpenses(
+    slug,
+    { dateFrom: dateFromIso, dateTo: dateToIso },
+    { query: { enabled: !!slug && openKpi === 'mySpend' } }
+  )
+
+  const overdueDateTo = dayjs().subtract(1, 'day').endOf('day').toISOString()
+  const overdueListParams = { dateTo: overdueDateTo, payableOnly: true as const }
+
+  const { data: overdueCountData } = useListTransactions(
+    slug,
+    { ...overdueListParams, perPage: 1, page: 1 },
+    { query: { enabled: !!slug, placeholderData: keepPreviousData } }
+  )
+
   const { data: overdueData, isFetching: overdueLoading } = useListTransactions(
     slug,
-    {
-      status: 'pending',
-      dateTo: dayjs().subtract(1, 'day').endOf('day').toISOString(),
-      payableOnly: true,
-      perPage: 100,
-    },
+    { ...overdueListParams, perPage: 100 },
     { query: { enabled: !!slug && openKpi === 'overdue' } }
   )
 
@@ -111,6 +122,8 @@ export function useTransactionKpiRow() {
         reportTotalIncome: moneyStringToReais(data?.totalIncome),
         reportTotalExpense: moneyStringToReais(data?.totalExpense),
         reportMyExpense: moneyStringToReais(data?.myExpenseTotal),
+        reportMyExpenseGross: moneyStringToReais(data?.myExpenseGrossTotal),
+        reportMySplitsInPeriod: moneyStringToReais(data?.mySplitsInPeriodTotal),
         reportMyPendingSplits: moneyStringToReais(data?.myPendingSplitsTotal),
         paidPayableExpenses: paidExpenseData?.transactions ?? [],
         pendingPayableExpenses: pendingExpenseData?.transactions ?? [],
@@ -125,46 +138,83 @@ export function useTransactionKpiRow() {
     [openTransactionDrawer]
   )
 
-  const openInvoice = useCallback(
-    (inv: InvoiceSummaryRow) => {
+  const openInvoiceByMonth = useCallback(
+    (accountId: string, monthKey: string) => {
       navigate({
         to: '/$org/accounts',
         params: { org: slug },
-        search: { accountId: inv.accountId, month: inv.monthKey },
+        search: { accountId, month: monthKey },
       })
     },
     [navigate, slug]
   )
 
-  const paidExpenseItems = useMemo(
-    () =>
-      mapPaidExpenseKpiItems({
-        transactions: paidExpenseData?.transactions ?? [],
-        invoiceSummaries,
-        onOpenTransaction: openTransaction,
-        onOpenInvoice: openInvoice,
-      }),
-    [paidExpenseData?.transactions, invoiceSummaries, openTransaction, openInvoice]
+  const openInvoice = useCallback(
+    (inv: InvoiceSummaryRow) => {
+      openInvoiceByMonth(inv.accountId, inv.monthKey)
+    },
+    [openInvoiceByMonth]
   )
+
+  const mySpendItems = useMemo(
+    () =>
+      mapMySpendKpiItems({
+        items: myExpenseData?.items ?? [],
+        onOpenTransaction: openTransaction,
+        onOpenInvoice: openInvoiceByMonth,
+      }),
+    [myExpenseData?.items, openTransaction, openInvoiceByMonth]
+  )
+
+  const overdueTransactionIds = useMemo(
+    () => (overdueData?.transactions ?? []).map(tx => tx.id),
+    [overdueData?.transactions]
+  )
+
+  const toPayTransactionIds = useMemo(
+    () => (pendingExpenseData?.transactions ?? []).map(tx => tx.id),
+    [pendingExpenseData?.transactions]
+  )
+
+  const toReceiveTransactionIds = useMemo(
+    () => (pendingIncomeData?.transactions ?? []).map(tx => tx.id),
+    [pendingIncomeData?.transactions]
+  )
+
+  const splitTransactionIds = useMemo(() => {
+    if (openKpi === 'overdue') return overdueTransactionIds
+    if (openKpi === 'toPay') return toPayTransactionIds
+    if (openKpi === 'toReceive') return toReceiveTransactionIds
+    return []
+  }, [openKpi, overdueTransactionIds, toPayTransactionIds, toReceiveTransactionIds])
+
+  const { data: splitData, isFetching: splitMetaLoading } = useSplitTransactionIds(
+    slug,
+    splitTransactionIds
+  )
+  const splitPaidById = splitData?.splitPaidById
+  const payableSplitsLoading = splitTransactionIds.length > 0 && splitMetaLoading
 
   const toPayItems = useMemo(
     () =>
       mapToPayKpiItems({
         transactions: pendingExpenseData?.transactions ?? [],
         invoiceSummaries,
+        splitPaidById,
         onOpenTransaction: openTransaction,
         onOpenInvoice: openInvoice,
       }),
-    [pendingExpenseData?.transactions, invoiceSummaries, openTransaction, openInvoice]
+    [pendingExpenseData?.transactions, invoiceSummaries, splitPaidById, openTransaction, openInvoice]
   )
 
   const toReceiveItems = useMemo(
     () =>
       mapToReceiveKpiItems({
         transactions: pendingIncomeData?.transactions ?? [],
+        splitPaidById,
         onOpenTransaction: openTransaction,
       }),
-    [pendingIncomeData?.transactions, openTransaction]
+    [pendingIncomeData?.transactions, splitPaidById, openTransaction]
   )
 
   const splitItems = useMemo(
@@ -180,12 +230,13 @@ export function useTransactionKpiRow() {
     () =>
       mapOverdueKpiItems({
         transactions: overdueData?.transactions ?? [],
+        splitPaidById,
         onOpenTransaction: openTransaction,
       }),
-    [overdueData?.transactions, openTransaction]
+    [overdueData?.transactions, splitPaidById, openTransaction]
   )
 
-  const overdueCount = data?.overdueCount ?? 0
+  const overdueCount = overdueCountData?.pagination?.total ?? data?.overdueCount ?? 0
 
   const cards: TransactionKpiCard[] = [
     {
@@ -193,9 +244,9 @@ export function useTransactionKpiRow() {
       label: 'Meu gasto',
       value: formatCurrency(kpis.myPaid),
       subtitle:
-        kpis.paid > kpis.myPaid
-          ? `De ${formatCurrency(kpis.paid)} pagos pela casa`
-          : 'Quanto efetivamente saiu do seu bolso',
+        kpis.mySplitsInPeriod > 0
+          ? 'Faturas e despesas, menos splits'
+          : 'Faturas e despesas no período',
       icon: 'mySpend',
       iconClass: 'text-rose-500',
       valueClass: 'text-slate-900',
@@ -246,13 +297,14 @@ export function useTransactionKpiRow() {
   const dialogByKey = buildKpiDialogByKey({
     kpis,
     overdueCount,
-    paidExpenseItems,
+    mySpendItems,
     splitItems,
     toPayItems,
     toReceiveItems,
     overdueItems,
+    mySpendLoading,
     splitsLoading,
-    overdueLoading,
+    overdueLoading: overdueLoading || payableSplitsLoading,
   })
 
   const activeDialog: KpiDialogView | null = openKpi ? dialogByKey[openKpi] : null

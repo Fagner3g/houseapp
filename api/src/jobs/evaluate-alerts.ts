@@ -3,6 +3,7 @@ import { container } from '@/core/container'
 import { JOB_CONFIGS } from './config'
 import { jobManager } from './job-manager'
 import type { JobResult } from './types'
+import { runSendWhatsappAlertsNow } from './send-whatsapp-alerts'
 
 async function evaluateAlerts(): Promise<JobResult> {
   const startTime = Date.now()
@@ -18,6 +19,19 @@ async function evaluateAlerts(): Promise<JobResult> {
         },
         'Alert rules evaluated'
       )
+    }
+
+    if (result.processed > 0) {
+      const whatsappResult = await runSendWhatsappAlertsNow()
+      if (whatsappResult && (whatsappResult.processed > 0 || whatsappResult.errors > 0)) {
+        logger.info(
+          {
+            sent: whatsappResult.processed,
+            errors: whatsappResult.errors,
+          },
+          'WhatsApp alerts sent after evaluation'
+        )
+      }
     }
 
     return {

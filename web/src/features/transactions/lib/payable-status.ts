@@ -80,7 +80,7 @@ export function getPayableStatusBadges(
     badges.push({
       key: 'overdue',
       label: formatOverdueDays(overdueDays),
-      className: 'border-amber-200 bg-amber-50 text-amber-800 hover:bg-amber-50',
+      className: 'border-red-200 bg-red-50 text-red-800 hover:bg-red-50',
     })
   }
 

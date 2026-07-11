@@ -295,32 +295,35 @@ export async function buildWhatsAppMessageForNotificationBatch(
 
 export function buildWhatsAppBatchGroupKey(
   phone: string,
+  userId: string,
   organizationId: string,
   kind: string | null
 ): string {
-  return `${phone}:${organizationId}:${getWhatsAppAlertKindCategory(kind)}`
+  return `${phone}:${userId}:${organizationId}:${getWhatsAppAlertKindCategory(kind)}`
 }
 
 export function buildWhatsAppSendDedupeKey(
   phone: string,
+  userId: string,
   transactionId: string | null,
   daysUntilDue: number | null,
   kind: string | null,
   splitId?: string | null
 ): string {
   if (splitId) {
-    return `${phone}:split:${splitId}:${daysUntilDue ?? 'na'}:${kind ?? 'alert'}`
+    return `${phone}:${userId}:split:${splitId}:${daysUntilDue ?? 'na'}:${kind ?? 'alert'}`
   }
 
-  return `${phone}:${transactionId ?? 'none'}:${daysUntilDue ?? 'na'}:${kind ?? 'alert'}`
+  return `${phone}:${userId}:${transactionId ?? 'none'}:${daysUntilDue ?? 'na'}:${kind ?? 'alert'}`
 }
 
 export function buildWhatsAppBatchSendDedupeKey(
   phone: string,
+  userId: string,
   organizationId: string,
   kind: string | null,
   notificationIds: string[]
 ): string {
   const sortedIds = [...notificationIds].sort().join(',')
-  return `${phone}:${organizationId}:${getWhatsAppAlertKindCategory(kind)}:batch:${sortedIds}`
+  return `${phone}:${userId}:${organizationId}:${getWhatsAppAlertKindCategory(kind)}:batch:${sortedIds}`
 }

@@ -8,8 +8,10 @@ import {
   DialogHeader,
   DialogTitle,
 } from '@/components/ui/dialog'
-import type { KpiSummaryItem } from '@/features/transactions/lib/kpi-summary'
+import type { KpiBreakdownLine, KpiSummaryItem } from '@/features/transactions/lib/kpi-summary'
 import { cn } from '@/lib/utils'
+
+import { KpiBreakdown } from './kpi-breakdown'
 
 export type { KpiSummaryItem }
 
@@ -21,7 +23,11 @@ type KpiSummaryDialogProps = {
   totalLabel: string
   total: ReactNode
   totalClassName?: string
+  breakdown?: KpiBreakdownLine[]
+  itemsLabel?: string
   items: KpiSummaryItem[]
+  secondaryItemsLabel?: string
+  secondaryItems?: KpiSummaryItem[]
   isLoading?: boolean
   emptyMessage: string
   footerHint?: string
@@ -139,7 +145,11 @@ export function KpiSummaryDialog({
   totalLabel,
   total,
   totalClassName,
+  breakdown,
+  itemsLabel,
   items,
+  secondaryItemsLabel,
+  secondaryItems = [],
   isLoading = false,
   emptyMessage,
   footerHint,
@@ -152,14 +162,21 @@ export function KpiSummaryDialog({
           <DialogDescription>{description}</DialogDescription>
         </DialogHeader>
 
-        <div className="rounded-lg border border-slate-100 bg-slate-50 px-3 py-2">
-          <p className="text-xs font-medium text-slate-600">{totalLabel}</p>
-          <p className={cn('text-xl font-bold tabular-nums text-slate-900', totalClassName)}>
-            {total}
-          </p>
-        </div>
+        {breakdown && breakdown.length > 0 ? (
+          <KpiBreakdown lines={breakdown} />
+        ) : (
+          <div className="rounded-lg border border-slate-100 bg-slate-50 px-3 py-2">
+            <p className="text-xs font-medium text-slate-600">{totalLabel}</p>
+            <p className={cn('text-xl font-bold tabular-nums text-slate-900', totalClassName)}>
+              {total}
+            </p>
+          </div>
+        )}
 
         <div key={String(open)} className="max-h-[50vh] space-y-2 overflow-y-auto">
+          {itemsLabel && items.length > 0 && (
+            <p className="text-xs font-medium text-slate-500">{itemsLabel}</p>
+          )}
           {isLoading ? (
             <p className="py-6 text-center text-sm text-slate-500">Carregando…</p>
           ) : items.length === 0 ? (
@@ -175,7 +192,16 @@ export function KpiSummaryDialog({
           )}
         </div>
 
-        {footerHint && items.length > 0 && (
+        {secondaryItemsLabel && secondaryItems.length > 0 && (
+          <div className="space-y-2 border-t border-slate-100 pt-3">
+            <p className="text-xs font-medium text-slate-500">{secondaryItemsLabel}</p>
+            {secondaryItems.map(item => (
+              <ItemRow key={item.id} item={item} onOpenChange={onOpenChange} />
+            ))}
+          </div>
+        )}
+
+        {footerHint && (items.length > 0 || secondaryItems.length > 0) && (
           <p className="text-center text-xs text-slate-400">{footerHint}</p>
         )}
       </DialogContent>

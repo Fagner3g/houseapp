@@ -29,6 +29,7 @@ import {
   reportMonthExpr,
 } from './report-spending'
 import { sumNetWorth } from './report-summary.logic'
+import { computeMySpendBreakdown, type MySpendBreakdown } from './my-spend'
 
 export type ReportDateRange = {
   from: Date
@@ -47,6 +48,8 @@ export type ReportScopeOptions = {
 export type SummaryRow = {
   totalIncome: bigint
   totalExpense: bigint
+  myExpenseGrossTotal: bigint
+  mySplitsInPeriodTotal: bigint
   myExpenseTotal: bigint
   netWorth: bigint
   pendingCount: number
@@ -166,6 +169,11 @@ export interface ReportRepository {
   getOverdueTotal(organizationId: string): Promise<bigint>
   getTrends(organizationId: string, months: number, endMonth?: string): Promise<MonthlyTrendRow[]>
   getDaily(organizationId: string, range: ReportDateRange): Promise<DailyReportRow[]>
+  getMySpendBreakdown(
+    organizationId: string,
+    range: ReportDateRange,
+    userId: string
+  ): Promise<MySpendBreakdown>
 }
 
 function toBigInt(value: unknown): bigint {
@@ -308,32 +316,10 @@ export class DrizzleReportRepository implements ReportRepository {
       .leftJoin(accounts, eq(transactions.accountId, accounts.id))
       .where(eq(transactions.organizationId, organizationId))
 
-    const expenseOwnerConditions = and(
-      expenseInReportRangeCondition(range),
-      userOwnsTransactionCondition(userId)
-    )
-
-    const [myExpenseRow] = await db
-      .select({ total: sum(reportExpenseAmountExpr) })
-      .from(transactions)
-      .leftJoin(accounts, eq(transactions.accountId, accounts.id))
-      .leftJoin(cards, eq(transactions.cardId, cards.id))
-      .where(and(eq(transactions.organizationId, organizationId), expenseOwnerConditions))
-
-    const [mySplitsRow] = await db
-      .select({
-        total: sql<bigint>`COALESCE(SUM(${transactionSplits.amount}), 0)`,
-      })
-      .from(transactionSplits)
-      .innerJoin(transactions, eq(transactionSplits.transactionId, transactions.id))
-      .leftJoin(accounts, eq(transactions.accountId, accounts.id))
-      .leftJoin(cards, eq(transactions.cardId, cards.id))
-      .where(and(eq(transactions.organizationId, organizationId), expenseOwnerConditions))
-
-    const myExpenseGross = toBigInt(myExpenseRow?.total)
-    const mySplitsInPeriod = toBigInt(mySplitsRow?.total)
-    const myExpenseTotal =
-      myExpenseGross > mySplitsInPeriod ? myExpenseGross - mySplitsInPeriod : 0n
+    const mySpend = await computeMySpendBreakdown(organizationId, range, userId)
+    const myExpenseGross = mySpend.grossTotal
+    const mySplitsInPeriod = mySpend.splitTotal
+    const myExpenseTotal = mySpend.myTotal
 
     const [pendingRow] = await db
       .select({ total: count() })
@@ -395,6 +381,8 @@ export class DrizzleReportRepository implements ReportRepository {
     return {
       totalIncome: toBigInt(incomeRow?.total),
       totalExpense: toBigInt(expenseRow?.total),
+      myExpenseGrossTotal: myExpenseGross,
+      mySplitsInPeriodTotal: mySplitsInPeriod,
       myExpenseTotal,
       netWorth,
       pendingCount: pendingRow?.total ?? 0,
@@ -814,5 +802,9 @@ export class DrizzleReportRepository implements ReportRepository {
     }
 
     return result
+  }
+
+  async getMySpendBreakdown(organizationId: string, range: ReportDateRange, userId: string) {
+    return computeMySpendBreakdown(organizationId, range, userId)
   }
 }

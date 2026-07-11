@@ -23,10 +23,13 @@ import {
   type TransactionStatus,
   type TransactionType,
 } from '@/db/schemas/transactions'
+import { UNPAID_TRANSACTION_STATUSES } from '@/core/transaction-payment'
 import {
+  isOverduePayableListFilter,
   isPayableTransactionCondition,
   isNotScheduledForFutureCondition,
   isScheduledOnlyCondition,
+  matchesOverdueDueDateCondition,
   matchesPayablePeriodCondition,
   shouldExcludeFutureScheduled,
 } from './payable-transaction'
@@ -149,15 +152,21 @@ function buildWhereConditions(filter: ListTransactionsFilter) {
     conditions.push(eq(transactions.accountId, filter.accountId))
   }
 
+  const overduePayableList = isOverduePayableListFilter(filter)
+
   if (filter.status) {
     conditions.push(eq(transactions.status, filter.status))
+  } else if (overduePayableList) {
+    conditions.push(inArray(transactions.status, [...UNPAID_TRANSACTION_STATUSES]))
   }
 
   if (filter.type) {
     conditions.push(eq(transactions.type, filter.type))
   }
 
-  if (filter.payableOnly && (filter.dateFrom || filter.dateTo)) {
+  if (overduePayableList && filter.dateTo) {
+    conditions.push(matchesOverdueDueDateCondition(filter.dateTo))
+  } else if (filter.payableOnly && (filter.dateFrom || filter.dateTo)) {
     const periodMatch = matchesPayablePeriodCondition(filter.dateFrom, filter.dateTo)
     if (periodMatch) conditions.push(periodMatch)
   } else {

@@ -84,6 +84,8 @@ import type {
   GetReportDailyParams,
   GetReportInsights200,
   GetReportInsightsParams,
+  GetReportMyExpenses200,
+  GetReportMyExpensesParams,
   GetReportSummary200,
   GetReportSummaryParams,
   GetReportTopMerchants200,
@@ -10122,6 +10124,206 @@ export function useGetReportSummary<
   queryKey: DataTag<QueryKey, TData, TError>;
 } {
   const queryOptions = getGetReportSummaryQueryOptions(slug, params, options);
+
+  const query = useQuery(queryOptions, queryClient) as UseQueryResult<
+    TData,
+    TError
+  > & { queryKey: DataTag<QueryKey, TData, TError> };
+
+  query.queryKey = queryOptions.queryKey;
+
+  return query;
+}
+
+/**
+ * Invoice and expense lines that compose Meu gasto for a date range
+ */
+export const getGetReportMyExpensesUrl = (
+  slug: string,
+  params?: GetReportMyExpensesParams,
+) => {
+  const normalizedParams = new URLSearchParams();
+
+  Object.entries(params || {}).forEach(([key, value]) => {
+    if (value !== undefined) {
+      normalizedParams.append(key, value === null ? "null" : value.toString());
+    }
+  });
+
+  const stringifiedParams = normalizedParams.toString();
+
+  return stringifiedParams.length > 0
+    ? `/organizations/${slug}/reports/my-expenses?${stringifiedParams}`
+    : `/organizations/${slug}/reports/my-expenses`;
+};
+
+export const getReportMyExpenses = async (
+  slug: string,
+  params?: GetReportMyExpensesParams,
+  options?: RequestInit,
+): Promise<GetReportMyExpenses200> => {
+  return http<GetReportMyExpenses200>(getGetReportMyExpensesUrl(slug, params), {
+    ...options,
+    method: "GET",
+  });
+};
+
+export const getGetReportMyExpensesQueryKey = (
+  slug?: string,
+  params?: GetReportMyExpensesParams,
+) => {
+  return [
+    `/organizations/${slug}/reports/my-expenses`,
+    ...(params ? [params] : []),
+  ] as const;
+};
+
+export const getGetReportMyExpensesQueryOptions = <
+  TData = Awaited<ReturnType<typeof getReportMyExpenses>>,
+  TError = unknown,
+>(
+  slug: string,
+  params?: GetReportMyExpensesParams,
+  options?: {
+    query?: Partial<
+      UseQueryOptions<
+        Awaited<ReturnType<typeof getReportMyExpenses>>,
+        TError,
+        TData
+      >
+    >;
+    request?: SecondParameter<typeof http>;
+  },
+) => {
+  const { query: queryOptions, request: requestOptions } = options ?? {};
+
+  const queryKey =
+    queryOptions?.queryKey ?? getGetReportMyExpensesQueryKey(slug, params);
+
+  const queryFn: QueryFunction<
+    Awaited<ReturnType<typeof getReportMyExpenses>>
+  > = ({ signal }) =>
+    getReportMyExpenses(slug, params, { signal, ...requestOptions });
+
+  return {
+    queryKey,
+    queryFn,
+    enabled: !!slug,
+    ...queryOptions,
+  } as UseQueryOptions<
+    Awaited<ReturnType<typeof getReportMyExpenses>>,
+    TError,
+    TData
+  > & { queryKey: DataTag<QueryKey, TData, TError> };
+};
+
+export type GetReportMyExpensesQueryResult = NonNullable<
+  Awaited<ReturnType<typeof getReportMyExpenses>>
+>;
+export type GetReportMyExpensesQueryError = unknown;
+
+export function useGetReportMyExpenses<
+  TData = Awaited<ReturnType<typeof getReportMyExpenses>>,
+  TError = unknown,
+>(
+  slug: string,
+  params: undefined | GetReportMyExpensesParams,
+  options: {
+    query: Partial<
+      UseQueryOptions<
+        Awaited<ReturnType<typeof getReportMyExpenses>>,
+        TError,
+        TData
+      >
+    > &
+      Pick<
+        DefinedInitialDataOptions<
+          Awaited<ReturnType<typeof getReportMyExpenses>>,
+          TError,
+          Awaited<ReturnType<typeof getReportMyExpenses>>
+        >,
+        "initialData"
+      >;
+    request?: SecondParameter<typeof http>;
+  },
+  queryClient?: QueryClient,
+): DefinedUseQueryResult<TData, TError> & {
+  queryKey: DataTag<QueryKey, TData, TError>;
+};
+export function useGetReportMyExpenses<
+  TData = Awaited<ReturnType<typeof getReportMyExpenses>>,
+  TError = unknown,
+>(
+  slug: string,
+  params?: GetReportMyExpensesParams,
+  options?: {
+    query?: Partial<
+      UseQueryOptions<
+        Awaited<ReturnType<typeof getReportMyExpenses>>,
+        TError,
+        TData
+      >
+    > &
+      Pick<
+        UndefinedInitialDataOptions<
+          Awaited<ReturnType<typeof getReportMyExpenses>>,
+          TError,
+          Awaited<ReturnType<typeof getReportMyExpenses>>
+        >,
+        "initialData"
+      >;
+    request?: SecondParameter<typeof http>;
+  },
+  queryClient?: QueryClient,
+): UseQueryResult<TData, TError> & {
+  queryKey: DataTag<QueryKey, TData, TError>;
+};
+export function useGetReportMyExpenses<
+  TData = Awaited<ReturnType<typeof getReportMyExpenses>>,
+  TError = unknown,
+>(
+  slug: string,
+  params?: GetReportMyExpensesParams,
+  options?: {
+    query?: Partial<
+      UseQueryOptions<
+        Awaited<ReturnType<typeof getReportMyExpenses>>,
+        TError,
+        TData
+      >
+    >;
+    request?: SecondParameter<typeof http>;
+  },
+  queryClient?: QueryClient,
+): UseQueryResult<TData, TError> & {
+  queryKey: DataTag<QueryKey, TData, TError>;
+};
+
+export function useGetReportMyExpenses<
+  TData = Awaited<ReturnType<typeof getReportMyExpenses>>,
+  TError = unknown,
+>(
+  slug: string,
+  params?: GetReportMyExpensesParams,
+  options?: {
+    query?: Partial<
+      UseQueryOptions<
+        Awaited<ReturnType<typeof getReportMyExpenses>>,
+        TError,
+        TData
+      >
+    >;
+    request?: SecondParameter<typeof http>;
+  },
+  queryClient?: QueryClient,
+): UseQueryResult<TData, TError> & {
+  queryKey: DataTag<QueryKey, TData, TError>;
+} {
+  const queryOptions = getGetReportMyExpensesQueryOptions(
+    slug,
+    params,
+    options,
+  );
 
   const query = useQuery(queryOptions, queryClient) as UseQueryResult<
     TData,

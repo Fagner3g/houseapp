@@ -31,6 +31,21 @@ export function isNotScheduledForFutureCondition(): SQL {
   ) as SQL
 }
 
+/** Payable overdue list: dateTo only, no dateFrom (global vencidos, not a period filter). */
+export function isOverduePayableListFilter(filter: {
+  payableOnly?: boolean
+  scheduledOnly?: boolean
+  dateFrom?: Date
+  dateTo?: Date
+}): boolean {
+  return Boolean(filter.payableOnly && filter.dateTo && !filter.dateFrom && !filter.scheduledOnly)
+}
+
+/** Overdue lists match due date only — not scheduled debit dates in other months. */
+export function matchesOverdueDueDateCondition(dateTo: Date): SQL {
+  return lte(transactions.date, sql`${dateTo.toISOString()}::timestamptz`)
+}
+
 /** Payable list period: due date in range OR pending/partial with scheduled debit in range. */
 export function matchesPayablePeriodCondition(dateFrom?: Date, dateTo?: Date): SQL | undefined {
   if (!dateFrom && !dateTo) return undefined
@@ -72,11 +87,7 @@ export function shouldExcludeFutureScheduled(filter: {
   dateTo?: Date
 }): boolean {
   if (filter.scheduledOnly) return false
-  if (!filter.payableOnly || !filter.dateTo || filter.dateFrom) return false
-
-  const todayStart = new Date()
-  todayStart.setHours(0, 0, 0, 0)
-  return filter.dateTo < todayStart
+  return isOverduePayableListFilter(filter)
 }
 
 /** Pending/partial payables with a future scheduled debit date. */

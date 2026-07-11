@@ -1,9 +1,33 @@
 import { describe, expect, it } from 'vitest'
 
-import { shouldExcludeFutureScheduled } from './payable-transaction'
+import {
+  isOverduePayableListFilter,
+  shouldExcludeFutureScheduled,
+} from './payable-transaction'
+
+describe('isOverduePayableListFilter', () => {
+  it('returns true for payable dateTo-only queries', () => {
+    expect(
+      isOverduePayableListFilter({
+        payableOnly: true,
+        dateTo: new Date('2026-07-08T23:59:59.999-03:00'),
+      })
+    ).toBe(true)
+  })
+
+  it('returns false for monthly period queries', () => {
+    expect(
+      isOverduePayableListFilter({
+        payableOnly: true,
+        dateFrom: new Date('2026-07-01'),
+        dateTo: new Date('2026-07-31'),
+      })
+    ).toBe(false)
+  })
+})
 
 describe('shouldExcludeFutureScheduled', () => {
-  it('returns true for overdue-style queries (dateTo only, before today)', () => {
+  it('returns true for overdue-style queries regardless of timezone on dateTo', () => {
     const yesterday = new Date()
     yesterday.setDate(yesterday.getDate() - 1)
     yesterday.setHours(23, 59, 59, 999)
@@ -12,6 +36,17 @@ describe('shouldExcludeFutureScheduled', () => {
       shouldExcludeFutureScheduled({
         payableOnly: true,
         dateTo: yesterday,
+      })
+    ).toBe(true)
+  })
+
+  it('returns true when dateTo in UTC is after server local midnight (Brazil client)', () => {
+    const yesterdayEndBrazil = new Date('2026-07-08T23:59:59.999-03:00')
+
+    expect(
+      shouldExcludeFutureScheduled({
+        payableOnly: true,
+        dateTo: yesterdayEndBrazil,
       })
     ).toBe(true)
   })
