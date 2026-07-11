@@ -39,6 +39,7 @@ import {
 import {
   Form,
   FormControl,
+  FormDescription,
   FormField,
   FormItem,
   FormLabel,
@@ -61,7 +62,7 @@ import {
   TRANSACTION_PERIODICITY_OPTIONS,
 } from '@/features/transactions/constants'
 import { useActiveOrganization } from '@/hooks/use-active-organization'
-import { centsStringToNumber, formatCurrency, reaisToMoneyString } from '@/lib/currency'
+import { apiAmountToFormReais, formatCurrency, optionalReaisToApiAmount } from '@/lib/currency'
 import {
   stackyDrawerCloseButton,
   stackyDrawerContent,
@@ -77,7 +78,7 @@ const contractSchema = z
   .object({
     title: z.string().min(1, 'Descrição obrigatória'),
     counterparty: z.string().optional(),
-    amount: z.number().positive('Valor obrigatório'),
+    amount: z.number().nullable(),
     accountId: z.string().min(1, 'Selecione uma conta'),
     categoryId: z.string().optional(),
     periodicity: z.string(),
@@ -137,7 +138,7 @@ export function RecurringContractDrawer() {
     defaultValues: {
       title: '',
       counterparty: '',
-      amount: 0,
+      amount: null,
       accountId: '',
       categoryId: '',
       periodicity: 'monthly-1',
@@ -161,7 +162,7 @@ export function RecurringContractDrawer() {
     form.reset({
       title: recurring.title,
       counterparty: recurring.counterparty ?? '',
-      amount: centsStringToNumber(recurring.amount),
+      amount: apiAmountToFormReais(recurring.amount),
       accountId: recurring.accountId ?? '',
       categoryId: recurring.categoryId ?? '',
       periodicity: formatTransactionPeriodicity(recurring.frequency, recurring.interval),
@@ -192,7 +193,8 @@ export function RecurringContractDrawer() {
     const { frequency, interval } = parseTransactionPeriodicity(values.periodicity)
     return {
       title: values.title,
-      amount: reaisToMoneyString(values.amount),
+      // Recurring template amount is NOT NULL in DB; use 0 as reminder-without-value.
+      amount: optionalReaisToApiAmount(values.amount) ?? '0.00',
       counterparty: values.counterparty?.trim() ? values.counterparty.trim() : null,
       accountId: values.accountId,
       categoryId: values.categoryId || null,
@@ -313,8 +315,15 @@ export function RecurringContractDrawer() {
                         <FormItem>
                           <FormLabel>Valor</FormLabel>
                           <FormControl>
-                            <CurrencyInput value={field.value} onValueChange={field.onChange} />
+                            <CurrencyInput
+                              value={field.value}
+                              onValueChange={field.onChange}
+                              allowEmpty
+                            />
                           </FormControl>
+                          <FormDescription>
+                            Deixe em branco se ainda não souber o valor
+                          </FormDescription>
                           <FormMessage />
                         </FormItem>
                       )}

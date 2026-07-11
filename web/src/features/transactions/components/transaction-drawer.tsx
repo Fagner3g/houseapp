@@ -74,10 +74,11 @@ import {
   uploadTransactionAttachment,
 } from '@/lib/attachments'
 import {
-  centsStringToNumber,
+  apiAmountToFormReais,
   formatCentsString,
   formatCurrency,
   moneyStringToReais,
+  optionalReaisToApiAmount,
   reaisToCentsString,
   reaisToMoneyString,
 } from '@/lib/currency'
@@ -181,12 +182,16 @@ import {
   SplitPaymentPayBanner,
 } from './split-payment-confirm-dialog'
 
+function hasPositiveAmount(amount: number | null | undefined): boolean {
+  return amount != null && Number.isFinite(amount) && amount > 0
+}
+
 function createTransactionSchema(options: { requireCategory: boolean }) {
   return z
     .object({
       type: z.enum(['expense', 'income', 'transfer']),
       title: z.string().min(1, 'Descrição obrigatória'),
-      amount: z.number().positive('Valor obrigatório'),
+      amount: z.number().nullable(),
       date: z.string().min(1),
       competenceDate: z.string().optional(),
       accountId: z.string().optional(),
@@ -216,6 +221,19 @@ function createTransactionSchema(options: { requireCategory: boolean }) {
       paidAmount: z.number().optional(),
     })
     .superRefine((values, ctx) => {
+      const amountRequired =
+        values.type === 'transfer' ||
+        values.recurrence === 'installment' ||
+        values.status === 'paid'
+
+      if (amountRequired && !hasPositiveAmount(values.amount)) {
+        ctx.addIssue({
+          code: z.ZodIssueCode.custom,
+          message: 'Valor obrigatório',
+          path: ['amount'],
+        })
+      }
+
       if (values.type === 'transfer') {
         if (!values.accountId) {
           ctx.addIssue({
@@ -296,7 +314,7 @@ function defaultFormValues(): TransactionFormValues {
   return {
     type: 'expense',
     title: '',
-    amount: 0,
+    amount: null,
     date: dayjs().format('YYYY-MM-DD'),
     status: 'pending',
     recurrence: 'once',
@@ -387,7 +405,7 @@ function buildTransactionEditPayload(
   return {
     title: values.title,
     type: values.type,
-    amount: reaisToMoneyString(values.amount),
+    amount: optionalReaisToApiAmount(values.amount),
     date: dayjs(values.date).toISOString(),
     competenceDate: values.competenceDate
       ? dayjs(values.competenceDate).toISOString()
@@ -643,7 +661,7 @@ export function TransactionDrawer() {
       form.reset({
         ...defaultFormValues(),
         title: tx.title,
-        amount: centsStringToNumber(tx.amount),
+        amount: apiAmountToFormReais(tx.amount),
         paidAt: dayjs().format('YYYY-MM-DD'),
         paidAmount: remaining > 0 ? remaining : installmentAmount,
         accountId,
@@ -655,7 +673,7 @@ export function TransactionDrawer() {
       ...defaultFormValues(),
       type: tx.type as TransactionFormValues['type'],
       title: tx.title,
-      amount: centsStringToNumber(tx.amount),
+      amount: apiAmountToFormReais(tx.amount),
       date: dayjs(tx.date).format('YYYY-MM-DD'),
       competenceDate: tx.competenceDate
         ? dayjs(tx.competenceDate).format('YYYY-MM-DD')
@@ -716,7 +734,7 @@ export function TransactionDrawer() {
       ...defaultFormValues(),
       type: (draft?.type as TransactionFormValues['type']) ?? 'expense',
       title: draft?.title ?? '',
-      amount: draft?.amount ? centsStringToNumber(draft.amount) : 0,
+      amount: draft?.amount ? apiAmountToFormReais(draft.amount) : null,
       date: draft?.date ? dayjs(draft.date).format('YYYY-MM-DD') : dayjs().format('YYYY-MM-DD'),
       competenceDate: draft?.competenceDate
         ? dayjs(draft.competenceDate).format('YYYY-MM-DD')
@@ -780,7 +798,8 @@ export function TransactionDrawer() {
     if (!open) return
     setSplitDraft(prev => {
       if (prev.splitMode === 'none' || prev.splitMode === 'custom') return prev
-      const splitAmountReais = prev.splitMode === 'half' ? amount / 2 : amount
+      const baseAmount = amount ?? 0
+      const splitAmountReais = prev.splitMode === 'half' ? baseAmount / 2 : baseAmount
       if (prev.splitAmountReais === splitAmountReais) return prev
       return { ...prev, splitAmountReais }
     })
@@ -834,7 +853,7 @@ export function TransactionDrawer() {
   const installmentPreview = useMemo(() => {
     if (recurrence !== 'installment') return null
     return buildInstallmentPreview({
-      totalAmount: amount,
+      totalAmount: amount ?? 0,
       installmentsTotal: installmentsTotal ?? 0,
       startDate: purchaseDate,
       periodicity,
@@ -1137,7 +1156,7 @@ export function TransactionDrawer() {
             id: editingId,
             data: {
               paidAt: dayjs(values.paidAt).toISOString(),
-              paidAmount: reaisToMoneyString(values.paidAmount ?? values.amount),
+              paidAmount: reaisToMoneyString(values.paidAmount ?? values.amount ?? 0),
             },
           })
           toast.success('Pagamento registrado')
@@ -1225,7 +1244,8 @@ export function TransactionDrawer() {
           slug,
           data: {
             title: values.title,
-            amount: reaisToMoneyString(values.amount),
+            // Recurring template amount is NOT NULL in DB; use 0 as reminder-without-value.
+            amount: optionalReaisToApiAmount(values.amount) ?? '0.00',
             type: values.type === 'income' ? 'income' : 'expense',
             accountId: values.accountId ?? null,
             categoryId: values.categoryId ?? null,
@@ -1260,7 +1280,7 @@ export function TransactionDrawer() {
           'Destino'
         const title = values.title || `Transferência: ${fromName} → ${toName}`
         const isoDate = dayjs(values.date).toISOString()
-        const amount = reaisToMoneyString(values.amount)
+        const amount = reaisToMoneyString(values.amount ?? 0)
 
         await createTransaction({
           slug,
@@ -1299,7 +1319,7 @@ export function TransactionDrawer() {
         data: {
           title: values.title,
           type: values.type,
-          amount: reaisToMoneyString(values.amount),
+          amount: optionalReaisToApiAmount(values.amount),
           date: dayjs(values.date).toISOString(),
           competenceDate: values.competenceDate
             ? dayjs(values.competenceDate).toISOString()
@@ -1645,13 +1665,21 @@ export function TransactionDrawer() {
                           <FormItem className={cn(stackyDrawerFormItem, 'col-span-3')}>
                             <div className={stackyDrawerFormLabelSlot}>
                               <FormLabel>
-                                Valor <FormRequiredMark />
+                                Valor
+                                {(isTransfer || recurrence === 'installment' || status === 'paid') && (
+                                  <>
+                                    {' '}
+                                    <FormRequiredMark />
+                                  </>
+                                )}
                               </FormLabel>
                             </div>
                             <FormControl>
                               <CurrencyInput
                                 value={field.value}
                                 onValueChange={field.onChange}
+                                allowEmpty
+                                title="Deixe em branco se ainda não souber o valor"
                                 disabled={isBankFieldsLocked}
                               />
                             </FormControl>
@@ -2081,7 +2109,7 @@ export function TransactionDrawer() {
 
                     {showSplitDraft && (
                       <TransactionSplitsDraftSection
-                        amountCents={reaisToCentsString(amount)}
+                        amountCents={reaisToCentsString(amount ?? 0)}
                         installmentsTotal={installmentsTotal}
                         recurrence={recurrence}
                         value={splitDraft}
@@ -2428,7 +2456,9 @@ export function TransactionDrawer() {
                     {isEdit && editingId && !isTransfer && (
                       <TransactionSplitsSection
                         transactionId={editingId}
-                        transactionAmount={tx?.amount ?? reaisToMoneyString(amount)}
+                        transactionAmount={
+                          tx?.amount ?? optionalReaisToApiAmount(amount) ?? '0.00'
+                        }
                         installmentsTotal={tx?.installmentsTotal}
                         installmentNumber={tx?.installmentNumber}
                         debtSummary={splitDebtSummary}
@@ -2448,7 +2478,7 @@ export function TransactionDrawer() {
                   <TransactionFooterSummary
                     splitDebtSummary={splitDebtSummary}
                     installmentSummary={installmentSummary}
-                    amount={amount}
+                    amount={amount ?? 0}
                     status={displayStatus}
                     showStatus={!isTransfer && !isCreditCardExpense}
                     accountName={selectedAccount && !isTransfer ? selectedAccount.name : undefined}

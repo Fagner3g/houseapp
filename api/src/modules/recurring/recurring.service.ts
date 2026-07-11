@@ -334,7 +334,8 @@ export class RecurringService {
         accountId: row.accountId,
         recurringTransactionId: row.id,
         title: row.title,
-        amount: row.amount,
+        // Template may store 0 as reminder-without-value; prefer null on occurrences.
+        amount: row.amount > 0n ? row.amount : null,
         type: row.type,
         date: item.date,
         competenceDate: item.date,

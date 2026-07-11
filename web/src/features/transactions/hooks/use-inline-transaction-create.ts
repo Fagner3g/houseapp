@@ -9,7 +9,7 @@ import {
 } from '@/api/generated/api'
 import { filterPaymentAccounts } from '@/features/accounts/constants'
 import { invalidateTransactionQueries } from '@/features/transactions/lib/invalidate-transaction-queries'
-import { reaisToMoneyString } from '@/lib/currency'
+import { optionalReaisToApiAmount } from '@/lib/currency'
 import { readHttpErrorMessage } from '@/lib/http'
 import { useActiveOrganization } from '@/hooks/use-active-organization'
 import { useDrawerStore } from '@/stores/drawers'
@@ -19,7 +19,7 @@ export type InlineTxType = 'expense' | 'income'
 export type InlineTransactionDraft = {
   type: InlineTxType
   title: string
-  amount: number
+  amount: number | null
   categoryId: string
   accountId: string
   date: string
@@ -28,7 +28,7 @@ export type InlineTransactionDraft = {
 const defaultDraft = (): InlineTransactionDraft => ({
   type: 'expense',
   title: '',
-  amount: 0,
+  amount: null,
   categoryId: '',
   accountId: '',
   date: dayjs().format('YYYY-MM-DD'),
@@ -94,7 +94,7 @@ export function useInlineTransactionCreate(lockedAccountId?: string) {
       {
         title: draft.title || undefined,
         type: draft.type,
-        amount: draft.amount > 0 ? reaisToMoneyString(draft.amount) : undefined,
+        amount: optionalReaisToApiAmount(draft.amount) ?? undefined,
         date: dayjs(draft.date).toISOString(),
         accountId: draft.accountId || undefined,
         categoryIds: draft.categoryId ? [draft.categoryId] : undefined,
@@ -111,10 +111,6 @@ export function useInlineTransactionCreate(lockedAccountId?: string) {
     if (!draft.title.trim()) {
       toast.error('Informe a descrição')
       titleRef.current?.focus()
-      return
-    }
-    if (draft.amount <= 0) {
-      toast.error('Informe o valor')
       return
     }
     if (!draft.accountId && !resolvedLockedAccountId) {
@@ -139,7 +135,7 @@ export function useInlineTransactionCreate(lockedAccountId?: string) {
         data: {
           title: draft.title.trim(),
           type: draft.type,
-          amount: reaisToMoneyString(draft.amount),
+          amount: optionalReaisToApiAmount(draft.amount),
           date: dayjs(draft.date).toISOString(),
           accountId,
           categoryIds: draft.categoryId ? [draft.categoryId] : undefined,

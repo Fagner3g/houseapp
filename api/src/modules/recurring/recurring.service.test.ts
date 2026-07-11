@@ -266,4 +266,33 @@ describe('RecurringService', () => {
 
     vi.useRealTimers()
   })
+
+  it('materializes reminder-without-value (amount 0) as null on occurrences', async () => {
+    const row = makeRecurring({
+      amount: 0n,
+      startDate: new Date('2026-07-16T00:00:00.000Z'),
+      lastGeneratedDate: null,
+    })
+
+    const createMany = vi.fn().mockResolvedValue([])
+    const update = vi.fn().mockResolvedValue(row)
+
+    const service = buildService({
+      recurringRepository: { update },
+      transactionRepository: { createMany },
+    })
+
+    vi.useFakeTimers()
+    vi.setSystemTime(new Date('2026-07-16T12:00:00.000Z'))
+
+    const generated = await service.materializeOne(row, {
+      horizonDate: new Date('2026-07-16T00:00:00.000Z'),
+    })
+
+    expect(generated).toBe(1)
+    const createdRows = createMany.mock.calls[0]?.[0] ?? []
+    expect(createdRows[0]).toMatchObject({ amount: null, title: row.title })
+
+    vi.useRealTimers()
+  })
 })

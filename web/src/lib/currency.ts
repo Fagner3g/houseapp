@@ -85,6 +85,19 @@ export function reaisToMoneyString(reais: number): string {
   return reais.toFixed(2)
 }
 
+/** API amount when known; `null` for reminder-without-value (empty / zero form). */
+export function optionalReaisToApiAmount(reais: number | null | undefined): string | null {
+  if (reais == null || !Number.isFinite(reais) || reais <= 0) return null
+  return reaisToMoneyString(reais)
+}
+
+/** Form amount for CurrencyInput `allowEmpty`: null when API amount is missing or zero. */
+export function apiAmountToFormReais(value: string | null | undefined): number | null {
+  if (value == null || value === '') return null
+  const reais = moneyStringToReais(value)
+  return reais > 0 ? reais : null
+}
+
 /** Dense currency label for tight UI surfaces (calendar cells, chips). */
 export function formatCompactCurrency(value: number): string {
   const compact = formatCurrency(value).replace(/\u00a0/g, ' ').replace(/\s/g, '')
