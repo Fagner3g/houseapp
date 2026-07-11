@@ -394,6 +394,103 @@ describe('buildSplitDebtSummary', () => {
     expect(summary.purchaseTotalIsEstimate).toBe(true)
     expect(summary.currentTransactionAmount).toBe('421.11')
   })
+
+  it('sums all recurring parcels when cents differ (remainder) without dropping siblings', () => {
+    const recurringId = 'rec-pbh'
+    const p1 = tx({
+      id: 'p1',
+      title: 'PBH',
+      amount: 42113n,
+      installmentNumber: 1,
+      installmentsTotal: 4,
+      source: 'recurring',
+      recurringTransactionId: recurringId,
+      date: new Date('2026-05-10'),
+    })
+    const p2 = tx({
+      id: 'p2',
+      title: 'PBH',
+      amount: 42112n,
+      installmentNumber: 2,
+      installmentsTotal: 4,
+      source: 'recurring',
+      recurringTransactionId: recurringId,
+      date: new Date('2026-06-10'),
+    })
+    const p3 = tx({
+      id: 'p3',
+      title: 'PBH',
+      amount: 42111n,
+      installmentNumber: 3,
+      installmentsTotal: 4,
+      source: 'recurring',
+      recurringTransactionId: recurringId,
+      date: new Date('2026-07-10'),
+    })
+    const p4 = tx({
+      id: 'p4',
+      title: 'PBH',
+      amount: 42111n,
+      installmentNumber: 4,
+      installmentsTotal: 4,
+      source: 'recurring',
+      recurringTransactionId: recurringId,
+      date: new Date('2026-08-10'),
+    })
+
+    const summary = buildSplitDebtSummary({
+      anchorTransaction: p3,
+      siblingTransactions: [p1, p2, p3, p4],
+      splits: [],
+      resolvePersonName: item => item.userName ?? 'Membro',
+    })
+
+    expect(summary.purchaseTotal).toBe('1684.47')
+    expect(summary.purchaseTotalIsEstimate).toBe(false)
+    expect(summary.currentTransactionAmount).toBe('421.11')
+  })
+
+  it('extrapolates incomplete recurring series even when parcel cents differ', () => {
+    const recurringId = 'rec-pbh'
+    const p2 = tx({
+      id: 'p2',
+      title: 'PBH',
+      amount: 42112n,
+      installmentNumber: 2,
+      installmentsTotal: 4,
+      source: 'recurring',
+      recurringTransactionId: recurringId,
+    })
+    const p3 = tx({
+      id: 'p3',
+      title: 'PBH',
+      amount: 42111n,
+      installmentNumber: 3,
+      installmentsTotal: 4,
+      source: 'recurring',
+      recurringTransactionId: recurringId,
+    })
+    const p4 = tx({
+      id: 'p4',
+      title: 'PBH',
+      amount: 42111n,
+      installmentNumber: 4,
+      installmentsTotal: 4,
+      source: 'recurring',
+      recurringTransactionId: recurringId,
+    })
+
+    const summary = buildSplitDebtSummary({
+      anchorTransaction: p3,
+      siblingTransactions: [p2, p3, p4],
+      splits: [],
+      resolvePersonName: item => item.userName ?? 'Membro',
+    })
+
+    // (421.12+421.11+421.11) * 4 / 3 = 1684.45
+    expect(summary.purchaseTotal).toBe('1684.45')
+    expect(summary.purchaseTotalIsEstimate).toBe(true)
+  })
 })
 
 describe('shouldUseAnchorInstallmentAmount', () => {

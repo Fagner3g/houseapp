@@ -9,6 +9,7 @@ import {
 } from '@/lib/currency'
 import { cn } from '@/lib/utils'
 
+import { InstallmentSeriesProgress } from './installment-series-progress'
 import { SPLIT_STATUS_LABELS, SPLIT_STATUS_VARIANT } from './splits/split-status'
 
 const TRANSACTION_STATUS_LABELS = {
@@ -151,6 +152,14 @@ export function TransactionFooterSummary({
           </div>
         )}
 
+        {hasInstallments && currentInstallment != null && totalInstallments != null && (
+          <InstallmentSeriesProgress
+            current={currentInstallment}
+            total={totalInstallments}
+            className="mt-3 border-t border-slate-200/80 pt-3"
+          />
+        )}
+
         {(showStatus && hasInstallments) || accountName ? (
           <div className="mt-3 flex flex-wrap items-center gap-x-4 gap-y-1 border-t border-slate-200/80 pt-2">
             {showStatus && hasInstallments && (
@@ -204,6 +213,13 @@ export function TransactionFooterSummary({
           </div>
         )}
       </div>
+      {hasInstallments && currentInstallment != null && totalInstallments != null && (
+        <InstallmentSeriesProgress
+          current={currentInstallment}
+          total={totalInstallments}
+          className="mt-3 border-t border-slate-200/80 pt-3"
+        />
+      )}
       {accountName && (
         <p className="mt-3 border-t border-slate-200/80 pt-2 text-xs text-slate-500">
           Conta · <span className="font-medium text-slate-700">{accountName}</span>

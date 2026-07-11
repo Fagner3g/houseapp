@@ -23,6 +23,7 @@ function row(
     installmentsTotal: 3,
     competenceDate: null as Date | null,
     amount: 27479n,
+    recurringTransactionId: null as string | null,
     ...partial,
   }
 }
@@ -180,6 +181,56 @@ describe('selectInstallmentSeriesSiblings', () => {
     expect(matchesInstallmentSeries(other, anchor)).toBe(false)
     expect(selectInstallmentSeriesSiblings([anchor, other], anchor).map(item => item.id)).toEqual([
       'a1',
+    ])
+  })
+
+  it('keeps recurring parcels together even when cents differ by more than 1', () => {
+    const recurringId = 'rec-pbh'
+    const anchor = row({
+      id: 'p3',
+      title: 'PBH',
+      installmentNumber: 3,
+      installmentsTotal: 4,
+      date: new Date('2026-07-10'),
+      amount: 42111n,
+      recurringTransactionId: recurringId,
+    })
+    const siblings = [
+      row({
+        id: 'p1',
+        title: 'PBH',
+        installmentNumber: 1,
+        installmentsTotal: 4,
+        date: new Date('2026-05-10'),
+        amount: 42113n,
+        recurringTransactionId: recurringId,
+      }),
+      row({
+        id: 'p2',
+        title: 'PBH',
+        installmentNumber: 2,
+        installmentsTotal: 4,
+        date: new Date('2026-06-10'),
+        amount: 42112n,
+        recurringTransactionId: recurringId,
+      }),
+      anchor,
+      row({
+        id: 'p4',
+        title: 'PBH',
+        installmentNumber: 4,
+        installmentsTotal: 4,
+        date: new Date('2026-08-10'),
+        amount: 42111n,
+        recurringTransactionId: recurringId,
+      }),
+    ]
+
+    expect(selectInstallmentSeriesSiblings(siblings, anchor).map(item => item.id)).toEqual([
+      'p1',
+      'p2',
+      'p3',
+      'p4',
     ])
   })
 })

@@ -8,7 +8,12 @@ const MAX_INSTALLMENT_DATE_DRIFT_MS = 40 * 24 * 60 * 60 * 1000
 
 export type InstallmentSeriesMatchFields = Pick<
   TransactionRecord,
-  'title' | 'installmentsTotal' | 'accountId' | 'cardId' | 'organizationId'
+  | 'title'
+  | 'installmentsTotal'
+  | 'accountId'
+  | 'cardId'
+  | 'organizationId'
+  | 'recurringTransactionId'
 >
 
 export type InstallmentSeriesSiblingFields = InstallmentSeriesMatchFields &
@@ -21,6 +26,12 @@ export function matchesInstallmentSeries(
   anchor: InstallmentSeriesMatchFields
 ): boolean {
   if (candidate.organizationId !== anchor.organizationId) return false
+
+  // Recurring contract occurrences form a closed series — ignore title/amount clusters.
+  if (anchor.recurringTransactionId) {
+    return candidate.recurringTransactionId === anchor.recurringTransactionId
+  }
+
   if (candidate.installmentsTotal !== anchor.installmentsTotal) return false
   if (candidate.installmentsTotal == null || candidate.installmentsTotal < 2) return false
   if (candidate.accountId !== anchor.accountId) return false
@@ -72,15 +83,25 @@ export function selectInstallmentSeriesSiblings<T extends InstallmentSeriesSibli
   if (matched.length === 0) return [anchor]
 
   const installmentsTotal = anchor.installmentsTotal
-  if (installmentsTotal == null || installmentsTotal < 2) return [anchor]
+  if (installmentsTotal == null || installmentsTotal < 2) {
+    if (anchor.recurringTransactionId) {
+      return matched.sort(
+        (left, right) => (left.installmentNumber ?? 0) - (right.installmentNumber ?? 0)
+      )
+    }
+    return [anchor]
+  }
 
   // Two 3x purchases at the same merchant must not share parcels across series.
-  const amountKeys = new Set(
-    matched.map(row => (row.amount != null ? row.amount.toString() : 'null'))
-  )
-  if (amountKeys.size > 1 && anchor.amount != null) {
-    const sameAmount = matched.filter(row => amountsCompatible(row.amount, anchor.amount))
-    if (sameAmount.length > 0) matched = sameAmount
+  // Skip for recurring — cent remainder across parcels is normal (e.g. 421.13 vs 421.11).
+  if (!anchor.recurringTransactionId) {
+    const amountKeys = new Set(
+      matched.map(row => (row.amount != null ? row.amount.toString() : 'null'))
+    )
+    if (amountKeys.size > 1 && anchor.amount != null) {
+      const sameAmount = matched.filter(row => amountsCompatible(row.amount, anchor.amount))
+      if (sameAmount.length > 0) matched = sameAmount
+    }
   }
 
   const byNumber = new Map<number, T[]>()

@@ -102,6 +102,11 @@ export function resolveInstallmentPurchaseTotalCentavos(
 
   const materialized = siblingTransactions.length
   if (materialized < installmentsTotal) {
+    // Recurring/import rows are already per-parcel; extrapolate even when cents differ.
+    if (anchor && storesPerInstallmentAmount(anchor) && sum > 0n) {
+      return extrapolateInstallmentSeriesTotalCentavos(sum, materialized, installmentsTotal)
+    }
+
     const amounts = siblingTransactions.map(row => row.amount ?? 0n)
     const firstAmount = amounts[0] ?? 0n
     const allSame = amounts.every(amount => amount === firstAmount)
