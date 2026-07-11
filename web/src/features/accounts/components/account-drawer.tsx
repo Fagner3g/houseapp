@@ -672,7 +672,7 @@ export function AccountDrawer({ nested = false }: { nested?: boolean }) {
   }
 
   return (
-    <Drawer open={open} onOpenChange={v => !v && close()} direction="right" modal>
+    <Drawer open={open} onOpenChange={v => !v && close()} direction="right">
       {panel}
     </Drawer>
   )

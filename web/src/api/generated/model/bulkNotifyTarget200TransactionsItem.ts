@@ -16,6 +16,7 @@ import type { BulkNotifyTarget200TransactionsItemCompetenceDate } from "./bulkNo
 import type { BulkNotifyTarget200TransactionsItemStatus } from "./bulkNotifyTarget200TransactionsItemStatus";
 import type { BulkNotifyTarget200TransactionsItemPaidAt } from "./bulkNotifyTarget200TransactionsItemPaidAt";
 import type { BulkNotifyTarget200TransactionsItemPaidAmount } from "./bulkNotifyTarget200TransactionsItemPaidAmount";
+import type { BulkNotifyTarget200TransactionsItemPaymentScheduledAt } from "./bulkNotifyTarget200TransactionsItemPaymentScheduledAt";
 import type { BulkNotifyTarget200TransactionsItemCounterparty } from "./bulkNotifyTarget200TransactionsItemCounterparty";
 import type { BulkNotifyTarget200TransactionsItemInstallmentNumber } from "./bulkNotifyTarget200TransactionsItemInstallmentNumber";
 import type { BulkNotifyTarget200TransactionsItemInstallmentsTotal } from "./bulkNotifyTarget200TransactionsItemInstallmentsTotal";
@@ -25,6 +26,7 @@ import type { BulkNotifyTarget200TransactionsItemNotifyTargetType } from "./bulk
 import type { BulkNotifyTarget200TransactionsItemNotifyUserId } from "./bulkNotifyTarget200TransactionsItemNotifyUserId";
 import type { BulkNotifyTarget200TransactionsItemNotifyContactName } from "./bulkNotifyTarget200TransactionsItemNotifyContactName";
 import type { BulkNotifyTarget200TransactionsItemNotifyContactPhone } from "./bulkNotifyTarget200TransactionsItemNotifyContactPhone";
+import type { BulkNotifyTarget200TransactionsItemNotifyOverdueConfig } from "./bulkNotifyTarget200TransactionsItemNotifyOverdueConfig";
 
 export type BulkNotifyTarget200TransactionsItem = {
   id: string;
@@ -42,6 +44,7 @@ export type BulkNotifyTarget200TransactionsItem = {
   status: BulkNotifyTarget200TransactionsItemStatus;
   paidAt: BulkNotifyTarget200TransactionsItemPaidAt;
   paidAmount: BulkNotifyTarget200TransactionsItemPaidAmount;
+  paymentScheduledAt: BulkNotifyTarget200TransactionsItemPaymentScheduledAt;
   counterparty: BulkNotifyTarget200TransactionsItemCounterparty;
   installmentNumber: BulkNotifyTarget200TransactionsItemInstallmentNumber;
   installmentsTotal: BulkNotifyTarget200TransactionsItemInstallmentsTotal;
@@ -54,6 +57,7 @@ export type BulkNotifyTarget200TransactionsItem = {
   notifyContactName: BulkNotifyTarget200TransactionsItemNotifyContactName;
   notifyContactPhone: BulkNotifyTarget200TransactionsItemNotifyContactPhone;
   notifyDaysBefore?: number[];
+  notifyOverdueConfig?: BulkNotifyTarget200TransactionsItemNotifyOverdueConfig;
   createdAt: string;
   updatedAt: string;
 };

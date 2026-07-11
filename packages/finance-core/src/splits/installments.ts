@@ -33,14 +33,18 @@ export function shouldExtrapolateInstallmentSplitTotals(input: {
   siblingCount: number
   materializedInstallmentSplitCount: number
   installmentsTotal: number | null
+  /** Full share collected once on this parcel — never scale across installments. */
+  collectLumpSum?: boolean
 }): boolean {
   const {
     isImportedStatement,
     siblingCount,
     materializedInstallmentSplitCount,
     installmentsTotal,
+    collectLumpSum,
   } = input
 
+  if (collectLumpSum) return false
   if (installmentsTotal == null || installmentsTotal < 2) return false
   if (materializedInstallmentSplitCount >= installmentsTotal) return false
   if (siblingCount >= installmentsTotal) return false
@@ -51,6 +55,7 @@ export function shouldExtrapolateInstallmentSplitTotals(input: {
  * Resolves how much of a person's share falls on the current installment.
  *
  * - Multiple split rows (one per parcel) → use the row amount as-is.
+ * - Lump-sum collection on one parcel → use the row amount as-is (full share due once).
  * - Single split covering the full debt on a parceled purchase → divide evenly.
  */
 export function resolvePersonShareInstallmentAmountCentavos(input: {
@@ -59,6 +64,7 @@ export function resolvePersonShareInstallmentAmountCentavos(input: {
   installmentNumber: number | null
   currentSplitAmountCentavos: bigint
   materializedInstallmentSplits: number
+  collectLumpSum?: boolean
 }): bigint {
   const {
     totalOwedCentavos,
@@ -66,7 +72,12 @@ export function resolvePersonShareInstallmentAmountCentavos(input: {
     installmentNumber,
     currentSplitAmountCentavos,
     materializedInstallmentSplits,
+    collectLumpSum,
   } = input
+
+  if (collectLumpSum) {
+    return currentSplitAmountCentavos
+  }
 
   if (installmentsTotal == null || installmentsTotal < 2 || totalOwedCentavos <= 0n) {
     return currentSplitAmountCentavos

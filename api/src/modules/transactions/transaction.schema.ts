@@ -6,13 +6,24 @@ const transactionSourceSchema = z.enum(['manual', 'import', 'recurring', 'ai_cha
 
 const notifyTargetTypeSchema = z.enum(['member', 'contact'])
 
+const notifyOverdueConfigSchema = z
+  .union([
+    z.object({ disabled: z.literal(true) }),
+    z.object({
+      frequency: z.enum(['daily', 'weekly', 'monthly']),
+      interval: z.number().int().min(1),
+    }),
+  ])
+  .nullable()
+
 const notifyFieldsSchema = {
   notifyEnabled: z.boolean().optional(),
   notifyTargetType: notifyTargetTypeSchema.nullable().optional(),
   notifyUserId: z.string().nullable().optional(),
   notifyContactName: z.string().nullable().optional(),
   notifyContactPhone: z.string().nullable().optional(),
-  notifyDaysBefore: z.array(z.number().int().min(0)).optional(),
+  notifyDaysBefore: z.array(z.number().int().min(0)).nullable().optional(),
+  notifyOverdueConfig: notifyOverdueConfigSchema.optional(),
 }
 
 export const transactionResponseSchema = z.object({
@@ -31,6 +42,7 @@ export const transactionResponseSchema = z.object({
   status: transactionStatusSchema,
   paidAt: z.string().nullable(),
   paidAmount: z.string().nullable(),
+  paymentScheduledAt: z.string().nullable(),
   counterparty: z.string().nullable(),
   installmentNumber: z.number().nullable(),
   installmentsTotal: z.number().nullable(),
@@ -43,6 +55,7 @@ export const transactionResponseSchema = z.object({
   notifyContactName: z.string().nullable(),
   notifyContactPhone: z.string().nullable(),
   notifyDaysBefore: z.array(z.number().int().min(0)).optional(),
+  notifyOverdueConfig: notifyOverdueConfigSchema.optional(),
   createdAt: z.string(),
   updatedAt: z.string(),
 })
@@ -110,6 +123,7 @@ const listTransactionsQuery = z.object({
   page: z.coerce.number().int().min(1).optional(),
   perPage: z.coerce.number().int().min(1).max(500).optional(),
   payableOnly: z.coerce.boolean().optional(),
+  scheduledOnly: z.coerce.boolean().optional(),
 })
 
 export const listTransactionsSchema = {
@@ -188,6 +202,31 @@ export const cancelTransactionPaymentSchema = {
   tags: ['Transactions'],
   description: 'Cancel a paid transaction and revert it to pending',
   operationId: 'cancelTransactionPayment',
+  params: transactionParams,
+  response: {
+    200: z.object({ transaction: transactionResponseSchema }),
+  },
+}
+
+const schedulePaymentBody = z.object({
+  scheduledAt: z.string().datetime(),
+})
+
+export const scheduleTransactionPaymentSchema = {
+  tags: ['Transactions'],
+  description: 'Schedule a pending transaction payment (suppresses alerts until date)',
+  operationId: 'scheduleTransactionPayment',
+  params: transactionParams,
+  body: schedulePaymentBody,
+  response: {
+    200: z.object({ transaction: transactionResponseSchema }),
+  },
+}
+
+export const cancelScheduledTransactionPaymentSchema = {
+  tags: ['Transactions'],
+  description: 'Cancel a scheduled payment on a pending transaction',
+  operationId: 'cancelScheduledTransactionPayment',
   params: transactionParams,
   response: {
     200: z.object({ transaction: transactionResponseSchema }),
@@ -275,6 +314,7 @@ export const bulkReviewImportSchema = {
 export type CreateTransactionBody = z.infer<typeof createTransactionBody>
 export type UpdateTransactionBody = z.infer<typeof updateTransactionBody>
 export type PayTransactionBody = z.infer<typeof payTransactionBody>
+export type SchedulePaymentBody = z.infer<typeof schedulePaymentBody>
 export type ListTransactionsQuery = z.infer<typeof listTransactionsQuery>
 export type BulkNotifyTargetBody = z.infer<typeof bulkNotifyTargetItem>
 export type BulkReviewImportBody = z.infer<typeof bulkReviewImportItem>

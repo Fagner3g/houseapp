@@ -5,17 +5,18 @@ export {
   type WhatsAppAlertMessageInput,
   type WhatsAppBatchRenderUnit,
 } from './types'
+export { WHATSAPP_ITEM_SEPARATOR } from './org-sections'
 export { buildGreeting, cleanTransactionTitle, formatAmountBRL } from './format'
 export {
   buildCreditCardShareTotalLine,
   buildGrandShareTotalLine,
-  buildSummaryLine,
   resolveDueShareAmount,
   sumDueShareCentavos,
-} from './summary'
+} from './due-share'
+export { buildSummaryLine } from './summary'
 export { buildDueLine } from './due'
 export {
   buildWhatsAppAlertMessage,
-  buildWhatsAppBatchAlertMessage,
   toWhatsAppBatchItem,
-} from './batch'
+} from './item'
+export { buildWhatsAppBatchAlertMessage } from './batch'

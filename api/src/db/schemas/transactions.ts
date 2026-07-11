@@ -26,6 +26,10 @@ export type TransactionStatus = 'pending' | 'partial' | 'paid' | 'canceled'
 export type TransactionSource = 'manual' | 'import' | 'recurring' | 'ai_chat'
 export type NotifyTargetType = 'member' | 'contact'
 
+export type TransactionNotifyOverdueConfig =
+  | { frequency: 'daily' | 'weekly' | 'monthly'; interval: number }
+  | { disabled: true }
+
 export const transactions = pgTable(
   'transactions',
   {
@@ -51,6 +55,7 @@ export const transactions = pgTable(
     status: text('status').$type<TransactionStatus>().notNull().default('pending'),
     paidAt: timestamp('paid_at', { withTimezone: true }),
     paidAmount: bigint('paid_amount', { mode: 'bigint' }),
+    paymentScheduledAt: timestamp('payment_scheduled_at', { withTimezone: true }),
     counterparty: text('counterparty'),
     installmentNumber: integer('installment_number'),
     installmentsTotal: integer('installments_total'),
@@ -63,6 +68,7 @@ export const transactions = pgTable(
     notifyContactName: text('notify_contact_name'),
     notifyContactPhone: text('notify_contact_phone'),
     notifyDaysBefore: jsonb('notify_days_before').$type<number[] | null>(),
+    notifyOverdueConfig: jsonb('notify_overdue_config').$type<TransactionNotifyOverdueConfig | null>(),
     notifyLastNotifiedAt: timestamp('notify_last_notified_at', { withTimezone: true }),
     createdAt: timestamp('created_at', { withTimezone: true }).notNull().defaultNow(),
     updatedAt: timestamp('updated_at', { withTimezone: true }).notNull().defaultNow(),

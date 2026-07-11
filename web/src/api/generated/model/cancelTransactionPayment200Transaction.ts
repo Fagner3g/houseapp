@@ -16,6 +16,7 @@ import type { CancelTransactionPayment200TransactionCompetenceDate } from "./can
 import type { CancelTransactionPayment200TransactionStatus } from "./cancelTransactionPayment200TransactionStatus";
 import type { CancelTransactionPayment200TransactionPaidAt } from "./cancelTransactionPayment200TransactionPaidAt";
 import type { CancelTransactionPayment200TransactionPaidAmount } from "./cancelTransactionPayment200TransactionPaidAmount";
+import type { CancelTransactionPayment200TransactionPaymentScheduledAt } from "./cancelTransactionPayment200TransactionPaymentScheduledAt";
 import type { CancelTransactionPayment200TransactionCounterparty } from "./cancelTransactionPayment200TransactionCounterparty";
 import type { CancelTransactionPayment200TransactionInstallmentNumber } from "./cancelTransactionPayment200TransactionInstallmentNumber";
 import type { CancelTransactionPayment200TransactionInstallmentsTotal } from "./cancelTransactionPayment200TransactionInstallmentsTotal";
@@ -25,6 +26,7 @@ import type { CancelTransactionPayment200TransactionNotifyTargetType } from "./c
 import type { CancelTransactionPayment200TransactionNotifyUserId } from "./cancelTransactionPayment200TransactionNotifyUserId";
 import type { CancelTransactionPayment200TransactionNotifyContactName } from "./cancelTransactionPayment200TransactionNotifyContactName";
 import type { CancelTransactionPayment200TransactionNotifyContactPhone } from "./cancelTransactionPayment200TransactionNotifyContactPhone";
+import type { CancelTransactionPayment200TransactionNotifyOverdueConfig } from "./cancelTransactionPayment200TransactionNotifyOverdueConfig";
 
 export type CancelTransactionPayment200Transaction = {
   id: string;
@@ -42,6 +44,7 @@ export type CancelTransactionPayment200Transaction = {
   status: CancelTransactionPayment200TransactionStatus;
   paidAt: CancelTransactionPayment200TransactionPaidAt;
   paidAmount: CancelTransactionPayment200TransactionPaidAmount;
+  paymentScheduledAt: CancelTransactionPayment200TransactionPaymentScheduledAt;
   counterparty: CancelTransactionPayment200TransactionCounterparty;
   installmentNumber: CancelTransactionPayment200TransactionInstallmentNumber;
   installmentsTotal: CancelTransactionPayment200TransactionInstallmentsTotal;
@@ -54,6 +57,7 @@ export type CancelTransactionPayment200Transaction = {
   notifyContactName: CancelTransactionPayment200TransactionNotifyContactName;
   notifyContactPhone: CancelTransactionPayment200TransactionNotifyContactPhone;
   notifyDaysBefore?: number[];
+  notifyOverdueConfig?: CancelTransactionPayment200TransactionNotifyOverdueConfig;
   createdAt: string;
   updatedAt: string;
 };

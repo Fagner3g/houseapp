@@ -18,11 +18,21 @@ import { transactionCategories } from '@/db/schemas/transactionCategories'
 import {
   transactions,
   type NotifyTargetType,
+  type TransactionNotifyOverdueConfig,
   type TransactionSource,
   type TransactionStatus,
   type TransactionType,
 } from '@/db/schemas/transactions'
-import { isPayableTransactionCondition } from './payable-transaction'
+import { UNPAID_TRANSACTION_STATUSES } from '@/core/transaction-payment'
+import {
+  isOverduePayableListFilter,
+  isPayableTransactionCondition,
+  isNotScheduledForFutureCondition,
+  isScheduledOnlyCondition,
+  matchesOverdueDueDateCondition,
+  matchesPayablePeriodCondition,
+  shouldExcludeFutureScheduled,
+} from './payable-transaction'
 
 export type TransactionRecord = typeof transactions.$inferSelect
 
@@ -53,6 +63,7 @@ export type CreateTransactionData = {
   notifyContactName?: string | null
   notifyContactPhone?: string | null
   notifyDaysBefore?: number[] | null
+  notifyOverdueConfig?: TransactionNotifyOverdueConfig | null
 }
 
 export type UpdateTransactionData = Partial<
@@ -60,6 +71,7 @@ export type UpdateTransactionData = Partial<
 > & {
   categoryIds?: string[]
   transferPairId?: string | null
+  paymentScheduledAt?: Date | null
 }
 
 export type TransactionSortBy = 'date' | 'purchaseDate'
@@ -78,6 +90,8 @@ export type ListTransactionsFilter = {
   perPage?: number
   /** Excludes credit card purchases (pay the invoice instead). */
   payableOnly?: boolean
+  /** Only pending/partial with future paymentScheduledAt. Implies payableOnly. */
+  scheduledOnly?: boolean
   sortBy?: TransactionSortBy
   sortOrder?: TransactionSortOrder
 }
@@ -138,24 +152,35 @@ function buildWhereConditions(filter: ListTransactionsFilter) {
     conditions.push(eq(transactions.accountId, filter.accountId))
   }
 
+  const overduePayableList = isOverduePayableListFilter(filter)
+
   if (filter.status) {
     conditions.push(eq(transactions.status, filter.status))
+  } else if (overduePayableList) {
+    conditions.push(inArray(transactions.status, [...UNPAID_TRANSACTION_STATUSES]))
   }
 
   if (filter.type) {
     conditions.push(eq(transactions.type, filter.type))
   }
 
-  if (filter.dateFrom) {
-    conditions.push(
-      sql`${dateField} >= ${filter.dateFrom.toISOString()}::timestamptz`
-    )
-  }
+  if (overduePayableList && filter.dateTo) {
+    conditions.push(matchesOverdueDueDateCondition(filter.dateTo))
+  } else if (filter.payableOnly && (filter.dateFrom || filter.dateTo)) {
+    const periodMatch = matchesPayablePeriodCondition(filter.dateFrom, filter.dateTo)
+    if (periodMatch) conditions.push(periodMatch)
+  } else {
+    if (filter.dateFrom) {
+      conditions.push(
+        sql`${dateField} >= ${filter.dateFrom.toISOString()}::timestamptz`
+      )
+    }
 
-  if (filter.dateTo) {
-    conditions.push(
-      sql`${dateField} <= ${filter.dateTo.toISOString()}::timestamptz`
-    )
+    if (filter.dateTo) {
+      conditions.push(
+        sql`${dateField} <= ${filter.dateTo.toISOString()}::timestamptz`
+      )
+    }
   }
 
   if (filter.search) {
@@ -208,18 +233,29 @@ export class DrizzleTransactionRepository implements TransactionRepository {
     const whereClause = and(...conditions)
     const orderBy = buildOrderBy(filter.sortBy, filter.sortOrder)
 
-    const [countRow] = filter.payableOnly
+    const payableWhere = and(
+      whereClause,
+      isPayableTransactionCondition(),
+      filter.scheduledOnly ? isScheduledOnlyCondition() : undefined,
+      !filter.scheduledOnly && shouldExcludeFutureScheduled(filter)
+        ? isNotScheduledForFutureCondition()
+        : undefined
+    )
+
+    const usePayableQuery = filter.payableOnly || filter.scheduledOnly
+
+    const [countRow] = usePayableQuery
       ? await db
           .select({ total: count() })
           .from(transactions)
           .leftJoin(accounts, eq(transactions.accountId, accounts.id))
-          .where(and(whereClause, isPayableTransactionCondition()))
+          .where(payableWhere)
       : await db
           .select({ total: count() })
           .from(transactions)
           .where(whereClause)
 
-    const rows = filter.payableOnly
+    const rows = usePayableQuery
       ? await db
           .select({
             id: transactions.id,
@@ -237,6 +273,7 @@ export class DrizzleTransactionRepository implements TransactionRepository {
             status: transactions.status,
             paidAt: transactions.paidAt,
             paidAmount: transactions.paidAmount,
+            paymentScheduledAt: transactions.paymentScheduledAt,
             counterparty: transactions.counterparty,
             installmentNumber: transactions.installmentNumber,
             installmentsTotal: transactions.installmentsTotal,
@@ -249,13 +286,14 @@ export class DrizzleTransactionRepository implements TransactionRepository {
             notifyContactName: transactions.notifyContactName,
             notifyContactPhone: transactions.notifyContactPhone,
             notifyDaysBefore: transactions.notifyDaysBefore,
+            notifyOverdueConfig: transactions.notifyOverdueConfig,
             notifyLastNotifiedAt: transactions.notifyLastNotifiedAt,
             createdAt: transactions.createdAt,
             updatedAt: transactions.updatedAt,
           })
           .from(transactions)
           .leftJoin(accounts, eq(transactions.accountId, accounts.id))
-          .where(and(whereClause, isPayableTransactionCondition()))
+          .where(payableWhere)
           .orderBy(...orderBy)
           .limit(perPage)
           .offset(offset)
@@ -319,6 +357,7 @@ export class DrizzleTransactionRepository implements TransactionRepository {
           notifyContactName: transactionData.notifyContactName ?? null,
           notifyContactPhone: transactionData.notifyContactPhone ?? null,
           notifyDaysBefore: transactionData.notifyDaysBefore ?? null,
+          notifyOverdueConfig: transactionData.notifyOverdueConfig ?? null,
         })
         .returning()
 
@@ -373,6 +412,7 @@ export class DrizzleTransactionRepository implements TransactionRepository {
             notifyContactName: transactionData.notifyContactName ?? null,
             notifyContactPhone: transactionData.notifyContactPhone ?? null,
             notifyDaysBefore: transactionData.notifyDaysBefore ?? null,
+            notifyOverdueConfig: transactionData.notifyOverdueConfig ?? null,
           })
           .returning()
 

@@ -10,11 +10,14 @@ import type { GetReportSummary200UpcomingItem } from "./getReportSummary200Upcom
 export type GetReportSummary200 = {
   totalIncome: string;
   totalExpense: string;
+  myExpenseGrossTotal: string;
+  mySplitsInPeriodTotal: string;
   myExpenseTotal: string;
   netWorth: string;
   pendingCount: number;
   overdueCount: number;
   pendingSplitsTotal: string;
   myPendingSplitsTotal: string;
+  myPendingSplitsInPeriodTotal: string;
   upcoming: GetReportSummary200UpcomingItem[];
 };

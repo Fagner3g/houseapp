@@ -55,6 +55,8 @@ export type SplitDraftState = {
   splitContactPhone: string
   splitAmountReais: number
   notifyEnabled: boolean
+  /** When true, debtor pays full share once on the first installment. */
+  collectLumpSum: boolean
 }
 
 export function defaultSplitDraftState(): SplitDraftState {
@@ -66,6 +68,7 @@ export function defaultSplitDraftState(): SplitDraftState {
     splitContactPhone: '',
     splitAmountReais: 0,
     notifyEnabled: true,
+    collectLumpSum: false,
   }
 }
 
@@ -241,7 +244,9 @@ export function buildSplitCreateBody(
     | 'splitContactPhone'
     | 'splitAmountReais'
     | 'notifyEnabled'
-  >,
+  > & {
+    collectLumpSum?: boolean
+  },
   context?: {
     installmentsTotal?: number | null
     installmentNumber?: number | null
@@ -253,6 +258,7 @@ export function buildSplitCreateBody(
   amount: string
   description?: string | null
   notifyEnabled?: boolean
+  collectLumpSum?: boolean
 } | null {
   if (state.splitMode === 'none') return null
 
@@ -265,6 +271,7 @@ export function buildSplitCreateBody(
   const installmentsTotal = context?.installmentsTotal ?? null
   const installmentNumber = context?.installmentNumber ?? null
   if (
+    !state.collectLumpSum &&
     state.splitMode === 'custom' &&
     installmentsTotal != null &&
     installmentsTotal >= 2 &&
@@ -281,12 +288,15 @@ export function buildSplitCreateBody(
       ? 'Compra de outra pessoa no meu cartão'
       : 'Divisão da despesa'
 
+  const collectLumpSum = state.collectLumpSum || undefined
+
   if (state.splitPersonMode === 'member' && state.splitUserId) {
     return {
       userId: state.splitUserId,
       amount: reaisToMoneyString(splitAmountReais),
       description,
       notifyEnabled: state.notifyEnabled,
+      ...(collectLumpSum ? { collectLumpSum: true } : {}),
     }
   }
 
@@ -297,6 +307,7 @@ export function buildSplitCreateBody(
       amount: reaisToMoneyString(splitAmountReais),
       description,
       notifyEnabled: state.notifyEnabled,
+      ...(collectLumpSum ? { collectLumpSum: true } : {}),
     }
   }
 

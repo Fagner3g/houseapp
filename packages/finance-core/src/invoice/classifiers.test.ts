@@ -4,6 +4,7 @@ import {
   isCardStatementCreditTitle,
   isImportedBillPaymentTitle,
   isImportedInvoiceSettlementCredit,
+  parseInvoicePaymentMonthKey,
 } from './classifiers'
 
 describe('isImportedBillPaymentTitle', () => {
@@ -31,5 +32,12 @@ describe('isImportedInvoiceSettlementCredit', () => {
     expect(
       isImportedInvoiceSettlementCredit({ title: 'Crédito de Confiança de "Loja X"' })
     ).toBe(true)
+  })
+})
+
+describe('parseInvoicePaymentMonthKey', () => {
+  it('parses month labels with and without "de"', () => {
+    expect(parseInvoicePaymentMonthKey('Pagamento Fatura Nubank - junho 2026')).toBe('2026-06')
+    expect(parseInvoicePaymentMonthKey('Pagamento Fatura Nubank - junho de 2026')).toBe('2026-06')
   })
 })

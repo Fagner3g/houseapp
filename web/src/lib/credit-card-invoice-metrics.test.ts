@@ -381,6 +381,67 @@ describe('computeInvoiceMetrics', () => {
     expect(metrics.remaining).toBe(0)
   })
 
+  it('keeps OFX LEDGERBAL as remaining when pre-closing payments are already netted', () => {
+    const julyCycle = getBillingCycle(10, 17, '2026-07')
+    const julyStatement = {
+      id: 'st-july',
+      totalAmount: '6030.35',
+      isClosed: true,
+      isPaid: false,
+      importSource: 'ofx',
+      periodStart: '2026-06-01T12:00:00.000Z',
+      periodEnd: '2026-07-10T12:00:00.000Z',
+      dueDate: '2026-07-17T12:00:00.000Z',
+      purchasesTotal: '7025.12',
+      previousBalance: '0.00',
+      paymentsReceived: '650.00',
+    }
+
+    const metrics = computeInvoiceMetrics(
+      julyCycle,
+      julyStatement,
+      [
+        {
+          type: 'income',
+          title: 'Pagamento recebido',
+          amount: '500.00',
+          date: '2026-07-03T12:00:00.000Z',
+          statementId: 'st-july',
+        },
+        {
+          type: 'income',
+          title: 'Pagamento recebido',
+          amount: '500.00',
+          date: '2026-07-09T12:00:00.000Z',
+          statementId: 'st-july',
+        },
+        {
+          type: 'income',
+          title: 'Estorno de "Vantagens.Cvolta.Com" (Compra e Volta)',
+          amount: '27.00',
+          date: '2026-06-01T12:00:00.000Z',
+          statementId: 'st-july',
+        },
+        {
+          type: 'income',
+          title: 'IOF de volta de Cursor, Ai Powered Ide',
+          amount: '1.88',
+          date: '2026-06-02T12:00:00.000Z',
+          statementId: 'st-july',
+        },
+      ],
+      {
+        closingDay: 10,
+        dueDay: 17,
+        previousStatement: { dueDate: '2026-06-08T12:00:00.000Z' },
+      }
+    )
+
+    expect(metrics.invoiceTotal).toBe(6030.35)
+    expect(metrics.payments).toBe(1000)
+    expect(metrics.remaining).toBe(6030.35)
+  })
+
   it('does not count imported purchases in a misaligned billing cycle', () => {
     const marchCycle = getBillingCycle(10, 17, '2026-03')
     const _aprilStatement = {

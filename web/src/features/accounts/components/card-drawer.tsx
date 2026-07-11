@@ -7,7 +7,7 @@ import { toast } from 'sonner'
 import { z } from 'zod'
 
 import { getListCardsQueryKey, useCreateCard, useListUsersByOrg } from '@/api/generated/api'
-import { CreateCardBodyType } from '@/api/generated/model/createCardBodyType'
+import type { CreateCardBodyType } from '@/api/generated/model/createCardBodyType'
 import { Button } from '@/components/ui/button'
 import {
   Drawer,
@@ -300,7 +300,7 @@ export function CardDrawer({ nested = false }: { nested?: boolean }) {
   }
 
   return (
-    <Drawer open={open} onOpenChange={v => !v && close()} direction="right" modal>
+    <Drawer open={open} onOpenChange={v => !v && close()} direction="right">
       {panel}
     </Drawer>
   )

@@ -8,13 +8,13 @@ import { toast } from 'sonner'
 import { z } from 'zod'
 
 import {
-  getListAccountsQueryKey,
   getListStatementsQueryKey,
-  getListTransactionsQueryKey,
   useCreateTransaction,
   useListAccounts,
   useUpdateTransaction,
 } from '@/api/generated/api'
+import { invalidateTransactionQueries } from '@/features/transactions/lib/invalidate-transaction-queries'
+import { calendarDateToIso } from '@/lib/date'
 import { Button } from '@/components/ui/button'
 import { CurrencyInput } from '@/components/ui/currency-input'
 import { DatePickerInput } from '@/components/ui/date-picker-field'
@@ -38,7 +38,7 @@ import { Input } from '@/components/ui/input'
 import { AccountSelect } from '@/features/accounts/components/account-select'
 import { filterPaymentAccounts } from '@/features/accounts/constants'
 import { useActiveOrganization } from '@/hooks/use-active-organization'
-import { centsToNumber, numberToCents, reaisToMoneyString } from '@/lib/currency'
+import { centsToNumber, reaisToMoneyString } from '@/lib/currency'
 import {
   stackyDrawerContentNested,
   stackyDrawerCloseButton,
@@ -125,7 +125,7 @@ export function PayInvoiceDrawer() {
     }
 
     try {
-      const isoDate = dayjs(values.date).toISOString()
+      const isoDate = calendarDateToIso(values.date)
       const amount = reaisToMoneyString(values.amount)
 
       const expense = await createTransaction({
@@ -163,8 +163,7 @@ export function PayInvoiceDrawer() {
         data: { transferPairId: income.transaction.id },
       })
 
-      await queryClient.invalidateQueries({ queryKey: getListAccountsQueryKey(slug) })
-      await queryClient.invalidateQueries({ queryKey: getListTransactionsQueryKey(slug) })
+      await invalidateTransactionQueries(queryClient, slug)
       await queryClient.invalidateQueries({
         queryKey: getListStatementsQueryKey(slug, context.creditCardAccountId),
       })
@@ -181,7 +180,7 @@ export function PayInvoiceDrawer() {
   }
 
   return (
-    <Drawer open={open} onOpenChange={v => !v && close()} direction="right" modal>
+    <Drawer open={open} onOpenChange={v => !v && close()} direction="right">
       <DrawerContent className={stackyDrawerContentNested} onOverlayDismiss={close}>
         <DrawerHeader className={stackyDrawerHeader}>
           <div>

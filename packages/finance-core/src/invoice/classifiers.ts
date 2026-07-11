@@ -57,10 +57,13 @@ export function parseInvoicePaymentMonthKey(title: string): string | null {
   if (!match) return null
 
   const label = match[1].trim()
-  const parsed = dayjs(label, 'MMMM YYYY', 'pt-br', true)
-  if (!parsed.isValid()) return null
+  const formats = ['MMMM YYYY', 'MMMM [de] YYYY']
+  for (const format of formats) {
+    const parsed = dayjs(label, format, 'pt-br', true)
+    if (parsed.isValid()) return parsed.format('YYYY-MM')
+  }
 
-  return parsed.format('YYYY-MM')
+  return null
 }
 
 /** Manual pay-invoice bookkeeping — not the same as an imported OFX bill payment. */

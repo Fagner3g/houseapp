@@ -31,6 +31,7 @@ import type {
   BulkNotifyTargetBody,
   BulkReviewImport200,
   BulkReviewImportBody,
+  CancelScheduledTransactionPayment200,
   CancelSplitPayment200,
   CancelTransactionPayment200,
   ConfirmAiAction200,
@@ -83,6 +84,8 @@ import type {
   GetReportDailyParams,
   GetReportInsights200,
   GetReportInsightsParams,
+  GetReportMyExpenses200,
+  GetReportMyExpensesParams,
   GetReportSummary200,
   GetReportSummaryParams,
   GetReportTopMerchants200,
@@ -145,6 +148,8 @@ import type {
   RejectAiActionBody,
   RenameOrg200,
   RenameOrgBody,
+  ScheduleTransactionPayment200,
+  ScheduleTransactionPaymentBody,
   SendManualAlert200,
   SendManualAlertBody,
   SignIn200,
@@ -7044,6 +7049,194 @@ export const useCancelTransactionPayment = <
 };
 
 /**
+ * Schedule a pending transaction payment (suppresses alerts until date)
+ */
+export const getScheduleTransactionPaymentUrl = (slug: string, id: string) => {
+  return `/organizations/${slug}/transactions/${id}/schedule-payment`;
+};
+
+export const scheduleTransactionPayment = async (
+  slug: string,
+  id: string,
+  scheduleTransactionPaymentBody: ScheduleTransactionPaymentBody,
+  options?: RequestInit,
+): Promise<ScheduleTransactionPayment200> => {
+  return http<ScheduleTransactionPayment200>(
+    getScheduleTransactionPaymentUrl(slug, id),
+    {
+      ...options,
+      method: "PATCH",
+      headers: { "Content-Type": "application/json", ...options?.headers },
+      body: JSON.stringify(scheduleTransactionPaymentBody),
+    },
+  );
+};
+
+export const getScheduleTransactionPaymentMutationOptions = <
+  TError = unknown,
+  TContext = unknown,
+>(options?: {
+  mutation?: UseMutationOptions<
+    Awaited<ReturnType<typeof scheduleTransactionPayment>>,
+    TError,
+    { slug: string; id: string; data: ScheduleTransactionPaymentBody },
+    TContext
+  >;
+  request?: SecondParameter<typeof http>;
+}): UseMutationOptions<
+  Awaited<ReturnType<typeof scheduleTransactionPayment>>,
+  TError,
+  { slug: string; id: string; data: ScheduleTransactionPaymentBody },
+  TContext
+> => {
+  const mutationKey = ["scheduleTransactionPayment"];
+  const { mutation: mutationOptions, request: requestOptions } = options
+    ? options.mutation &&
+      "mutationKey" in options.mutation &&
+      options.mutation.mutationKey
+      ? options
+      : { ...options, mutation: { ...options.mutation, mutationKey } }
+    : { mutation: { mutationKey }, request: undefined };
+
+  const mutationFn: MutationFunction<
+    Awaited<ReturnType<typeof scheduleTransactionPayment>>,
+    { slug: string; id: string; data: ScheduleTransactionPaymentBody }
+  > = (props) => {
+    const { slug, id, data } = props ?? {};
+
+    return scheduleTransactionPayment(slug, id, data, requestOptions);
+  };
+
+  return { mutationFn, ...mutationOptions };
+};
+
+export type ScheduleTransactionPaymentMutationResult = NonNullable<
+  Awaited<ReturnType<typeof scheduleTransactionPayment>>
+>;
+export type ScheduleTransactionPaymentMutationBody =
+  ScheduleTransactionPaymentBody;
+export type ScheduleTransactionPaymentMutationError = unknown;
+
+export const useScheduleTransactionPayment = <
+  TError = unknown,
+  TContext = unknown,
+>(
+  options?: {
+    mutation?: UseMutationOptions<
+      Awaited<ReturnType<typeof scheduleTransactionPayment>>,
+      TError,
+      { slug: string; id: string; data: ScheduleTransactionPaymentBody },
+      TContext
+    >;
+    request?: SecondParameter<typeof http>;
+  },
+  queryClient?: QueryClient,
+): UseMutationResult<
+  Awaited<ReturnType<typeof scheduleTransactionPayment>>,
+  TError,
+  { slug: string; id: string; data: ScheduleTransactionPaymentBody },
+  TContext
+> => {
+  const mutationOptions = getScheduleTransactionPaymentMutationOptions(options);
+
+  return useMutation(mutationOptions, queryClient);
+};
+
+/**
+ * Cancel a scheduled payment on a pending transaction
+ */
+export const getCancelScheduledTransactionPaymentUrl = (
+  slug: string,
+  id: string,
+) => {
+  return `/organizations/${slug}/transactions/${id}/cancel-scheduled-payment`;
+};
+
+export const cancelScheduledTransactionPayment = async (
+  slug: string,
+  id: string,
+  options?: RequestInit,
+): Promise<CancelScheduledTransactionPayment200> => {
+  return http<CancelScheduledTransactionPayment200>(
+    getCancelScheduledTransactionPaymentUrl(slug, id),
+    {
+      ...options,
+      method: "PATCH",
+    },
+  );
+};
+
+export const getCancelScheduledTransactionPaymentMutationOptions = <
+  TError = unknown,
+  TContext = unknown,
+>(options?: {
+  mutation?: UseMutationOptions<
+    Awaited<ReturnType<typeof cancelScheduledTransactionPayment>>,
+    TError,
+    { slug: string; id: string },
+    TContext
+  >;
+  request?: SecondParameter<typeof http>;
+}): UseMutationOptions<
+  Awaited<ReturnType<typeof cancelScheduledTransactionPayment>>,
+  TError,
+  { slug: string; id: string },
+  TContext
+> => {
+  const mutationKey = ["cancelScheduledTransactionPayment"];
+  const { mutation: mutationOptions, request: requestOptions } = options
+    ? options.mutation &&
+      "mutationKey" in options.mutation &&
+      options.mutation.mutationKey
+      ? options
+      : { ...options, mutation: { ...options.mutation, mutationKey } }
+    : { mutation: { mutationKey }, request: undefined };
+
+  const mutationFn: MutationFunction<
+    Awaited<ReturnType<typeof cancelScheduledTransactionPayment>>,
+    { slug: string; id: string }
+  > = (props) => {
+    const { slug, id } = props ?? {};
+
+    return cancelScheduledTransactionPayment(slug, id, requestOptions);
+  };
+
+  return { mutationFn, ...mutationOptions };
+};
+
+export type CancelScheduledTransactionPaymentMutationResult = NonNullable<
+  Awaited<ReturnType<typeof cancelScheduledTransactionPayment>>
+>;
+
+export type CancelScheduledTransactionPaymentMutationError = unknown;
+
+export const useCancelScheduledTransactionPayment = <
+  TError = unknown,
+  TContext = unknown,
+>(
+  options?: {
+    mutation?: UseMutationOptions<
+      Awaited<ReturnType<typeof cancelScheduledTransactionPayment>>,
+      TError,
+      { slug: string; id: string },
+      TContext
+    >;
+    request?: SecondParameter<typeof http>;
+  },
+  queryClient?: QueryClient,
+): UseMutationResult<
+  Awaited<ReturnType<typeof cancelScheduledTransactionPayment>>,
+  TError,
+  { slug: string; id: string },
+  TContext
+> => {
+  const mutationOptions =
+    getCancelScheduledTransactionPaymentMutationOptions(options);
+
+  return useMutation(mutationOptions, queryClient);
+};
+
+/**
  * List pending/partial splits across organization (Quem me deve)
  */
 export const getListPendingSplitsUrl = (slug: string) => {
@@ -9931,6 +10124,206 @@ export function useGetReportSummary<
   queryKey: DataTag<QueryKey, TData, TError>;
 } {
   const queryOptions = getGetReportSummaryQueryOptions(slug, params, options);
+
+  const query = useQuery(queryOptions, queryClient) as UseQueryResult<
+    TData,
+    TError
+  > & { queryKey: DataTag<QueryKey, TData, TError> };
+
+  query.queryKey = queryOptions.queryKey;
+
+  return query;
+}
+
+/**
+ * Invoice and expense lines that compose Meu gasto for a date range
+ */
+export const getGetReportMyExpensesUrl = (
+  slug: string,
+  params?: GetReportMyExpensesParams,
+) => {
+  const normalizedParams = new URLSearchParams();
+
+  Object.entries(params || {}).forEach(([key, value]) => {
+    if (value !== undefined) {
+      normalizedParams.append(key, value === null ? "null" : value.toString());
+    }
+  });
+
+  const stringifiedParams = normalizedParams.toString();
+
+  return stringifiedParams.length > 0
+    ? `/organizations/${slug}/reports/my-expenses?${stringifiedParams}`
+    : `/organizations/${slug}/reports/my-expenses`;
+};
+
+export const getReportMyExpenses = async (
+  slug: string,
+  params?: GetReportMyExpensesParams,
+  options?: RequestInit,
+): Promise<GetReportMyExpenses200> => {
+  return http<GetReportMyExpenses200>(getGetReportMyExpensesUrl(slug, params), {
+    ...options,
+    method: "GET",
+  });
+};
+
+export const getGetReportMyExpensesQueryKey = (
+  slug?: string,
+  params?: GetReportMyExpensesParams,
+) => {
+  return [
+    `/organizations/${slug}/reports/my-expenses`,
+    ...(params ? [params] : []),
+  ] as const;
+};
+
+export const getGetReportMyExpensesQueryOptions = <
+  TData = Awaited<ReturnType<typeof getReportMyExpenses>>,
+  TError = unknown,
+>(
+  slug: string,
+  params?: GetReportMyExpensesParams,
+  options?: {
+    query?: Partial<
+      UseQueryOptions<
+        Awaited<ReturnType<typeof getReportMyExpenses>>,
+        TError,
+        TData
+      >
+    >;
+    request?: SecondParameter<typeof http>;
+  },
+) => {
+  const { query: queryOptions, request: requestOptions } = options ?? {};
+
+  const queryKey =
+    queryOptions?.queryKey ?? getGetReportMyExpensesQueryKey(slug, params);
+
+  const queryFn: QueryFunction<
+    Awaited<ReturnType<typeof getReportMyExpenses>>
+  > = ({ signal }) =>
+    getReportMyExpenses(slug, params, { signal, ...requestOptions });
+
+  return {
+    queryKey,
+    queryFn,
+    enabled: !!slug,
+    ...queryOptions,
+  } as UseQueryOptions<
+    Awaited<ReturnType<typeof getReportMyExpenses>>,
+    TError,
+    TData
+  > & { queryKey: DataTag<QueryKey, TData, TError> };
+};
+
+export type GetReportMyExpensesQueryResult = NonNullable<
+  Awaited<ReturnType<typeof getReportMyExpenses>>
+>;
+export type GetReportMyExpensesQueryError = unknown;
+
+export function useGetReportMyExpenses<
+  TData = Awaited<ReturnType<typeof getReportMyExpenses>>,
+  TError = unknown,
+>(
+  slug: string,
+  params: undefined | GetReportMyExpensesParams,
+  options: {
+    query: Partial<
+      UseQueryOptions<
+        Awaited<ReturnType<typeof getReportMyExpenses>>,
+        TError,
+        TData
+      >
+    > &
+      Pick<
+        DefinedInitialDataOptions<
+          Awaited<ReturnType<typeof getReportMyExpenses>>,
+          TError,
+          Awaited<ReturnType<typeof getReportMyExpenses>>
+        >,
+        "initialData"
+      >;
+    request?: SecondParameter<typeof http>;
+  },
+  queryClient?: QueryClient,
+): DefinedUseQueryResult<TData, TError> & {
+  queryKey: DataTag<QueryKey, TData, TError>;
+};
+export function useGetReportMyExpenses<
+  TData = Awaited<ReturnType<typeof getReportMyExpenses>>,
+  TError = unknown,
+>(
+  slug: string,
+  params?: GetReportMyExpensesParams,
+  options?: {
+    query?: Partial<
+      UseQueryOptions<
+        Awaited<ReturnType<typeof getReportMyExpenses>>,
+        TError,
+        TData
+      >
+    > &
+      Pick<
+        UndefinedInitialDataOptions<
+          Awaited<ReturnType<typeof getReportMyExpenses>>,
+          TError,
+          Awaited<ReturnType<typeof getReportMyExpenses>>
+        >,
+        "initialData"
+      >;
+    request?: SecondParameter<typeof http>;
+  },
+  queryClient?: QueryClient,
+): UseQueryResult<TData, TError> & {
+  queryKey: DataTag<QueryKey, TData, TError>;
+};
+export function useGetReportMyExpenses<
+  TData = Awaited<ReturnType<typeof getReportMyExpenses>>,
+  TError = unknown,
+>(
+  slug: string,
+  params?: GetReportMyExpensesParams,
+  options?: {
+    query?: Partial<
+      UseQueryOptions<
+        Awaited<ReturnType<typeof getReportMyExpenses>>,
+        TError,
+        TData
+      >
+    >;
+    request?: SecondParameter<typeof http>;
+  },
+  queryClient?: QueryClient,
+): UseQueryResult<TData, TError> & {
+  queryKey: DataTag<QueryKey, TData, TError>;
+};
+
+export function useGetReportMyExpenses<
+  TData = Awaited<ReturnType<typeof getReportMyExpenses>>,
+  TError = unknown,
+>(
+  slug: string,
+  params?: GetReportMyExpensesParams,
+  options?: {
+    query?: Partial<
+      UseQueryOptions<
+        Awaited<ReturnType<typeof getReportMyExpenses>>,
+        TError,
+        TData
+      >
+    >;
+    request?: SecondParameter<typeof http>;
+  },
+  queryClient?: QueryClient,
+): UseQueryResult<TData, TError> & {
+  queryKey: DataTag<QueryKey, TData, TError>;
+} {
+  const queryOptions = getGetReportMyExpensesQueryOptions(
+    slug,
+    params,
+    options,
+  );
 
   const query = useQuery(queryOptions, queryClient) as UseQueryResult<
     TData,

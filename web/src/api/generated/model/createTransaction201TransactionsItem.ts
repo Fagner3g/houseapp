@@ -16,6 +16,7 @@ import type { CreateTransaction201TransactionsItemCompetenceDate } from "./creat
 import type { CreateTransaction201TransactionsItemStatus } from "./createTransaction201TransactionsItemStatus";
 import type { CreateTransaction201TransactionsItemPaidAt } from "./createTransaction201TransactionsItemPaidAt";
 import type { CreateTransaction201TransactionsItemPaidAmount } from "./createTransaction201TransactionsItemPaidAmount";
+import type { CreateTransaction201TransactionsItemPaymentScheduledAt } from "./createTransaction201TransactionsItemPaymentScheduledAt";
 import type { CreateTransaction201TransactionsItemCounterparty } from "./createTransaction201TransactionsItemCounterparty";
 import type { CreateTransaction201TransactionsItemInstallmentNumber } from "./createTransaction201TransactionsItemInstallmentNumber";
 import type { CreateTransaction201TransactionsItemInstallmentsTotal } from "./createTransaction201TransactionsItemInstallmentsTotal";
@@ -25,6 +26,7 @@ import type { CreateTransaction201TransactionsItemNotifyTargetType } from "./cre
 import type { CreateTransaction201TransactionsItemNotifyUserId } from "./createTransaction201TransactionsItemNotifyUserId";
 import type { CreateTransaction201TransactionsItemNotifyContactName } from "./createTransaction201TransactionsItemNotifyContactName";
 import type { CreateTransaction201TransactionsItemNotifyContactPhone } from "./createTransaction201TransactionsItemNotifyContactPhone";
+import type { CreateTransaction201TransactionsItemNotifyOverdueConfig } from "./createTransaction201TransactionsItemNotifyOverdueConfig";
 
 export type CreateTransaction201TransactionsItem = {
   id: string;
@@ -42,6 +44,7 @@ export type CreateTransaction201TransactionsItem = {
   status: CreateTransaction201TransactionsItemStatus;
   paidAt: CreateTransaction201TransactionsItemPaidAt;
   paidAmount: CreateTransaction201TransactionsItemPaidAmount;
+  paymentScheduledAt: CreateTransaction201TransactionsItemPaymentScheduledAt;
   counterparty: CreateTransaction201TransactionsItemCounterparty;
   installmentNumber: CreateTransaction201TransactionsItemInstallmentNumber;
   installmentsTotal: CreateTransaction201TransactionsItemInstallmentsTotal;
@@ -54,6 +57,7 @@ export type CreateTransaction201TransactionsItem = {
   notifyContactName: CreateTransaction201TransactionsItemNotifyContactName;
   notifyContactPhone: CreateTransaction201TransactionsItemNotifyContactPhone;
   notifyDaysBefore?: number[];
+  notifyOverdueConfig?: CreateTransaction201TransactionsItemNotifyOverdueConfig;
   createdAt: string;
   updatedAt: string;
 };

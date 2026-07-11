@@ -14,6 +14,8 @@ import {
   listTransactionsController,
   cancelTransactionPaymentController,
   payTransactionController,
+  scheduleTransactionPaymentController,
+  cancelScheduledTransactionPaymentController,
   updateTransactionController,
 } from './transaction.controller'
 import {
@@ -21,12 +23,14 @@ import {
   bulkNotifyTargetSchema,
   bulkReviewImportSchema,
   cancelTransactionPaymentSchema,
+  cancelScheduledTransactionPaymentSchema,
   createTransactionSchema,
   deleteTransactionSchema,
   getInstallmentSeriesSchema,
   getTransactionSchema,
   listTransactionsSchema,
   payTransactionSchema,
+  scheduleTransactionPaymentSchema,
   updateTransactionSchema,
 } from './transaction.schema'
 
@@ -99,6 +103,20 @@ export const transactionsRoutes: FastifyPluginAsyncZod = async app => {
     preHandler: [verifyOrgAccessHook],
     schema: cancelTransactionPaymentSchema,
     handler: cancelTransactionPaymentController,
+  })
+
+  app.patch('/organizations/:slug/transactions/:id/schedule-payment', {
+    onRequest: [authenticateUserHook],
+    preHandler: [verifyOrgAccessHook],
+    schema: scheduleTransactionPaymentSchema,
+    handler: scheduleTransactionPaymentController,
+  })
+
+  app.patch('/organizations/:slug/transactions/:id/cancel-scheduled-payment', {
+    onRequest: [authenticateUserHook],
+    preHandler: [verifyOrgAccessHook],
+    schema: cancelScheduledTransactionPaymentSchema,
+    handler: cancelScheduledTransactionPaymentController,
   })
 
   app.delete('/organizations/:slug/transactions/:id', {

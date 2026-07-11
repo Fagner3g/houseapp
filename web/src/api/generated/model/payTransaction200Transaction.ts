@@ -16,6 +16,7 @@ import type { PayTransaction200TransactionCompetenceDate } from "./payTransactio
 import type { PayTransaction200TransactionStatus } from "./payTransaction200TransactionStatus";
 import type { PayTransaction200TransactionPaidAt } from "./payTransaction200TransactionPaidAt";
 import type { PayTransaction200TransactionPaidAmount } from "./payTransaction200TransactionPaidAmount";
+import type { PayTransaction200TransactionPaymentScheduledAt } from "./payTransaction200TransactionPaymentScheduledAt";
 import type { PayTransaction200TransactionCounterparty } from "./payTransaction200TransactionCounterparty";
 import type { PayTransaction200TransactionInstallmentNumber } from "./payTransaction200TransactionInstallmentNumber";
 import type { PayTransaction200TransactionInstallmentsTotal } from "./payTransaction200TransactionInstallmentsTotal";
@@ -25,6 +26,7 @@ import type { PayTransaction200TransactionNotifyTargetType } from "./payTransact
 import type { PayTransaction200TransactionNotifyUserId } from "./payTransaction200TransactionNotifyUserId";
 import type { PayTransaction200TransactionNotifyContactName } from "./payTransaction200TransactionNotifyContactName";
 import type { PayTransaction200TransactionNotifyContactPhone } from "./payTransaction200TransactionNotifyContactPhone";
+import type { PayTransaction200TransactionNotifyOverdueConfig } from "./payTransaction200TransactionNotifyOverdueConfig";
 
 export type PayTransaction200Transaction = {
   id: string;
@@ -42,6 +44,7 @@ export type PayTransaction200Transaction = {
   status: PayTransaction200TransactionStatus;
   paidAt: PayTransaction200TransactionPaidAt;
   paidAmount: PayTransaction200TransactionPaidAmount;
+  paymentScheduledAt: PayTransaction200TransactionPaymentScheduledAt;
   counterparty: PayTransaction200TransactionCounterparty;
   installmentNumber: PayTransaction200TransactionInstallmentNumber;
   installmentsTotal: PayTransaction200TransactionInstallmentsTotal;
@@ -54,6 +57,7 @@ export type PayTransaction200Transaction = {
   notifyContactName: PayTransaction200TransactionNotifyContactName;
   notifyContactPhone: PayTransaction200TransactionNotifyContactPhone;
   notifyDaysBefore?: number[];
+  notifyOverdueConfig?: PayTransaction200TransactionNotifyOverdueConfig;
   createdAt: string;
   updatedAt: string;
 };

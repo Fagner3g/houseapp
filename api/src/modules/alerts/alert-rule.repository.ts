@@ -7,8 +7,6 @@ import {
   type AlertRuleConfig,
   type AlertRuleScope,
   type AlertRuleTriggerType,
-  type OverdueAlertConfig,
-  type UpcomingAlertConfig,
 } from '@/db/schemas/alertRules'
 
 export type AlertRuleRecord = typeof alertRules.$inferSelect
@@ -135,10 +133,4 @@ export class DrizzleAlertRuleRepository implements AlertRuleRepository {
   }
 }
 
-export function isUpcomingConfig(config: AlertRuleConfig): config is UpcomingAlertConfig {
-  return 'daysBefore' in config
-}
-
-export function isOverdueConfig(config: AlertRuleConfig): config is OverdueAlertConfig {
-  return 'frequency' in config
-}
+export { isOverdueConfig, isUpcomingConfig } from './alert-rule-config'

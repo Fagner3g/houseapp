@@ -4,12 +4,13 @@ import { useEffect, useMemo, useRef, useState } from 'react'
 import { toast } from 'sonner'
 
 import {
-  getListTransactionsQueryKey,
   useCreateTransaction,
   useListAccounts,
 } from '@/api/generated/api'
 import { filterPaymentAccounts } from '@/features/accounts/constants'
-import { reaisToMoneyString } from '@/lib/currency'
+import { invalidateTransactionQueries } from '@/features/transactions/lib/invalidate-transaction-queries'
+import { optionalReaisToApiAmount } from '@/lib/currency'
+import { calendarDateToIso } from '@/lib/date'
 import { readHttpErrorMessage } from '@/lib/http'
 import { useActiveOrganization } from '@/hooks/use-active-organization'
 import { useDrawerStore } from '@/stores/drawers'
@@ -19,7 +20,7 @@ export type InlineTxType = 'expense' | 'income'
 export type InlineTransactionDraft = {
   type: InlineTxType
   title: string
-  amount: number
+  amount: number | null
   categoryId: string
   accountId: string
   date: string
@@ -28,7 +29,7 @@ export type InlineTransactionDraft = {
 const defaultDraft = (): InlineTransactionDraft => ({
   type: 'expense',
   title: '',
-  amount: 0,
+  amount: null,
   categoryId: '',
   accountId: '',
   date: dayjs().format('YYYY-MM-DD'),
@@ -94,8 +95,8 @@ export function useInlineTransactionCreate(lockedAccountId?: string) {
       {
         title: draft.title || undefined,
         type: draft.type,
-        amount: draft.amount > 0 ? reaisToMoneyString(draft.amount) : undefined,
-        date: dayjs(draft.date).toISOString(),
+        amount: optionalReaisToApiAmount(draft.amount) ?? undefined,
+        date: calendarDateToIso(draft.date),
         accountId: draft.accountId || undefined,
         categoryIds: draft.categoryId ? [draft.categoryId] : undefined,
         status: 'pending',
@@ -111,10 +112,6 @@ export function useInlineTransactionCreate(lockedAccountId?: string) {
     if (!draft.title.trim()) {
       toast.error('Informe a descrição')
       titleRef.current?.focus()
-      return
-    }
-    if (draft.amount <= 0) {
-      toast.error('Informe o valor')
       return
     }
     if (!draft.accountId && !resolvedLockedAccountId) {
@@ -139,14 +136,14 @@ export function useInlineTransactionCreate(lockedAccountId?: string) {
         data: {
           title: draft.title.trim(),
           type: draft.type,
-          amount: reaisToMoneyString(draft.amount),
-          date: dayjs(draft.date).toISOString(),
+          amount: optionalReaisToApiAmount(draft.amount),
+          date: calendarDateToIso(draft.date),
           accountId,
           categoryIds: draft.categoryId ? [draft.categoryId] : undefined,
           status: 'pending',
         },
       })
-      await queryClient.invalidateQueries({ queryKey: getListTransactionsQueryKey(slug) })
+      await invalidateTransactionQueries(queryClient, slug)
       toast.success('Lançamento criado')
       reset()
     } catch (error) {

@@ -30,6 +30,7 @@ function makeSplit(
     isNotified: false,
     lastNotifiedAt: null,
     notifyEnabled: true,
+    collectLumpSum: false,
     createdAt: '2026-07-06T00:00:00.000Z',
     updatedAt: '2026-07-06T00:00:00.000Z',
     ...overrides,
@@ -64,6 +65,55 @@ describe('getUnsettledSplits', () => {
 })
 
 describe('resolveSplitInstallmentRemainingReais', () => {
+  it('returns full remaining for lump-sum splits without dividing by installments', () => {
+    const split = makeSplit({
+      amount: '450.00',
+      paidAmount: '0.00',
+      status: 'pending',
+      collectLumpSum: true,
+      contactName: 'Karoline',
+      userId: null,
+    })
+
+    expect(
+      resolveSplitInstallmentRemainingReais(split, {
+        debtSummary: {
+          purchaseTotal: '900.00',
+          myShareTotal: '450.00',
+          installmentsTotal: 3,
+          currentInstallmentNumber: 1,
+          currentTransactionAmount: '300.00',
+          persons: [
+            {
+              key: 'contact:karoline:',
+              name: 'Karoline',
+              userId: null,
+              contactName: 'Karoline',
+              contactPhone: null,
+              totalOwed: '450.00',
+              totalPaid: '0.00',
+              totalRemaining: '450.00',
+              status: 'pending',
+              installments: [
+                {
+                  installmentNumber: 1,
+                  transactionId: 'tx-1',
+                  transactionAmount: '300.00',
+                  splitId: 'split-1',
+                  amount: '450.00',
+                  paidAmount: '0.00',
+                  status: 'pending',
+                },
+              ],
+            },
+          ],
+        },
+        installmentNumber: 1,
+        installmentsTotal: 3,
+      })
+    ).toBe(450)
+  })
+
   it('returns R$ 150 for parcel 1 when total owed R$ 450 is on a single split (900 / 3x / 50-50)', () => {
     const split = makeSplit({
       amount: '450.00',

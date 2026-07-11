@@ -16,6 +16,7 @@ import type { UpdateTransaction200TransactionCompetenceDate } from "./updateTran
 import type { UpdateTransaction200TransactionStatus } from "./updateTransaction200TransactionStatus";
 import type { UpdateTransaction200TransactionPaidAt } from "./updateTransaction200TransactionPaidAt";
 import type { UpdateTransaction200TransactionPaidAmount } from "./updateTransaction200TransactionPaidAmount";
+import type { UpdateTransaction200TransactionPaymentScheduledAt } from "./updateTransaction200TransactionPaymentScheduledAt";
 import type { UpdateTransaction200TransactionCounterparty } from "./updateTransaction200TransactionCounterparty";
 import type { UpdateTransaction200TransactionInstallmentNumber } from "./updateTransaction200TransactionInstallmentNumber";
 import type { UpdateTransaction200TransactionInstallmentsTotal } from "./updateTransaction200TransactionInstallmentsTotal";
@@ -25,6 +26,7 @@ import type { UpdateTransaction200TransactionNotifyTargetType } from "./updateTr
 import type { UpdateTransaction200TransactionNotifyUserId } from "./updateTransaction200TransactionNotifyUserId";
 import type { UpdateTransaction200TransactionNotifyContactName } from "./updateTransaction200TransactionNotifyContactName";
 import type { UpdateTransaction200TransactionNotifyContactPhone } from "./updateTransaction200TransactionNotifyContactPhone";
+import type { UpdateTransaction200TransactionNotifyOverdueConfig } from "./updateTransaction200TransactionNotifyOverdueConfig";
 
 export type UpdateTransaction200Transaction = {
   id: string;
@@ -42,6 +44,7 @@ export type UpdateTransaction200Transaction = {
   status: UpdateTransaction200TransactionStatus;
   paidAt: UpdateTransaction200TransactionPaidAt;
   paidAmount: UpdateTransaction200TransactionPaidAmount;
+  paymentScheduledAt: UpdateTransaction200TransactionPaymentScheduledAt;
   counterparty: UpdateTransaction200TransactionCounterparty;
   installmentNumber: UpdateTransaction200TransactionInstallmentNumber;
   installmentsTotal: UpdateTransaction200TransactionInstallmentsTotal;
@@ -54,6 +57,7 @@ export type UpdateTransaction200Transaction = {
   notifyContactName: UpdateTransaction200TransactionNotifyContactName;
   notifyContactPhone: UpdateTransaction200TransactionNotifyContactPhone;
   notifyDaysBefore?: number[];
+  notifyOverdueConfig?: UpdateTransaction200TransactionNotifyOverdueConfig;
   createdAt: string;
   updatedAt: string;
 };

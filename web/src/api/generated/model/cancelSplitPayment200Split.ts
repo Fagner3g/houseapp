@@ -29,6 +29,7 @@ export type CancelSplitPayment200Split = {
   isNotified: boolean;
   lastNotifiedAt: CancelSplitPayment200SplitLastNotifiedAt;
   notifyEnabled: boolean;
+  collectLumpSum: boolean;
   createdAt: string;
   updatedAt: string;
 };

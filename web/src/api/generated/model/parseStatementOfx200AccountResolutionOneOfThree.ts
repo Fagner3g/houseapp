@@ -10,7 +10,12 @@ import type { ParseStatementOfx200AccountResolutionOneOfThreeSuggestedAccount } 
 
 export type ParseStatementOfx200AccountResolutionOneOfThree = {
   mode: ParseStatementOfx200AccountResolutionOneOfThreeMode;
-  ofxAccountId: string;
+  ofxAccountId?: string;
+  /**
+   * @minLength 4
+   * @maxLength 4
+   */
+  cardLastFour?: string;
   suggestedAccount: ParseStatementOfx200AccountResolutionOneOfThreeSuggestedAccount;
   uploadedOnAccountName?: string;
 };

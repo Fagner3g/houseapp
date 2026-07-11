@@ -8,6 +8,7 @@ import type {
   TransactionStatus,
   TransactionType,
   NotifyTargetType,
+  TransactionNotifyOverdueConfig,
 } from '@/db/schemas/transactions'
 import { badRequest, notFound } from '@/core/errors'
 import { centavosToString, parseCentavos } from '@/core/money'
@@ -20,7 +21,10 @@ import type { CategoryRepository } from '@/modules/categories/category.repositor
 import type { AccountRepository } from '@/modules/accounts/account.repository'
 import type { SplitService } from '@/modules/splits/split.service'
 import type { StatementRepository } from '@/modules/statements/statement.repository'
-import { matchesInstallmentSeries } from '@/modules/splits/split-debt-summary.logic'
+import {
+  matchesInstallmentSeries,
+  selectInstallmentSeriesSiblings,
+} from '@/modules/splits/split-debt-summary.logic'
 
 import type {
   ListTransactionsFilter,
@@ -45,6 +49,7 @@ import {
 } from './credit-card-installment-repair.logic'
 import { buildPeriodicInstallments } from './periodic-installments.logic'
 import { buildPeriodicInstallmentSeriesRepairPlan } from './periodic-installment-repair.logic'
+import { normalizeScheduledAt } from './schedule-payment'
 
 export type CreateTransactionResult = {
   transaction: TransactionDto
@@ -68,6 +73,7 @@ export type TransactionDto = {
   status: TransactionStatus
   paidAt: string | null
   paidAmount: string | null
+  paymentScheduledAt: string | null
   counterparty: string | null
   installmentNumber: number | null
   installmentsTotal: number | null
@@ -80,6 +86,7 @@ export type TransactionDto = {
   notifyContactName: string | null
   notifyContactPhone: string | null
   notifyDaysBefore: number[] | null
+  notifyOverdueConfig: TransactionNotifyOverdueConfig | null
   createdAt: string
   updatedAt: string
 }
@@ -104,6 +111,7 @@ function toTransactionDto(
     status: transaction.status,
     paidAt: transaction.paidAt?.toISOString() ?? null,
     paidAmount: centavosToString(transaction.paidAmount),
+    paymentScheduledAt: transaction.paymentScheduledAt?.toISOString() ?? null,
     counterparty: transaction.counterparty,
     installmentNumber: transaction.installmentNumber,
     installmentsTotal: transaction.installmentsTotal,
@@ -116,6 +124,7 @@ function toTransactionDto(
     notifyContactName: transaction.notifyContactName,
     notifyContactPhone: transaction.notifyContactPhone,
     notifyDaysBefore: transaction.notifyDaysBefore ?? undefined,
+    notifyOverdueConfig: transaction.notifyOverdueConfig ?? undefined,
     createdAt: transaction.createdAt.toISOString(),
     updatedAt: transaction.updatedAt.toISOString(),
   }
@@ -309,6 +318,19 @@ export class TransactionService {
     const created = await this.transactionRepository.create(
       this.toCreateData(organizationId, input, notifyTarget)
     )
+
+    if (input.type === 'income' && input.accountId && input.title) {
+      const { maybeMarkPurchasesAfterInvoicePayment } = await import(
+        '@/modules/statements/settle-after-payment'
+      )
+      await maybeMarkPurchasesAfterInvoicePayment({
+        organizationId,
+        accountId: input.accountId,
+        title: input.title,
+        type: 'income',
+        paidAt: input.paidAt ? new Date(input.paidAt) : created.paidAt,
+      })
+    }
 
     return { transaction: toTransactionDto(created, input.categoryIds ?? []) }
   }
@@ -542,6 +564,7 @@ export class TransactionService {
       status,
       paidAt,
       paidAmount: newPaidAmount,
+      paymentScheduledAt: null,
     })
 
     if (!updated) {
@@ -550,6 +573,53 @@ export class TransactionService {
 
     const categoryMap = await this.transactionRepository.getCategoryIds([updated.id])
 
+    return toTransactionDto(updated, categoryMap.get(updated.id) ?? [])
+  }
+
+  async schedulePayment(
+    organizationId: string,
+    id: string,
+    input: { scheduledAt: string }
+  ): Promise<TransactionDto> {
+    const existing = await this.transactionRepository.findById(organizationId, id)
+
+    if (!existing) {
+      throw notFound('Transaction not found')
+    }
+
+    if (existing.status === 'paid' || existing.status === 'canceled') {
+      throw badRequest('Cannot schedule payment on a paid or canceled transaction')
+    }
+
+    const paymentScheduledAt = normalizeScheduledAt(input.scheduledAt)
+    const updated = await this.transactionRepository.update(id, { paymentScheduledAt })
+
+    if (!updated) {
+      throw notFound('Transaction not found')
+    }
+
+    const categoryMap = await this.transactionRepository.getCategoryIds([updated.id])
+    return toTransactionDto(updated, categoryMap.get(updated.id) ?? [])
+  }
+
+  async cancelScheduledPayment(organizationId: string, id: string): Promise<TransactionDto> {
+    const existing = await this.transactionRepository.findById(organizationId, id)
+
+    if (!existing) {
+      throw notFound('Transaction not found')
+    }
+
+    if (!existing.paymentScheduledAt) {
+      throw badRequest('Transaction has no scheduled payment')
+    }
+
+    const updated = await this.transactionRepository.update(id, { paymentScheduledAt: null })
+
+    if (!updated) {
+      throw notFound('Transaction not found')
+    }
+
+    const categoryMap = await this.transactionRepository.getCategoryIds([updated.id])
     return toTransactionDto(updated, categoryMap.get(updated.id) ?? [])
   }
 
@@ -661,6 +731,7 @@ export class TransactionService {
             status,
             paidAt,
             paidAmount: newPaidAmount,
+            paymentScheduledAt: null,
             updatedAt: new Date(),
           })
           .where(
@@ -982,7 +1053,7 @@ export class TransactionService {
       .where(and(...conditions))
       .orderBy(transactions.installmentNumber)
 
-    const siblings = candidates.filter(candidate => matchesInstallmentSeries(candidate, anchor))
+    const siblings = selectInstallmentSeriesSiblings(candidates, anchor)
 
     return siblings.length > 0 ? siblings : [anchor]
   }
@@ -1172,7 +1243,8 @@ export class TransactionService {
       input.notifyUserId !== undefined ||
       input.notifyContactName !== undefined ||
       input.notifyContactPhone !== undefined ||
-      input.notifyDaysBefore !== undefined
+      input.notifyDaysBefore !== undefined ||
+      input.notifyOverdueConfig !== undefined
 
     if (!hasNotifyInput) {
       return existing ?? resolveNotifyTarget({ notifyEnabled: false })
@@ -1212,11 +1284,13 @@ export class TransactionService {
       const [card] = await db.select().from(cards).where(eq(cards.id, input.cardId)).limit(1)
 
       if (!card) {
-        throw badRequest('Card not found')
+        throw badRequest('Cartão não encontrado')
       }
 
       if (input.accountId && card.accountId !== input.accountId) {
-        throw badRequest('Card does not belong to the specified account')
+        throw badRequest(
+          'O cartão selecionado não pertence a esta conta. Selecione novamente a conta e o cartão.'
+        )
       }
 
       if (input.accountId == null) {
@@ -1234,14 +1308,14 @@ export class TransactionService {
 
     if (input.categoryIds?.length) {
       if (!input.type) {
-        throw badRequest('Transaction type is required when assigning categories')
+        throw badRequest('Informe o tipo do lançamento ao selecionar categorias')
       }
 
       for (const categoryId of input.categoryIds) {
         const category = await this.categoryRepository.findById(organizationId, categoryId)
 
         if (!category || !category.isActive) {
-          throw badRequest(`Category not found: ${categoryId}`)
+          throw badRequest('Categoria não encontrada ou inativa')
         }
 
         if (category.type !== input.type) {

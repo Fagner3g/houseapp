@@ -118,7 +118,14 @@ export function useMergedTransactionList(
   const { summaries, hiddenTransactionIds } = useInvoiceSummaryRows(dateFrom, dateTo, enabled)
 
   return useMemo(
-    () => mergeTransactionsWithInvoices(transactions, summaries, hiddenTransactionIds),
-    [transactions, summaries, hiddenTransactionIds]
+    () =>
+      mergeTransactionsWithInvoices(
+        transactions,
+        summaries,
+        hiddenTransactionIds,
+        dateFrom,
+        dateTo
+      ),
+    [transactions, summaries, hiddenTransactionIds, dateFrom, dateTo]
   )
 }

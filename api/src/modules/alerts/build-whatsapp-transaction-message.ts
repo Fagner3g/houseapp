@@ -110,6 +110,7 @@ export async function resolveWhatsAppAlertContentForTransaction(
     recipientName: '',
     transactionTitle: transaction.title,
     accountName,
+    organizationName: null,
     daysUntilDue,
     dueDate: dueDate.toISOString(),
     amount: amounts.amount,
@@ -120,6 +121,7 @@ export async function resolveWhatsAppAlertContentForTransaction(
     splitPaidAmount: amounts.splitPaidAmount ?? null,
     splitRemainingAmount: amounts.splitRemainingAmount ?? null,
     splitParticipantCount: amounts.splitParticipantCount ?? null,
+    collectLumpSum: amounts.collectLumpSum ?? null,
     kind: params.kind,
     overdueDays: params.overdueDays,
     installmentNumber: transaction.installmentNumber,
@@ -138,6 +140,7 @@ export async function buildWhatsAppMessageForTransaction(params: {
   overdueDays?: number
   amountOverride?: string | null
   isSplit?: boolean
+  splitId?: string | null
 }): Promise<string | null> {
   const content = await resolveWhatsAppAlertContentForTransaction(params)
   if (!content) return null
@@ -156,6 +159,7 @@ export async function buildWhatsAppMessageForTransaction(params: {
     splitPaidAmount: content.splitPaidAmount,
     splitRemainingAmount: content.splitRemainingAmount,
     splitParticipantCount: content.splitParticipantCount,
+    collectLumpSum: content.collectLumpSum,
     kind: content.kind,
     overdueDays: content.overdueDays,
     installmentNumber: content.installmentNumber,
@@ -189,6 +193,7 @@ export async function buildWhatsAppBatchMessageForTransactions(params: {
         splitPaidAmount: content.splitPaidAmount,
         splitRemainingAmount: content.splitRemainingAmount,
         splitParticipantCount: content.splitParticipantCount,
+        collectLumpSum: content.collectLumpSum,
         note: content.note,
         daysUntilDue: content.daysUntilDue,
         dueDate: content.dueDate,

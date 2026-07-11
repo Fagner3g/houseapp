@@ -4,20 +4,7 @@ import { formatCurrency, formatMoneyString, moneyStringToReais, reaisToMoneyStri
 import { cn } from '@/lib/utils'
 
 import { computeSplitDebtProgress } from '../split-debt-summary.utils'
-
-const STATUS_LABELS = {
-  pending: 'Pendente',
-  partial: 'Parcial',
-  paid: 'Pago',
-  forgiven: 'Perdoado',
-} as const
-
-const STATUS_VARIANT = {
-  pending: 'warning',
-  partial: 'partial',
-  paid: 'default',
-  forgiven: 'outline',
-} as const
+import { SPLIT_STATUS_LABELS, SPLIT_STATUS_VARIANT } from './splits/split-status'
 
 interface SplitDebtSummaryProps {
   summary: {
@@ -127,12 +114,12 @@ export function PersonSplitDebtDetails({
                     {formatMoneyString(installment.amount)}
                   </span>
                   <Badge
-                    variant={STATUS_VARIANT[installment.status]}
+                    variant={SPLIT_STATUS_VARIANT[installment.status]}
                     className="text-[10px] uppercase"
                   >
                     {installment.status === 'partial'
                       ? `Falta ${formatMoneyString(reaisToMoneyString(remaining))}`
-                      : STATUS_LABELS[installment.status]}
+                      : SPLIT_STATUS_LABELS[installment.status]}
                   </Badge>
                 </div>
               </li>

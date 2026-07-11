@@ -6,8 +6,6 @@ import { useNavigate, useSearch } from '@tanstack/react-router'
 import { toast } from 'sonner'
 
 import {
-  getListAccountsQueryKey,
-  getListTransactionsQueryKey,
   useDeleteTransaction,
   useListAccounts,
   useListCategories,
@@ -23,6 +21,7 @@ import {
   AlertDialogHeader,
   AlertDialogTitle,
 } from '@/components/ui/alert-dialog'
+import { invalidateTransactionQueries } from '@/features/transactions/lib/invalidate-transaction-queries'
 import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
 import { Checkbox } from '@/components/ui/checkbox'
@@ -35,8 +34,9 @@ import {
   TableHeader,
   TableRow,
 } from '@/components/ui/table'
-import { formatCentsString } from '@/lib/currency'
+import { formatCentsString, reaisToMoneyString } from '@/lib/currency'
 import { transactionPurchaseDate } from '@/lib/credit-card-invoice-metrics'
+import { formatIsoDateLabel, isoToCalendarDate } from '@/lib/date'
 import { useActiveOrganization } from '@/hooks/use-active-organization'
 import { useDrawerStore } from '@/stores/drawers'
 import { cn } from '@/lib/utils'
@@ -45,12 +45,21 @@ import { useSplitTransactionIds } from '@/features/credit-cards/hooks/use-split-
 import {
   formatDelegatedSplitBadge,
   formatPartialSplitBadge,
+  partialSplitBadgeClassName,
+  resolveSplitBadgeSettlement,
+  splitBadgeClassName,
   type PartialSplitBadgeInfo,
 } from '@/features/transactions/lib/split-badge-label'
 import { isInvoiceSummary, type TransactionListItem } from '@/features/transactions/types'
 import { TransactionInlineCreateBar } from './transaction-inline-create-bar'
 import { DeleteTransactionDialog } from './delete-transaction-dialog'
 import { canDeleteTransaction } from '@/features/transactions/utils/can-delete-transaction'
+import {
+  getPayableStatusBadges,
+  isFutureScheduled,
+  isOverduePayable,
+} from '@/features/transactions/lib/payable-status'
+import { resolveTransactionListAmountReais, isTransactionPartiallyPaid } from '@/features/transactions/installment-amount.utils'
 
 type TransactionRow = Extract<TransactionListItem, { kind: 'transaction' }>
 
@@ -68,6 +77,10 @@ interface TransactionListProps {
   fullyDelegatedById?: Map<string, string>
   /** Map of transaction id → partial split info for badge labels. */
   partiallyDividedById?: Map<string, PartialSplitBadgeInfo>
+  /** Map of transaction id → total paid on splits. */
+  splitPaidById?: Map<string, number>
+  /** Map of transaction id → remaining split amount still to collect. */
+  splitRemainingById?: Map<string, number>
   /** When false, hides the inline create row (e.g. credit card after first statement import). */
   allowInlineCreate?: boolean
   containerClassName?: string
@@ -82,7 +95,36 @@ function isCreditCardExpense(
 }
 
 function isOverdue(tx: Extract<TransactionListItem, { kind: 'transaction' }>) {
-  return tx.status === 'pending' && dayjs(tx.date).isBefore(dayjs().startOf('day'))
+  return isOverduePayable(tx) && !isFutureScheduled(tx)
+}
+
+function getPayableListDate(tx: TransactionRow) {
+  const dueKey = isoToCalendarDate(tx.date)
+  const scheduledKey = tx.paymentScheduledAt
+    ? isoToCalendarDate(tx.paymentScheduledAt)
+    : null
+
+  if (scheduledKey && scheduledKey !== dueKey) {
+    return {
+      displayDay: scheduledKey,
+      dueSubtext: `Venc. ${formatIsoDateLabel(tx.date)}`,
+      showScheduledBadge: true,
+    }
+  }
+
+  if (scheduledKey) {
+    return {
+      displayDay: scheduledKey,
+      dueSubtext: null,
+      showScheduledBadge: false,
+    }
+  }
+
+  return {
+    displayDay: dueKey,
+    dueSubtext: null,
+    showScheduledBadge: false,
+  }
 }
 
 function getStatusLabel(item: TransactionListItem): string {
@@ -96,6 +138,7 @@ function getStatusLabel(item: TransactionListItem): string {
   const tx = item
   if (tx.status === 'canceled') return 'Cancelado'
   if (tx.status === 'paid') return tx.type === 'income' ? 'Recebido' : 'Pago'
+  if (tx.status === 'partial') return 'Parcial'
   return 'Pendente'
 }
 
@@ -120,6 +163,8 @@ function TransactionTable({
   cards,
   fullyDelegatedById,
   partiallyDividedById,
+  splitPaidById,
+  splitRemainingById,
   allowInlineCreate = true,
   containerClassName,
 }: TransactionListProps) {
@@ -193,10 +238,9 @@ function TransactionTable({
   const allSelected =
     selectableItems.length > 0 && selectableItems.every(item => selected.has(item.id))
 
-  const invalidateTransactionQueries = async () => {
+  const invalidateQueries = async () => {
     if (!slug) return
-    await queryClient.invalidateQueries({ queryKey: getListTransactionsQueryKey(slug) })
-    await queryClient.invalidateQueries({ queryKey: getListAccountsQueryKey(slug) })
+    await invalidateTransactionQueries(queryClient, slug)
   }
 
   const applyBulkCategory = async () => {
@@ -220,7 +264,7 @@ function TransactionTable({
           })
         )
       )
-      await invalidateTransactionQueries()
+      await invalidateQueries()
       toast.success(
         selectedTransactions.length === 1
           ? 'Categoria aplicada'
@@ -239,7 +283,7 @@ function TransactionTable({
       await Promise.all(
         deletableSelected.map(item => deleteTransaction({ slug, id: item.id }))
       )
-      await invalidateTransactionQueries()
+      await invalidateQueries()
       toast.success(
         deletableSelected.length === 1
           ? 'Lançamento excluído'
@@ -440,7 +484,7 @@ function TransactionTable({
                 >
                   <TableCell />
                   <TableCell className="whitespace-nowrap text-sm text-slate-600">
-                    {dayjs(item.date).format('DD/MM/YYYY')}
+                    {formatIsoDateLabel(item.date)}
                   </TableCell>
                   <TableCell>
                     <span className="max-w-[200px] truncate font-medium text-violet-900 lg:max-w-xs">
@@ -487,6 +531,7 @@ function TransactionTable({
 
             const tx = item
             const overdue = mode === 'overdue' && isOverdue(tx)
+            const payableListDate = !isCreditCardStatement ? getPayableListDate(tx) : null
             const creditCardExpense = isCreditCardExpense(tx, accounts?.accounts)
             const showRecurringContractButton = tx.recurringTransactionId != null
             const showPayButton =
@@ -527,9 +572,11 @@ function TransactionTable({
                   overdue ? 'font-medium text-rose-600' : 'text-slate-600'
                 )}
               >
-                {dayjs(
-                  isCreditCardStatement ? transactionPurchaseDate(tx) : tx.date
-                ).format('DD/MM/YYYY')}
+                {formatIsoDateLabel(
+                  isCreditCardStatement
+                    ? transactionPurchaseDate(tx)
+                    : (payableListDate?.displayDay ?? tx.date)
+                )}
               </TableCell>
               <TableCell>
                 <div>
@@ -538,14 +585,22 @@ function TransactionTable({
                       {tx.title}
                     </span>
                     {(() => {
+                      const hasSplit =
+                        fullyDelegatedById?.has(tx.id) || partiallyDividedById?.has(tx.id)
+                      const settlement = hasSplit
+                        ? resolveSplitBadgeSettlement(splitRemainingById?.get(tx.id) ?? 0)
+                        : undefined
                       const delegatedName = fullyDelegatedById?.get(tx.id)
                       if (delegatedName) {
                         return (
                           <Badge
                             variant="secondary"
-                            className="shrink-0 border-amber-200 bg-amber-50 text-[10px] font-medium text-amber-800"
+                            className={cn(
+                              'shrink-0 text-[10px] font-medium',
+                              splitBadgeClassName(settlement)
+                            )}
                           >
-                            {formatDelegatedSplitBadge(delegatedName)}
+                            {formatDelegatedSplitBadge(delegatedName, settlement)}
                           </Badge>
                         )
                       }
@@ -554,9 +609,12 @@ function TransactionTable({
                         return (
                           <Badge
                             variant="secondary"
-                            className="shrink-0 border-sky-200 bg-sky-50 text-[10px] font-medium text-sky-800"
+                            className={cn(
+                              'shrink-0 text-[10px] font-medium',
+                              partialSplitBadgeClassName(settlement)
+                            )}
                           >
-                            {formatPartialSplitBadge(partialInfo)}
+                            {formatPartialSplitBadge(partialInfo, settlement)}
                           </Badge>
                         )
                       }
@@ -577,6 +635,9 @@ function TransactionTable({
                     <p className="text-xs text-slate-500">
                       Parcela {tx.installmentNumber ?? '?'}/{tx.installmentsTotal}
                     </p>
+                  )}
+                  {payableListDate?.dueSubtext && (
+                    <p className="text-xs text-slate-500">{payableListDate.dueSubtext}</p>
                   )}
                   {showCardLabel && tx.type === 'expense' && (
                     <p className="text-xs text-slate-500">
@@ -604,13 +665,41 @@ function TransactionTable({
                   )}
                 >
                   {tx.type === 'income' ? '+ ' : '- '}
-                  {formatCentsString(tx.amount)}
+                  {formatCentsString(
+                    tx.status === 'paid'
+                      ? tx.amount
+                      : reaisToMoneyString(
+                          resolveTransactionListAmountReais(
+                            tx.amount,
+                            tx.paidAmount,
+                            splitPaidById?.get(tx.id) ?? 0
+                          )
+                        )
+                  )}
                 </span>
               </TableCell>
               {showStatusColumn && (
                 <TableCell>
                   {creditCardExpense ? (
                     <span className="text-sm text-slate-400">—</span>
+                  ) : tx.status === 'pending' || tx.status === 'partial' ? (
+                    <div className="flex flex-wrap gap-1">
+                      {getPayableStatusBadges(tx, {
+                        isPartiallyPaid: isTransactionPartiallyPaid(
+                          tx.amount,
+                          tx.paidAmount,
+                          splitPaidById?.get(tx.id) ?? 0
+                        ),
+                      }).map(badge => (
+                        <Badge
+                          key={badge.key}
+                          variant="outline"
+                          className={cn('text-xs', badge.className)}
+                        >
+                          {badge.label}
+                        </Badge>
+                      ))}
+                    </div>
                   ) : (
                     <Badge
                       variant={getStatusVariant(tx)}
@@ -769,35 +858,57 @@ export function TransactionList({
   cards,
   fullyDelegatedById: fullyDelegatedByIdProp,
   partiallyDividedById: partiallyDividedByIdProp,
+  splitRemainingById: splitRemainingByIdProp,
   allowInlineCreate = true,
   containerClassName,
 }: TransactionListProps) {
   const { slug } = useActiveOrganization()
   const search = useSearch({ strict: false }) as {
     recurring?: 'all' | 'recurring' | 'single'
+    scheduled?: 'scheduled' | 'unscheduled'
   }
 
   const filtered = useMemo(() => {
-    if (!search.recurring || search.recurring === 'all') return items
-    return items.filter(item => {
-      if (isInvoiceSummary(item)) return true
-      if (search.recurring === 'recurring') {
-        return item.recurringTransactionId != null
-      }
-      return item.recurringTransactionId == null
-    })
-  }, [items, search.recurring])
+    let result = items
+
+    if (search.recurring && search.recurring !== 'all') {
+      result = result.filter(item => {
+        if (isInvoiceSummary(item)) return true
+        if (search.recurring === 'recurring') {
+          return item.recurringTransactionId != null
+        }
+        return item.recurringTransactionId == null
+      })
+    }
+
+    if (search.scheduled === 'scheduled') {
+      result = result.filter(item => {
+        if (isInvoiceSummary(item)) return false
+        return isFutureScheduled(item)
+      })
+    } else if (search.scheduled === 'unscheduled') {
+      result = result.filter(item => {
+        if (isInvoiceSummary(item)) return true
+        return !isFutureScheduled(item)
+      })
+    }
+
+    return result
+  }, [items, search.recurring, search.scheduled])
 
   const listItems = mode === 'overdue' ? items : filtered
-  const splitMapsProvided =
-    fullyDelegatedByIdProp != null && partiallyDividedByIdProp != null
-  const transactionIds = useMemo(() => {
-    if (splitMapsProvided) return []
-    return listItems.filter((item): item is TransactionRow => !isInvoiceSummary(item)).map(item => item.id)
-  }, [listItems, splitMapsProvided])
+  const transactionIds = useMemo(
+    () =>
+      listItems
+        .filter((item): item is TransactionRow => !isInvoiceSummary(item))
+        .map(item => item.id),
+    [listItems]
+  )
   const { data: splitData } = useSplitTransactionIds(slug, transactionIds)
   const fullyDelegatedById = fullyDelegatedByIdProp ?? splitData?.fullyDelegatedById
   const partiallyDividedById = partiallyDividedByIdProp ?? splitData?.partiallyDividedById
+  const splitPaidById = splitData?.splitPaidById
+  const splitRemainingById = splitRemainingByIdProp ?? splitData?.splitRemainingById
 
   return (
     <TransactionTable
@@ -809,6 +920,8 @@ export function TransactionList({
       cards={cards}
       fullyDelegatedById={fullyDelegatedById}
       partiallyDividedById={partiallyDividedById}
+      splitPaidById={splitPaidById}
+      splitRemainingById={splitRemainingById}
       allowInlineCreate={allowInlineCreate}
       containerClassName={containerClassName}
     />

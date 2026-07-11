@@ -9,6 +9,7 @@ import {
   cleanTransactionTitle,
   formatAmountBRL,
   WHATSAPP_BATCH_SEPARATOR,
+  WHATSAPP_ITEM_SEPARATOR,
 } from './whatsapp-alert-message'
 import { resolveWhatsAppAlertAmounts } from './resolve-whatsapp-alert-amounts'
 
@@ -108,6 +109,36 @@ describe('whatsapp-alert-message', () => {
         splitParticipantCount: 2,
       })
     ).toBe('Sua parte: R$ 83,75 (1/10) · 837,50')
+
+    // 100% delegated installment: don't append purchase total (reads as if 1/10 = R$ 1.000)
+    expect(
+      buildSummaryLine({
+        transactionTotalAmount: '1000.00',
+        splitAmount: '1000.00',
+        splitShareInstallmentAmount: '100.00',
+        splitPaidAmount: '0.00',
+        splitRemainingAmount: '1000.00',
+        amount: '1000.00',
+        installmentNumber: 1,
+        installmentsTotal: 10,
+        isSplit: true,
+        splitParticipantCount: 1,
+      })
+    ).toBe('Sua parte: R$ 100,00 (1/10)')
+
+    expect(
+      buildSummaryLine({
+        transactionTotalAmount: '824.37',
+        splitAmount: '412.19',
+        splitShareInstallmentAmount: '412.19',
+        amount: '412.19',
+        installmentNumber: 1,
+        installmentsTotal: 3,
+        isSplit: true,
+        collectLumpSum: true,
+        splitParticipantCount: 2,
+      })
+    ).toBe('Sua parte: R$ 412,19')
   })
 
   it('formats credit card invoice due line', () => {
@@ -159,9 +190,10 @@ describe('whatsapp-alert-message', () => {
       [
         'Boa tarde, Karoline!',
         '',
+        '🚨 *CONTAS VENCIDAS*',
         '⚠️ Amazonmktplc*Fidcomerc',
-        '7/12: R$ 61,07',
-        'Vencida há 62 dias · 01/05/2026',
+        '7/12: *R$ 61,07*',
+        '*Vencida há 62 dias · 01/05/2026*',
       ].join('\n')
     )
   })
@@ -188,11 +220,12 @@ describe('whatsapp-alert-message', () => {
       [
         'Boa tarde, Aline!',
         '',
+        '⏰ *PRESTES A VENCER*',
         '💳 Cartão de crédito',
-        'Fatura vence em 2 dias · 08/07/2026',
+        '*Fatura vence em 2 dias · 08/07/2026*',
         '',
-        '🧾 Mp *Ruivasstores · R$ 8.000,00',
-        'Sua parte: R$ 4.000,00',
+        '🧾 Mp *Ruivasstores · *R$ 8.000,00*',
+        'Sua parte: *R$ 4.000,00*',
       ].join('\n')
     )
   })
@@ -224,9 +257,10 @@ describe('whatsapp-alert-message', () => {
       [
         'Boa tarde, Karoline!',
         '',
-        '📅 Pia da cozinha · R$ 900,00',
-        'Sua parte: R$ 150,00 (1/3) · 450,00',
-        'Vence hoje · 06/07/2026',
+        '⏰ *PRESTES A VENCER*',
+        '📅 *Pia da cozinha* · *R$ 900,00*',
+        'Sua parte: *R$ 150,00* (1/3) · 450,00',
+        '*Vence hoje · 06/07/2026*',
       ].join('\n')
     )
   })
@@ -259,11 +293,125 @@ describe('whatsapp-alert-message', () => {
       [
         'Bom dia, Karoline!',
         '',
+        '⏰ *PRESTES A VENCER*',
         '💳 Cartão de crédito',
-        'Fatura vence em 9 dias · 17/07/2026',
+        '*Fatura vence em 9 dias · 17/07/2026*',
         '',
-        '🧾 Casas Bahia - NuPay · R$ 1.675,10',
-        'Sua parte: R$ 83,75 (1/10) · 837,50',
+        '🧾 *Casas Bahia - NuPay* · *R$ 1.675,10*',
+        'Sua parte: *R$ 83,75* (1/10) · 837,50',
+      ].join('\n')
+    )
+  })
+
+  it('builds lump-sum split alert without installment fraction', () => {
+    const message = buildWhatsAppAlertMessage(
+      {
+        recipientName: 'Karoline',
+        transactionTitle: 'Supermercados Bh - Parcela 1/3',
+        accountName: 'Nubank Cartão',
+        installmentNumber: 1,
+        installmentsTotal: 3,
+        transactionTotalAmount: '824.37',
+        splitAmount: '412.19',
+        splitShareInstallmentAmount: '412.19',
+        splitParticipantCount: 2,
+        collectLumpSum: true,
+        daysUntilDue: -24,
+        dueDate: '2026-06-17T12:00:00.000Z',
+        amount: '412.19',
+        kind: 'split_overdue',
+        overdueDays: 24,
+        isSplit: true,
+        isCreditCardInvoice: true,
+      },
+      new Date('2026-07-11T14:00:00.000Z')
+    )
+
+    expect(message).toBe(
+      [
+        'Bom dia, Karoline!',
+        '',
+        '🚨 *CONTAS VENCIDAS*',
+        '💳 Cartão de crédito',
+        '*Fatura vencida há 24 dias · 17/06/2026*',
+        '',
+        '⚠️ *Supermercados Bh* · *R$ 824,37*',
+        'Sua parte: *R$ 412,19*',
+      ].join('\n')
+    )
+  })
+
+  it('collapses installment series siblings to the soonest parcel', () => {
+    const message = buildWhatsAppBatchAlertMessage(
+      {
+        recipientName: 'Fagner',
+        items: [
+          {
+            transactionTitle: 'Piso cozinha',
+            transactionTotalAmount: '299.80',
+            splitAmount: '149.90',
+            isSplit: true,
+            dueLine: 'Vence em 6 dias · 17/07/2026',
+            daysUntilDue: 6,
+            kind: 'split_upcoming',
+          },
+          {
+            transactionTitle: 'Marmori cozinha',
+            transactionTotalAmount: '850.00',
+            splitAmount: '424.99',
+            splitShareInstallmentAmount: '141.67',
+            installmentNumber: 1,
+            installmentsTotal: 3,
+            isSplit: true,
+            dueLine: 'Vence em 6 dias · 17/07/2026',
+            daysUntilDue: 6,
+            kind: 'split_upcoming',
+          },
+          {
+            transactionTitle: 'Marmori cozinha',
+            transactionTotalAmount: '850.00',
+            splitAmount: '424.99',
+            splitShareInstallmentAmount: '141.66',
+            installmentNumber: 2,
+            installmentsTotal: 3,
+            isSplit: true,
+            dueLine: 'Vence em 37 dias · 17/08/2026',
+            daysUntilDue: 37,
+            kind: 'split_upcoming',
+          },
+          {
+            transactionTitle: 'Marmori cozinha',
+            transactionTotalAmount: '850.00',
+            splitAmount: '424.99',
+            splitShareInstallmentAmount: '141.66',
+            installmentNumber: 3,
+            installmentsTotal: 3,
+            isSplit: true,
+            dueLine: 'Vence em 68 dias · 17/09/2026',
+            daysUntilDue: 68,
+            kind: 'split_upcoming',
+          },
+        ],
+      },
+      new Date('2026-07-11T12:00:00.000Z')
+    )
+
+    expect(message).toBe(
+      [
+        'Bom dia, Fagner!',
+        '',
+        '⏰ *PRESTES A VENCER*',
+        '🧾 *Piso cozinha* · *R$ 299,80*',
+        'Sua parte: *R$ 149,90*',
+        '*Vence em 6 dias · 17/07/2026*',
+        '',
+        WHATSAPP_BATCH_SEPARATOR,
+        '',
+        '🧾 *Marmori cozinha* · *R$ 850,00*',
+        'Sua parte: *R$ 141,67* (1/3) · 424,99',
+        '*Vence em 6 dias · 17/07/2026*',
+        '',
+        '💰 Total da sua parte: *R$ 291,57*',
       ].join('\n')
     )
   })
@@ -297,15 +445,16 @@ describe('whatsapp-alert-message', () => {
       [
         'Bom dia, Fagner!',
         '',
-        '🧾 CEMIG',
-        'Vence em 2 dias · 08/07/2026',
+        '⏰ *PRESTES A VENCER*',
+        '🧾 *CEMIG*',
+        '*Vence em 2 dias · 08/07/2026*',
         '📝 Pagar energia',
         '',
         WHATSAPP_BATCH_SEPARATOR,
         '',
-        '📅 Vivo',
-        'R$ 64,00',
-        'Vence hoje · 06/07/2026',
+        '📅 *Vivo*',
+        '*R$ 64,00*',
+        '*Vence hoje · 06/07/2026*',
       ].join('\n')
     )
   })
@@ -356,20 +505,21 @@ describe('whatsapp-alert-message', () => {
       [
         'Boa tarde, Aline!',
         '',
+        '⏰ *PRESTES A VENCER*',
         '💳 Cartão de crédito',
-        'Fatura vence em 2 dias · 08/07/2026',
+        '*Fatura vence em 2 dias · 08/07/2026*',
         '',
         '🧾 Asa*Casaldentistabh',
-        'R$ 1.350,00',
+        '*R$ 1.350,00*',
         '',
-        '🧾 Mp *Ruivasstores · R$ 8.000,00',
-        'Sua parte: R$ 4.000,00',
+        '🧾 Mp *Ruivasstores · *R$ 8.000,00*',
+        'Sua parte: *R$ 4.000,00*',
         '',
         WHATSAPP_BATCH_SEPARATOR,
         '',
-        '📅 Emprestimo',
-        '1/4: R$ 250,00',
-        'Vence hoje · 06/07/2026',
+        '📅 *Emprestimo*',
+        '1/4: *R$ 250,00*',
+        '*Vence hoje · 06/07/2026*',
       ].join('\n')
     )
   })
@@ -412,16 +562,17 @@ describe('whatsapp-alert-message', () => {
       [
         'Bom dia, Karoline!',
         '',
+        '⏰ *PRESTES A VENCER*',
         '💳 Cartão de crédito',
-        'Fatura vence em 11 dias · 17/07/2026',
+        '*Fatura vence em 11 dias · 17/07/2026*',
         '',
-        '🧾 Papelaria Santa Ines',
-        'Sua parte: R$ 3,00',
+        '🧾 *Papelaria Santa Ines*',
+        'Sua parte: *R$ 3,00*',
         '',
-        '🧾 Posto de Combustiveis',
-        'Sua parte: R$ 12,50',
+        '🧾 *Posto de Combustiveis*',
+        'Sua parte: *R$ 12,50*',
         '',
-        '💰 Total da sua parte: R$ 15,50',
+        '💰 Total da sua parte: *R$ 15,50*',
       ].join('\n')
     )
   })
@@ -524,36 +675,153 @@ describe('whatsapp-alert-message', () => {
       [
         'Bom dia, Karoline!',
         '',
+        '⏰ *PRESTES A VENCER*',
         '💳 Cartão de crédito',
-        'Fatura vence em 9 dias · 17/07/2026',
+        '*Fatura vence em 9 dias · 17/07/2026*',
         '',
-        '🧾 Casas Bahia - NuPay · R$ 1.675,10',
-        'Sua parte: R$ 83,75 (1/10) · 837,50',
+        '🧾 *Casas Bahia - NuPay* · *R$ 1.675,10*',
+        'Sua parte: *R$ 83,75* (1/10) · 837,50',
         '',
-        '🧾 Marcio Parafusos · R$ 7,90',
-        'Sua parte: R$ 3,95',
+        '🧾 *Marcio Parafusos* · *R$ 7,90*',
+        'Sua parte: *R$ 3,95*',
         '',
-        '🧾 Marcio Parafusos · R$ 6,50',
-        'Sua parte: R$ 3,25',
+        '🧾 *Marcio Parafusos* · *R$ 6,50*',
+        'Sua parte: *R$ 3,25*',
         '',
-        '🧾 Marcio Parafusos · R$ 68,40',
-        'Sua parte: R$ 34,20',
+        '🧾 *Marcio Parafusos* · *R$ 68,40*',
+        'Sua parte: *R$ 34,20*',
         '',
-        '🧾 Marcio Parafusos · R$ 26,00',
-        'Sua parte: R$ 13,00',
+        '🧾 *Marcio Parafusos* · *R$ 26,00*',
+        'Sua parte: *R$ 13,00*',
         '',
-        '🧾 Marcio Parafusos · R$ 19,80',
-        'Sua parte: R$ 9,90',
+        '🧾 *Marcio Parafusos* · *R$ 19,80*',
+        'Sua parte: *R$ 9,90*',
         '',
-        '💰 Sua parte neste cartão: R$ 148,05',
+        '💰 Sua parte neste cartão: *R$ 148,05*',
         '',
         WHATSAPP_BATCH_SEPARATOR,
         '',
-        '🧾 Fogão cooktop · R$ 387,90',
-        'Sua parte: R$ 193,95',
-        'Vence em 9 dias · 17/07/2026',
+        '🧾 *Fogão cooktop* · *R$ 387,90*',
+        'Sua parte: *R$ 193,95*',
+        '*Vence em 9 dias · 17/07/2026*',
         '',
-        '💰 Total da sua parte: R$ 342,00',
+        '💰 Total da sua parte: *R$ 342,00*',
+      ].join('\n')
+    )
+  })
+
+  it('renders invoice digest as a single fatura line without purchase items', () => {
+    const message = buildWhatsAppBatchAlertMessage(
+      {
+        recipientName: 'Fagner Gomes',
+        items: [
+          {
+            transactionTitle: 'Fatura Nubank',
+            dueLine: 'Fatura vencida há 1 dia · 10/07/2026',
+            accountName: 'Nubank',
+            isCreditCardInvoice: true,
+            amount: '100.00',
+            transactionTotalAmount: '100.00',
+            daysUntilDue: -1,
+            kind: 'invoice_overdue',
+          },
+          {
+            transactionTitle: 'Uber',
+            dueLine: 'Fatura vencida há 1 dia · 10/07/2026',
+            accountName: 'Nubank',
+            isCreditCardInvoice: true,
+            amount: '30.00',
+            transactionTotalAmount: '30.00',
+            daysUntilDue: -1,
+            kind: 'overdue',
+          },
+          {
+            transactionTitle: 'iFood',
+            dueLine: 'Fatura vencida há 1 dia · 10/07/2026',
+            accountName: 'Nubank',
+            isCreditCardInvoice: true,
+            amount: '70.00',
+            transactionTotalAmount: '70.00',
+            daysUntilDue: -1,
+            kind: 'overdue',
+          },
+        ],
+      },
+      new Date('2026-07-11T15:00:00.000Z')
+    )
+
+    expect(message).toContain('⚠️ *Fatura Nubank*')
+    expect(message).toContain('*Fatura vencida há 1 dia · 10/07/2026*')
+    expect(message).toContain('💳 Cartão de crédito')
+    expect(message).toContain('Uber')
+    expect(message).toContain('iFood')
+    // Digest stays outside the purchase group (separator between single + group)
+    const digestIndex = message.indexOf('Fatura Nubank')
+    const cardHeaderIndex = message.indexOf('💳 Cartão de crédito')
+    expect(digestIndex).toBeGreaterThan(-1)
+    expect(cardHeaderIndex).toBeGreaterThan(digestIndex)
+  })
+
+  it('groups owner residual items by organization with lighter item separators', () => {
+    const message = buildWhatsAppBatchAlertMessage(
+      {
+        recipientName: 'Fagner',
+        items: [
+          {
+            transactionTitle: 'Fatura Nubank Ultravioleta',
+            organizationName: 'Casa',
+            amount: '4880.35',
+            dueLine: 'Fatura vence em 6 dias · 17/07/2026',
+            daysUntilDue: 6,
+            kind: 'invoice_upcoming',
+            isCreditCardInvoice: true,
+          },
+          {
+            transactionTitle: 'Internet',
+            organizationName: 'Empresa',
+            amount: '149.90',
+            dueLine: 'Vence em 5 dias · 16/07/2026',
+            daysUntilDue: 5,
+            kind: 'owner_upcoming',
+          },
+          {
+            transactionTitle: 'Aluguel',
+            organizationName: 'Casa',
+            amount: '2500.00',
+            dueLine: 'Vence em 2 dias · 13/07/2026',
+            daysUntilDue: 2,
+            kind: 'owner_upcoming',
+          },
+        ],
+      },
+      new Date('2026-07-11T15:00:00.000Z')
+    )
+
+    expect(message).toBe(
+      [
+        'Boa tarde, Fagner!',
+        '',
+        '⏰ *PRESTES A VENCER*',
+        '',
+        '🏠 *Casa*',
+        '',
+        '🧾 *Aluguel*',
+        '*R$ 2.500,00*',
+        '*Vence em 2 dias · 13/07/2026*',
+        '',
+        WHATSAPP_ITEM_SEPARATOR,
+        '',
+        '🧾 *Fatura Nubank Ultravioleta*',
+        '*R$ 4.880,35*',
+        '*Fatura vence em 6 dias · 17/07/2026*',
+        '',
+        WHATSAPP_BATCH_SEPARATOR,
+        '',
+        '🏢 *Empresa*',
+        '',
+        '🧾 *Internet*',
+        '*R$ 149,90*',
+        '*Vence em 5 dias · 16/07/2026*',
       ].join('\n')
     )
   })

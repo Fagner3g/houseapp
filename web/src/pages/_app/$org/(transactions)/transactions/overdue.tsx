@@ -34,7 +34,6 @@ function OverdueTransactionsPage() {
     accountId,
     categoryId,
     type,
-    status: 'pending',
     dateTo: dayjs().subtract(1, 'day').endOf('day').toISOString(),
     payableOnly: true,
     page: 1,

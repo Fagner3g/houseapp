@@ -26,6 +26,8 @@ import type { CreateTransactionBodyNotifyTargetType } from "./createTransactionB
 import type { CreateTransactionBodyNotifyUserId } from "./createTransactionBodyNotifyUserId";
 import type { CreateTransactionBodyNotifyContactName } from "./createTransactionBodyNotifyContactName";
 import type { CreateTransactionBodyNotifyContactPhone } from "./createTransactionBodyNotifyContactPhone";
+import type { CreateTransactionBodyNotifyDaysBefore } from "./createTransactionBodyNotifyDaysBefore";
+import type { CreateTransactionBodyNotifyOverdueConfig } from "./createTransactionBodyNotifyOverdueConfig";
 
 export type CreateTransactionBody = {
   accountId?: CreateTransactionBodyAccountId;
@@ -55,5 +57,6 @@ export type CreateTransactionBody = {
   notifyUserId?: CreateTransactionBodyNotifyUserId;
   notifyContactName?: CreateTransactionBodyNotifyContactName;
   notifyContactPhone?: CreateTransactionBodyNotifyContactPhone;
-  notifyDaysBefore?: number[];
+  notifyDaysBefore?: CreateTransactionBodyNotifyDaysBefore;
+  notifyOverdueConfig?: CreateTransactionBodyNotifyOverdueConfig;
 };

@@ -59,7 +59,8 @@ export function AnalyticsGroupDrawer() {
     return filterAnalyticsGroupTransactions(
       transactions,
       { type: context.groupType, key: context.groupKey },
-      context.purchasesPeriod
+      context.purchasesPeriod,
+      context.statementId
     )
   }, [context, transactions])
 
@@ -96,6 +97,7 @@ export function AnalyticsGroupDrawer() {
   const partiallyDividedById =
     splitData?.partiallyDividedById ?? new Map<string, PartialSplitBadgeInfo>()
   const dividedTransactionIds = splitData?.transactionIds ?? new Set<string>()
+  const splitRemainingById = splitData?.splitRemainingById ?? new Map<string, number>()
 
   const { allowsManual } = useAllowsManualCreditCardTransactions(context?.accountId ?? '')
 
@@ -193,6 +195,7 @@ export function AnalyticsGroupDrawer() {
                   accountId={context.accountId}
                   fullyDelegatedById={fullyDelegatedById}
                   partiallyDividedById={partiallyDividedById}
+                  splitRemainingById={splitRemainingById}
                   dividedTransactionIds={dividedTransactionIds}
                 />
               ) : (
@@ -203,6 +206,7 @@ export function AnalyticsGroupDrawer() {
                   allowInlineCreate={allowsManual}
                   fullyDelegatedById={fullyDelegatedById}
                   partiallyDividedById={partiallyDividedById}
+                  splitRemainingById={splitRemainingById}
                   containerClassName="mx-4 overflow-x-auto lg:mx-6"
                 />
               )}

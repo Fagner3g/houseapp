@@ -4,6 +4,7 @@ import {
   formatDelegatedSplitBadge,
   formatPartialSplitBadge,
   isHalfSplit,
+  resolveSplitBadgeSettlement,
 } from './split-badge-label'
 
 describe('isHalfSplit', () => {
@@ -15,6 +16,14 @@ describe('isHalfSplit', () => {
   it('rejects non-half amounts', () => {
     expect(isHalfSplit('50.00', '200.00')).toBe(false)
     expect(isHalfSplit('100.01', '200.00')).toBe(false)
+  })
+})
+
+describe('resolveSplitBadgeSettlement', () => {
+  it('maps remaining to settlement', () => {
+    expect(resolveSplitBadgeSettlement(undefined)).toBeUndefined()
+    expect(resolveSplitBadgeSettlement(10)).toBe('pending')
+    expect(resolveSplitBadgeSettlement(0)).toBe('received')
   })
 })
 
@@ -39,10 +48,25 @@ describe('formatPartialSplitBadge', () => {
     expect(label).toContain('75,50')
     expect(label).toContain('Bruno')
   })
+
+  it('uses settlement labels when provided', () => {
+    const info = {
+      splitWithName: 'Ana',
+      splitAmount: '100.00',
+      transactionAmount: '200.00',
+    }
+    expect(formatPartialSplitBadge(info, 'pending')).toBe('A receber · Ana')
+    expect(formatPartialSplitBadge(info, 'received')).toBe('Recebido · Ana')
+  })
 })
 
 describe('formatDelegatedSplitBadge', () => {
   it('labels full delegation', () => {
     expect(formatDelegatedSplitBadge('Carla')).toBe('Delegada · Carla')
+  })
+
+  it('labels settlement states', () => {
+    expect(formatDelegatedSplitBadge('Carla', 'pending')).toBe('A receber · Carla')
+    expect(formatDelegatedSplitBadge('Carla', 'received')).toBe('Recebido · Carla')
   })
 })

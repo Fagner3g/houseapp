@@ -12,7 +12,6 @@ import { transactions } from '@/db/schemas/transactions'
 import type { TransactionType } from '@/db/schemas/transactions'
 import { users } from '@/db/schemas/users'
 import type { TransactionRecord } from '@/modules/transactions/transaction.repository'
-import { UNPAID_TRANSACTION_STATUSES } from '@/core/transaction-payment'
 import {
   userIsSplitCreditorCondition,
 } from '@/modules/splits/split-expense-attribution'
@@ -29,6 +28,7 @@ export type CreateSplitData = {
   amount: bigint
   description?: string | null
   notifyEnabled?: boolean
+  collectLumpSum?: boolean
 }
 
 export type UpdateSplitData = Partial<
@@ -36,6 +36,7 @@ export type UpdateSplitData = Partial<
     amount: bigint
     status: SplitStatus
     notifyEnabled: boolean
+    collectLumpSum: boolean
     isNotified: boolean
     lastNotifiedAt: Date | null
   }
@@ -91,6 +92,14 @@ export interface SplitRepository {
       transactionAmount: bigint
     }>
   >
+  listSplitPaidTotals(
+    organizationId: string,
+    transactionIds: string[]
+  ): Promise<Array<{ transactionId: string; paidTotal: bigint }>>
+  listSplitRemainingTotals(
+    organizationId: string,
+    transactionIds: string[]
+  ): Promise<Array<{ transactionId: string; remainingTotal: bigint }>>
   findSplitsWithTransactions(
     transactionIds: string[]
   ): Promise<
@@ -117,6 +126,9 @@ export type PendingSplitNotifyRow = PendingSplitRow & {
   competenceDate: Date | null
   transactionType: TransactionType
   installmentNumber: number | null
+  installmentsTotal: number | null
+  accountId: string | null
+  cardId: string | null
   accountType: string | null
   closingDay: number | null
   dueDay: number | null
@@ -227,6 +239,7 @@ export class DrizzleSplitRepository implements SplitRepository {
         status: 'pending',
         paidAmount: 0n,
         notifyEnabled: data.notifyEnabled ?? true,
+        collectLumpSum: data.collectLumpSum ?? false,
       })
       .returning()
 
@@ -356,6 +369,9 @@ export class DrizzleSplitRepository implements SplitRepository {
         competenceDate: transactions.competenceDate,
         transactionType: transactions.type,
         installmentNumber: transactions.installmentNumber,
+        installmentsTotal: transactions.installmentsTotal,
+        accountId: transactions.accountId,
+        cardId: transactions.cardId,
         accountType: accounts.type,
         closingDay: accounts.closingDay,
         dueDay: accounts.dueDay,
@@ -366,7 +382,6 @@ export class DrizzleSplitRepository implements SplitRepository {
       .where(
         and(
           eq(transactions.organizationId, organizationId),
-          inArray(transactions.status, [...UNPAID_TRANSACTION_STATUSES]),
           inArray(transactionSplits.status, ['pending', 'partial'])
         )
       )
@@ -383,6 +398,9 @@ export class DrizzleSplitRepository implements SplitRepository {
       competenceDate: row.competenceDate,
       transactionType: row.transactionType,
       installmentNumber: row.installmentNumber,
+      installmentsTotal: row.installmentsTotal,
+      accountId: row.accountId,
+      cardId: row.cardId,
       accountType: row.accountType,
       closingDay: row.closingDay,
       dueDay: row.dueDay,
@@ -491,6 +509,69 @@ export class DrizzleSplitRepository implements SplitRepository {
         splitAmount: BigInt(row.splitAmount),
         transactionAmount: row.transactionAmount ?? 0n,
       }))
+  }
+
+  async listSplitPaidTotals(
+    organizationId: string,
+    transactionIds: string[]
+  ): Promise<Array<{ transactionId: string; paidTotal: bigint }>> {
+    if (transactionIds.length === 0) return []
+
+    const rows = await db
+      .select({
+        transactionId: transactionSplits.transactionId,
+        paidTotal: sql<bigint>`COALESCE(SUM(${transactionSplits.paidAmount}), 0)`,
+      })
+      .from(transactionSplits)
+      .innerJoin(transactions, eq(transactionSplits.transactionId, transactions.id))
+      .where(
+        and(
+          eq(transactions.organizationId, organizationId),
+          inArray(transactionSplits.transactionId, transactionIds)
+        )
+      )
+      .groupBy(transactionSplits.transactionId)
+
+    return rows.map(row => ({
+      transactionId: row.transactionId,
+      paidTotal: BigInt(row.paidTotal),
+    }))
+  }
+
+  async listSplitRemainingTotals(
+    organizationId: string,
+    transactionIds: string[]
+  ): Promise<Array<{ transactionId: string; remainingTotal: bigint }>> {
+    if (transactionIds.length === 0) return []
+
+    const rows = await db
+      .select({
+        transactionId: transactionSplits.transactionId,
+        remainingTotal: sql<bigint>`COALESCE(
+          SUM(
+            GREATEST(
+              ${transactionSplits.amount} - COALESCE(${transactionSplits.paidAmount}, 0),
+              0
+            )
+          ),
+          0
+        )`,
+      })
+      .from(transactionSplits)
+      .innerJoin(transactions, eq(transactionSplits.transactionId, transactions.id))
+      .where(
+        and(
+          eq(transactions.organizationId, organizationId),
+          inArray(transactionSplits.transactionId, transactionIds),
+          inArray(transactionSplits.status, ['pending', 'partial'])
+        )
+      )
+      .groupBy(transactionSplits.transactionId)
+
+    return rows.map(row => ({
+      transactionId: row.transactionId,
+      remainingTotal: BigInt(row.remainingTotal),
+    }))
   }
 
   async findSplitsWithTransactions(

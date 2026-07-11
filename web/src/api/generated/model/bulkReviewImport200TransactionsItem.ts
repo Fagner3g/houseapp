@@ -16,6 +16,7 @@ import type { BulkReviewImport200TransactionsItemCompetenceDate } from "./bulkRe
 import type { BulkReviewImport200TransactionsItemStatus } from "./bulkReviewImport200TransactionsItemStatus";
 import type { BulkReviewImport200TransactionsItemPaidAt } from "./bulkReviewImport200TransactionsItemPaidAt";
 import type { BulkReviewImport200TransactionsItemPaidAmount } from "./bulkReviewImport200TransactionsItemPaidAmount";
+import type { BulkReviewImport200TransactionsItemPaymentScheduledAt } from "./bulkReviewImport200TransactionsItemPaymentScheduledAt";
 import type { BulkReviewImport200TransactionsItemCounterparty } from "./bulkReviewImport200TransactionsItemCounterparty";
 import type { BulkReviewImport200TransactionsItemInstallmentNumber } from "./bulkReviewImport200TransactionsItemInstallmentNumber";
 import type { BulkReviewImport200TransactionsItemInstallmentsTotal } from "./bulkReviewImport200TransactionsItemInstallmentsTotal";
@@ -25,6 +26,7 @@ import type { BulkReviewImport200TransactionsItemNotifyTargetType } from "./bulk
 import type { BulkReviewImport200TransactionsItemNotifyUserId } from "./bulkReviewImport200TransactionsItemNotifyUserId";
 import type { BulkReviewImport200TransactionsItemNotifyContactName } from "./bulkReviewImport200TransactionsItemNotifyContactName";
 import type { BulkReviewImport200TransactionsItemNotifyContactPhone } from "./bulkReviewImport200TransactionsItemNotifyContactPhone";
+import type { BulkReviewImport200TransactionsItemNotifyOverdueConfig } from "./bulkReviewImport200TransactionsItemNotifyOverdueConfig";
 
 export type BulkReviewImport200TransactionsItem = {
   id: string;
@@ -42,6 +44,7 @@ export type BulkReviewImport200TransactionsItem = {
   status: BulkReviewImport200TransactionsItemStatus;
   paidAt: BulkReviewImport200TransactionsItemPaidAt;
   paidAmount: BulkReviewImport200TransactionsItemPaidAmount;
+  paymentScheduledAt: BulkReviewImport200TransactionsItemPaymentScheduledAt;
   counterparty: BulkReviewImport200TransactionsItemCounterparty;
   installmentNumber: BulkReviewImport200TransactionsItemInstallmentNumber;
   installmentsTotal: BulkReviewImport200TransactionsItemInstallmentsTotal;
@@ -54,6 +57,7 @@ export type BulkReviewImport200TransactionsItem = {
   notifyContactName: BulkReviewImport200TransactionsItemNotifyContactName;
   notifyContactPhone: BulkReviewImport200TransactionsItemNotifyContactPhone;
   notifyDaysBefore?: number[];
+  notifyOverdueConfig?: BulkReviewImport200TransactionsItemNotifyOverdueConfig;
   createdAt: string;
   updatedAt: string;
 };

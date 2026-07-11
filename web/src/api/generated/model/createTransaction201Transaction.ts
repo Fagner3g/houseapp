@@ -16,6 +16,7 @@ import type { CreateTransaction201TransactionCompetenceDate } from "./createTran
 import type { CreateTransaction201TransactionStatus } from "./createTransaction201TransactionStatus";
 import type { CreateTransaction201TransactionPaidAt } from "./createTransaction201TransactionPaidAt";
 import type { CreateTransaction201TransactionPaidAmount } from "./createTransaction201TransactionPaidAmount";
+import type { CreateTransaction201TransactionPaymentScheduledAt } from "./createTransaction201TransactionPaymentScheduledAt";
 import type { CreateTransaction201TransactionCounterparty } from "./createTransaction201TransactionCounterparty";
 import type { CreateTransaction201TransactionInstallmentNumber } from "./createTransaction201TransactionInstallmentNumber";
 import type { CreateTransaction201TransactionInstallmentsTotal } from "./createTransaction201TransactionInstallmentsTotal";
@@ -25,6 +26,7 @@ import type { CreateTransaction201TransactionNotifyTargetType } from "./createTr
 import type { CreateTransaction201TransactionNotifyUserId } from "./createTransaction201TransactionNotifyUserId";
 import type { CreateTransaction201TransactionNotifyContactName } from "./createTransaction201TransactionNotifyContactName";
 import type { CreateTransaction201TransactionNotifyContactPhone } from "./createTransaction201TransactionNotifyContactPhone";
+import type { CreateTransaction201TransactionNotifyOverdueConfig } from "./createTransaction201TransactionNotifyOverdueConfig";
 
 export type CreateTransaction201Transaction = {
   id: string;
@@ -42,6 +44,7 @@ export type CreateTransaction201Transaction = {
   status: CreateTransaction201TransactionStatus;
   paidAt: CreateTransaction201TransactionPaidAt;
   paidAmount: CreateTransaction201TransactionPaidAmount;
+  paymentScheduledAt: CreateTransaction201TransactionPaymentScheduledAt;
   counterparty: CreateTransaction201TransactionCounterparty;
   installmentNumber: CreateTransaction201TransactionInstallmentNumber;
   installmentsTotal: CreateTransaction201TransactionInstallmentsTotal;
@@ -54,6 +57,7 @@ export type CreateTransaction201Transaction = {
   notifyContactName: CreateTransaction201TransactionNotifyContactName;
   notifyContactPhone: CreateTransaction201TransactionNotifyContactPhone;
   notifyDaysBefore?: number[];
+  notifyOverdueConfig?: CreateTransaction201TransactionNotifyOverdueConfig;
   createdAt: string;
   updatedAt: string;
 };

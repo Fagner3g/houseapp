@@ -31,6 +31,7 @@ export type ListPendingSplits200SplitsItem = {
   isNotified: boolean;
   lastNotifiedAt: ListPendingSplits200SplitsItemLastNotifiedAt;
   notifyEnabled: boolean;
+  collectLumpSum: boolean;
   createdAt: string;
   updatedAt: string;
   transactionTitle: string;

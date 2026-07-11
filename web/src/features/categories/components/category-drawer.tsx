@@ -109,7 +109,7 @@ export function CategoryDrawer({ nested = false }: { nested?: boolean }) {
       }
 
       queryClient.invalidateQueries({ queryKey: getListCategoriesQueryKey(slug) })
-      if (isEdit) callback?.(editingCategory!.id)
+      if (isEdit && editingCategory) callback?.(editingCategory.id)
       close()
     } catch {
       toast.error(isEdit ? 'Erro ao atualizar categoria' : 'Erro ao criar categoria')
@@ -224,7 +224,7 @@ export function CategoryDrawer({ nested = false }: { nested?: boolean }) {
   }
 
   return (
-    <Drawer open={open} onOpenChange={v => !v && close()} direction="right" modal>
+    <Drawer open={open} onOpenChange={v => !v && close()} direction="right">
       {panel}
     </Drawer>
   )

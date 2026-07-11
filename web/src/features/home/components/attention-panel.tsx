@@ -10,9 +10,11 @@ import type {
 } from '@/api/generated/model'
 import { Button } from '@/components/ui/button'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
-import { formatCentsString, formatCurrency, moneyStringToCents } from '@/lib/currency'
+import { formatCentsString } from '@/lib/currency'
 import { useActiveOrganization } from '@/hooks/use-active-organization'
 import { useDrawerStore } from '@/stores/drawers'
+
+import { AttentionSplitsList } from './attention-splits-list'
 
 interface AttentionPanelProps {
   summary: GetReportSummary200
@@ -57,7 +59,6 @@ function OverdueList({ overdueCount }: { overdueCount: number }) {
   const { data } = useListTransactions(
     slug,
     {
-      status: 'pending',
       dateTo: dayjs().subtract(1, 'day').endOf('day').toISOString(),
       payableOnly: true,
       perPage: 4,
@@ -115,42 +116,6 @@ function OverdueList({ overdueCount }: { overdueCount: number }) {
   )
 }
 
-function SplitsList({
-  splits,
-  total,
-}: {
-  splits: ListPendingSplits200SplitsItem[]
-  total: string
-}) {
-  return (
-    <div className="space-y-2">
-      <p className="text-sm font-medium text-amber-600">Total: {formatCentsString(total)}</p>
-      {splits.slice(0, 4).map(split => {
-        const remainingCents = Math.max(
-          0,
-          moneyStringToCents(split.amount) - moneyStringToCents(split.paidAmount)
-        )
-        return (
-          <div
-            key={split.id}
-            className="flex items-center justify-between rounded-lg border border-slate-100 p-3"
-          >
-            <div>
-              <p className="font-medium text-slate-900">
-                {split.personName ?? split.contactName ?? 'Contato'}
-              </p>
-              <p className="text-sm text-slate-500">{split.transactionTitle}</p>
-            </div>
-            <span className="font-medium tabular-nums text-amber-600">
-              {formatCurrency(remainingCents / 100)}
-            </span>
-          </div>
-        )
-      })}
-    </div>
-  )
-}
-
 export function AttentionPanel({ summary, splits }: AttentionPanelProps) {
   const hasOverdue = summary.overdueCount > 0
   const hasUpcoming = summary.upcoming.length > 0
@@ -196,7 +161,7 @@ export function AttentionPanel({ summary, splits }: AttentionPanelProps) {
                   <Users className="size-4 text-amber-600" />
                   <h3 className="text-sm font-semibold text-slate-800">Quem me deve</h3>
                 </div>
-                <SplitsList splits={splits} total={summary.myPendingSplitsTotal} />
+                <AttentionSplitsList splits={splits} total={summary.myPendingSplitsTotal} />
               </section>
             )}
           </div>

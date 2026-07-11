@@ -7,6 +7,7 @@
     "db:repair-imported-statements": "tsx --env-file ./.env src/db/repair-imported-statements.ts",
     "db:backfill-statement-summaries": "tsx --env-file ./.env src/db/backfill-statement-summaries.ts",
     "db:repair-split-amounts": "tsx --env-file ./.env src/db/repair-split-amounts.ts",
+    "db:clear-today-alert-notifications": "tsx --env-file ./.env scripts/clear-today-alert-notifications.ts",
     "db:generate": "drizzle-kit generate",
     "db:migrate": "drizzle-kit migrate",
     "db:studio": "drizzle-kit studio",

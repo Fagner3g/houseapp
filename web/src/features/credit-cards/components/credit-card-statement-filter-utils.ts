@@ -12,6 +12,7 @@ export type InvoiceQuickFilter =
   | 'uncategorized'
   | 'installments'
   | 'divided'
+  | 'a_receber'
 
 function isBillPaymentTransaction(tx: ListTransactions200TransactionsItem): boolean {
   if (tx.type !== 'income') return false
@@ -46,11 +47,13 @@ export type InvoiceFilterCounts = {
   uncategorized: number
   installments: number
   divided: number
+  aReceber: number
 }
 
 export function computeInvoiceFilterCounts(
   transactions: ListTransactions200TransactionsItem[],
-  dividedTransactionIds: Set<string>
+  dividedTransactionIds: Set<string>,
+  pendingSplitTransactionIds: Set<string> = new Set()
 ): InvoiceFilterCounts {
   return {
     purchases: transactions.filter(tx => tx.type === 'expense').length,
@@ -61,6 +64,7 @@ export function computeInvoiceFilterCounts(
     ).length,
     installments: transactions.filter(tx => (tx.installmentsTotal ?? 0) > 1).length,
     divided: transactions.filter(tx => dividedTransactionIds.has(tx.id)).length,
+    aReceber: transactions.filter(tx => pendingSplitTransactionIds.has(tx.id)).length,
   }
 }
 
@@ -77,6 +81,7 @@ export function resolveInvoiceQuickFilter(
     uncategorized: counts.uncategorized,
     installments: counts.installments,
     divided: counts.divided,
+    a_receber: counts.aReceber,
   }
 
   return countByFilter[quickFilter] === 0 ? 'all' : quickFilter
@@ -85,7 +90,8 @@ export function resolveInvoiceQuickFilter(
 export function filterInvoiceTransactions(
   transactions: ListTransactions200TransactionsItem[],
   filters: InvoiceStatementFilters,
-  dividedTransactionIds: Set<string>
+  dividedTransactionIds: Set<string>,
+  pendingSplitTransactionIds: Set<string> = new Set()
 ): ListTransactions200TransactionsItem[] {
   const search = filters.search.trim().toLowerCase()
 
@@ -121,6 +127,8 @@ export function filterInvoiceTransactions(
         return (tx.installmentsTotal ?? 0) > 1
       case 'divided':
         return dividedTransactionIds.has(tx.id)
+      case 'a_receber':
+        return pendingSplitTransactionIds.has(tx.id)
       default:
         return true
     }

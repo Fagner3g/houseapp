@@ -1,6 +1,5 @@
 'use client'
 
-import dayjs from 'dayjs'
 import { CalendarIcon } from 'lucide-react'
 import { useState } from 'react'
 import type { Matcher } from 'react-day-picker'
@@ -9,7 +8,12 @@ import { Button } from '@/components/ui/button'
 import { Calendar } from '@/components/ui/calendar'
 import { Label } from '@/components/ui/label'
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover'
-import { formatDateLabel } from '@/lib/date'
+import {
+  calendarDateToLocalDate,
+  dateToCalendarDate,
+  formatDateLabel,
+  isoToCalendarDate,
+} from '@/lib/date'
 import { cn } from '@/lib/utils'
 
 /** Above drawer/dialog overlays (base drawer z-[51], nested z-[101]). */
@@ -20,12 +24,14 @@ const DATE_PICKER_BUTTON_CLASS =
 
 function parseFormDateString(value?: string | null): Date | undefined {
   if (!value) return undefined
-  return dayjs(value).startOf('day').toDate()
+  const key = /^\d{4}-\d{2}-\d{2}$/.test(value) ? value : isoToCalendarDate(value)
+  if (!key) return undefined
+  return calendarDateToLocalDate(key)
 }
 
 function formatFormDateString(date?: Date): string {
   if (!date) return ''
-  return dayjs(date).format('YYYY-MM-DD')
+  return dateToCalendarDate(date)
 }
 
 export type DatePickerProps = {

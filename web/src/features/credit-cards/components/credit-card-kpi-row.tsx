@@ -1,5 +1,6 @@
 import dayjs from 'dayjs'
 import { CalendarDays, CheckCircle2 } from 'lucide-react'
+import { useMemo } from 'react'
 
 import { Button } from '@/components/ui/button'
 import { formatCurrency, numberToCents } from '@/lib/currency'
@@ -7,9 +8,13 @@ import type { BillingCycle } from '@/lib/billing-cycle'
 import { formatDateRange, formatImportedPurchasePeriodRange } from '@/lib/billing-cycle'
 import { useDrawerStore } from '@/stores/drawers'
 import { cn } from '@/lib/utils'
+import { useActiveOrganization } from '@/hooks/use-active-organization'
 
 import { useCreditCardInvoiceMetrics } from '../hooks/use-credit-card-invoice-metrics'
+import { useSplitTransactionIds } from '../hooks/use-split-transaction-ids'
+import { sumCycleSplitRemaining } from '../lib/cycle-split-remaining'
 import { CreditCardKpiSkeleton } from './credit-card-invoice-skeletons'
+import { CreditCardKpiBreakdown } from './credit-card-kpi-breakdown'
 
 interface CreditCardKpiRowProps {
   accountId: string
@@ -17,38 +22,7 @@ interface CreditCardKpiRowProps {
   cycle: BillingCycle
   closingDay: number
   dueDay: number
-}
-
-function SummaryLine({
-  label,
-  amount,
-  emphasis = false,
-  negative = false,
-}: {
-  label: string
-  amount: number
-  emphasis?: boolean
-  negative?: boolean
-}) {
-  const formatted =
-    negative && amount > 0 ? `− ${formatCurrency(amount)}` : formatCurrency(amount)
-
-  return (
-    <div className="flex items-baseline justify-between gap-4 text-sm">
-      <span className={cn('text-slate-600', emphasis && 'font-medium text-slate-800')}>
-        {label}
-      </span>
-      <span
-        className={cn(
-          'shrink-0 tabular-nums',
-          emphasis ? 'text-base font-semibold text-slate-900' : 'font-medium text-slate-800',
-          negative && amount > 0 && 'text-emerald-700'
-        )}
-      >
-        {formatted}
-      </span>
-    </div>
-  )
+  onViewAReceber?: () => void
 }
 
 export function CreditCardKpiRow({
@@ -57,7 +31,9 @@ export function CreditCardKpiRow({
   cycle,
   closingDay,
   dueDay,
+  onViewAReceber,
 }: CreditCardKpiRowProps) {
+  const { slug } = useActiveOrganization()
   const openPayInvoiceDrawer = useDrawerStore(s => s.openPayInvoiceDrawer)
 
   const {
@@ -69,8 +45,23 @@ export function CreditCardKpiRow({
     isSettledEmpty,
     isOverdue,
     isPending,
+    cycleTransactions,
   } = useCreditCardInvoiceMetrics(accountId, cycle, closingDay, dueDay)
 
+  const transactionIds = useMemo(
+    () => cycleTransactions.map(transaction => transaction.id),
+    [cycleTransactions]
+  )
+  const { data: splitData } = useSplitTransactionIds(slug, transactionIds)
+  const pendingSplitRemaining = useMemo(
+    () =>
+      sumCycleSplitRemaining(transactionIds, splitData?.splitRemainingById ?? new Map()),
+    [transactionIds, splitData?.splitRemainingById]
+  )
+
+  const isInvoiceClosed =
+    matchedStatement?.isClosed === true ||
+    !dayjs(cycle.closingDate).startOf('day').isAfter(dayjs().startOf('day'))
   const purchasesLabel = metrics.usesImportedStatementPeriod
     ? formatImportedPurchasePeriodRange(purchasesPeriod.start, purchasesPeriod.end)
     : formatDateRange(cycle.periodStart, cycle.periodEnd)
@@ -111,7 +102,8 @@ export function CreditCardKpiRow({
     metrics.purchases > 0 ||
     metrics.previousBalance > 0 ||
     metrics.payments > 0 ||
-    metrics.invoiceTotal > 0
+    metrics.invoiceTotal > 0 ||
+    pendingSplitRemaining > 0
 
   if (isPending) {
     return <CreditCardKpiSkeleton />
@@ -155,6 +147,11 @@ export function CreditCardKpiRow({
                     {isOverdue ? 'Valor em atraso' : 'A pagar'}
                   </span>
                 )}
+                {isInvoiceClosed && !isPaid && (
+                  <span className="rounded-full bg-slate-200/80 px-2 py-0.5 text-xs font-medium text-slate-700">
+                    Fatura fechada
+                  </span>
+                )}
               </div>
               {isPaid && (
                 <p className="mt-2 text-xs font-medium uppercase tracking-wide text-emerald-600/80">
@@ -172,12 +169,26 @@ export function CreditCardKpiRow({
               </p>
               {heroSubtitle && (
                 <p
-                  className={cn(
-                    'mt-1 text-sm',
-                    isPaid ? 'text-emerald-600' : 'text-slate-500'
-                  )}
+                  className={cn('mt-1 text-sm', isPaid ? 'text-emerald-600' : 'text-slate-500')}
                 >
                   {heroSubtitle}
+                </p>
+              )}
+              {pendingSplitRemaining > 0 && (
+                <p className="mt-1 text-sm font-medium text-amber-700">
+                  {formatCurrency(pendingSplitRemaining)} a receber de divisões
+                  {onViewAReceber ? (
+                    <>
+                      {' · '}
+                      <button
+                        type="button"
+                        className="underline-offset-2 hover:underline"
+                        onClick={onViewAReceber}
+                      >
+                        Ver
+                      </button>
+                    </>
+                  ) : null}
                 </p>
               )}
               <div className="mt-3 flex flex-wrap items-center gap-x-3 gap-y-1 text-sm text-slate-500">
@@ -209,27 +220,15 @@ export function CreditCardKpiRow({
         </div>
 
         {showBreakdown && (
-          <div className="border-t border-slate-100 px-5 py-4 sm:px-6">
-            <p className="mb-3 text-xs font-medium uppercase tracking-wide text-slate-400">
-              Composição
-            </p>
-            <div className="space-y-2">
-              {metrics.previousBalance > 0 && (
-                <SummaryLine label="Saldo anterior" amount={metrics.previousBalance} />
-              )}
-              <SummaryLine label={`Compras (${purchasesLabel})`} amount={metrics.purchases} />
-              {metrics.payments > 0 && (
-                <SummaryLine label="Pagamentos" amount={metrics.payments} negative />
-              )}
-              <div className="border-t border-dashed border-slate-200 pt-2">
-                <SummaryLine
-                  label="Total da fatura"
-                  amount={metrics.invoiceTotal}
-                  emphasis
-                />
-              </div>
-            </div>
-          </div>
+          <CreditCardKpiBreakdown
+            previousBalance={metrics.previousBalance}
+            purchases={metrics.purchases}
+            purchasesLabel={purchasesLabel}
+            payments={metrics.payments}
+            invoiceTotal={metrics.invoiceTotal}
+            pendingSplitRemaining={pendingSplitRemaining}
+            onViewAReceber={onViewAReceber}
+          />
         )}
       </div>
     </div>

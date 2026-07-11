@@ -12,15 +12,15 @@
       <span class="logo">🏠 HouseApp</span>
       <select id="org-select" class="org-select hidden" title="Organização"></select>
       <div class="header-actions">
-        <button id="btn-refresh" title="Atualizar">↻</button>
-        <button id="btn-options" title="Configurações">⚙</button>
-        <button id="btn-open-web" title="Abrir app">↗</button>
+        <button id="btn-refresh" title="Atualizar" type="button">↻</button>
+        <button id="btn-options" title="Configurações" type="button">⚙</button>
+        <button id="btn-open-web" title="Abrir app" type="button">↗</button>
       </div>
     </header>
 
     <div id="screen-login" class="screen hidden">
       <p class="login-msg">Faça login no HouseApp para continuar.</p>
-      <button id="btn-login" class="btn-primary">Abrir HouseApp</button>
+      <button id="btn-login" class="btn-primary" type="button">Abrir HouseApp</button>
     </div>
 
     <div id="screen-loading" class="screen hidden">
@@ -29,27 +29,85 @@
 
     <div id="screen-error" class="screen hidden">
       <p class="error-msg">Erro ao carregar dados.</p>
-      <button id="btn-retry" class="btn-primary">Tentar novamente</button>
+      <button id="btn-retry" class="btn-primary" type="button">Tentar novamente</button>
     </div>
 
     <div id="screen-main" class="screen hidden">
-      <div id="summary-badge" class="summary-badge"></div>
-      <ul id="list-actions" class="tx-list"></ul>
-      <p id="list-empty" class="empty-msg hidden">Nenhuma pendência no momento.</p>
+      <div class="kpi-row">
+        <button id="pill-overdue" class="kpi-pill kpi-overdue" type="button">
+          <span class="kpi-count" id="count-overdue">0</span>
+          <span class="kpi-label">Vencidas</span>
+        </button>
+        <button id="pill-scheduled" class="kpi-pill kpi-scheduled" type="button">
+          <span class="kpi-count" id="count-scheduled">0</span>
+          <span class="kpi-label">Agendadas</span>
+        </button>
+        <button id="pill-upcoming" class="kpi-pill kpi-upcoming" type="button">
+          <span class="kpi-count" id="count-upcoming">0</span>
+          <span class="kpi-label">Próximas</span>
+        </button>
+      </div>
+
+      <div class="tabs" role="tablist">
+        <button class="tab active" data-filter="all" type="button">Todas</button>
+        <button class="tab" data-filter="overdue" type="button">Vencidas</button>
+        <button class="tab" data-filter="scheduled" type="button">Agendadas</button>
+        <button class="tab" data-filter="upcoming" type="button">Próximas</button>
+      </div>
+
+      <ul id="list-actions" class="alert-list"></ul>
+      <p id="list-empty" class="empty-msg hidden"></p>
+
+      <footer class="popup-footer">
+        <button id="btn-footer-web" class="footer-link" type="button">Abrir HouseApp ↗</button>
+        <span id="last-updated" class="footer-sync"></span>
+      </footer>
     </div>
 
-    <div id="pay-modal" class="modal hidden">
-      <div class="modal-content">
-        <h3>Pagar transação</h3>
-        <label>Valor pago<input id="pay-amount" type="text" inputmode="numeric" /></label>
-        <label>Data<input id="pay-date" type="date" /></label>
+    <div id="pay-modal" class="modal-backdrop hidden">
+      <div class="modal">
+        <h3 id="pay-modal-title" class="modal-title">Pagar transação</h3>
+        <p id="pay-modal-hint" class="modal-hint"></p>
+        <label class="modal-label">Valor pago
+          <input id="pay-amount" class="modal-input" type="text" inputmode="numeric" />
+        </label>
+        <label class="modal-label">Data
+          <div class="modal-date-row">
+            <input id="pay-date" class="modal-input" type="date" />
+            <button id="pay-today" class="btn-today" type="button">Hoje</button>
+          </div>
+        </label>
+        <p id="pay-error" class="modal-error hidden"></p>
         <div class="modal-actions">
-          <button id="pay-cancel">Cancelar</button>
-          <button id="pay-confirm" class="btn-primary">Confirmar</button>
+          <button id="pay-cancel" class="btn-secondary" type="button">Cancelar</button>
+          <button id="pay-confirm" class="btn-primary" type="button">Confirmar</button>
+        </div>
+      </div>
+    </div>
+
+    <div id="schedule-modal" class="modal-backdrop hidden">
+      <div class="modal">
+        <h3 id="schedule-modal-title" class="modal-title">Agendar pagamento</h3>
+        <p id="schedule-modal-hint" class="modal-hint">
+          Informe a data em que o débito está programado no banco. Aparece nos lançamentos do mês do débito e some dos vencidos até essa data.
+        </p>
+        <label class="modal-label">Data do débito
+          <div class="modal-date-row">
+            <input id="schedule-date" class="modal-input" type="date" />
+            <button id="schedule-due" class="btn-today" type="button">Vencimento</button>
+          </div>
+        </label>
+        <p id="schedule-error" class="modal-error hidden"></p>
+        <div class="modal-actions">
+          <button id="schedule-cancel" class="btn-secondary" type="button">Cancelar</button>
+          <button id="schedule-confirm" class="btn-primary" type="button">Confirmar</button>
         </div>
       </div>
     </div>
   </div>
+  <script src="lib/notification-utils.js"></script>
+  <script src="lib/alert-items.js"></script>
+  <script src="lib/pay-utils.js"></script>
   <script src="popup.js"></script>
 </body>
 </html>

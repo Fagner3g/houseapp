@@ -15,6 +15,7 @@ interface CreditCardPageHeaderProps {
   closingDay: number
   dueDay: number
   isCurrentCycle: boolean
+  canGoNextMonth: boolean
   onPrevMonth: () => void
   onNextMonth: () => void
   onGoToday: () => void
@@ -27,6 +28,7 @@ export function CreditCardPageHeader({
   closingDay,
   dueDay,
   isCurrentCycle,
+  canGoNextMonth,
   onPrevMonth,
   onNextMonth,
   onGoToday,
@@ -93,7 +95,7 @@ export function CreditCardPageHeader({
             size="icon"
             className="size-8 rounded-lg"
             onClick={onNextMonth}
-            disabled={isCurrentCycle}
+            disabled={!canGoNextMonth}
             aria-label="Próximo mês"
           >
             <ChevronRight className="size-4" />

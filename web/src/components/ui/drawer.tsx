@@ -1,6 +1,11 @@
 import type * as React from 'react'
+import { useEffect, useRef } from 'react'
 import { Drawer as DrawerPrimitive } from 'vaul'
 
+import {
+  isPortaledOverlayOpen,
+  shouldKeepDrawerOpenOnOutsideEvent,
+} from '@/components/ui/drawer-portal-layers'
 import {
   stackyDrawerContentStackedOuter,
   stackyDrawerInnerShell,
@@ -11,19 +16,24 @@ import { cn } from '@/lib/utils'
 
 function Drawer({
   dismissible = false,
+  modal = false,
   ...props
 }: React.ComponentProps<typeof DrawerPrimitive.Root>) {
-  return <DrawerPrimitive.Root data-slot="drawer" dismissible={dismissible} {...props} />
+  return (
+    <DrawerPrimitive.Root data-slot="drawer" dismissible={dismissible} modal={modal} {...props} />
+  )
 }
 
 function DrawerNestedRoot({
   dismissible = false,
+  modal = false,
   ...props
 }: React.ComponentProps<typeof DrawerPrimitive.NestedRoot>) {
   return (
     <DrawerPrimitive.NestedRoot
       data-slot="drawer-nested"
       dismissible={dismissible}
+      modal={modal}
       {...props}
     />
   )
@@ -56,9 +66,22 @@ function DrawerOverlay({
   const hasZIndex = /\bz-/.test(classStr)
   const hasCustomPosition = /\b(inset-y-0|right-0|left-auto|max-w-)/.test(classStr)
   const hasCustomBg = /\bbg-/.test(classStr)
+  const nestedOverlayOpenOnPointerDownRef = useRef(false)
 
-  const handleClick = () => {
-    if (!dismissible) return
+  useEffect(() => {
+    if (!onDismiss) return
+
+    const captureNestedOverlayState = () => {
+      nestedOverlayOpenOnPointerDownRef.current = isPortaledOverlayOpen()
+    }
+
+    document.addEventListener('pointerdown', captureNestedOverlayState, true)
+    return () => document.removeEventListener('pointerdown', captureNestedOverlayState, true)
+  }, [onDismiss])
+
+  const handlePointerDown = (event: React.PointerEvent<HTMLDivElement>) => {
+    if (!dismissible || event.button !== 0) return
+    if (nestedOverlayOpenOnPointerDownRef.current) return
     onDismiss?.()
   }
 
@@ -75,7 +98,7 @@ function DrawerOverlay({
         className
       )}
       aria-hidden="true"
-      onClick={onDismiss ? handleClick : undefined}
+      onPointerDown={onDismiss ? handlePointerDown : undefined}
       {...props}
     />
   )
@@ -99,6 +122,10 @@ function DrawerContent({
   onStackedOverlayDismiss,
   stackable = false,
   stacked = false,
+  onFocusOutside,
+  onPointerDownOutside,
+  onInteractOutside,
+  style,
   ...props
 }: React.ComponentProps<typeof DrawerPrimitive.Content> & {
   hideOverlay?: boolean
@@ -136,6 +163,25 @@ function DrawerContent({
           stackable && stacked && stackyDrawerContentStackedOuter
         )}
         aria-describedby={undefined}
+        style={{ pointerEvents: 'auto', ...style }}
+        onFocusOutside={event => {
+          if (shouldKeepDrawerOpenOnOutsideEvent(event)) {
+            event.preventDefault()
+          }
+          onFocusOutside?.(event)
+        }}
+        onPointerDownOutside={event => {
+          if (shouldKeepDrawerOpenOnOutsideEvent(event)) {
+            event.preventDefault()
+          }
+          onPointerDownOutside?.(event)
+        }}
+        onInteractOutside={event => {
+          if (shouldKeepDrawerOpenOnOutsideEvent(event)) {
+            event.preventDefault()
+          }
+          onInteractOutside?.(event)
+        }}
         {...props}
       >
         <div className="bg-muted mx-auto mt-4 hidden h-2 w-[100px] shrink-0 rounded-full group-data-[vaul-drawer-direction=bottom]/drawer-content:block" />

@@ -20,5 +20,6 @@ export type UpdateSplitBody = {
   amount?: string;
   description?: UpdateSplitBodyDescription;
   notifyEnabled?: boolean;
+  collectLumpSum?: boolean;
   status?: UpdateSplitBodyStatus;
 };

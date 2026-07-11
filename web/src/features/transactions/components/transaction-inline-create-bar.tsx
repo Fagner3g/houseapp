@@ -142,7 +142,8 @@ export function TransactionInlineCreateBar({
         >
           <CurrencyInput
             value={draft.amount}
-            onValueChange={amount => patch({ amount: amount ?? 0 })}
+            onValueChange={amount => patch({ amount })}
+            allowEmpty
             onKeyDown={onKeyDown}
             className="h-8 w-full min-w-[6.5rem] bg-white text-right sm:w-24"
           />

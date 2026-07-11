@@ -12,6 +12,7 @@ const splitDraftHalf = {
   splitContactPhone: '',
   splitAmountReais: 450,
   notifyEnabled: true,
+  collectLumpSum: false,
 }
 
 describe('split installment flow (50/50 on parceled purchase)', () => {
@@ -40,7 +41,7 @@ describe('split installment flow (50/50 on parceled purchase)', () => {
       periodicity: 'monthly-1',
       account: { type: 'checking' },
       split: { splitMode: 'half', splitAmountReais: 450 },
-    })!
+    }) as NonNullable<ReturnType<typeof buildInstallmentPreview>>
 
     const splits = preview.map(item =>
       buildSplitCreateBody(
@@ -57,10 +58,24 @@ describe('split installment flow (50/50 on parceled purchase)', () => {
     expect(splits[0]?.amount).toBe('225.00')
     expect(splits[1]?.amount).toBe('225.00')
     expect(splits[0]?.userId).toBe('user-karoline')
+    expect(splits[0]?.collectLumpSum).toBeUndefined()
 
     const totalOwed =
       Number(splits[0]?.amount ?? 0) + Number(splits[1]?.amount ?? 0)
     expect(totalOwed).toBe(450)
+  })
+
+  it('lump-sum create puts full share on first installment only', () => {
+    const body = buildSplitCreateBody('90000', {
+      ...splitDraftHalf,
+      collectLumpSum: true,
+    })
+
+    expect(body).toMatchObject({
+      amount: '450.00',
+      userId: 'user-karoline',
+      collectLumpSum: true,
+    })
   })
 
   it('custom R$ 450 total is divided across installments', () => {
@@ -77,5 +92,17 @@ describe('split installment flow (50/50 on parceled purchase)', () => {
 
     expect(split1?.amount).toBe('225.00')
     expect(split2?.amount).toBe('225.00')
+  })
+
+  it('custom lump-sum keeps full custom amount on one body', () => {
+    const body = buildSplitCreateBody('90000', {
+      ...splitDraftHalf,
+      splitMode: 'custom',
+      splitAmountReais: 450,
+      collectLumpSum: true,
+    })
+
+    expect(body?.amount).toBe('450.00')
+    expect(body?.collectLumpSum).toBe(true)
   })
 })

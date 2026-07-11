@@ -11,7 +11,7 @@ import type {
 } from './split.repository'
 import {
   buildSplitDebtSummary,
-  matchesInstallmentSeries,
+  selectInstallmentSeriesSiblings,
   type SplitDebtSummary,
 } from './split-debt-summary.logic'
 
@@ -30,6 +30,7 @@ export type SplitDto = {
   isNotified: boolean
   lastNotifiedAt: string | null
   notifyEnabled: boolean
+  collectLumpSum: boolean
   createdAt: string
   updatedAt: string
 }
@@ -69,6 +70,7 @@ function toSplitDto(split: SplitRecord): SplitDto {
     isNotified: split.isNotified,
     lastNotifiedAt: split.lastNotifiedAt?.toISOString() ?? null,
     notifyEnabled: split.notifyEnabled,
+    collectLumpSum: split.collectLumpSum,
     createdAt: split.createdAt.toISOString(),
     updatedAt: split.updatedAt.toISOString(),
   }
@@ -94,6 +96,7 @@ export type CreateSplitInput = {
   amount: string
   description?: string | null
   notifyEnabled?: boolean
+  collectLumpSum?: boolean
 }
 
 export type UpdateSplitInput = Partial<CreateSplitInput & { status: SplitStatus }>
@@ -135,6 +138,7 @@ export class SplitService {
       amount: parseCentavos(input.amount),
       description: input.description ?? null,
       notifyEnabled: input.notifyEnabled,
+      collectLumpSum: input.collectLumpSum,
     })
 
     return toSplitDto(created)
@@ -170,6 +174,7 @@ export class SplitService {
       description: input.description,
       status: input.status,
       notifyEnabled: input.notifyEnabled,
+      collectLumpSum: input.collectLumpSum,
     })
 
     if (!updated) {
@@ -282,21 +287,43 @@ export class SplitService {
       splitAmount: string
       transactionAmount: string
     }>
+    splitPaidTotals: Array<{ transactionId: string; paidAmount: string }>
+    splitRemainingTotals: Array<{ transactionId: string; remainingAmount: string }>
   }> {
-    const [transactionIdsWithSplits, fullyDelegated, partiallyDividedRows] = await Promise.all([
+    const [
+      transactionIdsWithSplits,
+      fullyDelegated,
+      partiallyDividedRows,
+      splitPaidRows,
+      splitRemainingRows,
+    ] = await Promise.all([
       this.splitRepository.listTransactionIdsWithSplits(organizationId, transactionIds),
       this.splitRepository.listFullyDelegatedTransactions(organizationId, transactionIds),
       this.splitRepository.listPartiallyDividedTransactions(organizationId, transactionIds),
+      this.splitRepository.listSplitPaidTotals(organizationId, transactionIds),
+      this.splitRepository.listSplitRemainingTotals(organizationId, transactionIds),
     ])
 
     const partiallyDivided = partiallyDividedRows.map(row => ({
       transactionId: row.transactionId,
       splitWithName: row.splitWithName,
-      splitAmount: centavosToString(row.splitAmount),
-      transactionAmount: centavosToString(row.transactionAmount),
+      splitAmount: centavosToString(row.splitAmount) ?? '0.00',
+      transactionAmount: centavosToString(row.transactionAmount) ?? '0.00',
     }))
 
-    return { transactionIds: transactionIdsWithSplits, fullyDelegated, partiallyDivided }
+    return {
+      transactionIds: transactionIdsWithSplits,
+      fullyDelegated,
+      partiallyDivided,
+      splitPaidTotals: splitPaidRows.map(row => ({
+        transactionId: row.transactionId,
+        paidAmount: centavosToString(row.paidTotal) ?? '0.00',
+      })),
+      splitRemainingTotals: splitRemainingRows.map(row => ({
+        transactionId: row.transactionId,
+        remainingAmount: centavosToString(row.remainingTotal) ?? '0.00',
+      })),
+    }
   }
 
   async getSplitDebtSummary(
@@ -307,12 +334,13 @@ export class SplitService {
 
     const siblingTransactions =
       anchor.installmentsTotal != null && anchor.installmentsTotal > 1
-        ? (
+        ? selectInstallmentSeriesSiblings(
             await this.splitRepository.findInstallmentSiblingCandidates(
               organizationId,
               anchor
-            )
-          ).filter(candidate => matchesInstallmentSeries(candidate, anchor))
+            ),
+            anchor
+          )
         : [anchor]
 
     const transactionIds = siblingTransactions.map(row => row.id)

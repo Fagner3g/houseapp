@@ -62,6 +62,7 @@ function split(
     isNotified: false,
     lastNotifiedAt: null,
     notifyEnabled: true,
+    collectLumpSum: false,
     createdAt: new Date(),
     updatedAt: new Date(),
     installmentNumber: 1,
@@ -187,6 +188,58 @@ describe('buildSplitDebtSummary', () => {
     expect(summary.purchaseTotal).toBe('900.00')
     expect(summary.currentTransactionAmount).toBe('300.00')
     expect(summary.myShareTotal).toBe('450.00')
+  })
+
+  it('does not extrapolate when collectLumpSum is set (full share due once)', () => {
+    const anchor = tx({
+      id: 'tx-1',
+      title: 'Supermercados Bh - Parcela 1/3',
+      amount: 27479n,
+      installmentNumber: 1,
+      installmentsTotal: 3,
+      source: 'import',
+      statementId: 'stmt-1',
+    })
+
+    const siblings = [
+      anchor,
+      tx({
+        id: 'tx-2',
+        title: 'Supermercados Bh - Parcela 2/3',
+        amount: 27479n,
+        installmentNumber: 2,
+        installmentsTotal: 3,
+        source: 'import',
+        statementId: 'stmt-1',
+      }),
+    ]
+
+    const splits: SplitWithTransaction[] = [
+      split({
+        id: 'split-1',
+        transactionId: 'tx-1',
+        amount: 41219n,
+        installmentNumber: 1,
+        transactionAmount: 27479n,
+        collectLumpSum: true,
+        userName: 'Karoline',
+      }),
+    ]
+
+    const summary = buildSplitDebtSummary({
+      anchorTransaction: anchor,
+      siblingTransactions: siblings,
+      splits,
+      resolvePersonName: item => item.userName ?? 'Membro',
+    })
+
+    expect(summary.purchaseTotal).toBe('824.37')
+    expect(summary.myShareTotal).toBe('412.18')
+    expect(summary.persons[0]).toMatchObject({
+      name: 'Karoline',
+      totalOwed: '412.19',
+      totalRemaining: '412.19',
+    })
   })
 
   it('extrapolates 50% split on first imported parcel across the full purchase', () => {
@@ -318,6 +371,126 @@ describe('buildSplitDebtSummary', () => {
     expect(summary.purchaseTotalIsEstimate).toBe(true)
     expect(summary.currentTransactionAmount).toBe('51.69')
   })
+
+  it('extrapolates recurring parcel amount across installmentsTotal', () => {
+    const anchor = tx({
+      id: 'tx-pbh',
+      title: 'PBH',
+      amount: 42111n,
+      installmentNumber: 1,
+      installmentsTotal: 4,
+      source: 'recurring',
+      recurringTransactionId: 'rec-pbh',
+    })
+
+    const summary = buildSplitDebtSummary({
+      anchorTransaction: anchor,
+      siblingTransactions: [anchor],
+      splits: [],
+      resolvePersonName: item => item.userName ?? 'Membro',
+    })
+
+    expect(summary.purchaseTotal).toBe('1684.44')
+    expect(summary.purchaseTotalIsEstimate).toBe(true)
+    expect(summary.currentTransactionAmount).toBe('421.11')
+  })
+
+  it('sums all recurring parcels when cents differ (remainder) without dropping siblings', () => {
+    const recurringId = 'rec-pbh'
+    const p1 = tx({
+      id: 'p1',
+      title: 'PBH',
+      amount: 42113n,
+      installmentNumber: 1,
+      installmentsTotal: 4,
+      source: 'recurring',
+      recurringTransactionId: recurringId,
+      date: new Date('2026-05-10'),
+    })
+    const p2 = tx({
+      id: 'p2',
+      title: 'PBH',
+      amount: 42112n,
+      installmentNumber: 2,
+      installmentsTotal: 4,
+      source: 'recurring',
+      recurringTransactionId: recurringId,
+      date: new Date('2026-06-10'),
+    })
+    const p3 = tx({
+      id: 'p3',
+      title: 'PBH',
+      amount: 42111n,
+      installmentNumber: 3,
+      installmentsTotal: 4,
+      source: 'recurring',
+      recurringTransactionId: recurringId,
+      date: new Date('2026-07-10'),
+    })
+    const p4 = tx({
+      id: 'p4',
+      title: 'PBH',
+      amount: 42111n,
+      installmentNumber: 4,
+      installmentsTotal: 4,
+      source: 'recurring',
+      recurringTransactionId: recurringId,
+      date: new Date('2026-08-10'),
+    })
+
+    const summary = buildSplitDebtSummary({
+      anchorTransaction: p3,
+      siblingTransactions: [p1, p2, p3, p4],
+      splits: [],
+      resolvePersonName: item => item.userName ?? 'Membro',
+    })
+
+    expect(summary.purchaseTotal).toBe('1684.47')
+    expect(summary.purchaseTotalIsEstimate).toBe(false)
+    expect(summary.currentTransactionAmount).toBe('421.11')
+  })
+
+  it('extrapolates incomplete recurring series even when parcel cents differ', () => {
+    const recurringId = 'rec-pbh'
+    const p2 = tx({
+      id: 'p2',
+      title: 'PBH',
+      amount: 42112n,
+      installmentNumber: 2,
+      installmentsTotal: 4,
+      source: 'recurring',
+      recurringTransactionId: recurringId,
+    })
+    const p3 = tx({
+      id: 'p3',
+      title: 'PBH',
+      amount: 42111n,
+      installmentNumber: 3,
+      installmentsTotal: 4,
+      source: 'recurring',
+      recurringTransactionId: recurringId,
+    })
+    const p4 = tx({
+      id: 'p4',
+      title: 'PBH',
+      amount: 42111n,
+      installmentNumber: 4,
+      installmentsTotal: 4,
+      source: 'recurring',
+      recurringTransactionId: recurringId,
+    })
+
+    const summary = buildSplitDebtSummary({
+      anchorTransaction: p3,
+      siblingTransactions: [p2, p3, p4],
+      splits: [],
+      resolvePersonName: item => item.userName ?? 'Membro',
+    })
+
+    // (421.12+421.11+421.11) * 4 / 3 = 1684.45
+    expect(summary.purchaseTotal).toBe('1684.45')
+    expect(summary.purchaseTotalIsEstimate).toBe(true)
+  })
 })
 
 describe('shouldUseAnchorInstallmentAmount', () => {
@@ -326,6 +499,15 @@ describe('shouldUseAnchorInstallmentAmount', () => {
       shouldUseAnchorInstallmentAmount(
         { source: 'import', statementId: 'stmt-1' },
         [{ amount: 27479n }]
+      )
+    ).toBe(true)
+  })
+
+  it('returns true for recurring occurrences', () => {
+    expect(
+      shouldUseAnchorInstallmentAmount(
+        { source: 'recurring', statementId: null },
+        [{ amount: 42111n }]
       )
     ).toBe(true)
   })

@@ -19,6 +19,7 @@ import type { CreateAccountBodyIcon } from "./createAccountBodyIcon";
 import type { CreateAccountBodyBrand } from "./createAccountBodyBrand";
 import type { CreateAccountBodyHolderName } from "./createAccountBodyHolderName";
 import type { CreateAccountBodyOfxAccountId } from "./createAccountBodyOfxAccountId";
+import type { CreateAccountBodyLastFourDigits } from "./createAccountBodyLastFourDigits";
 
 export type CreateAccountBody = {
   /** @minLength 1 */
@@ -43,4 +44,5 @@ export type CreateAccountBody = {
   brand?: (typeof CreateAccountBodyBrand)[keyof typeof CreateAccountBodyBrand];
   holderName?: CreateAccountBodyHolderName;
   ofxAccountId?: CreateAccountBodyOfxAccountId;
+  lastFourDigits?: CreateAccountBodyLastFourDigits;
 };

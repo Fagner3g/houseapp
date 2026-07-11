@@ -29,6 +29,7 @@ export type RegisterSplitPayment201Split = {
   isNotified: boolean;
   lastNotifiedAt: RegisterSplitPayment201SplitLastNotifiedAt;
   notifyEnabled: boolean;
+  collectLumpSum: boolean;
   createdAt: string;
   updatedAt: string;
 };

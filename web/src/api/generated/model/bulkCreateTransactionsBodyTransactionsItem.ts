@@ -26,6 +26,8 @@ import type { BulkCreateTransactionsBodyTransactionsItemNotifyTargetType } from 
 import type { BulkCreateTransactionsBodyTransactionsItemNotifyUserId } from "./bulkCreateTransactionsBodyTransactionsItemNotifyUserId";
 import type { BulkCreateTransactionsBodyTransactionsItemNotifyContactName } from "./bulkCreateTransactionsBodyTransactionsItemNotifyContactName";
 import type { BulkCreateTransactionsBodyTransactionsItemNotifyContactPhone } from "./bulkCreateTransactionsBodyTransactionsItemNotifyContactPhone";
+import type { BulkCreateTransactionsBodyTransactionsItemNotifyDaysBefore } from "./bulkCreateTransactionsBodyTransactionsItemNotifyDaysBefore";
+import type { BulkCreateTransactionsBodyTransactionsItemNotifyOverdueConfig } from "./bulkCreateTransactionsBodyTransactionsItemNotifyOverdueConfig";
 
 export type BulkCreateTransactionsBodyTransactionsItem = {
   accountId?: BulkCreateTransactionsBodyTransactionsItemAccountId;
@@ -55,5 +57,6 @@ export type BulkCreateTransactionsBodyTransactionsItem = {
   notifyUserId?: BulkCreateTransactionsBodyTransactionsItemNotifyUserId;
   notifyContactName?: BulkCreateTransactionsBodyTransactionsItemNotifyContactName;
   notifyContactPhone?: BulkCreateTransactionsBodyTransactionsItemNotifyContactPhone;
-  notifyDaysBefore?: number[];
+  notifyDaysBefore?: BulkCreateTransactionsBodyTransactionsItemNotifyDaysBefore;
+  notifyOverdueConfig?: BulkCreateTransactionsBodyTransactionsItemNotifyOverdueConfig;
 };

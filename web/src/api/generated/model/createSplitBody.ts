@@ -19,4 +19,5 @@ export type CreateSplitBody = {
   amount: string;
   description?: CreateSplitBodyDescription;
   notifyEnabled?: boolean;
+  collectLumpSum?: boolean;
 };

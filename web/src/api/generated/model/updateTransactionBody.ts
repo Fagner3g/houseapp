@@ -26,6 +26,8 @@ import type { UpdateTransactionBodyNotifyTargetType } from "./updateTransactionB
 import type { UpdateTransactionBodyNotifyUserId } from "./updateTransactionBodyNotifyUserId";
 import type { UpdateTransactionBodyNotifyContactName } from "./updateTransactionBodyNotifyContactName";
 import type { UpdateTransactionBodyNotifyContactPhone } from "./updateTransactionBodyNotifyContactPhone";
+import type { UpdateTransactionBodyNotifyDaysBefore } from "./updateTransactionBodyNotifyDaysBefore";
+import type { UpdateTransactionBodyNotifyOverdueConfig } from "./updateTransactionBodyNotifyOverdueConfig";
 
 export type UpdateTransactionBody = {
   accountId?: UpdateTransactionBodyAccountId;
@@ -55,5 +57,6 @@ export type UpdateTransactionBody = {
   notifyUserId?: UpdateTransactionBodyNotifyUserId;
   notifyContactName?: UpdateTransactionBodyNotifyContactName;
   notifyContactPhone?: UpdateTransactionBodyNotifyContactPhone;
-  notifyDaysBefore?: number[];
+  notifyDaysBefore?: UpdateTransactionBodyNotifyDaysBefore;
+  notifyOverdueConfig?: UpdateTransactionBodyNotifyOverdueConfig;
 };

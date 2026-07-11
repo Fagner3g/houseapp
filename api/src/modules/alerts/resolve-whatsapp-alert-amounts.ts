@@ -1,8 +1,8 @@
 import { centavosToString } from '@/core/money'
 import {
-  matchesInstallmentSeries,
   resolveInstallmentAmountCentavos,
   resolveInstallmentPurchaseTotalCentavos,
+  selectInstallmentSeriesSiblings,
 } from '@/modules/splits/split-debt-summary.logic'
 import type { TransactionRecord } from '@/modules/transactions/transaction.repository'
 
@@ -16,6 +16,8 @@ export type WhatsAppAlertAmounts = {
   splitRemainingAmount?: string | null
   /** Debtors + owner when the purchase is split. */
   splitParticipantCount?: number | null
+  /** Full share due once on this parcel (do not divide across installments). */
+  collectLumpSum?: boolean | null
 }
 
 type TransactionAmountInput = Pick<
@@ -62,8 +64,15 @@ export function resolveWhatsAppAlertAmounts(input: {
 export function filterInstallmentSiblings<
   T extends Pick<
     TransactionRecord,
-    'title' | 'installmentsTotal' | 'accountId' | 'cardId' | 'organizationId'
-  >,
+    | 'title'
+    | 'installmentsTotal'
+    | 'accountId'
+    | 'cardId'
+    | 'organizationId'
+    | 'installmentNumber'
+    | 'date'
+    | 'competenceDate'
+  > & { id?: string },
 >(candidates: T[], anchor: T): T[] {
-  return candidates.filter(candidate => matchesInstallmentSeries(candidate, anchor))
+  return selectInstallmentSeriesSiblings(candidates, anchor)
 }

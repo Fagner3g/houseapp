@@ -5,11 +5,10 @@ import { useMemo, useState } from 'react'
 import { toast } from 'sonner'
 
 import {
-  getListAccountsQueryKey,
-  getListTransactionsQueryKey,
   useListCategories,
   useUpdateTransaction,
 } from '@/api/generated/api'
+import { invalidateTransactionQueries } from '@/features/transactions/lib/invalidate-transaction-queries'
 import type { ListTransactions200TransactionsItem } from '@/api/generated/model'
 import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
@@ -19,6 +18,9 @@ import { CategorySelect } from '@/features/categories/components/category-select
 import {
   formatDelegatedSplitBadge,
   formatPartialSplitBadge,
+  partialSplitBadgeClassName,
+  resolveSplitBadgeSettlement,
+  splitBadgeClassName,
   type PartialSplitBadgeInfo,
 } from '@/features/transactions/lib/split-badge-label'
 import { formatCentsString } from '@/lib/currency'
@@ -43,6 +45,7 @@ type CreditCardStatementGroupsProps = {
   cards?: Array<{ id: string; label: string; lastFourDigits?: string | null }>
   fullyDelegatedById?: Map<string, string>
   partiallyDividedById?: Map<string, PartialSplitBadgeInfo>
+  splitRemainingById?: Map<string, number>
   dividedTransactionIds?: Set<string>
 }
 
@@ -66,6 +69,7 @@ function StatementCompactRow({
   cardLabel,
   fullyDelegatedById,
   partiallyDividedById,
+  splitRemainingById,
   onOpen,
 }: {
   transaction: ListTransactions200TransactionsItem
@@ -75,10 +79,14 @@ function StatementCompactRow({
   cardLabel: (cardId?: string | null) => string | null
   fullyDelegatedById?: Map<string, string>
   partiallyDividedById?: Map<string, PartialSplitBadgeInfo>
+  splitRemainingById?: Map<string, number>
   onOpen: () => void
 }) {
   const hasSplit =
     fullyDelegatedById?.has(transaction.id) || partiallyDividedById?.has(transaction.id)
+  const settlement = hasSplit
+    ? resolveSplitBadgeSettlement(splitRemainingById?.get(transaction.id) ?? 0)
+    : undefined
 
   return (
     // biome-ignore lint/a11y/useSemanticElements: nested split control must remain a button
@@ -109,9 +117,12 @@ function StatementCompactRow({
               return (
                 <Badge
                   variant="secondary"
-                  className="h-5 shrink-0 border-amber-200 bg-amber-50 px-1.5 text-[10px] font-medium text-amber-800"
+                  className={cn(
+                    'h-5 shrink-0 px-1.5 text-[10px] font-medium',
+                    splitBadgeClassName(settlement)
+                  )}
                 >
-                  {formatDelegatedSplitBadge(delegatedName)}
+                  {formatDelegatedSplitBadge(delegatedName, settlement)}
                 </Badge>
               )
             }
@@ -120,9 +131,12 @@ function StatementCompactRow({
               return (
                 <Badge
                   variant="secondary"
-                  className="h-5 shrink-0 border-sky-200 bg-sky-50 px-1.5 text-[10px] font-medium text-sky-800"
+                  className={cn(
+                    'h-5 shrink-0 px-1.5 text-[10px] font-medium',
+                    partialSplitBadgeClassName(settlement)
+                  )}
                 >
-                  {formatPartialSplitBadge(partialInfo)}
+                  {formatPartialSplitBadge(partialInfo, settlement)}
                 </Badge>
               )
             }
@@ -185,6 +199,7 @@ function StatementMerchantGroupCard({
   cards,
   fullyDelegatedById,
   partiallyDividedById,
+  splitRemainingById,
   expanded,
   selectedIds,
   isUpdatingCategory,
@@ -200,6 +215,7 @@ function StatementMerchantGroupCard({
   cards?: Array<{ id: string; label: string; lastFourDigits?: string | null }>
   fullyDelegatedById?: Map<string, string>
   partiallyDividedById?: Map<string, PartialSplitBadgeInfo>
+  splitRemainingById?: Map<string, number>
   expanded: boolean
   selectedIds: Set<string>
   isUpdatingCategory: boolean
@@ -345,6 +361,7 @@ function StatementMerchantGroupCard({
               cardLabel={cardLabel}
               fullyDelegatedById={fullyDelegatedById}
               partiallyDividedById={partiallyDividedById}
+              splitRemainingById={splitRemainingById}
               onOpen={() => onOpenTransaction(transaction)}
             />
           ))}
@@ -360,6 +377,7 @@ export function CreditCardStatementGroups({
   cards,
   fullyDelegatedById,
   partiallyDividedById,
+  splitRemainingById,
   dividedTransactionIds = new Set(),
 }: CreditCardStatementGroupsProps) {
   const { slug } = useActiveOrganization()
@@ -402,10 +420,9 @@ export function CreditCardStatementGroups({
     return card.lastFourDigits ? `${card.label} · ${card.lastFourDigits}` : card.label
   }
 
-  const invalidateTransactionQueries = async () => {
+  const invalidateQueries = async () => {
     if (!slug) return
-    await queryClient.invalidateQueries({ queryKey: getListTransactionsQueryKey(slug) })
-    await queryClient.invalidateQueries({ queryKey: getListAccountsQueryKey(slug) })
+    await invalidateTransactionQueries(queryClient, slug)
   }
 
   const applyCategoryToTransactions = async (
@@ -424,7 +441,7 @@ export function CreditCardStatementGroups({
           })
         )
       )
-      await invalidateTransactionQueries()
+      await invalidateQueries()
       toast.success(
         targets.length === 1
           ? 'Categoria aplicada'
@@ -548,6 +565,7 @@ export function CreditCardStatementGroups({
             cards={cards}
             fullyDelegatedById={fullyDelegatedById}
             partiallyDividedById={partiallyDividedById}
+            splitRemainingById={splitRemainingById}
             expanded={expandedGroupKeys.has(group.key)}
             selectedIds={selectedIds}
             isUpdatingCategory={isUpdatingCategory}

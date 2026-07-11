@@ -55,7 +55,7 @@ const HEURISTIC_RULES: Array<{ pattern: RegExp; categoryName: string }> = [
   {
     pattern:
       /seguro|justos|academia|fit|lifebox|saúde|imede|diagnost|drogaria|droga mix|dentist|odonto|hospital|farmácia|farmacia|asa\*casal|unimed|amil|sulamerica|consulta médica|consulta medica|laborat|veterin/i,
-    categoryName: 'Saúde',
+    categoryName: 'Saúde & Beleza',
   },
   {
     pattern:

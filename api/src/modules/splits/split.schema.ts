@@ -18,6 +18,7 @@ export const splitResponseSchema = z.object({
   isNotified: z.boolean(),
   lastNotifiedAt: z.string().nullable(),
   notifyEnabled: z.boolean(),
+  collectLumpSum: z.boolean(),
   createdAt: z.string(),
   updatedAt: z.string(),
 })
@@ -52,6 +53,7 @@ const createSplitBody = z.object({
   amount: z.string(),
   description: z.string().nullable().optional(),
   notifyEnabled: z.boolean().optional(),
+  collectLumpSum: z.boolean().optional(),
 })
 
 const updateSplitBody = createSplitBody
@@ -176,6 +178,18 @@ export const listSplitTransactionIdsSchema = {
           splitWithName: z.string(),
           splitAmount: z.string(),
           transactionAmount: z.string(),
+        })
+      ),
+      splitPaidTotals: z.array(
+        z.object({
+          transactionId: z.string(),
+          paidAmount: z.string(),
+        })
+      ),
+      splitRemainingTotals: z.array(
+        z.object({
+          transactionId: z.string(),
+          remainingAmount: z.string(),
         })
       ),
     }),

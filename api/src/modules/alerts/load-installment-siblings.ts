@@ -8,6 +8,7 @@ import { filterInstallmentSiblings } from './resolve-whatsapp-alert-amounts'
 
 type InstallmentSiblingAnchor = Pick<
   TransactionRecord,
+  | 'id'
   | 'organizationId'
   | 'installmentsTotal'
   | 'accountId'
@@ -15,6 +16,8 @@ type InstallmentSiblingAnchor = Pick<
   | 'title'
   | 'amount'
   | 'installmentNumber'
+  | 'date'
+  | 'competenceDate'
 >
 
 type TransactionAmountInput = Pick<
@@ -48,6 +51,7 @@ export async function loadInstallmentSiblingTransactions(
 
   const candidates = await db
     .select({
+      id: transactions.id,
       title: transactions.title,
       organizationId: transactions.organizationId,
       installmentsTotal: transactions.installmentsTotal,
@@ -55,6 +59,8 @@ export async function loadInstallmentSiblingTransactions(
       cardId: transactions.cardId,
       amount: transactions.amount,
       installmentNumber: transactions.installmentNumber,
+      date: transactions.date,
+      competenceDate: transactions.competenceDate,
     })
     .from(transactions)
     .where(and(...conditions))

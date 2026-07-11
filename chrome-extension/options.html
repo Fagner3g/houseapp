@@ -120,6 +120,7 @@
 
   <div class="env-toggle">
     <button class="env-btn active" id="btn-env-prod" data-env="prod">Produção</button>
+    <button class="env-btn" id="btn-env-homolog" data-env="homolog">Homolog</button>
     <button class="env-btn" id="btn-env-dev" data-env="dev">Dev</button>
   </div>
 
@@ -139,6 +140,16 @@
       <option value="15">A cada 15 minutos</option>
       <option value="30">A cada 30 minutos</option>
       <option value="60">A cada hora</option>
+    </select>
+  </div>
+
+  <div class="field">
+    <label for="upcoming-period">Período de contas próximas</label>
+    <select id="upcoming-period">
+      <option value="7">Próximos 7 dias</option>
+      <option value="14">Próximos 14 dias</option>
+      <option value="30">Próximos 30 dias</option>
+      <option value="month">Até o fim do mês</option>
     </select>
   </div>
 

@@ -27,6 +27,7 @@ import {
   CreditCardSubNav,
   type CreditCardView,
 } from '@/features/credit-cards/components/credit-card-sub-nav'
+import { canNavigateToNextBillingMonth } from '@/features/credit-cards/lib/navigable-billing-month'
 import { useActiveOrganization } from '@/hooks/use-active-organization'
 import {
   currentBillingMonthKey,
@@ -44,7 +45,16 @@ export const Route = createFileRoute('/_app/$org/accounts/')({
       .optional(),
     view: z.enum(['settings', 'analytics']).optional(),
     invoiceFilter: z
-      .enum(['all', 'purchases', 'payments', 'credits', 'uncategorized', 'installments', 'divided'])
+      .enum([
+        'all',
+        'purchases',
+        'payments',
+        'credits',
+        'uncategorized',
+        'installments',
+        'divided',
+        'a_receber',
+      ])
       .optional(),
   }),
 })
@@ -82,9 +92,13 @@ function AccountsPage() {
   const selectedAccount = creditCards.find(a => a.id === selectedId)
   const billingMonthKey = month ?? currentBillingMonthKey()
 
-  const { cycle, closingDay, dueDay } = useCreditCardBillingCycle(
+  const { cycle, closingDay, dueDay, latestNavigableMonthKey } = useCreditCardBillingCycle(
     selectedAccount,
     billingMonthKey
+  )
+  const canGoNextMonth = canNavigateToNextBillingMonth(
+    billingMonthKey,
+    latestNavigableMonthKey
   )
 
   useEffect(() => {
@@ -231,6 +245,7 @@ function AccountsPage() {
                       closingDay={closingDay}
                       dueDay={dueDay}
                       isCurrentCycle={billingMonthKey === currentBillingMonthKey()}
+                      canGoNextMonth={canGoNextMonth}
                       onPrevMonth={() =>
                         updateSearch({ month: shiftBillingMonth(billingMonthKey, -1) })
                       }
@@ -257,6 +272,9 @@ function AccountsPage() {
                           cycle={cycle}
                           closingDay={closingDay}
                           dueDay={dueDay}
+                          onViewAReceber={() =>
+                            updateSearch({ view: undefined, invoiceFilter: 'a_receber' })
+                          }
                         />
                         <CreditCardStatementSection
                           accountId={selectedAccount.id}

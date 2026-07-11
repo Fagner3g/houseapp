@@ -1,19 +1,12 @@
-import { ChevronDown, Wallet } from 'lucide-react'
-import { useMemo, useState } from 'react'
+import { Wallet } from 'lucide-react'
+import { useId, useMemo, useState } from 'react'
 
+import { useListUsersByOrg } from '@/api/generated/api'
+import { Badge } from '@/components/ui/badge'
 import { CurrencyInput } from '@/components/ui/currency-input'
-import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
-import { PhoneInput } from '@/components/ui/phone-input'
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from '@/components/ui/select'
 import { Switch } from '@/components/ui/switch'
-import { MemberSelect, SPLIT_MODE_LABELS } from '@/features/accounts/components/import-review-fields'
+import { SPLIT_MODE_LABELS } from '@/features/accounts/components/import-review-fields'
 import {
   defaultSplitDraftState,
   resolveSplitAmountReais,
@@ -21,8 +14,24 @@ import {
   type SplitMode,
 } from '@/features/accounts/components/import-review-types'
 import { divideReais } from '@/features/transactions/installment-preview'
-import { formatCurrency, formatMoneyString, moneyStringToReais, reaisToMoneyString } from '@/lib/currency'
-import { cn } from '@/lib/utils'
+import { useActiveOrganization } from '@/hooks/use-active-organization'
+import {
+  formatCurrency,
+  formatMoneyString,
+  moneyStringToReais,
+  reaisToMoneyString,
+} from '@/lib/currency'
+import { getSplitEligibleOrgUsers } from '@/lib/org-users'
+import { useAuthStore } from '@/stores/auth'
+
+import {
+  DrawerCollapsibleSection,
+  SplitMemberChipList,
+  SplitModePresets,
+  SplitMyShareRow,
+  SplitParcelChargeToggle,
+  SplitPersonFields,
+} from './splits'
 
 export { defaultSplitDraftState, type SplitDraftState }
 export { validateSplitDraft } from '@/features/accounts/components/import-review-types'
@@ -42,24 +51,44 @@ export function TransactionSplitsDraftSection({
   value,
   onChange,
 }: TransactionSplitsDraftSectionProps) {
+  const splitNotifyId = useId()
+  const { slug } = useActiveOrganization()
+  const currentUserId = useAuthStore(s => s.user?.id)
   const [open, setOpen] = useState(value.splitMode !== 'none')
+
+  const { data: membersData } = useListUsersByOrg(slug, {
+    query: { enabled: !!slug && open },
+  })
 
   const totalReais = moneyStringToReais(amountCents)
   const splitReais = resolveSplitAmountReais(amountCents, value.splitMode, value.splitAmountReais)
   const myShareReais = Math.max(0, totalReais - splitReais)
   const isInstallment = recurrence === 'installment' && (installmentsTotal ?? 0) >= 2
+  const totalInstallments = installmentsTotal ?? 0
+  const showParcelChargeToggle =
+    isInstallment && (value.splitMode === 'half' || value.splitMode === 'custom')
+  const chargePerInstallment = showParcelChargeToggle && !value.collectLumpSum
+
+  const splitEligibleMembers = useMemo(
+    () => getSplitEligibleOrgUsers(membersData?.users ?? [], currentUserId),
+    [membersData?.users, currentUserId]
+  )
+
+  const selectedMemberName = value.splitUserId
+    ? membersData?.users?.find(member => member.id === value.splitUserId)?.name
+    : undefined
 
   const perInstallmentAmounts = useMemo(() => {
     if (!isInstallment || value.splitMode === 'none') return null
 
     if (value.splitMode === 'custom') {
       return {
-        split: divideReais(value.splitAmountReais, installmentsTotal!),
-        myShare: divideReais(myShareReais, installmentsTotal!),
+        split: divideReais(value.splitAmountReais, totalInstallments),
+        myShare: divideReais(myShareReais, totalInstallments),
       }
     }
 
-    const parcelAmounts = divideReais(totalReais, installmentsTotal!)
+    const parcelAmounts = divideReais(totalReais, totalInstallments)
     return {
       split: parcelAmounts.map(parcel =>
         resolveSplitAmountReais(
@@ -81,7 +110,7 @@ export function TransactionSplitsDraftSection({
     isInstallment,
     value.splitMode,
     value.splitAmountReais,
-    installmentsTotal,
+    totalInstallments,
     totalReais,
     myShareReais,
   ])
@@ -90,151 +119,147 @@ export function TransactionSplitsDraftSection({
     onChange({ ...value, ...patch })
   }
 
+  const handleModeChange = (splitMode: SplitMode) => {
+    update({
+      splitMode,
+      splitAmountReais:
+        splitMode === 'half'
+          ? totalReais / 2
+          : splitMode === 'full_other'
+            ? totalReais
+            : value.splitAmountReais,
+    })
+  }
+
+  const handleQuickDelegate = (userId: string) => {
+    update({
+      splitMode: 'full_other',
+      splitPersonMode: 'member',
+      splitUserId: userId,
+      splitAmountReais: totalReais,
+      notifyEnabled: true,
+    })
+  }
+
+  const headerSummary =
+    value.splitMode !== 'none' ? (
+      <span className="ml-1 flex flex-wrap gap-1">
+        <Badge variant="secondary" className="font-normal">
+          {SPLIT_MODE_LABELS[value.splitMode]}
+        </Badge>
+        {selectedMemberName && (
+          <Badge variant="secondary" className="font-normal">
+            {selectedMemberName}
+          </Badge>
+        )}
+      </span>
+    ) : undefined
+
   return (
-    <div className="rounded-lg border border-slate-200">
-      <button
-        type="button"
-        className="flex w-full items-center justify-between px-4 py-3 text-sm font-medium text-slate-700"
-        onClick={() => setOpen(v => !v)}
-      >
-        <span className="flex items-center gap-2">
-          <Wallet className="size-4" />
-          Divisão
-          {value.splitMode !== 'none' && (
-            <span className="rounded-full bg-slate-100 px-2 py-0.5 text-xs font-medium text-slate-600">
-              {SPLIT_MODE_LABELS[value.splitMode]}
-            </span>
-          )}
-        </span>
-        <ChevronDown className={cn('size-4 transition-transform', open && 'rotate-180')} />
-      </button>
+    <DrawerCollapsibleSection
+      icon={Wallet}
+      title="Divisão"
+      summary={headerSummary}
+      open={open}
+      onOpenChange={setOpen}
+    >
+      <div className="space-y-4 rounded-lg border border-slate-100 bg-slate-50/50 p-4">
+        <div className="space-y-2">
+          <Label className="text-sm font-medium text-slate-700">Tipo de divisão</Label>
+          <SplitModePresets
+            variant="draft"
+            value={value.splitMode}
+            onChange={handleModeChange}
+          />
+        </div>
 
-      {open && (
-        <div className="space-y-3 border-t border-slate-100 px-4 py-3">
-          <div className="space-y-2">
-            <Label className="text-sm text-slate-600">Tipo de divisão</Label>
-            <Select
-              value={value.splitMode}
-              onValueChange={mode => {
-                const splitMode = mode as SplitMode
-                update({
-                  splitMode,
-                  splitAmountReais:
-                    splitMode === 'half'
-                      ? totalReais / 2
-                      : splitMode === 'full_other'
-                        ? totalReais
-                        : value.splitAmountReais,
-                })
-              }}
-            >
-              <SelectTrigger>
-                <SelectValue />
-              </SelectTrigger>
-              <SelectContent>
-                {Object.entries(SPLIT_MODE_LABELS).map(([mode, label]) => (
-                  <SelectItem key={mode} value={mode}>
-                    {label}
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
-          </div>
+        {value.splitMode === 'none' && splitEligibleMembers.length > 0 && (
+          <SplitMemberChipList
+            members={splitEligibleMembers}
+            onSelect={handleQuickDelegate}
+            label="Ou delegar para"
+          />
+        )}
 
-          {value.splitMode !== 'none' && (
-            <>
+        {value.splitMode !== 'none' && (
+          <>
+            {showParcelChargeToggle && (
+              <SplitParcelChargeToggle
+                checked={!value.collectLumpSum}
+                onCheckedChange={parcelCharge => update({ collectLumpSum: !parcelCharge })}
+                banner={
+                  chargePerInstallment
+                    ? `A divisão será aplicada em todas as ${totalInstallments} parcelas.`
+                    : `A cobrança será à vista na 1ª parcela (valor total da divisão: ${formatCurrency(splitReais)}).`
+                }
+              />
+            )}
+
+            <SplitPersonFields
+              personMode={value.splitPersonMode}
+              onPersonModeChange={personMode => update({ splitPersonMode: personMode })}
+              selectedUserId={value.splitUserId}
+              onSelectedUserIdChange={userId => update({ splitUserId: userId })}
+              contactName={value.splitContactName}
+              onContactNameChange={splitContactName => update({ splitContactName })}
+              contactPhone={value.splitContactPhone}
+              onContactPhoneChange={splitContactPhone => update({ splitContactPhone })}
+            />
+
+            {value.splitMode === 'custom' ? (
               <div className="space-y-2">
-                <Label className="text-sm text-slate-600">Quem deve</Label>
-                <Select
-                  value={value.splitPersonMode}
-                  onValueChange={personMode =>
-                    update({ splitPersonMode: personMode as 'member' | 'contact' })
-                  }
-                >
-                  <SelectTrigger>
-                    <SelectValue />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="member">Membro da casa</SelectItem>
-                    <SelectItem value="contact">Contato externo</SelectItem>
-                  </SelectContent>
-                </Select>
-              </div>
-
-              {value.splitPersonMode === 'member' ? (
-                <MemberSelect
-                  value={value.splitUserId}
-                  onChange={userId => update({ splitUserId: userId })}
-                />
-              ) : (
-                <>
-                  <Input
-                    placeholder="Nome do contato"
-                    value={value.splitContactName}
-                    onChange={e => update({ splitContactName: e.target.value })}
-                  />
-                  <PhoneInput
-                    placeholder="Telefone (WhatsApp)"
-                    value={value.splitContactPhone}
-                    onValueChange={splitContactPhone => update({ splitContactPhone })}
-                  />
-                </>
-              )}
-
-              {value.splitMode === 'custom' ? (
-                <div className="space-y-2">
-                  <Label className="text-sm text-slate-600">Valor da divisão</Label>
-                  <CurrencyInput
-                    value={value.splitAmountReais}
-                    onValueChange={splitAmountReais => update({ splitAmountReais })}
-                  />
-                </div>
-              ) : (
-                <p className="text-sm text-slate-500">
-                  Valor da divisão:{' '}
-                  <strong className="tabular-nums text-slate-800">
-                    {formatMoneyString(reaisToMoneyString(splitReais))}
-                  </strong>
-                  {isInstallment && perInstallmentAmounts && (
-                    <span className="text-slate-500">
-                      {' '}
-                      ({installmentsTotal}×{' '}
-                      {formatMoneyString(reaisToMoneyString(perInstallmentAmounts.split[0] ?? 0))}{' '}
-                      por parcela)
-                    </span>
-                  )}
-                </p>
-              )}
-
-              <div className="flex items-center justify-between gap-3">
-                <Label htmlFor="split-draft-notify" className="text-sm text-slate-600">
-                  Notificar esta pessoa
-                </Label>
-                <Switch
-                  id="split-draft-notify"
-                  checked={value.notifyEnabled}
-                  onCheckedChange={notifyEnabled => update({ notifyEnabled })}
+                <Label className="text-sm font-medium text-slate-700">Valor da divisão</Label>
+                <CurrencyInput
+                  value={value.splitAmountReais}
+                  onValueChange={splitAmountReais => update({ splitAmountReais })}
                 />
               </div>
-            </>
-          )}
-
-          {value.splitMode !== 'none' && (
-            <div className="flex items-center justify-between border-t border-slate-100 pt-3 text-sm">
-              <span className="text-slate-500">Meu valor</span>
-              <strong className="tabular-nums text-slate-900">
-                {formatCurrency(myShareReais)}
-                {isInstallment && perInstallmentAmounts && (
-                  <span className="ml-1 text-xs font-normal text-slate-500">
+            ) : (
+              <p className="text-sm text-slate-500">
+                Valor da divisão:{' '}
+                <strong className="tabular-nums text-slate-800">
+                  {formatMoneyString(reaisToMoneyString(splitReais))}
+                </strong>
+                {chargePerInstallment && perInstallmentAmounts && (
+                  <span className="text-slate-500">
+                    {' '}
                     ({installmentsTotal}×{' '}
-                    {formatCurrency(perInstallmentAmounts.myShare[0] ?? 0)})
+                    {formatMoneyString(reaisToMoneyString(perInstallmentAmounts.split[0] ?? 0))}{' '}
+                    por parcela)
                   </span>
                 )}
-              </strong>
+                {showParcelChargeToggle && !chargePerInstallment && (
+                  <span className="text-slate-500"> · à vista na 1ª parcela</span>
+                )}
+              </p>
+            )}
+
+            <div className="flex items-center justify-between gap-3">
+              <Label htmlFor={splitNotifyId} className="text-sm text-slate-600">
+                Notificar esta pessoa
+              </Label>
+              <Switch
+                id={splitNotifyId}
+                checked={value.notifyEnabled}
+                onCheckedChange={notifyEnabled => update({ notifyEnabled })}
+              />
             </div>
-          )}
-        </div>
+          </>
+        )}
+      </div>
+
+      {value.splitMode !== 'none' && (
+        <SplitMyShareRow
+          amountReais={myShareReais}
+          suffix={
+            chargePerInstallment && perInstallmentAmounts ? (
+              <span className="ml-1 text-xs font-normal text-slate-500">
+                ({installmentsTotal}× {formatCurrency(perInstallmentAmounts.myShare[0] ?? 0)})
+              </span>
+            ) : undefined
+          }
+        />
       )}
-    </div>
+    </DrawerCollapsibleSection>
   )
 }

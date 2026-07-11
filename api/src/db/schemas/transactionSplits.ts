@@ -26,6 +26,8 @@ export const transactionSplits = pgTable(
     paidAmount: bigint('paid_amount', { mode: 'bigint' }).notNull().default(sql`0`),
     paidAt: timestamp('paid_at', { withTimezone: true }),
     notifyEnabled: boolean('notify_enabled').notNull().default(true),
+    /** Debtor pays full share once on this parcel (purchase may still be installmentized). */
+    collectLumpSum: boolean('collect_lump_sum').notNull().default(false),
     isNotified: boolean('is_notified').notNull().default(false),
     lastNotifiedAt: timestamp('last_notified_at', { withTimezone: true }),
     createdAt: timestamp('created_at', { withTimezone: true }).notNull().defaultNow(),

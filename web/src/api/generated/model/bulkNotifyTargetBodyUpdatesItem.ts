@@ -9,6 +9,8 @@ import type { BulkNotifyTargetBodyUpdatesItemNotifyTargetType } from "./bulkNoti
 import type { BulkNotifyTargetBodyUpdatesItemNotifyUserId } from "./bulkNotifyTargetBodyUpdatesItemNotifyUserId";
 import type { BulkNotifyTargetBodyUpdatesItemNotifyContactName } from "./bulkNotifyTargetBodyUpdatesItemNotifyContactName";
 import type { BulkNotifyTargetBodyUpdatesItemNotifyContactPhone } from "./bulkNotifyTargetBodyUpdatesItemNotifyContactPhone";
+import type { BulkNotifyTargetBodyUpdatesItemNotifyDaysBefore } from "./bulkNotifyTargetBodyUpdatesItemNotifyDaysBefore";
+import type { BulkNotifyTargetBodyUpdatesItemNotifyOverdueConfig } from "./bulkNotifyTargetBodyUpdatesItemNotifyOverdueConfig";
 
 export type BulkNotifyTargetBodyUpdatesItem = {
   transactionId: string;
@@ -17,5 +19,6 @@ export type BulkNotifyTargetBodyUpdatesItem = {
   notifyUserId?: BulkNotifyTargetBodyUpdatesItemNotifyUserId;
   notifyContactName?: BulkNotifyTargetBodyUpdatesItemNotifyContactName;
   notifyContactPhone?: BulkNotifyTargetBodyUpdatesItemNotifyContactPhone;
-  notifyDaysBefore?: number[];
+  notifyDaysBefore?: BulkNotifyTargetBodyUpdatesItemNotifyDaysBefore;
+  notifyOverdueConfig?: BulkNotifyTargetBodyUpdatesItemNotifyOverdueConfig;
 };

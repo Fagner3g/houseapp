@@ -6,14 +6,12 @@ import { useEffect, useLayoutEffect, useMemo, useRef, useState, useCallback } fr
 import { useForm, useFormState } from 'react-hook-form'
 import { z } from 'zod'
 
+import type { CreateTransactionBody } from '@/api/generated/model'
+import { calendarDateToIso, isoToCalendarDate } from '@/lib/date'
 import {
   getGetSplitDebtSummaryQueryKey,
   getGetTransactionQueryKey,
-  getGetReportByCategoryQueryKey,
-  getGetReportTopMerchantsQueryKey,
-  getListAccountsQueryKey,
   getListSplitsQueryKey,
-  getListTransactionsQueryKey,
   useCancelTransactionPayment,
   useCreateRecurringTransaction,
   useCreateSplit,
@@ -22,6 +20,7 @@ import {
   useGetSplitDebtSummary,
   useGetTransaction,
   useListAccounts,
+  useListAlertRules,
   useListAttachments,
   useListCards,
   useListSplits,
@@ -76,10 +75,11 @@ import {
   uploadTransactionAttachment,
 } from '@/lib/attachments'
 import {
-  centsStringToNumber,
+  apiAmountToFormReais,
   formatCentsString,
   formatCurrency,
   moneyStringToReais,
+  optionalReaisToApiAmount,
   reaisToCentsString,
   reaisToMoneyString,
 } from '@/lib/currency'
@@ -141,19 +141,24 @@ import { TransactionFooterSummary } from './transaction-footer-summary'
 import { TransactionSplitsSection } from './transaction-splits-section'
 import { DeleteTransactionDialog } from './delete-transaction-dialog'
 import { canDeleteTransaction } from '@/features/transactions/utils/can-delete-transaction'
+import { invalidateTransactionQueries } from '@/features/transactions/lib/invalidate-transaction-queries'
 import { isImportedStatementTransaction } from '@/features/transactions/utils/is-imported-statement-transaction'
 import {
   buildNotifyApiPayload,
   defaultNotifyState,
   notifyStateFromTransaction,
+  orgNotifyDefaultsFromRules,
   TransactionRemindersSection,
+  type OrgNotifyDefaults,
   type TransactionNotifyState,
 } from './transaction-reminders-section'
+import { TransactionSchedulePaymentSection } from './transaction-schedule-payment-section'
 import { AccountDrawer } from '@/features/accounts/components/account-drawer'
 import { AccountSelect } from '@/features/accounts/components/account-select'
 import { filterPaymentAccounts } from '@/features/accounts/constants'
 import { CardDrawer } from '@/features/accounts/components/card-drawer'
 import { CategoryDrawer } from '@/features/categories/components/category-drawer'
+import { RecurringContractDrawer } from '@/features/recurring/components/recurring-contract-drawer'
 import { CategorySelect } from '@/features/categories/components/category-select'
 import {
   resolveTransactionInstallmentAmountReais,
@@ -179,12 +184,16 @@ import {
   SplitPaymentPayBanner,
 } from './split-payment-confirm-dialog'
 
+function hasPositiveAmount(amount: number | null | undefined): boolean {
+  return amount != null && Number.isFinite(amount) && amount > 0
+}
+
 function createTransactionSchema(options: { requireCategory: boolean }) {
   return z
     .object({
       type: z.enum(['expense', 'income', 'transfer']),
       title: z.string().min(1, 'Descrição obrigatória'),
-      amount: z.number().positive('Valor obrigatório'),
+      amount: z.number().nullable(),
       date: z.string().min(1),
       competenceDate: z.string().optional(),
       accountId: z.string().optional(),
@@ -214,6 +223,19 @@ function createTransactionSchema(options: { requireCategory: boolean }) {
       paidAmount: z.number().optional(),
     })
     .superRefine((values, ctx) => {
+      const amountRequired =
+        values.type === 'transfer' ||
+        values.recurrence === 'installment' ||
+        values.status === 'paid'
+
+      if (amountRequired && !hasPositiveAmount(values.amount)) {
+        ctx.addIssue({
+          code: z.ZodIssueCode.custom,
+          message: 'Valor obrigatório',
+          path: ['amount'],
+        })
+      }
+
       if (values.type === 'transfer') {
         if (!values.accountId) {
           ctx.addIssue({
@@ -294,7 +316,7 @@ function defaultFormValues(): TransactionFormValues {
   return {
     type: 'expense',
     title: '',
-    amount: 0,
+    amount: null,
     date: dayjs().format('YYYY-MM-DD'),
     status: 'pending',
     recurrence: 'once',
@@ -306,6 +328,19 @@ function defaultFormValues(): TransactionFormValues {
     counterparty: '',
     paidAt: dayjs().format('YYYY-MM-DD'),
     paidAmount: 0,
+  }
+}
+
+function buildNextCreateDraft(
+  values: TransactionFormValues,
+  lockedAccountId: string | null
+): Partial<CreateTransactionBody> {
+  return {
+    type: values.type === 'transfer' ? 'expense' : values.type,
+    accountId: lockedAccountId ?? values.accountId ?? undefined,
+    cardId: values.cardId ?? undefined,
+    date: calendarDateToIso(values.date),
+    status: 'pending',
   }
 }
 
@@ -372,10 +407,10 @@ function buildTransactionEditPayload(
   return {
     title: values.title,
     type: values.type,
-    amount: reaisToMoneyString(values.amount),
-    date: dayjs(values.date).toISOString(),
+    amount: optionalReaisToApiAmount(values.amount),
+    date: calendarDateToIso(values.date),
     competenceDate: values.competenceDate
-      ? dayjs(values.competenceDate).toISOString()
+      ? calendarDateToIso(values.competenceDate)
       : null,
     accountId: values.accountId ?? null,
     cardId: values.cardId ?? null,
@@ -397,6 +432,7 @@ export function TransactionDrawer() {
   const lockedAccountId = useDrawerStore(s => s.lockedAccountId)
   const editingId = useDrawerStore(s => s.editingTransactionId)
   const close = useDrawerStore(s => s.closeTransactionDrawer)
+  const openTransactionDrawer = useDrawerStore(s => s.openTransactionDrawer)
   const openAccountDrawer = useDrawerStore(s => s.openAccountDrawer)
   const openRecurringContractDrawer = useDrawerStore(s => s.openRecurringContractDrawer)
   const openCategoryDrawer = useDrawerStore(s => s.openCategoryDrawer)
@@ -425,6 +461,15 @@ export function TransactionDrawer() {
   const { data: transactionData, isLoading: isLoadingTx, isError: isTxError } = useGetTransaction(slug, editingId ?? '', {
     query: { enabled: !!slug && !!editingId && open && mode !== 'create' },
   })
+
+  const { data: alertRulesData } = useListAlertRules(slug, {
+    query: { enabled: !!slug && open },
+  })
+
+  const orgNotifyDefaults = useMemo(
+    (): OrgNotifyDefaults => orgNotifyDefaultsFromRules(alertRulesData?.rules),
+    [alertRulesData?.rules]
+  )
 
   const [notesOpen, setNotesOpen] = useState(false)
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false)
@@ -468,6 +513,7 @@ export function TransactionDrawer() {
     editingId ?? '',
     { query: { enabled: !!slug && !!editingId && open && isEdit } }
   )
+  const hasExistingAttachments = (attachmentsData?.attachments?.length ?? 0) > 0
 
   const { data: splitDebtSummaryData } = useGetSplitDebtSummary(slug, editingId ?? '', {
     query: { enabled: !!slug && !!editingId && open && (isEdit || isPay) },
@@ -493,7 +539,10 @@ export function TransactionDrawer() {
 
   const installmentSummary =
     splitDebtSummaryData && (tx?.installmentsTotal ?? 0) > 1 ? splitDebtSummaryData : undefined
-  const splitDebtSummary = installmentSummary?.persons.length ? installmentSummary : undefined
+  const splitDebtSummary =
+    splitDebtSummaryData && splitDebtSummaryData.persons.length > 0
+      ? splitDebtSummaryData
+      : undefined
 
   const splitInstallmentContext = useMemo(
     () => ({
@@ -588,7 +637,7 @@ export function TransactionDrawer() {
     if (!open) {
       setPendingFiles([])
       setNotesOpen(false)
-      setNotifyState(defaultNotifyState())
+      setNotifyState(defaultNotifyState(orgNotifyDefaults))
       setSplitDraft(defaultSplitDraftState())
       setAdvancePromptOpen(false)
       setSplitPaymentConfirmOpen(false)
@@ -598,7 +647,7 @@ export function TransactionDrawer() {
       form.reset(defaultFormValues())
       return
     }
-  }, [open, form])
+  }, [open, form, orgNotifyDefaults])
 
   useLayoutEffect(() => {
     if (!open || (!isEdit && !isPay) || !tx || tx.id !== editingId) return
@@ -615,7 +664,7 @@ export function TransactionDrawer() {
       form.reset({
         ...defaultFormValues(),
         title: tx.title,
-        amount: centsStringToNumber(tx.amount),
+        amount: apiAmountToFormReais(tx.amount),
         paidAt: dayjs().format('YYYY-MM-DD'),
         paidAmount: remaining > 0 ? remaining : installmentAmount,
         accountId,
@@ -627,22 +676,26 @@ export function TransactionDrawer() {
       ...defaultFormValues(),
       type: tx.type as TransactionFormValues['type'],
       title: tx.title,
-      amount: centsStringToNumber(tx.amount),
-      date: dayjs(tx.date).format('YYYY-MM-DD'),
+      amount: apiAmountToFormReais(tx.amount),
+      date: isoToCalendarDate(tx.date),
       competenceDate: tx.competenceDate
-        ? dayjs(tx.competenceDate).format('YYYY-MM-DD')
+        ? isoToCalendarDate(tx.competenceDate)
         : undefined,
       accountId,
       cardId: tx.cardId ?? undefined,
       categoryId: tx.categoryIds?.[0] ?? draft?.categoryIds?.[0],
       status: tx.status === 'paid' ? 'paid' : 'pending',
-      paidAt: tx.paidAt ? dayjs(tx.paidAt).format('YYYY-MM-DD') : dayjs().format('YYYY-MM-DD'),
+      paidAt: tx.paidAt ? isoToCalendarDate(tx.paidAt) : dayjs().format('YYYY-MM-DD'),
       paidAmount: 0,
       description: tx.description ?? '',
-      recurrence: tx.installmentsTotal ? 'installment' : 'once',
+      // Finite recurring contracts also set installmentsTotal on occurrences.
+      // Only true installment purchases should use recurrence=installment (requires amount).
+      recurrence:
+        tx.installmentsTotal && !tx.recurringTransactionId ? 'installment' : 'once',
       installmentsTotal: tx.installmentsTotal ?? undefined,
     })
-    setNotifyState(notifyStateFromTransaction(tx, [1, 3, 7]))
+    setNotifyState(notifyStateFromTransaction(tx, orgNotifyDefaults))
+    setNotesOpen(Boolean(tx.description?.trim()))
   }, [
     open,
     isEdit,
@@ -655,6 +708,7 @@ export function TransactionDrawer() {
     activeAccounts,
     form,
     installmentSummary,
+    orgNotifyDefaults,
   ])
 
   useEffect(() => {
@@ -687,10 +741,10 @@ export function TransactionDrawer() {
       ...defaultFormValues(),
       type: (draft?.type as TransactionFormValues['type']) ?? 'expense',
       title: draft?.title ?? '',
-      amount: draft?.amount ? centsStringToNumber(draft.amount) : 0,
-      date: draft?.date ? dayjs(draft.date).format('YYYY-MM-DD') : dayjs().format('YYYY-MM-DD'),
+      amount: draft?.amount ? apiAmountToFormReais(draft.amount) : null,
+      date: draft?.date ? isoToCalendarDate(draft.date) : dayjs().format('YYYY-MM-DD'),
       competenceDate: draft?.competenceDate
-        ? dayjs(draft.competenceDate).format('YYYY-MM-DD')
+        ? isoToCalendarDate(draft.competenceDate)
         : undefined,
       accountId: draft?.accountId ?? effectiveLockedAccountId ?? paymentAccounts[0]?.id,
       cardId: draft?.cardId ?? undefined,
@@ -698,22 +752,45 @@ export function TransactionDrawer() {
       status: (draft?.status as TransactionFormValues['status']) ?? 'pending',
       description: draft?.description ?? '',
     })
+    setNotesOpen(Boolean(draft?.description?.trim()))
   }, [open, isEdit, isPay, draft, form, effectiveLockedAccountId, paymentAccounts])
+
+  useEffect(() => {
+    if (!open || !isEdit) return
+    if (hasExistingAttachments) setNotesOpen(true)
+  }, [open, isEdit, hasExistingAttachments])
 
   useEffect(() => {
     if (!open || !effectiveLockedAccountId) return
     if (form.getValues('accountId') !== effectiveLockedAccountId) {
       form.setValue('accountId', effectiveLockedAccountId)
+      form.setValue('cardId', undefined)
     }
   }, [open, effectiveLockedAccountId, form])
 
   useEffect(() => {
-    if (!open || !isCreditCard || selectableCards.length !== 1) return
-    const soleCard = selectableCards[0]
-    if (soleCard && !form.getValues('cardId')) {
-      form.setValue('cardId', soleCard.id)
+    if (!open || isEdit || isPay) return
+
+    if (!isCreditCard) {
+      if (form.getValues('cardId')) form.setValue('cardId', undefined)
+      return
     }
-  }, [open, isCreditCard, selectableCards, form])
+
+    const currentCardId = form.getValues('cardId')
+    const cardStillValid =
+      !!currentCardId && selectableCards.some(card => card.id === currentCardId)
+
+    if (currentCardId && selectableCards.length > 0 && !cardStillValid) {
+      form.setValue('cardId', undefined)
+    }
+
+    if (selectableCards.length === 1) {
+      const soleCard = selectableCards[0]
+      if (soleCard && form.getValues('cardId') !== soleCard.id) {
+        form.setValue('cardId', soleCard.id)
+      }
+    }
+  }, [open, isEdit, isPay, isCreditCard, selectableCards, form])
 
   useEffect(() => {
     if (!open || !isPay || !tx || isLoadingTx) return
@@ -734,7 +811,8 @@ export function TransactionDrawer() {
     if (!open) return
     setSplitDraft(prev => {
       if (prev.splitMode === 'none' || prev.splitMode === 'custom') return prev
-      const splitAmountReais = prev.splitMode === 'half' ? amount / 2 : amount
+      const baseAmount = amount ?? 0
+      const splitAmountReais = prev.splitMode === 'half' ? baseAmount / 2 : baseAmount
       if (prev.splitAmountReais === splitAmountReais) return prev
       return { ...prev, splitAmountReais }
     })
@@ -788,7 +866,7 @@ export function TransactionDrawer() {
   const installmentPreview = useMemo(() => {
     if (recurrence !== 'installment') return null
     return buildInstallmentPreview({
-      totalAmount: amount,
+      totalAmount: amount ?? 0,
       installmentsTotal: installmentsTotal ?? 0,
       startDate: purchaseDate,
       periodicity,
@@ -878,13 +956,24 @@ export function TransactionDrawer() {
 
   const invalidateAll = async () => {
     if (!slug) return
-    await Promise.all([
-      queryClient.invalidateQueries({ queryKey: getListTransactionsQueryKey(slug) }),
-      queryClient.invalidateQueries({ queryKey: getGetReportByCategoryQueryKey(slug) }),
-      queryClient.invalidateQueries({ queryKey: getGetReportTopMerchantsQueryKey(slug) }),
-      queryClient.invalidateQueries({ queryKey: getListAccountsQueryKey(slug) }),
-    ])
+    await invalidateTransactionQueries(queryClient, slug)
   }
+
+  const resetCreateDraft = useCallback(
+    (values: TransactionFormValues) => {
+      setPendingFiles([])
+      setNotesOpen(false)
+      setNotifyState(defaultNotifyState(orgNotifyDefaults))
+      setSplitDraft(defaultSplitDraftState())
+      openTransactionDrawer(
+        buildNextCreateDraft(values, effectiveLockedAccountId),
+        null,
+        effectiveLockedAccountId ? { lockAccountId: effectiveLockedAccountId } : undefined
+      )
+      form.clearErrors()
+    },
+    [openTransactionDrawer, effectiveLockedAccountId, orgNotifyDefaults, form]
+  )
 
   const uploadPendingFiles = async (transactionId: string) => {
     if (!slug) return
@@ -903,6 +992,33 @@ export function TransactionDrawer() {
     }>
   ): Promise<number> => {
     if (splitDraft.splitMode === 'none' || !slug) return 0
+
+    if (splitDraft.collectLumpSum) {
+      const withAmount = transactions.filter(transaction => transaction.amount)
+      if (withAmount.length === 0) return 0
+
+      const first =
+        [...withAmount].sort(
+          (a, b) => (a.installmentNumber ?? 1) - (b.installmentNumber ?? 1)
+        )[0] ?? withAmount[0]
+
+      const purchaseTotalReais = withAmount.reduce(
+        (sum, transaction) => sum + moneyStringToReais(transaction.amount ?? '0'),
+        0
+      )
+      const body = buildSplitCreateBody(reaisToMoneyString(purchaseTotalReais), {
+        ...splitDraft,
+        collectLumpSum: true,
+      })
+      if (!body) return 0
+
+      await createSplit({
+        slug,
+        transactionId: first.id,
+        data: body,
+      })
+      return 1
+    }
 
     let created = 0
     for (const transaction of transactions) {
@@ -1035,7 +1151,7 @@ export function TransactionDrawer() {
               slug,
               id: editingId,
               data: {
-                paidAt: dayjs(values.paidAt).toISOString(),
+                paidAt: calendarDateToIso(values.paidAt),
                 paidAmount: reaisToMoneyString(paymentAmount),
                 advanceTransactionIds: selectedAdvanceIds,
               },
@@ -1052,8 +1168,8 @@ export function TransactionDrawer() {
             slug,
             id: editingId,
             data: {
-              paidAt: dayjs(values.paidAt).toISOString(),
-              paidAmount: reaisToMoneyString(values.paidAmount ?? values.amount),
+              paidAt: calendarDateToIso(values.paidAt),
+              paidAmount: reaisToMoneyString(values.paidAmount ?? values.amount ?? 0),
             },
           })
           toast.success('Pagamento registrado')
@@ -1092,7 +1208,7 @@ export function TransactionDrawer() {
               slug,
               id: editingId,
               data: {
-                paidAt: dayjs(values.paidAt).toISOString(),
+                paidAt: calendarDateToIso(values.paidAt),
                 paidAmount: reaisToMoneyString(paymentAmount),
               },
             })
@@ -1141,19 +1257,20 @@ export function TransactionDrawer() {
           slug,
           data: {
             title: values.title,
-            amount: reaisToMoneyString(values.amount),
+            // Recurring template amount is NOT NULL in DB; use 0 as reminder-without-value.
+            amount: optionalReaisToApiAmount(values.amount) ?? '0.00',
             type: values.type === 'income' ? 'income' : 'expense',
             accountId: values.accountId ?? null,
             categoryId: values.categoryId ?? null,
             counterparty: values.counterparty?.trim() ? values.counterparty.trim() : null,
             frequency,
             interval,
-            startDate: dayjs(values.date).toISOString(),
+            startDate: calendarDateToIso(values.date),
             installmentsTotal:
               values.recurringDuration === 'times' ? values.recurringRepetitions ?? null : null,
             endDate:
               values.recurringDuration === 'until' && values.recurringEndDate
-                ? dayjs(values.recurringEndDate).toISOString()
+                ? calendarDateToIso(values.recurringEndDate)
                 : null,
           },
         })
@@ -1175,8 +1292,8 @@ export function TransactionDrawer() {
           accountsData?.accounts?.find(a => a.id === values.transferToAccountId)?.name ??
           'Destino'
         const title = values.title || `Transferência: ${fromName} → ${toName}`
-        const isoDate = dayjs(values.date).toISOString()
-        const amount = reaisToMoneyString(values.amount)
+        const isoDate = calendarDateToIso(values.date)
+        const amount = reaisToMoneyString(values.amount ?? 0)
 
         await createTransaction({
           slug,
@@ -1215,10 +1332,10 @@ export function TransactionDrawer() {
         data: {
           title: values.title,
           type: values.type,
-          amount: reaisToMoneyString(values.amount),
-          date: dayjs(values.date).toISOString(),
+          amount: optionalReaisToApiAmount(values.amount),
+          date: calendarDateToIso(values.date),
           competenceDate: values.competenceDate
-            ? dayjs(values.competenceDate).toISOString()
+            ? calendarDateToIso(values.competenceDate)
             : null,
           accountId: values.accountId ?? null,
           cardId: values.cardId ?? null,
@@ -1249,7 +1366,7 @@ export function TransactionDrawer() {
             : 'Lançamento criado'
       )
       invalidateAll()
-      close()
+      resetCreateDraft(values)
     } catch (error) {
       toast.error(await readHttpErrorMessage(error, 'Erro ao salvar lançamento'))
     }
@@ -1291,7 +1408,6 @@ export function TransactionDrawer() {
       open={open}
       onOpenChange={v => !v && close()}
       direction="right"
-      modal={!nestedDrawerOpen}
     >
       <DrawerContent
         className={stackyDrawerContent}
@@ -1378,6 +1494,19 @@ export function TransactionDrawer() {
                     )}
                   </div>
                 )}
+                {(isEdit || isPay) &&
+                  tx?.status === 'pending' &&
+                  !isTransfer &&
+                  !isCreditCardExpense &&
+                  editingId && (
+                    <TransactionSchedulePaymentSection
+                      slug={slug}
+                      transactionId={editingId}
+                      dueDate={tx.date}
+                      paymentScheduledAt={tx.paymentScheduledAt}
+                      disabled={isPending}
+                    />
+                  )}
                 <fieldset
                   disabled={isPaidLocked}
                   className={cn('min-w-0 space-y-5 border-0 p-0', isPaidLocked && 'opacity-70')}
@@ -1549,13 +1678,21 @@ export function TransactionDrawer() {
                           <FormItem className={cn(stackyDrawerFormItem, 'col-span-3')}>
                             <div className={stackyDrawerFormLabelSlot}>
                               <FormLabel>
-                                Valor <FormRequiredMark />
+                                Valor
+                                {(isTransfer || recurrence === 'installment' || status === 'paid') && (
+                                  <>
+                                    {' '}
+                                    <FormRequiredMark />
+                                  </>
+                                )}
                               </FormLabel>
                             </div>
                             <FormControl>
                               <CurrencyInput
                                 value={field.value}
                                 onValueChange={field.onChange}
+                                allowEmpty
+                                title="Deixe em branco se ainda não souber o valor"
                                 disabled={isBankFieldsLocked}
                               />
                             </FormControl>
@@ -1979,12 +2116,13 @@ export function TransactionDrawer() {
                       <TransactionRemindersSection
                         value={notifyState}
                         onChange={setNotifyState}
+                        orgDefaults={orgNotifyDefaults}
                       />
                     )}
 
                     {showSplitDraft && (
                       <TransactionSplitsDraftSection
-                        amountCents={reaisToCentsString(amount)}
+                        amountCents={reaisToCentsString(amount ?? 0)}
                         installmentsTotal={installmentsTotal}
                         recurrence={recurrence}
                         value={splitDraft}
@@ -2331,7 +2469,9 @@ export function TransactionDrawer() {
                     {isEdit && editingId && !isTransfer && (
                       <TransactionSplitsSection
                         transactionId={editingId}
-                        transactionAmount={tx?.amount ?? reaisToMoneyString(amount)}
+                        transactionAmount={
+                          tx?.amount ?? optionalReaisToApiAmount(amount) ?? '0.00'
+                        }
                         installmentsTotal={tx?.installmentsTotal}
                         installmentNumber={tx?.installmentNumber}
                         debtSummary={splitDebtSummary}
@@ -2351,7 +2491,7 @@ export function TransactionDrawer() {
                   <TransactionFooterSummary
                     splitDebtSummary={splitDebtSummary}
                     installmentSummary={installmentSummary}
-                    amount={amount}
+                    amount={amount ?? 0}
                     status={displayStatus}
                     showStatus={!isTransfer && !isCreditCardExpense}
                     accountName={selectedAccount && !isTransfer ? selectedAccount.name : undefined}
@@ -2409,6 +2549,7 @@ export function TransactionDrawer() {
       <AccountDrawer nested />
       <CategoryDrawer nested />
       <CardDrawer nested />
+      <RecurringContractDrawer nested />
       <DeleteTransactionDialog
         transaction={
           tx

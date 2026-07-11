@@ -1,19 +1,29 @@
 const statusEl = document.getElementById('status')
 
 const ENVS = {
-  prod: { apiUrl: 'https://api.jarvis.dev.br', webUrl: 'https://app.jarvis.dev.br' },
-  dev:  { apiUrl: 'http://localhost:3333',      webUrl: 'http://localhost:5173' },
+  prod:    { apiUrl: 'https://api.jarvis.dev.br',        webUrl: 'https://app.jarvis.dev.br' },
+  homolog: { apiUrl: 'https://api.homolog.jarvis.dev.br', webUrl: 'https://app.homolog.jarvis.dev.br' },
+  dev:     { apiUrl: 'http://localhost:3333',             webUrl: 'http://localhost:5173' },
+}
+
+function detectEnv(apiUrl) {
+  if (!apiUrl) return 'prod'
+  if (apiUrl.includes('localhost')) return 'dev'
+  if (apiUrl.includes('homolog')) return 'homolog'
+  return 'prod'
 }
 
 function applyEnv(env) {
   document.getElementById('api-url').value = ENVS[env].apiUrl
   document.getElementById('web-url').value = ENVS[env].webUrl
-  document.getElementById('btn-env-prod').classList.toggle('active', env === 'prod')
-  document.getElementById('btn-env-dev').classList.toggle('active',  env === 'dev')
+  for (const key of Object.keys(ENVS)) {
+    document.getElementById(`btn-env-${key}`).classList.toggle('active', key === env)
+  }
 }
 
-document.getElementById('btn-env-prod').addEventListener('click', () => applyEnv('prod'))
-document.getElementById('btn-env-dev').addEventListener('click',  () => applyEnv('dev'))
+for (const key of Object.keys(ENVS)) {
+  document.getElementById(`btn-env-${key}`).addEventListener('click', () => applyEnv(key))
+}
 
 function setStatus(msg, type = '') {
   statusEl.textContent = msg
@@ -22,17 +32,18 @@ function setStatus(msg, type = '') {
 
 // ── Load saved settings ───────────────────────────────────────────────────────
 
-chrome.storage.local.get(['apiUrl', 'webUrl', 'pollMinutes'], (data) => {
+chrome.storage.local.get(['apiUrl', 'webUrl', 'pollMinutes', 'upcomingPeriod'], (data) => {
   if (data.apiUrl)     document.getElementById('api-url').value = data.apiUrl
   if (data.webUrl)     document.getElementById('web-url').value = data.webUrl
   if (data.pollMinutes) {
     document.getElementById('poll-minutes').value = String(data.pollMinutes)
   }
+  document.getElementById('upcoming-period').value = data.upcomingPeriod || '7'
   // highlight active env button based on saved apiUrl
-  const savedApi = data.apiUrl || ''
-  const activeEnv = savedApi.includes('localhost') ? 'dev' : 'prod'
-  document.getElementById('btn-env-prod').classList.toggle('active', activeEnv === 'prod')
-  document.getElementById('btn-env-dev').classList.toggle('active',  activeEnv === 'dev')
+  const activeEnv = detectEnv(data.apiUrl || '')
+  for (const key of Object.keys(ENVS)) {
+    document.getElementById(`btn-env-${key}`).classList.toggle('active', key === activeEnv)
+  }
 })
 
 // ── Save ──────────────────────────────────────────────────────────────────────
@@ -41,11 +52,12 @@ document.getElementById('btn-save').addEventListener('click', async () => {
   const apiUrl     = document.getElementById('api-url').value.trim().replace(/\/$/, '')
   const webUrl     = document.getElementById('web-url').value.trim().replace(/\/$/, '')
   const pollMinutes = Number(document.getElementById('poll-minutes').value)
+  const upcomingPeriod = document.getElementById('upcoming-period').value
 
   if (!apiUrl) { setStatus('Informe a URL da API.', 'err'); return }
   if (!webUrl) { setStatus('Informe a URL do App Web.', 'err'); return }
 
-  await chrome.storage.local.set({ apiUrl, webUrl, pollMinutes })
+  await chrome.storage.local.set({ apiUrl, webUrl, pollMinutes, upcomingPeriod })
 
   // Recreate alarm with new interval
   chrome.alarms.clear('houseapp-poll', () => {

@@ -30,6 +30,7 @@ export async function sendWhatsAppMessage({
         'Content-Type': 'application/json',
       },
       body: JSON.stringify({ number: phone, text: message }),
+      signal: AbortSignal.timeout(15_000),
     })
 
     if (!response.ok) {
@@ -43,6 +44,14 @@ export async function sendWhatsAppMessage({
 
     return { status: 'sent', phone }
   } catch (error) {
+    if (error instanceof DOMException && error.name === 'TimeoutError') {
+      return {
+        status: 'error',
+        error: 'WhatsApp API timeout after 15s',
+        phone,
+      }
+    }
+
     // Erro de rede/conectividade
     if (error instanceof TypeError && error.message === 'fetch failed') {
       return {

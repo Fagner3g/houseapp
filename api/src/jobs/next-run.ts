@@ -1,8 +1,4 @@
 const DAYS = ['dom', 'seg', 'ter', 'qua', 'qui', 'sex', 'sáb']
-const MONTHS = [
-  'jan', 'fev', 'mar', 'abr', 'mai', 'jun',
-  'jul', 'ago', 'set', 'out', 'nov', 'dez',
-]
 
 function parseCronField(value: string, max: number, min = 0): Set<number> {
   const result = new Set<number>()
@@ -41,7 +37,7 @@ export function computeNextRun(schedule: string, timezone = 'America/Sao_Paulo')
   const offset = timezone === 'America/Sao_Paulo' ? -3 : 0
   const localNow = new Date(now.getTime() + offset * 60 * 60 * 1000)
 
-  let candidate = new Date(localNow)
+  const candidate = new Date(localNow)
   candidate.setSeconds(0, 0)
 
   for (let daysAhead = 0; daysAhead < 366; daysAhead++) {
@@ -53,10 +49,6 @@ export function computeNextRun(schedule: string, timezone = 'America/Sao_Paulo')
       candidate.setDate(candidate.getDate() + 1)
       continue
     }
-
-    const dayMatch =
-      (!dayOfMonth || dayOfMonth === '*' ? false : daysOfMonth.has(d)) ||
-      (!dayOfWeek || dayOfWeek === '*' ? false : daysOfWeek.has(w))
 
     if (dayOfMonth !== '*' && dayOfWeek !== '*' && !(daysOfMonth.has(d) || daysOfWeek.has(w))) {
       candidate.setDate(candidate.getDate() + 1)
@@ -87,7 +79,7 @@ export function computeNextRun(schedule: string, timezone = 'America/Sao_Paulo')
   return 'Indisponível'
 }
 
-export function humanizeSchedule(schedule: string, timezone?: string): string {
+export function humanizeSchedule(schedule: string, _timezone?: string): string {
   const parts = schedule.split(' ')
   if (parts.length < 5) return schedule
 
@@ -98,11 +90,11 @@ export function humanizeSchedule(schedule: string, timezone?: string): string {
   if (dayOfWeek !== '*') {
     const dayIndex = Number(dayOfWeek)
     const dayName = DAYS[dayIndex]
-    if (dayName && !isNaN(dayIndex)) return `Toda ${dayName}-feira às ${time}`
+    if (dayName && !Number.isNaN(dayIndex)) return `Toda ${dayName}-feira às ${time}`
   }
 
   const dayNum = Number(parts[2])
-  if (!isNaN(dayNum) && dayNum >= 1 && dayNum <= 28) {
+  if (!Number.isNaN(dayNum) && dayNum >= 1 && dayNum <= 28) {
     return `Todo dia ${dayNum} às ${time}`
   }
 

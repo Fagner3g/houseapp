@@ -29,6 +29,7 @@ export type UpdateSplit200Split = {
   isNotified: boolean;
   lastNotifiedAt: UpdateSplit200SplitLastNotifiedAt;
   notifyEnabled: boolean;
+  collectLumpSum: boolean;
   createdAt: string;
   updatedAt: string;
 };

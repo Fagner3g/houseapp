@@ -1,6 +1,10 @@
 import { describe, expect, it } from 'vitest'
 
-import { buildInvoiceSummariesForRange, buildOverdueInvoiceSummaries } from './credit-card-invoice-rows'
+import {
+  buildInvoiceSummariesForRange,
+  buildOverdueInvoiceSummaries,
+  mergeTransactionsWithInvoices,
+} from './credit-card-invoice-rows'
 
 describe('buildInvoiceSummariesForRange', () => {
   it('creates invoice row when due date falls in filter range and hides card purchases', () => {
@@ -80,7 +84,7 @@ describe('buildInvoiceSummariesForRange', () => {
     expect(hiddenTransactionIds.has('tx-ifood')).toBe(true)
   })
 
-  it('hides Nubank purchases in July and shows invoice even with negative statement total', () => {
+  it('excludes August-due invoice from July filter while still hiding card purchases', () => {
     const nubankId = 'nubank-6115'
 
     const { summaries, hiddenTransactionIds } = buildInvoiceSummariesForRange({
@@ -175,8 +179,9 @@ describe('buildInvoiceSummariesForRange', () => {
       dateTo: '2026-07-31',
     })
 
-    expect(summaries.length).toBeGreaterThanOrEqual(1)
-    expect(summaries.some(s => s.title.includes('Nubank 6115'))).toBe(true)
+    expect(summaries.some(s => s.monthKey === '2026-08')).toBe(false)
+    expect(summaries.every(s => !s.title.includes('agosto'))).toBe(true)
+    expect(summaries.every(s => s.date.startsWith('2026-07'))).toBe(true)
     expect(hiddenTransactionIds.has('tx-jul-1')).toBe(true)
     expect(hiddenTransactionIds.has('tx-jul-2')).toBe(true)
   })
@@ -350,5 +355,135 @@ describe('buildInvoiceSummariesForRange', () => {
 
     expect(summaries.some(summary => summary.monthKey === '2026-03')).toBe(false)
     expect(summaries.some(summary => summary.monthKey === '2026-04')).toBe(false)
+  })
+})
+
+describe('mergeTransactionsWithInvoices', () => {
+  it('drops rows whose displayed date is outside the selected period', () => {
+    const merged = mergeTransactionsWithInvoices(
+      [
+        {
+          id: 'tx-in',
+          organizationId: 'org',
+          accountId: 'acc-1',
+          cardId: null,
+          recurringTransactionId: null,
+          statementId: null,
+          title: 'In range',
+          description: null,
+          amount: '10.00',
+          type: 'expense',
+          date: '2026-07-15T12:00:00.000Z',
+          competenceDate: null,
+          status: 'pending',
+          paidAt: null,
+          paidAmount: null,
+          counterparty: null,
+          installmentNumber: null,
+          installmentsTotal: null,
+          source: 'manual',
+          categoryIds: [],
+          createdAt: '2026-07-15T12:00:00.000Z',
+          updatedAt: '2026-07-15T12:00:00.000Z',
+        },
+        {
+          id: 'tx-out',
+          organizationId: 'org',
+          accountId: 'acc-1',
+          cardId: null,
+          recurringTransactionId: null,
+          statementId: null,
+          title: 'Out of range',
+          description: null,
+          amount: '20.00',
+          type: 'expense',
+          date: '2026-08-08T12:00:00.000Z',
+          competenceDate: null,
+          status: 'pending',
+          paidAt: null,
+          paidAmount: null,
+          counterparty: null,
+          installmentNumber: null,
+          installmentsTotal: null,
+          source: 'manual',
+          categoryIds: [],
+          createdAt: '2026-08-08T12:00:00.000Z',
+          updatedAt: '2026-08-08T12:00:00.000Z',
+        },
+      ],
+      [
+        {
+          kind: 'invoice_summary',
+          id: 'invoice-aug',
+          accountId: 'cc-1',
+          accountName: 'Nubank',
+          monthKey: '2026-08',
+          title: 'Fatura Nubank — agosto de 2026',
+          amount: '100.00',
+          payments: '0.00',
+          remaining: '100.00',
+          type: 'expense',
+          date: '2026-08-17T12:00:00.000Z',
+          status: 'pending',
+        },
+        {
+          kind: 'invoice_summary',
+          id: 'invoice-jul',
+          accountId: 'cc-1',
+          accountName: 'Nubank',
+          monthKey: '2026-07',
+          title: 'Fatura Nubank — julho de 2026',
+          amount: '50.00',
+          payments: '0.00',
+          remaining: '50.00',
+          type: 'expense',
+          date: '2026-07-17T12:00:00.000Z',
+          status: 'pending',
+        },
+      ],
+      new Set(),
+      '2026-07-01',
+      '2026-07-31'
+    )
+
+    expect(merged.map(item => item.id)).toEqual(['invoice-jul', 'tx-in'])
+  })
+
+  it('keeps payables whose due date is outside the period but schedule falls inside', () => {
+    const merged = mergeTransactionsWithInvoices(
+      [
+        {
+          id: 'tx-scheduled',
+          organizationId: 'org',
+          accountId: 'acc-1',
+          cardId: null,
+          recurringTransactionId: null,
+          statementId: null,
+          title: 'Empréstimo',
+          description: null,
+          amount: '500.00',
+          type: 'expense',
+          date: '2026-06-20T12:00:00.000Z',
+          competenceDate: null,
+          status: 'pending',
+          paidAt: null,
+          paidAmount: null,
+          paymentScheduledAt: '2026-07-20T23:59:59.999Z',
+          counterparty: null,
+          installmentNumber: null,
+          installmentsTotal: null,
+          source: 'manual',
+          categoryIds: [],
+          createdAt: '2026-06-20T12:00:00.000Z',
+          updatedAt: '2026-06-20T12:00:00.000Z',
+        },
+      ],
+      [],
+      new Set(),
+      '2026-07-01',
+      '2026-07-31'
+    )
+
+    expect(merged.map(item => item.id)).toEqual(['tx-scheduled'])
   })
 })

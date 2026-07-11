@@ -33,4 +33,5 @@ export type ListTransactionsParams = {
    */
   perPage?: number;
   payableOnly?: boolean;
+  scheduledOnly?: boolean;
 };

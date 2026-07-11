@@ -40,6 +40,9 @@ import {
 } from './credit-card-invoice-skeletons'
 import { useSplitTransactionIds } from '../hooks/use-split-transaction-ids'
 import { useInvoiceCycleTransactions } from '../hooks/use-invoice-cycle-transactions'
+import {
+  cyclePendingSplitTransactionIds,
+} from '../lib/cycle-split-remaining'
 import { hasImportedInvoiceTotal } from '@/lib/credit-card-invoice-metrics'
 import type { PartialSplitBadgeInfo } from '@/features/transactions/lib/split-badge-label'
 
@@ -155,10 +158,16 @@ export function CreditCardStatementSection({
   const partiallyDividedById =
     splitData?.partiallyDividedById ?? new Map<string, PartialSplitBadgeInfo>()
   const dividedTransactionIds = splitData?.transactionIds ?? new Set<string>()
+  const splitRemainingById = splitData?.splitRemainingById ?? new Map<string, number>()
+  const pendingSplitTransactionIds = useMemo(
+    () => cyclePendingSplitTransactionIds(transactionIds, splitRemainingById),
+    [transactionIds, splitRemainingById]
+  )
 
   const filterCounts = useMemo(
-    () => computeInvoiceFilterCounts(baseItems, dividedTransactionIds),
-    [baseItems, dividedTransactionIds]
+    () =>
+      computeInvoiceFilterCounts(baseItems, dividedTransactionIds, pendingSplitTransactionIds),
+    [baseItems, dividedTransactionIds, pendingSplitTransactionIds]
   )
 
   const filteredItems = useMemo(() => {
@@ -166,9 +175,10 @@ export function CreditCardStatementSection({
     return filterInvoiceTransactions(
       baseItems,
       { ...filters, quickFilter },
-      dividedTransactionIds
+      dividedTransactionIds,
+      pendingSplitTransactionIds
     )
-  }, [baseItems, filters, filterCounts, dividedTransactionIds])
+  }, [baseItems, filters, filterCounts, dividedTransactionIds, pendingSplitTransactionIds])
 
   const updateFilters = useCallback((patch: Partial<InvoiceStatementFilters>) => {
     setFilters(current => ({ ...current, ...patch }))
@@ -182,9 +192,9 @@ export function CreditCardStatementSection({
     })
   }, [accountId, cycle.monthKey, initialQuickFilter])
 
-  // biome-ignore lint/correctness/useExhaustiveDependencies: scroll when navigating to divided filter on another cycle
+  // biome-ignore lint/correctness/useExhaustiveDependencies: scroll when navigating to divided/a_receber filter on another cycle
   useEffect(() => {
-    if (initialQuickFilter !== 'divided') return
+    if (initialQuickFilter !== 'divided' && initialQuickFilter !== 'a_receber') return
     sectionRef.current?.scrollIntoView({ behavior: 'smooth', block: 'start' })
   }, [initialQuickFilter, accountId, cycle.monthKey])
 
@@ -271,6 +281,7 @@ export function CreditCardStatementSection({
           cards={showCardFilter ? activeCards : undefined}
           fullyDelegatedById={fullyDelegatedById}
           partiallyDividedById={partiallyDividedById}
+          splitRemainingById={splitRemainingById}
           dividedTransactionIds={dividedTransactionIds}
         />
       ) : (
@@ -282,6 +293,7 @@ export function CreditCardStatementSection({
           cards={showCardFilter ? activeCards : undefined}
           fullyDelegatedById={fullyDelegatedById}
           partiallyDividedById={partiallyDividedById}
+          splitRemainingById={splitRemainingById}
         />
       )}
     </section>

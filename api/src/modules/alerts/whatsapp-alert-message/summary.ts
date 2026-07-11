@@ -1,19 +1,11 @@
-import { formatCentavos, parseCentavos, parseMoneyStringToCentavos } from '@houseapp/finance-core'
+import { parseMoneyStringToCentavos } from '@houseapp/finance-core'
 
 import {
   cleanTransactionTitle,
   formatAmountBRL,
   formatAmountDigitsBRL,
 } from './format'
-
-function divideMoneyString(value: string, divisor: number): string | null {
-  if (divisor < 1) return null
-  try {
-    return formatCentavos(parseCentavos(value) / BigInt(divisor))
-  } catch {
-    return null
-  }
-}
+import { divideMoneyString, resolveDueShareAmount } from './due-share'
 
 function buildInstallmentSummaryLine(input: {
   installmentNumber: number
@@ -32,6 +24,7 @@ function buildInstallmentSummaryLine(input: {
 export function buildSplitShareSummaryLine(input: {
   shareAmount?: string | null
   shareTotalAmount?: string | null
+  purchaseTotalAmount?: string | null
   installmentNumber?: number | null
   installmentsTotal?: number | null
 }): string | null {
@@ -48,12 +41,20 @@ export function buildSplitShareSummaryLine(input: {
     ? `Sua parte: ${shareAmount} (${input.installmentNumber}/${input.installmentsTotal})`
     : `Sua parte: ${shareAmount}`
 
+  // Trailing total is useful for partial splits (e.g. 50/50): "83,75 (1/10) · 837,50".
+  // Skip when the person owes 100% of the purchase — it reads as if the installment were R$ 1.000.
   const shareTotalDigits = formatAmountDigitsBRL(input.shareTotalAmount)
+  const isFullPurchaseShare =
+    !!input.shareTotalAmount &&
+    !!input.purchaseTotalAmount &&
+    input.shareTotalAmount === input.purchaseTotalAmount
+
   if (
     shareTotalDigits &&
     input.shareTotalAmount &&
     input.shareAmount &&
-    input.shareTotalAmount !== input.shareAmount
+    input.shareTotalAmount !== input.shareAmount &&
+    !isFullPurchaseShare
   ) {
     line = `${line} · ${shareTotalDigits}`
   }
@@ -71,63 +72,6 @@ export function buildSplitTransactionTitleLine(input: {
   return purchaseTotal ? `${cleanTitle} · ${purchaseTotal}` : cleanTitle
 }
 
-/** Amount the recipient owes for this alert cycle (split share for the current bill). */
-export function resolveDueShareAmount(input: {
-  amount?: string | null
-  splitAmount?: string | null
-  splitShareInstallmentAmount?: string | null
-  splitPaidAmount?: string | null
-  splitRemainingAmount?: string | null
-  installmentNumber?: number | null
-  installmentsTotal?: number | null
-  isSplit?: boolean
-}): string | null {
-  if (!input.isSplit) return null
-
-  const hasInstallments = !!(
-    input.installmentNumber &&
-    input.installmentsTotal &&
-    input.installmentsTotal >= 2
-  )
-  const hasPartialPayment = parseMoneyStringToCentavos(input.splitPaidAmount) > 0n
-
-  if (hasInstallments && input.installmentsTotal) {
-    return (
-      input.splitShareInstallmentAmount ??
-      (input.splitAmount ? divideMoneyString(input.splitAmount, input.installmentsTotal) : null) ??
-      input.amount ??
-      null
-    )
-  }
-
-  if (hasPartialPayment && input.splitRemainingAmount) {
-    return input.splitRemainingAmount
-  }
-
-  return input.splitAmount ?? input.amount ?? null
-}
-
-export function sumDueShareCentavos(
-  items: Array<Parameters<typeof resolveDueShareAmount>[0]>
-): bigint {
-  return items.reduce((sum, item) => {
-    const share = resolveDueShareAmount(item)
-    return sum + parseMoneyStringToCentavos(share)
-  }, 0n)
-}
-
-export function buildCreditCardShareTotalLine(centavos: bigint): string | null {
-  if (centavos <= 0n) return null
-  const amount = formatAmountBRL(formatCentavos(centavos))
-  return amount ? `💰 Sua parte neste cartão: ${amount}` : null
-}
-
-export function buildGrandShareTotalLine(centavos: bigint): string | null {
-  if (centavos <= 0n) return null
-  const amount = formatAmountBRL(formatCentavos(centavos))
-  return amount ? `💰 Total da sua parte: ${amount}` : null
-}
-
 export function buildSummaryLine(input: {
   amount?: string | null
   transactionTotalAmount?: string | null
@@ -140,6 +84,7 @@ export function buildSummaryLine(input: {
   installmentNumber?: number | null
   installmentsTotal?: number | null
   isSplit?: boolean
+  collectLumpSum?: boolean | null
 }): string | null {
   const splitTotal = formatAmountBRL(input.splitAmount)
   const splitRemaining = formatAmountBRL(input.splitRemainingAmount)
@@ -147,18 +92,18 @@ export function buildSummaryLine(input: {
   const hasInstallments = !!(
     input.installmentNumber &&
     input.installmentsTotal &&
-    input.installmentsTotal >= 2
+    input.installmentsTotal >= 2 &&
+    !input.collectLumpSum
   )
   const isSplit = !!input.isSplit
   const hasPartialPayment = isSplit && parseMoneyStringToCentavos(input.splitPaidAmount) > 0n
 
   if (hasInstallments && input.installmentsTotal && input.installmentNumber) {
     if (isSplit) {
-      const shareAmount = resolveDueShareAmount(input)
-
       return buildSplitShareSummaryLine({
-        shareAmount,
+        shareAmount: resolveDueShareAmount(input),
         shareTotalAmount: input.splitAmount,
+        purchaseTotalAmount: input.transactionTotalAmount,
         installmentNumber: input.installmentNumber,
         installmentsTotal: input.installmentsTotal,
       })

@@ -2,7 +2,7 @@ import { eq } from 'drizzle-orm'
 
 import { db } from '@/db'
 import { users } from '@/db/schemas/users'
-import { sendWhatsAppMessage } from '@/domain/whatsapp'
+import { sendWhatsAppMessage, normalizePhone } from '@/domain/whatsapp'
 import { logger } from '@/lib/logger'
 
 import type { NotificationRecord, NotificationRepository } from './notification.repository'
@@ -28,7 +28,7 @@ async function resolvePhone(notification: NotificationRecord): Promise<string | 
   const metadata = notification.metadata as Record<string, unknown>
   const externalPhone = typeof metadata.externalPhone === 'string' ? metadata.externalPhone : null
 
-  if (externalPhone) return externalPhone
+  if (externalPhone) return normalizePhone(externalPhone) || null
 
   const [user] = await db
     .select({ phone: users.phone })
@@ -36,7 +36,9 @@ async function resolvePhone(notification: NotificationRecord): Promise<string | 
     .where(eq(users.id, notification.userId))
     .limit(1)
 
-  return user?.phone ?? null
+  if (!user?.phone) return null
+  const normalized = normalizePhone(user.phone)
+  return normalized || null
 }
 
 function groupNotifications(entries: NotificationWithPhone[]): NotificationWithPhone[][] {
@@ -47,6 +49,7 @@ function groupNotifications(entries: NotificationWithPhone[]): NotificationWithP
     const kind = typeof metadata.kind === 'string' ? metadata.kind : null
     const groupKey = buildWhatsAppBatchGroupKey(
       entry.phone,
+      entry.notification.userId,
       entry.notification.organizationId,
       kind
     )
@@ -88,6 +91,7 @@ export async function sendWhatsappForNotifications(
       const metadata = group[0].notification.metadata as Record<string, unknown>
       const kind = typeof metadata.kind === 'string' ? metadata.kind : null
       const phone = group[0].phone
+      const userId = group[0].notification.userId
       const organizationId = group[0].notification.organizationId
       const notificationIds = group.map(entry => entry.notification.id)
 
@@ -100,6 +104,7 @@ export async function sendWhatsappForNotifications(
         const splitId = typeof itemMetadata.splitId === 'string' ? itemMetadata.splitId : null
         const sendKey = buildWhatsAppSendDedupeKey(
           phone,
+          notification.userId,
           notification.transactionId,
           daysUntilDue,
           itemKind,
@@ -128,6 +133,7 @@ export async function sendWhatsappForNotifications(
 
       const batchSendKey = buildWhatsAppBatchSendDedupeKey(
         phone,
+        userId,
         organizationId,
         kind,
         notificationIds

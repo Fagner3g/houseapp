@@ -1,7 +1,7 @@
 import { useMemo, useState } from 'react'
 import { toast } from 'sonner'
 
-import { getListTransactionsQueryKey } from '@/api/generated/api'
+import { invalidateTransactionQueries } from '@/features/transactions/lib/invalidate-transaction-queries'
 import { Button } from '@/components/ui/button'
 import {
   Dialog,
@@ -104,7 +104,7 @@ export function ImportStatementReviewDialog({
     setIsSaving(true)
     try {
       const result = await bulkReviewImport(slug, updates)
-      queryClient.invalidateQueries({ queryKey: getListTransactionsQueryKey(slug) })
+      await invalidateTransactionQueries(queryClient, slug)
       toast.success(
         result.splitsCreated > 0
           ? `Revisão salva (${result.splitsCreated} divisão(ões) criada(s))`

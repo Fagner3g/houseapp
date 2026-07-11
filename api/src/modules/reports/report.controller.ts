@@ -20,6 +20,20 @@ export async function getSummaryReportController(
   return reply.send(summary)
 }
 
+export async function getMyExpensesReportController(
+  request: FastifyRequest<{ Params: OrgParams; Querystring: ReportDateQuery }>,
+  reply: FastifyReply
+) {
+  const result = await container.reportService.getMyExpenses(
+    request.organization.id,
+    request.user.sub,
+    request.query.dateFrom,
+    request.query.dateTo
+  )
+
+  return reply.send(result)
+}
+
 export async function getByAccountReportController(
   request: FastifyRequest<{ Params: OrgParams; Querystring: ReportDateQuery }>,
   reply: FastifyReply

@@ -3,11 +3,10 @@ import { useEffect, useState } from 'react'
 import { toast } from 'sonner'
 
 import {
-  getListAccountsQueryKey,
   getListStatementsQueryKey,
-  getListTransactionsQueryKey,
   useImportStatement,
 } from '@/api/generated/api'
+import { invalidateTransactionQueries } from '@/features/transactions/lib/invalidate-transaction-queries'
 import type { ImportStatementBody } from '@/api/generated/model'
 import { useActiveOrganization } from '@/hooks/use-active-organization'
 import { bulkReviewImport } from '@/lib/bulk-review-import'
@@ -128,8 +127,7 @@ export function useImportStatementFlow() {
   const invalidateAfterImport = (accountId: string) => {
     const orgSlug = slug ?? ''
     queryClient.invalidateQueries({ queryKey: getListStatementsQueryKey(orgSlug, accountId) })
-    queryClient.invalidateQueries({ queryKey: getListTransactionsQueryKey(orgSlug) })
-    queryClient.invalidateQueries({ queryKey: getListAccountsQueryKey(orgSlug) })
+    void invalidateTransactionQueries(queryClient, orgSlug)
   }
 
   const finishFileImport = (

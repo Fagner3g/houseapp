@@ -146,8 +146,12 @@ export class RecurringService {
       installmentsTotal: input.installmentsTotal ?? null,
     })
 
+    // Catch up through today so the UI shows due parcels immediately.
+    // If start_date is in the future, still materialize that first occurrence now.
+    const today = startOfDay(new Date())
+    const startDate = startOfDay(created.startDate)
     const materializedCount = await this.materializeOne(created, {
-      horizonDate: startOfDay(created.startDate),
+      horizonDate: startDate > today ? startDate : today,
     })
 
     const refreshed = await this.recurringRepository.findById(organizationId, created.id)
@@ -334,7 +338,8 @@ export class RecurringService {
         accountId: row.accountId,
         recurringTransactionId: row.id,
         title: row.title,
-        amount: row.amount,
+        // Template may store 0 as reminder-without-value; prefer null on occurrences.
+        amount: row.amount > 0n ? row.amount : null,
         type: row.type,
         date: item.date,
         competenceDate: item.date,
@@ -557,9 +562,9 @@ function computeNextOccurrenceDate(row: RecurringRecord): string | null {
 }
 
 function startOfDay(date: Date): Date {
-  const d = new Date(date)
-  d.setHours(0, 0, 0, 0)
-  return d
+  return new Date(
+    Date.UTC(date.getUTCFullYear(), date.getUTCMonth(), date.getUTCDate(), 12, 0, 0, 0)
+  )
 }
 
 function addPeriod(date: Date, frequency: RecurringFrequency, interval: number): Date {
@@ -567,16 +572,16 @@ function addPeriod(date: Date, frequency: RecurringFrequency, interval: number):
 
   switch (frequency) {
     case 'daily':
-      result.setDate(result.getDate() + interval)
+      result.setUTCDate(result.getUTCDate() + interval)
       break
     case 'weekly':
-      result.setDate(result.getDate() + 7 * interval)
+      result.setUTCDate(result.getUTCDate() + 7 * interval)
       break
     case 'monthly':
-      result.setMonth(result.getMonth() + interval)
+      result.setUTCMonth(result.getUTCMonth() + interval)
       break
     case 'yearly':
-      result.setFullYear(result.getFullYear() + interval)
+      result.setUTCFullYear(result.getUTCFullYear() + interval)
       break
   }
 

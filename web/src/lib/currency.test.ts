@@ -1,9 +1,11 @@
 import { describe, expect, it } from 'vitest'
 
 import {
+  apiAmountToFormReais,
   centsStringToNumber,
   formatCentsString,
   moneyStringToReais,
+  optionalReaisToApiAmount,
   reaisToCentsString,
   reaisToMoneyString,
 } from './currency'
@@ -42,5 +44,30 @@ describe('formatCentsString', () => {
 describe('reaisToMoneyString', () => {
   it('formats API request amounts with two decimals', () => {
     expect(reaisToMoneyString(6983.61)).toBe('6983.61')
+  })
+})
+
+describe('optionalReaisToApiAmount', () => {
+  it('returns null for empty or non-positive amounts', () => {
+    expect(optionalReaisToApiAmount(null)).toBeNull()
+    expect(optionalReaisToApiAmount(undefined)).toBeNull()
+    expect(optionalReaisToApiAmount(0)).toBeNull()
+    expect(optionalReaisToApiAmount(-1)).toBeNull()
+  })
+
+  it('returns decimal string for positive amounts', () => {
+    expect(optionalReaisToApiAmount(12.34)).toBe('12.34')
+  })
+})
+
+describe('apiAmountToFormReais', () => {
+  it('returns null for missing or zero API amounts', () => {
+    expect(apiAmountToFormReais(null)).toBeNull()
+    expect(apiAmountToFormReais('')).toBeNull()
+    expect(apiAmountToFormReais('0.00')).toBeNull()
+  })
+
+  it('returns reais for positive API amounts', () => {
+    expect(apiAmountToFormReais('12.34')).toBe(12.34)
   })
 })

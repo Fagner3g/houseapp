@@ -4,6 +4,7 @@ import slugify from 'slugify'
 import { db } from '@/db'
 import { organizations } from '@/db/schemas/organizations'
 import { ensureDefaultCategories } from '@/modules/categories/default-categories'
+import { ensureDefaultOrgAlertRules } from '@/modules/alerts/default-org-alert-rules'
 
 interface CreateOrganization {
   name: string
@@ -30,6 +31,7 @@ export async function createOrganization({ name, ownerId }: CreateOrganization) 
         .returning()
 
       await ensureDefaultCategories(organization.id)
+      await ensureDefaultOrgAlertRules(organization.id, ownerId)
 
       return { organization }
     } catch (err) {
