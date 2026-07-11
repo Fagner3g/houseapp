@@ -5,10 +5,10 @@
  * API for HouseApp
  * OpenAPI spec version: 2.0.0
  */
-import type { UpdateCategoryBodyType } from "./updateCategoryBodyType";
-import type { UpdateCategoryBodyColor } from "./updateCategoryBodyColor";
-import type { UpdateCategoryBodyIcon } from "./updateCategoryBodyIcon";
-import type { UpdateCategoryBodyParentId } from "./updateCategoryBodyParentId";
+import type { UpdateCategoryBodyType } from './updateCategoryBodyType';
+import type { UpdateCategoryBodyColor } from './updateCategoryBodyColor';
+import type { UpdateCategoryBodyIcon } from './updateCategoryBodyIcon';
+import type { UpdateCategoryBodyParentId } from './updateCategoryBodyParentId';
 
 export type UpdateCategoryBody = {
   /** @minLength 1 */

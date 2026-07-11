@@ -6,13 +6,13 @@
  * OpenAPI spec version: 2.0.0
  */
 
-export type CancelScheduledTransactionPayment200TransactionStatus =
-  (typeof CancelScheduledTransactionPayment200TransactionStatus)[keyof typeof CancelScheduledTransactionPayment200TransactionStatus];
+export type CancelScheduledTransactionPayment200TransactionStatus = typeof CancelScheduledTransactionPayment200TransactionStatus[keyof typeof CancelScheduledTransactionPayment200TransactionStatus];
+
 
 // eslint-disable-next-line @typescript-eslint/no-redeclare
 export const CancelScheduledTransactionPayment200TransactionStatus = {
-  pending: "pending",
-  partial: "partial",
-  paid: "paid",
-  canceled: "canceled",
+  pending: 'pending',
+  partial: 'partial',
+  paid: 'paid',
+  canceled: 'canceled',
 } as const;

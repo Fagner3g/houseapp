@@ -5,7 +5,7 @@
  * API for HouseApp
  * OpenAPI spec version: 2.0.0
  */
-import type { ListSplitPayments200PaymentsItem } from "./listSplitPayments200PaymentsItem";
+import type { ListSplitPayments200PaymentsItem } from './listSplitPayments200PaymentsItem';
 
 export type ListSplitPayments200 = {
   payments: ListSplitPayments200PaymentsItem[];

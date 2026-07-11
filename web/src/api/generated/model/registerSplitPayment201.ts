@@ -5,8 +5,8 @@
  * API for HouseApp
  * OpenAPI spec version: 2.0.0
  */
-import type { RegisterSplitPayment201Payment } from "./registerSplitPayment201Payment";
-import type { RegisterSplitPayment201Split } from "./registerSplitPayment201Split";
+import type { RegisterSplitPayment201Payment } from './registerSplitPayment201Payment';
+import type { RegisterSplitPayment201Split } from './registerSplitPayment201Split';
 
 export type RegisterSplitPayment201 = {
   payment: RegisterSplitPayment201Payment;

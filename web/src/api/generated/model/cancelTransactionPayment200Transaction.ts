@@ -5,28 +5,28 @@
  * API for HouseApp
  * OpenAPI spec version: 2.0.0
  */
-import type { CancelTransactionPayment200TransactionAccountId } from "./cancelTransactionPayment200TransactionAccountId";
-import type { CancelTransactionPayment200TransactionCardId } from "./cancelTransactionPayment200TransactionCardId";
-import type { CancelTransactionPayment200TransactionRecurringTransactionId } from "./cancelTransactionPayment200TransactionRecurringTransactionId";
-import type { CancelTransactionPayment200TransactionStatementId } from "./cancelTransactionPayment200TransactionStatementId";
-import type { CancelTransactionPayment200TransactionDescription } from "./cancelTransactionPayment200TransactionDescription";
-import type { CancelTransactionPayment200TransactionAmount } from "./cancelTransactionPayment200TransactionAmount";
-import type { CancelTransactionPayment200TransactionType } from "./cancelTransactionPayment200TransactionType";
-import type { CancelTransactionPayment200TransactionCompetenceDate } from "./cancelTransactionPayment200TransactionCompetenceDate";
-import type { CancelTransactionPayment200TransactionStatus } from "./cancelTransactionPayment200TransactionStatus";
-import type { CancelTransactionPayment200TransactionPaidAt } from "./cancelTransactionPayment200TransactionPaidAt";
-import type { CancelTransactionPayment200TransactionPaidAmount } from "./cancelTransactionPayment200TransactionPaidAmount";
-import type { CancelTransactionPayment200TransactionPaymentScheduledAt } from "./cancelTransactionPayment200TransactionPaymentScheduledAt";
-import type { CancelTransactionPayment200TransactionCounterparty } from "./cancelTransactionPayment200TransactionCounterparty";
-import type { CancelTransactionPayment200TransactionInstallmentNumber } from "./cancelTransactionPayment200TransactionInstallmentNumber";
-import type { CancelTransactionPayment200TransactionInstallmentsTotal } from "./cancelTransactionPayment200TransactionInstallmentsTotal";
-import type { CancelTransactionPayment200TransactionSource } from "./cancelTransactionPayment200TransactionSource";
-import type { CancelTransactionPayment200TransactionTransferPairId } from "./cancelTransactionPayment200TransactionTransferPairId";
-import type { CancelTransactionPayment200TransactionNotifyTargetType } from "./cancelTransactionPayment200TransactionNotifyTargetType";
-import type { CancelTransactionPayment200TransactionNotifyUserId } from "./cancelTransactionPayment200TransactionNotifyUserId";
-import type { CancelTransactionPayment200TransactionNotifyContactName } from "./cancelTransactionPayment200TransactionNotifyContactName";
-import type { CancelTransactionPayment200TransactionNotifyContactPhone } from "./cancelTransactionPayment200TransactionNotifyContactPhone";
-import type { CancelTransactionPayment200TransactionNotifyOverdueConfig } from "./cancelTransactionPayment200TransactionNotifyOverdueConfig";
+import type { CancelTransactionPayment200TransactionAccountId } from './cancelTransactionPayment200TransactionAccountId';
+import type { CancelTransactionPayment200TransactionCardId } from './cancelTransactionPayment200TransactionCardId';
+import type { CancelTransactionPayment200TransactionRecurringTransactionId } from './cancelTransactionPayment200TransactionRecurringTransactionId';
+import type { CancelTransactionPayment200TransactionStatementId } from './cancelTransactionPayment200TransactionStatementId';
+import type { CancelTransactionPayment200TransactionDescription } from './cancelTransactionPayment200TransactionDescription';
+import type { CancelTransactionPayment200TransactionAmount } from './cancelTransactionPayment200TransactionAmount';
+import type { CancelTransactionPayment200TransactionType } from './cancelTransactionPayment200TransactionType';
+import type { CancelTransactionPayment200TransactionCompetenceDate } from './cancelTransactionPayment200TransactionCompetenceDate';
+import type { CancelTransactionPayment200TransactionStatus } from './cancelTransactionPayment200TransactionStatus';
+import type { CancelTransactionPayment200TransactionPaidAt } from './cancelTransactionPayment200TransactionPaidAt';
+import type { CancelTransactionPayment200TransactionPaidAmount } from './cancelTransactionPayment200TransactionPaidAmount';
+import type { CancelTransactionPayment200TransactionPaymentScheduledAt } from './cancelTransactionPayment200TransactionPaymentScheduledAt';
+import type { CancelTransactionPayment200TransactionCounterparty } from './cancelTransactionPayment200TransactionCounterparty';
+import type { CancelTransactionPayment200TransactionInstallmentNumber } from './cancelTransactionPayment200TransactionInstallmentNumber';
+import type { CancelTransactionPayment200TransactionInstallmentsTotal } from './cancelTransactionPayment200TransactionInstallmentsTotal';
+import type { CancelTransactionPayment200TransactionSource } from './cancelTransactionPayment200TransactionSource';
+import type { CancelTransactionPayment200TransactionTransferPairId } from './cancelTransactionPayment200TransactionTransferPairId';
+import type { CancelTransactionPayment200TransactionNotifyTargetType } from './cancelTransactionPayment200TransactionNotifyTargetType';
+import type { CancelTransactionPayment200TransactionNotifyUserId } from './cancelTransactionPayment200TransactionNotifyUserId';
+import type { CancelTransactionPayment200TransactionNotifyContactName } from './cancelTransactionPayment200TransactionNotifyContactName';
+import type { CancelTransactionPayment200TransactionNotifyContactPhone } from './cancelTransactionPayment200TransactionNotifyContactPhone';
+import type { CancelTransactionPayment200TransactionNotifyOverdueConfig } from './cancelTransactionPayment200TransactionNotifyOverdueConfig';
 
 export type CancelTransactionPayment200Transaction = {
   id: string;
@@ -52,7 +52,7 @@ export type CancelTransactionPayment200Transaction = {
   categoryIds: string[];
   transferPairId: CancelTransactionPayment200TransactionTransferPairId;
   notifyEnabled: boolean;
-  notifyTargetType: (typeof CancelTransactionPayment200TransactionNotifyTargetType)[keyof typeof CancelTransactionPayment200TransactionNotifyTargetType];
+  notifyTargetType: typeof CancelTransactionPayment200TransactionNotifyTargetType[keyof typeof CancelTransactionPayment200TransactionNotifyTargetType] ;
   notifyUserId: CancelTransactionPayment200TransactionNotifyUserId;
   notifyContactName: CancelTransactionPayment200TransactionNotifyContactName;
   notifyContactPhone: CancelTransactionPayment200TransactionNotifyContactPhone;

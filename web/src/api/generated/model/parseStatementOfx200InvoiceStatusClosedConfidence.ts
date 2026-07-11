@@ -6,11 +6,11 @@
  * OpenAPI spec version: 2.0.0
  */
 
-export type ParseStatementOfx200InvoiceStatusClosedConfidence =
-  (typeof ParseStatementOfx200InvoiceStatusClosedConfidence)[keyof typeof ParseStatementOfx200InvoiceStatusClosedConfidence];
+export type ParseStatementOfx200InvoiceStatusClosedConfidence = typeof ParseStatementOfx200InvoiceStatusClosedConfidence[keyof typeof ParseStatementOfx200InvoiceStatusClosedConfidence];
+
 
 // eslint-disable-next-line @typescript-eslint/no-redeclare
 export const ParseStatementOfx200InvoiceStatusClosedConfidence = {
-  high: "high",
-  manual: "manual",
+  high: 'high',
+  manual: 'manual',
 } as const;

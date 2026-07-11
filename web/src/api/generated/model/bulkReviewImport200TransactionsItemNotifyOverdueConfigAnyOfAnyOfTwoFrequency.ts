@@ -6,13 +6,12 @@
  * OpenAPI spec version: 2.0.0
  */
 
-export type BulkReviewImport200TransactionsItemNotifyOverdueConfigAnyOfAnyOfTwoFrequency =
-  (typeof BulkReviewImport200TransactionsItemNotifyOverdueConfigAnyOfAnyOfTwoFrequency)[keyof typeof BulkReviewImport200TransactionsItemNotifyOverdueConfigAnyOfAnyOfTwoFrequency];
+export type BulkReviewImport200TransactionsItemNotifyOverdueConfigAnyOfAnyOfTwoFrequency = typeof BulkReviewImport200TransactionsItemNotifyOverdueConfigAnyOfAnyOfTwoFrequency[keyof typeof BulkReviewImport200TransactionsItemNotifyOverdueConfigAnyOfAnyOfTwoFrequency];
+
 
 // eslint-disable-next-line @typescript-eslint/no-redeclare
-export const BulkReviewImport200TransactionsItemNotifyOverdueConfigAnyOfAnyOfTwoFrequency =
-  {
-    daily: "daily",
-    weekly: "weekly",
-    monthly: "monthly",
-  } as const;
+export const BulkReviewImport200TransactionsItemNotifyOverdueConfigAnyOfAnyOfTwoFrequency = {
+  daily: 'daily',
+  weekly: 'weekly',
+  monthly: 'monthly',
+} as const;

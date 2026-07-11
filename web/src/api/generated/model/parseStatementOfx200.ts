@@ -5,13 +5,13 @@
  * API for HouseApp
  * OpenAPI spec version: 2.0.0
  */
-import type { ParseStatementOfx200Parsed } from "./parseStatementOfx200Parsed";
-import type { ParseStatementOfx200Provider } from "./parseStatementOfx200Provider";
-import type { ParseStatementOfx200Summary } from "./parseStatementOfx200Summary";
-import type { ParseStatementOfx200Duplicate } from "./parseStatementOfx200Duplicate";
-import type { ParseStatementOfx200InvoiceStatus } from "./parseStatementOfx200InvoiceStatus";
-import type { ParseStatementOfx200CardMismatchWarning } from "./parseStatementOfx200CardMismatchWarning";
-import type { ParseStatementOfx200AccountResolution } from "./parseStatementOfx200AccountResolution";
+import type { ParseStatementOfx200Parsed } from './parseStatementOfx200Parsed';
+import type { ParseStatementOfx200Provider } from './parseStatementOfx200Provider';
+import type { ParseStatementOfx200Summary } from './parseStatementOfx200Summary';
+import type { ParseStatementOfx200Duplicate } from './parseStatementOfx200Duplicate';
+import type { ParseStatementOfx200InvoiceStatus } from './parseStatementOfx200InvoiceStatus';
+import type { ParseStatementOfx200CardMismatchWarning } from './parseStatementOfx200CardMismatchWarning';
+import type { ParseStatementOfx200AccountResolution } from './parseStatementOfx200AccountResolution';
 
 export type ParseStatementOfx200 = {
   parsed: ParseStatementOfx200Parsed;

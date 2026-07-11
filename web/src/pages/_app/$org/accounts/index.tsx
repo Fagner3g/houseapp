@@ -45,7 +45,16 @@ export const Route = createFileRoute('/_app/$org/accounts/')({
       .optional(),
     view: z.enum(['settings', 'analytics']).optional(),
     invoiceFilter: z
-      .enum(['all', 'purchases', 'payments', 'credits', 'uncategorized', 'installments', 'divided'])
+      .enum([
+        'all',
+        'purchases',
+        'payments',
+        'credits',
+        'uncategorized',
+        'installments',
+        'divided',
+        'a_receber',
+      ])
       .optional(),
   }),
 })
@@ -263,6 +272,9 @@ function AccountsPage() {
                           cycle={cycle}
                           closingDay={closingDay}
                           dueDay={dueDay}
+                          onViewAReceber={() =>
+                            updateSearch({ view: undefined, invoiceFilter: 'a_receber' })
+                          }
                         />
                         <CreditCardStatementSection
                           accountId={selectedAccount.id}

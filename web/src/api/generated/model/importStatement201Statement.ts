@@ -5,21 +5,21 @@
  * API for HouseApp
  * OpenAPI spec version: 2.0.0
  */
-import type { ImportStatement201StatementPeriodStart } from "./importStatement201StatementPeriodStart";
-import type { ImportStatement201StatementPeriodEnd } from "./importStatement201StatementPeriodEnd";
-import type { ImportStatement201StatementClosingDate } from "./importStatement201StatementClosingDate";
-import type { ImportStatement201StatementDueDate } from "./importStatement201StatementDueDate";
-import type { ImportStatement201StatementTotalAmount } from "./importStatement201StatementTotalAmount";
-import type { ImportStatement201StatementMinimumPayment } from "./importStatement201StatementMinimumPayment";
-import type { ImportStatement201StatementPreviousBalance } from "./importStatement201StatementPreviousBalance";
-import type { ImportStatement201StatementPaymentsReceived } from "./importStatement201StatementPaymentsReceived";
-import type { ImportStatement201StatementPurchasesTotal } from "./importStatement201StatementPurchasesTotal";
-import type { ImportStatement201StatementOtherCharges } from "./importStatement201StatementOtherCharges";
-import type { ImportStatement201StatementNextInvoiceBalance } from "./importStatement201StatementNextInvoiceBalance";
-import type { ImportStatement201StatementTotalOpenBalance } from "./importStatement201StatementTotalOpenBalance";
-import type { ImportStatement201StatementFileName } from "./importStatement201StatementFileName";
-import type { ImportStatement201StatementImportSource } from "./importStatement201StatementImportSource";
-import type { ImportStatement201StatementImportedBy } from "./importStatement201StatementImportedBy";
+import type { ImportStatement201StatementPeriodStart } from './importStatement201StatementPeriodStart';
+import type { ImportStatement201StatementPeriodEnd } from './importStatement201StatementPeriodEnd';
+import type { ImportStatement201StatementClosingDate } from './importStatement201StatementClosingDate';
+import type { ImportStatement201StatementDueDate } from './importStatement201StatementDueDate';
+import type { ImportStatement201StatementTotalAmount } from './importStatement201StatementTotalAmount';
+import type { ImportStatement201StatementMinimumPayment } from './importStatement201StatementMinimumPayment';
+import type { ImportStatement201StatementPreviousBalance } from './importStatement201StatementPreviousBalance';
+import type { ImportStatement201StatementPaymentsReceived } from './importStatement201StatementPaymentsReceived';
+import type { ImportStatement201StatementPurchasesTotal } from './importStatement201StatementPurchasesTotal';
+import type { ImportStatement201StatementOtherCharges } from './importStatement201StatementOtherCharges';
+import type { ImportStatement201StatementNextInvoiceBalance } from './importStatement201StatementNextInvoiceBalance';
+import type { ImportStatement201StatementTotalOpenBalance } from './importStatement201StatementTotalOpenBalance';
+import type { ImportStatement201StatementFileName } from './importStatement201StatementFileName';
+import type { ImportStatement201StatementImportSource } from './importStatement201StatementImportSource';
+import type { ImportStatement201StatementImportedBy } from './importStatement201StatementImportedBy';
 
 export type ImportStatement201Statement = {
   id: string;
@@ -40,7 +40,7 @@ export type ImportStatement201Statement = {
   transactionsCount: number;
   fileHash: string;
   fileName: ImportStatement201StatementFileName;
-  importSource: (typeof ImportStatement201StatementImportSource)[keyof typeof ImportStatement201StatementImportSource];
+  importSource: typeof ImportStatement201StatementImportSource[keyof typeof ImportStatement201StatementImportSource] ;
   isClosed: boolean;
   isPaid: boolean;
   importedBy: ImportStatement201StatementImportedBy;

@@ -5,7 +5,7 @@
  * API for HouseApp
  * OpenAPI spec version: 2.0.0
  */
-import type { ParseStatementOfx200SummaryPreviewTransactionsItem } from "./parseStatementOfx200SummaryPreviewTransactionsItem";
+import type { ParseStatementOfx200SummaryPreviewTransactionsItem } from './parseStatementOfx200SummaryPreviewTransactionsItem';
 
 export type ParseStatementOfx200Summary = {
   expensesCount: number;

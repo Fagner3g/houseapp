@@ -12,7 +12,6 @@ import { transactions } from '@/db/schemas/transactions'
 import type { TransactionType } from '@/db/schemas/transactions'
 import { users } from '@/db/schemas/users'
 import type { TransactionRecord } from '@/modules/transactions/transaction.repository'
-import { UNPAID_TRANSACTION_STATUSES } from '@/core/transaction-payment'
 import {
   userIsSplitCreditorCondition,
 } from '@/modules/splits/split-expense-attribution'
@@ -95,6 +94,10 @@ export interface SplitRepository {
     organizationId: string,
     transactionIds: string[]
   ): Promise<Array<{ transactionId: string; paidTotal: bigint }>>
+  listSplitRemainingTotals(
+    organizationId: string,
+    transactionIds: string[]
+  ): Promise<Array<{ transactionId: string; remainingTotal: bigint }>>
   findSplitsWithTransactions(
     transactionIds: string[]
   ): Promise<
@@ -370,7 +373,6 @@ export class DrizzleSplitRepository implements SplitRepository {
       .where(
         and(
           eq(transactions.organizationId, organizationId),
-          inArray(transactions.status, [...UNPAID_TRANSACTION_STATUSES]),
           inArray(transactionSplits.status, ['pending', 'partial'])
         )
       )
@@ -521,6 +523,42 @@ export class DrizzleSplitRepository implements SplitRepository {
     return rows.map(row => ({
       transactionId: row.transactionId,
       paidTotal: BigInt(row.paidTotal),
+    }))
+  }
+
+  async listSplitRemainingTotals(
+    organizationId: string,
+    transactionIds: string[]
+  ): Promise<Array<{ transactionId: string; remainingTotal: bigint }>> {
+    if (transactionIds.length === 0) return []
+
+    const rows = await db
+      .select({
+        transactionId: transactionSplits.transactionId,
+        remainingTotal: sql<bigint>`COALESCE(
+          SUM(
+            GREATEST(
+              ${transactionSplits.amount} - COALESCE(${transactionSplits.paidAmount}, 0),
+              0
+            )
+          ),
+          0
+        )`,
+      })
+      .from(transactionSplits)
+      .innerJoin(transactions, eq(transactionSplits.transactionId, transactions.id))
+      .where(
+        and(
+          eq(transactions.organizationId, organizationId),
+          inArray(transactionSplits.transactionId, transactionIds),
+          inArray(transactionSplits.status, ['pending', 'partial'])
+        )
+      )
+      .groupBy(transactionSplits.transactionId)
+
+    return rows.map(row => ({
+      transactionId: row.transactionId,
+      remainingTotal: BigInt(row.remainingTotal),
     }))
   }
 

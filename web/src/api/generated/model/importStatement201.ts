@@ -5,7 +5,7 @@
  * API for HouseApp
  * OpenAPI spec version: 2.0.0
  */
-import type { ImportStatement201Statement } from "./importStatement201Statement";
+import type { ImportStatement201Statement } from './importStatement201Statement';
 
 export type ImportStatement201 = {
   statement: ImportStatement201Statement;

@@ -5,7 +5,7 @@
  * API for HouseApp
  * OpenAPI spec version: 2.0.0
  */
-import type { GetReportByCategory200CategoriesItemColor } from "./getReportByCategory200CategoriesItemColor";
+import type { GetReportByCategory200CategoriesItemColor } from './getReportByCategory200CategoriesItemColor';
 
 export type GetReportByCategory200CategoriesItem = {
   categoryId: string;

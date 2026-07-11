@@ -5,18 +5,18 @@
  * API for HouseApp
  * OpenAPI spec version: 2.0.0
  */
-import type { UpdateAccount200AccountType } from "./updateAccount200AccountType";
-import type { UpdateAccount200AccountInstitution } from "./updateAccount200AccountInstitution";
-import type { UpdateAccount200AccountCreditLimit } from "./updateAccount200AccountCreditLimit";
-import type { UpdateAccount200AccountClosingDay } from "./updateAccount200AccountClosingDay";
-import type { UpdateAccount200AccountDueDay } from "./updateAccount200AccountDueDay";
-import type { UpdateAccount200AccountPaymentAccountId } from "./updateAccount200AccountPaymentAccountId";
-import type { UpdateAccount200AccountPixKey } from "./updateAccount200AccountPixKey";
-import type { UpdateAccount200AccountPixKeyType } from "./updateAccount200AccountPixKeyType";
-import type { UpdateAccount200AccountColor } from "./updateAccount200AccountColor";
-import type { UpdateAccount200AccountIcon } from "./updateAccount200AccountIcon";
-import type { UpdateAccount200AccountOfxAccountId } from "./updateAccount200AccountOfxAccountId";
-import type { UpdateAccount200AccountCardsItem } from "./updateAccount200AccountCardsItem";
+import type { UpdateAccount200AccountType } from './updateAccount200AccountType';
+import type { UpdateAccount200AccountInstitution } from './updateAccount200AccountInstitution';
+import type { UpdateAccount200AccountCreditLimit } from './updateAccount200AccountCreditLimit';
+import type { UpdateAccount200AccountClosingDay } from './updateAccount200AccountClosingDay';
+import type { UpdateAccount200AccountDueDay } from './updateAccount200AccountDueDay';
+import type { UpdateAccount200AccountPaymentAccountId } from './updateAccount200AccountPaymentAccountId';
+import type { UpdateAccount200AccountPixKey } from './updateAccount200AccountPixKey';
+import type { UpdateAccount200AccountPixKeyType } from './updateAccount200AccountPixKeyType';
+import type { UpdateAccount200AccountColor } from './updateAccount200AccountColor';
+import type { UpdateAccount200AccountIcon } from './updateAccount200AccountIcon';
+import type { UpdateAccount200AccountOfxAccountId } from './updateAccount200AccountOfxAccountId';
+import type { UpdateAccount200AccountCardsItem } from './updateAccount200AccountCardsItem';
 
 export type UpdateAccount200Account = {
   id: string;
@@ -31,7 +31,7 @@ export type UpdateAccount200Account = {
   paymentAccountId: UpdateAccount200AccountPaymentAccountId;
   initialBalance: string;
   pixKey: UpdateAccount200AccountPixKey;
-  pixKeyType: (typeof UpdateAccount200AccountPixKeyType)[keyof typeof UpdateAccount200AccountPixKeyType];
+  pixKeyType: typeof UpdateAccount200AccountPixKeyType[keyof typeof UpdateAccount200AccountPixKeyType] ;
   color: UpdateAccount200AccountColor;
   icon: UpdateAccount200AccountIcon;
   displayOrder: number;

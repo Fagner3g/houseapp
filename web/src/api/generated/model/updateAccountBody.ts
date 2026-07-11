@@ -5,18 +5,18 @@
  * API for HouseApp
  * OpenAPI spec version: 2.0.0
  */
-import type { UpdateAccountBodyInstitution } from "./updateAccountBodyInstitution";
-import type { UpdateAccountBodyCreditLimit } from "./updateAccountBodyCreditLimit";
-import type { UpdateAccountBodyClosingDay } from "./updateAccountBodyClosingDay";
-import type { UpdateAccountBodyDueDay } from "./updateAccountBodyDueDay";
-import type { UpdateAccountBodyPaymentAccountId } from "./updateAccountBodyPaymentAccountId";
-import type { UpdateAccountBodyInitialBalance } from "./updateAccountBodyInitialBalance";
-import type { UpdateAccountBodyPixKey } from "./updateAccountBodyPixKey";
-import type { UpdateAccountBodyPixKeyType } from "./updateAccountBodyPixKeyType";
-import type { UpdateAccountBodyColor } from "./updateAccountBodyColor";
-import type { UpdateAccountBodyIcon } from "./updateAccountBodyIcon";
-import type { UpdateAccountBodyOfxAccountId } from "./updateAccountBodyOfxAccountId";
-import type { UpdateAccountBodyLastFourDigits } from "./updateAccountBodyLastFourDigits";
+import type { UpdateAccountBodyInstitution } from './updateAccountBodyInstitution';
+import type { UpdateAccountBodyCreditLimit } from './updateAccountBodyCreditLimit';
+import type { UpdateAccountBodyClosingDay } from './updateAccountBodyClosingDay';
+import type { UpdateAccountBodyDueDay } from './updateAccountBodyDueDay';
+import type { UpdateAccountBodyPaymentAccountId } from './updateAccountBodyPaymentAccountId';
+import type { UpdateAccountBodyInitialBalance } from './updateAccountBodyInitialBalance';
+import type { UpdateAccountBodyPixKey } from './updateAccountBodyPixKey';
+import type { UpdateAccountBodyPixKeyType } from './updateAccountBodyPixKeyType';
+import type { UpdateAccountBodyColor } from './updateAccountBodyColor';
+import type { UpdateAccountBodyIcon } from './updateAccountBodyIcon';
+import type { UpdateAccountBodyOfxAccountId } from './updateAccountBodyOfxAccountId';
+import type { UpdateAccountBodyLastFourDigits } from './updateAccountBodyLastFourDigits';
 
 export type UpdateAccountBody = {
   /** @minLength 1 */
@@ -29,7 +29,7 @@ export type UpdateAccountBody = {
   paymentAccountId?: UpdateAccountBodyPaymentAccountId;
   initialBalance?: UpdateAccountBodyInitialBalance;
   pixKey?: UpdateAccountBodyPixKey;
-  pixKeyType?: (typeof UpdateAccountBodyPixKeyType)[keyof typeof UpdateAccountBodyPixKeyType];
+  pixKeyType?: typeof UpdateAccountBodyPixKeyType[keyof typeof UpdateAccountBodyPixKeyType] ;
   color?: UpdateAccountBodyColor;
   icon?: UpdateAccountBodyIcon;
   /**

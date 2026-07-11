@@ -5,7 +5,7 @@
  * API for HouseApp
  * OpenAPI spec version: 2.0.0
  */
-import type { GetReportSummary200UpcomingItem } from "./getReportSummary200UpcomingItem";
+import type { GetReportSummary200UpcomingItem } from './getReportSummary200UpcomingItem';
 
 export type GetReportSummary200 = {
   totalIncome: string;

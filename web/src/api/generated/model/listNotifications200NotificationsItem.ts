@@ -5,13 +5,13 @@
  * API for HouseApp
  * OpenAPI spec version: 2.0.0
  */
-import type { ListNotifications200NotificationsItemAlertRuleId } from "./listNotifications200NotificationsItemAlertRuleId";
-import type { ListNotifications200NotificationsItemTransactionId } from "./listNotifications200NotificationsItemTransactionId";
-import type { ListNotifications200NotificationsItemAccountId } from "./listNotifications200NotificationsItemAccountId";
-import type { ListNotifications200NotificationsItemBody } from "./listNotifications200NotificationsItemBody";
-import type { ListNotifications200NotificationsItemSentAt } from "./listNotifications200NotificationsItemSentAt";
-import type { ListNotifications200NotificationsItemReadAt } from "./listNotifications200NotificationsItemReadAt";
-import type { ListNotifications200NotificationsItemMetadata } from "./listNotifications200NotificationsItemMetadata";
+import type { ListNotifications200NotificationsItemAlertRuleId } from './listNotifications200NotificationsItemAlertRuleId';
+import type { ListNotifications200NotificationsItemTransactionId } from './listNotifications200NotificationsItemTransactionId';
+import type { ListNotifications200NotificationsItemAccountId } from './listNotifications200NotificationsItemAccountId';
+import type { ListNotifications200NotificationsItemBody } from './listNotifications200NotificationsItemBody';
+import type { ListNotifications200NotificationsItemSentAt } from './listNotifications200NotificationsItemSentAt';
+import type { ListNotifications200NotificationsItemReadAt } from './listNotifications200NotificationsItemReadAt';
+import type { ListNotifications200NotificationsItemMetadata } from './listNotifications200NotificationsItemMetadata';
 
 export type ListNotifications200NotificationsItem = {
   id: string;

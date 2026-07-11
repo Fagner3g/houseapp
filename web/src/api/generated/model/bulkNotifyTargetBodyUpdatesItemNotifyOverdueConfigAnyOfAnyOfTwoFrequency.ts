@@ -6,13 +6,12 @@
  * OpenAPI spec version: 2.0.0
  */
 
-export type BulkNotifyTargetBodyUpdatesItemNotifyOverdueConfigAnyOfAnyOfTwoFrequency =
-  (typeof BulkNotifyTargetBodyUpdatesItemNotifyOverdueConfigAnyOfAnyOfTwoFrequency)[keyof typeof BulkNotifyTargetBodyUpdatesItemNotifyOverdueConfigAnyOfAnyOfTwoFrequency];
+export type BulkNotifyTargetBodyUpdatesItemNotifyOverdueConfigAnyOfAnyOfTwoFrequency = typeof BulkNotifyTargetBodyUpdatesItemNotifyOverdueConfigAnyOfAnyOfTwoFrequency[keyof typeof BulkNotifyTargetBodyUpdatesItemNotifyOverdueConfigAnyOfAnyOfTwoFrequency];
+
 
 // eslint-disable-next-line @typescript-eslint/no-redeclare
-export const BulkNotifyTargetBodyUpdatesItemNotifyOverdueConfigAnyOfAnyOfTwoFrequency =
-  {
-    daily: "daily",
-    weekly: "weekly",
-    monthly: "monthly",
-  } as const;
+export const BulkNotifyTargetBodyUpdatesItemNotifyOverdueConfigAnyOfAnyOfTwoFrequency = {
+  daily: 'daily',
+  weekly: 'weekly',
+  monthly: 'monthly',
+} as const;

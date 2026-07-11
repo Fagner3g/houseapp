@@ -5,13 +5,13 @@
  * API for HouseApp
  * OpenAPI spec version: 2.0.0
  */
-import type { PreviewUpdateRecurringTransactionBodyType } from "./previewUpdateRecurringTransactionBodyType";
-import type { PreviewUpdateRecurringTransactionBodyCounterparty } from "./previewUpdateRecurringTransactionBodyCounterparty";
-import type { PreviewUpdateRecurringTransactionBodyCategoryId } from "./previewUpdateRecurringTransactionBodyCategoryId";
-import type { PreviewUpdateRecurringTransactionBodyAccountId } from "./previewUpdateRecurringTransactionBodyAccountId";
-import type { PreviewUpdateRecurringTransactionBodyFrequency } from "./previewUpdateRecurringTransactionBodyFrequency";
-import type { PreviewUpdateRecurringTransactionBodyEndDate } from "./previewUpdateRecurringTransactionBodyEndDate";
-import type { PreviewUpdateRecurringTransactionBodyInstallmentsTotal } from "./previewUpdateRecurringTransactionBodyInstallmentsTotal";
+import type { PreviewUpdateRecurringTransactionBodyType } from './previewUpdateRecurringTransactionBodyType';
+import type { PreviewUpdateRecurringTransactionBodyCounterparty } from './previewUpdateRecurringTransactionBodyCounterparty';
+import type { PreviewUpdateRecurringTransactionBodyCategoryId } from './previewUpdateRecurringTransactionBodyCategoryId';
+import type { PreviewUpdateRecurringTransactionBodyAccountId } from './previewUpdateRecurringTransactionBodyAccountId';
+import type { PreviewUpdateRecurringTransactionBodyFrequency } from './previewUpdateRecurringTransactionBodyFrequency';
+import type { PreviewUpdateRecurringTransactionBodyEndDate } from './previewUpdateRecurringTransactionBodyEndDate';
+import type { PreviewUpdateRecurringTransactionBodyInstallmentsTotal } from './previewUpdateRecurringTransactionBodyInstallmentsTotal';
 
 export type PreviewUpdateRecurringTransactionBody = {
   /** @minLength 1 */

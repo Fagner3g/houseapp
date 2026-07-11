@@ -6,12 +6,12 @@
  * OpenAPI spec version: 2.0.0
  */
 
-export type ListAlertRules200RulesItemChannelsItem =
-  (typeof ListAlertRules200RulesItemChannelsItem)[keyof typeof ListAlertRules200RulesItemChannelsItem];
+export type ListAlertRules200RulesItemChannelsItem = typeof ListAlertRules200RulesItemChannelsItem[keyof typeof ListAlertRules200RulesItemChannelsItem];
+
 
 // eslint-disable-next-line @typescript-eslint/no-redeclare
 export const ListAlertRules200RulesItemChannelsItem = {
-  in_app: "in_app",
-  whatsapp: "whatsapp",
-  extension: "extension",
+  in_app: 'in_app',
+  whatsapp: 'whatsapp',
+  extension: 'extension',
 } as const;

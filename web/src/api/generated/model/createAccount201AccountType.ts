@@ -6,14 +6,14 @@
  * OpenAPI spec version: 2.0.0
  */
 
-export type CreateAccount201AccountType =
-  (typeof CreateAccount201AccountType)[keyof typeof CreateAccount201AccountType];
+export type CreateAccount201AccountType = typeof CreateAccount201AccountType[keyof typeof CreateAccount201AccountType];
+
 
 // eslint-disable-next-line @typescript-eslint/no-redeclare
 export const CreateAccount201AccountType = {
-  checking: "checking",
-  savings: "savings",
-  credit_card: "credit_card",
-  cash: "cash",
-  investment: "investment",
+  checking: 'checking',
+  savings: 'savings',
+  credit_card: 'credit_card',
+  cash: 'cash',
+  investment: 'investment',
 } as const;

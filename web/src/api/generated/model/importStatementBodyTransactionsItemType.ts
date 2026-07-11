@@ -6,11 +6,11 @@
  * OpenAPI spec version: 2.0.0
  */
 
-export type ImportStatementBodyTransactionsItemType =
-  (typeof ImportStatementBodyTransactionsItemType)[keyof typeof ImportStatementBodyTransactionsItemType];
+export type ImportStatementBodyTransactionsItemType = typeof ImportStatementBodyTransactionsItemType[keyof typeof ImportStatementBodyTransactionsItemType];
+
 
 // eslint-disable-next-line @typescript-eslint/no-redeclare
 export const ImportStatementBodyTransactionsItemType = {
-  income: "income",
-  expense: "expense",
+  income: 'income',
+  expense: 'expense',
 } as const;

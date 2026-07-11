@@ -12,6 +12,7 @@ export type SplitTransactionIdsResult = {
   partiallyDividedById: Map<string, PartialSplitBadgeInfo>
   partiallyDividedCount: number
   splitPaidById: Map<string, number>
+  splitRemainingById: Map<string, number>
 }
 
 function toSplitTransactionIdsResult(data: ListSplitTransactionIds200): SplitTransactionIdsResult {
@@ -34,6 +35,12 @@ function toSplitTransactionIdsResult(data: ListSplitTransactionIds200): SplitTra
     partiallyDividedCount: data.partiallyDivided.length,
     splitPaidById: new Map(
       data.splitPaidTotals.map(item => [item.transactionId, moneyStringToReais(item.paidAmount)])
+    ),
+    splitRemainingById: new Map(
+      data.splitRemainingTotals.map(item => [
+        item.transactionId,
+        moneyStringToReais(item.remainingAmount),
+      ])
     ),
   }
 }

@@ -5,28 +5,28 @@
  * API for HouseApp
  * OpenAPI spec version: 2.0.0
  */
-import type { BulkCreateTransactions201TransactionsItemAccountId } from "./bulkCreateTransactions201TransactionsItemAccountId";
-import type { BulkCreateTransactions201TransactionsItemCardId } from "./bulkCreateTransactions201TransactionsItemCardId";
-import type { BulkCreateTransactions201TransactionsItemRecurringTransactionId } from "./bulkCreateTransactions201TransactionsItemRecurringTransactionId";
-import type { BulkCreateTransactions201TransactionsItemStatementId } from "./bulkCreateTransactions201TransactionsItemStatementId";
-import type { BulkCreateTransactions201TransactionsItemDescription } from "./bulkCreateTransactions201TransactionsItemDescription";
-import type { BulkCreateTransactions201TransactionsItemAmount } from "./bulkCreateTransactions201TransactionsItemAmount";
-import type { BulkCreateTransactions201TransactionsItemType } from "./bulkCreateTransactions201TransactionsItemType";
-import type { BulkCreateTransactions201TransactionsItemCompetenceDate } from "./bulkCreateTransactions201TransactionsItemCompetenceDate";
-import type { BulkCreateTransactions201TransactionsItemStatus } from "./bulkCreateTransactions201TransactionsItemStatus";
-import type { BulkCreateTransactions201TransactionsItemPaidAt } from "./bulkCreateTransactions201TransactionsItemPaidAt";
-import type { BulkCreateTransactions201TransactionsItemPaidAmount } from "./bulkCreateTransactions201TransactionsItemPaidAmount";
-import type { BulkCreateTransactions201TransactionsItemPaymentScheduledAt } from "./bulkCreateTransactions201TransactionsItemPaymentScheduledAt";
-import type { BulkCreateTransactions201TransactionsItemCounterparty } from "./bulkCreateTransactions201TransactionsItemCounterparty";
-import type { BulkCreateTransactions201TransactionsItemInstallmentNumber } from "./bulkCreateTransactions201TransactionsItemInstallmentNumber";
-import type { BulkCreateTransactions201TransactionsItemInstallmentsTotal } from "./bulkCreateTransactions201TransactionsItemInstallmentsTotal";
-import type { BulkCreateTransactions201TransactionsItemSource } from "./bulkCreateTransactions201TransactionsItemSource";
-import type { BulkCreateTransactions201TransactionsItemTransferPairId } from "./bulkCreateTransactions201TransactionsItemTransferPairId";
-import type { BulkCreateTransactions201TransactionsItemNotifyTargetType } from "./bulkCreateTransactions201TransactionsItemNotifyTargetType";
-import type { BulkCreateTransactions201TransactionsItemNotifyUserId } from "./bulkCreateTransactions201TransactionsItemNotifyUserId";
-import type { BulkCreateTransactions201TransactionsItemNotifyContactName } from "./bulkCreateTransactions201TransactionsItemNotifyContactName";
-import type { BulkCreateTransactions201TransactionsItemNotifyContactPhone } from "./bulkCreateTransactions201TransactionsItemNotifyContactPhone";
-import type { BulkCreateTransactions201TransactionsItemNotifyOverdueConfig } from "./bulkCreateTransactions201TransactionsItemNotifyOverdueConfig";
+import type { BulkCreateTransactions201TransactionsItemAccountId } from './bulkCreateTransactions201TransactionsItemAccountId';
+import type { BulkCreateTransactions201TransactionsItemCardId } from './bulkCreateTransactions201TransactionsItemCardId';
+import type { BulkCreateTransactions201TransactionsItemRecurringTransactionId } from './bulkCreateTransactions201TransactionsItemRecurringTransactionId';
+import type { BulkCreateTransactions201TransactionsItemStatementId } from './bulkCreateTransactions201TransactionsItemStatementId';
+import type { BulkCreateTransactions201TransactionsItemDescription } from './bulkCreateTransactions201TransactionsItemDescription';
+import type { BulkCreateTransactions201TransactionsItemAmount } from './bulkCreateTransactions201TransactionsItemAmount';
+import type { BulkCreateTransactions201TransactionsItemType } from './bulkCreateTransactions201TransactionsItemType';
+import type { BulkCreateTransactions201TransactionsItemCompetenceDate } from './bulkCreateTransactions201TransactionsItemCompetenceDate';
+import type { BulkCreateTransactions201TransactionsItemStatus } from './bulkCreateTransactions201TransactionsItemStatus';
+import type { BulkCreateTransactions201TransactionsItemPaidAt } from './bulkCreateTransactions201TransactionsItemPaidAt';
+import type { BulkCreateTransactions201TransactionsItemPaidAmount } from './bulkCreateTransactions201TransactionsItemPaidAmount';
+import type { BulkCreateTransactions201TransactionsItemPaymentScheduledAt } from './bulkCreateTransactions201TransactionsItemPaymentScheduledAt';
+import type { BulkCreateTransactions201TransactionsItemCounterparty } from './bulkCreateTransactions201TransactionsItemCounterparty';
+import type { BulkCreateTransactions201TransactionsItemInstallmentNumber } from './bulkCreateTransactions201TransactionsItemInstallmentNumber';
+import type { BulkCreateTransactions201TransactionsItemInstallmentsTotal } from './bulkCreateTransactions201TransactionsItemInstallmentsTotal';
+import type { BulkCreateTransactions201TransactionsItemSource } from './bulkCreateTransactions201TransactionsItemSource';
+import type { BulkCreateTransactions201TransactionsItemTransferPairId } from './bulkCreateTransactions201TransactionsItemTransferPairId';
+import type { BulkCreateTransactions201TransactionsItemNotifyTargetType } from './bulkCreateTransactions201TransactionsItemNotifyTargetType';
+import type { BulkCreateTransactions201TransactionsItemNotifyUserId } from './bulkCreateTransactions201TransactionsItemNotifyUserId';
+import type { BulkCreateTransactions201TransactionsItemNotifyContactName } from './bulkCreateTransactions201TransactionsItemNotifyContactName';
+import type { BulkCreateTransactions201TransactionsItemNotifyContactPhone } from './bulkCreateTransactions201TransactionsItemNotifyContactPhone';
+import type { BulkCreateTransactions201TransactionsItemNotifyOverdueConfig } from './bulkCreateTransactions201TransactionsItemNotifyOverdueConfig';
 
 export type BulkCreateTransactions201TransactionsItem = {
   id: string;
@@ -52,7 +52,7 @@ export type BulkCreateTransactions201TransactionsItem = {
   categoryIds: string[];
   transferPairId: BulkCreateTransactions201TransactionsItemTransferPairId;
   notifyEnabled: boolean;
-  notifyTargetType: (typeof BulkCreateTransactions201TransactionsItemNotifyTargetType)[keyof typeof BulkCreateTransactions201TransactionsItemNotifyTargetType];
+  notifyTargetType: typeof BulkCreateTransactions201TransactionsItemNotifyTargetType[keyof typeof BulkCreateTransactions201TransactionsItemNotifyTargetType] ;
   notifyUserId: BulkCreateTransactions201TransactionsItemNotifyUserId;
   notifyContactName: BulkCreateTransactions201TransactionsItemNotifyContactName;
   notifyContactPhone: BulkCreateTransactions201TransactionsItemNotifyContactPhone;

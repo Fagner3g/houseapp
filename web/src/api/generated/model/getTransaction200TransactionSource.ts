@@ -6,13 +6,13 @@
  * OpenAPI spec version: 2.0.0
  */
 
-export type GetTransaction200TransactionSource =
-  (typeof GetTransaction200TransactionSource)[keyof typeof GetTransaction200TransactionSource];
+export type GetTransaction200TransactionSource = typeof GetTransaction200TransactionSource[keyof typeof GetTransaction200TransactionSource];
+
 
 // eslint-disable-next-line @typescript-eslint/no-redeclare
 export const GetTransaction200TransactionSource = {
-  manual: "manual",
-  import: "import",
-  recurring: "recurring",
-  ai_chat: "ai_chat",
+  manual: 'manual',
+  import: 'import',
+  recurring: 'recurring',
+  ai_chat: 'ai_chat',
 } as const;

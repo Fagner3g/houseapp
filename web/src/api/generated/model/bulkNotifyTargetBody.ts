@@ -5,7 +5,7 @@
  * API for HouseApp
  * OpenAPI spec version: 2.0.0
  */
-import type { BulkNotifyTargetBodyUpdatesItem } from "./bulkNotifyTargetBodyUpdatesItem";
+import type { BulkNotifyTargetBodyUpdatesItem } from './bulkNotifyTargetBodyUpdatesItem';
 
 export type BulkNotifyTargetBody = {
   /** @minItems 1 */

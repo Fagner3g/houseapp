@@ -5,17 +5,17 @@
  * API for HouseApp
  * OpenAPI spec version: 2.0.0
  */
-import type { BulkNotifyTargetBodyUpdatesItemNotifyTargetType } from "./bulkNotifyTargetBodyUpdatesItemNotifyTargetType";
-import type { BulkNotifyTargetBodyUpdatesItemNotifyUserId } from "./bulkNotifyTargetBodyUpdatesItemNotifyUserId";
-import type { BulkNotifyTargetBodyUpdatesItemNotifyContactName } from "./bulkNotifyTargetBodyUpdatesItemNotifyContactName";
-import type { BulkNotifyTargetBodyUpdatesItemNotifyContactPhone } from "./bulkNotifyTargetBodyUpdatesItemNotifyContactPhone";
-import type { BulkNotifyTargetBodyUpdatesItemNotifyDaysBefore } from "./bulkNotifyTargetBodyUpdatesItemNotifyDaysBefore";
-import type { BulkNotifyTargetBodyUpdatesItemNotifyOverdueConfig } from "./bulkNotifyTargetBodyUpdatesItemNotifyOverdueConfig";
+import type { BulkNotifyTargetBodyUpdatesItemNotifyTargetType } from './bulkNotifyTargetBodyUpdatesItemNotifyTargetType';
+import type { BulkNotifyTargetBodyUpdatesItemNotifyUserId } from './bulkNotifyTargetBodyUpdatesItemNotifyUserId';
+import type { BulkNotifyTargetBodyUpdatesItemNotifyContactName } from './bulkNotifyTargetBodyUpdatesItemNotifyContactName';
+import type { BulkNotifyTargetBodyUpdatesItemNotifyContactPhone } from './bulkNotifyTargetBodyUpdatesItemNotifyContactPhone';
+import type { BulkNotifyTargetBodyUpdatesItemNotifyDaysBefore } from './bulkNotifyTargetBodyUpdatesItemNotifyDaysBefore';
+import type { BulkNotifyTargetBodyUpdatesItemNotifyOverdueConfig } from './bulkNotifyTargetBodyUpdatesItemNotifyOverdueConfig';
 
 export type BulkNotifyTargetBodyUpdatesItem = {
   transactionId: string;
   notifyEnabled?: boolean;
-  notifyTargetType?: (typeof BulkNotifyTargetBodyUpdatesItemNotifyTargetType)[keyof typeof BulkNotifyTargetBodyUpdatesItemNotifyTargetType];
+  notifyTargetType?: typeof BulkNotifyTargetBodyUpdatesItemNotifyTargetType[keyof typeof BulkNotifyTargetBodyUpdatesItemNotifyTargetType] ;
   notifyUserId?: BulkNotifyTargetBodyUpdatesItemNotifyUserId;
   notifyContactName?: BulkNotifyTargetBodyUpdatesItemNotifyContactName;
   notifyContactPhone?: BulkNotifyTargetBodyUpdatesItemNotifyContactPhone;

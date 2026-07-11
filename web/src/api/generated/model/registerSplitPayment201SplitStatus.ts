@@ -6,13 +6,13 @@
  * OpenAPI spec version: 2.0.0
  */
 
-export type RegisterSplitPayment201SplitStatus =
-  (typeof RegisterSplitPayment201SplitStatus)[keyof typeof RegisterSplitPayment201SplitStatus];
+export type RegisterSplitPayment201SplitStatus = typeof RegisterSplitPayment201SplitStatus[keyof typeof RegisterSplitPayment201SplitStatus];
+
 
 // eslint-disable-next-line @typescript-eslint/no-redeclare
 export const RegisterSplitPayment201SplitStatus = {
-  pending: "pending",
-  partial: "partial",
-  paid: "paid",
-  forgiven: "forgiven",
+  pending: 'pending',
+  partial: 'partial',
+  paid: 'paid',
+  forgiven: 'forgiven',
 } as const;

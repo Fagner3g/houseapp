@@ -283,20 +283,27 @@ export class SplitService {
       transactionAmount: string
     }>
     splitPaidTotals: Array<{ transactionId: string; paidAmount: string }>
+    splitRemainingTotals: Array<{ transactionId: string; remainingAmount: string }>
   }> {
-    const [transactionIdsWithSplits, fullyDelegated, partiallyDividedRows, splitPaidRows] =
-      await Promise.all([
+    const [
+      transactionIdsWithSplits,
+      fullyDelegated,
+      partiallyDividedRows,
+      splitPaidRows,
+      splitRemainingRows,
+    ] = await Promise.all([
       this.splitRepository.listTransactionIdsWithSplits(organizationId, transactionIds),
       this.splitRepository.listFullyDelegatedTransactions(organizationId, transactionIds),
       this.splitRepository.listPartiallyDividedTransactions(organizationId, transactionIds),
       this.splitRepository.listSplitPaidTotals(organizationId, transactionIds),
+      this.splitRepository.listSplitRemainingTotals(organizationId, transactionIds),
     ])
 
     const partiallyDivided = partiallyDividedRows.map(row => ({
       transactionId: row.transactionId,
       splitWithName: row.splitWithName,
-      splitAmount: centavosToString(row.splitAmount),
-      transactionAmount: centavosToString(row.transactionAmount),
+      splitAmount: centavosToString(row.splitAmount) ?? '0.00',
+      transactionAmount: centavosToString(row.transactionAmount) ?? '0.00',
     }))
 
     return {
@@ -306,6 +313,10 @@ export class SplitService {
       splitPaidTotals: splitPaidRows.map(row => ({
         transactionId: row.transactionId,
         paidAmount: centavosToString(row.paidTotal) ?? '0.00',
+      })),
+      splitRemainingTotals: splitRemainingRows.map(row => ({
+        transactionId: row.transactionId,
+        remainingAmount: centavosToString(row.remainingTotal) ?? '0.00',
       })),
     }
   }

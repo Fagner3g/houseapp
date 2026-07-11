@@ -6,13 +6,13 @@
  * OpenAPI spec version: 2.0.0
  */
 
-export type CancelScheduledTransactionPayment200TransactionSource =
-  (typeof CancelScheduledTransactionPayment200TransactionSource)[keyof typeof CancelScheduledTransactionPayment200TransactionSource];
+export type CancelScheduledTransactionPayment200TransactionSource = typeof CancelScheduledTransactionPayment200TransactionSource[keyof typeof CancelScheduledTransactionPayment200TransactionSource];
+
 
 // eslint-disable-next-line @typescript-eslint/no-redeclare
 export const CancelScheduledTransactionPayment200TransactionSource = {
-  manual: "manual",
-  import: "import",
-  recurring: "recurring",
-  ai_chat: "ai_chat",
+  manual: 'manual',
+  import: 'import',
+  recurring: 'recurring',
+  ai_chat: 'ai_chat',
 } as const;

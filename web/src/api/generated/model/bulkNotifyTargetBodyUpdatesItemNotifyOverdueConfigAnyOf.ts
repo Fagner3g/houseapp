@@ -5,9 +5,7 @@
  * API for HouseApp
  * OpenAPI spec version: 2.0.0
  */
-import type { BulkNotifyTargetBodyUpdatesItemNotifyOverdueConfigAnyOfAnyOf } from "./bulkNotifyTargetBodyUpdatesItemNotifyOverdueConfigAnyOfAnyOf";
-import type { BulkNotifyTargetBodyUpdatesItemNotifyOverdueConfigAnyOfAnyOfTwo } from "./bulkNotifyTargetBodyUpdatesItemNotifyOverdueConfigAnyOfAnyOfTwo";
+import type { BulkNotifyTargetBodyUpdatesItemNotifyOverdueConfigAnyOfAnyOf } from './bulkNotifyTargetBodyUpdatesItemNotifyOverdueConfigAnyOfAnyOf';
+import type { BulkNotifyTargetBodyUpdatesItemNotifyOverdueConfigAnyOfAnyOfTwo } from './bulkNotifyTargetBodyUpdatesItemNotifyOverdueConfigAnyOfAnyOfTwo';
 
-export type BulkNotifyTargetBodyUpdatesItemNotifyOverdueConfigAnyOf =
-  | BulkNotifyTargetBodyUpdatesItemNotifyOverdueConfigAnyOfAnyOf
-  | BulkNotifyTargetBodyUpdatesItemNotifyOverdueConfigAnyOfAnyOfTwo;
+export type BulkNotifyTargetBodyUpdatesItemNotifyOverdueConfigAnyOf = BulkNotifyTargetBodyUpdatesItemNotifyOverdueConfigAnyOfAnyOf | BulkNotifyTargetBodyUpdatesItemNotifyOverdueConfigAnyOfAnyOfTwo;

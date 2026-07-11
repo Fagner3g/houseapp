@@ -42,29 +42,13 @@ function hasConfiguredBillingCycle(account: CreditCardAccount) {
   return account.type === 'credit_card' && account.closingDay != null && account.dueDay != null
 }
 
-function hasPurchasesInFilterRange(
-  accountTx: ListTransactions200TransactionsItem[],
-  cycle: ReturnType<typeof getBillingCycle>,
-  dateFrom: string,
-  dateTo: string
-) {
-  return accountTx.some(
-    tx =>
-      tx.type === 'expense' &&
-      isWithinBillingRange(transactionPurchaseDate(tx), cycle.periodStart, cycle.periodEnd) &&
-      isDateInRange(transactionPurchaseDate(tx), dateFrom, dateTo)
-  )
-}
-
+/** Period picker is the source of truth: only cycles whose due date falls in range. */
 function shouldIncludeCycleInRange(
   cycle: ReturnType<typeof getBillingCycle>,
-  accountTx: ListTransactions200TransactionsItem[],
   dateFrom: string,
   dateTo: string
 ) {
-  if (isDateInRange(cycle.dueDate, dateFrom, dateTo)) return true
-  if (isDateInRange(cycle.closingDate, dateFrom, dateTo)) return true
-  return hasPurchasesInFilterRange(accountTx, cycle, dateFrom, dateTo)
+  return isDateInRange(cycle.dueDate, dateFrom, dateTo)
 }
 
 function resolveInvoiceAmount(metrics: ReturnType<typeof computeInvoiceMetrics>) {
@@ -93,14 +77,14 @@ export function buildInvoiceSummariesForRange({
   for (const account of creditCards) {
     if (!hasConfiguredBillingCycle(account)) continue
 
-    const closing = account.closingDay!
-    const due = account.dueDay!
+    const closing = account.closingDay as number
+    const due = account.dueDay as number
     const accountTx = transactions.filter(t => t.accountId === account.id)
     const accountStatements = statementsByAccountId[account.id] ?? []
 
     for (const monthKey of monthKeysAround(dateFrom, dateTo)) {
       const cycle = getBillingCycle(closing, due, monthKey)
-      if (!shouldIncludeCycleInRange(cycle, accountTx, dateFrom, dateTo)) continue
+      if (!shouldIncludeCycleInRange(cycle, dateFrom, dateTo)) continue
 
       const statement = findStatementForCycle(accountStatements, cycle, {
         closingDay: closing,
@@ -195,8 +179,8 @@ export function buildOverdueInvoiceSummaries({
   for (const account of creditCards) {
     if (!hasConfiguredBillingCycle(account)) continue
 
-    const closing = account.closingDay!
-    const due = account.dueDay!
+    const closing = account.closingDay as number
+    const due = account.dueDay as number
     const accountTx = transactions.filter(t => t.accountId === account.id)
     const accountStatements = statementsByAccountId[account.id] ?? []
 
@@ -247,13 +231,15 @@ export function buildOverdueInvoiceSummaries({
 export function mergeTransactionsWithInvoices(
   transactions: ListTransactions200TransactionsItem[],
   summaries: InvoiceSummaryRow[],
-  hiddenTransactionIds: Set<string>
+  hiddenTransactionIds: Set<string>,
+  dateFrom: string,
+  dateTo: string
 ) {
   const visible = transactions.filter(t => !hiddenTransactionIds.has(t.id))
   const merged = [
     ...summaries,
     ...visible.map(tx => ({ kind: 'transaction' as const, ...tx })),
-  ]
+  ].filter(item => isDateInRange(item.date, dateFrom, dateTo))
 
   merged.sort((a, b) => dayjs(b.date).valueOf() - dayjs(a.date).valueOf())
 

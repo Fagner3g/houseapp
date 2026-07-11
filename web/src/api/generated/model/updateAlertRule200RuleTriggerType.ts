@@ -6,11 +6,11 @@
  * OpenAPI spec version: 2.0.0
  */
 
-export type UpdateAlertRule200RuleTriggerType =
-  (typeof UpdateAlertRule200RuleTriggerType)[keyof typeof UpdateAlertRule200RuleTriggerType];
+export type UpdateAlertRule200RuleTriggerType = typeof UpdateAlertRule200RuleTriggerType[keyof typeof UpdateAlertRule200RuleTriggerType];
+
 
 // eslint-disable-next-line @typescript-eslint/no-redeclare
 export const UpdateAlertRule200RuleTriggerType = {
-  upcoming: "upcoming",
-  overdue: "overdue",
+  upcoming: 'upcoming',
+  overdue: 'overdue',
 } as const;

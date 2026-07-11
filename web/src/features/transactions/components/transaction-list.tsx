@@ -44,6 +44,9 @@ import { useSplitTransactionIds } from '@/features/credit-cards/hooks/use-split-
 import {
   formatDelegatedSplitBadge,
   formatPartialSplitBadge,
+  partialSplitBadgeClassName,
+  resolveSplitBadgeSettlement,
+  splitBadgeClassName,
   type PartialSplitBadgeInfo,
 } from '@/features/transactions/lib/split-badge-label'
 import { isInvoiceSummary, type TransactionListItem } from '@/features/transactions/types'
@@ -75,6 +78,8 @@ interface TransactionListProps {
   partiallyDividedById?: Map<string, PartialSplitBadgeInfo>
   /** Map of transaction id → total paid on splits. */
   splitPaidById?: Map<string, number>
+  /** Map of transaction id → remaining split amount still to collect. */
+  splitRemainingById?: Map<string, number>
   /** When false, hides the inline create row (e.g. credit card after first statement import). */
   allowInlineCreate?: boolean
   containerClassName?: string
@@ -158,6 +163,7 @@ function TransactionTable({
   fullyDelegatedById,
   partiallyDividedById,
   splitPaidById,
+  splitRemainingById,
   allowInlineCreate = true,
   containerClassName,
 }: TransactionListProps) {
@@ -578,14 +584,22 @@ function TransactionTable({
                       {tx.title}
                     </span>
                     {(() => {
+                      const hasSplit =
+                        fullyDelegatedById?.has(tx.id) || partiallyDividedById?.has(tx.id)
+                      const settlement = hasSplit
+                        ? resolveSplitBadgeSettlement(splitRemainingById?.get(tx.id) ?? 0)
+                        : undefined
                       const delegatedName = fullyDelegatedById?.get(tx.id)
                       if (delegatedName) {
                         return (
                           <Badge
                             variant="secondary"
-                            className="shrink-0 border-amber-200 bg-amber-50 text-[10px] font-medium text-amber-800"
+                            className={cn(
+                              'shrink-0 text-[10px] font-medium',
+                              splitBadgeClassName(settlement)
+                            )}
                           >
-                            {formatDelegatedSplitBadge(delegatedName)}
+                            {formatDelegatedSplitBadge(delegatedName, settlement)}
                           </Badge>
                         )
                       }
@@ -594,9 +608,12 @@ function TransactionTable({
                         return (
                           <Badge
                             variant="secondary"
-                            className="shrink-0 border-sky-200 bg-sky-50 text-[10px] font-medium text-sky-800"
+                            className={cn(
+                              'shrink-0 text-[10px] font-medium',
+                              partialSplitBadgeClassName(settlement)
+                            )}
                           >
-                            {formatPartialSplitBadge(partialInfo)}
+                            {formatPartialSplitBadge(partialInfo, settlement)}
                           </Badge>
                         )
                       }
@@ -840,6 +857,7 @@ export function TransactionList({
   cards,
   fullyDelegatedById: fullyDelegatedByIdProp,
   partiallyDividedById: partiallyDividedByIdProp,
+  splitRemainingById: splitRemainingByIdProp,
   allowInlineCreate = true,
   containerClassName,
 }: TransactionListProps) {
@@ -889,6 +907,7 @@ export function TransactionList({
   const fullyDelegatedById = fullyDelegatedByIdProp ?? splitData?.fullyDelegatedById
   const partiallyDividedById = partiallyDividedByIdProp ?? splitData?.partiallyDividedById
   const splitPaidById = splitData?.splitPaidById
+  const splitRemainingById = splitRemainingByIdProp ?? splitData?.splitRemainingById
 
   return (
     <TransactionTable
@@ -901,6 +920,7 @@ export function TransactionList({
       fullyDelegatedById={fullyDelegatedById}
       partiallyDividedById={partiallyDividedById}
       splitPaidById={splitPaidById}
+      splitRemainingById={splitRemainingById}
       allowInlineCreate={allowInlineCreate}
       containerClassName={containerClassName}
     />

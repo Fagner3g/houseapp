@@ -5,7 +5,7 @@
  * API for HouseApp
  * OpenAPI spec version: 2.0.0
  */
-import type { UpdateRecurringTransaction200RecurringTransaction } from "./updateRecurringTransaction200RecurringTransaction";
+import type { UpdateRecurringTransaction200RecurringTransaction } from './updateRecurringTransaction200RecurringTransaction';
 
 export type UpdateRecurringTransaction200 = {
   recurringTransaction: UpdateRecurringTransaction200RecurringTransaction;

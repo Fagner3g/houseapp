@@ -5,17 +5,17 @@
  * API for HouseApp
  * OpenAPI spec version: 2.0.0
  */
-import type { UnblockCard200CardLastFourDigits } from "./unblockCard200CardLastFourDigits";
-import type { UnblockCard200CardType } from "./unblockCard200CardType";
-import type { UnblockCard200CardHolderName } from "./unblockCard200CardHolderName";
-import type { UnblockCard200CardUserId } from "./unblockCard200CardUserId";
-import type { UnblockCard200CardBrand } from "./unblockCard200CardBrand";
-import type { UnblockCard200CardStatus } from "./unblockCard200CardStatus";
-import type { UnblockCard200CardBlockedAt } from "./unblockCard200CardBlockedAt";
-import type { UnblockCard200CardBlockedReason } from "./unblockCard200CardBlockedReason";
-import type { UnblockCard200CardCanceledAt } from "./unblockCard200CardCanceledAt";
-import type { UnblockCard200CardCanceledReason } from "./unblockCard200CardCanceledReason";
-import type { UnblockCard200CardExpiresAt } from "./unblockCard200CardExpiresAt";
+import type { UnblockCard200CardLastFourDigits } from './unblockCard200CardLastFourDigits';
+import type { UnblockCard200CardType } from './unblockCard200CardType';
+import type { UnblockCard200CardHolderName } from './unblockCard200CardHolderName';
+import type { UnblockCard200CardUserId } from './unblockCard200CardUserId';
+import type { UnblockCard200CardBrand } from './unblockCard200CardBrand';
+import type { UnblockCard200CardStatus } from './unblockCard200CardStatus';
+import type { UnblockCard200CardBlockedAt } from './unblockCard200CardBlockedAt';
+import type { UnblockCard200CardBlockedReason } from './unblockCard200CardBlockedReason';
+import type { UnblockCard200CardCanceledAt } from './unblockCard200CardCanceledAt';
+import type { UnblockCard200CardCanceledReason } from './unblockCard200CardCanceledReason';
+import type { UnblockCard200CardExpiresAt } from './unblockCard200CardExpiresAt';
 
 export type UnblockCard200Card = {
   id: string;
@@ -25,12 +25,12 @@ export type UnblockCard200Card = {
   type: UnblockCard200CardType;
   holderName: UnblockCard200CardHolderName;
   userId: UnblockCard200CardUserId;
-  brand: (typeof UnblockCard200CardBrand)[keyof typeof UnblockCard200CardBrand];
+  brand: typeof UnblockCard200CardBrand[keyof typeof UnblockCard200CardBrand] ;
   status: UnblockCard200CardStatus;
   blockedAt: UnblockCard200CardBlockedAt;
-  blockedReason: (typeof UnblockCard200CardBlockedReason)[keyof typeof UnblockCard200CardBlockedReason];
+  blockedReason: typeof UnblockCard200CardBlockedReason[keyof typeof UnblockCard200CardBlockedReason] ;
   canceledAt: UnblockCard200CardCanceledAt;
-  canceledReason: (typeof UnblockCard200CardCanceledReason)[keyof typeof UnblockCard200CardCanceledReason];
+  canceledReason: typeof UnblockCard200CardCanceledReason[keyof typeof UnblockCard200CardCanceledReason] ;
   expiresAt: UnblockCard200CardExpiresAt;
   isContactless: boolean;
   createdAt: string;

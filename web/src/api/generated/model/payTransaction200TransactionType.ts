@@ -6,12 +6,12 @@
  * OpenAPI spec version: 2.0.0
  */
 
-export type PayTransaction200TransactionType =
-  (typeof PayTransaction200TransactionType)[keyof typeof PayTransaction200TransactionType];
+export type PayTransaction200TransactionType = typeof PayTransaction200TransactionType[keyof typeof PayTransaction200TransactionType];
+
 
 // eslint-disable-next-line @typescript-eslint/no-redeclare
 export const PayTransaction200TransactionType = {
-  income: "income",
-  expense: "expense",
-  transfer: "transfer",
+  income: 'income',
+  expense: 'expense',
+  transfer: 'transfer',
 } as const;

@@ -5,7 +5,7 @@
  * API for HouseApp
  * OpenAPI spec version: 2.0.0
  */
-import type { ListManualAlertTargets200TargetsItem } from "./listManualAlertTargets200TargetsItem";
+import type { ListManualAlertTargets200TargetsItem } from './listManualAlertTargets200TargetsItem';
 
 export type ListManualAlertTargets200 = {
   targets: ListManualAlertTargets200TargetsItem[];

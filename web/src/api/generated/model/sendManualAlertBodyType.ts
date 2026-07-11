@@ -6,12 +6,12 @@
  * OpenAPI spec version: 2.0.0
  */
 
-export type SendManualAlertBodyType =
-  (typeof SendManualAlertBodyType)[keyof typeof SendManualAlertBodyType];
+export type SendManualAlertBodyType = typeof SendManualAlertBodyType[keyof typeof SendManualAlertBodyType];
+
 
 // eslint-disable-next-line @typescript-eslint/no-redeclare
 export const SendManualAlertBodyType = {
-  overdue: "overdue",
-  upcoming: "upcoming",
-  "monthly-summary": "monthly-summary",
+  overdue: 'overdue',
+  upcoming: 'upcoming',
+  'monthly-summary': 'monthly-summary',
 } as const;

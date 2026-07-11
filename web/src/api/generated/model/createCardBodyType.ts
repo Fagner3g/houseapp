@@ -6,12 +6,12 @@
  * OpenAPI spec version: 2.0.0
  */
 
-export type CreateCardBodyType =
-  (typeof CreateCardBodyType)[keyof typeof CreateCardBodyType];
+export type CreateCardBodyType = typeof CreateCardBodyType[keyof typeof CreateCardBodyType];
+
 
 // eslint-disable-next-line @typescript-eslint/no-redeclare
 export const CreateCardBodyType = {
-  physical: "physical",
-  virtual: "virtual",
-  additional: "additional",
+  physical: 'physical',
+  virtual: 'virtual',
+  additional: 'additional',
 } as const;

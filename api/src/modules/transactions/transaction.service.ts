@@ -1268,11 +1268,13 @@ export class TransactionService {
       const [card] = await db.select().from(cards).where(eq(cards.id, input.cardId)).limit(1)
 
       if (!card) {
-        throw badRequest('Card not found')
+        throw badRequest('Cartão não encontrado')
       }
 
       if (input.accountId && card.accountId !== input.accountId) {
-        throw badRequest('Card does not belong to the specified account')
+        throw badRequest(
+          'O cartão selecionado não pertence a esta conta. Selecione novamente a conta e o cartão.'
+        )
       }
 
       if (input.accountId == null) {
@@ -1290,14 +1292,14 @@ export class TransactionService {
 
     if (input.categoryIds?.length) {
       if (!input.type) {
-        throw badRequest('Transaction type is required when assigning categories')
+        throw badRequest('Informe o tipo do lançamento ao selecionar categorias')
       }
 
       for (const categoryId of input.categoryIds) {
         const category = await this.categoryRepository.findById(organizationId, categoryId)
 
         if (!category || !category.isActive) {
-          throw badRequest(`Category not found: ${categoryId}`)
+          throw badRequest('Categoria não encontrada ou inativa')
         }
 
         if (category.type !== input.type) {

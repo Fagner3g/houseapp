@@ -5,28 +5,28 @@
  * API for HouseApp
  * OpenAPI spec version: 2.0.0
  */
-import type { BulkReviewImport200TransactionsItemAccountId } from "./bulkReviewImport200TransactionsItemAccountId";
-import type { BulkReviewImport200TransactionsItemCardId } from "./bulkReviewImport200TransactionsItemCardId";
-import type { BulkReviewImport200TransactionsItemRecurringTransactionId } from "./bulkReviewImport200TransactionsItemRecurringTransactionId";
-import type { BulkReviewImport200TransactionsItemStatementId } from "./bulkReviewImport200TransactionsItemStatementId";
-import type { BulkReviewImport200TransactionsItemDescription } from "./bulkReviewImport200TransactionsItemDescription";
-import type { BulkReviewImport200TransactionsItemAmount } from "./bulkReviewImport200TransactionsItemAmount";
-import type { BulkReviewImport200TransactionsItemType } from "./bulkReviewImport200TransactionsItemType";
-import type { BulkReviewImport200TransactionsItemCompetenceDate } from "./bulkReviewImport200TransactionsItemCompetenceDate";
-import type { BulkReviewImport200TransactionsItemStatus } from "./bulkReviewImport200TransactionsItemStatus";
-import type { BulkReviewImport200TransactionsItemPaidAt } from "./bulkReviewImport200TransactionsItemPaidAt";
-import type { BulkReviewImport200TransactionsItemPaidAmount } from "./bulkReviewImport200TransactionsItemPaidAmount";
-import type { BulkReviewImport200TransactionsItemPaymentScheduledAt } from "./bulkReviewImport200TransactionsItemPaymentScheduledAt";
-import type { BulkReviewImport200TransactionsItemCounterparty } from "./bulkReviewImport200TransactionsItemCounterparty";
-import type { BulkReviewImport200TransactionsItemInstallmentNumber } from "./bulkReviewImport200TransactionsItemInstallmentNumber";
-import type { BulkReviewImport200TransactionsItemInstallmentsTotal } from "./bulkReviewImport200TransactionsItemInstallmentsTotal";
-import type { BulkReviewImport200TransactionsItemSource } from "./bulkReviewImport200TransactionsItemSource";
-import type { BulkReviewImport200TransactionsItemTransferPairId } from "./bulkReviewImport200TransactionsItemTransferPairId";
-import type { BulkReviewImport200TransactionsItemNotifyTargetType } from "./bulkReviewImport200TransactionsItemNotifyTargetType";
-import type { BulkReviewImport200TransactionsItemNotifyUserId } from "./bulkReviewImport200TransactionsItemNotifyUserId";
-import type { BulkReviewImport200TransactionsItemNotifyContactName } from "./bulkReviewImport200TransactionsItemNotifyContactName";
-import type { BulkReviewImport200TransactionsItemNotifyContactPhone } from "./bulkReviewImport200TransactionsItemNotifyContactPhone";
-import type { BulkReviewImport200TransactionsItemNotifyOverdueConfig } from "./bulkReviewImport200TransactionsItemNotifyOverdueConfig";
+import type { BulkReviewImport200TransactionsItemAccountId } from './bulkReviewImport200TransactionsItemAccountId';
+import type { BulkReviewImport200TransactionsItemCardId } from './bulkReviewImport200TransactionsItemCardId';
+import type { BulkReviewImport200TransactionsItemRecurringTransactionId } from './bulkReviewImport200TransactionsItemRecurringTransactionId';
+import type { BulkReviewImport200TransactionsItemStatementId } from './bulkReviewImport200TransactionsItemStatementId';
+import type { BulkReviewImport200TransactionsItemDescription } from './bulkReviewImport200TransactionsItemDescription';
+import type { BulkReviewImport200TransactionsItemAmount } from './bulkReviewImport200TransactionsItemAmount';
+import type { BulkReviewImport200TransactionsItemType } from './bulkReviewImport200TransactionsItemType';
+import type { BulkReviewImport200TransactionsItemCompetenceDate } from './bulkReviewImport200TransactionsItemCompetenceDate';
+import type { BulkReviewImport200TransactionsItemStatus } from './bulkReviewImport200TransactionsItemStatus';
+import type { BulkReviewImport200TransactionsItemPaidAt } from './bulkReviewImport200TransactionsItemPaidAt';
+import type { BulkReviewImport200TransactionsItemPaidAmount } from './bulkReviewImport200TransactionsItemPaidAmount';
+import type { BulkReviewImport200TransactionsItemPaymentScheduledAt } from './bulkReviewImport200TransactionsItemPaymentScheduledAt';
+import type { BulkReviewImport200TransactionsItemCounterparty } from './bulkReviewImport200TransactionsItemCounterparty';
+import type { BulkReviewImport200TransactionsItemInstallmentNumber } from './bulkReviewImport200TransactionsItemInstallmentNumber';
+import type { BulkReviewImport200TransactionsItemInstallmentsTotal } from './bulkReviewImport200TransactionsItemInstallmentsTotal';
+import type { BulkReviewImport200TransactionsItemSource } from './bulkReviewImport200TransactionsItemSource';
+import type { BulkReviewImport200TransactionsItemTransferPairId } from './bulkReviewImport200TransactionsItemTransferPairId';
+import type { BulkReviewImport200TransactionsItemNotifyTargetType } from './bulkReviewImport200TransactionsItemNotifyTargetType';
+import type { BulkReviewImport200TransactionsItemNotifyUserId } from './bulkReviewImport200TransactionsItemNotifyUserId';
+import type { BulkReviewImport200TransactionsItemNotifyContactName } from './bulkReviewImport200TransactionsItemNotifyContactName';
+import type { BulkReviewImport200TransactionsItemNotifyContactPhone } from './bulkReviewImport200TransactionsItemNotifyContactPhone';
+import type { BulkReviewImport200TransactionsItemNotifyOverdueConfig } from './bulkReviewImport200TransactionsItemNotifyOverdueConfig';
 
 export type BulkReviewImport200TransactionsItem = {
   id: string;
@@ -52,7 +52,7 @@ export type BulkReviewImport200TransactionsItem = {
   categoryIds: string[];
   transferPairId: BulkReviewImport200TransactionsItemTransferPairId;
   notifyEnabled: boolean;
-  notifyTargetType: (typeof BulkReviewImport200TransactionsItemNotifyTargetType)[keyof typeof BulkReviewImport200TransactionsItemNotifyTargetType];
+  notifyTargetType: typeof BulkReviewImport200TransactionsItemNotifyTargetType[keyof typeof BulkReviewImport200TransactionsItemNotifyTargetType] ;
   notifyUserId: BulkReviewImport200TransactionsItemNotifyUserId;
   notifyContactName: BulkReviewImport200TransactionsItemNotifyContactName;
   notifyContactPhone: BulkReviewImport200TransactionsItemNotifyContactPhone;

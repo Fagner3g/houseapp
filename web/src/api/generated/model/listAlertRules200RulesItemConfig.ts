@@ -5,9 +5,7 @@
  * API for HouseApp
  * OpenAPI spec version: 2.0.0
  */
-import type { ListAlertRules200RulesItemConfigAnyOf } from "./listAlertRules200RulesItemConfigAnyOf";
-import type { ListAlertRules200RulesItemConfigAnyOfTwo } from "./listAlertRules200RulesItemConfigAnyOfTwo";
+import type { ListAlertRules200RulesItemConfigAnyOf } from './listAlertRules200RulesItemConfigAnyOf';
+import type { ListAlertRules200RulesItemConfigAnyOfTwo } from './listAlertRules200RulesItemConfigAnyOfTwo';
 
-export type ListAlertRules200RulesItemConfig =
-  | ListAlertRules200RulesItemConfigAnyOf
-  | ListAlertRules200RulesItemConfigAnyOfTwo;
+export type ListAlertRules200RulesItemConfig = ListAlertRules200RulesItemConfigAnyOf | ListAlertRules200RulesItemConfigAnyOfTwo;

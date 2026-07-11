@@ -5,9 +5,7 @@
  * API for HouseApp
  * OpenAPI spec version: 2.0.0
  */
-import type { UpdateTransaction200TransactionNotifyOverdueConfigAnyOfAnyOf } from "./updateTransaction200TransactionNotifyOverdueConfigAnyOfAnyOf";
-import type { UpdateTransaction200TransactionNotifyOverdueConfigAnyOfAnyOfTwo } from "./updateTransaction200TransactionNotifyOverdueConfigAnyOfAnyOfTwo";
+import type { UpdateTransaction200TransactionNotifyOverdueConfigAnyOfAnyOf } from './updateTransaction200TransactionNotifyOverdueConfigAnyOfAnyOf';
+import type { UpdateTransaction200TransactionNotifyOverdueConfigAnyOfAnyOfTwo } from './updateTransaction200TransactionNotifyOverdueConfigAnyOfAnyOfTwo';
 
-export type UpdateTransaction200TransactionNotifyOverdueConfigAnyOf =
-  | UpdateTransaction200TransactionNotifyOverdueConfigAnyOfAnyOf
-  | UpdateTransaction200TransactionNotifyOverdueConfigAnyOfAnyOfTwo;
+export type UpdateTransaction200TransactionNotifyOverdueConfigAnyOf = UpdateTransaction200TransactionNotifyOverdueConfigAnyOfAnyOf | UpdateTransaction200TransactionNotifyOverdueConfigAnyOfAnyOfTwo;

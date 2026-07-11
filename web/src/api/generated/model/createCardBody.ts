@@ -5,12 +5,12 @@
  * API for HouseApp
  * OpenAPI spec version: 2.0.0
  */
-import type { CreateCardBodyType } from "./createCardBodyType";
-import type { CreateCardBodyLastFourDigits } from "./createCardBodyLastFourDigits";
-import type { CreateCardBodyHolderName } from "./createCardBodyHolderName";
-import type { CreateCardBodyUserId } from "./createCardBodyUserId";
-import type { CreateCardBodyBrand } from "./createCardBodyBrand";
-import type { CreateCardBodyExpiresAt } from "./createCardBodyExpiresAt";
+import type { CreateCardBodyType } from './createCardBodyType';
+import type { CreateCardBodyLastFourDigits } from './createCardBodyLastFourDigits';
+import type { CreateCardBodyHolderName } from './createCardBodyHolderName';
+import type { CreateCardBodyUserId } from './createCardBodyUserId';
+import type { CreateCardBodyBrand } from './createCardBodyBrand';
+import type { CreateCardBodyExpiresAt } from './createCardBodyExpiresAt';
 
 export type CreateCardBody = {
   /** @minLength 1 */
@@ -19,7 +19,7 @@ export type CreateCardBody = {
   lastFourDigits?: CreateCardBodyLastFourDigits;
   holderName?: CreateCardBodyHolderName;
   userId?: CreateCardBodyUserId;
-  brand?: (typeof CreateCardBodyBrand)[keyof typeof CreateCardBodyBrand];
+  brand?: typeof CreateCardBodyBrand[keyof typeof CreateCardBodyBrand] ;
   expiresAt?: CreateCardBodyExpiresAt;
   isContactless?: boolean;
 };

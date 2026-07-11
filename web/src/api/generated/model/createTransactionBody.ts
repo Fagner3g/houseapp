@@ -5,29 +5,29 @@
  * API for HouseApp
  * OpenAPI spec version: 2.0.0
  */
-import type { CreateTransactionBodyAccountId } from "./createTransactionBodyAccountId";
-import type { CreateTransactionBodyCardId } from "./createTransactionBodyCardId";
-import type { CreateTransactionBodyRecurringTransactionId } from "./createTransactionBodyRecurringTransactionId";
-import type { CreateTransactionBodyStatementId } from "./createTransactionBodyStatementId";
-import type { CreateTransactionBodyTransferPairId } from "./createTransactionBodyTransferPairId";
-import type { CreateTransactionBodyDescription } from "./createTransactionBodyDescription";
-import type { CreateTransactionBodyAmount } from "./createTransactionBodyAmount";
-import type { CreateTransactionBodyType } from "./createTransactionBodyType";
-import type { CreateTransactionBodyCompetenceDate } from "./createTransactionBodyCompetenceDate";
-import type { CreateTransactionBodyStatus } from "./createTransactionBodyStatus";
-import type { CreateTransactionBodyPaidAt } from "./createTransactionBodyPaidAt";
-import type { CreateTransactionBodyPaidAmount } from "./createTransactionBodyPaidAmount";
-import type { CreateTransactionBodyCounterparty } from "./createTransactionBodyCounterparty";
-import type { CreateTransactionBodyInstallmentNumber } from "./createTransactionBodyInstallmentNumber";
-import type { CreateTransactionBodyInstallmentsTotal } from "./createTransactionBodyInstallmentsTotal";
-import type { CreateTransactionBodyInstallmentPeriodicity } from "./createTransactionBodyInstallmentPeriodicity";
-import type { CreateTransactionBodySource } from "./createTransactionBodySource";
-import type { CreateTransactionBodyNotifyTargetType } from "./createTransactionBodyNotifyTargetType";
-import type { CreateTransactionBodyNotifyUserId } from "./createTransactionBodyNotifyUserId";
-import type { CreateTransactionBodyNotifyContactName } from "./createTransactionBodyNotifyContactName";
-import type { CreateTransactionBodyNotifyContactPhone } from "./createTransactionBodyNotifyContactPhone";
-import type { CreateTransactionBodyNotifyDaysBefore } from "./createTransactionBodyNotifyDaysBefore";
-import type { CreateTransactionBodyNotifyOverdueConfig } from "./createTransactionBodyNotifyOverdueConfig";
+import type { CreateTransactionBodyAccountId } from './createTransactionBodyAccountId';
+import type { CreateTransactionBodyCardId } from './createTransactionBodyCardId';
+import type { CreateTransactionBodyRecurringTransactionId } from './createTransactionBodyRecurringTransactionId';
+import type { CreateTransactionBodyStatementId } from './createTransactionBodyStatementId';
+import type { CreateTransactionBodyTransferPairId } from './createTransactionBodyTransferPairId';
+import type { CreateTransactionBodyDescription } from './createTransactionBodyDescription';
+import type { CreateTransactionBodyAmount } from './createTransactionBodyAmount';
+import type { CreateTransactionBodyType } from './createTransactionBodyType';
+import type { CreateTransactionBodyCompetenceDate } from './createTransactionBodyCompetenceDate';
+import type { CreateTransactionBodyStatus } from './createTransactionBodyStatus';
+import type { CreateTransactionBodyPaidAt } from './createTransactionBodyPaidAt';
+import type { CreateTransactionBodyPaidAmount } from './createTransactionBodyPaidAmount';
+import type { CreateTransactionBodyCounterparty } from './createTransactionBodyCounterparty';
+import type { CreateTransactionBodyInstallmentNumber } from './createTransactionBodyInstallmentNumber';
+import type { CreateTransactionBodyInstallmentsTotal } from './createTransactionBodyInstallmentsTotal';
+import type { CreateTransactionBodyInstallmentPeriodicity } from './createTransactionBodyInstallmentPeriodicity';
+import type { CreateTransactionBodySource } from './createTransactionBodySource';
+import type { CreateTransactionBodyNotifyTargetType } from './createTransactionBodyNotifyTargetType';
+import type { CreateTransactionBodyNotifyUserId } from './createTransactionBodyNotifyUserId';
+import type { CreateTransactionBodyNotifyContactName } from './createTransactionBodyNotifyContactName';
+import type { CreateTransactionBodyNotifyContactPhone } from './createTransactionBodyNotifyContactPhone';
+import type { CreateTransactionBodyNotifyDaysBefore } from './createTransactionBodyNotifyDaysBefore';
+import type { CreateTransactionBodyNotifyOverdueConfig } from './createTransactionBodyNotifyOverdueConfig';
 
 export type CreateTransactionBody = {
   accountId?: CreateTransactionBodyAccountId;
@@ -53,7 +53,7 @@ export type CreateTransactionBody = {
   source?: CreateTransactionBodySource;
   categoryIds?: string[];
   notifyEnabled?: boolean;
-  notifyTargetType?: (typeof CreateTransactionBodyNotifyTargetType)[keyof typeof CreateTransactionBodyNotifyTargetType];
+  notifyTargetType?: typeof CreateTransactionBodyNotifyTargetType[keyof typeof CreateTransactionBodyNotifyTargetType] ;
   notifyUserId?: CreateTransactionBodyNotifyUserId;
   notifyContactName?: CreateTransactionBodyNotifyContactName;
   notifyContactPhone?: CreateTransactionBodyNotifyContactPhone;

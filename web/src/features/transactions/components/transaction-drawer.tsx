@@ -733,16 +733,33 @@ export function TransactionDrawer() {
     if (!open || !effectiveLockedAccountId) return
     if (form.getValues('accountId') !== effectiveLockedAccountId) {
       form.setValue('accountId', effectiveLockedAccountId)
+      form.setValue('cardId', undefined)
     }
   }, [open, effectiveLockedAccountId, form])
 
   useEffect(() => {
-    if (!open || !isCreditCard || selectableCards.length !== 1) return
-    const soleCard = selectableCards[0]
-    if (soleCard && !form.getValues('cardId')) {
-      form.setValue('cardId', soleCard.id)
+    if (!open || isEdit || isPay) return
+
+    if (!isCreditCard) {
+      if (form.getValues('cardId')) form.setValue('cardId', undefined)
+      return
     }
-  }, [open, isCreditCard, selectableCards, form])
+
+    const currentCardId = form.getValues('cardId')
+    const cardStillValid =
+      !!currentCardId && selectableCards.some(card => card.id === currentCardId)
+
+    if (currentCardId && selectableCards.length > 0 && !cardStillValid) {
+      form.setValue('cardId', undefined)
+    }
+
+    if (selectableCards.length === 1) {
+      const soleCard = selectableCards[0]
+      if (soleCard && form.getValues('cardId') !== soleCard.id) {
+        form.setValue('cardId', soleCard.id)
+      }
+    }
+  }, [open, isEdit, isPay, isCreditCard, selectableCards, form])
 
   useEffect(() => {
     if (!open || !isPay || !tx || isLoadingTx) return

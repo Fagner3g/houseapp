@@ -31,6 +31,7 @@ const QUICK_FILTERS: Array<{
   { id: 'payments', label: 'Pagamentos', count: c => c.payments },
   { id: 'uncategorized', label: 'Sem categoria', count: c => c.uncategorized },
   { id: 'divided', label: 'Compras divididas', count: c => c.divided },
+  { id: 'a_receber', label: 'A receber', count: c => c.aReceber },
   { id: 'installments', label: 'Parceladas', count: c => c.installments },
 ]
 

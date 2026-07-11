@@ -5,8 +5,8 @@
  * API for HouseApp
  * OpenAPI spec version: 2.0.0
  */
-import type { GetJobsJobKeyHistory200LastRun } from "./getJobsJobKeyHistory200LastRun";
-import type { GetJobsJobKeyHistory200HistoryItem } from "./getJobsJobKeyHistory200HistoryItem";
+import type { GetJobsJobKeyHistory200LastRun } from './getJobsJobKeyHistory200LastRun';
+import type { GetJobsJobKeyHistory200HistoryItem } from './getJobsJobKeyHistory200HistoryItem';
 
 export type GetJobsJobKeyHistory200 = {
   jobKey: string;

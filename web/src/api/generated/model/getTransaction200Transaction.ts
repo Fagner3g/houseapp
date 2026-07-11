@@ -5,28 +5,28 @@
  * API for HouseApp
  * OpenAPI spec version: 2.0.0
  */
-import type { GetTransaction200TransactionAccountId } from "./getTransaction200TransactionAccountId";
-import type { GetTransaction200TransactionCardId } from "./getTransaction200TransactionCardId";
-import type { GetTransaction200TransactionRecurringTransactionId } from "./getTransaction200TransactionRecurringTransactionId";
-import type { GetTransaction200TransactionStatementId } from "./getTransaction200TransactionStatementId";
-import type { GetTransaction200TransactionDescription } from "./getTransaction200TransactionDescription";
-import type { GetTransaction200TransactionAmount } from "./getTransaction200TransactionAmount";
-import type { GetTransaction200TransactionType } from "./getTransaction200TransactionType";
-import type { GetTransaction200TransactionCompetenceDate } from "./getTransaction200TransactionCompetenceDate";
-import type { GetTransaction200TransactionStatus } from "./getTransaction200TransactionStatus";
-import type { GetTransaction200TransactionPaidAt } from "./getTransaction200TransactionPaidAt";
-import type { GetTransaction200TransactionPaidAmount } from "./getTransaction200TransactionPaidAmount";
-import type { GetTransaction200TransactionPaymentScheduledAt } from "./getTransaction200TransactionPaymentScheduledAt";
-import type { GetTransaction200TransactionCounterparty } from "./getTransaction200TransactionCounterparty";
-import type { GetTransaction200TransactionInstallmentNumber } from "./getTransaction200TransactionInstallmentNumber";
-import type { GetTransaction200TransactionInstallmentsTotal } from "./getTransaction200TransactionInstallmentsTotal";
-import type { GetTransaction200TransactionSource } from "./getTransaction200TransactionSource";
-import type { GetTransaction200TransactionTransferPairId } from "./getTransaction200TransactionTransferPairId";
-import type { GetTransaction200TransactionNotifyTargetType } from "./getTransaction200TransactionNotifyTargetType";
-import type { GetTransaction200TransactionNotifyUserId } from "./getTransaction200TransactionNotifyUserId";
-import type { GetTransaction200TransactionNotifyContactName } from "./getTransaction200TransactionNotifyContactName";
-import type { GetTransaction200TransactionNotifyContactPhone } from "./getTransaction200TransactionNotifyContactPhone";
-import type { GetTransaction200TransactionNotifyOverdueConfig } from "./getTransaction200TransactionNotifyOverdueConfig";
+import type { GetTransaction200TransactionAccountId } from './getTransaction200TransactionAccountId';
+import type { GetTransaction200TransactionCardId } from './getTransaction200TransactionCardId';
+import type { GetTransaction200TransactionRecurringTransactionId } from './getTransaction200TransactionRecurringTransactionId';
+import type { GetTransaction200TransactionStatementId } from './getTransaction200TransactionStatementId';
+import type { GetTransaction200TransactionDescription } from './getTransaction200TransactionDescription';
+import type { GetTransaction200TransactionAmount } from './getTransaction200TransactionAmount';
+import type { GetTransaction200TransactionType } from './getTransaction200TransactionType';
+import type { GetTransaction200TransactionCompetenceDate } from './getTransaction200TransactionCompetenceDate';
+import type { GetTransaction200TransactionStatus } from './getTransaction200TransactionStatus';
+import type { GetTransaction200TransactionPaidAt } from './getTransaction200TransactionPaidAt';
+import type { GetTransaction200TransactionPaidAmount } from './getTransaction200TransactionPaidAmount';
+import type { GetTransaction200TransactionPaymentScheduledAt } from './getTransaction200TransactionPaymentScheduledAt';
+import type { GetTransaction200TransactionCounterparty } from './getTransaction200TransactionCounterparty';
+import type { GetTransaction200TransactionInstallmentNumber } from './getTransaction200TransactionInstallmentNumber';
+import type { GetTransaction200TransactionInstallmentsTotal } from './getTransaction200TransactionInstallmentsTotal';
+import type { GetTransaction200TransactionSource } from './getTransaction200TransactionSource';
+import type { GetTransaction200TransactionTransferPairId } from './getTransaction200TransactionTransferPairId';
+import type { GetTransaction200TransactionNotifyTargetType } from './getTransaction200TransactionNotifyTargetType';
+import type { GetTransaction200TransactionNotifyUserId } from './getTransaction200TransactionNotifyUserId';
+import type { GetTransaction200TransactionNotifyContactName } from './getTransaction200TransactionNotifyContactName';
+import type { GetTransaction200TransactionNotifyContactPhone } from './getTransaction200TransactionNotifyContactPhone';
+import type { GetTransaction200TransactionNotifyOverdueConfig } from './getTransaction200TransactionNotifyOverdueConfig';
 
 export type GetTransaction200Transaction = {
   id: string;
@@ -52,7 +52,7 @@ export type GetTransaction200Transaction = {
   categoryIds: string[];
   transferPairId: GetTransaction200TransactionTransferPairId;
   notifyEnabled: boolean;
-  notifyTargetType: (typeof GetTransaction200TransactionNotifyTargetType)[keyof typeof GetTransaction200TransactionNotifyTargetType];
+  notifyTargetType: typeof GetTransaction200TransactionNotifyTargetType[keyof typeof GetTransaction200TransactionNotifyTargetType] ;
   notifyUserId: GetTransaction200TransactionNotifyUserId;
   notifyContactName: GetTransaction200TransactionNotifyContactName;
   notifyContactPhone: GetTransaction200TransactionNotifyContactPhone;

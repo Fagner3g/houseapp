@@ -5,11 +5,11 @@
  * API for HouseApp
  * OpenAPI spec version: 2.0.0
  */
-import type { CreateSplitBodyUserId } from "./createSplitBodyUserId";
-import type { CreateSplitBodyContactName } from "./createSplitBodyContactName";
-import type { CreateSplitBodyContactPhone } from "./createSplitBodyContactPhone";
-import type { CreateSplitBodyContactEmail } from "./createSplitBodyContactEmail";
-import type { CreateSplitBodyDescription } from "./createSplitBodyDescription";
+import type { CreateSplitBodyUserId } from './createSplitBodyUserId';
+import type { CreateSplitBodyContactName } from './createSplitBodyContactName';
+import type { CreateSplitBodyContactPhone } from './createSplitBodyContactPhone';
+import type { CreateSplitBodyContactEmail } from './createSplitBodyContactEmail';
+import type { CreateSplitBodyDescription } from './createSplitBodyDescription';
 
 export type CreateSplitBody = {
   userId?: CreateSplitBodyUserId;

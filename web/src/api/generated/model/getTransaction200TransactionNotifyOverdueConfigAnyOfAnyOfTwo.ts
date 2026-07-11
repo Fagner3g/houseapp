@@ -5,7 +5,7 @@
  * API for HouseApp
  * OpenAPI spec version: 2.0.0
  */
-import type { GetTransaction200TransactionNotifyOverdueConfigAnyOfAnyOfTwoFrequency } from "./getTransaction200TransactionNotifyOverdueConfigAnyOfAnyOfTwoFrequency";
+import type { GetTransaction200TransactionNotifyOverdueConfigAnyOfAnyOfTwoFrequency } from './getTransaction200TransactionNotifyOverdueConfigAnyOfAnyOfTwoFrequency';
 
 export type GetTransaction200TransactionNotifyOverdueConfigAnyOfAnyOfTwo = {
   frequency: GetTransaction200TransactionNotifyOverdueConfigAnyOfAnyOfTwoFrequency;

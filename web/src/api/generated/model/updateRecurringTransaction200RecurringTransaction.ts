@@ -5,14 +5,14 @@
  * API for HouseApp
  * OpenAPI spec version: 2.0.0
  */
-import type { UpdateRecurringTransaction200RecurringTransactionAccountId } from "./updateRecurringTransaction200RecurringTransactionAccountId";
-import type { UpdateRecurringTransaction200RecurringTransactionType } from "./updateRecurringTransaction200RecurringTransactionType";
-import type { UpdateRecurringTransaction200RecurringTransactionCounterparty } from "./updateRecurringTransaction200RecurringTransactionCounterparty";
-import type { UpdateRecurringTransaction200RecurringTransactionCategoryId } from "./updateRecurringTransaction200RecurringTransactionCategoryId";
-import type { UpdateRecurringTransaction200RecurringTransactionFrequency } from "./updateRecurringTransaction200RecurringTransactionFrequency";
-import type { UpdateRecurringTransaction200RecurringTransactionEndDate } from "./updateRecurringTransaction200RecurringTransactionEndDate";
-import type { UpdateRecurringTransaction200RecurringTransactionInstallmentsTotal } from "./updateRecurringTransaction200RecurringTransactionInstallmentsTotal";
-import type { UpdateRecurringTransaction200RecurringTransactionLastGeneratedDate } from "./updateRecurringTransaction200RecurringTransactionLastGeneratedDate";
+import type { UpdateRecurringTransaction200RecurringTransactionAccountId } from './updateRecurringTransaction200RecurringTransactionAccountId';
+import type { UpdateRecurringTransaction200RecurringTransactionType } from './updateRecurringTransaction200RecurringTransactionType';
+import type { UpdateRecurringTransaction200RecurringTransactionCounterparty } from './updateRecurringTransaction200RecurringTransactionCounterparty';
+import type { UpdateRecurringTransaction200RecurringTransactionCategoryId } from './updateRecurringTransaction200RecurringTransactionCategoryId';
+import type { UpdateRecurringTransaction200RecurringTransactionFrequency } from './updateRecurringTransaction200RecurringTransactionFrequency';
+import type { UpdateRecurringTransaction200RecurringTransactionEndDate } from './updateRecurringTransaction200RecurringTransactionEndDate';
+import type { UpdateRecurringTransaction200RecurringTransactionInstallmentsTotal } from './updateRecurringTransaction200RecurringTransactionInstallmentsTotal';
+import type { UpdateRecurringTransaction200RecurringTransactionLastGeneratedDate } from './updateRecurringTransaction200RecurringTransactionLastGeneratedDate';
 
 export type UpdateRecurringTransaction200RecurringTransaction = {
   id: string;

@@ -5,28 +5,28 @@
  * API for HouseApp
  * OpenAPI spec version: 2.0.0
  */
-import type { ListTransactions200TransactionsItemAccountId } from "./listTransactions200TransactionsItemAccountId";
-import type { ListTransactions200TransactionsItemCardId } from "./listTransactions200TransactionsItemCardId";
-import type { ListTransactions200TransactionsItemRecurringTransactionId } from "./listTransactions200TransactionsItemRecurringTransactionId";
-import type { ListTransactions200TransactionsItemStatementId } from "./listTransactions200TransactionsItemStatementId";
-import type { ListTransactions200TransactionsItemDescription } from "./listTransactions200TransactionsItemDescription";
-import type { ListTransactions200TransactionsItemAmount } from "./listTransactions200TransactionsItemAmount";
-import type { ListTransactions200TransactionsItemType } from "./listTransactions200TransactionsItemType";
-import type { ListTransactions200TransactionsItemCompetenceDate } from "./listTransactions200TransactionsItemCompetenceDate";
-import type { ListTransactions200TransactionsItemStatus } from "./listTransactions200TransactionsItemStatus";
-import type { ListTransactions200TransactionsItemPaidAt } from "./listTransactions200TransactionsItemPaidAt";
-import type { ListTransactions200TransactionsItemPaidAmount } from "./listTransactions200TransactionsItemPaidAmount";
-import type { ListTransactions200TransactionsItemPaymentScheduledAt } from "./listTransactions200TransactionsItemPaymentScheduledAt";
-import type { ListTransactions200TransactionsItemCounterparty } from "./listTransactions200TransactionsItemCounterparty";
-import type { ListTransactions200TransactionsItemInstallmentNumber } from "./listTransactions200TransactionsItemInstallmentNumber";
-import type { ListTransactions200TransactionsItemInstallmentsTotal } from "./listTransactions200TransactionsItemInstallmentsTotal";
-import type { ListTransactions200TransactionsItemSource } from "./listTransactions200TransactionsItemSource";
-import type { ListTransactions200TransactionsItemTransferPairId } from "./listTransactions200TransactionsItemTransferPairId";
-import type { ListTransactions200TransactionsItemNotifyTargetType } from "./listTransactions200TransactionsItemNotifyTargetType";
-import type { ListTransactions200TransactionsItemNotifyUserId } from "./listTransactions200TransactionsItemNotifyUserId";
-import type { ListTransactions200TransactionsItemNotifyContactName } from "./listTransactions200TransactionsItemNotifyContactName";
-import type { ListTransactions200TransactionsItemNotifyContactPhone } from "./listTransactions200TransactionsItemNotifyContactPhone";
-import type { ListTransactions200TransactionsItemNotifyOverdueConfig } from "./listTransactions200TransactionsItemNotifyOverdueConfig";
+import type { ListTransactions200TransactionsItemAccountId } from './listTransactions200TransactionsItemAccountId';
+import type { ListTransactions200TransactionsItemCardId } from './listTransactions200TransactionsItemCardId';
+import type { ListTransactions200TransactionsItemRecurringTransactionId } from './listTransactions200TransactionsItemRecurringTransactionId';
+import type { ListTransactions200TransactionsItemStatementId } from './listTransactions200TransactionsItemStatementId';
+import type { ListTransactions200TransactionsItemDescription } from './listTransactions200TransactionsItemDescription';
+import type { ListTransactions200TransactionsItemAmount } from './listTransactions200TransactionsItemAmount';
+import type { ListTransactions200TransactionsItemType } from './listTransactions200TransactionsItemType';
+import type { ListTransactions200TransactionsItemCompetenceDate } from './listTransactions200TransactionsItemCompetenceDate';
+import type { ListTransactions200TransactionsItemStatus } from './listTransactions200TransactionsItemStatus';
+import type { ListTransactions200TransactionsItemPaidAt } from './listTransactions200TransactionsItemPaidAt';
+import type { ListTransactions200TransactionsItemPaidAmount } from './listTransactions200TransactionsItemPaidAmount';
+import type { ListTransactions200TransactionsItemPaymentScheduledAt } from './listTransactions200TransactionsItemPaymentScheduledAt';
+import type { ListTransactions200TransactionsItemCounterparty } from './listTransactions200TransactionsItemCounterparty';
+import type { ListTransactions200TransactionsItemInstallmentNumber } from './listTransactions200TransactionsItemInstallmentNumber';
+import type { ListTransactions200TransactionsItemInstallmentsTotal } from './listTransactions200TransactionsItemInstallmentsTotal';
+import type { ListTransactions200TransactionsItemSource } from './listTransactions200TransactionsItemSource';
+import type { ListTransactions200TransactionsItemTransferPairId } from './listTransactions200TransactionsItemTransferPairId';
+import type { ListTransactions200TransactionsItemNotifyTargetType } from './listTransactions200TransactionsItemNotifyTargetType';
+import type { ListTransactions200TransactionsItemNotifyUserId } from './listTransactions200TransactionsItemNotifyUserId';
+import type { ListTransactions200TransactionsItemNotifyContactName } from './listTransactions200TransactionsItemNotifyContactName';
+import type { ListTransactions200TransactionsItemNotifyContactPhone } from './listTransactions200TransactionsItemNotifyContactPhone';
+import type { ListTransactions200TransactionsItemNotifyOverdueConfig } from './listTransactions200TransactionsItemNotifyOverdueConfig';
 
 export type ListTransactions200TransactionsItem = {
   id: string;
@@ -52,7 +52,7 @@ export type ListTransactions200TransactionsItem = {
   categoryIds: string[];
   transferPairId: ListTransactions200TransactionsItemTransferPairId;
   notifyEnabled: boolean;
-  notifyTargetType: (typeof ListTransactions200TransactionsItemNotifyTargetType)[keyof typeof ListTransactions200TransactionsItemNotifyTargetType];
+  notifyTargetType: typeof ListTransactions200TransactionsItemNotifyTargetType[keyof typeof ListTransactions200TransactionsItemNotifyTargetType] ;
   notifyUserId: ListTransactions200TransactionsItemNotifyUserId;
   notifyContactName: ListTransactions200TransactionsItemNotifyContactName;
   notifyContactPhone: ListTransactions200TransactionsItemNotifyContactPhone;

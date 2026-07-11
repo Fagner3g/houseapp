@@ -5,28 +5,28 @@
  * API for HouseApp
  * OpenAPI spec version: 2.0.0
  */
-import type { UpdateTransaction200TransactionAccountId } from "./updateTransaction200TransactionAccountId";
-import type { UpdateTransaction200TransactionCardId } from "./updateTransaction200TransactionCardId";
-import type { UpdateTransaction200TransactionRecurringTransactionId } from "./updateTransaction200TransactionRecurringTransactionId";
-import type { UpdateTransaction200TransactionStatementId } from "./updateTransaction200TransactionStatementId";
-import type { UpdateTransaction200TransactionDescription } from "./updateTransaction200TransactionDescription";
-import type { UpdateTransaction200TransactionAmount } from "./updateTransaction200TransactionAmount";
-import type { UpdateTransaction200TransactionType } from "./updateTransaction200TransactionType";
-import type { UpdateTransaction200TransactionCompetenceDate } from "./updateTransaction200TransactionCompetenceDate";
-import type { UpdateTransaction200TransactionStatus } from "./updateTransaction200TransactionStatus";
-import type { UpdateTransaction200TransactionPaidAt } from "./updateTransaction200TransactionPaidAt";
-import type { UpdateTransaction200TransactionPaidAmount } from "./updateTransaction200TransactionPaidAmount";
-import type { UpdateTransaction200TransactionPaymentScheduledAt } from "./updateTransaction200TransactionPaymentScheduledAt";
-import type { UpdateTransaction200TransactionCounterparty } from "./updateTransaction200TransactionCounterparty";
-import type { UpdateTransaction200TransactionInstallmentNumber } from "./updateTransaction200TransactionInstallmentNumber";
-import type { UpdateTransaction200TransactionInstallmentsTotal } from "./updateTransaction200TransactionInstallmentsTotal";
-import type { UpdateTransaction200TransactionSource } from "./updateTransaction200TransactionSource";
-import type { UpdateTransaction200TransactionTransferPairId } from "./updateTransaction200TransactionTransferPairId";
-import type { UpdateTransaction200TransactionNotifyTargetType } from "./updateTransaction200TransactionNotifyTargetType";
-import type { UpdateTransaction200TransactionNotifyUserId } from "./updateTransaction200TransactionNotifyUserId";
-import type { UpdateTransaction200TransactionNotifyContactName } from "./updateTransaction200TransactionNotifyContactName";
-import type { UpdateTransaction200TransactionNotifyContactPhone } from "./updateTransaction200TransactionNotifyContactPhone";
-import type { UpdateTransaction200TransactionNotifyOverdueConfig } from "./updateTransaction200TransactionNotifyOverdueConfig";
+import type { UpdateTransaction200TransactionAccountId } from './updateTransaction200TransactionAccountId';
+import type { UpdateTransaction200TransactionCardId } from './updateTransaction200TransactionCardId';
+import type { UpdateTransaction200TransactionRecurringTransactionId } from './updateTransaction200TransactionRecurringTransactionId';
+import type { UpdateTransaction200TransactionStatementId } from './updateTransaction200TransactionStatementId';
+import type { UpdateTransaction200TransactionDescription } from './updateTransaction200TransactionDescription';
+import type { UpdateTransaction200TransactionAmount } from './updateTransaction200TransactionAmount';
+import type { UpdateTransaction200TransactionType } from './updateTransaction200TransactionType';
+import type { UpdateTransaction200TransactionCompetenceDate } from './updateTransaction200TransactionCompetenceDate';
+import type { UpdateTransaction200TransactionStatus } from './updateTransaction200TransactionStatus';
+import type { UpdateTransaction200TransactionPaidAt } from './updateTransaction200TransactionPaidAt';
+import type { UpdateTransaction200TransactionPaidAmount } from './updateTransaction200TransactionPaidAmount';
+import type { UpdateTransaction200TransactionPaymentScheduledAt } from './updateTransaction200TransactionPaymentScheduledAt';
+import type { UpdateTransaction200TransactionCounterparty } from './updateTransaction200TransactionCounterparty';
+import type { UpdateTransaction200TransactionInstallmentNumber } from './updateTransaction200TransactionInstallmentNumber';
+import type { UpdateTransaction200TransactionInstallmentsTotal } from './updateTransaction200TransactionInstallmentsTotal';
+import type { UpdateTransaction200TransactionSource } from './updateTransaction200TransactionSource';
+import type { UpdateTransaction200TransactionTransferPairId } from './updateTransaction200TransactionTransferPairId';
+import type { UpdateTransaction200TransactionNotifyTargetType } from './updateTransaction200TransactionNotifyTargetType';
+import type { UpdateTransaction200TransactionNotifyUserId } from './updateTransaction200TransactionNotifyUserId';
+import type { UpdateTransaction200TransactionNotifyContactName } from './updateTransaction200TransactionNotifyContactName';
+import type { UpdateTransaction200TransactionNotifyContactPhone } from './updateTransaction200TransactionNotifyContactPhone';
+import type { UpdateTransaction200TransactionNotifyOverdueConfig } from './updateTransaction200TransactionNotifyOverdueConfig';
 
 export type UpdateTransaction200Transaction = {
   id: string;
@@ -52,7 +52,7 @@ export type UpdateTransaction200Transaction = {
   categoryIds: string[];
   transferPairId: UpdateTransaction200TransactionTransferPairId;
   notifyEnabled: boolean;
-  notifyTargetType: (typeof UpdateTransaction200TransactionNotifyTargetType)[keyof typeof UpdateTransaction200TransactionNotifyTargetType];
+  notifyTargetType: typeof UpdateTransaction200TransactionNotifyTargetType[keyof typeof UpdateTransaction200TransactionNotifyTargetType] ;
   notifyUserId: UpdateTransaction200TransactionNotifyUserId;
   notifyContactName: UpdateTransaction200TransactionNotifyContactName;
   notifyContactPhone: UpdateTransaction200TransactionNotifyContactPhone;

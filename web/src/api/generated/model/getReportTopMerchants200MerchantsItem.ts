@@ -5,8 +5,8 @@
  * API for HouseApp
  * OpenAPI spec version: 2.0.0
  */
-import type { GetReportTopMerchants200MerchantsItemDelegatedToName } from "./getReportTopMerchants200MerchantsItemDelegatedToName";
-import type { GetReportTopMerchants200MerchantsItemDividedWithName } from "./getReportTopMerchants200MerchantsItemDividedWithName";
+import type { GetReportTopMerchants200MerchantsItemDelegatedToName } from './getReportTopMerchants200MerchantsItemDelegatedToName';
+import type { GetReportTopMerchants200MerchantsItemDividedWithName } from './getReportTopMerchants200MerchantsItemDividedWithName';
 
 export type GetReportTopMerchants200MerchantsItem = {
   key: string;

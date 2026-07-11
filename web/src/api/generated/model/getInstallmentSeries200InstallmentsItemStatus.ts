@@ -6,13 +6,13 @@
  * OpenAPI spec version: 2.0.0
  */
 
-export type GetInstallmentSeries200InstallmentsItemStatus =
-  (typeof GetInstallmentSeries200InstallmentsItemStatus)[keyof typeof GetInstallmentSeries200InstallmentsItemStatus];
+export type GetInstallmentSeries200InstallmentsItemStatus = typeof GetInstallmentSeries200InstallmentsItemStatus[keyof typeof GetInstallmentSeries200InstallmentsItemStatus];
+
 
 // eslint-disable-next-line @typescript-eslint/no-redeclare
 export const GetInstallmentSeries200InstallmentsItemStatus = {
-  pending: "pending",
-  partial: "partial",
-  paid: "paid",
-  canceled: "canceled",
+  pending: 'pending',
+  partial: 'partial',
+  paid: 'paid',
+  canceled: 'canceled',
 } as const;

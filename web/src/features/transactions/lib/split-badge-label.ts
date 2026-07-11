@@ -6,6 +6,8 @@ export type PartialSplitBadgeInfo = {
   transactionAmount: string
 }
 
+export type SplitBadgeSettlement = 'pending' | 'received'
+
 /** True when split amount is exactly half of the transaction (50/50). */
 export function isHalfSplit(splitAmount: string, transactionAmount: string): boolean {
   const splitCents = reaisToCents(moneyStringToReais(splitAmount))
@@ -14,14 +16,51 @@ export function isHalfSplit(splitAmount: string, transactionAmount: string): boo
   return splitCents * 2 === totalCents
 }
 
-export function formatDelegatedSplitBadge(name: string): string {
+export function resolveSplitBadgeSettlement(
+  remaining: number | undefined
+): SplitBadgeSettlement | undefined {
+  if (remaining === undefined) return undefined
+  return remaining > 0 ? 'pending' : 'received'
+}
+
+export function formatDelegatedSplitBadge(
+  name: string,
+  settlement?: SplitBadgeSettlement
+): string {
+  if (settlement === 'received') return `Recebido · ${name}`
+  if (settlement === 'pending') return `A receber · ${name}`
   return `Delegada · ${name}`
 }
 
-export function formatPartialSplitBadge(info: PartialSplitBadgeInfo): string {
+export function formatPartialSplitBadge(
+  info: PartialSplitBadgeInfo,
+  settlement?: SplitBadgeSettlement
+): string {
   const { splitWithName, splitAmount, transactionAmount } = info
+  if (settlement === 'received') return `Recebido · ${splitWithName}`
+  if (settlement === 'pending') return `A receber · ${splitWithName}`
   if (isHalfSplit(splitAmount, transactionAmount)) {
     return `50/50 · ${splitWithName}`
   }
   return `Valor · ${formatMoneyString(splitAmount)} · ${splitWithName}`
+}
+
+export function splitBadgeClassName(settlement?: SplitBadgeSettlement): string {
+  if (settlement === 'received') {
+    return 'border-emerald-200 bg-emerald-50 text-emerald-800'
+  }
+  if (settlement === 'pending') {
+    return 'border-amber-200 bg-amber-50 text-amber-800'
+  }
+  return 'border-amber-200 bg-amber-50 text-amber-800'
+}
+
+export function partialSplitBadgeClassName(settlement?: SplitBadgeSettlement): string {
+  if (settlement === 'received') {
+    return 'border-emerald-200 bg-emerald-50 text-emerald-800'
+  }
+  if (settlement === 'pending') {
+    return 'border-amber-200 bg-amber-50 text-amber-800'
+  }
+  return 'border-sky-200 bg-sky-50 text-sky-800'
 }

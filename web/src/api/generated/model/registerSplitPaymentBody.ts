@@ -5,13 +5,13 @@
  * API for HouseApp
  * OpenAPI spec version: 2.0.0
  */
-import type { RegisterSplitPaymentBodyPaidAt } from "./registerSplitPaymentBodyPaidAt";
-import type { RegisterSplitPaymentBodyMethod } from "./registerSplitPaymentBodyMethod";
-import type { RegisterSplitPaymentBodyNote } from "./registerSplitPaymentBodyNote";
+import type { RegisterSplitPaymentBodyPaidAt } from './registerSplitPaymentBodyPaidAt';
+import type { RegisterSplitPaymentBodyMethod } from './registerSplitPaymentBodyMethod';
+import type { RegisterSplitPaymentBodyNote } from './registerSplitPaymentBodyNote';
 
 export type RegisterSplitPaymentBody = {
   amount: string;
   paidAt?: RegisterSplitPaymentBodyPaidAt;
-  method?: (typeof RegisterSplitPaymentBodyMethod)[keyof typeof RegisterSplitPaymentBodyMethod];
+  method?: typeof RegisterSplitPaymentBodyMethod[keyof typeof RegisterSplitPaymentBodyMethod] ;
   note?: RegisterSplitPaymentBodyNote;
 };

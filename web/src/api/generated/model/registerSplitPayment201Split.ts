@@ -5,14 +5,14 @@
  * API for HouseApp
  * OpenAPI spec version: 2.0.0
  */
-import type { RegisterSplitPayment201SplitUserId } from "./registerSplitPayment201SplitUserId";
-import type { RegisterSplitPayment201SplitContactName } from "./registerSplitPayment201SplitContactName";
-import type { RegisterSplitPayment201SplitContactPhone } from "./registerSplitPayment201SplitContactPhone";
-import type { RegisterSplitPayment201SplitContactEmail } from "./registerSplitPayment201SplitContactEmail";
-import type { RegisterSplitPayment201SplitDescription } from "./registerSplitPayment201SplitDescription";
-import type { RegisterSplitPayment201SplitStatus } from "./registerSplitPayment201SplitStatus";
-import type { RegisterSplitPayment201SplitPaidAt } from "./registerSplitPayment201SplitPaidAt";
-import type { RegisterSplitPayment201SplitLastNotifiedAt } from "./registerSplitPayment201SplitLastNotifiedAt";
+import type { RegisterSplitPayment201SplitUserId } from './registerSplitPayment201SplitUserId';
+import type { RegisterSplitPayment201SplitContactName } from './registerSplitPayment201SplitContactName';
+import type { RegisterSplitPayment201SplitContactPhone } from './registerSplitPayment201SplitContactPhone';
+import type { RegisterSplitPayment201SplitContactEmail } from './registerSplitPayment201SplitContactEmail';
+import type { RegisterSplitPayment201SplitDescription } from './registerSplitPayment201SplitDescription';
+import type { RegisterSplitPayment201SplitStatus } from './registerSplitPayment201SplitStatus';
+import type { RegisterSplitPayment201SplitPaidAt } from './registerSplitPayment201SplitPaidAt';
+import type { RegisterSplitPayment201SplitLastNotifiedAt } from './registerSplitPayment201SplitLastNotifiedAt';
 
 export type RegisterSplitPayment201Split = {
   id: string;

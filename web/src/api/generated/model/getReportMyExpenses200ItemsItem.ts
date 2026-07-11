@@ -5,10 +5,10 @@
  * API for HouseApp
  * OpenAPI spec version: 2.0.0
  */
-import type { GetReportMyExpenses200ItemsItemKind } from "./getReportMyExpenses200ItemsItemKind";
-import type { GetReportMyExpenses200ItemsItemSubtitle } from "./getReportMyExpenses200ItemsItemSubtitle";
-import type { GetReportMyExpenses200ItemsItemAccountId } from "./getReportMyExpenses200ItemsItemAccountId";
-import type { GetReportMyExpenses200ItemsItemMonthKey } from "./getReportMyExpenses200ItemsItemMonthKey";
+import type { GetReportMyExpenses200ItemsItemKind } from './getReportMyExpenses200ItemsItemKind';
+import type { GetReportMyExpenses200ItemsItemSubtitle } from './getReportMyExpenses200ItemsItemSubtitle';
+import type { GetReportMyExpenses200ItemsItemAccountId } from './getReportMyExpenses200ItemsItemAccountId';
+import type { GetReportMyExpenses200ItemsItemMonthKey } from './getReportMyExpenses200ItemsItemMonthKey';
 
 export type GetReportMyExpenses200ItemsItem = {
   kind: GetReportMyExpenses200ItemsItemKind;

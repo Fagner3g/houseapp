@@ -6,15 +6,15 @@
  * OpenAPI spec version: 2.0.0
  */
 
-export type DeleteCardBodyReason =
-  (typeof DeleteCardBodyReason)[keyof typeof DeleteCardBodyReason];
+export type DeleteCardBodyReason = typeof DeleteCardBodyReason[keyof typeof DeleteCardBodyReason];
+
 
 // eslint-disable-next-line @typescript-eslint/no-redeclare
 export const DeleteCardBodyReason = {
-  fraud: "fraud",
-  lost: "lost",
-  stolen: "stolen",
-  requested: "requested",
-  expired: "expired",
-  upgrade: "upgrade",
+  fraud: 'fraud',
+  lost: 'lost',
+  stolen: 'stolen',
+  requested: 'requested',
+  expired: 'expired',
+  upgrade: 'upgrade',
 } as const;

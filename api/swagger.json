@@ -14620,13 +14620,33 @@
                         ],
                         "additionalProperties": false
                       }
+                    },
+                    "splitRemainingTotals": {
+                      "type": "array",
+                      "items": {
+                        "type": "object",
+                        "properties": {
+                          "transactionId": {
+                            "type": "string"
+                          },
+                          "remainingAmount": {
+                            "type": "string"
+                          }
+                        },
+                        "required": [
+                          "transactionId",
+                          "remainingAmount"
+                        ],
+                        "additionalProperties": false
+                      }
                     }
                   },
                   "required": [
                     "transactionIds",
                     "fullyDelegated",
                     "partiallyDivided",
-                    "splitPaidTotals"
+                    "splitPaidTotals",
+                    "splitRemainingTotals"
                   ],
                   "additionalProperties": false
                 }

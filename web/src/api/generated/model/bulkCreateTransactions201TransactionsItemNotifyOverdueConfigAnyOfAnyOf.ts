@@ -6,7 +6,6 @@
  * OpenAPI spec version: 2.0.0
  */
 
-export type BulkCreateTransactions201TransactionsItemNotifyOverdueConfigAnyOfAnyOf =
-  {
-    disabled: boolean;
-  };
+export type BulkCreateTransactions201TransactionsItemNotifyOverdueConfigAnyOfAnyOf = {
+  disabled: boolean;
+};

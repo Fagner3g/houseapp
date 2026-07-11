@@ -6,11 +6,11 @@
  * OpenAPI spec version: 2.0.0
  */
 
-export type CreateRecurringTransaction201RecurringTransactionType =
-  (typeof CreateRecurringTransaction201RecurringTransactionType)[keyof typeof CreateRecurringTransaction201RecurringTransactionType];
+export type CreateRecurringTransaction201RecurringTransactionType = typeof CreateRecurringTransaction201RecurringTransactionType[keyof typeof CreateRecurringTransaction201RecurringTransactionType];
+
 
 // eslint-disable-next-line @typescript-eslint/no-redeclare
 export const CreateRecurringTransaction201RecurringTransactionType = {
-  income: "income",
-  expense: "expense",
+  income: 'income',
+  expense: 'expense',
 } as const;

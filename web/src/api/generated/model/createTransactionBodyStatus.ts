@@ -6,13 +6,13 @@
  * OpenAPI spec version: 2.0.0
  */
 
-export type CreateTransactionBodyStatus =
-  (typeof CreateTransactionBodyStatus)[keyof typeof CreateTransactionBodyStatus];
+export type CreateTransactionBodyStatus = typeof CreateTransactionBodyStatus[keyof typeof CreateTransactionBodyStatus];
+
 
 // eslint-disable-next-line @typescript-eslint/no-redeclare
 export const CreateTransactionBodyStatus = {
-  pending: "pending",
-  partial: "partial",
-  paid: "paid",
-  canceled: "canceled",
+  pending: 'pending',
+  partial: 'partial',
+  paid: 'paid',
+  canceled: 'canceled',
 } as const;

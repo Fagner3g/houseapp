@@ -5,7 +5,7 @@
  * API for HouseApp
  * OpenAPI spec version: 2.0.0
  */
-import type { GetJobs200JobsItemConfig } from "./getJobs200JobsItemConfig";
+import type { GetJobs200JobsItemConfig } from './getJobs200JobsItemConfig';
 
 export type GetJobs200JobsItem = {
   key: string;

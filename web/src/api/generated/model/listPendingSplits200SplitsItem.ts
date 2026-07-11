@@ -5,16 +5,16 @@
  * API for HouseApp
  * OpenAPI spec version: 2.0.0
  */
-import type { ListPendingSplits200SplitsItemUserId } from "./listPendingSplits200SplitsItemUserId";
-import type { ListPendingSplits200SplitsItemContactName } from "./listPendingSplits200SplitsItemContactName";
-import type { ListPendingSplits200SplitsItemContactPhone } from "./listPendingSplits200SplitsItemContactPhone";
-import type { ListPendingSplits200SplitsItemContactEmail } from "./listPendingSplits200SplitsItemContactEmail";
-import type { ListPendingSplits200SplitsItemDescription } from "./listPendingSplits200SplitsItemDescription";
-import type { ListPendingSplits200SplitsItemStatus } from "./listPendingSplits200SplitsItemStatus";
-import type { ListPendingSplits200SplitsItemPaidAt } from "./listPendingSplits200SplitsItemPaidAt";
-import type { ListPendingSplits200SplitsItemLastNotifiedAt } from "./listPendingSplits200SplitsItemLastNotifiedAt";
-import type { ListPendingSplits200SplitsItemTransactionAmount } from "./listPendingSplits200SplitsItemTransactionAmount";
-import type { ListPendingSplits200SplitsItemPersonName } from "./listPendingSplits200SplitsItemPersonName";
+import type { ListPendingSplits200SplitsItemUserId } from './listPendingSplits200SplitsItemUserId';
+import type { ListPendingSplits200SplitsItemContactName } from './listPendingSplits200SplitsItemContactName';
+import type { ListPendingSplits200SplitsItemContactPhone } from './listPendingSplits200SplitsItemContactPhone';
+import type { ListPendingSplits200SplitsItemContactEmail } from './listPendingSplits200SplitsItemContactEmail';
+import type { ListPendingSplits200SplitsItemDescription } from './listPendingSplits200SplitsItemDescription';
+import type { ListPendingSplits200SplitsItemStatus } from './listPendingSplits200SplitsItemStatus';
+import type { ListPendingSplits200SplitsItemPaidAt } from './listPendingSplits200SplitsItemPaidAt';
+import type { ListPendingSplits200SplitsItemLastNotifiedAt } from './listPendingSplits200SplitsItemLastNotifiedAt';
+import type { ListPendingSplits200SplitsItemTransactionAmount } from './listPendingSplits200SplitsItemTransactionAmount';
+import type { ListPendingSplits200SplitsItemPersonName } from './listPendingSplits200SplitsItemPersonName';
 
 export type ListPendingSplits200SplitsItem = {
   id: string;

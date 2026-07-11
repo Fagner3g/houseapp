@@ -5,14 +5,14 @@
  * API for HouseApp
  * OpenAPI spec version: 2.0.0
  */
-import type { CancelSplitPayment200SplitUserId } from "./cancelSplitPayment200SplitUserId";
-import type { CancelSplitPayment200SplitContactName } from "./cancelSplitPayment200SplitContactName";
-import type { CancelSplitPayment200SplitContactPhone } from "./cancelSplitPayment200SplitContactPhone";
-import type { CancelSplitPayment200SplitContactEmail } from "./cancelSplitPayment200SplitContactEmail";
-import type { CancelSplitPayment200SplitDescription } from "./cancelSplitPayment200SplitDescription";
-import type { CancelSplitPayment200SplitStatus } from "./cancelSplitPayment200SplitStatus";
-import type { CancelSplitPayment200SplitPaidAt } from "./cancelSplitPayment200SplitPaidAt";
-import type { CancelSplitPayment200SplitLastNotifiedAt } from "./cancelSplitPayment200SplitLastNotifiedAt";
+import type { CancelSplitPayment200SplitUserId } from './cancelSplitPayment200SplitUserId';
+import type { CancelSplitPayment200SplitContactName } from './cancelSplitPayment200SplitContactName';
+import type { CancelSplitPayment200SplitContactPhone } from './cancelSplitPayment200SplitContactPhone';
+import type { CancelSplitPayment200SplitContactEmail } from './cancelSplitPayment200SplitContactEmail';
+import type { CancelSplitPayment200SplitDescription } from './cancelSplitPayment200SplitDescription';
+import type { CancelSplitPayment200SplitStatus } from './cancelSplitPayment200SplitStatus';
+import type { CancelSplitPayment200SplitPaidAt } from './cancelSplitPayment200SplitPaidAt';
+import type { CancelSplitPayment200SplitLastNotifiedAt } from './cancelSplitPayment200SplitLastNotifiedAt';
 
 export type CancelSplitPayment200Split = {
   id: string;

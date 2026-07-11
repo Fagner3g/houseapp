@@ -5,18 +5,18 @@
  * API for HouseApp
  * OpenAPI spec version: 2.0.0
  */
-import type { ListAccounts200AccountsItemType } from "./listAccounts200AccountsItemType";
-import type { ListAccounts200AccountsItemInstitution } from "./listAccounts200AccountsItemInstitution";
-import type { ListAccounts200AccountsItemCreditLimit } from "./listAccounts200AccountsItemCreditLimit";
-import type { ListAccounts200AccountsItemClosingDay } from "./listAccounts200AccountsItemClosingDay";
-import type { ListAccounts200AccountsItemDueDay } from "./listAccounts200AccountsItemDueDay";
-import type { ListAccounts200AccountsItemPaymentAccountId } from "./listAccounts200AccountsItemPaymentAccountId";
-import type { ListAccounts200AccountsItemPixKey } from "./listAccounts200AccountsItemPixKey";
-import type { ListAccounts200AccountsItemPixKeyType } from "./listAccounts200AccountsItemPixKeyType";
-import type { ListAccounts200AccountsItemColor } from "./listAccounts200AccountsItemColor";
-import type { ListAccounts200AccountsItemIcon } from "./listAccounts200AccountsItemIcon";
-import type { ListAccounts200AccountsItemOfxAccountId } from "./listAccounts200AccountsItemOfxAccountId";
-import type { ListAccounts200AccountsItemCardsItem } from "./listAccounts200AccountsItemCardsItem";
+import type { ListAccounts200AccountsItemType } from './listAccounts200AccountsItemType';
+import type { ListAccounts200AccountsItemInstitution } from './listAccounts200AccountsItemInstitution';
+import type { ListAccounts200AccountsItemCreditLimit } from './listAccounts200AccountsItemCreditLimit';
+import type { ListAccounts200AccountsItemClosingDay } from './listAccounts200AccountsItemClosingDay';
+import type { ListAccounts200AccountsItemDueDay } from './listAccounts200AccountsItemDueDay';
+import type { ListAccounts200AccountsItemPaymentAccountId } from './listAccounts200AccountsItemPaymentAccountId';
+import type { ListAccounts200AccountsItemPixKey } from './listAccounts200AccountsItemPixKey';
+import type { ListAccounts200AccountsItemPixKeyType } from './listAccounts200AccountsItemPixKeyType';
+import type { ListAccounts200AccountsItemColor } from './listAccounts200AccountsItemColor';
+import type { ListAccounts200AccountsItemIcon } from './listAccounts200AccountsItemIcon';
+import type { ListAccounts200AccountsItemOfxAccountId } from './listAccounts200AccountsItemOfxAccountId';
+import type { ListAccounts200AccountsItemCardsItem } from './listAccounts200AccountsItemCardsItem';
 
 export type ListAccounts200AccountsItem = {
   id: string;
@@ -31,7 +31,7 @@ export type ListAccounts200AccountsItem = {
   paymentAccountId: ListAccounts200AccountsItemPaymentAccountId;
   initialBalance: string;
   pixKey: ListAccounts200AccountsItemPixKey;
-  pixKeyType: (typeof ListAccounts200AccountsItemPixKeyType)[keyof typeof ListAccounts200AccountsItemPixKeyType];
+  pixKeyType: typeof ListAccounts200AccountsItemPixKeyType[keyof typeof ListAccounts200AccountsItemPixKeyType] ;
   color: ListAccounts200AccountsItemColor;
   icon: ListAccounts200AccountsItemIcon;
   displayOrder: number;

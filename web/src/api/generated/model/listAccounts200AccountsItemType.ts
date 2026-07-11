@@ -6,14 +6,14 @@
  * OpenAPI spec version: 2.0.0
  */
 
-export type ListAccounts200AccountsItemType =
-  (typeof ListAccounts200AccountsItemType)[keyof typeof ListAccounts200AccountsItemType];
+export type ListAccounts200AccountsItemType = typeof ListAccounts200AccountsItemType[keyof typeof ListAccounts200AccountsItemType];
+
 
 // eslint-disable-next-line @typescript-eslint/no-redeclare
 export const ListAccounts200AccountsItemType = {
-  checking: "checking",
-  savings: "savings",
-  credit_card: "credit_card",
-  cash: "cash",
-  investment: "investment",
+  checking: 'checking',
+  savings: 'savings',
+  credit_card: 'credit_card',
+  cash: 'cash',
+  investment: 'investment',
 } as const;

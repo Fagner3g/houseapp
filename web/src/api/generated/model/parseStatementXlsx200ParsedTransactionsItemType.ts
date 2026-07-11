@@ -6,11 +6,11 @@
  * OpenAPI spec version: 2.0.0
  */
 
-export type ParseStatementXlsx200ParsedTransactionsItemType =
-  (typeof ParseStatementXlsx200ParsedTransactionsItemType)[keyof typeof ParseStatementXlsx200ParsedTransactionsItemType];
+export type ParseStatementXlsx200ParsedTransactionsItemType = typeof ParseStatementXlsx200ParsedTransactionsItemType[keyof typeof ParseStatementXlsx200ParsedTransactionsItemType];
+
 
 // eslint-disable-next-line @typescript-eslint/no-redeclare
 export const ParseStatementXlsx200ParsedTransactionsItemType = {
-  income: "income",
-  expense: "expense",
+  income: 'income',
+  expense: 'expense',
 } as const;

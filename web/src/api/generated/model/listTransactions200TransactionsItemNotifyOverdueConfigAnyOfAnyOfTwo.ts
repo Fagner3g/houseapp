@@ -5,14 +5,13 @@
  * API for HouseApp
  * OpenAPI spec version: 2.0.0
  */
-import type { ListTransactions200TransactionsItemNotifyOverdueConfigAnyOfAnyOfTwoFrequency } from "./listTransactions200TransactionsItemNotifyOverdueConfigAnyOfAnyOfTwoFrequency";
+import type { ListTransactions200TransactionsItemNotifyOverdueConfigAnyOfAnyOfTwoFrequency } from './listTransactions200TransactionsItemNotifyOverdueConfigAnyOfAnyOfTwoFrequency';
 
-export type ListTransactions200TransactionsItemNotifyOverdueConfigAnyOfAnyOfTwo =
-  {
-    frequency: ListTransactions200TransactionsItemNotifyOverdueConfigAnyOfAnyOfTwoFrequency;
-    /**
-     * @minimum 1
-     * @maximum 9007199254740991
-     */
-    interval: number;
-  };
+export type ListTransactions200TransactionsItemNotifyOverdueConfigAnyOfAnyOfTwo = {
+  frequency: ListTransactions200TransactionsItemNotifyOverdueConfigAnyOfAnyOfTwoFrequency;
+  /**
+   * @minimum 1
+   * @maximum 9007199254740991
+   */
+  interval: number;
+};
