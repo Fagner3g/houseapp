@@ -32,6 +32,7 @@ function buildInstallmentSummaryLine(input: {
 export function buildSplitShareSummaryLine(input: {
   shareAmount?: string | null
   shareTotalAmount?: string | null
+  purchaseTotalAmount?: string | null
   installmentNumber?: number | null
   installmentsTotal?: number | null
 }): string | null {
@@ -48,12 +49,20 @@ export function buildSplitShareSummaryLine(input: {
     ? `Sua parte: ${shareAmount} (${input.installmentNumber}/${input.installmentsTotal})`
     : `Sua parte: ${shareAmount}`
 
+  // Trailing total is useful for partial splits (e.g. 50/50): "83,75 (1/10) · 837,50".
+  // Skip when the person owes 100% of the purchase — it reads as if the installment were R$ 1.000.
   const shareTotalDigits = formatAmountDigitsBRL(input.shareTotalAmount)
+  const isFullPurchaseShare =
+    !!input.shareTotalAmount &&
+    !!input.purchaseTotalAmount &&
+    input.shareTotalAmount === input.purchaseTotalAmount
+
   if (
     shareTotalDigits &&
     input.shareTotalAmount &&
     input.shareAmount &&
-    input.shareTotalAmount !== input.shareAmount
+    input.shareTotalAmount !== input.shareAmount &&
+    !isFullPurchaseShare
   ) {
     line = `${line} · ${shareTotalDigits}`
   }
@@ -159,6 +168,7 @@ export function buildSummaryLine(input: {
       return buildSplitShareSummaryLine({
         shareAmount,
         shareTotalAmount: input.splitAmount,
+        purchaseTotalAmount: input.transactionTotalAmount,
         installmentNumber: input.installmentNumber,
         installmentsTotal: input.installmentsTotal,
       })

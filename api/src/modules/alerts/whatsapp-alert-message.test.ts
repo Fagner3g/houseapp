@@ -108,6 +108,22 @@ describe('whatsapp-alert-message', () => {
         splitParticipantCount: 2,
       })
     ).toBe('Sua parte: R$ 83,75 (1/10) · 837,50')
+
+    // 100% delegated installment: don't append purchase total (reads as if 1/10 = R$ 1.000)
+    expect(
+      buildSummaryLine({
+        transactionTotalAmount: '1000.00',
+        splitAmount: '1000.00',
+        splitShareInstallmentAmount: '100.00',
+        splitPaidAmount: '0.00',
+        splitRemainingAmount: '1000.00',
+        amount: '1000.00',
+        installmentNumber: 1,
+        installmentsTotal: 10,
+        isSplit: true,
+        splitParticipantCount: 1,
+      })
+    ).toBe('Sua parte: R$ 100,00 (1/10)')
   })
 
   it('formats credit card invoice due line', () => {
