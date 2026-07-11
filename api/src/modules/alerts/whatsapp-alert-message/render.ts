@@ -1,3 +1,8 @@
+import {
+  emphasizeMoneyInLine,
+  emphasizeTitleLine,
+  whatsAppBold,
+} from './emphasis'
 import { pickWhatsAppItemEmoji } from './format'
 import {
   buildCreditCardShareTotalLine,
@@ -80,16 +85,22 @@ function renderWhatsAppBatchItemLines(
   item: WhatsAppAlertBatchItem,
   options?: { includeNote?: boolean }
 ): string[] {
-  const title = buildSplitTransactionTitleLine({
-    title: item.transactionTitle,
-    transactionTotalAmount: item.transactionTotalAmount,
-    isSplit: item.isSplit,
-  })
+  const title = emphasizeTitleLine(
+    buildSplitTransactionTitleLine({
+      title: item.transactionTitle,
+      transactionTotalAmount: item.transactionTotalAmount,
+      isSplit: item.isSplit,
+    })
+  )
   const lines = [`${pickWhatsAppItemEmoji(item)} ${title}`]
   const summaryLine = resolveItemSummaryLine(item)
-  if (summaryLine) lines.push(summaryLine)
+  if (summaryLine) lines.push(emphasizeMoneyInLine(summaryLine))
   if (options?.includeNote !== false && item.note) lines.push(`📝 ${item.note}`)
   return lines
+}
+
+function emphasizeTotalLine(line: string | null): string | null {
+  return line ? emphasizeMoneyInLine(line) : null
 }
 
 export function renderWhatsAppBatchUnitLines(
@@ -98,12 +109,12 @@ export function renderWhatsAppBatchUnitLines(
 ): string[] {
   if (unit.type === 'single') {
     const lines = renderWhatsAppBatchItemLines(unit.item, { includeNote: false })
-    lines.push(unit.item.dueLine)
+    lines.push(whatsAppBold(unit.item.dueLine))
     if (unit.item.note) lines.push(`📝 ${unit.item.note}`)
     return lines
   }
 
-  const lines = [`💳 ${WHATSAPP_CREDIT_CARD_LABEL}`, unit.dueLine, '']
+  const lines = [`💳 ${WHATSAPP_CREDIT_CARD_LABEL}`, whatsAppBold(unit.dueLine), '']
   unit.items.forEach((item, index) => {
     if (index > 0) lines.push('')
     lines.push(...renderWhatsAppBatchItemLines(item))
@@ -111,9 +122,11 @@ export function renderWhatsAppBatchUnitLines(
 
   if (options?.includeShareTotal) {
     const shareTotal = sumDueShareCentavos(unit.items)
-    const totalLine = options.shareTotalAsGrand
-      ? buildGrandShareTotalLine(shareTotal)
-      : buildCreditCardShareTotalLine(shareTotal)
+    const totalLine = emphasizeTotalLine(
+      options.shareTotalAsGrand
+        ? buildGrandShareTotalLine(shareTotal)
+        : buildCreditCardShareTotalLine(shareTotal)
+    )
     if (totalLine) {
       lines.push('')
       lines.push(totalLine)

@@ -16,6 +16,6 @@ export {
 export { buildDueLine } from './due'
 export {
   buildWhatsAppAlertMessage,
-  buildWhatsAppBatchAlertMessage,
   toWhatsAppBatchItem,
-} from './batch'
+} from './item'
+export { buildWhatsAppBatchAlertMessage } from './batch'

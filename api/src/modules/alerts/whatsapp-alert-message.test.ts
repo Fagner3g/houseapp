@@ -159,9 +159,10 @@ describe('whatsapp-alert-message', () => {
       [
         'Boa tarde, Karoline!',
         '',
+        '🚨 *CONTAS VENCIDAS*',
         '⚠️ Amazonmktplc*Fidcomerc',
-        '7/12: R$ 61,07',
-        'Vencida há 62 dias · 01/05/2026',
+        '7/12: *R$ 61,07*',
+        '*Vencida há 62 dias · 01/05/2026*',
       ].join('\n')
     )
   })
@@ -188,11 +189,12 @@ describe('whatsapp-alert-message', () => {
       [
         'Boa tarde, Aline!',
         '',
+        '⏰ *PRESTES A VENCER*',
         '💳 Cartão de crédito',
-        'Fatura vence em 2 dias · 08/07/2026',
+        '*Fatura vence em 2 dias · 08/07/2026*',
         '',
-        '🧾 Mp *Ruivasstores · R$ 8.000,00',
-        'Sua parte: R$ 4.000,00',
+        '🧾 Mp *Ruivasstores · *R$ 8.000,00*',
+        'Sua parte: *R$ 4.000,00*',
       ].join('\n')
     )
   })
@@ -224,9 +226,10 @@ describe('whatsapp-alert-message', () => {
       [
         'Boa tarde, Karoline!',
         '',
-        '📅 Pia da cozinha · R$ 900,00',
-        'Sua parte: R$ 150,00 (1/3) · 450,00',
-        'Vence hoje · 06/07/2026',
+        '⏰ *PRESTES A VENCER*',
+        '📅 *Pia da cozinha* · *R$ 900,00*',
+        'Sua parte: *R$ 150,00* (1/3) · 450,00',
+        '*Vence hoje · 06/07/2026*',
       ].join('\n')
     )
   })
@@ -259,11 +262,12 @@ describe('whatsapp-alert-message', () => {
       [
         'Bom dia, Karoline!',
         '',
+        '⏰ *PRESTES A VENCER*',
         '💳 Cartão de crédito',
-        'Fatura vence em 9 dias · 17/07/2026',
+        '*Fatura vence em 9 dias · 17/07/2026*',
         '',
-        '🧾 Casas Bahia - NuPay · R$ 1.675,10',
-        'Sua parte: R$ 83,75 (1/10) · 837,50',
+        '🧾 *Casas Bahia - NuPay* · *R$ 1.675,10*',
+        'Sua parte: *R$ 83,75* (1/10) · 837,50',
       ].join('\n')
     )
   })
@@ -297,15 +301,16 @@ describe('whatsapp-alert-message', () => {
       [
         'Bom dia, Fagner!',
         '',
-        '🧾 CEMIG',
-        'Vence em 2 dias · 08/07/2026',
+        '⏰ *PRESTES A VENCER*',
+        '🧾 *CEMIG*',
+        '*Vence em 2 dias · 08/07/2026*',
         '📝 Pagar energia',
         '',
         WHATSAPP_BATCH_SEPARATOR,
         '',
-        '📅 Vivo',
-        'R$ 64,00',
-        'Vence hoje · 06/07/2026',
+        '📅 *Vivo*',
+        '*R$ 64,00*',
+        '*Vence hoje · 06/07/2026*',
       ].join('\n')
     )
   })
@@ -356,20 +361,21 @@ describe('whatsapp-alert-message', () => {
       [
         'Boa tarde, Aline!',
         '',
+        '⏰ *PRESTES A VENCER*',
         '💳 Cartão de crédito',
-        'Fatura vence em 2 dias · 08/07/2026',
+        '*Fatura vence em 2 dias · 08/07/2026*',
         '',
         '🧾 Asa*Casaldentistabh',
-        'R$ 1.350,00',
+        '*R$ 1.350,00*',
         '',
-        '🧾 Mp *Ruivasstores · R$ 8.000,00',
-        'Sua parte: R$ 4.000,00',
+        '🧾 Mp *Ruivasstores · *R$ 8.000,00*',
+        'Sua parte: *R$ 4.000,00*',
         '',
         WHATSAPP_BATCH_SEPARATOR,
         '',
-        '📅 Emprestimo',
-        '1/4: R$ 250,00',
-        'Vence hoje · 06/07/2026',
+        '📅 *Emprestimo*',
+        '1/4: *R$ 250,00*',
+        '*Vence hoje · 06/07/2026*',
       ].join('\n')
     )
   })
@@ -412,16 +418,17 @@ describe('whatsapp-alert-message', () => {
       [
         'Bom dia, Karoline!',
         '',
+        '⏰ *PRESTES A VENCER*',
         '💳 Cartão de crédito',
-        'Fatura vence em 11 dias · 17/07/2026',
+        '*Fatura vence em 11 dias · 17/07/2026*',
         '',
-        '🧾 Papelaria Santa Ines',
-        'Sua parte: R$ 3,00',
+        '🧾 *Papelaria Santa Ines*',
+        'Sua parte: *R$ 3,00*',
         '',
-        '🧾 Posto de Combustiveis',
-        'Sua parte: R$ 12,50',
+        '🧾 *Posto de Combustiveis*',
+        'Sua parte: *R$ 12,50*',
         '',
-        '💰 Total da sua parte: R$ 15,50',
+        '💰 Total da sua parte: *R$ 15,50*',
       ].join('\n')
     )
   })
@@ -524,36 +531,37 @@ describe('whatsapp-alert-message', () => {
       [
         'Bom dia, Karoline!',
         '',
+        '⏰ *PRESTES A VENCER*',
         '💳 Cartão de crédito',
-        'Fatura vence em 9 dias · 17/07/2026',
+        '*Fatura vence em 9 dias · 17/07/2026*',
         '',
-        '🧾 Casas Bahia - NuPay · R$ 1.675,10',
-        'Sua parte: R$ 83,75 (1/10) · 837,50',
+        '🧾 *Casas Bahia - NuPay* · *R$ 1.675,10*',
+        'Sua parte: *R$ 83,75* (1/10) · 837,50',
         '',
-        '🧾 Marcio Parafusos · R$ 7,90',
-        'Sua parte: R$ 3,95',
+        '🧾 *Marcio Parafusos* · *R$ 7,90*',
+        'Sua parte: *R$ 3,95*',
         '',
-        '🧾 Marcio Parafusos · R$ 6,50',
-        'Sua parte: R$ 3,25',
+        '🧾 *Marcio Parafusos* · *R$ 6,50*',
+        'Sua parte: *R$ 3,25*',
         '',
-        '🧾 Marcio Parafusos · R$ 68,40',
-        'Sua parte: R$ 34,20',
+        '🧾 *Marcio Parafusos* · *R$ 68,40*',
+        'Sua parte: *R$ 34,20*',
         '',
-        '🧾 Marcio Parafusos · R$ 26,00',
-        'Sua parte: R$ 13,00',
+        '🧾 *Marcio Parafusos* · *R$ 26,00*',
+        'Sua parte: *R$ 13,00*',
         '',
-        '🧾 Marcio Parafusos · R$ 19,80',
-        'Sua parte: R$ 9,90',
+        '🧾 *Marcio Parafusos* · *R$ 19,80*',
+        'Sua parte: *R$ 9,90*',
         '',
-        '💰 Sua parte neste cartão: R$ 148,05',
+        '💰 Sua parte neste cartão: *R$ 148,05*',
         '',
         WHATSAPP_BATCH_SEPARATOR,
         '',
-        '🧾 Fogão cooktop · R$ 387,90',
-        'Sua parte: R$ 193,95',
-        'Vence em 9 dias · 17/07/2026',
+        '🧾 *Fogão cooktop* · *R$ 387,90*',
+        'Sua parte: *R$ 193,95*',
+        '*Vence em 9 dias · 17/07/2026*',
         '',
-        '💰 Total da sua parte: R$ 342,00',
+        '💰 Total da sua parte: *R$ 342,00*',
       ].join('\n')
     )
   })
