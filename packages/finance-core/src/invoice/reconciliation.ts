@@ -26,6 +26,10 @@ export function computePersonalSpendAdjustment(purchases: bigint, mySpend: bigin
   return diff > 0n ? diff : 0n
 }
 
+export function isLedgerBalanceImportSource(source: string | null | undefined): boolean {
+  return source === 'ofx' || source === 'xlsx'
+}
+
 /** OFX LEDGERBAL is net of payments; gross imports still need payments deducted from remaining. */
 export function isNetImportedInvoiceTotal(
   invoiceTotal: bigint,
@@ -37,6 +41,21 @@ export function isNetImportedInvoiceTotal(
 
   const net = purchases + previousBalance - payments
   return invoiceTotal === net
+}
+
+/**
+ * True when imported total matches purchases + previous − settlement credits (within 1 cent).
+ * Those statements still need bill payments deducted from remaining.
+ */
+export function isGrossImportedInvoiceTotal(
+  invoiceTotal: bigint,
+  purchases: bigint,
+  previousBalance: bigint,
+  settlementCredits: bigint
+): boolean {
+  const gross = purchases + previousBalance - settlementCredits
+  const gap = gross > invoiceTotal ? gross - invoiceTotal : invoiceTotal - gross
+  return gap <= 1n
 }
 
 export function parseStatementMoney(value: string | null | undefined): bigint {

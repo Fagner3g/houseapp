@@ -71,6 +71,9 @@ export function CreditCardKpiRow({
     isPending,
   } = useCreditCardInvoiceMetrics(accountId, cycle, closingDay, dueDay)
 
+  const isInvoiceClosed =
+    matchedStatement?.isClosed === true ||
+    !dayjs(cycle.closingDate).startOf('day').isAfter(dayjs().startOf('day'))
   const purchasesLabel = metrics.usesImportedStatementPeriod
     ? formatImportedPurchasePeriodRange(purchasesPeriod.start, purchasesPeriod.end)
     : formatDateRange(cycle.periodStart, cycle.periodEnd)
@@ -153,6 +156,11 @@ export function CreditCardKpiRow({
                     )}
                   >
                     {isOverdue ? 'Valor em atraso' : 'A pagar'}
+                  </span>
+                )}
+                {isInvoiceClosed && !isPaid && (
+                  <span className="rounded-full bg-slate-200/80 px-2 py-0.5 text-xs font-medium text-slate-700">
+                    Fatura fechada
                   </span>
                 )}
               </div>

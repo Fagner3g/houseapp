@@ -27,6 +27,7 @@ import {
   CreditCardSubNav,
   type CreditCardView,
 } from '@/features/credit-cards/components/credit-card-sub-nav'
+import { canNavigateToNextBillingMonth } from '@/features/credit-cards/lib/navigable-billing-month'
 import { useActiveOrganization } from '@/hooks/use-active-organization'
 import {
   currentBillingMonthKey,
@@ -82,9 +83,13 @@ function AccountsPage() {
   const selectedAccount = creditCards.find(a => a.id === selectedId)
   const billingMonthKey = month ?? currentBillingMonthKey()
 
-  const { cycle, closingDay, dueDay } = useCreditCardBillingCycle(
+  const { cycle, closingDay, dueDay, latestNavigableMonthKey } = useCreditCardBillingCycle(
     selectedAccount,
     billingMonthKey
+  )
+  const canGoNextMonth = canNavigateToNextBillingMonth(
+    billingMonthKey,
+    latestNavigableMonthKey
   )
 
   useEffect(() => {
@@ -231,6 +236,7 @@ function AccountsPage() {
                       closingDay={closingDay}
                       dueDay={dueDay}
                       isCurrentCycle={billingMonthKey === currentBillingMonthKey()}
+                      canGoNextMonth={canGoNextMonth}
                       onPrevMonth={() =>
                         updateSearch({ month: shiftBillingMonth(billingMonthKey, -1) })
                       }

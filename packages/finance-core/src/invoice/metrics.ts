@@ -1,6 +1,5 @@
 import { isWithinBillingRange, type BillingCycle } from '../billing-cycle/index'
 import { parseMoneyStringToCentavos } from '../money/strings'
-import { isImportedInvoiceSettlementCredit } from './classifiers'
 import {
   hasImportedInvoiceTotal,
   isCrossStatementBillPaymentForInvoice,
@@ -15,28 +14,10 @@ import {
   parseStatementMoney,
   resolveComputedInvoiceTotal,
 } from './reconciliation'
+import { resolveRemainingDeductions } from './remaining'
 import { hasStoredInvoiceSummary } from './scope'
 import { sumAmounts, sumManualPurchasesInPeriod, transactionsOwnedByInvoiceCycle } from './filters'
 import type { InvoiceMetrics, InvoiceStatementLike, PaymentPeriodContext, TransactionLike } from './types'
-
-function sumPaymentsNotInStatement(
-  transactions: TransactionLike[],
-  purchasesPeriod: { start: string; end: string },
-  paymentPeriod: { start: string; end: string },
-  statement: InvoiceStatementLike | null,
-  cycle: BillingCycle
-): bigint {
-  const statementId = statement?.id ?? null
-
-  return sumAmounts(
-    transactions.filter(
-      tx =>
-        isInvoicePayment(tx, purchasesPeriod, paymentPeriod, cycle, statement) &&
-        (statementId == null || !tx.statementId || tx.statementId !== statementId)
-    ),
-    'income'
-  )
-}
 
 export function computeInvoiceMetrics(
   cycle: BillingCycle,
@@ -122,43 +103,26 @@ export function computeInvoiceMetrics(
     (statement?.importSource === 'ofx' || statement?.importSource === 'xlsx') &&
     isNetImportedInvoiceTotal(resolvedInvoiceTotal, purchases, previousBalance, payments)
 
-  let paymentsToDeduct: bigint
-  if (statement?.isClosed && !statement?.isPaid && payments > 0n && !isNetImportedTotal) {
-    paymentsToDeduct = payments
-  } else if (imported && (statement?.importSource === 'ofx' || statement?.importSource === 'xlsx' || isNetImportedTotal)) {
-    paymentsToDeduct = sumPaymentsNotInStatement(
-      ownedTransactions,
-      purchasesPeriod,
-      paymentPeriod,
-      statement,
-      cycle
-    )
-  } else {
-    paymentsToDeduct = payments
-  }
-
-  const settlementCredits =
-    imported && statement?.isClosed
-      ? sumAmounts(
-          ownedTransactions.filter(
-            tx =>
-              tx.type === 'income' &&
-              isImportedInvoiceSettlementCredit(tx) &&
-              isWithinBillingRange(
-                tx.date,
-                purchasesPeriod.start,
-                purchasesPeriod.end
-              )
-          ),
-          'income'
-        )
-      : 0n
+  const { paymentsToDeduct, settlementCreditsToDeduct } = resolveRemainingDeductions({
+    imported,
+    statement,
+    cycle,
+    ownedTransactions,
+    purchasesPeriod,
+    paymentPeriod,
+    resolvedInvoiceTotal,
+    purchases,
+    previousBalance,
+    payments,
+    crossStatementPayments,
+    isNetImportedTotal,
+  })
 
   const remaining =
     statement?.isClosed && statement?.isPaid
       ? 0n
       : (() => {
-          const value = resolvedInvoiceTotal - paymentsToDeduct - settlementCredits
+          const value = resolvedInvoiceTotal - paymentsToDeduct - settlementCreditsToDeduct
           return value > 0n ? value : 0n
         })()
 
