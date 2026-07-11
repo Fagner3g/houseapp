@@ -74,10 +74,11 @@ function getStatusBadges(item) {
       badgeClass: 'badge-scheduled',
     })
     if (item.overdueDays != null && item.overdueDays > 0) {
+      const dueIso = item.dueDate || item.date
       badges.push({
-        key: 'overdue',
-        label: formatOverdueLabel(item.overdueDays),
-        badgeClass: 'badge-overdue',
+        key: 'due-date',
+        label: `Venc. ${fmtDateShort(dueIso)}`,
+        badgeClass: 'badge-due-date',
       })
     }
     return badges

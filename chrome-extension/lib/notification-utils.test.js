@@ -106,7 +106,7 @@ assert.deepEqual(countByKind(items), { overdue: 0, upcoming: 1, scheduled: 0 })
 const scheduledItem = {
   kind: 'scheduled',
   date: '2026-07-20T23:59:59.999Z',
-  paymentScheduledAt: '2026-07-20T23:59:59.999Z',
+  paymentScheduledAt: '2099-07-20T23:59:59.999Z',
   dueDate: '2026-06-17T00:00:00.000Z',
   overdueDays: 22,
 }
@@ -115,8 +115,9 @@ assert.equal(scheduledBadges.length, 2)
 assert.equal(scheduledBadges[0].key, 'scheduled')
 assert.equal(scheduledBadges[0].badgeClass, 'badge-scheduled')
 assert.match(scheduledBadges[0].label, /Agendado para/)
-assert.equal(scheduledBadges[1].key, 'overdue')
-assert.match(scheduledBadges[1].label, /Vencida há 22 dias/)
+assert.equal(scheduledBadges[1].key, 'due-date')
+assert.equal(scheduledBadges[1].badgeClass, 'badge-due-date')
+assert.match(scheduledBadges[1].label, /^Venc\. \d{2}\/\d{2}$/)
 assert.match(formatStatusLabel(scheduledItem), /Agendado para/)
 assert.equal(statusBadgeClass('scheduled'), 'badge-scheduled')
 

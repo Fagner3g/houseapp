@@ -21,17 +21,41 @@ describe('payable-status', () => {
     assert.equal(isOverduePayable(tx), true)
   })
 
-  it('returns both scheduled and overdue badges', () => {
+  it('treats partial status as future scheduled', () => {
+    const tx = {
+      status: 'partial',
+      date: '2026-06-17T00:00:00.000Z',
+      paymentScheduledAt: dayjs().add(2, 'day').endOf('day').toISOString(),
+    }
+    assert.equal(isFutureScheduled(tx), true)
+  })
+
+  it('shows scheduled plus gray due date when past due but scheduled', () => {
+    const dueDate = '2026-06-17T00:00:00.000Z'
     const tx = {
       status: 'pending',
-      date: '2026-06-17T00:00:00.000Z',
+      date: dueDate,
       paymentScheduledAt: dayjs().add(2, 'day').endOf('day').toISOString(),
     }
     const badges = getPayableStatusBadges(tx)
     assert.equal(badges.length, 2)
     assert.equal(badges[0].key, 'scheduled')
-    assert.equal(badges[1].key, 'overdue')
-    assert.match(badges[1].label, /Vencida há/)
+    assert.equal(badges[1].key, 'due-date')
+    assert.equal(badges[1].label, `Venc. ${dayjs(dueDate).format('DD/MM/YYYY')}`)
+    assert.match(badges[1].className, /slate/)
+  })
+
+  it('shows overdue only when schedule date has passed', () => {
+    const tx = {
+      status: 'pending',
+      date: '2026-06-17T00:00:00.000Z',
+      paymentScheduledAt: dayjs().subtract(1, 'day').endOf('day').toISOString(),
+    }
+    assert.equal(isFutureScheduled(tx), false)
+    const badges = getPayableStatusBadges(tx)
+    assert.equal(badges.length, 1)
+    assert.equal(badges[0].key, 'overdue')
+    assert.match(badges[0].label, /Vencida há/)
   })
 
   it('formats overdue days', () => {

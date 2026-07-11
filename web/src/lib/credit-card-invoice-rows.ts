@@ -38,6 +38,23 @@ function isDateInRange(date: string, dateFrom: string, dateTo: string) {
   return !d.isBefore(dayjs(dateFrom).startOf('day')) && !d.isAfter(dayjs(dateTo).endOf('day'))
 }
 
+/** Match API payable period: due date in range, or scheduled debit date in range. */
+function isTransactionInPeriod(
+  tx: Pick<ListTransactions200TransactionsItem, 'date' | 'paymentScheduledAt'>,
+  dateFrom: string,
+  dateTo: string
+) {
+  if (isDateInRange(tx.date, dateFrom, dateTo)) return true
+  if (tx.paymentScheduledAt && isDateInRange(tx.paymentScheduledAt, dateFrom, dateTo)) return true
+  return false
+}
+
+function listSortDate(
+  item: { date: string; paymentScheduledAt?: string | null }
+): string {
+  return item.paymentScheduledAt || item.date
+}
+
 function hasConfiguredBillingCycle(account: CreditCardAccount) {
   return account.type === 'credit_card' && account.closingDay != null && account.dueDay != null
 }
@@ -237,11 +254,15 @@ export function mergeTransactionsWithInvoices(
 ) {
   const visible = transactions.filter(t => !hiddenTransactionIds.has(t.id))
   const merged = [
-    ...summaries,
-    ...visible.map(tx => ({ kind: 'transaction' as const, ...tx })),
-  ].filter(item => isDateInRange(item.date, dateFrom, dateTo))
+    ...summaries.filter(item => isDateInRange(item.date, dateFrom, dateTo)),
+    ...visible
+      .filter(tx => isTransactionInPeriod(tx, dateFrom, dateTo))
+      .map(tx => ({ kind: 'transaction' as const, ...tx })),
+  ]
 
-  merged.sort((a, b) => dayjs(b.date).valueOf() - dayjs(a.date).valueOf())
+  merged.sort(
+    (a, b) => dayjs(listSortDate(b)).valueOf() - dayjs(listSortDate(a)).valueOf()
+  )
 
   return merged
 }

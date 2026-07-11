@@ -13,7 +13,8 @@ export type PayableStatusBadge = {
 }
 
 export function isFutureScheduled(tx: PayableStatusTx): boolean {
-  if (!tx.paymentScheduledAt || tx.status !== 'pending') return false
+  if (!tx.paymentScheduledAt) return false
+  if (tx.status !== 'pending' && tx.status !== 'partial') return false
   return dayjs(tx.paymentScheduledAt).isAfter(dayjs())
 }
 
@@ -67,30 +68,39 @@ export function getPayableStatusBadges(
     })
   }
 
-  if (isFutureScheduled(tx)) {
+  const futureScheduled = isFutureScheduled(tx)
+
+  if (futureScheduled) {
     badges.push({
       key: 'scheduled',
       label: `Agendado para ${dayjs(tx.paymentScheduledAt).format('DD/MM/YYYY')}`,
       className: 'border-sky-200 bg-sky-50 text-sky-800 hover:bg-sky-50',
     })
-  }
+    if (isOverduePayable(tx)) {
+      badges.push({
+        key: 'due-date',
+        label: `Venc. ${dayjs(tx.date).format('DD/MM/YYYY')}`,
+        className: 'border-slate-200 bg-slate-50 text-slate-600 hover:bg-slate-50',
+      })
+    }
+  } else {
+    const overdueDays = getOverdueDays(tx)
+    if (overdueDays != null) {
+      badges.push({
+        key: 'overdue',
+        label: formatOverdueDays(overdueDays),
+        className: 'border-red-200 bg-red-50 text-red-800 hover:bg-red-50',
+      })
+    }
 
-  const overdueDays = getOverdueDays(tx)
-  if (overdueDays != null) {
-    badges.push({
-      key: 'overdue',
-      label: formatOverdueDays(overdueDays),
-      className: 'border-red-200 bg-red-50 text-red-800 hover:bg-red-50',
-    })
-  }
-
-  const daysUntilDue = getDaysUntilDue(tx)
-  if (daysUntilDue != null && !isFutureScheduled(tx)) {
-    badges.push({
-      key: 'upcoming',
-      label: formatUpcomingDays(daysUntilDue),
-      className: 'border-yellow-200 bg-yellow-50 text-yellow-800 hover:bg-yellow-50',
-    })
+    const daysUntilDue = getDaysUntilDue(tx)
+    if (daysUntilDue != null) {
+      badges.push({
+        key: 'upcoming',
+        label: formatUpcomingDays(daysUntilDue),
+        className: 'border-yellow-200 bg-yellow-50 text-yellow-800 hover:bg-yellow-50',
+      })
+    }
   }
 
   if (badges.length === 0) {

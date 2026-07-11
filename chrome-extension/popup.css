@@ -220,6 +220,7 @@ header {
 
 .badge-overdue { background: #fffbeb; border-color: #fde68a; color: #92400e; }
 .badge-scheduled { background: #f0f9ff; border-color: #bae6fd; color: #075985; }
+.badge-due-date { background: #f8fafc; border-color: #e2e8f0; color: #64748b; }
 .badge-upcoming { background: #fefce8; border-color: #fde047; color: #854d0e; }
 .badge-partial { background: #fffbeb; border-color: #fde68a; color: #92400e; }
 

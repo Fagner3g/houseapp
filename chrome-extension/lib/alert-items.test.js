@@ -122,7 +122,9 @@ assert.equal(scheduledOnlyItems[0].transactionId, 'tx-loan')
 const loanBadges = notify.getStatusBadges(scheduledOnlyItems[0])
 assert.equal(loanBadges.length, 2)
 assert.equal(loanBadges[0].key, 'scheduled')
-assert.equal(loanBadges[1].key, 'overdue')
+assert.equal(loanBadges[1].key, 'due-date')
+assert.equal(loanBadges[1].badgeClass, 'badge-due-date')
+assert.match(loanBadges[1].label, /^Venc\. /)
 
 const withNotification = buildOrgAlertItems({
   overdueTransactions: [
@@ -206,5 +208,64 @@ const partialBadges = notify.getStatusBadges(partialItems[0])
 assert.equal(partialBadges[0].key, 'partial')
 assert.equal(partialBadges[0].label, 'Pagamento parcial')
 assert.equal(partialBadges[1].key, 'overdue')
+
+// Screenshot scenario: DAS overdue + DARF/NFE scheduled past-due → 1 vencida, 2 agendadas
+const screenshotItems = buildOrgAlertItems({
+  overdueTransactions: [
+    {
+      id: 'tx-das',
+      title: 'DAS',
+      amount: '100.00',
+      date: '2026-07-10T00:00:00.000Z',
+    },
+    {
+      id: 'tx-darf',
+      title: 'DARF',
+      amount: '200.00',
+      date: '2026-07-10T00:00:00.000Z',
+      paymentScheduledAt: futureSchedule.toISOString(),
+    },
+    {
+      id: 'tx-nfe',
+      title: 'NFE Sem Parar',
+      amount: '300.00',
+      date: '2026-07-06T00:00:00.000Z',
+      paymentScheduledAt: futureSchedule.toISOString(),
+    },
+  ],
+  upcomingTransactions: [],
+  scheduledTransactions: [
+    {
+      id: 'tx-darf',
+      title: 'DARF',
+      amount: '200.00',
+      date: '2026-07-10T00:00:00.000Z',
+      paymentScheduledAt: futureSchedule.toISOString(),
+    },
+    {
+      id: 'tx-nfe',
+      title: 'NFE Sem Parar',
+      amount: '300.00',
+      date: '2026-07-06T00:00:00.000Z',
+      paymentScheduledAt: futureSchedule.toISOString(),
+    },
+  ],
+  notifications: [],
+  orgs,
+  orgId: 'org1',
+})
+
+assert.equal(screenshotItems.length, 3)
+assert.deepEqual(notify.countByKind(screenshotItems), {
+  overdue: 1,
+  scheduled: 2,
+  upcoming: 0,
+})
+assert.equal(screenshotItems.find(i => i.transactionId === 'tx-das')?.kind, 'overdue')
+assert.equal(screenshotItems.find(i => i.transactionId === 'tx-darf')?.kind, 'scheduled')
+assert.equal(screenshotItems.find(i => i.transactionId === 'tx-nfe')?.kind, 'scheduled')
+const darfBadges = notify.getStatusBadges(screenshotItems.find(i => i.transactionId === 'tx-darf'))
+assert.ok(!darfBadges.some(b => b.key === 'overdue'))
+assert.ok(darfBadges.some(b => b.key === 'due-date'))
 
 console.log('alert-items.test.js: all passed')

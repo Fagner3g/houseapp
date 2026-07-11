@@ -448,4 +448,42 @@ describe('mergeTransactionsWithInvoices', () => {
 
     expect(merged.map(item => item.id)).toEqual(['invoice-jul', 'tx-in'])
   })
+
+  it('keeps payables whose due date is outside the period but schedule falls inside', () => {
+    const merged = mergeTransactionsWithInvoices(
+      [
+        {
+          id: 'tx-scheduled',
+          organizationId: 'org',
+          accountId: 'acc-1',
+          cardId: null,
+          recurringTransactionId: null,
+          statementId: null,
+          title: 'Empréstimo',
+          description: null,
+          amount: '500.00',
+          type: 'expense',
+          date: '2026-06-20T12:00:00.000Z',
+          competenceDate: null,
+          status: 'pending',
+          paidAt: null,
+          paidAmount: null,
+          paymentScheduledAt: '2026-07-20T23:59:59.999Z',
+          counterparty: null,
+          installmentNumber: null,
+          installmentsTotal: null,
+          source: 'manual',
+          categoryIds: [],
+          createdAt: '2026-06-20T12:00:00.000Z',
+          updatedAt: '2026-06-20T12:00:00.000Z',
+        },
+      ],
+      [],
+      new Set(),
+      '2026-07-01',
+      '2026-07-31'
+    )
+
+    expect(merged.map(item => item.id)).toEqual(['tx-scheduled'])
+  })
 })
