@@ -340,6 +340,81 @@ describe('whatsapp-alert-message', () => {
     )
   })
 
+  it('collapses installment series siblings to the soonest parcel', () => {
+    const message = buildWhatsAppBatchAlertMessage(
+      {
+        recipientName: 'Fagner',
+        items: [
+          {
+            transactionTitle: 'Piso cozinha',
+            transactionTotalAmount: '299.80',
+            splitAmount: '149.90',
+            isSplit: true,
+            dueLine: 'Vence em 6 dias · 17/07/2026',
+            daysUntilDue: 6,
+            kind: 'split_upcoming',
+          },
+          {
+            transactionTitle: 'Marmori cozinha',
+            transactionTotalAmount: '850.00',
+            splitAmount: '424.99',
+            splitShareInstallmentAmount: '141.67',
+            installmentNumber: 1,
+            installmentsTotal: 3,
+            isSplit: true,
+            dueLine: 'Vence em 6 dias · 17/07/2026',
+            daysUntilDue: 6,
+            kind: 'split_upcoming',
+          },
+          {
+            transactionTitle: 'Marmori cozinha',
+            transactionTotalAmount: '850.00',
+            splitAmount: '424.99',
+            splitShareInstallmentAmount: '141.66',
+            installmentNumber: 2,
+            installmentsTotal: 3,
+            isSplit: true,
+            dueLine: 'Vence em 37 dias · 17/08/2026',
+            daysUntilDue: 37,
+            kind: 'split_upcoming',
+          },
+          {
+            transactionTitle: 'Marmori cozinha',
+            transactionTotalAmount: '850.00',
+            splitAmount: '424.99',
+            splitShareInstallmentAmount: '141.66',
+            installmentNumber: 3,
+            installmentsTotal: 3,
+            isSplit: true,
+            dueLine: 'Vence em 68 dias · 17/09/2026',
+            daysUntilDue: 68,
+            kind: 'split_upcoming',
+          },
+        ],
+      },
+      new Date('2026-07-11T12:00:00.000Z')
+    )
+
+    expect(message).toBe(
+      [
+        'Bom dia, Fagner!',
+        '',
+        '⏰ *PRESTES A VENCER*',
+        '🧾 *Piso cozinha* · *R$ 299,80*',
+        'Sua parte: *R$ 149,90*',
+        '*Vence em 6 dias · 17/07/2026*',
+        '',
+        WHATSAPP_BATCH_SEPARATOR,
+        '',
+        '🧾 *Marmori cozinha* · *R$ 850,00*',
+        'Sua parte: *R$ 141,67* (1/3) · 424,99',
+        '*Vence em 6 dias · 17/07/2026*',
+        '',
+        '💰 Total da sua parte: *R$ 291,57*',
+      ].join('\n')
+    )
+  })
+
   it('builds batched WhatsApp message for multiple alerts', () => {
     const message = buildWhatsAppBatchAlertMessage(
       {

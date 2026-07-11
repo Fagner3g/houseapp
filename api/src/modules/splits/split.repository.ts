@@ -126,6 +126,9 @@ export type PendingSplitNotifyRow = PendingSplitRow & {
   competenceDate: Date | null
   transactionType: TransactionType
   installmentNumber: number | null
+  installmentsTotal: number | null
+  accountId: string | null
+  cardId: string | null
   accountType: string | null
   closingDay: number | null
   dueDay: number | null
@@ -366,6 +369,9 @@ export class DrizzleSplitRepository implements SplitRepository {
         competenceDate: transactions.competenceDate,
         transactionType: transactions.type,
         installmentNumber: transactions.installmentNumber,
+        installmentsTotal: transactions.installmentsTotal,
+        accountId: transactions.accountId,
+        cardId: transactions.cardId,
         accountType: accounts.type,
         closingDay: accounts.closingDay,
         dueDay: accounts.dueDay,
@@ -392,6 +398,9 @@ export class DrizzleSplitRepository implements SplitRepository {
       competenceDate: row.competenceDate,
       transactionType: row.transactionType,
       installmentNumber: row.installmentNumber,
+      installmentsTotal: row.installmentsTotal,
+      accountId: row.accountId,
+      cardId: row.cardId,
       accountType: row.accountType,
       closingDay: row.closingDay,
       dueDay: row.dueDay,

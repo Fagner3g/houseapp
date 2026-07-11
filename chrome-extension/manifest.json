@@ -20,7 +20,8 @@
     {
       "matches": [
         "http://localhost:5173/*",
-        "https://app.jarvis.dev.br/*"
+        "https://app.jarvis.dev.br/*",
+        "https://app.homolog.jarvis.dev.br/*"
       ],
       "js": ["content.js"],
       "run_at": "document_idle"

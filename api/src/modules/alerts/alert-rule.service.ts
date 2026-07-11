@@ -47,6 +47,7 @@ import {
   buildWhatsAppBatchMessageForTransactions,
   buildWhatsAppMessageForTransaction,
 } from './build-whatsapp-transaction-message'
+import { keepSoonestUpcomingInstallmentSplits } from './keep-soonest-installment-splits'
 import type { NotificationRepository } from './notification.repository'
 import { resolveSplitAlertDueDate, resolveTransactionAlertDueDate } from './resolve-transaction-alert-due-date'
 import { personKey } from '@/modules/splits/split-debt-summary.logic'
@@ -520,8 +521,14 @@ export class AlertRuleService {
   ): Promise<ManualAlertItem[]> {
     const items: ManualAlertItem[] = []
     const pendingTransactions = await this.loadPendingTransactions(organizationId)
-    const activeSplits = await this.splitRepository.listActivePendingSplits(organizationId)
-    const transactionIdsWithSplits = new Set(activeSplits.map(split => split.transactionId))
+    const activeSplitsRaw = await this.splitRepository.listActivePendingSplits(organizationId)
+    const activeSplits =
+      mode === 'overdue'
+        ? activeSplitsRaw
+        : keepSoonestUpcomingInstallmentSplits(activeSplitsRaw, split =>
+            this.resolveDaysUntilDueForSplit(split)
+          )
+    const transactionIdsWithSplits = new Set(activeSplitsRaw.map(split => split.transactionId))
 
     for (const transaction of pendingTransactions) {
       if (transactionIdsWithSplits.has(transaction.id)) {

@@ -1,19 +1,29 @@
 const statusEl = document.getElementById('status')
 
 const ENVS = {
-  prod: { apiUrl: 'https://api.jarvis.dev.br', webUrl: 'https://app.jarvis.dev.br' },
-  dev:  { apiUrl: 'http://localhost:3333',      webUrl: 'http://localhost:5173' },
+  prod:    { apiUrl: 'https://api.jarvis.dev.br',        webUrl: 'https://app.jarvis.dev.br' },
+  homolog: { apiUrl: 'https://api.homolog.jarvis.dev.br', webUrl: 'https://app.homolog.jarvis.dev.br' },
+  dev:     { apiUrl: 'http://localhost:3333',             webUrl: 'http://localhost:5173' },
+}
+
+function detectEnv(apiUrl) {
+  if (!apiUrl) return 'prod'
+  if (apiUrl.includes('localhost')) return 'dev'
+  if (apiUrl.includes('homolog')) return 'homolog'
+  return 'prod'
 }
 
 function applyEnv(env) {
   document.getElementById('api-url').value = ENVS[env].apiUrl
   document.getElementById('web-url').value = ENVS[env].webUrl
-  document.getElementById('btn-env-prod').classList.toggle('active', env === 'prod')
-  document.getElementById('btn-env-dev').classList.toggle('active',  env === 'dev')
+  for (const key of Object.keys(ENVS)) {
+    document.getElementById(`btn-env-${key}`).classList.toggle('active', key === env)
+  }
 }
 
-document.getElementById('btn-env-prod').addEventListener('click', () => applyEnv('prod'))
-document.getElementById('btn-env-dev').addEventListener('click',  () => applyEnv('dev'))
+for (const key of Object.keys(ENVS)) {
+  document.getElementById(`btn-env-${key}`).addEventListener('click', () => applyEnv(key))
+}
 
 function setStatus(msg, type = '') {
   statusEl.textContent = msg
@@ -30,10 +40,10 @@ chrome.storage.local.get(['apiUrl', 'webUrl', 'pollMinutes', 'upcomingPeriod'], 
   }
   document.getElementById('upcoming-period').value = data.upcomingPeriod || '7'
   // highlight active env button based on saved apiUrl
-  const savedApi = data.apiUrl || ''
-  const activeEnv = savedApi.includes('localhost') ? 'dev' : 'prod'
-  document.getElementById('btn-env-prod').classList.toggle('active', activeEnv === 'prod')
-  document.getElementById('btn-env-dev').classList.toggle('active',  activeEnv === 'dev')
+  const activeEnv = detectEnv(data.apiUrl || '')
+  for (const key of Object.keys(ENVS)) {
+    document.getElementById(`btn-env-${key}`).classList.toggle('active', key === activeEnv)
+  }
 })
 
 // ── Save ──────────────────────────────────────────────────────────────────────

@@ -1,3 +1,4 @@
+import { collapseInstallmentSeriesItems } from './collapse-installments'
 import { buildUrgencyBanner, emphasizeMoneyInLine } from './emphasis'
 import { buildGreeting } from './format'
 import { buildWhatsAppBatchRenderUnits, renderWhatsAppBatchUnitLines } from './render'
@@ -27,12 +28,13 @@ export function buildWhatsAppBatchAlertMessage(
   },
   referenceDate = new Date()
 ): string {
+  const items = collapseInstallmentSeriesItems(input.items)
   const lines = [
     buildGreeting(input.recipientName, referenceDate),
     '',
-    buildUrgencyBanner(input.items),
+    buildUrgencyBanner(items),
   ]
-  const units = buildWhatsAppBatchRenderUnits(input.items)
+  const units = buildWhatsAppBatchRenderUnits(items)
   const allItems = units.flatMap(collectUnitItems)
   const showGrandTotal = units.filter(unitHasSplitItems).length >= 2
 
