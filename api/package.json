@@ -1,6 +1,6 @@
 {
   "name": "houseapp",
-  "version": "2.0.0",
+  "version": "2.1.0",
   "main": "index.js",
   "scripts": {
     "dev": "tsx watch --env-file ./.env src/http/server.ts",
