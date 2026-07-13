@@ -4,6 +4,7 @@ import { db } from '@/db'
 import { organizations } from '@/db/schemas/organizations'
 import { transactions } from '@/db/schemas/transactions'
 
+import { resolveAlertDedupeKey, shouldSkipAlertDedupe } from '../alert-dedupe'
 import type { NotificationRepository } from '../notification.repository'
 import type { CreateExternalNotificationParams } from './notification-types'
 
@@ -15,7 +16,10 @@ export async function createExternalNotification(
     return 0
   }
 
-  if (await notificationRepository.existsByDedupeKey(params.dedupeKey)) {
+  if (
+    !shouldSkipAlertDedupe() &&
+    (await notificationRepository.existsByDedupeKey(params.dedupeKey))
+  ) {
     return 0
   }
 
@@ -39,7 +43,7 @@ export async function createExternalNotification(
     channel: 'whatsapp',
     status: 'pending',
     sentAt: null,
-    dedupeKey: params.dedupeKey,
+    dedupeKey: resolveAlertDedupeKey(params.dedupeKey),
     metadata: {
       ...params.metadata,
       externalPhone: params.phone,
