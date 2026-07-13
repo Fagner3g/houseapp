@@ -1325,6 +1325,29 @@
                           "role": {
                             "type": "string"
                           },
+                          "notificationsEnabled": {
+                            "type": "boolean"
+                          },
+                          "alertPreferences": {
+                            "type": "object",
+                            "properties": {
+                              "whatsapp": {
+                                "type": "boolean"
+                              },
+                              "inApp": {
+                                "type": "boolean"
+                              },
+                              "extension": {
+                                "type": "boolean"
+                              }
+                            },
+                            "required": [
+                              "whatsapp",
+                              "inApp",
+                              "extension"
+                            ],
+                            "additionalProperties": false
+                          },
                           "isOwner": {
                             "type": "boolean"
                           }
@@ -1336,6 +1359,8 @@
                           "phone",
                           "avatarUrl",
                           "role",
+                          "notificationsEnabled",
+                          "alertPreferences",
                           "isOwner"
                         ],
                         "additionalProperties": false

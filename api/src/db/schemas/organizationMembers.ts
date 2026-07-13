@@ -1,9 +1,21 @@
-import { pgTable, primaryKey, text, timestamp } from 'drizzle-orm/pg-core'
+import { boolean, jsonb, pgTable, primaryKey, text, timestamp } from 'drizzle-orm/pg-core'
 
 import { organizations } from './organizations'
 import { users } from './users'
 
 export type OrganizationMemberRole = 'owner' | 'admin' | 'member'
+
+export type AlertPreferences = {
+  whatsapp: boolean
+  inApp: boolean
+  extension: boolean
+}
+
+export const DEFAULT_ALERT_PREFERENCES: AlertPreferences = {
+  whatsapp: true,
+  inApp: true,
+  extension: true,
+}
 
 export const organizationMembers = pgTable(
   'organization_members',
@@ -15,6 +27,11 @@ export const organizationMembers = pgTable(
       .notNull()
       .references(() => organizations.id, { onDelete: 'cascade' }),
     role: text('role').$type<OrganizationMemberRole>().notNull().default('member'),
+    notificationsEnabled: boolean('notifications_enabled').notNull().default(true),
+    alertPreferences: jsonb('alert_preferences')
+      .$type<AlertPreferences>()
+      .notNull()
+      .default(DEFAULT_ALERT_PREFERENCES),
     joinedAt: timestamp('joined_at', { withTimezone: true }).notNull().defaultNow(),
   },
   table => [primaryKey({ columns: [table.userId, table.organizationId] })]
