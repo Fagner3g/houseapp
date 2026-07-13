@@ -8,6 +8,7 @@ import {
   DEFAULT_NOTIFY_MINUTE,
   formatNotifyTime,
 } from './alert-utils'
+import { clearTodayOrgNotifications } from './clear-today-org-notifications'
 
 export type AlertSettings = {
   defaultNotifyHour: number
@@ -44,6 +45,11 @@ export class AlertSettingsService {
   }
 
   async update(organizationId: string, input: UpdateAlertSettingsInput): Promise<AlertSettings> {
+    const current = await this.get(organizationId)
+    const timeChanged =
+      current.defaultNotifyHour !== input.defaultNotifyHour ||
+      current.defaultNotifyMinute !== input.defaultNotifyMinute
+
     const [updated] = await db
       .update(organizations)
       .set({
@@ -56,6 +62,10 @@ export class AlertSettingsService {
         defaultNotifyHour: organizations.defaultNotifyHour,
         defaultNotifyMinute: organizations.defaultNotifyMinute,
       })
+
+    if (timeChanged) {
+      await clearTodayOrgNotifications(organizationId)
+    }
 
     const defaultNotifyHour = updated?.defaultNotifyHour ?? input.defaultNotifyHour
     const defaultNotifyMinute = updated?.defaultNotifyMinute ?? input.defaultNotifyMinute

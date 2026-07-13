@@ -6,6 +6,7 @@ import {
   organizationMembers,
 } from '@/db/schemas/organizationMembers'
 
+import { resolveAlertDedupeKey, shouldSkipAlertDedupe } from '../alert-dedupe'
 import { isAlertChannelEnabled } from '../alert-preferences'
 import type { NotificationRepository } from '../notification.repository'
 import type { CreateUserNotificationParams } from './notification-types'
@@ -40,9 +41,12 @@ export async function createNotificationsForUser(
       continue
     }
 
-    const dedupeKey = params.dedupeKeyBuilder(params.userId, channel)
+    const baseDedupeKey = params.dedupeKeyBuilder(params.userId, channel)
 
-    if (!params.skipDedupe && (await notificationRepository.existsByDedupeKey(dedupeKey))) {
+    if (
+      !shouldSkipAlertDedupe(params.skipDedupe) &&
+      (await notificationRepository.existsByDedupeKey(baseDedupeKey))
+    ) {
       continue
     }
 
@@ -57,7 +61,7 @@ export async function createNotificationsForUser(
       channel,
       status: channel === 'in_app' || channel === 'extension' ? 'sent' : 'pending',
       sentAt: channel === 'in_app' || channel === 'extension' ? new Date() : null,
-      dedupeKey,
+      dedupeKey: resolveAlertDedupeKey(baseDedupeKey, params.skipDedupe),
       metadata: params.metadata,
     })
 

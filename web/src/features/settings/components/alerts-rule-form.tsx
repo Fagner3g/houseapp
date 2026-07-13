@@ -43,7 +43,7 @@ export function loadRuleDraft(rule: ListAlertRules200RulesItem): RuleDraft {
     selectedDays: [1, 3, 7],
     overdueFrequency: 'daily',
     overdueInterval: 1,
-    channels: ['in_app', 'extension'],
+    channels: ['in_app', 'whatsapp', 'extension'],
   }
 }
 

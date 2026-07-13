@@ -38,7 +38,7 @@ export function AlertsScheduleRow() {
     },
     onSuccess: saved => {
       queryClient.setQueryData(['alert-settings', slug], saved)
-      toast.success('Horário dos alertas atualizado')
+      toast.success('Horário atualizado. Alertas de hoje liberados para reenvio.')
     },
     onError: error => {
       if (error instanceof Error && error.message === 'invalid-time') {
