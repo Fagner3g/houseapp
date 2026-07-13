@@ -3,7 +3,7 @@
  * Do not edit manually.
  * HouseApp API
  * API for HouseApp
- * OpenAPI spec version: 2.0.0
+ * OpenAPI spec version: 2.1.0
  */
 
 export * from "./aiChatBody";
@@ -803,6 +803,7 @@ export * from "./listTransactionsStatus";
 export * from "./listTransactionsType";
 export * from "./listUsersByOrg200";
 export * from "./listUsersByOrg200UsersItem";
+export * from "./listUsersByOrg200UsersItemAlertPreferences";
 export * from "./listUsersByOrg200UsersItemAvatarUrl";
 export * from "./listUsersByOrg200UsersItemPhone";
 export * from "./markNotificationRead200";

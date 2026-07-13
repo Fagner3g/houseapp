@@ -110,12 +110,9 @@ describe('mapOverdueKpiItems', () => {
 })
 
 describe('mapPendingSplitKpiItems', () => {
-  const period = {
-    dateFrom: '2026-06-01',
-    dateTo: '2026-06-30',
-  }
+  const dateTo = '2026-06-30'
 
-  it('groups by person with date-sorted children and summed amounts in period', () => {
+  it('groups by person with date-sorted children and summed amounts due through period', () => {
     const onOpen = vi.fn()
     const { items, secondaryItems } = mapPendingSplitKpiItems({
       splits: [
@@ -144,7 +141,7 @@ describe('mapPendingSplitKpiItems', () => {
           amount: '4000.00',
         }),
       ],
-      ...period,
+      dateTo,
       onOpenTransaction: onOpen,
     })
 
@@ -163,7 +160,48 @@ describe('mapPendingSplitKpiItems', () => {
     expect(items[1]?.onClick).toBeUndefined()
   })
 
-  it('uses period amount as primary and full outstanding as subtitle', () => {
+  it('includes past/overdue before period start in the primary amount', () => {
+    const onOpen = vi.fn()
+    const { items, secondaryItems } = mapPendingSplitKpiItems({
+      splits: [
+        split({
+          id: '1',
+          transactionId: 't1',
+          personName: 'Karoline',
+          transactionTitle: 'Past May',
+          transactionDate: '2026-05-10',
+          amount: '50.00',
+        }),
+        split({
+          id: '2',
+          transactionId: 't2',
+          personName: 'Karoline',
+          transactionTitle: 'In June',
+          transactionDate: '2026-06-15',
+          amount: '100.00',
+        }),
+        split({
+          id: '3',
+          transactionId: 't3',
+          personName: 'Karoline',
+          transactionTitle: 'Future July',
+          transactionDate: '2026-07-15',
+          amount: '200.00',
+        }),
+      ],
+      dateTo,
+      onOpenTransaction: onOpen,
+    })
+
+    expect(items).toHaveLength(1)
+    expect(secondaryItems).toHaveLength(0)
+    expect(items[0]?.amountLabel).toContain('150,00')
+    expect(items[0]?.subtitle).toContain('350,00')
+    expect(items[0]?.meta).toBe('2 lançamentos')
+    expect(items[0]?.children?.map(c => c.title)).toEqual(['Past May', 'In June'])
+  })
+
+  it('uses due-through-period amount as primary and full outstanding as subtitle', () => {
     const onOpen = vi.fn()
     const { items, secondaryItems } = mapPendingSplitKpiItems({
       splits: [
@@ -184,7 +222,7 @@ describe('mapPendingSplitKpiItems', () => {
           amount: '200.00',
         }),
       ],
-      ...period,
+      dateTo,
       onOpenTransaction: onOpen,
     })
 
@@ -196,7 +234,51 @@ describe('mapPendingSplitKpiItems', () => {
     expect(items[0]?.children?.map(c => c.title)).toEqual(['In period'])
   })
 
-  it('puts people with only out-of-period splits in secondaryItems', () => {
+  it('strips Parcela N/M from lump-sum split titles and marks à vista in meta', () => {
+    const onOpen = vi.fn()
+    const { items } = mapPendingSplitKpiItems({
+      splits: [
+        split({
+          id: '1',
+          transactionId: 't1',
+          personName: 'Karoline',
+          transactionTitle: 'Supermercados Bh - Parcela 1/3',
+          transactionDate: '2026-06-10',
+          amount: '412.19',
+          collectLumpSum: true,
+        }),
+      ],
+      dateTo,
+      onOpenTransaction: onOpen,
+    })
+
+    expect(items[0]?.children?.[0]?.title).toBe('Supermercados Bh')
+    expect(items[0]?.children?.[0]?.meta).toBe('10/06/2026 · à vista')
+  })
+
+  it('keeps Parcela N/M when the person share is also installmentized', () => {
+    const onOpen = vi.fn()
+    const { items } = mapPendingSplitKpiItems({
+      splits: [
+        split({
+          id: '1',
+          transactionId: 't1',
+          personName: 'Karoline',
+          transactionTitle: 'Celular - Parcela 6/10',
+          transactionDate: '2026-06-17',
+          amount: '556.09',
+          collectLumpSum: false,
+        }),
+      ],
+      dateTo,
+      onOpenTransaction: onOpen,
+    })
+
+    expect(items[0]?.children?.[0]?.title).toBe('Celular - Parcela 6/10')
+    expect(items[0]?.children?.[0]?.meta).toBe('17/06/2026')
+  })
+
+  it('puts people with only future splits in secondaryItems', () => {
     const onOpen = vi.fn()
     const { items, secondaryItems } = mapPendingSplitKpiItems({
       splits: [
@@ -209,7 +291,7 @@ describe('mapPendingSplitKpiItems', () => {
           amount: '500.00',
         }),
       ],
-      ...period,
+      dateTo,
       onOpenTransaction: onOpen,
     })
 

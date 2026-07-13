@@ -222,11 +222,10 @@ export function useTransactionKpiRow() {
     () =>
       mapPendingSplitKpiItems({
         splits: pendingSplitsData?.splits ?? [],
-        dateFrom,
         dateTo,
         onOpenTransaction: openTransaction,
       }),
-    [pendingSplitsData?.splits, dateFrom, dateTo, openTransaction]
+    [pendingSplitsData?.splits, dateTo, openTransaction]
   )
 
   const overdueItems = useMemo(

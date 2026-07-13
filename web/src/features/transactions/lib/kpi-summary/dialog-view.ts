@@ -60,14 +60,14 @@ export function buildKpiDialogByKey(input: {
     pendingSplits: {
       title: 'Splits a receber',
       description:
-        'Dinheiro que outras pessoas ainda te devem em divisões neste período. Já foi retirado de Meu gasto; aqui é só o que falta entrar.',
-      totalLabel: 'No período',
+        'Dinheiro que outras pessoas ainda te devem até o fim deste período, incluindo vencidos e o passado. Já foi retirado de Meu gasto; aqui é só o que falta entrar. Parcelas futuras ficam à parte.',
+      totalLabel: 'Até o período',
       total: formatCurrency(kpis.myPendingSplitsInPeriod),
       totalClassName: 'text-amber-700',
       breakdown: showPendingSplitsBreakdown
         ? [
             {
-              label: 'No período',
+              label: 'Até o período',
               value: formatCurrency(kpis.myPendingSplitsInPeriod),
               emphasis: true,
               className: 'text-amber-700',
@@ -80,10 +80,10 @@ export function buildKpiDialogByKey(input: {
         : undefined,
       items: input.splitItems,
       secondaryItemsLabel:
-        input.splitSecondaryItems.length > 0 ? 'Em aberto fora do período' : undefined,
+        input.splitSecondaryItems.length > 0 ? 'Parcelas futuras' : undefined,
       secondaryItems: input.splitSecondaryItems,
       isLoading: input.splitsLoading,
-      emptyMessage: 'Nenhum split pendente no período.',
+      emptyMessage: 'Nenhum split pendente até o fim do período.',
       footerHint: 'Toque na pessoa para ver os lançamentos · toque no lançamento para abrir',
     },
     toPay: {

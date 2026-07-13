@@ -36,6 +36,13 @@
       "when": 1783702080000,
       "tag": "0004_split_collect_lump_sum",
       "breakpoints": true
+    },
+    {
+      "idx": 5,
+      "version": "7",
+      "when": 1783788480000,
+      "tag": "0005_organization_member_notification_prefs",
+      "breakpoints": true
     }
   ]
 }
