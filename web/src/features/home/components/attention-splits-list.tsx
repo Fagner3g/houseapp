@@ -15,6 +15,8 @@ import { readHttpErrorMessage } from '@/lib/http'
 import { listManualAlertTargets } from '@/features/settings/api/list-manual-alert-targets'
 import { sendManualAlert } from '@/features/settings/api/send-manual-alert'
 
+import { pendingSplitDisplayTitle } from '@/features/transactions/lib/pending-split-display-title'
+
 import {
   pendingSplitAlertType,
   pendingSplitTargetKey,
@@ -92,7 +94,9 @@ export function AttentionSplitsList({
               <p className="font-medium text-slate-900">
                 {split.personName ?? split.contactName ?? 'Contato'}
               </p>
-              <p className="truncate text-sm text-slate-500">{split.transactionTitle}</p>
+              <p className="truncate text-sm text-slate-500">
+                {pendingSplitDisplayTitle(split.transactionTitle, split.collectLumpSum)}
+              </p>
             </div>
             <div className="flex shrink-0 items-center gap-2">
               <span className="font-medium tabular-nums text-amber-600">

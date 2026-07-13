@@ -389,7 +389,7 @@ export class DrizzleReportRepository implements ReportRepository {
       .where(
         and(
           myPendingSplitsBase,
-          gte(transactions.date, range.from),
+          // Past + current period (overdue included); future installments stay in total only.
           lte(transactions.date, range.to)
         )
       )
