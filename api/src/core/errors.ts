@@ -35,3 +35,7 @@ export function conflict(message = 'Resource already exists'): AppError {
 export function badRequest(message: string): AppError {
   return new AppError(ErrorCodes.BAD_REQUEST, StatusCodes.BAD_REQUEST, message)
 }
+
+export function forbidden(message = 'Forbidden'): AppError {
+  return new AppError(ErrorCodes.FORBIDDEN, StatusCodes.FORBIDDEN, message)
+}

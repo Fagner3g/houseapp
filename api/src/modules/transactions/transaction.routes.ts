@@ -8,6 +8,7 @@ import {
   bulkNotifyTargetController,
   bulkReviewImportController,
   createTransactionController,
+  createTransferController,
   deleteTransactionController,
   getInstallmentSeriesController,
   getTransactionController,
@@ -33,6 +34,7 @@ import {
   scheduleTransactionPaymentSchema,
   updateTransactionSchema,
 } from './transaction.schema'
+import { createTransferSchema } from './transfer'
 
 export const transactionsRoutes: FastifyPluginAsyncZod = async app => {
   app.get('/organizations/:slug/transactions', {
@@ -68,6 +70,13 @@ export const transactionsRoutes: FastifyPluginAsyncZod = async app => {
     preHandler: [verifyOrgAccessHook],
     schema: createTransactionSchema,
     handler: createTransactionController,
+  })
+
+  app.post('/organizations/:slug/transfers', {
+    onRequest: [authenticateUserHook],
+    preHandler: [verifyOrgAccessHook],
+    schema: createTransferSchema,
+    handler: createTransferController,
   })
 
   app.get('/organizations/:slug/transactions/:id/installment-series', {

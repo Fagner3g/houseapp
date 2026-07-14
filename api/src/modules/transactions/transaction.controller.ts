@@ -2,6 +2,8 @@ import type { FastifyReply, FastifyRequest } from 'fastify'
 import { StatusCodes } from 'http-status-codes'
 
 import { container } from '@/core/container'
+import { createTransfer } from '@/modules/transactions/transfer'
+import type { CreateTransferBody } from '@/modules/transactions/transfer'
 import type {
   BulkNotifyTargetBody,
   BulkReviewImportBody,
@@ -68,6 +70,21 @@ export async function createTransactionController(
     request.organization.id,
     request.body
   )
+
+  return reply.status(StatusCodes.CREATED).send(result)
+}
+
+export async function createTransferController(
+  request: FastifyRequest<{ Params: OrgParams; Body: CreateTransferBody }>,
+  reply: FastifyReply
+) {
+  const result = await createTransfer({
+    userId: request.user.sub,
+    fromOrganizationId: request.organization.id,
+    input: request.body,
+    transactionRepository: container.transactionRepository,
+    accountRepository: container.accountRepository,
+  })
 
   return reply.status(StatusCodes.CREATED).send(result)
 }

@@ -49,6 +49,18 @@ export const transactionResponseSchema = z.object({
   source: transactionSourceSchema,
   categoryIds: z.array(z.string()),
   transferPairId: z.string().nullable(),
+  transferPair: z
+    .object({
+      id: z.string(),
+      organizationId: z.string(),
+      organizationSlug: z.string(),
+      organizationName: z.string(),
+      accountId: z.string().nullable(),
+      accountName: z.string().nullable(),
+      type: transactionTypeSchema,
+    })
+    .nullable()
+    .optional(),
   notifyEnabled: z.boolean(),
   notifyTargetType: notifyTargetTypeSchema.nullable(),
   notifyUserId: z.string().nullable(),

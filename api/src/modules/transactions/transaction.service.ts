@@ -2,6 +2,7 @@ import { and, eq } from 'drizzle-orm'
 
 import { db } from '@/db'
 import { cards } from '@/db/schemas/cards'
+import { organizations } from '@/db/schemas/organizations'
 import { transactions } from '@/db/schemas/transactions'
 import type {
   TransactionSource,
@@ -81,6 +82,15 @@ export type TransactionDto = {
   source: TransactionSource
   categoryIds: string[]
   transferPairId: string | null
+  transferPair?: {
+    id: string
+    organizationId: string
+    organizationSlug: string
+    organizationName: string
+    accountId: string | null
+    accountName: string | null
+    type: TransactionType
+  } | null
   notifyEnabled: boolean
   notifyTargetType: NotifyTargetType | null
   notifyUserId: string | null
@@ -92,7 +102,7 @@ export type TransactionDto = {
   updatedAt: string
 }
 
-function toTransactionDto(
+export function toTransactionDto(
   transaction: TransactionRecord,
   categoryIds: string[] = []
 ): TransactionDto {
@@ -262,8 +272,42 @@ export class TransactionService {
     }
 
     const categoryMap = await this.transactionRepository.getCategoryIds([transaction.id])
+    const dto = toTransactionDto(transaction, categoryMap.get(transaction.id) ?? [])
+    dto.transferPair = await this.resolveTransferPairSummary(transaction.transferPairId)
+    return dto
+  }
 
-    return toTransactionDto(transaction, categoryMap.get(transaction.id) ?? [])
+  private async resolveTransferPairSummary(
+    transferPairId: string | null
+  ): Promise<TransactionDto['transferPair']> {
+    if (!transferPairId) return null
+
+    const pair = await this.transactionRepository.findByIdGlobal(transferPairId)
+    if (!pair) return null
+
+    const [org] = await db
+      .select({
+        id: organizations.id,
+        name: organizations.name,
+        slug: organizations.slug,
+      })
+      .from(organizations)
+      .where(eq(organizations.id, pair.organizationId))
+      .limit(1)
+
+    const account = pair.accountId
+      ? await this.accountRepository.findById(pair.organizationId, pair.accountId)
+      : null
+
+    return {
+      id: pair.id,
+      organizationId: pair.organizationId,
+      organizationSlug: org?.slug ?? '',
+      organizationName: org?.name ?? '',
+      accountId: pair.accountId,
+      accountName: account?.name ?? null,
+      type: pair.type,
+    }
   }
 
   async create(
@@ -777,10 +821,7 @@ export class TransactionService {
     }
 
     if (transaction.transferPairId) {
-      const pair = await this.transactionRepository.findById(
-        organizationId,
-        transaction.transferPairId
-      )
+      const pair = await this.transactionRepository.findByIdGlobal(transaction.transferPairId)
 
       if (pair && isImportedStatementTransaction(pair)) {
         throw badRequest('Imported statement lines cannot be deleted')
