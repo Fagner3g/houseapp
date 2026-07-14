@@ -14,6 +14,7 @@ import { badRequest, notFound } from '@/core/errors'
 import { centavosToString, parseCentavos } from '@/core/money'
 import {
   computeTransactionStatus,
+  isReminderWithoutValue,
   resolveTransactionPaidAt,
   transactionRemainingAmount,
 } from '@/core/transaction-payment'
@@ -532,28 +533,35 @@ export class TransactionService {
     }
 
     const existingPaid = transaction.paidAmount ?? 0n
+    const withoutValue = isReminderWithoutValue(transaction.amount)
     const remaining = transactionRemainingAmount(transaction.amount, existingPaid)
 
-    if (remaining <= 0n) {
+    if (!withoutValue && remaining <= 0n) {
       throw badRequest('Transaction is already paid')
     }
 
     const paymentAmount =
-      input.paidAmount != null ? parseCentavos(input.paidAmount) : remaining
+      input.paidAmount != null
+        ? parseCentavos(input.paidAmount)
+        : withoutValue
+          ? 0n
+          : remaining
 
     if (paymentAmount <= 0n) {
       throw badRequest('Payment amount must be greater than zero')
     }
 
-    if (paymentAmount > remaining) {
+    if (!withoutValue && paymentAmount > remaining) {
       throw badRequest(
         `Payment exceeds remaining amount (${centavosToString(remaining)})`
       )
     }
 
-    const newPaidAmount = existingPaid + paymentAmount
+    // Reminder-without-value: the paid amount becomes the known bill amount.
+    const settledAmount = withoutValue ? paymentAmount : transaction.amount
+    const newPaidAmount = withoutValue ? paymentAmount : existingPaid + paymentAmount
     const status = computeTransactionStatus(
-      transaction.amount,
+      settledAmount,
       newPaidAmount,
       transaction.status
     )
@@ -564,6 +572,7 @@ export class TransactionService {
       status,
       paidAt,
       paidAmount: newPaidAmount,
+      ...(withoutValue ? { amount: paymentAmount } : {}),
       paymentScheduledAt: null,
     })
 

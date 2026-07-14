@@ -5,6 +5,7 @@ import {
   resolveTransactionInstallmentRemainingReais,
   resolveTransactionListAmountReais,
   isTransactionPartiallyPaid,
+  isTransactionReminderWithoutValue,
   transactionRemainingReais,
 } from './installment-amount.utils'
 
@@ -98,5 +99,18 @@ describe('isTransactionPartiallyPaid', () => {
 
   it('returns false when the transaction is fully paid', () => {
     expect(isTransactionPartiallyPaid('4000.00', '4000.00', 0)).toBe(false)
+  })
+})
+
+describe('isTransactionReminderWithoutValue', () => {
+  it('treats null, empty and zero amounts as without value', () => {
+    expect(isTransactionReminderWithoutValue(null)).toBe(true)
+    expect(isTransactionReminderWithoutValue(undefined)).toBe(true)
+    expect(isTransactionReminderWithoutValue('')).toBe(true)
+    expect(isTransactionReminderWithoutValue('0.00')).toBe(true)
+  })
+
+  it('treats positive amounts as known value', () => {
+    expect(isTransactionReminderWithoutValue('10.00')).toBe(false)
   })
 })

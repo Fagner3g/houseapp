@@ -6,6 +6,11 @@ export function isUnpaidTransactionStatus(status: TransactionStatus): boolean {
   return status === 'pending' || status === 'partial'
 }
 
+/** Amount null/0 means value will be filled in later (e.g. recurring bill). */
+export function isReminderWithoutValue(amount: bigint | null | undefined): boolean {
+  return amount == null || amount <= 0n
+}
+
 export function computeTransactionStatus(
   amount: bigint | null | undefined,
   paidAmount: bigint,
@@ -13,8 +18,8 @@ export function computeTransactionStatus(
 ): TransactionStatus {
   if (currentStatus === 'canceled') return 'canceled'
   if (paidAmount <= 0n) return 'pending'
-  if (amount == null || amount <= 0n) return paidAmount > 0n ? 'paid' : 'pending'
-  if (paidAmount >= amount) return 'paid'
+  if (isReminderWithoutValue(amount)) return 'paid'
+  if (amount != null && paidAmount >= amount) return 'paid'
   return 'partial'
 }
 

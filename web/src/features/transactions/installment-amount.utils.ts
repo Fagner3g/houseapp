@@ -10,6 +10,13 @@ export function transactionRemainingReais(
   return Math.max(0, moneyStringToReais(amount) - moneyStringToReais(paidAmount))
 }
 
+/** Amount null/empty/0 means value will be filled in later (e.g. recurring bill). */
+export function isTransactionReminderWithoutValue(
+  amount: string | null | undefined
+): boolean {
+  return amount == null || amount === '' || moneyStringToReais(amount) <= 0
+}
+
 export function resolveTransactionListAmountReais(
   amount: string | null | undefined,
   paidAmount: string | null | undefined,

@@ -283,3 +283,77 @@ describe('TransactionService update on credit_card', () => {
     expect(transactionRepository.update).toHaveBeenCalled()
   })
 })
+
+describe('TransactionService pay reminder-without-value', () => {
+  it('sets amount from paidAmount when occurrence has no value yet', async () => {
+    const pending = {
+      id: 'tx-vivo',
+      organizationId: 'org-1',
+      accountId: 'acc-1',
+      cardId: null,
+      recurringTransactionId: 'rec-1',
+      statementId: null,
+      title: 'Vivo',
+      description: null,
+      amount: null,
+      type: 'expense' as const,
+      date: new Date('2026-07-08T12:00:00.000Z'),
+      competenceDate: null,
+      status: 'pending' as const,
+      paidAt: null,
+      paidAmount: null,
+      paymentScheduledAt: null,
+      counterparty: null,
+      installmentNumber: null,
+      installmentsTotal: null,
+      source: 'recurring' as const,
+      externalId: null,
+      transferPairId: null,
+      notifyEnabled: false,
+      notifyTargetType: null,
+      notifyUserId: null,
+      notifyContactName: null,
+      notifyContactPhone: null,
+      notifyDaysBefore: null,
+      notifyOverdueConfig: null,
+      notifyLastNotifiedAt: null,
+      createdAt: new Date(),
+      updatedAt: new Date(),
+    }
+
+    const updated = {
+      ...pending,
+      amount: 8990n,
+      paidAmount: 8990n,
+      status: 'paid' as const,
+      paidAt: new Date('2026-07-11T12:00:00.000Z'),
+    }
+
+    const transactionRepository = {
+      findById: vi.fn().mockResolvedValue(pending),
+      update: vi.fn().mockResolvedValue(updated),
+      getCategoryIds: vi.fn().mockResolvedValue(new Map()),
+    } as unknown as TransactionRepository
+
+    const service = buildService({
+      transactionRepository,
+      accountRepository: { findById: vi.fn() } as unknown as AccountRepository,
+    })
+
+    const result = await service.pay('org-1', 'tx-vivo', {
+      paidAmount: '89.90',
+      paidAt: '2026-07-11',
+    })
+
+    expect(transactionRepository.update).toHaveBeenCalledWith(
+      'tx-vivo',
+      expect.objectContaining({
+        amount: 8990n,
+        paidAmount: 8990n,
+        status: 'paid',
+      })
+    )
+    expect(result.amount).toBe('89.90')
+    expect(result.status).toBe('paid')
+  })
+})

@@ -161,6 +161,7 @@ import { CategoryDrawer } from '@/features/categories/components/category-drawer
 import { RecurringContractDrawer } from '@/features/recurring/components/recurring-contract-drawer'
 import { CategorySelect } from '@/features/categories/components/category-select'
 import {
+  isTransactionReminderWithoutValue,
   resolveTransactionInstallmentAmountReais,
   resolveTransactionInstallmentRemainingReais,
 } from '@/features/transactions/installment-amount.utils'
@@ -840,6 +841,7 @@ export function TransactionDrawer() {
     () => resolveTransactionInstallmentRemainingReais(tx, installmentSummary),
     [tx, installmentSummary]
   )
+  const isReminderWithoutValue = isTransactionReminderWithoutValue(tx?.amount)
 
   useEffect(() => {
     if (!isPay || !showAdvancePicker) return
@@ -920,13 +922,14 @@ export function TransactionDrawer() {
     if (!isPay) return true
     const paymentAmount = paidAmountWatched ?? 0
     if (paymentAmount <= 0) return false
-    if (paymentAmount <= installmentRemainingReais) return true
+    if (isReminderWithoutValue || paymentAmount <= installmentRemainingReais) return true
     if (!showAdvancePicker) return true
     if (selectedAdvanceIds.length === 0) return false
     return Math.abs(paymentAmount - advancePaymentTotalReais) < 0.005
   }, [
     isPay,
     paidAmountWatched,
+    isReminderWithoutValue,
     installmentRemainingReais,
     showAdvancePicker,
     selectedAdvanceIds.length,
@@ -1117,13 +1120,14 @@ export function TransactionDrawer() {
       if (isPay && editingId && tx) {
         const remaining = installmentRemainingReais
         const paymentAmount = values.paidAmount ?? 0
+        const withoutValue = isTransactionReminderWithoutValue(tx.amount)
 
         if (paymentAmount <= 0) {
           toast.error('Informe o valor pago')
           return
         }
 
-        if (paymentAmount > remaining) {
+        if (!withoutValue && paymentAmount > remaining) {
           if (!showAdvancePicker) {
             setAdvancePromptOpen(true)
             return
@@ -1182,6 +1186,7 @@ export function TransactionDrawer() {
       if (isEdit && editingId && tx) {
         const remaining = installmentRemainingReais
         const paymentAmount = values.paidAmount ?? 0
+        const withoutValue = isTransactionReminderWithoutValue(tx.amount)
         const registeringPayment =
           tx.status !== 'paid' &&
           paymentAmount > 0 &&
@@ -1192,7 +1197,7 @@ export function TransactionDrawer() {
           return
         }
 
-        if (registeringPayment && paymentAmount > remaining) {
+        if (registeringPayment && !withoutValue && paymentAmount > remaining) {
           toast.error(`Valor excede o saldo da parcela (${formatCurrency(remaining)})`)
           return
         }
@@ -1584,8 +1589,9 @@ export function TransactionDrawer() {
                     <div className="rounded-lg bg-slate-50 p-4 space-y-1">
                       <p className="font-medium text-slate-900">{tx?.title}</p>
                       <p className="text-sm text-slate-500">
-                        Valor da parcela:{' '}
-                        {formatCurrency(installmentAmountReais)}
+                        {isReminderWithoutValue
+                          ? 'Valor ainda não definido — informe o valor pago'
+                          : `Valor da parcela: ${formatCurrency(installmentAmountReais)}`}
                       </p>
                       {hasInstallmentContext && (
                         <p className="text-sm text-slate-500">
