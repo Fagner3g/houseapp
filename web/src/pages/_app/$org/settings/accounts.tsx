@@ -1,19 +1,14 @@
-import { createFileRoute } from '@tanstack/react-router'
-
-import { AccountsSettingsTab } from '@/features/settings/components/accounts-settings-tab'
-import { SettingsPageShell } from '@/features/settings/components/settings-page-shell'
+import { createFileRoute, redirect } from '@tanstack/react-router'
 
 export const Route = createFileRoute('/_app/$org/settings/accounts')({
-  component: SettingsAccountsPage,
+  beforeLoad: ({ params }) => {
+    throw redirect({
+      to: '/$org/accounts',
+      params: { org: params.org },
+      search: {
+        kind: 'accounts',
+        view: 'settings',
+      },
+    })
+  },
 })
-
-function SettingsAccountsPage() {
-  return (
-    <SettingsPageShell
-      title="Contas"
-      subtitle="Gerencie contas para lançamentos manuais (bancárias, carteira e poupança)"
-    >
-      <AccountsSettingsTab />
-    </SettingsPageShell>
-  )
-}

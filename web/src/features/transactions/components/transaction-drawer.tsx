@@ -1952,12 +1952,13 @@ export function TransactionDrawer() {
                                 <p className="mt-2 text-xs text-amber-700">
                                   Cadastre uma conta em{' '}
                                   <Link
-                                    to="/$org/settings/accounts"
+                                    to="/$org/accounts"
                                     params={{ org: slug }}
+                                    search={{ kind: 'accounts' }}
                                     className="font-medium underline"
                                     onClick={close}
                                   >
-                                    Configurações → Contas
+                                    Contas
                                   </Link>
                                   .
                                 </p>

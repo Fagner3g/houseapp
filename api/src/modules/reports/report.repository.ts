@@ -22,6 +22,7 @@ import {
   incomeInReportRangeCondition,
   isCreditCardExpenseInRange,
   isInvoicePaymentTitleCondition,
+  isNonCreditCardExpenseInRange,
   paidAmountExpr,
   purchaseDateExpr,
   reportDayExpr,
@@ -218,10 +219,20 @@ function normalizedTitleExpr() {
   return sql<string>`LOWER(TRIM(REGEXP_REPLACE(REGEXP_REPLACE(${transactions.title}, '\\s*-\\s*Parcela \\d+/\\d+', '', 'gi'), '\\s+Parcela \\d+/\\d+', '', 'gi')))`
 }
 
-function expenseRangeCondition(range: ReportDateRange, scope?: ReportScopeOptions['scope']) {
-  return scope === 'credit_card'
-    ? isCreditCardExpenseInRange(range)
-    : expenseInReportRangeCondition(range)
+function expenseRangeCondition(
+  range: ReportDateRange,
+  scopeOptions?: Pick<ReportScopeOptions, 'scope' | 'accountId'>
+) {
+  if (scopeOptions?.scope === 'credit_card') {
+    return isCreditCardExpenseInRange(range)
+  }
+
+  // Account hub Análise: include pending so Extrato and Análise stay aligned.
+  if (scopeOptions?.accountId) {
+    return or(isCreditCardExpenseInRange(range), isNonCreditCardExpenseInRange(range))
+  }
+
+  return expenseInReportRangeCondition(range)
 }
 
 function invoiceStatementConditions(scopeOptions?: ReportScopeOptions) {
@@ -480,7 +491,7 @@ export class DrizzleReportRepository implements ReportRepository {
   ): Promise<CategoryReportRow[]> {
     const rangeCondition =
       type === 'expense'
-        ? expenseRangeCondition(range, scopeOptions?.scope)
+        ? expenseRangeCondition(range, scopeOptions)
         : incomeInReportRangeCondition(range)
     const applyOwnership = personal || scopeOptions?.scope === 'credit_card'
     const amountExpr =
@@ -604,7 +615,7 @@ export class DrizzleReportRepository implements ReportRepository {
     const partiallyDivided = partiallyDividedCondition()
     const expenseWhere = and(
       eq(transactions.organizationId, organizationId),
-      expenseRangeCondition(range, scopeOptions?.scope),
+      expenseRangeCondition(range, scopeOptions),
       userOwnsTransactionCondition(userId),
       personal ? sql`${myExpenseAmountExpr()} > 0` : undefined,
       reportScopeConditions(scopeOptions)

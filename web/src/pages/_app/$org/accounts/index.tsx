@@ -1,43 +1,19 @@
-import { createFileRoute, useNavigate } from '@tanstack/react-router'
-import { keepPreviousData, useQueryClient } from '@tanstack/react-query'
-import { useEffect, useMemo, useState } from 'react'
-import { toast } from 'sonner'
+import { createFileRoute } from '@tanstack/react-router'
 import z from 'zod'
 
-import {
-  getListAccountsQueryKey,
-  useDeleteAccount,
-  useListAccounts,
-} from '@/api/generated/api'
-import type { CreateAccountBodyType, ListAccounts200AccountsItem } from '@/api/generated/model'
 import { LoadingErrorState } from '@/components/loading-error-state'
+import { AccountDetailPanel } from '@/features/accounts/components/account-detail-panel'
+import { AccountsHubEmptyState } from '@/features/accounts/components/accounts-hub-empty-state'
 import { AccountTypeSidebar } from '@/features/accounts/components/account-type-sidebar'
-import { ImportStatementTriggerButton } from '@/features/accounts/components/import-statement-trigger-button'
-import { groupCreditCardsForSidebar } from '@/features/accounts/constants'
-import { DeleteCreditCardDialog } from '@/features/credit-cards/components/delete-credit-card-dialog'
-import { CreditCardAnalyticsSection } from '@/features/credit-cards/components/credit-card-analytics-section'
-import { CreditCardKpiRow } from '@/features/credit-cards/components/credit-card-kpi-row'
-import { CreditCardOverdueBanner } from '@/features/credit-cards/components/credit-card-overdue-banner'
-import { CreditCardPageHeader } from '@/features/credit-cards/components/credit-card-page-header'
-import { CreditCardSettingsSection } from '@/features/credit-cards/components/credit-card-settings-section'
-import { CreditCardStatementSection } from '@/features/credit-cards/components/credit-card-statement-section'
-import type { InvoiceQuickFilter } from '@/features/credit-cards/components/credit-card-statement-filter-utils'
-import { useCreditCardBillingCycle } from '@/features/credit-cards/hooks/use-credit-card-billing-cycle'
-import {
-  CreditCardSubNav,
-  type CreditCardView,
-} from '@/features/credit-cards/components/credit-card-sub-nav'
-import { canNavigateToNextBillingMonth } from '@/features/credit-cards/lib/navigable-billing-month'
-import { useActiveOrganization } from '@/hooks/use-active-organization'
-import {
-  currentBillingMonthKey,
-  shiftBillingMonth,
-} from '@/lib/billing-cycle'
-import { useDrawerStore } from '@/stores/drawers'
+import { CreditCardDetailPanel } from '@/features/accounts/components/credit-card-detail-panel'
+import { DeleteAccountDialog } from '@/features/accounts/components/delete-account-dialog'
+import { useAccountsHub } from '@/features/accounts/hooks/use-accounts-hub'
+import { currentBillingMonthKey } from '@/lib/billing-cycle'
 
 export const Route = createFileRoute('/_app/$org/accounts/')({
   component: AccountsPage,
   validateSearch: z.object({
+    kind: z.enum(['cards', 'accounts']).optional(),
     accountId: z.string().optional(),
     month: z
       .string()
@@ -60,266 +36,87 @@ export const Route = createFileRoute('/_app/$org/accounts/')({
 })
 
 function AccountsPage() {
-  const { slug } = useActiveOrganization()
-  const navigate = useNavigate({ from: Route.fullPath })
-  const { accountId, month, view, invoiceFilter } = Route.useSearch()
-  const isSettingsView = view === 'settings'
-  const isAnalyticsView = view === 'analytics'
-  const isStatementView = !isSettingsView && !isAnalyticsView
-  const currentView: CreditCardView = isSettingsView
-    ? 'settings'
-    : isAnalyticsView
-      ? 'analytics'
-      : 'statement'
-  const queryClient = useQueryClient()
-  const openAccountDrawer = useDrawerStore(s => s.openAccountDrawer)
-
-  const { data, isLoading, error, refetch } = useListAccounts(slug, {
-    query: { enabled: !!slug, placeholderData: keepPreviousData },
-  })
-  const { mutateAsync: deleteAccount, isPending: isDeletingAccount } = useDeleteAccount()
-  const [accountToDelete, setAccountToDelete] = useState<ListAccounts200AccountsItem | null>(null)
-
-  const accounts = useMemo(() => data?.accounts ?? [], [data?.accounts])
-  const creditCards = useMemo(
-    () => accounts.filter(account => account.type === 'credit_card'),
-    [accounts]
-  )
-
-  const sections = useMemo(() => groupCreditCardsForSidebar(accounts), [accounts])
-
-  const selectedId = accountId ?? creditCards[0]?.id
-  const selectedAccount = creditCards.find(a => a.id === selectedId)
-  const billingMonthKey = month ?? currentBillingMonthKey()
-
-  const { cycle, closingDay, dueDay, latestNavigableMonthKey } = useCreditCardBillingCycle(
-    selectedAccount,
-    billingMonthKey
-  )
-  const canGoNextMonth = canNavigateToNextBillingMonth(
-    billingMonthKey,
-    latestNavigableMonthKey
-  )
-
-  useEffect(() => {
-    if (!creditCards.length) return
-
-    const isValidSelection = accountId && creditCards.some(card => card.id === accountId)
-    if (!isValidSelection) {
-      navigate({
-        search: prev => ({
-          ...prev,
-          accountId: creditCards[0].id,
-          month: prev.month ?? currentBillingMonthKey(),
-        }),
-        replace: true,
-      })
-    }
-  }, [creditCards, accountId, navigate])
-
-  const invalidateAccounts = () => {
-    queryClient.invalidateQueries({ queryKey: getListAccountsQueryKey(slug) })
-  }
-
-  const updateSearch = (patch: {
-    accountId?: string
-    month?: string
-    view?: 'settings' | 'analytics' | undefined
-    invoiceFilter?: InvoiceQuickFilter | undefined
-  }) => {
-    navigate({
-      search: prev => ({ ...prev, ...patch }),
-      replace: true,
-    })
-  }
-
-  const handleViewChange = (nextView: CreditCardView) => {
-    updateSearch({
-      view: nextView === 'statement' ? undefined : nextView,
-    })
-  }
-
-  const handleCreate = (type: CreateAccountBodyType, institution?: string | null) => {
-    openAccountDrawer(newId => {
-      invalidateAccounts()
-      updateSearch({ accountId: newId, month: currentBillingMonthKey() })
-    }, type, institution)
-  }
-
-  const handleOpenSettings = (account: ListAccounts200AccountsItem) => {
-    updateSearch({ accountId: account.id, view: 'settings' })
-  }
-
-  const handleDelete = (account: ListAccounts200AccountsItem) => {
-    setAccountToDelete(account)
-  }
-
-  const confirmDelete = async () => {
-    if (!slug || !accountToDelete) return
-
-    try {
-      await deleteAccount({ slug, id: accountToDelete.id })
-      invalidateAccounts()
-      if (accountToDelete.id === selectedId) {
-        const remaining = creditCards.filter(a => a.id !== accountToDelete.id)
-        updateSearch({ accountId: remaining[0]?.id, view: undefined })
-      }
-      toast.success('Cartão excluído')
-      setAccountToDelete(null)
-    } catch {
-      toast.error('Erro ao excluir cartão')
-    }
-  }
-
-  const handleImported = () => {
-    refetch()
-    invalidateAccounts()
-  }
-
-  const handleViewExistingStatement = ({
-    accountId,
-    monthKey,
-  }: {
-    accountId: string
-    monthKey: string
-  }) => {
-    updateSearch({ accountId, month: monthKey, view: undefined })
-  }
+  const search = Route.useSearch()
+  const hub = useAccountsHub(search)
+  const isCards = hub.kind === 'cards'
+  const listEmpty = isCards ? !hub.creditCards.length : !hub.paymentAccounts.length
 
   return (
     <LoadingErrorState
-      isLoading={isLoading}
-      error={error}
-      onRetry={refetch}
-      title="Erro ao carregar cartões"
-      description="Não foi possível carregar os cartões."
+      isLoading={hub.isLoading}
+      error={hub.error}
+      onRetry={hub.refetch}
+      title={isCards ? 'Erro ao carregar cartões' : 'Erro ao carregar contas'}
+      description={
+        isCards
+          ? 'Não foi possível carregar os cartões.'
+          : 'Não foi possível carregar as contas.'
+      }
     >
       <div className="flex min-h-0 flex-1 flex-col overflow-hidden">
-        {!creditCards.length ? (
-          <div className="flex flex-1 flex-col items-center justify-center px-6 py-24 text-center">
-            <p className="text-slate-500">Nenhum cartão cadastrado.</p>
-            <p className="mt-1 max-w-sm text-sm text-slate-400">
-              Importe uma fatura OFX do Nubank para cadastrar o cartão e começar a acompanhar seus
-              gastos.
-            </p>
-            <div className="mt-6">
-              <ImportStatementTriggerButton
-                onImported={importedAccountId => {
-                  invalidateAccounts()
-                  updateSearch({
-                    accountId: importedAccountId,
-                    month: currentBillingMonthKey(),
-                  })
-                }}
-                onViewExistingStatement={handleViewExistingStatement}
-              />
-            </div>
-          </div>
-        ) : (
-          <div className="flex min-h-0 flex-1 flex-col overflow-hidden lg:flex-row">
-            <AccountTypeSidebar
-              sections={sections}
-              selectedId={selectedId}
-              onSelect={id => updateSearch({ accountId: id, view: undefined })}
-              onCreate={handleCreate}
-              onOpenSettings={handleOpenSettings}
-              onDelete={handleDelete}
+        <div className="flex min-h-0 flex-1 flex-col overflow-hidden lg:flex-row">
+          <AccountTypeSidebar
+            kind={hub.kind}
+            onKindChange={hub.handleKindChange}
+            sections={hub.sections}
+            selectedId={hub.selectedId}
+            onSelect={id =>
+              hub.updateSearch({ accountId: id, view: undefined, invoiceFilter: undefined })
+            }
+            onCreate={hub.handleCreate}
+            onOpenSettings={hub.handleOpenSettings}
+            onDelete={hub.setAccountToDelete}
+          />
+
+          {listEmpty ? (
+            <AccountsHubEmptyState
+              kind={hub.kind}
+              onCreate={() => hub.handleCreate(isCards ? 'credit_card' : 'checking')}
+              onImported={importedAccountId => {
+                hub.invalidateAccounts()
+                hub.updateSearch({
+                  kind: 'cards',
+                  accountId: importedAccountId,
+                  month: currentBillingMonthKey(),
+                })
+              }}
+              onViewExistingStatement={hub.handleViewExistingStatement}
             />
+          ) : hub.selectedAccount && isCards ? (
+            <CreditCardDetailPanel
+              account={hub.selectedAccount}
+              billingMonthKey={hub.monthKey}
+              view={hub.currentView}
+              invoiceFilter={hub.invoiceFilter}
+              onViewChange={hub.handleViewChange}
+              onMonthChange={monthKey => hub.updateSearch({ month: monthKey })}
+              onInvoiceFilterChange={filter =>
+                hub.updateSearch({ view: undefined, invoiceFilter: filter })
+              }
+              onUpdated={hub.invalidateAccounts}
+              onImported={hub.handleImported}
+              onViewExistingStatement={hub.handleViewExistingStatement}
+            />
+          ) : hub.selectedAccount ? (
+            <AccountDetailPanel
+              account={hub.selectedAccount}
+              monthKey={hub.monthKey}
+              view={hub.currentView}
+              onViewChange={hub.handleViewChange}
+              onMonthChange={monthKey => hub.updateSearch({ month: monthKey })}
+              onUpdated={hub.invalidateAccounts}
+            />
+          ) : null}
+        </div>
 
-            {selectedAccount && (
-              <div className="min-h-0 min-w-0 flex-1 overflow-y-auto pb-24 md:pb-6">
-                <CreditCardSubNav view={currentView} onViewChange={handleViewChange} />
-
-                {isSettingsView ? (
-                  <CreditCardSettingsSection
-                    account={selectedAccount}
-                    onBack={() => updateSearch({ view: undefined })}
-                    onUpdated={invalidateAccounts}
-                    onViewStatement={handleViewExistingStatement}
-                  />
-                ) : (
-                  <>
-                    <CreditCardPageHeader
-                      accountId={selectedAccount.id}
-                      cycle={cycle}
-                      closingDay={closingDay}
-                      dueDay={dueDay}
-                      isCurrentCycle={billingMonthKey === currentBillingMonthKey()}
-                      canGoNextMonth={canGoNextMonth}
-                      onPrevMonth={() =>
-                        updateSearch({ month: shiftBillingMonth(billingMonthKey, -1) })
-                      }
-                      onNextMonth={() =>
-                        updateSearch({ month: shiftBillingMonth(billingMonthKey, 1) })
-                      }
-                      onGoToday={() => updateSearch({ month: currentBillingMonthKey() })}
-                      onNavigateToMonth={monthKey => updateSearch({ month: monthKey })}
-                    />
-
-                    {isStatementView ? (
-                      <div className="space-y-4 py-3">
-                        <CreditCardOverdueBanner
-                          accountId={selectedAccount.id}
-                          cycle={cycle}
-                          closingDay={closingDay}
-                          dueDay={dueDay}
-                          viewingMonthKey={billingMonthKey}
-                          onNavigateToMonth={monthKey => updateSearch({ month: monthKey })}
-                        />
-                        <CreditCardKpiRow
-                          accountId={selectedAccount.id}
-                          accountName={selectedAccount.name}
-                          cycle={cycle}
-                          closingDay={closingDay}
-                          dueDay={dueDay}
-                          onViewAReceber={() =>
-                            updateSearch({ view: undefined, invoiceFilter: 'a_receber' })
-                          }
-                        />
-                        <CreditCardStatementSection
-                          accountId={selectedAccount.id}
-                          cycle={cycle}
-                          closingDay={closingDay}
-                          dueDay={dueDay}
-                          initialQuickFilter={invoiceFilter}
-                          onImported={handleImported}
-                          onViewExistingStatement={handleViewExistingStatement}
-                        />
-                      </div>
-                    ) : (
-                      <CreditCardAnalyticsSection
-                        accountId={selectedAccount.id}
-                        accountName={selectedAccount.name}
-                        cycle={cycle}
-                        closingDay={closingDay}
-                        dueDay={dueDay}
-                        onNavigateToMonth={monthKey => updateSearch({ month: monthKey })}
-                        onViewDividedTransactions={() =>
-                          updateSearch({ view: undefined, invoiceFilter: 'divided' })
-                        }
-                        onViewInvoiceCredits={() =>
-                          updateSearch({ view: undefined, invoiceFilter: 'credits' })
-                        }
-                        onViewInvoicePayments={() =>
-                          updateSearch({ view: undefined, invoiceFilter: 'payments' })
-                        }
-                      />
-                    )}
-                  </>
-                )}
-              </div>
-            )}
-          </div>
-        )}
-
-        <DeleteCreditCardDialog
-          account={accountToDelete}
-          open={accountToDelete != null}
+        <DeleteAccountDialog
+          account={hub.accountToDelete}
+          open={hub.accountToDelete != null}
           onOpenChange={open => {
-            if (!open && !isDeletingAccount) setAccountToDelete(null)
+            if (!open && !hub.isDeletingAccount) hub.setAccountToDelete(null)
           }}
-          onConfirm={confirmDelete}
-          isDeleting={isDeletingAccount}
+          onConfirm={hub.confirmDelete}
+          isDeleting={hub.isDeletingAccount}
         />
       </div>
     </LoadingErrorState>

@@ -1,7 +1,6 @@
 import { keepPreviousData } from '@tanstack/react-query'
 import dayjs from 'dayjs'
-import { Link } from '@tanstack/react-router'
-import { ExternalLink, Plus } from 'lucide-react'
+import { Plus } from 'lucide-react'
 
 import { useListTransactions } from '@/api/generated/api'
 import { Button } from '@/components/ui/button'
@@ -44,36 +43,26 @@ export function AccountStatementSection({
             {dayjs(dateFrom).format('DD/MM')} – {dayjs(dateTo).format('DD/MM/YYYY')}
           </p>
         </div>
-        <div className="flex flex-wrap items-center gap-2">
-          <Button
-            type="button"
-            variant="outline"
-            size="sm"
-            className="rounded-lg"
-            onClick={() =>
-              openTransactionDrawer(
-                {
-                  accountId,
-                  type: 'expense',
-                  date: dayjs().toISOString(),
-                },
-                null,
-                { lockAccountId: accountId }
-              )
-            }
-          >
-            <Plus className="mr-1.5 size-4" />
-            Adicionar lançamento
-          </Button>
-          <Link
-            to="/$org/accounts/$id"
-            params={{ org: slug, id: accountId }}
-            className="inline-flex h-8 items-center gap-1.5 rounded-lg px-3 text-sm font-medium text-slate-600 hover:bg-slate-100 hover:text-slate-900"
-          >
-            <ExternalLink className="size-4" />
-            Detalhes
-          </Link>
-        </div>
+        <Button
+          type="button"
+          variant="outline"
+          size="sm"
+          className="rounded-lg"
+          onClick={() =>
+            openTransactionDrawer(
+              {
+                accountId,
+                type: 'expense',
+                date: dayjs().toISOString(),
+              },
+              null,
+              { lockAccountId: accountId }
+            )
+          }
+        >
+          <Plus className="mr-1.5 size-4" />
+          Adicionar lançamento
+        </Button>
       </div>
 
       <TransactionList
