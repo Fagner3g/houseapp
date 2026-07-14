@@ -3,7 +3,7 @@ import { keepPreviousData } from '@tanstack/react-query'
 import { CircleMinus, Clock } from 'lucide-react'
 import { useMemo } from 'react'
 
-import { useGetReportByAccount, useListTransactions } from '@/api/generated/api'
+import { useListTransactions } from '@/api/generated/api'
 import { formatCentsString } from '@/lib/currency'
 import { useActiveOrganization } from '@/hooks/use-active-organization'
 import { cn } from '@/lib/utils'
@@ -20,17 +20,10 @@ export function AccountKpiRow({ accountId, dateFrom, dateTo }: AccountKpiRowProp
   const dateFromIso = dayjs(dateFrom).startOf('day').toISOString()
   const dateToIso = dayjs(dateTo).endOf('day').toISOString()
 
-  const { data } = useGetReportByAccount(
-    slug,
-    { dateFrom: dateFromIso, dateTo: dateToIso },
-    { query: { enabled: !!slug && !!accountId, placeholderData: keepPreviousData } }
-  )
-
-  const { data: pendingData } = useListTransactions(
+  const { data } = useListTransactions(
     slug,
     {
       accountId,
-      status: 'pending',
       type: 'expense',
       dateFrom: dateFromIso,
       dateTo: dateToIso,
@@ -41,15 +34,19 @@ export function AccountKpiRow({ accountId, dateFrom, dateTo }: AccountKpiRowProp
   )
 
   const metrics = useMemo(() => {
-    const account = data?.accounts?.find(a => a.accountId === accountId)
-    const expense = Number(account?.expense ?? 0)
-    const pending = (pendingData?.transactions ?? []).reduce(
-      (sum, tx) => sum + Number(tx.amount ?? 0),
-      0
+    const transactions = data?.transactions ?? []
+    const expense = transactions.reduce((sum, tx) => sum + Number(tx.amount ?? 0), 0)
+    const pendingTransactions = transactions.filter(
+      tx => tx.status === 'pending' || tx.status === 'partial'
     )
+    const pending = pendingTransactions.reduce((sum, tx) => sum + Number(tx.amount ?? 0), 0)
 
-    return { expense, pending, pendingCount: pendingData?.transactions?.length ?? 0 }
-  }, [data?.accounts, accountId, pendingData?.transactions])
+    return {
+      expense,
+      pending,
+      pendingCount: pendingTransactions.length,
+    }
+  }, [data?.transactions])
 
   const cards = [
     {

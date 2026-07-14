@@ -79,6 +79,24 @@ export function isPayableExpenseInRange(range: ReportDateRange): SQL {
   )
 }
 
+/**
+ * Non-credit-card expenses in the period (paid or pending).
+ * Used when reporting a specific payment account so Análise matches the Extrato.
+ */
+export function isNonCreditCardExpenseInRange(range: ReportDateRange): SQL {
+  return requiredSql(
+    and(
+      eq(transactions.type, 'expense'),
+      inArray(transactions.status, ['paid', 'pending']),
+      sql`${transactions.date} >= ${rangeFromIso(range)}::timestamptz`,
+      sql`${transactions.date} <= ${rangeToIso(range)}::timestamptz`,
+      isNonCreditCardAccountCondition(),
+      isPayableTransactionCondition(),
+      sql`NOT (${isInvoicePaymentTitleCondition()})`
+    )
+  )
+}
+
 /** Any expense that counts toward dashboard spending KPIs. */
 export function expenseInReportRangeCondition(range: ReportDateRange): SQL {
   return requiredSql(

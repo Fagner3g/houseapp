@@ -7,6 +7,7 @@ import {
   DEFAULT_NOTIFY_HOUR,
   DEFAULT_NOTIFY_MINUTE,
   formatNotifyTime,
+  hasReachedNotifyTime,
 } from './alert-utils'
 import { clearTodayOrgNotifications } from './clear-today-org-notifications'
 
@@ -63,7 +64,11 @@ export class AlertSettingsService {
         defaultNotifyMinute: organizations.defaultNotifyMinute,
       })
 
-    if (timeChanged) {
+    // Clear dedupe only when the new time is still ahead today (else run is tomorrow).
+    if (
+      timeChanged &&
+      !hasReachedNotifyTime(input.defaultNotifyHour, input.defaultNotifyMinute)
+    ) {
       await clearTodayOrgNotifications(organizationId)
     }
 

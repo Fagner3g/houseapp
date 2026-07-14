@@ -2,6 +2,7 @@ import { and, eq } from 'drizzle-orm'
 
 import { db } from '@/db'
 import { cards } from '@/db/schemas/cards'
+import { organizations } from '@/db/schemas/organizations'
 import { transactions } from '@/db/schemas/transactions'
 import type {
   TransactionSource,
@@ -14,6 +15,7 @@ import { badRequest, notFound } from '@/core/errors'
 import { centavosToString, parseCentavos } from '@/core/money'
 import {
   computeTransactionStatus,
+  isReminderWithoutValue,
   resolveTransactionPaidAt,
   transactionRemainingAmount,
 } from '@/core/transaction-payment'
@@ -80,6 +82,15 @@ export type TransactionDto = {
   source: TransactionSource
   categoryIds: string[]
   transferPairId: string | null
+  transferPair?: {
+    id: string
+    organizationId: string
+    organizationSlug: string
+    organizationName: string
+    accountId: string | null
+    accountName: string | null
+    type: TransactionType
+  } | null
   notifyEnabled: boolean
   notifyTargetType: NotifyTargetType | null
   notifyUserId: string | null
@@ -91,7 +102,7 @@ export type TransactionDto = {
   updatedAt: string
 }
 
-function toTransactionDto(
+export function toTransactionDto(
   transaction: TransactionRecord,
   categoryIds: string[] = []
 ): TransactionDto {
@@ -261,8 +272,42 @@ export class TransactionService {
     }
 
     const categoryMap = await this.transactionRepository.getCategoryIds([transaction.id])
+    const dto = toTransactionDto(transaction, categoryMap.get(transaction.id) ?? [])
+    dto.transferPair = await this.resolveTransferPairSummary(transaction.transferPairId)
+    return dto
+  }
 
-    return toTransactionDto(transaction, categoryMap.get(transaction.id) ?? [])
+  private async resolveTransferPairSummary(
+    transferPairId: string | null
+  ): Promise<TransactionDto['transferPair']> {
+    if (!transferPairId) return null
+
+    const pair = await this.transactionRepository.findByIdGlobal(transferPairId)
+    if (!pair) return null
+
+    const [org] = await db
+      .select({
+        id: organizations.id,
+        name: organizations.name,
+        slug: organizations.slug,
+      })
+      .from(organizations)
+      .where(eq(organizations.id, pair.organizationId))
+      .limit(1)
+
+    const account = pair.accountId
+      ? await this.accountRepository.findById(pair.organizationId, pair.accountId)
+      : null
+
+    return {
+      id: pair.id,
+      organizationId: pair.organizationId,
+      organizationSlug: org?.slug ?? '',
+      organizationName: org?.name ?? '',
+      accountId: pair.accountId,
+      accountName: account?.name ?? null,
+      type: pair.type,
+    }
   }
 
   async create(
@@ -532,28 +577,35 @@ export class TransactionService {
     }
 
     const existingPaid = transaction.paidAmount ?? 0n
+    const withoutValue = isReminderWithoutValue(transaction.amount)
     const remaining = transactionRemainingAmount(transaction.amount, existingPaid)
 
-    if (remaining <= 0n) {
+    if (!withoutValue && remaining <= 0n) {
       throw badRequest('Transaction is already paid')
     }
 
     const paymentAmount =
-      input.paidAmount != null ? parseCentavos(input.paidAmount) : remaining
+      input.paidAmount != null
+        ? parseCentavos(input.paidAmount)
+        : withoutValue
+          ? 0n
+          : remaining
 
     if (paymentAmount <= 0n) {
       throw badRequest('Payment amount must be greater than zero')
     }
 
-    if (paymentAmount > remaining) {
+    if (!withoutValue && paymentAmount > remaining) {
       throw badRequest(
         `Payment exceeds remaining amount (${centavosToString(remaining)})`
       )
     }
 
-    const newPaidAmount = existingPaid + paymentAmount
+    // Reminder-without-value: the paid amount becomes the known bill amount.
+    const settledAmount = withoutValue ? paymentAmount : transaction.amount
+    const newPaidAmount = withoutValue ? paymentAmount : existingPaid + paymentAmount
     const status = computeTransactionStatus(
-      transaction.amount,
+      settledAmount,
       newPaidAmount,
       transaction.status
     )
@@ -564,6 +616,7 @@ export class TransactionService {
       status,
       paidAt,
       paidAmount: newPaidAmount,
+      ...(withoutValue ? { amount: paymentAmount } : {}),
       paymentScheduledAt: null,
     })
 
@@ -768,10 +821,7 @@ export class TransactionService {
     }
 
     if (transaction.transferPairId) {
-      const pair = await this.transactionRepository.findById(
-        organizationId,
-        transaction.transferPairId
-      )
+      const pair = await this.transactionRepository.findByIdGlobal(transaction.transferPairId)
 
       if (pair && isImportedStatementTransaction(pair)) {
         throw badRequest('Imported statement lines cannot be deleted')

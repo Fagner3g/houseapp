@@ -56,6 +56,7 @@ export type CreateTransactionData = {
   installmentsTotal?: number | null
   source?: TransactionSource
   externalId?: string | null
+  transferPairId?: string | null
   categoryIds?: string[]
   notifyEnabled?: boolean
   notifyTargetType?: NotifyTargetType | null
@@ -105,8 +106,13 @@ export type ListTransactionsResult = {
 export interface TransactionRepository {
   findMany(filter: ListTransactionsFilter): Promise<ListTransactionsResult>
   findById(organizationId: string, id: string): Promise<TransactionRecord | null>
+  findByIdGlobal(id: string): Promise<TransactionRecord | null>
   create(data: CreateTransactionData): Promise<TransactionRecord>
   createMany(data: CreateTransactionData[]): Promise<TransactionRecord[]>
+  createTransferPair(
+    from: CreateTransactionData,
+    to: CreateTransactionData
+  ): Promise<{ from: TransactionRecord; to: TransactionRecord }>
   update(id: string, data: UpdateTransactionData): Promise<TransactionRecord | null>
   delete(id: string): Promise<TransactionRecord | null>
   deleteWithTransferPair(id: string, pairId: string | null): Promise<void>
@@ -324,6 +330,12 @@ export class DrizzleTransactionRepository implements TransactionRepository {
     return transaction ?? null
   }
 
+  async findByIdGlobal(id: string): Promise<TransactionRecord | null> {
+    const [transaction] = await db.select().from(transactions).where(eq(transactions.id, id)).limit(1)
+
+    return transaction ?? null
+  }
+
   async create(data: CreateTransactionData): Promise<TransactionRecord> {
     const { categoryIds, ...transactionData } = data
 
@@ -429,6 +441,60 @@ export class DrizzleTransactionRepository implements TransactionRepository {
       }
 
       return createdRows
+    })
+  }
+
+  async createTransferPair(
+    from: CreateTransactionData,
+    to: CreateTransactionData
+  ): Promise<{ from: TransactionRecord; to: TransactionRecord }> {
+    return db.transaction(async tx => {
+      const [expense] = await tx
+        .insert(transactions)
+        .values({
+          organizationId: from.organizationId,
+          accountId: from.accountId ?? null,
+          title: from.title,
+          description: from.description ?? null,
+          amount: from.amount ?? null,
+          type: 'expense',
+          date: from.date,
+          status: from.status ?? 'paid',
+          paidAt: from.paidAt ?? from.date,
+          paidAmount: from.paidAmount ?? from.amount ?? null,
+          source: from.source ?? 'manual',
+        })
+        .returning()
+
+      const [income] = await tx
+        .insert(transactions)
+        .values({
+          organizationId: to.organizationId,
+          accountId: to.accountId ?? null,
+          title: to.title,
+          description: to.description ?? null,
+          amount: to.amount ?? null,
+          type: 'income',
+          date: to.date,
+          status: to.status ?? 'paid',
+          paidAt: to.paidAt ?? to.date,
+          paidAmount: to.paidAmount ?? to.amount ?? null,
+          source: to.source ?? 'manual',
+          transferPairId: expense.id,
+        })
+        .returning()
+
+      const [linkedExpense] = await tx
+        .update(transactions)
+        .set({ transferPairId: income.id, updatedAt: new Date() })
+        .where(eq(transactions.id, expense.id))
+        .returning()
+
+      if (!linkedExpense) {
+        throw new Error('Failed to link transfer pair')
+      }
+
+      return { from: linkedExpense, to: income }
     })
   }
 

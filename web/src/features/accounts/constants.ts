@@ -196,10 +196,9 @@ export type AccountSidebarSection<T> = {
   createOptions: { label: string; type: CreateAccountBodyType }[]
 }
 
-const INSTITUTION_CREATE_OPTIONS: { label: string; type: CreateAccountBodyType }[] = [
-  { label: 'Adicionar conta', type: 'checking' },
-  { label: 'Adicionar cartão', type: 'credit_card' },
-  { label: 'Adicionar investimento', type: 'investment' },
+const PAYMENT_INSTITUTION_CREATE_OPTIONS: { label: string; type: CreateAccountBodyType }[] = [
+  { label: 'Adicionar conta corrente', type: 'checking' },
+  { label: 'Adicionar poupança', type: 'savings' },
 ]
 
 const CASH_CREATE_OPTIONS: { label: string; type: CreateAccountBodyType }[] = [
@@ -383,7 +382,7 @@ export function groupAccountsForSidebar<
     label: group.label,
     institution: group.key || null,
     accounts: group.accounts,
-    createOptions: INSTITUTION_CREATE_OPTIONS,
+    createOptions: PAYMENT_INSTITUTION_CREATE_OPTIONS,
   }))
 
   if (cashAccounts.length > 0 || !q) {

@@ -21,7 +21,6 @@ export type NavItem = {
 }
 
 const settingsChildren = [
-  { title: 'Contas', path: 'settings/accounts', matchPrefix: 'settings/accounts' },
   { title: 'Categorias', path: 'settings/categories', matchPrefix: 'settings/categories' },
   { title: 'Alertas', path: 'settings/alerts', matchPrefix: 'settings/alerts' },
   { title: 'Membros', path: 'settings/members', matchPrefix: 'settings/members' },

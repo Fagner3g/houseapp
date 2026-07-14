@@ -1,10 +1,12 @@
+import { isReminderWithoutValue as isReminderWithoutValueAmount } from '@/core/transaction-payment'
+
 import { isCreditCardInvoiceAlert } from '../resolve-transaction-alert-due-date'
 
 import type { ResidualTransaction } from './types'
 
 /** Recurring reminder with value to fill in later (amount null or 0). */
 export function isReminderWithoutValue(tx: Pick<ResidualTransaction, 'amount'>): boolean {
-  return tx.amount == null || tx.amount <= 0n
+  return isReminderWithoutValueAmount(tx.amount)
 }
 
 export function remainingCentavos(tx: ResidualTransaction): bigint {

@@ -8,6 +8,7 @@ export const Route = createFileRoute('/_app/$org/accounts/$id')({
       search: {
         accountId: params.id,
         view: 'settings',
+        // kind resolved by hub from account type
       },
     })
   },

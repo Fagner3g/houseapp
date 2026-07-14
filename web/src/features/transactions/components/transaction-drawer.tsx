@@ -161,6 +161,7 @@ import { CategoryDrawer } from '@/features/categories/components/category-drawer
 import { RecurringContractDrawer } from '@/features/recurring/components/recurring-contract-drawer'
 import { CategorySelect } from '@/features/categories/components/category-select'
 import {
+  isTransactionReminderWithoutValue,
   resolveTransactionInstallmentAmountReais,
   resolveTransactionInstallmentRemainingReais,
 } from '@/features/transactions/installment-amount.utils'
@@ -179,6 +180,8 @@ import {
   buildUnsettledSplitItems,
   type UnsettledSplitItem,
 } from '../split-debt-summary.utils'
+import { useCreateTransfer } from '../api/create-transfer'
+import { TransferDestinationFields } from './transfer/transfer-destination-fields'
 import {
   SplitPaymentConfirmDialog,
   SplitPaymentPayBanner,
@@ -192,11 +195,12 @@ function createTransactionSchema(options: { requireCategory: boolean }) {
   return z
     .object({
       type: z.enum(['expense', 'income', 'transfer']),
-      title: z.string().min(1, 'Descrição obrigatória'),
+      title: z.string(),
       amount: z.number().nullable(),
       date: z.string().min(1),
       competenceDate: z.string().optional(),
       accountId: z.string().optional(),
+      transferToOrganizationSlug: z.string().optional(),
       transferToAccountId: z.string().optional(),
       cardId: z.string().optional(),
       categoryId: z.string().optional(),
@@ -233,6 +237,14 @@ function createTransactionSchema(options: { requireCategory: boolean }) {
           code: z.ZodIssueCode.custom,
           message: 'Valor obrigatório',
           path: ['amount'],
+        })
+      }
+
+      if (values.type !== 'transfer' && !values.title.trim()) {
+        ctx.addIssue({
+          code: z.ZodIssueCode.custom,
+          message: 'Descrição obrigatória',
+          path: ['title'],
         })
       }
 
@@ -312,7 +324,7 @@ function resolveTransactionDisplayStatus(
   return formStatus
 }
 
-function defaultFormValues(): TransactionFormValues {
+function defaultFormValues(orgSlug?: string): TransactionFormValues {
   return {
     type: 'expense',
     title: '',
@@ -328,6 +340,7 @@ function defaultFormValues(): TransactionFormValues {
     counterparty: '',
     paidAt: dayjs().format('YYYY-MM-DD'),
     paidAmount: 0,
+    transferToOrganizationSlug: orgSlug,
   }
 }
 
@@ -441,6 +454,7 @@ export function TransactionDrawer() {
   const queryClient = useQueryClient()
 
   const { mutateAsync: createTransaction, isPending: isCreating } = useCreateTransaction()
+  const { mutateAsync: createTransfer, isPending: isCreatingTransfer } = useCreateTransfer()
   const { mutateAsync: createSplit } = useCreateSplit()
   const { mutateAsync: updateTransaction, isPending: isUpdating } = useUpdateTransaction()
   const { mutateAsync: payTransaction, isPending: isPaying } = usePayTransaction()
@@ -502,11 +516,28 @@ export function TransactionDrawer() {
   const tx = transactionData?.transaction
 
   const pairedTransactionId = tx?.transferPairId ?? null
-  const { data: pairedTransactionData } = useGetTransaction(slug, pairedTransactionId ?? '', {
-    query: {
-      enabled: !!slug && !!pairedTransactionId && open && mode !== 'create',
-    },
-  })
+  const transferPairMeta = (
+    tx as
+      | {
+          transferPair?: {
+            organizationSlug?: string
+            organizationName?: string
+            accountName?: string | null
+          } | null
+        }
+      | undefined
+  )?.transferPair
+  const pairedOrgSlug = transferPairMeta?.organizationSlug || slug
+  const { data: pairedTransactionData } = useGetTransaction(
+    pairedOrgSlug ?? '',
+    pairedTransactionId ?? '',
+    {
+      query: {
+        enabled:
+          !!pairedOrgSlug && !!pairedTransactionId && open && mode !== 'create',
+      },
+    }
+  )
 
   const { data: attachmentsData } = useListAttachments(
     slug,
@@ -738,7 +769,7 @@ export function TransactionDrawer() {
     if (!open || isEdit || isPay) return
 
     form.reset({
-      ...defaultFormValues(),
+      ...defaultFormValues(slug),
       type: (draft?.type as TransactionFormValues['type']) ?? 'expense',
       title: draft?.title ?? '',
       amount: draft?.amount ? apiAmountToFormReais(draft.amount) : null,
@@ -751,9 +782,10 @@ export function TransactionDrawer() {
       categoryId: draft?.categoryIds?.[0],
       status: (draft?.status as TransactionFormValues['status']) ?? 'pending',
       description: draft?.description ?? '',
+      transferToOrganizationSlug: slug,
     })
     setNotesOpen(Boolean(draft?.description?.trim()))
-  }, [open, isEdit, isPay, draft, form, effectiveLockedAccountId, paymentAccounts])
+  }, [open, isEdit, isPay, draft, form, effectiveLockedAccountId, paymentAccounts, slug])
 
   useEffect(() => {
     if (!open || !isEdit) return
@@ -840,6 +872,7 @@ export function TransactionDrawer() {
     () => resolveTransactionInstallmentRemainingReais(tx, installmentSummary),
     [tx, installmentSummary]
   )
+  const isReminderWithoutValue = isTransactionReminderWithoutValue(tx?.amount)
 
   useEffect(() => {
     if (!isPay || !showAdvancePicker) return
@@ -898,6 +931,7 @@ export function TransactionDrawer() {
   const showCardField = !isTransfer && isCreditCard && selectableCards.length > 1
   const isPending =
     isCreating ||
+    isCreatingTransfer ||
     isUpdating ||
     isPaying ||
     isRegisteringSplitPayment ||
@@ -920,13 +954,14 @@ export function TransactionDrawer() {
     if (!isPay) return true
     const paymentAmount = paidAmountWatched ?? 0
     if (paymentAmount <= 0) return false
-    if (paymentAmount <= installmentRemainingReais) return true
+    if (isReminderWithoutValue || paymentAmount <= installmentRemainingReais) return true
     if (!showAdvancePicker) return true
     if (selectedAdvanceIds.length === 0) return false
     return Math.abs(paymentAmount - advancePaymentTotalReais) < 0.005
   }, [
     isPay,
     paidAmountWatched,
+    isReminderWithoutValue,
     installmentRemainingReais,
     showAdvancePicker,
     selectedAdvanceIds.length,
@@ -1117,13 +1152,14 @@ export function TransactionDrawer() {
       if (isPay && editingId && tx) {
         const remaining = installmentRemainingReais
         const paymentAmount = values.paidAmount ?? 0
+        const withoutValue = isTransactionReminderWithoutValue(tx.amount)
 
         if (paymentAmount <= 0) {
           toast.error('Informe o valor pago')
           return
         }
 
-        if (paymentAmount > remaining) {
+        if (!withoutValue && paymentAmount > remaining) {
           if (!showAdvancePicker) {
             setAdvancePromptOpen(true)
             return
@@ -1182,6 +1218,7 @@ export function TransactionDrawer() {
       if (isEdit && editingId && tx) {
         const remaining = installmentRemainingReais
         const paymentAmount = values.paidAmount ?? 0
+        const withoutValue = isTransactionReminderWithoutValue(tx.amount)
         const registeringPayment =
           tx.status !== 'paid' &&
           paymentAmount > 0 &&
@@ -1192,7 +1229,7 @@ export function TransactionDrawer() {
           return
         }
 
-        if (registeringPayment && paymentAmount > remaining) {
+        if (registeringPayment && !withoutValue && paymentAmount > remaining) {
           toast.error(`Valor excede o saldo da parcela (${formatCurrency(remaining)})`)
           return
         }
@@ -1286,43 +1323,27 @@ export function TransactionDrawer() {
       }
 
       if (isTransfer) {
-        const fromName =
-          accountsData?.accounts?.find(a => a.id === values.accountId)?.name ?? 'Origem'
-        const toName =
-          accountsData?.accounts?.find(a => a.id === values.transferToAccountId)?.name ??
-          'Destino'
-        const title = values.title || `Transferência: ${fromName} → ${toName}`
+        const toOrgSlug = values.transferToOrganizationSlug || slug
         const isoDate = calendarDateToIso(values.date)
         const amount = reaisToMoneyString(values.amount ?? 0)
 
-        await createTransaction({
+        await createTransfer({
           slug,
           data: {
-            title,
-            type: 'expense',
+            fromAccountId: String(values.accountId),
+            toOrganizationSlug: toOrgSlug,
+            toAccountId: String(values.transferToAccountId),
             amount,
             date: isoDate,
-            accountId: values.accountId,
-            status: 'paid',
-            paidAt: isoDate,
-            paidAmount: amount,
-          },
-        })
-        await createTransaction({
-          slug,
-          data: {
-            title,
-            type: 'income',
-            amount,
-            date: isoDate,
-            accountId: values.transferToAccountId,
-            status: 'paid',
-            paidAt: isoDate,
-            paidAmount: amount,
+            title: values.title?.trim() || undefined,
+            description: values.description || null,
           },
         })
         toast.success('Transferência registrada')
-        invalidateAll()
+        await invalidateTransactionQueries(queryClient, slug)
+        if (toOrgSlug !== slug) {
+          await invalidateTransactionQueries(queryClient, toOrgSlug)
+        }
         close()
         return
       }
@@ -1523,6 +1544,13 @@ export function TransactionDrawer() {
                           if (!v) return
                           const previousType = field.value
                           field.onChange(v)
+                          if (v === 'transfer' && slug) {
+                            form.setValue('transferToOrganizationSlug', slug)
+                            const currentTitle = form.getValues('title')
+                            if (!currentTitle?.trim()) {
+                              form.setValue('title', 'Transferência: Origem → Destino')
+                            }
+                          }
                           const categoryId = form.getValues('categoryId')
                           if (
                             categoryId &&
@@ -1584,8 +1612,9 @@ export function TransactionDrawer() {
                     <div className="rounded-lg bg-slate-50 p-4 space-y-1">
                       <p className="font-medium text-slate-900">{tx?.title}</p>
                       <p className="text-sm text-slate-500">
-                        Valor da parcela:{' '}
-                        {formatCurrency(installmentAmountReais)}
+                        {isReminderWithoutValue
+                          ? 'Valor ainda não definido — informe o valor pago'
+                          : `Valor da parcela: ${formatCurrency(installmentAmountReais)}`}
                       </p>
                       {hasInstallmentContext && (
                         <p className="text-sm text-slate-500">
@@ -1663,7 +1692,11 @@ export function TransactionDrawer() {
                             </div>
                             <FormControl>
                               <Input
-                                placeholder="Ex: Mercado, Salário..."
+                                placeholder={
+                                  isTransfer
+                                    ? 'Transferência: conta origem → destino'
+                                    : 'Ex: Mercado, Salário...'
+                                }
                                 disabled={isBankFieldsLocked}
                                 {...field}
                               />
@@ -1763,6 +1796,11 @@ export function TransactionDrawer() {
                         />
                       )}
                     </div>
+                    {isTransfer && (
+                      <p className="-mt-2 text-xs text-slate-500">
+                        Descrição preenchida automaticamente pelas contas; você pode editar.
+                      </p>
+                    )}
 
                     {!isTransfer && (
                       <FormField
@@ -1805,55 +1843,18 @@ export function TransactionDrawer() {
                     )}
 
                     {isTransfer ? (
-                      <div className="grid grid-cols-2 gap-3">
-                        <FormField
-                          control={form.control}
-                          name="accountId"
-                          render={({ field }) => (
-                            <FormItem>
-                              <FormLabel>
-                                Conta origem <FormRequiredMark />
-                              </FormLabel>
-                              <FormControl>
-                                <AccountSelect
-                                  accounts={accountsData?.accounts ?? []}
-                                  value={field.value}
-                                  onValueChange={field.onChange}
-                                  placeholder="De"
-                                  paymentOnly
-                                  instanceKey={editingId ?? 'create'}
-                                  className={stackySelectTrigger}
-                                  itemClassName={stackySelectItem}
-                                />
-                              </FormControl>
-                            </FormItem>
-                          )}
-                        />
-                        <FormField
-                          control={form.control}
-                          name="transferToAccountId"
-                          render={({ field }) => (
-                            <FormItem>
-                              <FormLabel>
-                                Conta destino <FormRequiredMark />
-                              </FormLabel>
-                              <FormControl>
-                                <AccountSelect
-                                  accounts={accountsData?.accounts ?? []}
-                                  value={field.value}
-                                  onValueChange={field.onChange}
-                                  excludeAccountId={selectedAccountId}
-                                  placeholder="Para"
-                                  paymentOnly
-                                  instanceKey={`${editingId ?? 'create'}-to`}
-                                  className={stackySelectTrigger}
-                                  itemClassName={stackySelectItem}
-                                />
-                              </FormControl>
-                            </FormItem>
-                          )}
-                        />
-                      </div>
+                      <TransferDestinationFields
+                        control={form.control}
+                        setValue={form.setValue}
+                        getValues={form.getValues}
+                        sourceOrgSlug={slug}
+                        sourceAccounts={activeAccounts}
+                        sourceAccountId={selectedAccountId}
+                        transferToAccountId={form.watch('transferToAccountId')}
+                        destinationOrgSlug={form.watch('transferToOrganizationSlug')}
+                        open={open}
+                        instanceKey={editingId ?? 'create'}
+                      />
                     ) : isCreditCardExpense ? (
                       <div className={stackyDrawerFormRow}>
                         <FormField
@@ -1946,12 +1947,13 @@ export function TransactionDrawer() {
                                 <p className="mt-2 text-xs text-amber-700">
                                   Cadastre uma conta em{' '}
                                   <Link
-                                    to="/$org/settings/accounts"
+                                    to="/$org/accounts"
                                     params={{ org: slug }}
+                                    search={{ kind: 'accounts' }}
                                     className="font-medium underline"
                                     onClick={close}
                                   >
-                                    Configurações → Contas
+                                    Contas
                                   </Link>
                                   .
                                 </p>
