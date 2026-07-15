@@ -1,19 +1,15 @@
 import { Bell } from 'lucide-react'
+import { useState } from 'react'
 
 import { Button } from '@/components/ui/button'
-import {
-  DropdownMenu,
-  DropdownMenuContent,
-  DropdownMenuLabel,
-  DropdownMenuSeparator,
-  DropdownMenuTrigger,
-} from '@/components/ui/dropdown-menu'
+import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover'
 
 import { useNotificationsMenu } from '../hooks/use-notifications-menu'
 import { isDecisionNotification, readNotificationMetadata } from '../lib/kinds'
 import { NotificationItem } from './notification-item'
 
 export function NotificationsMenu() {
+  const [open, setOpen] = useState(false)
   const {
     isLoading,
     unreadCount,
@@ -33,8 +29,8 @@ export function NotificationsMenu() {
     visible.some(n => isDecisionNotification(readNotificationMetadata(n.metadata)))
 
   return (
-    <DropdownMenu>
-      <DropdownMenuTrigger asChild>
+    <Popover open={open} onOpenChange={setOpen}>
+      <PopoverTrigger asChild>
         <Button
           variant="ghost"
           size="icon"
@@ -50,12 +46,10 @@ export function NotificationsMenu() {
             )}
           </span>
         </Button>
-      </DropdownMenuTrigger>
-      <DropdownMenuContent align="end" className="w-[24rem] rounded-xl p-2">
+      </PopoverTrigger>
+      <PopoverContent align="end" className="w-[24rem] rounded-xl p-2">
         <div className="flex items-center justify-between gap-2 px-2 pb-1 pt-0.5">
-          <DropdownMenuLabel className="p-0 text-sm font-semibold text-slate-900">
-            Notificações
-          </DropdownMenuLabel>
+          <p className="text-sm font-semibold text-slate-900">Notificações</p>
           {informationalCount > 0 && (
             <Button
               type="button"
@@ -69,7 +63,7 @@ export function NotificationsMenu() {
             </Button>
           )}
         </div>
-        <DropdownMenuSeparator className="mb-1" />
+        <div className="mb-1 h-px bg-border" />
         {isLoading ? (
           <p className="px-2 py-4 text-sm text-muted-foreground">Carregando...</p>
         ) : visible.length ? (
@@ -79,7 +73,10 @@ export function NotificationsMenu() {
                 key={notification.id}
                 notification={notification}
                 isResponding={isResponding}
-                onOpen={item => void handleOpen(item)}
+                onOpen={item => {
+                  setOpen(false)
+                  void handleOpen(item)
+                }}
                 onAccept={(item, event) => void handleAccept(item, event)}
                 onReject={(item, event) => void handleReject(item, event)}
               />
@@ -101,7 +98,7 @@ export function NotificationsMenu() {
             Confirmações de pagamento precisam de Confirmar ou Recusar.
           </p>
         )}
-      </DropdownMenuContent>
-    </DropdownMenu>
+      </PopoverContent>
+    </Popover>
   )
 }
