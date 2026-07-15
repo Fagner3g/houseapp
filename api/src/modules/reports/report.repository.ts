@@ -14,6 +14,11 @@ import {
   userIsSplitCreditorCondition,
   userOwnsTransactionCondition,
 } from '@/modules/splits/split-expense-attribution'
+import {
+  transactionVisibilityCondition,
+  type TransactionViewer,
+} from '@/modules/transactions/transaction-visibility'
+import { accountVisibilityCondition } from '@/modules/transactions/account-visibility'
 
 import {
   expenseAmountInRangeCase,
@@ -143,38 +148,68 @@ export type TopMerchantsReportResult = {
 }
 
 export interface ReportRepository {
-  getSummary(organizationId: string, range: ReportDateRange, userId: string): Promise<SummaryRow>
-  listUpcoming(organizationId: string, days: number): Promise<UpcomingTransactionRow[]>
-  getByAccount(organizationId: string, range: ReportDateRange): Promise<AccountReportRow[]>
+  getSummary(
+    organizationId: string,
+    range: ReportDateRange,
+    userId: string,
+    viewer?: TransactionViewer
+  ): Promise<SummaryRow>
+  listUpcoming(
+    organizationId: string,
+    days: number,
+    viewer?: TransactionViewer
+  ): Promise<UpcomingTransactionRow[]>
+  getByAccount(
+    organizationId: string,
+    range: ReportDateRange,
+    viewer?: TransactionViewer
+  ): Promise<AccountReportRow[]>
   getByCategory(
     organizationId: string,
     range: ReportDateRange,
     type: 'income' | 'expense',
     userId: string | undefined,
     personal: boolean,
-    scopeOptions?: ReportScopeOptions
+    scopeOptions?: ReportScopeOptions,
+    viewer?: TransactionViewer
   ): Promise<CategoryReportRow[]>
-  getByCard(organizationId: string, range: ReportDateRange): Promise<CardTransactionsReportResult>
+  getByCard(
+    organizationId: string,
+    range: ReportDateRange,
+    viewer?: TransactionViewer
+  ): Promise<CardTransactionsReportResult>
   getTopMerchants(
     organizationId: string,
     range: ReportDateRange,
     userId: string,
     limit: number,
     scopeOptions?: ReportScopeOptions,
-    personal?: boolean
+    personal?: boolean,
+    viewer?: TransactionViewer
   ): Promise<TopMerchantsReportResult>
   listTopPending(
     organizationId: string,
     type: 'income' | 'expense',
-    limit: number
+    limit: number,
+    viewer?: TransactionViewer
   ): Promise<PendingCounterpartyRow[]>
-  getOverdueTotal(organizationId: string): Promise<bigint>
-  getTrends(organizationId: string, months: number, endMonth?: string): Promise<MonthlyTrendRow[]>
-  getDaily(organizationId: string, range: ReportDateRange): Promise<DailyReportRow[]>
+  getOverdueTotal(organizationId: string, viewer?: TransactionViewer): Promise<bigint>
+  getTrends(
+    organizationId: string,
+    months: number,
+    endMonth?: string,
+    viewer?: TransactionViewer
+  ): Promise<MonthlyTrendRow[]>
+  getDaily(
+    organizationId: string,
+    range: ReportDateRange,
+    viewer?: TransactionViewer
+  ): Promise<DailyReportRow[]>
   getMySpendBreakdown(
     organizationId: string,
     range: ReportDateRange,
-    userId: string
+    userId: string,
+    viewer?: TransactionViewer
   ): Promise<MySpendBreakdown>
 }
 
@@ -183,6 +218,11 @@ function toBigInt(value: unknown): bigint {
   if (typeof value === 'bigint') return value
   return BigInt(String(value).split('.')[0] || '0')
 }
+
+function visibilityCondition(viewer?: TransactionViewer) {
+  return transactionVisibilityCondition(viewer)
+}
+
 
 function splitSumExpr() {
   return sql<bigint>`COALESCE((
@@ -312,23 +352,25 @@ export class DrizzleReportRepository implements ReportRepository {
   async getSummary(
     organizationId: string,
     range: ReportDateRange,
-    userId: string
+    userId: string,
+    viewer?: TransactionViewer
   ): Promise<SummaryRow> {
     const todayStart = dayjs().startOf('day').toDate()
+    const visible = visibilityCondition(viewer)
 
     const [incomeRow] = await db
       .select({ total: sum(incomeAmountInRangeCase(range)) })
       .from(transactions)
       .leftJoin(accounts, eq(transactions.accountId, accounts.id))
-      .where(eq(transactions.organizationId, organizationId))
+      .where(and(eq(transactions.organizationId, organizationId), visible))
 
     const [expenseRow] = await db
       .select({ total: sum(expenseAmountInRangeCase(range)) })
       .from(transactions)
       .leftJoin(accounts, eq(transactions.accountId, accounts.id))
-      .where(eq(transactions.organizationId, organizationId))
+      .where(and(eq(transactions.organizationId, organizationId), visible))
 
-    const mySpend = await computeMySpendBreakdown(organizationId, range, userId)
+    const mySpend = await computeMySpendBreakdown(organizationId, range, userId, viewer)
     const myExpenseGross = mySpend.grossTotal
     const mySplitsInPeriod = mySpend.splitTotal
     const myExpenseTotal = mySpend.myTotal
@@ -341,7 +383,8 @@ export class DrizzleReportRepository implements ReportRepository {
         and(
           eq(transactions.organizationId, organizationId),
           inArray(transactions.status, [...UNPAID_TRANSACTION_STATUSES]),
-          isPayableTransactionCondition()
+          isPayableTransactionCondition(),
+          visible
         )
       )
 
@@ -355,11 +398,12 @@ export class DrizzleReportRepository implements ReportRepository {
           inArray(transactions.status, [...UNPAID_TRANSACTION_STATUSES]),
           lt(transactions.date, todayStart),
           isPayableTransactionCondition(),
-          isNotScheduledForFutureCondition()
+          isNotScheduledForFutureCondition(),
+          visible
         )
       )
 
-    const accountRows = await this.getByAccount(organizationId, range)
+    const accountRows = await this.getByAccount(organizationId, range, viewer)
     const netWorth = sumNetWorth(accountRows)
 
     const [splitsRow] = await db
@@ -371,14 +415,15 @@ export class DrizzleReportRepository implements ReportRepository {
       .where(
         and(
           eq(transactions.organizationId, organizationId),
-          inArray(transactionSplits.status, ['pending', 'partial'])
+          inArray(transactionSplits.status, ['pending', 'partial']),
+          visible
         )
       )
 
     const myPendingSplitsBase = and(
       eq(transactions.organizationId, organizationId),
       inArray(transactionSplits.status, ['pending', 'partial']),
-      userIsSplitCreditorCondition(userId)
+      userIsSplitCreditorCondition(userId, viewer?.ownerId)
     )
 
     const [myPendingSplitsRow] = await db
@@ -387,6 +432,7 @@ export class DrizzleReportRepository implements ReportRepository {
       })
       .from(transactionSplits)
       .innerJoin(transactions, eq(transactionSplits.transactionId, transactions.id))
+      .leftJoin(accounts, eq(transactions.accountId, accounts.id))
       .leftJoin(cards, eq(transactions.cardId, cards.id))
       .where(myPendingSplitsBase)
 
@@ -396,6 +442,7 @@ export class DrizzleReportRepository implements ReportRepository {
       })
       .from(transactionSplits)
       .innerJoin(transactions, eq(transactionSplits.transactionId, transactions.id))
+      .leftJoin(accounts, eq(transactions.accountId, accounts.id))
       .leftJoin(cards, eq(transactions.cardId, cards.id))
       .where(
         and(
@@ -422,7 +469,11 @@ export class DrizzleReportRepository implements ReportRepository {
     }
   }
 
-  async listUpcoming(organizationId: string, days: number): Promise<UpcomingTransactionRow[]> {
+  async listUpcoming(
+    organizationId: string,
+    days: number,
+    viewer?: TransactionViewer
+  ): Promise<UpcomingTransactionRow[]> {
     const todayStart = dayjs().startOf('day').toDate()
     const until = dayjs().add(days, 'day').endOf('day').toDate()
 
@@ -443,14 +494,20 @@ export class DrizzleReportRepository implements ReportRepository {
           inArray(transactions.status, [...UNPAID_TRANSACTION_STATUSES]),
           gte(transactions.date, todayStart),
           lte(transactions.date, until),
-          isNotScheduledForFutureCondition()
+          isNotScheduledForFutureCondition(),
+          visibilityCondition(viewer)
         )
       )
       .orderBy(asc(transactions.date), asc(transactions.title))
   }
 
-  async getByAccount(organizationId: string, range: ReportDateRange): Promise<AccountReportRow[]> {
+  async getByAccount(
+    organizationId: string,
+    range: ReportDateRange,
+    viewer?: TransactionViewer
+  ): Promise<AccountReportRow[]> {
     const delta = balanceDeltaExpr()
+    const visible = visibilityCondition(viewer)
 
     const rows = await db
       .select({
@@ -462,8 +519,17 @@ export class DrizzleReportRepository implements ReportRepository {
         expense: accountPeriodExpenseCase(range),
       })
       .from(accounts)
-      .leftJoin(transactions, eq(transactions.accountId, accounts.id))
-      .where(and(eq(accounts.organizationId, organizationId), eq(accounts.isActive, true)))
+      .leftJoin(
+        transactions,
+        and(eq(transactions.accountId, accounts.id), visible)
+      )
+      .where(
+        and(
+          eq(accounts.organizationId, organizationId),
+          eq(accounts.isActive, true),
+          accountVisibilityCondition(viewer, { ownedOnly: true })
+        )
+      )
       .groupBy(
         accounts.id,
         accounts.name,
@@ -487,7 +553,8 @@ export class DrizzleReportRepository implements ReportRepository {
     type: 'income' | 'expense',
     userId: string | undefined,
     personal: boolean,
-    scopeOptions?: ReportScopeOptions
+    scopeOptions?: ReportScopeOptions,
+    viewer?: TransactionViewer
   ): Promise<CategoryReportRow[]> {
     const rangeCondition =
       type === 'expense'
@@ -503,9 +570,12 @@ export class DrizzleReportRepository implements ReportRepository {
 
     const personalConditions = and(
       rangeCondition,
-      applyOwnership && userId ? userOwnsTransactionCondition(userId) : undefined,
+      applyOwnership && userId
+        ? userOwnsTransactionCondition(userId, viewer?.ownerId)
+        : undefined,
       personal && type === 'expense' && userId ? sql`${myExpenseAmountExpr()} > 0` : undefined,
-      reportScopeConditions(scopeOptions)
+      reportScopeConditions(scopeOptions),
+      visibilityCondition(viewer)
     )
 
     const rows = await db
@@ -541,7 +611,8 @@ export class DrizzleReportRepository implements ReportRepository {
 
   async getByCard(
     organizationId: string,
-    range: ReportDateRange
+    range: ReportDateRange,
+    viewer?: TransactionViewer
   ): Promise<CardTransactionsReportResult> {
     const splitSumExpr = sql<bigint>`COALESCE((
       SELECT SUM(${transactionSplits.amount})
@@ -551,7 +622,8 @@ export class DrizzleReportRepository implements ReportRepository {
     const myAmountExpr = sql<bigint>`GREATEST(${reportExpenseAmountExpr} - ${splitSumExpr}, 0)`
     const cardExpenseWhere = and(
       eq(transactions.organizationId, organizationId),
-      isCreditCardExpenseInRange(range)
+      isCreditCardExpenseInRange(range),
+      visibilityCondition(viewer)
     )
 
     const [totalsRow] = await db
@@ -607,7 +679,8 @@ export class DrizzleReportRepository implements ReportRepository {
     userId: string,
     limit: number,
     scopeOptions?: ReportScopeOptions,
-    personal = false
+    personal = false,
+    viewer?: TransactionViewer
   ): Promise<TopMerchantsReportResult> {
     const amountExpr = personal ? myExpenseAmountExpr() : reportExpenseAmountExpr
     const normalizedTitle = normalizedTitleExpr()
@@ -616,9 +689,10 @@ export class DrizzleReportRepository implements ReportRepository {
     const expenseWhere = and(
       eq(transactions.organizationId, organizationId),
       expenseRangeCondition(range, scopeOptions),
-      userOwnsTransactionCondition(userId),
+      userOwnsTransactionCondition(userId, viewer?.ownerId),
       personal ? sql`${myExpenseAmountExpr()} > 0` : undefined,
-      reportScopeConditions(scopeOptions)
+      reportScopeConditions(scopeOptions),
+      visibilityCondition(viewer)
     )
 
     const totalsQuery = db
@@ -695,7 +769,8 @@ export class DrizzleReportRepository implements ReportRepository {
   async listTopPending(
     organizationId: string,
     type: 'income' | 'expense',
-    limit: number
+    limit: number,
+    viewer?: TransactionViewer
   ): Promise<PendingCounterpartyRow[]> {
     const rows = await db
       .select({
@@ -709,7 +784,8 @@ export class DrizzleReportRepository implements ReportRepository {
           eq(transactions.organizationId, organizationId),
           eq(transactions.type, type),
           inArray(transactions.status, [...UNPAID_TRANSACTION_STATUSES]),
-          isPayableTransactionCondition()
+          isPayableTransactionCondition(),
+          visibilityCondition(viewer)
         )
       )
       .orderBy(sql`COALESCE(${transactions.amount}, 0) DESC`, transactions.title)
@@ -721,7 +797,10 @@ export class DrizzleReportRepository implements ReportRepository {
     }))
   }
 
-  async getOverdueTotal(organizationId: string): Promise<bigint> {
+  async getOverdueTotal(
+    organizationId: string,
+    viewer?: TransactionViewer
+  ): Promise<bigint> {
     const todayStart = dayjs().startOf('day').toDate()
 
     const [row] = await db
@@ -734,7 +813,8 @@ export class DrizzleReportRepository implements ReportRepository {
           inArray(transactions.status, [...UNPAID_TRANSACTION_STATUSES]),
           lt(transactions.date, todayStart),
           isPayableTransactionCondition(),
-          isNotScheduledForFutureCondition()
+          isNotScheduledForFutureCondition(),
+          visibilityCondition(viewer)
         )
       )
 
@@ -744,7 +824,8 @@ export class DrizzleReportRepository implements ReportRepository {
   async getTrends(
     organizationId: string,
     months: number,
-    endMonth?: string
+    endMonth?: string,
+    viewer?: TransactionViewer
   ): Promise<MonthlyTrendRow[]> {
     const count = Math.min(Math.max(months, 1), 24)
     const anchor = endMonth ? dayjs(`${endMonth}-01`) : dayjs()
@@ -767,7 +848,8 @@ export class DrizzleReportRepository implements ReportRepository {
           or(
             incomeInReportRangeCondition(range),
             expenseInReportRangeCondition(range)
-          )
+          ),
+          visibilityCondition(viewer)
         )
       )
       .groupBy(monthExpr)
@@ -790,24 +872,37 @@ export class DrizzleReportRepository implements ReportRepository {
     return result
   }
 
-  async getDaily(organizationId: string, range: ReportDateRange): Promise<DailyReportRow[]> {
+  async getDaily(
+    organizationId: string,
+    range: ReportDateRange,
+    viewer?: TransactionViewer
+  ): Promise<DailyReportRow[]> {
     const dateExpr = reportDayExpr()
+    const personal = Boolean(viewer && !viewer.isOwner)
+    const expenseExpr = personal ? myExpenseAmountExpr() : reportExpenseAmountExpr
+    const ownership =
+      personal && viewer
+        ? userOwnsTransactionCondition(viewer.userId, viewer.ownerId)
+        : undefined
 
     const rows = await db
       .select({
         date: dateExpr,
         income: sql<bigint>`COALESCE(SUM(CASE WHEN ${transactions.type} = 'income' THEN ${paidAmountExpr} ELSE 0 END), 0)`,
-        expense: sql<bigint>`COALESCE(SUM(CASE WHEN ${transactions.type} = 'expense' THEN ${reportExpenseAmountExpr} ELSE 0 END), 0)`,
+        expense: sql<bigint>`COALESCE(SUM(CASE WHEN ${transactions.type} = 'expense' THEN ${expenseExpr} ELSE 0 END), 0)`,
       })
       .from(transactions)
       .leftJoin(accounts, eq(transactions.accountId, accounts.id))
+      .leftJoin(cards, eq(transactions.cardId, cards.id))
       .where(
         and(
           eq(transactions.organizationId, organizationId),
           or(
             incomeInReportRangeCondition(range),
             expenseInReportRangeCondition(range)
-          )
+          ),
+          visibilityCondition(viewer),
+          ownership
         )
       )
       .groupBy(dateExpr)
@@ -834,7 +929,12 @@ export class DrizzleReportRepository implements ReportRepository {
     return result
   }
 
-  async getMySpendBreakdown(organizationId: string, range: ReportDateRange, userId: string) {
-    return computeMySpendBreakdown(organizationId, range, userId)
+  async getMySpendBreakdown(
+    organizationId: string,
+    range: ReportDateRange,
+    userId: string,
+    viewer?: TransactionViewer
+  ) {
+    return computeMySpendBreakdown(organizationId, range, userId, viewer)
   }
 }

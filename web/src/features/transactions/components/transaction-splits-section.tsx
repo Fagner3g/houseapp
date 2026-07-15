@@ -7,6 +7,7 @@ import {
   getListSplitsQueryKey,
   getGetSplitDebtSummaryQueryKey,
   useCreateSplit,
+  useCreateSplitPaymentRequest,
   useDeleteSplit,
   useListSplits,
   useListUsersByOrg,
@@ -89,8 +90,12 @@ export function TransactionSplitsSection({
   const { mutateAsync: createSplit, isPending: isCreating } = useCreateSplit()
   const { mutateAsync: deleteSplit, isPending: isDeleting } = useDeleteSplit()
   const { mutateAsync: registerPayment, isPending: isPaying } = useRegisterSplitPayment()
+  const { mutateAsync: createPaymentRequest, isPending: isRequestingPayment } =
+    useCreateSplitPaymentRequest()
 
   const splits = data?.splits ?? []
+  const viewerIsCreditor = data?.viewerIsCreditor ?? false
+  const viewerCanMutate = data?.viewerCanMutate ?? false
   const members = membersData?.users ?? []
   const splitEligibleMembers = useMemo(
     () => getSplitEligibleOrgUsers(members, currentUserId),
@@ -121,8 +126,14 @@ export function TransactionSplitsSection({
     0
   )
   const remainingReais = Math.max(0, transactionTotalReais - splitsTotalReais)
-  const myShareReais = remainingReais
   const showInstallmentDebtSummary = hasInstallmentSplitDebt(debtSummary)
+  const viewerSplit = splits.find(split => split.userId === currentUserId)
+  const myShareReais =
+    !viewerIsCreditor && viewerSplit
+      ? moneyStringToReais(viewerSplit.amount)
+      : !viewerIsCreditor && debtSummary?.viewerOwedTotal != null
+        ? moneyStringToReais(debtSummary.viewerOwedTotal)
+        : remainingReais
   const currentParcelLabel =
     installmentNumber != null && parcelCount > 0
       ? `${installmentNumber}/${parcelCount}`
@@ -131,6 +142,7 @@ export function TransactionSplitsSection({
         : null
 
   const splitPersonLabel = (split: (typeof splits)[number]) => {
+    if (split.userId && split.userId === currentUserId) return 'Você'
     if (split.userId) {
       return members.find(member => member.id === split.userId)?.name ?? 'Membro'
     }
@@ -281,6 +293,22 @@ export function TransactionSplitsSection({
     }
   }
 
+  const handleRequestPaymentConfirmation = async (splitId: string) => {
+    if (!slug) return
+    try {
+      await createPaymentRequest({
+        slug,
+        transactionId,
+        id: splitId,
+        data: {},
+      })
+      toast.success('Pedido de confirmação enviado')
+      invalidate()
+    } catch {
+      toast.error('Erro ao enviar pedido de confirmação')
+    }
+  }
+
   const headerSummary =
     splits.length > 0 ? (
       <span className="ml-1 flex flex-wrap gap-1">
@@ -302,7 +330,16 @@ export function TransactionSplitsSection({
         onOpenChange={setOpen}
       >
         {showInstallmentDebtSummary && debtSummary && (
-          <SplitDebtSummary summary={debtSummary} />
+          <SplitDebtSummary
+            summary={{
+              purchaseTotal: debtSummary.purchaseTotal,
+              installmentsTotal: debtSummary.installmentsTotal,
+              myShareTotal:
+                !debtSummary.viewerIsCreditor && debtSummary.viewerOwedTotal != null
+                  ? debtSummary.viewerOwedTotal
+                  : debtSummary.myShareTotal,
+            }}
+          />
         )}
 
         {isLoading ? (
@@ -321,13 +358,19 @@ export function TransactionSplitsSection({
                 installmentNumber={installmentNumber}
                 installmentsTotal={installmentsTotal}
                 parcelInstallmentsTotal={parcelCount}
+                viewerIsCreditor={viewerIsCreditor}
+                viewerCanMutate={viewerCanMutate}
                 onRegisterPayment={(id, remaining) => {
                   setPaymentSplitId(id)
                   setPaymentAmount(remaining)
                   setPaymentMethod('pix')
                 }}
+                onRequestPaymentConfirmation={id =>
+                  void handleRequestPaymentConfirmation(id)
+                }
                 onDelete={id => void handleDeleteSplit(id)}
                 isDeleting={isDeleting}
+                isRequestingPayment={isRequestingPayment}
               />
             ))}
           </SplitList>
@@ -335,7 +378,7 @@ export function TransactionSplitsSection({
           <SplitEmptyState />
         )}
 
-        {!showAddForm && splits.length === 0 && (
+        {viewerCanMutate && !showAddForm && splits.length === 0 && (
           <SplitMemberChipList
             members={splitEligibleMembers}
             disabled={isCreating}
@@ -343,28 +386,29 @@ export function TransactionSplitsSection({
           />
         )}
 
-        {showAddForm ? (
-          <SplitAddForm
-            remainingReais={remainingReais}
-            purchaseTotalReais={purchaseTotalReais}
-            isParceledPurchase={isParceledPurchase}
-            parcelCount={parcelCount}
-            currentParcelLabel={currentParcelLabel}
-            isSubmitting={isCreating}
-            onSubmit={values => void handleAddSplit(values)}
-            onCancel={() => setShowAddForm(false)}
-          />
-        ) : (
-          <Button
-            type="button"
-            variant="outline"
-            className="w-full"
-            onClick={() => setShowAddForm(true)}
-          >
-            <Plus className="mr-2 size-4" />
-            {splits.length > 0 ? 'Adicionar divisão' : 'Dividir despesa'}
-          </Button>
-        )}
+        {viewerCanMutate &&
+          (showAddForm ? (
+            <SplitAddForm
+              remainingReais={remainingReais}
+              purchaseTotalReais={purchaseTotalReais}
+              isParceledPurchase={isParceledPurchase}
+              parcelCount={parcelCount}
+              currentParcelLabel={currentParcelLabel}
+              isSubmitting={isCreating}
+              onSubmit={values => void handleAddSplit(values)}
+              onCancel={() => setShowAddForm(false)}
+            />
+          ) : (
+            <Button
+              type="button"
+              variant="outline"
+              className="w-full"
+              onClick={() => setShowAddForm(true)}
+            >
+              <Plus className="mr-2 size-4" />
+              {splits.length > 0 ? 'Adicionar divisão' : 'Dividir despesa'}
+            </Button>
+          ))}
 
         {!showInstallmentDebtSummary && splits.length > 0 && (
           <SplitMyShareRow amountReais={myShareReais} />

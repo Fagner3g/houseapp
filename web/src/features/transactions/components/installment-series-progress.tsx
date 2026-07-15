@@ -18,14 +18,14 @@ export function InstallmentSeriesProgress({
 
   return (
     <div className={cn('space-y-1.5', className)}>
-      <div className="flex items-center justify-between gap-2 text-xs text-slate-500">
+      <div className="flex items-center justify-between gap-2 text-[11px] font-medium uppercase tracking-wide text-slate-500">
         <span>Progresso</span>
-        <span className="tabular-nums">
+        <span className="tabular-nums normal-case tracking-normal text-slate-600">
           {current} de {total}
         </span>
       </div>
       <div
-        className="h-1.5 overflow-hidden rounded-full bg-slate-200"
+        className="h-2 overflow-hidden rounded-full bg-slate-100 ring-1 ring-inset ring-slate-200/80"
         role="progressbar"
         aria-valuenow={current}
         aria-valuemin={1}
@@ -33,7 +33,7 @@ export function InstallmentSeriesProgress({
         aria-label={`Parcela ${current} de ${total}`}
       >
         <div
-          className="h-full rounded-full bg-slate-700 transition-all duration-300"
+          className="h-full rounded-full bg-slate-800 transition-all duration-300"
           style={{ width: `${percent}%` }}
         />
       </div>

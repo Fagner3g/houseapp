@@ -27,14 +27,20 @@ export function AccountDetailPanel({
   onMonthChange,
   onUpdated,
 }: AccountDetailPanelProps) {
-  const isSettings = view === 'settings'
+  const canManage = account.canManage !== false
+  const isSettings = canManage && view === 'settings'
   const isAnalytics = view === 'analytics'
   const { dateFrom, dateTo, label } = monthKeyToRange(monthKey)
   const monthLabel = label.charAt(0).toUpperCase() + label.slice(1)
 
   return (
     <div className="min-h-0 min-w-0 flex-1 overflow-y-auto pb-24 md:pb-6">
-      <AccountsHubSubNav kind="accounts" view={view} onViewChange={onViewChange} />
+      <AccountsHubSubNav
+        kind="accounts"
+        view={isSettings ? 'settings' : isAnalytics ? 'analytics' : 'statement'}
+        onViewChange={onViewChange}
+        showSettings={canManage}
+      />
 
       {isSettings ? (
         <AccountSettingsSection

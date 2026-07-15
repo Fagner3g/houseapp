@@ -2,6 +2,7 @@ import type { FastifyReply, FastifyRequest } from 'fastify'
 import { StatusCodes } from 'http-status-codes'
 
 import { container } from '@/core/container'
+import { toTransactionViewer } from '@/modules/transactions/transaction-visibility'
 import type {
   BlockCardBody,
   CancelCardBody,
@@ -13,13 +14,18 @@ type OrgParams = { slug: string }
 type AccountParams = OrgParams & { accountId: string }
 type CardParams = AccountParams & { id: string }
 
+function viewerFromRequest(request: FastifyRequest) {
+  return toTransactionViewer(request.user.sub, request.organization.ownerId)
+}
+
 export async function listCardsController(
   request: FastifyRequest<{ Params: AccountParams }>,
   reply: FastifyReply
 ) {
   const cards = await container.cardService.list(
     request.organization.id,
-    request.params.accountId
+    request.params.accountId,
+    viewerFromRequest(request)
   )
 
   return reply.send({ cards })
@@ -32,7 +38,8 @@ export async function getCardController(
   const card = await container.cardService.get(
     request.organization.id,
     request.params.accountId,
-    request.params.id
+    request.params.id,
+    viewerFromRequest(request)
   )
 
   return reply.send({ card })
@@ -42,10 +49,15 @@ export async function createCardController(
   request: FastifyRequest<{ Params: AccountParams; Body: CreateCardBody }>,
   reply: FastifyReply
 ) {
+  const viewer = viewerFromRequest(request)
   const card = await container.cardService.create(
     request.organization.id,
     request.params.accountId,
-    request.body
+    {
+      ...request.body,
+      // Members can only create cards assigned to themselves.
+      userId: viewer.isOwner ? request.body.userId : viewer.userId,
+    }
   )
 
   return reply.status(StatusCodes.CREATED).send({ card })

@@ -22,7 +22,7 @@ export function OpenInvoicesCard({ monthKey }: OpenInvoicesCardProps) {
   const { slug } = useActiveOrganization()
   const { dateFrom, dateTo } = monthKeyToRange(monthKey)
   const accounts = useListAccounts(slug, { query: { enabled: !!slug } })
-  const { summaries } = useInvoiceSummaryRows(dateFrom, dateTo, !!slug)
+  const { summaries } = useInvoiceSummaryRows(dateFrom, dateTo, !!slug, { ownedOnly: true })
   const isLoading = accounts.isLoading
 
   const openInvoices = summaries
@@ -41,8 +41,8 @@ export function OpenInvoicesCard({ monthKey }: OpenInvoicesCardProps) {
       <CardContent>
         {isLoading ? (
           <div className="space-y-2">
-            {Array.from({ length: 2 }).map((_, index) => (
-              <div key={index} className="h-14 animate-pulse rounded-lg bg-slate-100" />
+            {['skeleton-a', 'skeleton-b'].map(key => (
+              <div key={key} className="h-14 animate-pulse rounded-lg bg-slate-100" />
             ))}
           </div>
         ) : openInvoices.length === 0 ? (

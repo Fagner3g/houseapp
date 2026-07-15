@@ -34,7 +34,8 @@ export function CreditCardDetailPanel({
   onImported,
   onViewExistingStatement,
 }: CreditCardDetailPanelProps) {
-  const isSettings = view === 'settings'
+  const canManage = account.canManage !== false
+  const isSettings = canManage && view === 'settings'
   const isAnalytics = view === 'analytics'
   const isStatement = !isSettings && !isAnalytics
 
@@ -49,7 +50,12 @@ export function CreditCardDetailPanel({
 
   return (
     <div className="min-h-0 min-w-0 flex-1 overflow-y-auto pb-24 md:pb-6">
-      <AccountsHubSubNav kind="cards" view={view} onViewChange={onViewChange} />
+      <AccountsHubSubNav
+        kind="cards"
+        view={isSettings ? 'settings' : isAnalytics ? 'analytics' : 'statement'}
+        onViewChange={onViewChange}
+        showSettings={canManage}
+      />
 
       {isSettings ? (
         <CreditCardSettingsSection

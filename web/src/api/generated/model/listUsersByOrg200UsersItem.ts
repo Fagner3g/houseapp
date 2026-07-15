@@ -3,7 +3,7 @@
  * Do not edit manually.
  * HouseApp API
  * API for HouseApp
- * OpenAPI spec version: 2.1.0
+ * OpenAPI spec version: 2.2.1
  */
 import type { ListUsersByOrg200UsersItemPhone } from "./listUsersByOrg200UsersItemPhone";
 import type { ListUsersByOrg200UsersItemAvatarUrl } from "./listUsersByOrg200UsersItemAvatarUrl";

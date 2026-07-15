@@ -1,4 +1,4 @@
-import { and, eq } from 'drizzle-orm'
+import { and, eq, isNull } from 'drizzle-orm'
 
 import { db } from '@/db'
 import {
@@ -6,6 +6,10 @@ import {
   type AccountType,
   type PixKeyType,
 } from '@/db/schemas/accounts'
+import {
+  accountVisibilityCondition,
+} from '@/modules/transactions/account-visibility'
+import type { TransactionViewer } from '@/modules/transactions/transaction-visibility'
 
 export type AccountRecord = typeof accounts.$inferSelect
 
@@ -26,6 +30,7 @@ export type CreateAccountData = {
   icon?: string | null
   displayOrder?: number
   ofxAccountId?: string | null
+  createdBy?: string | null
 }
 
 export type UpdateAccountData = Partial<
@@ -35,10 +40,23 @@ export type UpdateAccountData = Partial<
 }
 
 export interface AccountRepository {
-  findAllByOrganization(organizationId: string): Promise<AccountRecord[]>
+  findAllByOrganization(
+    organizationId: string,
+    viewer?: TransactionViewer,
+    options?: { ownedOnly?: boolean }
+  ): Promise<AccountRecord[]>
   findAllByOrganizationIncludingInactive(organizationId: string): Promise<AccountRecord[]>
-  findById(organizationId: string, id: string): Promise<AccountRecord | null>
-  findByName(organizationId: string, name: string): Promise<AccountRecord | null>
+  findById(
+    organizationId: string,
+    id: string,
+    viewer?: TransactionViewer,
+    options?: { ownedOnly?: boolean }
+  ): Promise<AccountRecord | null>
+  findByName(
+    organizationId: string,
+    name: string,
+    createdBy?: string | null
+  ): Promise<AccountRecord | null>
   findByOfxAccountId(organizationId: string, ofxAccountId: string): Promise<AccountRecord | null>
   create(data: CreateAccountData): Promise<AccountRecord>
   update(id: string, data: UpdateAccountData): Promise<AccountRecord | null>
@@ -46,12 +64,20 @@ export interface AccountRepository {
 }
 
 export class DrizzleAccountRepository implements AccountRepository {
-  async findAllByOrganization(organizationId: string): Promise<AccountRecord[]> {
+  async findAllByOrganization(
+    organizationId: string,
+    viewer?: TransactionViewer,
+    options?: { ownedOnly?: boolean }
+  ): Promise<AccountRecord[]> {
     return db
       .select()
       .from(accounts)
       .where(
-        and(eq(accounts.organizationId, organizationId), eq(accounts.isActive, true))
+        and(
+          eq(accounts.organizationId, organizationId),
+          eq(accounts.isActive, true),
+          accountVisibilityCondition(viewer, options)
+        )
       )
       .orderBy(accounts.displayOrder, accounts.name)
   }
@@ -64,21 +90,42 @@ export class DrizzleAccountRepository implements AccountRepository {
       .orderBy(accounts.displayOrder, accounts.name)
   }
 
-  async findById(organizationId: string, id: string): Promise<AccountRecord | null> {
+  async findById(
+    organizationId: string,
+    id: string,
+    viewer?: TransactionViewer,
+    options?: { ownedOnly?: boolean }
+  ): Promise<AccountRecord | null> {
     const [account] = await db
       .select()
       .from(accounts)
-      .where(and(eq(accounts.id, id), eq(accounts.organizationId, organizationId)))
+      .where(
+        and(
+          eq(accounts.id, id),
+          eq(accounts.organizationId, organizationId),
+          accountVisibilityCondition(viewer, options)
+        )
+      )
       .limit(1)
 
     return account ?? null
   }
 
-  async findByName(organizationId: string, name: string): Promise<AccountRecord | null> {
+  async findByName(
+    organizationId: string,
+    name: string,
+    createdBy?: string | null
+  ): Promise<AccountRecord | null> {
     const [account] = await db
       .select()
       .from(accounts)
-      .where(and(eq(accounts.organizationId, organizationId), eq(accounts.name, name)))
+      .where(
+        and(
+          eq(accounts.organizationId, organizationId),
+          eq(accounts.name, name),
+          createdBy == null ? isNull(accounts.createdBy) : eq(accounts.createdBy, createdBy)
+        )
+      )
       .limit(1)
 
     return account ?? null
@@ -119,6 +166,7 @@ export class DrizzleAccountRepository implements AccountRepository {
         icon: data.icon ?? null,
         displayOrder: data.displayOrder ?? 0,
         ofxAccountId: data.ofxAccountId ?? null,
+        createdBy: data.createdBy ?? null,
       })
       .returning()
 

@@ -3,7 +3,7 @@
  * Do not edit manually.
  * HouseApp API
  * API for HouseApp
- * OpenAPI spec version: 2.0.0
+ * OpenAPI spec version: 2.2.1
  */
 import type { UpdateAccount200AccountType } from "./updateAccount200AccountType";
 import type { UpdateAccount200AccountInstitution } from "./updateAccount200AccountInstitution";
@@ -45,4 +45,5 @@ export type UpdateAccount200Account = {
    * @maximum 9007199254740991
    */
   cardCount?: number;
+  canManage: boolean;
 };

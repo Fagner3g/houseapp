@@ -3,7 +3,7 @@
  * Do not edit manually.
  * HouseApp API
  * API for HouseApp
- * OpenAPI spec version: 2.0.0
+ * OpenAPI spec version: 2.2.1
  */
 import type { UnblockCard200CardLastFourDigits } from "./unblockCard200CardLastFourDigits";
 import type { UnblockCard200CardType } from "./unblockCard200CardType";

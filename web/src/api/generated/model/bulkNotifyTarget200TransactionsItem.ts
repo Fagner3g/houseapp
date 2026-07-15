@@ -3,7 +3,7 @@
  * Do not edit manually.
  * HouseApp API
  * API for HouseApp
- * OpenAPI spec version: 2.0.0
+ * OpenAPI spec version: 2.2.1
  */
 import type { BulkNotifyTarget200TransactionsItemAccountId } from "./bulkNotifyTarget200TransactionsItemAccountId";
 import type { BulkNotifyTarget200TransactionsItemCardId } from "./bulkNotifyTarget200TransactionsItemCardId";
@@ -22,11 +22,13 @@ import type { BulkNotifyTarget200TransactionsItemInstallmentNumber } from "./bul
 import type { BulkNotifyTarget200TransactionsItemInstallmentsTotal } from "./bulkNotifyTarget200TransactionsItemInstallmentsTotal";
 import type { BulkNotifyTarget200TransactionsItemSource } from "./bulkNotifyTarget200TransactionsItemSource";
 import type { BulkNotifyTarget200TransactionsItemTransferPairId } from "./bulkNotifyTarget200TransactionsItemTransferPairId";
+import type { BulkNotifyTarget200TransactionsItemTransferPair } from "./bulkNotifyTarget200TransactionsItemTransferPair";
 import type { BulkNotifyTarget200TransactionsItemNotifyTargetType } from "./bulkNotifyTarget200TransactionsItemNotifyTargetType";
 import type { BulkNotifyTarget200TransactionsItemNotifyUserId } from "./bulkNotifyTarget200TransactionsItemNotifyUserId";
 import type { BulkNotifyTarget200TransactionsItemNotifyContactName } from "./bulkNotifyTarget200TransactionsItemNotifyContactName";
 import type { BulkNotifyTarget200TransactionsItemNotifyContactPhone } from "./bulkNotifyTarget200TransactionsItemNotifyContactPhone";
 import type { BulkNotifyTarget200TransactionsItemNotifyOverdueConfig } from "./bulkNotifyTarget200TransactionsItemNotifyOverdueConfig";
+import type { BulkNotifyTarget200TransactionsItemCreatedBy } from "./bulkNotifyTarget200TransactionsItemCreatedBy";
 
 export type BulkNotifyTarget200TransactionsItem = {
   id: string;
@@ -51,6 +53,7 @@ export type BulkNotifyTarget200TransactionsItem = {
   source: BulkNotifyTarget200TransactionsItemSource;
   categoryIds: string[];
   transferPairId: BulkNotifyTarget200TransactionsItemTransferPairId;
+  transferPair?: BulkNotifyTarget200TransactionsItemTransferPair;
   notifyEnabled: boolean;
   notifyTargetType: (typeof BulkNotifyTarget200TransactionsItemNotifyTargetType)[keyof typeof BulkNotifyTarget200TransactionsItemNotifyTargetType];
   notifyUserId: BulkNotifyTarget200TransactionsItemNotifyUserId;
@@ -58,6 +61,7 @@ export type BulkNotifyTarget200TransactionsItem = {
   notifyContactPhone: BulkNotifyTarget200TransactionsItemNotifyContactPhone;
   notifyDaysBefore?: number[];
   notifyOverdueConfig?: BulkNotifyTarget200TransactionsItemNotifyOverdueConfig;
+  createdBy: BulkNotifyTarget200TransactionsItemCreatedBy;
   createdAt: string;
   updatedAt: string;
 };

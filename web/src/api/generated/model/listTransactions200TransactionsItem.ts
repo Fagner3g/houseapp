@@ -3,7 +3,7 @@
  * Do not edit manually.
  * HouseApp API
  * API for HouseApp
- * OpenAPI spec version: 2.0.0
+ * OpenAPI spec version: 2.2.1
  */
 import type { ListTransactions200TransactionsItemAccountId } from "./listTransactions200TransactionsItemAccountId";
 import type { ListTransactions200TransactionsItemCardId } from "./listTransactions200TransactionsItemCardId";
@@ -22,11 +22,13 @@ import type { ListTransactions200TransactionsItemInstallmentNumber } from "./lis
 import type { ListTransactions200TransactionsItemInstallmentsTotal } from "./listTransactions200TransactionsItemInstallmentsTotal";
 import type { ListTransactions200TransactionsItemSource } from "./listTransactions200TransactionsItemSource";
 import type { ListTransactions200TransactionsItemTransferPairId } from "./listTransactions200TransactionsItemTransferPairId";
+import type { ListTransactions200TransactionsItemTransferPair } from "./listTransactions200TransactionsItemTransferPair";
 import type { ListTransactions200TransactionsItemNotifyTargetType } from "./listTransactions200TransactionsItemNotifyTargetType";
 import type { ListTransactions200TransactionsItemNotifyUserId } from "./listTransactions200TransactionsItemNotifyUserId";
 import type { ListTransactions200TransactionsItemNotifyContactName } from "./listTransactions200TransactionsItemNotifyContactName";
 import type { ListTransactions200TransactionsItemNotifyContactPhone } from "./listTransactions200TransactionsItemNotifyContactPhone";
 import type { ListTransactions200TransactionsItemNotifyOverdueConfig } from "./listTransactions200TransactionsItemNotifyOverdueConfig";
+import type { ListTransactions200TransactionsItemCreatedBy } from "./listTransactions200TransactionsItemCreatedBy";
 
 export type ListTransactions200TransactionsItem = {
   id: string;
@@ -51,6 +53,7 @@ export type ListTransactions200TransactionsItem = {
   source: ListTransactions200TransactionsItemSource;
   categoryIds: string[];
   transferPairId: ListTransactions200TransactionsItemTransferPairId;
+  transferPair?: ListTransactions200TransactionsItemTransferPair;
   notifyEnabled: boolean;
   notifyTargetType: (typeof ListTransactions200TransactionsItemNotifyTargetType)[keyof typeof ListTransactions200TransactionsItemNotifyTargetType];
   notifyUserId: ListTransactions200TransactionsItemNotifyUserId;
@@ -58,6 +61,7 @@ export type ListTransactions200TransactionsItem = {
   notifyContactPhone: ListTransactions200TransactionsItemNotifyContactPhone;
   notifyDaysBefore?: number[];
   notifyOverdueConfig?: ListTransactions200TransactionsItemNotifyOverdueConfig;
+  createdBy: ListTransactions200TransactionsItemCreatedBy;
   createdAt: string;
   updatedAt: string;
 };

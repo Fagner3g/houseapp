@@ -43,6 +43,27 @@
       "when": 1783788480000,
       "tag": "0005_organization_member_notification_prefs",
       "breakpoints": true
+    },
+    {
+      "idx": 6,
+      "version": "7",
+      "when": 1783874880000,
+      "tag": "0006_transaction_created_by",
+      "breakpoints": true
+    },
+    {
+      "idx": 7,
+      "version": "7",
+      "when": 1783961280000,
+      "tag": "0007_account_created_by",
+      "breakpoints": true
+    },
+    {
+      "idx": 8,
+      "version": "7",
+      "when": 1784047680000,
+      "tag": "0008_split_payment_requests",
+      "breakpoints": true
     }
   ]
 }

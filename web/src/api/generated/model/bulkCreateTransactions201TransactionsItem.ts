@@ -3,7 +3,7 @@
  * Do not edit manually.
  * HouseApp API
  * API for HouseApp
- * OpenAPI spec version: 2.0.0
+ * OpenAPI spec version: 2.2.1
  */
 import type { BulkCreateTransactions201TransactionsItemAccountId } from "./bulkCreateTransactions201TransactionsItemAccountId";
 import type { BulkCreateTransactions201TransactionsItemCardId } from "./bulkCreateTransactions201TransactionsItemCardId";
@@ -22,11 +22,13 @@ import type { BulkCreateTransactions201TransactionsItemInstallmentNumber } from 
 import type { BulkCreateTransactions201TransactionsItemInstallmentsTotal } from "./bulkCreateTransactions201TransactionsItemInstallmentsTotal";
 import type { BulkCreateTransactions201TransactionsItemSource } from "./bulkCreateTransactions201TransactionsItemSource";
 import type { BulkCreateTransactions201TransactionsItemTransferPairId } from "./bulkCreateTransactions201TransactionsItemTransferPairId";
+import type { BulkCreateTransactions201TransactionsItemTransferPair } from "./bulkCreateTransactions201TransactionsItemTransferPair";
 import type { BulkCreateTransactions201TransactionsItemNotifyTargetType } from "./bulkCreateTransactions201TransactionsItemNotifyTargetType";
 import type { BulkCreateTransactions201TransactionsItemNotifyUserId } from "./bulkCreateTransactions201TransactionsItemNotifyUserId";
 import type { BulkCreateTransactions201TransactionsItemNotifyContactName } from "./bulkCreateTransactions201TransactionsItemNotifyContactName";
 import type { BulkCreateTransactions201TransactionsItemNotifyContactPhone } from "./bulkCreateTransactions201TransactionsItemNotifyContactPhone";
 import type { BulkCreateTransactions201TransactionsItemNotifyOverdueConfig } from "./bulkCreateTransactions201TransactionsItemNotifyOverdueConfig";
+import type { BulkCreateTransactions201TransactionsItemCreatedBy } from "./bulkCreateTransactions201TransactionsItemCreatedBy";
 
 export type BulkCreateTransactions201TransactionsItem = {
   id: string;
@@ -51,6 +53,7 @@ export type BulkCreateTransactions201TransactionsItem = {
   source: BulkCreateTransactions201TransactionsItemSource;
   categoryIds: string[];
   transferPairId: BulkCreateTransactions201TransactionsItemTransferPairId;
+  transferPair?: BulkCreateTransactions201TransactionsItemTransferPair;
   notifyEnabled: boolean;
   notifyTargetType: (typeof BulkCreateTransactions201TransactionsItemNotifyTargetType)[keyof typeof BulkCreateTransactions201TransactionsItemNotifyTargetType];
   notifyUserId: BulkCreateTransactions201TransactionsItemNotifyUserId;
@@ -58,6 +61,7 @@ export type BulkCreateTransactions201TransactionsItem = {
   notifyContactPhone: BulkCreateTransactions201TransactionsItemNotifyContactPhone;
   notifyDaysBefore?: number[];
   notifyOverdueConfig?: BulkCreateTransactions201TransactionsItemNotifyOverdueConfig;
+  createdBy: BulkCreateTransactions201TransactionsItemCreatedBy;
   createdAt: string;
   updatedAt: string;
 };

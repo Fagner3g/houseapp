@@ -87,6 +87,7 @@ export function CreditCardPeriodViews({
         <CreditCardAnalyticsSection
           accountId={account.id}
           accountName={account.name}
+          canManage={account.canManage !== false}
           cycle={cycle}
           closingDay={closingDay}
           dueDay={dueDay}

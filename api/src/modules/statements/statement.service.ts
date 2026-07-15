@@ -12,7 +12,9 @@ import { suggestCreditCardAccountName } from '@/modules/accounts/suggest-credit-
 import type { CategoryRepository } from '@/modules/categories/category.repository'
 import type { CardRepository } from '@/modules/cards/card.repository'
 import type { TransactionRepository } from '@/modules/transactions/transaction.repository'
+import type { TransactionViewer } from '@/modules/transactions/transaction-visibility'
 
+import { stripSharedAccessInvoiceTotals } from './strip-shared-access-invoice-totals'
 import type {
   ImportTransactionData,
   StatementRecord,
@@ -167,15 +169,28 @@ export class StatementService {
     private readonly cardRepository: CardRepository
   ) {}
 
-  async list(organizationId: string, accountId: string): Promise<StatementDto[]> {
-    await this.ensureAccount(organizationId, accountId)
+  async list(
+    organizationId: string,
+    accountId: string,
+    viewer?: TransactionViewer
+  ): Promise<StatementDto[]> {
+    await this.ensureAccount(organizationId, accountId, viewer)
 
     const rows = await this.statementRepository.findByAccountId(organizationId, accountId)
-    return rows.map(toStatementDto)
+    const showFullTotals = await this.canShowFullInvoiceTotals(organizationId, accountId, viewer)
+    return rows.map(row => {
+      const dto = toStatementDto(row)
+      return showFullTotals ? dto : stripSharedAccessInvoiceTotals(dto)
+    })
   }
 
-  async get(organizationId: string, accountId: string, id: string): Promise<StatementDto> {
-    await this.ensureAccount(organizationId, accountId)
+  async get(
+    organizationId: string,
+    accountId: string,
+    id: string,
+    viewer?: TransactionViewer
+  ): Promise<StatementDto> {
+    await this.ensureAccount(organizationId, accountId, viewer)
 
     const statement = await this.statementRepository.findById(organizationId, accountId, id)
 
@@ -183,7 +198,9 @@ export class StatementService {
       throw notFound('Statement not found')
     }
 
-    return toStatementDto(statement)
+    const dto = toStatementDto(statement)
+    const showFullTotals = await this.canShowFullInvoiceTotals(organizationId, accountId, viewer)
+    return showFullTotals ? dto : stripSharedAccessInvoiceTotals(dto)
   }
 
   async import(
@@ -791,14 +808,31 @@ export class StatementService {
     }
   }
 
-  private async ensureAccount(organizationId: string, accountId: string) {
-    const account = await this.accountRepository.findById(organizationId, accountId)
+  private async ensureAccount(
+    organizationId: string,
+    accountId: string,
+    viewer?: TransactionViewer
+  ) {
+    const account = await this.accountRepository.findById(organizationId, accountId, viewer)
 
     if (!account || !account.isActive) {
       throw notFound('Account not found')
     }
 
     return account
+  }
+
+  /** Owners and permanent account holders see imported totals; split-only access does not. */
+  private async canShowFullInvoiceTotals(
+    organizationId: string,
+    accountId: string,
+    viewer?: TransactionViewer
+  ): Promise<boolean> {
+    if (!viewer || viewer.isOwner) return true
+    const owned = await this.accountRepository.findById(organizationId, accountId, viewer, {
+      ownedOnly: true,
+    })
+    return owned != null
   }
 
   private async buildCardMap(accountId: string): Promise<Map<string, string>> {

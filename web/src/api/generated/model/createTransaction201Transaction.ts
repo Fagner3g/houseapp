@@ -3,7 +3,7 @@
  * Do not edit manually.
  * HouseApp API
  * API for HouseApp
- * OpenAPI spec version: 2.0.0
+ * OpenAPI spec version: 2.2.1
  */
 import type { CreateTransaction201TransactionAccountId } from "./createTransaction201TransactionAccountId";
 import type { CreateTransaction201TransactionCardId } from "./createTransaction201TransactionCardId";
@@ -22,11 +22,13 @@ import type { CreateTransaction201TransactionInstallmentNumber } from "./createT
 import type { CreateTransaction201TransactionInstallmentsTotal } from "./createTransaction201TransactionInstallmentsTotal";
 import type { CreateTransaction201TransactionSource } from "./createTransaction201TransactionSource";
 import type { CreateTransaction201TransactionTransferPairId } from "./createTransaction201TransactionTransferPairId";
+import type { CreateTransaction201TransactionTransferPair } from "./createTransaction201TransactionTransferPair";
 import type { CreateTransaction201TransactionNotifyTargetType } from "./createTransaction201TransactionNotifyTargetType";
 import type { CreateTransaction201TransactionNotifyUserId } from "./createTransaction201TransactionNotifyUserId";
 import type { CreateTransaction201TransactionNotifyContactName } from "./createTransaction201TransactionNotifyContactName";
 import type { CreateTransaction201TransactionNotifyContactPhone } from "./createTransaction201TransactionNotifyContactPhone";
 import type { CreateTransaction201TransactionNotifyOverdueConfig } from "./createTransaction201TransactionNotifyOverdueConfig";
+import type { CreateTransaction201TransactionCreatedBy } from "./createTransaction201TransactionCreatedBy";
 
 export type CreateTransaction201Transaction = {
   id: string;
@@ -51,6 +53,7 @@ export type CreateTransaction201Transaction = {
   source: CreateTransaction201TransactionSource;
   categoryIds: string[];
   transferPairId: CreateTransaction201TransactionTransferPairId;
+  transferPair?: CreateTransaction201TransactionTransferPair;
   notifyEnabled: boolean;
   notifyTargetType: (typeof CreateTransaction201TransactionNotifyTargetType)[keyof typeof CreateTransaction201TransactionNotifyTargetType];
   notifyUserId: CreateTransaction201TransactionNotifyUserId;
@@ -58,6 +61,7 @@ export type CreateTransaction201Transaction = {
   notifyContactPhone: CreateTransaction201TransactionNotifyContactPhone;
   notifyDaysBefore?: number[];
   notifyOverdueConfig?: CreateTransaction201TransactionNotifyOverdueConfig;
+  createdBy: CreateTransaction201TransactionCreatedBy;
   createdAt: string;
   updatedAt: string;
 };

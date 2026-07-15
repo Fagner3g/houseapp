@@ -3,7 +3,7 @@
  * Do not edit manually.
  * HouseApp API
  * API for HouseApp
- * OpenAPI spec version: 2.0.0
+ * OpenAPI spec version: 2.2.1
  */
 import type { ParseStatementOfx200DuplicateMode } from "./parseStatementOfx200DuplicateMode";
 import type { ParseStatementOfx200DuplicateMatchType } from "./parseStatementOfx200DuplicateMatchType";

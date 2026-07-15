@@ -8,11 +8,13 @@ import type { ReportDateRange } from '../report.repository'
 import { listInvoiceMySpendItems } from './invoice-items'
 import { listOtherMySpendItems } from './other-expenses'
 import type { MySpendBreakdown } from './types'
+import type { TransactionViewer } from '@/modules/transactions/transaction-visibility'
 
 export async function computeMySpendBreakdown(
   organizationId: string,
   range: ReportDateRange,
-  userId: string
+  userId: string,
+  viewer?: TransactionViewer
 ): Promise<MySpendBreakdown> {
   const ccAccounts = await db
     .select({
@@ -39,8 +41,8 @@ export async function computeMySpendBreakdown(
   }))
 
   const [invoiceItems, otherExpenses] = await Promise.all([
-    listInvoiceMySpendItems(organizationId, range, userId, creditCards),
-    listOtherMySpendItems(organizationId, userId, range),
+    listInvoiceMySpendItems(organizationId, range, userId, creditCards, viewer),
+    listOtherMySpendItems(organizationId, userId, range, viewer),
   ])
 
   const items = [...invoiceItems, ...otherExpenses].sort(

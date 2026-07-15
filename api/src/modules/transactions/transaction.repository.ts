@@ -10,10 +10,12 @@ import {
   inArray,
   or,
   sql,
+  type SQL,
 } from 'drizzle-orm'
 
 import { db } from '@/db'
 import { accounts } from '@/db/schemas/accounts'
+import { cards } from '@/db/schemas/cards'
 import { transactionCategories } from '@/db/schemas/transactionCategories'
 import {
   transactions,
@@ -24,6 +26,7 @@ import {
   type TransactionType,
 } from '@/db/schemas/transactions'
 import { UNPAID_TRANSACTION_STATUSES } from '@/core/transaction-payment'
+import { userOwnsTransactionCondition } from '@/modules/splits/split-expense-attribution'
 import {
   isOverduePayableListFilter,
   isPayableTransactionCondition,
@@ -33,6 +36,10 @@ import {
   matchesPayablePeriodCondition,
   shouldExcludeFutureScheduled,
 } from './payable-transaction'
+import {
+  transactionVisibilityCondition,
+  type TransactionViewer,
+} from './transaction-visibility'
 
 export type TransactionRecord = typeof transactions.$inferSelect
 
@@ -57,6 +64,7 @@ export type CreateTransactionData = {
   source?: TransactionSource
   externalId?: string | null
   transferPairId?: string | null
+  createdBy?: string | null
   categoryIds?: string[]
   notifyEnabled?: boolean
   notifyTargetType?: NotifyTargetType | null
@@ -93,8 +101,11 @@ export type ListTransactionsFilter = {
   payableOnly?: boolean
   /** Only pending/partial with future paymentScheduledAt. Implies payableOnly. */
   scheduledOnly?: boolean
+  /** Only transactions attributed to the viewer as payer. */
+  ownedOnly?: boolean
   sortBy?: TransactionSortBy
   sortOrder?: TransactionSortOrder
+  viewer?: TransactionViewer
 }
 
 export type ListTransactionsResult = {
@@ -105,7 +116,11 @@ export type ListTransactionsResult = {
 
 export interface TransactionRepository {
   findMany(filter: ListTransactionsFilter): Promise<ListTransactionsResult>
-  findById(organizationId: string, id: string): Promise<TransactionRecord | null>
+  findById(
+    organizationId: string,
+    id: string,
+    viewer?: TransactionViewer
+  ): Promise<TransactionRecord | null>
   findByIdGlobal(id: string): Promise<TransactionRecord | null>
   create(data: CreateTransactionData): Promise<TransactionRecord>
   createMany(data: CreateTransactionData[]): Promise<TransactionRecord[]>
@@ -154,6 +169,17 @@ function buildWhereConditions(filter: ListTransactionsFilter) {
   const conditions = [eq(transactions.organizationId, filter.organizationId)]
   const dateField = transactionDateForFilter(filter)
 
+  const visibility = transactionVisibilityCondition(filter.viewer)
+  if (visibility) {
+    conditions.push(visibility)
+  }
+
+  if (filter.ownedOnly && filter.viewer) {
+    conditions.push(
+      userOwnsTransactionCondition(filter.viewer.userId, filter.viewer.ownerId)
+    )
+  }
+
   if (filter.accountId) {
     conditions.push(eq(transactions.accountId, filter.accountId))
   }
@@ -196,7 +222,7 @@ function buildWhereConditions(filter: ListTransactionsFilter) {
         ilike(transactions.title, pattern),
         ilike(transactions.description, pattern),
         ilike(transactions.counterparty, pattern)
-      )
+      ) as SQL
     )
   }
 
@@ -238,6 +264,7 @@ export class DrizzleTransactionRepository implements TransactionRepository {
 
     const whereClause = and(...conditions)
     const orderBy = buildOrderBy(filter.sortBy, filter.sortOrder)
+    const needsOwnershipJoins = Boolean(filter.ownedOnly)
 
     const payableWhere = and(
       whereClause,
@@ -255,11 +282,19 @@ export class DrizzleTransactionRepository implements TransactionRepository {
           .select({ total: count() })
           .from(transactions)
           .leftJoin(accounts, eq(transactions.accountId, accounts.id))
+          .leftJoin(cards, eq(transactions.cardId, cards.id))
           .where(payableWhere)
-      : await db
-          .select({ total: count() })
-          .from(transactions)
-          .where(whereClause)
+      : needsOwnershipJoins
+        ? await db
+            .select({ total: count() })
+            .from(transactions)
+            .leftJoin(accounts, eq(transactions.accountId, accounts.id))
+            .leftJoin(cards, eq(transactions.cardId, cards.id))
+            .where(whereClause)
+        : await db
+            .select({ total: count() })
+            .from(transactions)
+            .where(whereClause)
 
     const rows = usePayableQuery
       ? await db
@@ -294,22 +329,68 @@ export class DrizzleTransactionRepository implements TransactionRepository {
             notifyDaysBefore: transactions.notifyDaysBefore,
             notifyOverdueConfig: transactions.notifyOverdueConfig,
             notifyLastNotifiedAt: transactions.notifyLastNotifiedAt,
+            createdBy: transactions.createdBy,
             createdAt: transactions.createdAt,
             updatedAt: transactions.updatedAt,
           })
           .from(transactions)
           .leftJoin(accounts, eq(transactions.accountId, accounts.id))
+          .leftJoin(cards, eq(transactions.cardId, cards.id))
           .where(payableWhere)
           .orderBy(...orderBy)
           .limit(perPage)
           .offset(offset)
-      : await db
-          .select()
-          .from(transactions)
-          .where(whereClause)
-          .orderBy(...orderBy)
-          .limit(perPage)
-          .offset(offset)
+      : needsOwnershipJoins
+        ? await db
+            .select({
+              id: transactions.id,
+              organizationId: transactions.organizationId,
+              accountId: transactions.accountId,
+              cardId: transactions.cardId,
+              recurringTransactionId: transactions.recurringTransactionId,
+              statementId: transactions.statementId,
+              title: transactions.title,
+              description: transactions.description,
+              amount: transactions.amount,
+              type: transactions.type,
+              date: transactions.date,
+              competenceDate: transactions.competenceDate,
+              status: transactions.status,
+              paidAt: transactions.paidAt,
+              paidAmount: transactions.paidAmount,
+              paymentScheduledAt: transactions.paymentScheduledAt,
+              counterparty: transactions.counterparty,
+              installmentNumber: transactions.installmentNumber,
+              installmentsTotal: transactions.installmentsTotal,
+              source: transactions.source,
+              externalId: transactions.externalId,
+              transferPairId: transactions.transferPairId,
+              notifyEnabled: transactions.notifyEnabled,
+              notifyTargetType: transactions.notifyTargetType,
+              notifyUserId: transactions.notifyUserId,
+              notifyContactName: transactions.notifyContactName,
+              notifyContactPhone: transactions.notifyContactPhone,
+              notifyDaysBefore: transactions.notifyDaysBefore,
+              notifyOverdueConfig: transactions.notifyOverdueConfig,
+              notifyLastNotifiedAt: transactions.notifyLastNotifiedAt,
+              createdBy: transactions.createdBy,
+              createdAt: transactions.createdAt,
+              updatedAt: transactions.updatedAt,
+            })
+            .from(transactions)
+            .leftJoin(accounts, eq(transactions.accountId, accounts.id))
+            .leftJoin(cards, eq(transactions.cardId, cards.id))
+            .where(whereClause)
+            .orderBy(...orderBy)
+            .limit(perPage)
+            .offset(offset)
+        : await db
+            .select()
+            .from(transactions)
+            .where(whereClause)
+            .orderBy(...orderBy)
+            .limit(perPage)
+            .offset(offset)
 
     const categoryIdsByTransaction = await this.getCategoryIds(rows.map(row => row.id))
 
@@ -320,11 +401,24 @@ export class DrizzleTransactionRepository implements TransactionRepository {
     }
   }
 
-  async findById(organizationId: string, id: string): Promise<TransactionRecord | null> {
+  async findById(
+    organizationId: string,
+    id: string,
+    viewer?: TransactionViewer
+  ): Promise<TransactionRecord | null> {
+    const conditions = [
+      eq(transactions.id, id),
+      eq(transactions.organizationId, organizationId),
+    ]
+    const visibility = transactionVisibilityCondition(viewer)
+    if (visibility) {
+      conditions.push(visibility)
+    }
+
     const [transaction] = await db
       .select()
       .from(transactions)
-      .where(and(eq(transactions.id, id), eq(transactions.organizationId, organizationId)))
+      .where(and(...conditions))
       .limit(1)
 
     return transaction ?? null
@@ -370,6 +464,7 @@ export class DrizzleTransactionRepository implements TransactionRepository {
           notifyContactPhone: transactionData.notifyContactPhone ?? null,
           notifyDaysBefore: transactionData.notifyDaysBefore ?? null,
           notifyOverdueConfig: transactionData.notifyOverdueConfig ?? null,
+          createdBy: transactionData.createdBy ?? null,
         })
         .returning()
 
@@ -425,6 +520,7 @@ export class DrizzleTransactionRepository implements TransactionRepository {
             notifyContactPhone: transactionData.notifyContactPhone ?? null,
             notifyDaysBefore: transactionData.notifyDaysBefore ?? null,
             notifyOverdueConfig: transactionData.notifyOverdueConfig ?? null,
+            createdBy: transactionData.createdBy ?? null,
           })
           .returning()
 
@@ -463,6 +559,7 @@ export class DrizzleTransactionRepository implements TransactionRepository {
           paidAt: from.paidAt ?? from.date,
           paidAmount: from.paidAmount ?? from.amount ?? null,
           source: from.source ?? 'manual',
+          createdBy: from.createdBy ?? null,
         })
         .returning()
 
@@ -481,6 +578,7 @@ export class DrizzleTransactionRepository implements TransactionRepository {
           paidAmount: to.paidAmount ?? to.amount ?? null,
           source: to.source ?? 'manual',
           transferPairId: expense.id,
+          createdBy: to.createdBy ?? null,
         })
         .returning()
 

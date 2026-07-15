@@ -556,6 +556,7 @@ export function TransactionDrawer() {
     query: { enabled: !!slug && open && (isEdit || isPay) },
   })
   const transactionSplits = splitsData?.splits ?? []
+  const viewerIsCreditor = splitsData?.viewerIsCreditor ?? false
   const orgMembers = orgMembersData?.users ?? []
 
   const resolveSplitLabel = useCallback(
@@ -1101,6 +1102,12 @@ export function TransactionDrawer() {
       await executePayment()
       return
     }
+    if (!viewerIsCreditor) {
+      toast.info(
+        'Peça confirmação do pagamento em "Divisões" (Avisar que paguei) antes de marcar a transação como paga.'
+      )
+      return
+    }
     pendingPaymentRef.current = executePayment
     setSplitPaymentConfirmOpen(true)
   }
@@ -1628,7 +1635,7 @@ export function TransactionDrawer() {
                         </p>
                       )}
                     </div>
-                    <SplitPaymentPayBanner items={unsettledSplitItems} />
+                    {viewerIsCreditor && <SplitPaymentPayBanner items={unsettledSplitItems} />}
                     <FormField
                       control={form.control}
                       name="paidAmount"

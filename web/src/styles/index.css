@@ -205,7 +205,7 @@
   }
 
   .app-content-panel {
-    @apply relative z-10 h-[calc(100svh-1rem)] overflow-visible rounded-lg bg-white shadow-sm md:h-[calc(100svh-1.5rem)];
+    @apply relative z-10 h-svh min-w-0 overflow-visible bg-white md:h-[calc(100svh-1.5rem)] md:rounded-lg md:shadow-sm;
   }
 
   .sidebar-nav-item {

@@ -10,6 +10,7 @@ import { loadInstallmentSiblingTransactions } from './load-installment-siblings'
 import { resolveWhatsAppAlertAmounts } from './resolve-whatsapp-alert-amounts'
 import { resolveWhatsAppSplitAlertAmounts } from './resolve-whatsapp-split-alert-amounts'
 import {
+  buildGreeting,
   buildWhatsAppAlertMessage,
   buildWhatsAppBatchAlertMessage,
   toWhatsAppBatchItem,
@@ -20,6 +21,16 @@ import {
   isCreditCardInvoiceAlert,
   resolveTransactionAlertDueDate,
 } from './resolve-transaction-alert-due-date'
+
+async function loadRecipientName(userId: string): Promise<string> {
+  const [user] = await db
+    .select({ name: users.name })
+    .from(users)
+    .where(eq(users.id, userId))
+    .limit(1)
+
+  return user?.name?.trim() || 'você'
+}
 
 function readMetadataString(metadata: Record<string, unknown>, key: string): string | null {
   const value = metadata[key]
@@ -46,8 +57,36 @@ function isInvoiceKind(kind: string | null | undefined): boolean {
 
 export function getWhatsAppAlertKindCategory(kind: string | null): string {
   if (!kind) return 'alert'
+  if (
+    kind === 'split_payment_request' ||
+    kind === 'split_payment_request_accepted' ||
+    kind === 'split_payment_request_rejected'
+  ) {
+    return kind
+  }
   if (kind.includes('overdue')) return 'overdue'
   return 'upcoming'
+}
+
+export function buildWhatsAppBatchGroupKey(
+  phone: string,
+  userId: string,
+  organizationId: string,
+  kind: string | null,
+  requestId?: string | null
+): string {
+  if (
+    kind === 'split_payment_request' ||
+    kind === 'split_payment_request_accepted' ||
+    kind === 'split_payment_request_rejected'
+  ) {
+    return `${phone}:${userId}:${kind}:${requestId ?? 'unknown'}`
+  }
+  const category = getWhatsAppAlertKindCategory(kind)
+  if (isOwnerResidualAlertKind(kind)) {
+    return `${phone}:${userId}:owner-residual:${category}`
+  }
+  return `${phone}:${userId}:${organizationId}:${category}`
 }
 
 export type ResolvedWhatsAppAlertContent = {
@@ -307,6 +346,54 @@ export function toWhatsAppBatchItemFromContent(
 export async function buildWhatsAppMessageForNotification(
   notification: NotificationRecord
 ): Promise<string> {
+  const metadata = notification.metadata as Record<string, unknown>
+  if (
+    metadata.kind === 'split_payment_request' ||
+    metadata.kind === 'split_payment_request_accepted' ||
+    metadata.kind === 'split_payment_request_rejected'
+  ) {
+    const recipientName = await loadRecipientName(notification.userId)
+    const body = notification.body?.trim()
+    if (body) {
+      return `${buildGreeting(recipientName)}\n\n${body}`
+    }
+
+    const requesterName =
+      typeof metadata.requesterName === 'string' ? metadata.requesterName : 'Alguém'
+    const creditorName =
+      typeof metadata.creditorName === 'string' ? metadata.creditorName : 'Alguém'
+    const transactionTitle =
+      typeof metadata.transactionTitle === 'string' ? metadata.transactionTitle : 'transação'
+    const amount = typeof metadata.amount === 'string' ? metadata.amount : null
+    const amountLine = amount ? `\nValor: R$ ${amount.replace('.', ',')}` : ''
+
+    if (metadata.kind === 'split_payment_request_accepted') {
+      return [
+        buildGreeting(recipientName),
+        '',
+        `${creditorName} confirmou o seu pagamento.`,
+        `Transação: ${transactionTitle}${amountLine}`,
+      ].join('\n')
+    }
+
+    if (metadata.kind === 'split_payment_request_rejected') {
+      return [
+        buildGreeting(recipientName),
+        '',
+        `${creditorName} recusou a confirmação do pagamento.`,
+        `Transação: ${transactionTitle}${amountLine}`,
+      ].join('\n')
+    }
+
+    return [
+      buildGreeting(recipientName),
+      '',
+      `${requesterName} pediu confirmação de pagamento.`,
+      `Transação: ${transactionTitle}${amountLine}`,
+      'Abra o app para confirmar ou recusar.',
+    ].join('\n')
+  }
+
   const content = await resolveWhatsAppAlertContentForNotification(notification)
 
   return buildWhatsAppAlertMessage({
@@ -346,19 +433,6 @@ export async function buildWhatsAppMessageForNotificationBatch(
     recipientName: contents[0]?.recipientName ?? 'você',
     items: contents.map(toWhatsAppBatchItemFromContent),
   })
-}
-
-export function buildWhatsAppBatchGroupKey(
-  phone: string,
-  userId: string,
-  organizationId: string,
-  kind: string | null
-): string {
-  const category = getWhatsAppAlertKindCategory(kind)
-  if (isOwnerResidualAlertKind(kind)) {
-    return `${phone}:${userId}:owner-residual:${category}`
-  }
-  return `${phone}:${userId}:${organizationId}:${category}`
 }
 
 export function buildWhatsAppSendDedupeKey(

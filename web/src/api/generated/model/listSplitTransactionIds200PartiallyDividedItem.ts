@@ -3,12 +3,15 @@
  * Do not edit manually.
  * HouseApp API
  * API for HouseApp
- * OpenAPI spec version: 2.0.0
+ * OpenAPI spec version: 2.2.1
  */
+import type { ListSplitTransactionIds200PartiallyDividedItemDebtorUserId } from "./listSplitTransactionIds200PartiallyDividedItemDebtorUserId";
 
 export type ListSplitTransactionIds200PartiallyDividedItem = {
   transactionId: string;
   splitWithName: string;
   splitAmount: string;
   transactionAmount: string;
+  debtorUserId: ListSplitTransactionIds200PartiallyDividedItemDebtorUserId;
+  creditorName: string;
 };

@@ -2,11 +2,16 @@ import type { FastifyReply, FastifyRequest } from 'fastify'
 import { StatusCodes } from 'http-status-codes'
 
 import { container } from '@/core/container'
+import { toTransactionViewer } from '@/modules/transactions/transaction-visibility'
 import type { ImportStatementBody } from './statement.schema'
 
 type OrgParams = { slug: string }
 type AccountParams = OrgParams & { accountId: string }
 type StatementParams = AccountParams & { id: string }
+
+function viewerFromRequest(request: FastifyRequest) {
+  return toTransactionViewer(request.user.sub, request.organization.ownerId)
+}
 
 export async function listStatementsController(
   request: FastifyRequest<{ Params: AccountParams }>,
@@ -14,7 +19,8 @@ export async function listStatementsController(
 ) {
   const statements = await container.statementService.list(
     request.organization.id,
-    request.params.accountId
+    request.params.accountId,
+    viewerFromRequest(request)
   )
 
   return reply.send({ statements })
@@ -27,7 +33,8 @@ export async function getStatementController(
   const statement = await container.statementService.get(
     request.organization.id,
     request.params.accountId,
-    request.params.id
+    request.params.id,
+    viewerFromRequest(request)
   )
 
   return reply.send({ statement })

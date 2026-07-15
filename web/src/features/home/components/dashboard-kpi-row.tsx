@@ -13,6 +13,29 @@ interface DashboardKpiRowProps {
   cashFlowLoading?: boolean
 }
 
+function myExpenseSubtitle(params: {
+  myExpense: number
+  myExpenseGross: number
+  mySplitsInPeriod: number
+  houseExpense: number
+}) {
+  const { myExpense, myExpenseGross, mySplitsInPeriod, houseExpense } = params
+  if (mySplitsInPeriod > 0) {
+    return `Total ${formatCurrency(myExpenseGross)} · splits ${formatCurrency(mySplitsInPeriod)}`
+  }
+  if (houseExpense > myExpense) {
+    return `${formatCurrency(houseExpense)} total da casa`
+  }
+  return 'Compras e despesas do período'
+}
+
+function toPaySubtitle(pendingSplitsInPeriod: number) {
+  if (pendingSplitsInPeriod > 0) {
+    return `Splits a receber ${formatCurrency(pendingSplitsInPeriod)}`
+  }
+  return 'Pendente no período'
+}
+
 export function DashboardKpiRow({
   summary,
   previousSummary,
@@ -20,8 +43,11 @@ export function DashboardKpiRow({
   cashFlowLoading = false,
 }: DashboardKpiRowProps) {
   const income = moneyStringToReais(summary.totalIncome)
-  const expense = moneyStringToReais(summary.totalExpense)
+  const houseExpense = moneyStringToReais(summary.totalExpense)
   const myExpense = moneyStringToReais(summary.myExpenseTotal)
+  const myExpenseGross = moneyStringToReais(summary.myExpenseGrossTotal)
+  const mySplitsInPeriod = moneyStringToReais(summary.mySplitsInPeriodTotal)
+  const pendingSplitsInPeriod = moneyStringToReais(summary.myPendingSplitsInPeriodTotal)
   const balance = income - myExpense
   const savingsRate = income > 0 ? (balance / income) * 100 : null
 
@@ -42,10 +68,12 @@ export function DashboardKpiRow({
       label: 'Meu gasto',
       value: formatCurrency(myExpense),
       delta: formatDeltaPercent(computeDeltaPercent(myExpense, prevMyExpense)),
-      subtitle:
-        expense > myExpense
-          ? `${formatCurrency(expense)} total da casa`
-          : 'Compras e despesas do período',
+      subtitle: myExpenseSubtitle({
+        myExpense,
+        myExpenseGross,
+        mySplitsInPeriod,
+        houseExpense,
+      }),
       icon: CircleMinus,
       iconClass: 'text-rose-500',
       valueClass: 'text-slate-900',
@@ -53,7 +81,7 @@ export function DashboardKpiRow({
     {
       label: 'A pagar',
       value: cashFlowLoading ? '—' : formatCurrency(pendingExpense),
-      subtitle: 'Pendente no período',
+      subtitle: toPaySubtitle(pendingSplitsInPeriod),
       icon: Clock,
       iconClass: 'text-amber-500',
       valueClass: pendingExpense > 0 ? 'text-amber-600' : 'text-slate-900',
@@ -62,7 +90,10 @@ export function DashboardKpiRow({
       label: 'Saldo do mês',
       value: formatCurrency(balance),
       delta: savingsRate != null ? `${savingsRate.toFixed(0)}% poupança` : undefined,
-      subtitle: balance >= 0 ? 'Receitas − meu gasto' : 'Gastou mais do que recebeu',
+      subtitle:
+        balance >= 0
+          ? 'Receitas − meu gasto (líquido)'
+          : 'Gastou mais do que recebeu (líquido)',
       icon: PiggyBank,
       iconClass: balance >= 0 ? 'text-emerald-500' : 'text-rose-500',
       valueClass: balance >= 0 ? 'text-emerald-700' : 'text-rose-600',

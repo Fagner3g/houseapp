@@ -1,4 +1,4 @@
-import { useQueries } from '@tanstack/react-query'
+import { useQueries, useQuery } from '@tanstack/react-query'
 import dayjs from 'dayjs'
 import { useMemo } from 'react'
 
@@ -8,23 +8,45 @@ import {
   useListAccounts,
   useListTransactions,
 } from '@/api/generated/api'
+import type { ListAccounts200 } from '@/api/generated/model'
 import {
   buildInvoiceSummariesForRange,
   buildOverdueInvoiceSummaries,
   mergeTransactionsWithInvoices,
 } from '@/lib/credit-card-invoice-rows'
 import { useActiveOrganization } from '@/hooks/use-active-organization'
+import { http } from '@/lib/http'
 
-export function useInvoiceSummaryRows(dateFrom: string, dateTo: string, enabled = true) {
-  const { slug } = useActiveOrganization()
-
-  const { data: accountsData } = useListAccounts(slug, {
-    query: { enabled: !!slug && enabled },
+function useAccountsForInvoices(
+  slug: string | undefined,
+  enabled: boolean,
+  ownedOnly: boolean
+) {
+  const ownedQuery = useQuery({
+    queryKey: [`/organizations/${slug}/accounts`, { ownedOnly: true }] as const,
+    queryFn: () =>
+      http<ListAccounts200>(`/organizations/${slug}/accounts?ownedOnly=true`),
+    enabled: !!slug && enabled && ownedOnly,
   })
+  const allQuery = useListAccounts(slug, {
+    query: { enabled: !!slug && enabled && !ownedOnly },
+  })
+  return ownedOnly ? ownedQuery : allQuery
+}
+
+export function useInvoiceSummaryRows(
+  dateFrom: string,
+  dateTo: string,
+  enabled = true,
+  options?: { ownedOnly?: boolean }
+) {
+  const { slug } = useActiveOrganization()
+  const ownedOnly = options?.ownedOnly ?? false
+  const accountsQuery = useAccountsForInvoices(slug, enabled, ownedOnly)
 
   const creditCards = useMemo(
-    () => (accountsData?.accounts ?? []).filter(a => a.type === 'credit_card'),
-    [accountsData?.accounts]
+    () => (accountsQuery.data?.accounts ?? []).filter(a => a.type === 'credit_card'),
+    [accountsQuery.data?.accounts]
   )
 
   const extendedFrom = dayjs(dateFrom).subtract(2, 'month').startOf('day').toISOString()
@@ -32,21 +54,28 @@ export function useInvoiceSummaryRows(dateFrom: string, dateTo: string, enabled 
 
   const { data: extendedTxData } = useListTransactions(
     slug,
-    { dateFrom: extendedFrom, dateTo: extendedTo, perPage: 500 },
+    {
+      dateFrom: extendedFrom,
+      dateTo: extendedTo,
+      perPage: 500,
+      ...(ownedOnly ? { ownedOnly: true } : {}),
+    },
     { query: { enabled: !!slug && enabled && creditCards.length > 0 } }
   )
 
   const statementQueries = useQueries({
     queries: creditCards.map(card => ({
-      queryKey: getListStatementsQueryKey(slug, card.id),
+      queryKey: [...getListStatementsQueryKey(slug, card.id), ownedOnly ? 'owned' : 'all'] as const,
       queryFn: () => listStatements(slug, card.id),
       enabled: !!slug && enabled,
     })),
   })
 
   return useMemo(() => {
-    const statementsByAccountId: Record<string, NonNullable<typeof statementQueries[0]['data']>['statements']> =
-      {}
+    const statementsByAccountId: Record<
+      string,
+      NonNullable<(typeof statementQueries)[0]['data']>['statements']
+    > = {}
 
     creditCards.forEach((card, index) => {
       statementsByAccountId[card.id] = statementQueries[index]?.data?.statements ?? []
@@ -66,14 +95,12 @@ export function useInvoiceSummaryRows(dateFrom: string, dateTo: string, enabled 
 
 export function useOverdueInvoiceSummaries(enabled = true) {
   const { slug } = useActiveOrganization()
-
-  const { data: accountsData } = useListAccounts(slug, {
-    query: { enabled: !!slug && enabled },
-  })
+  const ownedOnly = true
+  const accountsQuery = useAccountsForInvoices(slug, enabled, ownedOnly)
 
   const creditCards = useMemo(
-    () => (accountsData?.accounts ?? []).filter(a => a.type === 'credit_card'),
-    [accountsData?.accounts]
+    () => (accountsQuery.data?.accounts ?? []).filter(a => a.type === 'credit_card'),
+    [accountsQuery.data?.accounts]
   )
 
   const extendedFrom = dayjs().subtract(14, 'month').startOf('day').toISOString()
@@ -81,21 +108,28 @@ export function useOverdueInvoiceSummaries(enabled = true) {
 
   const { data: extendedTxData } = useListTransactions(
     slug,
-    { dateFrom: extendedFrom, dateTo: extendedTo, perPage: 500 },
+    {
+      dateFrom: extendedFrom,
+      dateTo: extendedTo,
+      perPage: 500,
+      ownedOnly: true,
+    },
     { query: { enabled: !!slug && enabled && creditCards.length > 0 } }
   )
 
   const statementQueries = useQueries({
     queries: creditCards.map(card => ({
-      queryKey: getListStatementsQueryKey(slug, card.id),
+      queryKey: [...getListStatementsQueryKey(slug, card.id), 'owned-overdue'] as const,
       queryFn: () => listStatements(slug, card.id),
       enabled: !!slug && enabled,
     })),
   })
 
   return useMemo(() => {
-    const statementsByAccountId: Record<string, NonNullable<typeof statementQueries[0]['data']>['statements']> =
-      {}
+    const statementsByAccountId: Record<
+      string,
+      NonNullable<(typeof statementQueries)[0]['data']>['statements']
+    > = {}
 
     creditCards.forEach((card, index) => {
       statementsByAccountId[card.id] = statementQueries[index]?.data?.statements ?? []

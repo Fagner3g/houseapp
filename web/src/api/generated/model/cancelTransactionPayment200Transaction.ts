@@ -3,7 +3,7 @@
  * Do not edit manually.
  * HouseApp API
  * API for HouseApp
- * OpenAPI spec version: 2.0.0
+ * OpenAPI spec version: 2.2.1
  */
 import type { CancelTransactionPayment200TransactionAccountId } from "./cancelTransactionPayment200TransactionAccountId";
 import type { CancelTransactionPayment200TransactionCardId } from "./cancelTransactionPayment200TransactionCardId";
@@ -22,11 +22,13 @@ import type { CancelTransactionPayment200TransactionInstallmentNumber } from "./
 import type { CancelTransactionPayment200TransactionInstallmentsTotal } from "./cancelTransactionPayment200TransactionInstallmentsTotal";
 import type { CancelTransactionPayment200TransactionSource } from "./cancelTransactionPayment200TransactionSource";
 import type { CancelTransactionPayment200TransactionTransferPairId } from "./cancelTransactionPayment200TransactionTransferPairId";
+import type { CancelTransactionPayment200TransactionTransferPair } from "./cancelTransactionPayment200TransactionTransferPair";
 import type { CancelTransactionPayment200TransactionNotifyTargetType } from "./cancelTransactionPayment200TransactionNotifyTargetType";
 import type { CancelTransactionPayment200TransactionNotifyUserId } from "./cancelTransactionPayment200TransactionNotifyUserId";
 import type { CancelTransactionPayment200TransactionNotifyContactName } from "./cancelTransactionPayment200TransactionNotifyContactName";
 import type { CancelTransactionPayment200TransactionNotifyContactPhone } from "./cancelTransactionPayment200TransactionNotifyContactPhone";
 import type { CancelTransactionPayment200TransactionNotifyOverdueConfig } from "./cancelTransactionPayment200TransactionNotifyOverdueConfig";
+import type { CancelTransactionPayment200TransactionCreatedBy } from "./cancelTransactionPayment200TransactionCreatedBy";
 
 export type CancelTransactionPayment200Transaction = {
   id: string;
@@ -51,6 +53,7 @@ export type CancelTransactionPayment200Transaction = {
   source: CancelTransactionPayment200TransactionSource;
   categoryIds: string[];
   transferPairId: CancelTransactionPayment200TransactionTransferPairId;
+  transferPair?: CancelTransactionPayment200TransactionTransferPair;
   notifyEnabled: boolean;
   notifyTargetType: (typeof CancelTransactionPayment200TransactionNotifyTargetType)[keyof typeof CancelTransactionPayment200TransactionNotifyTargetType];
   notifyUserId: CancelTransactionPayment200TransactionNotifyUserId;
@@ -58,6 +61,7 @@ export type CancelTransactionPayment200Transaction = {
   notifyContactPhone: CancelTransactionPayment200TransactionNotifyContactPhone;
   notifyDaysBefore?: number[];
   notifyOverdueConfig?: CancelTransactionPayment200TransactionNotifyOverdueConfig;
+  createdBy: CancelTransactionPayment200TransactionCreatedBy;
   createdAt: string;
   updatedAt: string;
 };

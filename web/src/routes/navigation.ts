@@ -13,6 +13,7 @@ export type NavSubItem = {
 export type NavItem = {
   title: string
   url: string
+  shortTitle?: string
   icon?: typeof LayoutDashboard
   matchPrefix?: string
   exact?: boolean
@@ -33,6 +34,7 @@ const baseItems = [
   { title: 'Cartões', path: 'accounts', icon: CreditCard, matchPrefix: 'accounts' },
   {
     title: 'Configurações',
+    shortTitle: 'Ajustes',
     path: 'settings/categories',
     icon: Settings,
     matchPrefix: 'settings',
@@ -55,6 +57,7 @@ export function useNavItems(): NavItem[] {
     return {
       title: item.title,
       url,
+      shortTitle: 'shortTitle' in item ? item.shortTitle : undefined,
       icon: item.icon,
       matchPrefix: 'matchPrefix' in item ? item.matchPrefix : undefined,
       exact: 'exact' in item ? item.exact : undefined,

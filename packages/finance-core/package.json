@@ -13,7 +13,7 @@
     "./splits": "./src/splits/index.ts"
   },
   "scripts": {
-    "test": "vitest run"
+    "test": "node ../../api/scripts/run-vitest.mjs"
   },
   "dependencies": {
     "dayjs": "^1.11.13"

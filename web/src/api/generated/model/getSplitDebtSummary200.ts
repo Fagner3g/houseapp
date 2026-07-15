@@ -3,11 +3,13 @@
  * Do not edit manually.
  * HouseApp API
  * API for HouseApp
- * OpenAPI spec version: 2.0.0
+ * OpenAPI spec version: 2.2.1
  */
 import type { GetSplitDebtSummary200InstallmentsTotal } from "./getSplitDebtSummary200InstallmentsTotal";
 import type { GetSplitDebtSummary200CurrentInstallmentNumber } from "./getSplitDebtSummary200CurrentInstallmentNumber";
 import type { GetSplitDebtSummary200CurrentTransactionAmount } from "./getSplitDebtSummary200CurrentTransactionAmount";
+import type { GetSplitDebtSummary200ViewerOwedTotal } from "./getSplitDebtSummary200ViewerOwedTotal";
+import type { GetSplitDebtSummary200ViewerRemainingTotal } from "./getSplitDebtSummary200ViewerRemainingTotal";
 import type { GetSplitDebtSummary200PersonsItem } from "./getSplitDebtSummary200PersonsItem";
 
 export type GetSplitDebtSummary200 = {
@@ -17,5 +19,8 @@ export type GetSplitDebtSummary200 = {
   installmentsTotal: GetSplitDebtSummary200InstallmentsTotal;
   currentInstallmentNumber: GetSplitDebtSummary200CurrentInstallmentNumber;
   currentTransactionAmount: GetSplitDebtSummary200CurrentTransactionAmount;
+  viewerIsCreditor: boolean;
+  viewerOwedTotal: GetSplitDebtSummary200ViewerOwedTotal;
+  viewerRemainingTotal: GetSplitDebtSummary200ViewerRemainingTotal;
   persons: GetSplitDebtSummary200PersonsItem[];
 };

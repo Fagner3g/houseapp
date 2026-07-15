@@ -70,6 +70,7 @@ export const transactions = pgTable(
     notifyDaysBefore: jsonb('notify_days_before').$type<number[] | null>(),
     notifyOverdueConfig: jsonb('notify_overdue_config').$type<TransactionNotifyOverdueConfig | null>(),
     notifyLastNotifiedAt: timestamp('notify_last_notified_at', { withTimezone: true }),
+    createdBy: text('created_by').references(() => users.id, { onDelete: 'set null' }),
     createdAt: timestamp('created_at', { withTimezone: true }).notNull().defaultNow(),
     updatedAt: timestamp('updated_at', { withTimezone: true }).notNull().defaultNow(),
   },
@@ -87,6 +88,9 @@ export const transactions = pgTable(
     index('idx_transactions_card')
       .on(table.cardId)
       .where(sql`${table.cardId} IS NOT NULL`),
+    index('idx_transactions_created_by')
+      .on(table.createdBy)
+      .where(sql`${table.createdBy} IS NOT NULL`),
     index('idx_transactions_status')
       .on(table.organizationId, table.status)
       .where(sql`${table.status} IN ('pending', 'partial')`),

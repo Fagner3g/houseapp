@@ -43,14 +43,23 @@ import {
   aggregateMerchantsFromTransactions,
   filterDividedExpenseTransactions,
 } from '../lib/compute-divided-analytics'
+import {
+  sumViewerShares,
+  transactionsWithViewerShareAmounts,
+} from '../lib/debtor-analytics'
 import { useCreditCardInvoiceMetrics } from '../hooks/use-credit-card-invoice-metrics'
 import { useSplitTransactionIds } from '../hooks/use-split-transaction-ids'
+import {
+  DebtorMetricsHero,
+  DebtorShareBanner,
+} from './credit-card-debtor-analytics-hero'
 import { CreditCardAnalyticsSkeleton } from './credit-card-invoice-skeletons'
-import type { PartialSplitBadgeInfo } from '@/features/transactions/lib/split-badge-label'
 
 interface CreditCardAnalyticsSectionProps {
   accountId: string
   accountName: string
+  /** Permanent account ownership. When false, show debtor share analytics. */
+  canManage?: boolean
   cycle: BillingCycle
   closingDay: number
   dueDay: number
@@ -512,6 +521,7 @@ function InvoiceBridgeBreakdown({
 export function CreditCardAnalyticsSection({
   accountId,
   accountName,
+  canManage = true,
   cycle,
   closingDay,
   dueDay,
@@ -520,6 +530,7 @@ export function CreditCardAnalyticsSection({
   onViewInvoiceCredits,
   onViewInvoicePayments,
 }: CreditCardAnalyticsSectionProps) {
+  const isDebtorView = canManage === false
   const { slug } = useActiveOrganization()
   const openAnalyticsGroupDrawer = useDrawerStore(s => s.openAnalyticsGroupDrawer)
   const [merchantQuickFilter, setMerchantQuickFilter] = useState<MerchantQuickFilter>('all')
@@ -543,9 +554,9 @@ export function CreditCardAnalyticsSection({
   )
   const { data: splitData } = useSplitTransactionIds(slug, cycleTransactionIds)
   const dividedTransactionIds = splitData?.transactionIds ?? new Set<string>()
-  const fullyDelegatedById = splitData?.fullyDelegatedById ?? new Map<string, string>()
-  const partiallyDividedById =
-    splitData?.partiallyDividedById ?? new Map<string, PartialSplitBadgeInfo>()
+  const fullyDelegatedById = splitData?.fullyDelegatedById ?? new Map()
+  const partiallyDividedById = splitData?.partiallyDividedById ?? new Map()
+  const viewerShareById = splitData?.viewerShareById ?? new Map()
 
   const hasImportedInvoice = hasImportedInvoiceTotal(matchedStatement)
   const suggestedForeignMonthKey = foreignStatements[0]
@@ -566,25 +577,27 @@ export function CreditCardAnalyticsSection({
     ...reportScope,
   }
 
+  const reportsEnabled = !!slug && !!accountId && !isDebtorView
+
   const byCategoryAll = useGetReportByCategory(
     slug,
     { ...reportParams, type: 'expense' },
-    { query: { enabled: !!slug && !!accountId } }
+    { query: { enabled: reportsEnabled } }
   )
   const byCategoryPersonal = useGetReportByCategory(
     slug,
     { ...reportParams, type: 'expense', personal: true },
-    { query: { enabled: !!slug && !!accountId } }
+    { query: { enabled: reportsEnabled } }
   )
   const topMerchantsAll = useGetReportTopMerchants(
     slug,
     { ...reportParams, limit: MERCHANT_FETCH_LIMIT },
-    { query: { enabled: !!slug && !!accountId } }
+    { query: { enabled: reportsEnabled } }
   )
   const topMerchantsPersonal = useGetReportTopMerchants(
     slug,
     { ...reportParams, personal: true, limit: MERCHANT_FETCH_LIMIT },
-    { query: { enabled: !!slug && !!accountId } }
+    { query: { enabled: reportsEnabled } }
   )
 
   const byCategory = showPersonal ? byCategoryPersonal : byCategoryAll
@@ -626,11 +639,58 @@ export function CreditCardAnalyticsSection({
     [invoicePurchaseTransactions, dividedTransactionIds]
   )
 
+  const debtorShareTransactions = useMemo(
+    () =>
+      isDebtorView
+        ? transactionsWithViewerShareAmounts(invoicePurchaseTransactions, viewerShareById)
+        : [],
+    [isDebtorView, invoicePurchaseTransactions, viewerShareById]
+  )
+
+  const debtorMySpend = useMemo(
+    () =>
+      isDebtorView
+        ? sumViewerShares(
+            invoicePurchaseTransactions.map(transaction => transaction.id),
+            viewerShareById
+          )
+        : 0,
+    [isDebtorView, invoicePurchaseTransactions, viewerShareById]
+  )
+
+  const debtorAnalytics = useMemo(() => {
+    if (!isDebtorView) return null
+
+    const categoryMeta = byCategoryAll.data?.categories ?? []
+    const aggregatedCategories = aggregateCategoriesFromTransactions(
+      debtorShareTransactions,
+      categoryMeta
+    )
+    const aggregatedMerchants = aggregateMerchantsFromTransactions(
+      debtorShareTransactions,
+      fullyDelegatedById,
+      partiallyDividedById
+    )
+
+    return {
+      categories: aggregatedCategories,
+      merchants: aggregatedMerchants.merchants,
+      merchantCount: aggregatedMerchants.merchantCount,
+      grandTotal: aggregatedMerchants.grandTotal,
+    }
+  }, [
+    isDebtorView,
+    debtorShareTransactions,
+    byCategoryAll.data?.categories,
+    fullyDelegatedById,
+    partiallyDividedById,
+  ])
+
   const baseCategories = byCategory.data?.categories ?? []
   const baseMerchants = topMerchants.data?.merchants ?? []
 
   const dividedAnalytics = useMemo(() => {
-    if (!dividedOnly) return null
+    if (!dividedOnly || isDebtorView) return null
 
     const categoryMeta = byCategoryAll.data?.categories ?? baseCategories
     const aggregatedCategories = aggregateCategoriesFromTransactions(
@@ -651,6 +711,7 @@ export function CreditCardAnalyticsSection({
     }
   }, [
     dividedOnly,
+    isDebtorView,
     dividedExpenses,
     byCategoryAll.data?.categories,
     baseCategories,
@@ -660,18 +721,23 @@ export function CreditCardAnalyticsSection({
 
   const isLoading =
     isPending ||
-    byCategoryAll.isLoading ||
-    byCategoryPersonal.isLoading ||
-    topMerchantsAll.isLoading ||
-    topMerchantsPersonal.isLoading
-  const categories = dividedAnalytics?.categories ?? baseCategories
-  const allMerchants = dividedAnalytics?.merchants ?? baseMerchants
+    (!isDebtorView &&
+      (byCategoryAll.isLoading ||
+        byCategoryPersonal.isLoading ||
+        topMerchantsAll.isLoading ||
+        topMerchantsPersonal.isLoading))
+  const categories = debtorAnalytics?.categories ?? dividedAnalytics?.categories ?? baseCategories
+  const allMerchants = debtorAnalytics?.merchants ?? dividedAnalytics?.merchants ?? baseMerchants
   const merchantCount =
+    debtorAnalytics?.merchantCount ??
     dividedAnalytics?.merchantCount ??
     topMerchants.data?.merchantCount ??
     allMerchants.length
-  const grandTotal = dividedAnalytics?.grandTotal ?? topMerchants.data?.grandTotal ?? '0'
-  const mySpend = moneyStringToReais(topMerchantsPersonal.data?.grandTotal ?? '0')
+  const grandTotal =
+    debtorAnalytics?.grandTotal ?? dividedAnalytics?.grandTotal ?? topMerchants.data?.grandTotal ?? '0'
+  const mySpend = isDebtorView
+    ? debtorMySpend
+    : moneyStringToReais(topMerchantsPersonal.data?.grandTotal ?? '0')
   const allPurchasesTotal = moneyStringToReais(topMerchantsAll.data?.grandTotal ?? '0')
   const chartSpendTotal = moneyStringToReais(grandTotal)
   const invoiceTotal = metrics.invoiceTotal
@@ -712,27 +778,32 @@ export function CreditCardAnalyticsSection({
     [paymentLines]
   )
   const amountsDiffer =
+    !isDebtorView &&
     hasImportedInvoice &&
     reaisToCents(invoiceTotal) !== reaisToCents(mySpend) &&
     mySpend > 0
   const showNoInvoiceNotice =
-    !hasImportedInvoice && (mySpend > 0 || foreignStatements.length > 0)
+    !isDebtorView && !hasImportedInvoice && (mySpend > 0 || foreignStatements.length > 0)
   const showAmountReconciliation =
-    amountsDiffer && invoicePurchases > 0 && !showNoInvoiceNotice
+    !isDebtorView && amountsDiffer && invoicePurchases > 0 && !showNoInvoiceNotice
 
   const breakdownNote = suggestedForeignMonthKey
     ? `Não há fatura importada neste ciclo. Compras importadas deste período estão na ${formatInvoiceLabel(suggestedForeignMonthKey).toLowerCase()}.`
     : 'Não há fatura importada neste ciclo. Suas compras aqui podem constar na fatura de outro mês.'
-  const categorySectionHint = dividedOnly
-    ? `Compras divididas ou delegadas por categoria · toque para ver`
-    : showPersonal
-      ? 'Seu gasto líquido após divisões · toque para ver'
-      : 'Todas as compras do período da fatura · toque para ver'
-  const merchantSectionHint = dividedOnly
-    ? `Top ${TOP_MERCHANTS_LIMIT} em compras divididas ou delegadas · toque para ver`
-    : showPersonal
-      ? `Top ${TOP_MERCHANTS_LIMIT} por gasto pessoal · agrupados pelo nome na fatura · toque para ver`
-      : `Top ${TOP_MERCHANTS_LIMIT} por valor · agrupados pelo nome na fatura · toque para ver`
+  const categorySectionHint = isDebtorView
+    ? 'Sua parte nas compras por categoria · toque para ver'
+    : dividedOnly
+      ? `Compras divididas ou delegadas por categoria · toque para ver`
+      : showPersonal
+        ? 'Seu gasto líquido após divisões · toque para ver'
+        : 'Todas as compras do período da fatura · toque para ver'
+  const merchantSectionHint = isDebtorView
+    ? `Top ${TOP_MERCHANTS_LIMIT} pela sua parte · agrupados pelo nome na fatura · toque para ver`
+    : dividedOnly
+      ? `Top ${TOP_MERCHANTS_LIMIT} em compras divididas ou delegadas · toque para ver`
+      : showPersonal
+        ? `Top ${TOP_MERCHANTS_LIMIT} por gasto pessoal · agrupados pelo nome na fatura · toque para ver`
+        : `Top ${TOP_MERCHANTS_LIMIT} por valor · agrupados pelo nome na fatura · toque para ver`
 
   const fullyDelegatedAmount = useMemo(
     () =>
@@ -844,13 +915,17 @@ export function CreditCardAnalyticsSection({
             <span className="text-sm font-medium text-slate-700">Análise da fatura</span>
           </div>
 
-          <DualMetricsHero
-            mySpend={mySpend}
-            invoiceTotal={invoiceTotal}
-            hasImportedInvoice={hasImportedInvoice}
-            invoiceCredits={amountReconciliation.invoiceCredits}
-            invoicePayments={paymentTotal}
-          />
+          {isDebtorView ? (
+            <DebtorMetricsHero mySpend={mySpend} />
+          ) : (
+            <DualMetricsHero
+              mySpend={mySpend}
+              invoiceTotal={invoiceTotal}
+              hasImportedInvoice={hasImportedInvoice}
+              invoiceCredits={amountReconciliation.invoiceCredits}
+              invoicePayments={paymentTotal}
+            />
+          )}
 
           {showAmountReconciliation && (
             <InvoiceBridgeBreakdown
@@ -870,45 +945,57 @@ export function CreditCardAnalyticsSection({
             />
           )}
 
-          {splitAdjustment > 0 && !showAmountReconciliation && onViewDividedTransactions && dividedCount > 0 && (
-            <div className="mt-5 flex gap-2 rounded-xl border border-slate-200 bg-slate-50/50 px-4 py-3 text-sm text-slate-700">
-              <Info className="mt-0.5 size-4 shrink-0 text-slate-500" />
-              <div className="space-y-1">
-                {fullyDelegatedCount > 0 && (
-                  <p>
-                    {fullyDelegatedCount === 1 ? '1 compra delegada' : `${fullyDelegatedCount} compras delegadas`}
-                    {fullyDelegatedAmount > 0 && (
-                      <>
-                        {' '}
-                        (
-                        <span className="font-medium tabular-nums">
-                          {formatCurrency(fullyDelegatedAmount)}
-                        </span>
-                        )
-                      </>
-                    )}
-                    {' '}
-                    — não entra no seu gasto.
-                  </p>
-                )}
-                {partialSplitAdjustment > 0 && (
-                  <p>
-                    Parte das compras foi dividida com outras pessoas (
-                    <span className="font-medium tabular-nums">
-                      {formatCurrency(partialSplitAdjustment)}
-                    </span>
-                    ).
-                  </p>
-                )}
-                <button
-                  type="button"
-                  className="cursor-pointer font-medium text-slate-700 underline-offset-2 hover:underline"
-                  onClick={onViewDividedTransactions}
-                >
-                  Ver {dividedCount === 1 ? 'compra dividida' : `${dividedCount} compras divididas`}
-                </button>
+          {isDebtorView ? (
+            <DebtorShareBanner
+              mySpend={mySpend}
+              dividedCount={dividedCount}
+              onViewDividedTransactions={onViewDividedTransactions}
+            />
+          ) : (
+            splitAdjustment > 0 &&
+            !showAmountReconciliation &&
+            onViewDividedTransactions &&
+            dividedCount > 0 && (
+              <div className="mt-5 flex gap-2 rounded-xl border border-slate-200 bg-slate-50/50 px-4 py-3 text-sm text-slate-700">
+                <Info className="mt-0.5 size-4 shrink-0 text-slate-500" />
+                <div className="space-y-1">
+                  {fullyDelegatedCount > 0 && (
+                    <p>
+                      {fullyDelegatedCount === 1
+                        ? '1 compra delegada'
+                        : `${fullyDelegatedCount} compras delegadas`}
+                      {fullyDelegatedAmount > 0 && (
+                        <>
+                          {' '}
+                          (
+                          <span className="font-medium tabular-nums">
+                            {formatCurrency(fullyDelegatedAmount)}
+                          </span>
+                          )
+                        </>
+                      )}{' '}
+                      — não entra no seu gasto.
+                    </p>
+                  )}
+                  {partialSplitAdjustment > 0 && (
+                    <p>
+                      Parte das compras foi dividida com outras pessoas (
+                      <span className="font-medium tabular-nums">
+                        {formatCurrency(partialSplitAdjustment)}
+                      </span>
+                      ).
+                    </p>
+                  )}
+                  <button
+                    type="button"
+                    className="cursor-pointer font-medium text-slate-700 underline-offset-2 hover:underline"
+                    onClick={onViewDividedTransactions}
+                  >
+                    Ver {dividedCount === 1 ? 'compra dividida' : `${dividedCount} compras divididas`}
+                  </button>
+                </div>
               </div>
-            </div>
+            )
           )}
 
           {showNoInvoiceNotice && (
@@ -998,15 +1085,17 @@ export function CreditCardAnalyticsSection({
             />
           </div>
 
-          <AnalyticsSpendingToggle
-            value={spendingView}
-            allTotal={allPurchasesTotal}
-            personalTotal={mySpend}
-            onChange={nextView => {
-              setSpendingView(nextView)
-              if (dividedOnly) setDividedOnly(false)
-            }}
-          />
+          {!isDebtorView && (
+            <AnalyticsSpendingToggle
+              value={spendingView}
+              allTotal={allPurchasesTotal}
+              personalTotal={mySpend}
+              onChange={nextView => {
+                setSpendingView(nextView)
+                if (dividedOnly) setDividedOnly(false)
+              }}
+            />
+          )}
         </div>
       </div>
 
@@ -1017,14 +1106,16 @@ export function CreditCardAnalyticsSection({
             <p className="text-sm text-slate-500">{categorySectionHint}</p>
           </CardHeader>
           <CardContent>
-            {byCategory.error ? (
+            {!!byCategory.error && !isDebtorView ? (
               <AnalyticsError message="Não foi possível carregar as categorias" />
             ) : categories.length === 0 ? (
               <AnalyticsError
                 message={
-                  dividedOnly
-                    ? 'Nenhuma compra dividida ou delegada nesta fatura'
-                    : 'Nenhuma compra categorizada nesta fatura'
+                  isDebtorView
+                    ? 'Nenhuma compra com a sua parte nesta fatura'
+                    : dividedOnly
+                      ? 'Nenhuma compra dividida ou delegada nesta fatura'
+                      : 'Nenhuma compra categorizada nesta fatura'
                 }
               />
             ) : (
@@ -1065,7 +1156,7 @@ export function CreditCardAnalyticsSection({
             />
           </CardHeader>
           <CardContent>
-            {topMerchants.error ? (
+            {!!topMerchants.error && !isDebtorView ? (
               <AnalyticsError message="Não foi possível carregar os estabelecimentos" />
             ) : (
               <ExpenseRankingList

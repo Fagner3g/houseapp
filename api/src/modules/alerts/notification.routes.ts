@@ -5,11 +5,13 @@ import { authenticateUserHook } from '@/http/hooks/authenticate-user'
 import {
   listNotificationsController,
   listPendingNotificationsController,
+  markInformationalNotificationsReadController,
   markNotificationReadController,
 } from './notification.controller'
 import {
   listNotificationsSchema,
   listPendingNotificationsSchema,
+  markInformationalNotificationsReadSchema,
   markNotificationReadSchema,
 } from './notification.schema'
 
@@ -24,6 +26,12 @@ export const notificationsRoutes: FastifyPluginAsyncZod = async app => {
     onRequest: [authenticateUserHook],
     schema: listPendingNotificationsSchema,
     handler: listPendingNotificationsController,
+  })
+
+  app.patch('/notifications/read-informational', {
+    onRequest: [authenticateUserHook],
+    schema: markInformationalNotificationsReadSchema,
+    handler: markInformationalNotificationsReadController,
   })
 
   app.patch('/notifications/:id/read', {

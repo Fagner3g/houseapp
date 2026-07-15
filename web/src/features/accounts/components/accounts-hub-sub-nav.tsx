@@ -8,14 +8,21 @@ interface AccountsHubSubNavProps {
   kind: AccountsHubKind
   view: AccountsHubView
   onViewChange: (view: AccountsHubView) => void
+  showSettings?: boolean
 }
 
-export function AccountsHubSubNav({ kind, view, onViewChange }: AccountsHubSubNavProps) {
+export function AccountsHubSubNav({
+  kind,
+  view,
+  onViewChange,
+  showSettings = true,
+}: AccountsHubSubNavProps) {
   const statementLabel = kind === 'cards' ? 'Fatura' : 'Transações'
+  const safeView = !showSettings && view === 'settings' ? 'statement' : view
 
   return (
     <Tabs
-      value={view}
+      value={safeView}
       onValueChange={value => onViewChange(value as AccountsHubView)}
       className="px-4 lg:px-6"
     >
@@ -26,9 +33,11 @@ export function AccountsHubSubNav({ kind, view, onViewChange }: AccountsHubSubNa
         <TabsTrigger value="analytics" className={pageTabsTrigger}>
           Análise
         </TabsTrigger>
-        <TabsTrigger value="settings" className={pageTabsTrigger}>
-          Configurações
-        </TabsTrigger>
+        {showSettings ? (
+          <TabsTrigger value="settings" className={pageTabsTrigger}>
+            Configurações
+          </TabsTrigger>
+        ) : null}
       </TabsList>
     </Tabs>
   )

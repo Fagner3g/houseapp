@@ -50,7 +50,9 @@ export function useTransactionKpiRow() {
     { query: { enabled: !!slug, placeholderData: keepPreviousData } }
   )
 
-  const { summaries: invoiceSummaries } = useInvoiceSummaryRows(dateFrom, dateTo)
+  const { summaries: invoiceSummaries } = useInvoiceSummaryRows(dateFrom, dateTo, true, {
+    ownedOnly: true,
+  })
 
   const { data: pendingExpenseData } = useListTransactions(
     slug,
@@ -60,6 +62,7 @@ export function useTransactionKpiRow() {
       dateFrom: dateFromIso,
       dateTo: dateToIso,
       payableOnly: true,
+      ownedOnly: true,
       perPage: 100,
     },
     { query: { enabled: !!slug, placeholderData: keepPreviousData } }
@@ -73,6 +76,7 @@ export function useTransactionKpiRow() {
       dateFrom: dateFromIso,
       dateTo: dateToIso,
       payableOnly: true,
+      ownedOnly: true,
       perPage: 100,
     },
     { query: { enabled: !!slug, placeholderData: keepPreviousData } }
@@ -86,6 +90,7 @@ export function useTransactionKpiRow() {
       dateFrom: dateFromIso,
       dateTo: dateToIso,
       payableOnly: true,
+      ownedOnly: true,
       perPage: 100,
     },
     { query: { enabled: !!slug, placeholderData: keepPreviousData } }
@@ -98,7 +103,11 @@ export function useTransactionKpiRow() {
   )
 
   const overdueDateTo = dayjs().subtract(1, 'day').endOf('day').toISOString()
-  const overdueListParams = { dateTo: overdueDateTo, payableOnly: true as const }
+  const overdueListParams = {
+    dateTo: overdueDateTo,
+    payableOnly: true as const,
+    ownedOnly: true as const,
+  }
 
   const { data: overdueCountData } = useListTransactions(
     slug,

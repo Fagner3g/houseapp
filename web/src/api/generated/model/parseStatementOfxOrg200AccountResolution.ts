@@ -3,7 +3,7 @@
  * Do not edit manually.
  * HouseApp API
  * API for HouseApp
- * OpenAPI spec version: 2.0.0
+ * OpenAPI spec version: 2.2.1
  */
 import type { ParseStatementOfxOrg200AccountResolutionOneOf } from "./parseStatementOfxOrg200AccountResolutionOneOf";
 import type { ParseStatementOfxOrg200AccountResolutionOneOfThree } from "./parseStatementOfxOrg200AccountResolutionOneOfThree";

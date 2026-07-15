@@ -21,7 +21,9 @@ export function usePeriodCashFlowKpis(monthKey: string) {
     { query: { enabled: !!slug, placeholderData: keepPreviousData } }
   )
 
-  const { summaries: invoiceSummaries } = useInvoiceSummaryRows(dateFrom, dateTo, !!slug)
+  const { summaries: invoiceSummaries } = useInvoiceSummaryRows(dateFrom, dateTo, !!slug, {
+    ownedOnly: true,
+  })
 
   const pendingExpense = useListTransactions(
     slug,
@@ -31,6 +33,7 @@ export function usePeriodCashFlowKpis(monthKey: string) {
       dateFrom: dateFromIso,
       dateTo: dateToIso,
       payableOnly: true,
+      ownedOnly: true,
       perPage: 100,
     },
     { query: { enabled: !!slug, placeholderData: keepPreviousData } }
@@ -44,6 +47,7 @@ export function usePeriodCashFlowKpis(monthKey: string) {
       dateFrom: dateFromIso,
       dateTo: dateToIso,
       payableOnly: true,
+      ownedOnly: true,
       perPage: 100,
     },
     { query: { enabled: !!slug, placeholderData: keepPreviousData } }
@@ -57,6 +61,7 @@ export function usePeriodCashFlowKpis(monthKey: string) {
       dateFrom: dateFromIso,
       dateTo: dateToIso,
       payableOnly: true,
+      ownedOnly: true,
       perPage: 100,
     },
     { query: { enabled: !!slug, placeholderData: keepPreviousData } }

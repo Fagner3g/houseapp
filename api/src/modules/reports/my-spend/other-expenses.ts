@@ -5,6 +5,10 @@ import { accounts } from '@/db/schemas/accounts'
 import { cards } from '@/db/schemas/cards'
 import { transactions } from '@/db/schemas/transactions'
 import { userOwnsTransactionCondition } from '@/modules/splits/split-expense-attribution'
+import {
+  transactionVisibilityCondition,
+  type TransactionViewer,
+} from '@/modules/transactions/transaction-visibility'
 
 import type { ReportDateRange } from '../report.repository'
 import { isPayableExpenseInRange, reportExpenseAmountExpr } from '../report-spending'
@@ -14,7 +18,8 @@ import type { MySpendItemRow } from './types'
 export async function listOtherMySpendItems(
   organizationId: string,
   userId: string,
-  range: ReportDateRange
+  range: ReportDateRange,
+  viewer?: TransactionViewer
 ): Promise<MySpendItemRow[]> {
   const rows = await db
     .select({
@@ -32,7 +37,8 @@ export async function listOtherMySpendItems(
       and(
         eq(transactions.organizationId, organizationId),
         isPayableExpenseInRange(range),
-        userOwnsTransactionCondition(userId),
+        userOwnsTransactionCondition(userId, viewer?.ownerId),
+        transactionVisibilityCondition(viewer),
         sql`${myAmountExpr()} > 0`
       )
     )

@@ -1,4 +1,4 @@
-import { and, desc, eq, inArray } from 'drizzle-orm'
+import { and, desc, eq, inArray, sql } from 'drizzle-orm'
 
 import { db } from '@/db'
 import {
@@ -6,6 +6,9 @@ import {
   type NotificationChannel,
   type NotificationStatus,
 } from '@/db/schemas/notifications'
+
+/** Kinds that require an explicit user decision and must not be bulk-dismissed. */
+export const DECISION_NOTIFICATION_KINDS = ['split_payment_request'] as const
 
 export type NotificationRecord = typeof notifications.$inferSelect
 
@@ -31,6 +34,7 @@ export interface NotificationRepository {
   existsByDedupeKey(dedupeKey: string): Promise<boolean>
   create(data: CreateNotificationData): Promise<NotificationRecord | null>
   markRead(id: string, userId: string): Promise<NotificationRecord | null>
+  markInformationalRead(userId: string): Promise<number>
   findPendingByChannel(channel: NotificationChannel, limit?: number): Promise<NotificationRecord[]>
   findPendingByChannelAndUser(
     channel: NotificationChannel,
@@ -123,6 +127,26 @@ export class DrizzleNotificationRepository implements NotificationRepository {
       .returning()
 
     return updated ?? null
+  }
+
+  async markInformationalRead(userId: string): Promise<number> {
+    const updated = await db
+      .update(notifications)
+      .set({
+        status: 'read',
+        readAt: new Date(),
+      })
+      .where(
+        and(
+          eq(notifications.userId, userId),
+          inArray(notifications.channel, ['in_app', 'extension']),
+          inArray(notifications.status, ['pending', 'sent']),
+          sql`coalesce(${notifications.metadata}->>'kind', '') <> ${DECISION_NOTIFICATION_KINDS[0]}`
+        )
+      )
+      .returning({ id: notifications.id })
+
+    return updated.length
   }
 
   async findPendingByChannel(

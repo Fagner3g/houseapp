@@ -1,5 +1,13 @@
 import { describe, expect, it, vi } from 'vitest'
 
+vi.mock('@/db', () => {
+  const limit = vi.fn().mockResolvedValue([{ ownerId: 'owner-1' }])
+  const where = vi.fn(() => ({ limit }))
+  const from = vi.fn(() => ({ where }))
+  const select = vi.fn(() => ({ from }))
+  return { db: { select } }
+})
+
 import type { AccountRepository } from '@/modules/accounts/account.repository'
 import type { CategoryRepository } from '@/modules/categories/category.repository'
 import type {
@@ -69,6 +77,9 @@ function makeTransaction(overrides: Partial<TransactionRecord> = {}): Transactio
     notifyContactPhone: null,
     notifyDaysBefore: null,
     notifyLastNotifiedAt: null,
+    notifyOverdueConfig: null,
+    paymentScheduledAt: null,
+    createdBy: null,
     createdAt: new Date('2026-07-01T00:00:00.000Z'),
     updatedAt: new Date('2026-07-01T00:00:00.000Z'),
     ...overrides,
@@ -123,7 +134,7 @@ describe('RecurringService', () => {
       },
     })
 
-    vi.useFakeTimers()
+    vi.useFakeTimers({ toFake: ['Date'] })
     vi.setSystemTime(new Date('2026-07-11T12:00:00.000Z'))
 
     const result = await service.create('org-1', {
@@ -182,7 +193,7 @@ describe('RecurringService', () => {
       },
     })
 
-    vi.useFakeTimers()
+    vi.useFakeTimers({ toFake: ['Date'] })
     vi.setSystemTime(new Date('2026-07-11T15:00:00.000Z'))
 
     const result = await service.create('org-1', {
@@ -315,7 +326,7 @@ describe('RecurringService', () => {
       },
     })
 
-    vi.useFakeTimers()
+    vi.useFakeTimers({ toFake: ['Date'] })
     vi.setSystemTime(new Date('2026-07-16T12:00:00.000Z'))
 
     const generated = await service.materializeOne(row, {
@@ -343,7 +354,7 @@ describe('RecurringService', () => {
       transactionRepository: { createMany },
     })
 
-    vi.useFakeTimers()
+    vi.useFakeTimers({ toFake: ['Date'] })
     vi.setSystemTime(new Date('2026-07-16T12:00:00.000Z'))
 
     const generated = await service.materializeOne(row, {

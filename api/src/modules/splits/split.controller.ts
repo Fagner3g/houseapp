@@ -2,6 +2,7 @@ import type { FastifyReply, FastifyRequest } from 'fastify'
 import { StatusCodes } from 'http-status-codes'
 
 import { container } from '@/core/container'
+import { toTransactionViewer } from '@/modules/transactions/transaction-visibility'
 import type {
   CreateSplitBody,
   ListSplitTransactionIdsBody,
@@ -14,16 +15,21 @@ type TransactionParams = OrgParams & { transactionId: string }
 type SplitParams = TransactionParams & { id: string }
 type SplitPaymentParams = SplitParams & { paymentId: string }
 
+function viewerFromRequest(request: FastifyRequest) {
+  return toTransactionViewer(request.user.sub, request.organization.ownerId)
+}
+
 export async function listSplitsController(
   request: FastifyRequest<{ Params: TransactionParams }>,
   reply: FastifyReply
 ) {
-  const splits = await container.splitService.listByTransaction(
+  const result = await container.splitService.listByTransaction(
     request.organization.id,
-    request.params.transactionId
+    request.params.transactionId,
+    viewerFromRequest(request)
   )
 
-  return reply.send({ splits })
+  return reply.send(result)
 }
 
 export async function createSplitController(
@@ -33,7 +39,8 @@ export async function createSplitController(
   const split = await container.splitService.create(
     request.organization.id,
     request.params.transactionId,
-    request.body
+    request.body,
+    viewerFromRequest(request)
   )
 
   return reply.status(StatusCodes.CREATED).send({ split })
@@ -47,7 +54,8 @@ export async function updateSplitController(
     request.organization.id,
     request.params.transactionId,
     request.params.id,
-    request.body
+    request.body,
+    viewerFromRequest(request)
   )
 
   return reply.send({ split })
@@ -60,7 +68,8 @@ export async function deleteSplitController(
   await container.splitService.delete(
     request.organization.id,
     request.params.transactionId,
-    request.params.id
+    request.params.id,
+    viewerFromRequest(request)
   )
 
   return reply.status(StatusCodes.NO_CONTENT).send()
@@ -73,7 +82,8 @@ export async function listSplitPaymentsController(
   const payments = await container.splitService.listPayments(
     request.organization.id,
     request.params.transactionId,
-    request.params.id
+    request.params.id,
+    viewerFromRequest(request)
   )
 
   return reply.send({ payments })
@@ -87,7 +97,8 @@ export async function registerSplitPaymentController(
     request.organization.id,
     request.params.transactionId,
     request.params.id,
-    request.body
+    request.body,
+    viewerFromRequest(request)
   )
 
   return reply.status(StatusCodes.CREATED).send(result)
@@ -101,7 +112,8 @@ export async function cancelSplitPaymentController(
     request.organization.id,
     request.params.transactionId,
     request.params.id,
-    request.params.paymentId
+    request.params.paymentId,
+    viewerFromRequest(request)
   )
 
   return reply.send(result)
@@ -111,9 +123,11 @@ export async function listPendingSplitsController(
   request: FastifyRequest<{ Params: OrgParams }>,
   reply: FastifyReply
 ) {
+  const viewer = viewerFromRequest(request)
   const splits = await container.splitService.listPending(
     request.organization.id,
-    request.user.sub
+    request.user.sub,
+    viewer.ownerId
   )
   return reply.send({ splits })
 }
@@ -124,7 +138,8 @@ export async function listSplitTransactionIdsController(
 ) {
   const result = await container.splitService.listTransactionIdsWithSplits(
     request.organization.id,
-    request.body.transactionIds
+    request.body.transactionIds,
+    viewerFromRequest(request)
   )
 
   return reply.send(result)
@@ -136,7 +151,8 @@ export async function getSplitDebtSummaryController(
 ) {
   const summary = await container.splitService.getSplitDebtSummary(
     request.organization.id,
-    request.params.transactionId
+    request.params.transactionId,
+    viewerFromRequest(request)
   )
 
   return reply.send(summary)

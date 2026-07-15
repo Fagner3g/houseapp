@@ -3,7 +3,7 @@
  * Do not edit manually.
  * HouseApp API
  * API for HouseApp
- * OpenAPI spec version: 2.0.0
+ * OpenAPI spec version: 2.2.1
  */
 import type { CancelScheduledTransactionPayment200TransactionAccountId } from "./cancelScheduledTransactionPayment200TransactionAccountId";
 import type { CancelScheduledTransactionPayment200TransactionCardId } from "./cancelScheduledTransactionPayment200TransactionCardId";
@@ -22,11 +22,13 @@ import type { CancelScheduledTransactionPayment200TransactionInstallmentNumber }
 import type { CancelScheduledTransactionPayment200TransactionInstallmentsTotal } from "./cancelScheduledTransactionPayment200TransactionInstallmentsTotal";
 import type { CancelScheduledTransactionPayment200TransactionSource } from "./cancelScheduledTransactionPayment200TransactionSource";
 import type { CancelScheduledTransactionPayment200TransactionTransferPairId } from "./cancelScheduledTransactionPayment200TransactionTransferPairId";
+import type { CancelScheduledTransactionPayment200TransactionTransferPair } from "./cancelScheduledTransactionPayment200TransactionTransferPair";
 import type { CancelScheduledTransactionPayment200TransactionNotifyTargetType } from "./cancelScheduledTransactionPayment200TransactionNotifyTargetType";
 import type { CancelScheduledTransactionPayment200TransactionNotifyUserId } from "./cancelScheduledTransactionPayment200TransactionNotifyUserId";
 import type { CancelScheduledTransactionPayment200TransactionNotifyContactName } from "./cancelScheduledTransactionPayment200TransactionNotifyContactName";
 import type { CancelScheduledTransactionPayment200TransactionNotifyContactPhone } from "./cancelScheduledTransactionPayment200TransactionNotifyContactPhone";
 import type { CancelScheduledTransactionPayment200TransactionNotifyOverdueConfig } from "./cancelScheduledTransactionPayment200TransactionNotifyOverdueConfig";
+import type { CancelScheduledTransactionPayment200TransactionCreatedBy } from "./cancelScheduledTransactionPayment200TransactionCreatedBy";
 
 export type CancelScheduledTransactionPayment200Transaction = {
   id: string;
@@ -51,6 +53,7 @@ export type CancelScheduledTransactionPayment200Transaction = {
   source: CancelScheduledTransactionPayment200TransactionSource;
   categoryIds: string[];
   transferPairId: CancelScheduledTransactionPayment200TransactionTransferPairId;
+  transferPair?: CancelScheduledTransactionPayment200TransactionTransferPair;
   notifyEnabled: boolean;
   notifyTargetType: (typeof CancelScheduledTransactionPayment200TransactionNotifyTargetType)[keyof typeof CancelScheduledTransactionPayment200TransactionNotifyTargetType];
   notifyUserId: CancelScheduledTransactionPayment200TransactionNotifyUserId;
@@ -58,6 +61,7 @@ export type CancelScheduledTransactionPayment200Transaction = {
   notifyContactPhone: CancelScheduledTransactionPayment200TransactionNotifyContactPhone;
   notifyDaysBefore?: number[];
   notifyOverdueConfig?: CancelScheduledTransactionPayment200TransactionNotifyOverdueConfig;
+  createdBy: CancelScheduledTransactionPayment200TransactionCreatedBy;
   createdAt: string;
   updatedAt: string;
 };

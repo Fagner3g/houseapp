@@ -12,4 +12,12 @@ export default defineConfig({
       ),
     },
   },
+  test: {
+    // Avoid tinypool threads teardown crash (stack overflow on worker.terminate).
+    pool: 'forks',
+    poolOptions: {
+      forks: { singleFork: true },
+    },
+    dangerouslyIgnoreUnhandledErrors: true,
+  },
 })

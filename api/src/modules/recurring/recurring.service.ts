@@ -2,8 +2,11 @@ import type {
   RecurringFrequency,
   RecurringTransactionType,
 } from '@/db/schemas/recurringTransactions'
+import { eq } from 'drizzle-orm'
 import { badRequest, notFound } from '@/core/errors'
 import { centavosToString, parseCentavos } from '@/core/money'
+import { db } from '@/db'
+import { organizations } from '@/db/schemas/organizations'
 import type { AccountRepository } from '@/modules/accounts/account.repository'
 import type { CategoryRepository } from '@/modules/categories/category.repository'
 import type { TransactionRepository } from '@/modules/transactions/transaction.repository'
@@ -126,6 +129,16 @@ export class RecurringService {
     }
 
     return toRecurringDto(row)
+  }
+
+  private async resolveOrganizationOwnerId(organizationId: string): Promise<string | null> {
+    const [org] = await db
+      .select({ ownerId: organizations.ownerId })
+      .from(organizations)
+      .where(eq(organizations.id, organizationId))
+      .limit(1)
+
+    return org?.ownerId ?? null
   }
 
   async create(organizationId: string, input: CreateRecurringInput): Promise<CreateRecurringResult> {
@@ -275,7 +288,7 @@ export class RecurringService {
 
   async materializeOne(
     row: RecurringRecord,
-    options?: { horizonDate?: Date }
+    options?: { horizonDate?: Date; createdBy?: string | null }
   ): Promise<number> {
     const horizonDate = startOfDay(options?.horizonDate ?? new Date())
     const startDate = startOfDay(row.startDate)
@@ -283,6 +296,11 @@ export class RecurringService {
 
     if (startDate > horizonDate) {
       return 0
+    }
+
+    let createdBy = options?.createdBy ?? null
+    if (createdBy === undefined || createdBy === null) {
+      createdBy = await this.resolveOrganizationOwnerId(row.organizationId)
     }
 
     let installmentNumber = 0
@@ -349,6 +367,7 @@ export class RecurringService {
         installmentsTotal: row.installmentsTotal,
         source: 'recurring' as const,
         categoryIds: row.categoryId ? [row.categoryId] : undefined,
+        createdBy: createdBy,
       }))
     )
 

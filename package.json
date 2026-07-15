@@ -8,9 +8,9 @@
     "packages/finance-core"
   ],
   "scripts": {
-    "prepare": "husky install",
     "test": "npm test --prefix api && npm test --prefix packages/finance-core && node chrome-extension/lib/notification-utils.test.js",
     "precommit": "lint-staged",
+    "prepare": "husky install",
     "dev": "concurrently -n api,web -c blue,green \"cd api && TZ=UTC npx tsx watch --env-file ./.env src/http/server.ts\" \"cd web && yarn dev\""
   },
   "devDependencies": {
@@ -22,6 +22,6 @@
     "lint-staged": "^15.2.0"
   },
   "lint-staged": {
-    "**/*.{js,ts,tsx,jsx,json}": "biome lint --fix"
+    "**/*.{js,ts,tsx,jsx,json}": "biome lint --write --no-errors-on-unmatched --files-ignore-unknown=true"
   }
 }

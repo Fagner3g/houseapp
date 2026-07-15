@@ -4,6 +4,7 @@ import { StatusCodes } from 'http-status-codes'
 import { container } from '@/core/container'
 import { createTransfer } from '@/modules/transactions/transfer'
 import type { CreateTransferBody } from '@/modules/transactions/transfer'
+import { toTransactionViewer } from './transaction-visibility'
 import type {
   BulkNotifyTargetBody,
   BulkReviewImportBody,
@@ -16,6 +17,10 @@ import type {
 
 type OrgParams = { slug: string }
 type TransactionParams = OrgParams & { id: string }
+
+function viewerFromRequest(request: FastifyRequest) {
+  return toTransactionViewer(request.user.sub, request.organization.ownerId)
+}
 
 export async function listTransactionsController(
   request: FastifyRequest<{ Params: OrgParams; Querystring: ListTransactionsQuery }>,
@@ -33,6 +38,8 @@ export async function listTransactionsController(
     perPage: request.query.perPage,
     payableOnly: request.query.payableOnly,
     scheduledOnly: request.query.scheduledOnly,
+    ownedOnly: request.query.ownedOnly,
+    viewer: viewerFromRequest(request),
   })
 
   return reply.send(result)
@@ -44,7 +51,8 @@ export async function getTransactionController(
 ) {
   const transaction = await container.transactionService.get(
     request.organization.id,
-    request.params.id
+    request.params.id,
+    viewerFromRequest(request)
   )
 
   return reply.send({ transaction })
@@ -56,7 +64,8 @@ export async function getInstallmentSeriesController(
 ) {
   const result = await container.transactionService.getInstallmentSeries(
     request.organization.id,
-    request.params.id
+    request.params.id,
+    viewerFromRequest(request)
   )
 
   return reply.send(result)
@@ -68,7 +77,8 @@ export async function createTransactionController(
 ) {
   const result = await container.transactionService.create(
     request.organization.id,
-    request.body
+    request.body,
+    request.user.sub
   )
 
   return reply.status(StatusCodes.CREATED).send(result)
@@ -95,7 +105,8 @@ export async function bulkCreateTransactionsController(
 ) {
   const transactions = await container.transactionService.bulkCreate(
     request.organization.id,
-    request.body.transactions
+    request.body.transactions,
+    request.user.sub
   )
 
   return reply.status(StatusCodes.CREATED).send({ transactions })
@@ -108,7 +119,8 @@ export async function updateTransactionController(
   const transaction = await container.transactionService.update(
     request.organization.id,
     request.params.id,
-    request.body
+    request.body,
+    viewerFromRequest(request)
   )
 
   return reply.send({ transaction })
@@ -121,7 +133,8 @@ export async function payTransactionController(
   const transaction = await container.transactionService.pay(
     request.organization.id,
     request.params.id,
-    request.body
+    request.body,
+    viewerFromRequest(request)
   )
 
   return reply.send({ transaction })
@@ -133,7 +146,8 @@ export async function cancelTransactionPaymentController(
 ) {
   const transaction = await container.transactionService.cancelPayment(
     request.organization.id,
-    request.params.id
+    request.params.id,
+    viewerFromRequest(request)
   )
 
   return reply.send({ transaction })
@@ -146,7 +160,8 @@ export async function scheduleTransactionPaymentController(
   const transaction = await container.transactionService.schedulePayment(
     request.organization.id,
     request.params.id,
-    request.body
+    request.body,
+    viewerFromRequest(request)
   )
 
   return reply.send({ transaction })
@@ -158,7 +173,8 @@ export async function cancelScheduledTransactionPaymentController(
 ) {
   const transaction = await container.transactionService.cancelScheduledPayment(
     request.organization.id,
-    request.params.id
+    request.params.id,
+    viewerFromRequest(request)
   )
 
   return reply.send({ transaction })
@@ -168,7 +184,11 @@ export async function deleteTransactionController(
   request: FastifyRequest<{ Params: TransactionParams }>,
   reply: FastifyReply
 ) {
-  await container.transactionService.delete(request.organization.id, request.params.id)
+  await container.transactionService.delete(
+    request.organization.id,
+    request.params.id,
+    viewerFromRequest(request)
+  )
   return reply.status(StatusCodes.NO_CONTENT).send()
 }
 

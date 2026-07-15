@@ -3,7 +3,7 @@
  * Do not edit manually.
  * HouseApp API
  * API for HouseApp
- * OpenAPI spec version: 2.0.0
+ * OpenAPI spec version: 2.2.1
  */
 import type { ListAlertRules200RulesItemScope } from "./listAlertRules200RulesItemScope";
 import type { ListAlertRules200RulesItemAccountId } from "./listAlertRules200RulesItemAccountId";

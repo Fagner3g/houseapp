@@ -9,7 +9,7 @@ export async function verifyUserBelongsToOrg(request: FastifyRequest, slug: stri
   const userId = request.user.sub
 
   const [organization] = await db
-    .select({ id: organizations.id })
+    .select({ id: organizations.id, ownerId: organizations.ownerId })
     .from(organizations)
     .where(eq(organizations.slug, slug))
     .limit(1)
@@ -33,5 +33,8 @@ export async function verifyUserBelongsToOrg(request: FastifyRequest, slug: stri
     return null
   }
 
-  return organization
+  return {
+    id: organization.id,
+    ownerId: organization.ownerId,
+  }
 }

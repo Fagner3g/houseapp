@@ -54,7 +54,7 @@ export const stackyDrawerForm =
   '[&_[data-slot=form-item]]:min-w-0 [&_[data-slot=form-label]]:text-sm [&_[data-slot=form-label]]:font-medium [&_[data-slot=form-label]]:text-gray-700'
 
 export const stackyDrawerFooter =
-  'mt-auto shrink-0 rounded-bl-[24px] border-t border-gray-100 bg-white px-6 py-4'
+  'mt-auto shrink-0 rounded-bl-[24px] border-t border-slate-200 bg-slate-100/95 px-6 py-4 shadow-[0_-8px_24px_-10px_rgba(15,23,42,0.14)] backdrop-blur-md'
 
 /** Type tabs: Despesa / Receita / Transferência */
 export const stackyTypeSegmentedControl = 'w-full gap-0 rounded-lg bg-slate-100 p-1'

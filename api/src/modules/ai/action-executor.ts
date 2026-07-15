@@ -95,7 +95,7 @@ async function executeCreateTransaction(action: PendingAction): Promise<ActionEx
     source: 'ai_chat',
     paidAt: data.status === 'paid' ? new Date().toISOString() : undefined,
     paidAmount: data.status === 'paid' ? data.amount : undefined,
-  })
+  }, action.userId)
 
   return {
     action: action.action,

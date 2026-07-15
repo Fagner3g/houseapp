@@ -17,6 +17,7 @@ export function CategoryChartCard({ data, isLoading, error }: CategoryChartCardP
     <Card className="finance-card">
       <CardHeader>
         <CardTitle className="text-base">Gastos por categoria</CardTitle>
+        <p className="text-sm text-slate-500">Meu gasto no período (líquido de splits)</p>
       </CardHeader>
       <CardContent>
         {isLoading ? (
