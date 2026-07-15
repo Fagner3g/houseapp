@@ -36,6 +36,7 @@ export const accountResponseSchema = z.object({
   updatedAt: z.string(),
   cards: z.array(cardSummarySchema).optional(),
   cardCount: z.number().int().optional(),
+  canManage: z.boolean(),
 })
 
 const slugParams = z.object({ slug: z.string() })
@@ -81,10 +82,16 @@ export const listAccountsSchema = {
   description: 'List organization accounts',
   operationId: 'listAccounts',
   params: slugParams,
+  querystring: z.object({
+    /** Only permanently owned accounts (excludes temporary split access). */
+    ownedOnly: z.coerce.boolean().optional(),
+  }),
   response: {
     200: z.object({ accounts: z.array(accountResponseSchema) }),
   },
 }
+
+export type ListAccountsQuery = z.infer<typeof listAccountsSchema.querystring>
 
 export const getAccountSchema = {
   tags: ['Accounts'],

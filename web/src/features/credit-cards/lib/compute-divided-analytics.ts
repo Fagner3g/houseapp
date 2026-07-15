@@ -72,7 +72,7 @@ export function aggregateCategoriesFromTransactions(
 
 export function aggregateMerchantsFromTransactions(
   transactions: ListTransactions200TransactionsItem[],
-  fullyDelegatedById: Map<string, string>,
+  fullyDelegatedById: Map<string, { delegateName: string } | string>,
   partiallyDividedById: Map<string, PartialSplitBadgeInfo> = new Map()
 ): {
   merchants: DividedAnalyticsMerchant[]
@@ -98,7 +98,11 @@ export function aggregateMerchantsFromTransactions(
     const amount = moneyStringToReais(transaction.amount ?? '0')
     const purchaseDate = transactionPurchaseDate(transaction)
     const isFullyDelegated = fullyDelegatedById.has(transaction.id)
-    const delegatedName = fullyDelegatedById.get(transaction.id) ?? null
+    const delegatedEntry = fullyDelegatedById.get(transaction.id)
+    const delegatedName =
+      typeof delegatedEntry === 'string'
+        ? delegatedEntry
+        : (delegatedEntry?.delegateName ?? null)
     const isPartiallyDivided = partiallyDividedById.has(transaction.id)
     const dividedName = partiallyDividedById.get(transaction.id)?.splitWithName ?? null
     const hasInstallments = (transaction.installmentsTotal ?? 0) > 1

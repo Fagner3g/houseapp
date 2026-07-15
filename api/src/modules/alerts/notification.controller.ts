@@ -31,3 +31,11 @@ export async function markNotificationReadController(
 
   return reply.send({ notification })
 }
+
+export async function markInformationalNotificationsReadController(
+  request: FastifyRequest,
+  reply: FastifyReply
+) {
+  const result = await container.notificationService.markInformationalRead(request.user.sub)
+  return reply.send(result)
+}

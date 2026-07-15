@@ -46,10 +46,13 @@ import {
   formatDelegatedSplitBadge,
   formatPartialSplitBadge,
   partialSplitBadgeClassName,
+  resolveSplitBadgePerspective,
   resolveSplitBadgeSettlement,
   splitBadgeClassName,
   type PartialSplitBadgeInfo,
 } from '@/features/transactions/lib/split-badge-label'
+import type { DelegatedSplitBadgeInfo } from '@/features/credit-cards/hooks/use-split-transaction-ids'
+import { useAuthStore } from '@/stores/auth'
 import { isInvoiceSummary, type TransactionListItem } from '@/features/transactions/types'
 import { TransactionInlineCreateBar } from './transaction-inline-create-bar'
 import { DeleteTransactionDialog } from './delete-transaction-dialog'
@@ -73,10 +76,10 @@ interface TransactionListProps {
   accountId?: string
   /** When multiple cards exist, shows which card made each purchase. */
   cards?: Array<{ id: string; label: string; lastFourDigits?: string | null }>
-  /** Map of transaction id → delegate name for fully delegated purchases. */
-  fullyDelegatedById?: Map<string, string>
+  /** Map of transaction id → fully delegated split badge info. */
+  fullyDelegatedById?: Map<string, DelegatedSplitBadgeInfo>
   /** Map of transaction id → partial split info for badge labels. */
-  partiallyDividedById?: Map<string, PartialSplitBadgeInfo>
+  partiallyDividedById?: Map<string, PartialSplitBadgeInfo & { debtorUserId?: string | null; creditorName?: string }>
   /** Map of transaction id → total paid on splits. */
   splitPaidById?: Map<string, number>
   /** Map of transaction id → remaining split amount still to collect. */
@@ -175,6 +178,7 @@ function TransactionTable({
   const showDeleteActionColumn = isCreditCardStatement
   const showActionsColumn = showPayActionColumn || showDeleteActionColumn
   const { slug } = useActiveOrganization()
+  const currentUserId = useAuthStore(s => s.user?.id)
   const queryClient = useQueryClient()
   const navigate = useNavigate()
   const { data: accounts } = useListAccounts(slug, { query: { enabled: !!slug } })
@@ -590,8 +594,12 @@ function TransactionTable({
                       const settlement = hasSplit
                         ? resolveSplitBadgeSettlement(splitRemainingById?.get(tx.id) ?? 0)
                         : undefined
-                      const delegatedName = fullyDelegatedById?.get(tx.id)
-                      if (delegatedName) {
+                      const delegated = fullyDelegatedById?.get(tx.id)
+                      if (delegated) {
+                        const perspective = resolveSplitBadgePerspective(
+                          delegated.debtorUserId,
+                          currentUserId
+                        )
                         return (
                           <Badge
                             variant="secondary"
@@ -600,12 +608,21 @@ function TransactionTable({
                               splitBadgeClassName(settlement)
                             )}
                           >
-                            {formatDelegatedSplitBadge(delegatedName, settlement)}
+                            {formatDelegatedSplitBadge(
+                              delegated.delegateName,
+                              settlement,
+                              perspective,
+                              delegated.creditorName
+                            )}
                           </Badge>
                         )
                       }
                       const partialInfo = partiallyDividedById?.get(tx.id)
                       if (partialInfo) {
+                        const perspective = resolveSplitBadgePerspective(
+                          partialInfo.debtorUserId,
+                          currentUserId
+                        )
                         return (
                           <Badge
                             variant="secondary"
@@ -614,7 +631,7 @@ function TransactionTable({
                               partialSplitBadgeClassName(settlement)
                             )}
                           >
-                            {formatPartialSplitBadge(partialInfo, settlement)}
+                            {formatPartialSplitBadge(partialInfo, settlement, perspective)}
                           </Badge>
                         )
                       }

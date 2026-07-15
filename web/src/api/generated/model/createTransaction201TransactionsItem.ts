@@ -3,7 +3,7 @@
  * Do not edit manually.
  * HouseApp API
  * API for HouseApp
- * OpenAPI spec version: 2.0.0
+ * OpenAPI spec version: 2.2.1
  */
 import type { CreateTransaction201TransactionsItemAccountId } from "./createTransaction201TransactionsItemAccountId";
 import type { CreateTransaction201TransactionsItemCardId } from "./createTransaction201TransactionsItemCardId";
@@ -22,11 +22,13 @@ import type { CreateTransaction201TransactionsItemInstallmentNumber } from "./cr
 import type { CreateTransaction201TransactionsItemInstallmentsTotal } from "./createTransaction201TransactionsItemInstallmentsTotal";
 import type { CreateTransaction201TransactionsItemSource } from "./createTransaction201TransactionsItemSource";
 import type { CreateTransaction201TransactionsItemTransferPairId } from "./createTransaction201TransactionsItemTransferPairId";
+import type { CreateTransaction201TransactionsItemTransferPair } from "./createTransaction201TransactionsItemTransferPair";
 import type { CreateTransaction201TransactionsItemNotifyTargetType } from "./createTransaction201TransactionsItemNotifyTargetType";
 import type { CreateTransaction201TransactionsItemNotifyUserId } from "./createTransaction201TransactionsItemNotifyUserId";
 import type { CreateTransaction201TransactionsItemNotifyContactName } from "./createTransaction201TransactionsItemNotifyContactName";
 import type { CreateTransaction201TransactionsItemNotifyContactPhone } from "./createTransaction201TransactionsItemNotifyContactPhone";
 import type { CreateTransaction201TransactionsItemNotifyOverdueConfig } from "./createTransaction201TransactionsItemNotifyOverdueConfig";
+import type { CreateTransaction201TransactionsItemCreatedBy } from "./createTransaction201TransactionsItemCreatedBy";
 
 export type CreateTransaction201TransactionsItem = {
   id: string;
@@ -51,6 +53,7 @@ export type CreateTransaction201TransactionsItem = {
   source: CreateTransaction201TransactionsItemSource;
   categoryIds: string[];
   transferPairId: CreateTransaction201TransactionsItemTransferPairId;
+  transferPair?: CreateTransaction201TransactionsItemTransferPair;
   notifyEnabled: boolean;
   notifyTargetType: (typeof CreateTransaction201TransactionsItemNotifyTargetType)[keyof typeof CreateTransaction201TransactionsItemNotifyTargetType];
   notifyUserId: CreateTransaction201TransactionsItemNotifyUserId;
@@ -58,6 +61,7 @@ export type CreateTransaction201TransactionsItem = {
   notifyContactPhone: CreateTransaction201TransactionsItemNotifyContactPhone;
   notifyDaysBefore?: number[];
   notifyOverdueConfig?: CreateTransaction201TransactionsItemNotifyOverdueConfig;
+  createdBy: CreateTransaction201TransactionsItemCreatedBy;
   createdAt: string;
   updatedAt: string;
 };

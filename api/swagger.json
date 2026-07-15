@@ -1867,6 +1867,14 @@
         "parameters": [
           {
             "schema": {
+              "type": "boolean"
+            },
+            "in": "query",
+            "name": "ownedOnly",
+            "required": false
+          },
+          {
+            "schema": {
               "type": "string"
             },
             "in": "path",
@@ -2120,6 +2128,9 @@
                             "type": "integer",
                             "minimum": -9007199254740991,
                             "maximum": 9007199254740991
+                          },
+                          "canManage": {
+                            "type": "boolean"
                           }
                         },
                         "required": [
@@ -2142,7 +2153,8 @@
                           "isActive",
                           "ofxAccountId",
                           "createdAt",
-                          "updatedAt"
+                          "updatedAt",
+                          "canManage"
                         ],
                         "additionalProperties": false
                       }
@@ -2657,6 +2669,9 @@
                           "type": "integer",
                           "minimum": -9007199254740991,
                           "maximum": 9007199254740991
+                        },
+                        "canManage": {
+                          "type": "boolean"
                         }
                       },
                       "required": [
@@ -2679,7 +2694,8 @@
                         "isActive",
                         "ofxAccountId",
                         "createdAt",
-                        "updatedAt"
+                        "updatedAt",
+                        "canManage"
                       ],
                       "additionalProperties": false
                     }
@@ -2964,6 +2980,9 @@
                           "type": "integer",
                           "minimum": -9007199254740991,
                           "maximum": 9007199254740991
+                        },
+                        "canManage": {
+                          "type": "boolean"
                         }
                       },
                       "required": [
@@ -2986,7 +3005,8 @@
                         "isActive",
                         "ofxAccountId",
                         "createdAt",
-                        "updatedAt"
+                        "updatedAt",
+                        "canManage"
                       ],
                       "additionalProperties": false
                     }
@@ -3462,6 +3482,9 @@
                           "type": "integer",
                           "minimum": -9007199254740991,
                           "maximum": 9007199254740991
+                        },
+                        "canManage": {
+                          "type": "boolean"
                         }
                       },
                       "required": [
@@ -3484,7 +3507,8 @@
                         "isActive",
                         "ofxAccountId",
                         "createdAt",
-                        "updatedAt"
+                        "updatedAt",
+                        "canManage"
                       ],
                       "additionalProperties": false
                     }
@@ -7574,6 +7598,14 @@
           },
           {
             "schema": {
+              "type": "boolean"
+            },
+            "in": "query",
+            "name": "ownedOnly",
+            "required": false
+          },
+          {
+            "schema": {
               "type": "string"
             },
             "in": "path",
@@ -8010,6 +8042,19 @@
                               }
                             ]
                           },
+                          "createdBy": {
+                            "anyOf": [
+                              {
+                                "type": "string"
+                              },
+                              {
+                                "nullable": true,
+                                "enum": [
+                                  null
+                                ]
+                              }
+                            ]
+                          },
                           "createdAt": {
                             "type": "string"
                           },
@@ -8045,6 +8090,7 @@
                           "notifyUserId",
                           "notifyContactName",
                           "notifyContactPhone",
+                          "createdBy",
                           "createdAt",
                           "updatedAt"
                         ],
@@ -8905,6 +8951,19 @@
                             }
                           ]
                         },
+                        "createdBy": {
+                          "anyOf": [
+                            {
+                              "type": "string"
+                            },
+                            {
+                              "nullable": true,
+                              "enum": [
+                                null
+                              ]
+                            }
+                          ]
+                        },
                         "createdAt": {
                           "type": "string"
                         },
@@ -8940,6 +8999,7 @@
                         "notifyUserId",
                         "notifyContactName",
                         "notifyContactPhone",
+                        "createdBy",
                         "createdAt",
                         "updatedAt"
                       ],
@@ -9371,6 +9431,19 @@
                               }
                             ]
                           },
+                          "createdBy": {
+                            "anyOf": [
+                              {
+                                "type": "string"
+                              },
+                              {
+                                "nullable": true,
+                                "enum": [
+                                  null
+                                ]
+                              }
+                            ]
+                          },
                           "createdAt": {
                             "type": "string"
                           },
@@ -9406,6 +9479,7 @@
                           "notifyUserId",
                           "notifyContactName",
                           "notifyContactPhone",
+                          "createdBy",
                           "createdAt",
                           "updatedAt"
                         ],
@@ -10257,6 +10331,19 @@
                               }
                             ]
                           },
+                          "createdBy": {
+                            "anyOf": [
+                              {
+                                "type": "string"
+                              },
+                              {
+                                "nullable": true,
+                                "enum": [
+                                  null
+                                ]
+                              }
+                            ]
+                          },
                           "createdAt": {
                             "type": "string"
                           },
@@ -10292,6 +10379,7 @@
                           "notifyUserId",
                           "notifyContactName",
                           "notifyContactPhone",
+                          "createdBy",
                           "createdAt",
                           "updatedAt"
                         ],
@@ -10913,6 +11001,19 @@
                               }
                             ]
                           },
+                          "createdBy": {
+                            "anyOf": [
+                              {
+                                "type": "string"
+                              },
+                              {
+                                "nullable": true,
+                                "enum": [
+                                  null
+                                ]
+                              }
+                            ]
+                          },
                           "createdAt": {
                             "type": "string"
                           },
@@ -10948,6 +11049,7 @@
                           "notifyUserId",
                           "notifyContactName",
                           "notifyContactPhone",
+                          "createdBy",
                           "createdAt",
                           "updatedAt"
                         ],
@@ -11511,6 +11613,19 @@
                               }
                             ]
                           },
+                          "createdBy": {
+                            "anyOf": [
+                              {
+                                "type": "string"
+                              },
+                              {
+                                "nullable": true,
+                                "enum": [
+                                  null
+                                ]
+                              }
+                            ]
+                          },
                           "createdAt": {
                             "type": "string"
                           },
@@ -11546,6 +11661,7 @@
                           "notifyUserId",
                           "notifyContactName",
                           "notifyContactPhone",
+                          "createdBy",
                           "createdAt",
                           "updatedAt"
                         ],
@@ -12069,6 +12185,19 @@
                             }
                           ]
                         },
+                        "createdBy": {
+                          "anyOf": [
+                            {
+                              "type": "string"
+                            },
+                            {
+                              "nullable": true,
+                              "enum": [
+                                null
+                              ]
+                            }
+                          ]
+                        },
                         "createdAt": {
                           "type": "string"
                         },
@@ -12104,6 +12233,7 @@
                         "notifyUserId",
                         "notifyContactName",
                         "notifyContactPhone",
+                        "createdBy",
                         "createdAt",
                         "updatedAt"
                       ],
@@ -12528,6 +12658,19 @@
                             }
                           ]
                         },
+                        "createdBy": {
+                          "anyOf": [
+                            {
+                              "type": "string"
+                            },
+                            {
+                              "nullable": true,
+                              "enum": [
+                                null
+                              ]
+                            }
+                          ]
+                        },
                         "createdAt": {
                           "type": "string"
                         },
@@ -12563,6 +12706,7 @@
                         "notifyUserId",
                         "notifyContactName",
                         "notifyContactPhone",
+                        "createdBy",
                         "createdAt",
                         "updatedAt"
                       ],
@@ -13133,6 +13277,19 @@
                             }
                           ]
                         },
+                        "createdBy": {
+                          "anyOf": [
+                            {
+                              "type": "string"
+                            },
+                            {
+                              "nullable": true,
+                              "enum": [
+                                null
+                              ]
+                            }
+                          ]
+                        },
                         "createdAt": {
                           "type": "string"
                         },
@@ -13168,6 +13325,7 @@
                         "notifyUserId",
                         "notifyContactName",
                         "notifyContactPhone",
+                        "createdBy",
                         "createdAt",
                         "updatedAt"
                       ],
@@ -14005,6 +14163,19 @@
                             }
                           ]
                         },
+                        "createdBy": {
+                          "anyOf": [
+                            {
+                              "type": "string"
+                            },
+                            {
+                              "nullable": true,
+                              "enum": [
+                                null
+                              ]
+                            }
+                          ]
+                        },
                         "createdAt": {
                           "type": "string"
                         },
@@ -14040,6 +14211,7 @@
                         "notifyUserId",
                         "notifyContactName",
                         "notifyContactPhone",
+                        "createdBy",
                         "createdAt",
                         "updatedAt"
                       ],
@@ -14585,6 +14757,19 @@
                             }
                           ]
                         },
+                        "createdBy": {
+                          "anyOf": [
+                            {
+                              "type": "string"
+                            },
+                            {
+                              "nullable": true,
+                              "enum": [
+                                null
+                              ]
+                            }
+                          ]
+                        },
                         "createdAt": {
                           "type": "string"
                         },
@@ -14620,6 +14805,7 @@
                         "notifyUserId",
                         "notifyContactName",
                         "notifyContactPhone",
+                        "createdBy",
                         "createdAt",
                         "updatedAt"
                       ],
@@ -15089,6 +15275,19 @@
                             }
                           ]
                         },
+                        "createdBy": {
+                          "anyOf": [
+                            {
+                              "type": "string"
+                            },
+                            {
+                              "nullable": true,
+                              "enum": [
+                                null
+                              ]
+                            }
+                          ]
+                        },
                         "createdAt": {
                           "type": "string"
                         },
@@ -15124,6 +15323,7 @@
                         "notifyUserId",
                         "notifyContactName",
                         "notifyContactPhone",
+                        "createdBy",
                         "createdAt",
                         "updatedAt"
                       ],
@@ -15613,6 +15813,19 @@
                             }
                           ]
                         },
+                        "createdBy": {
+                          "anyOf": [
+                            {
+                              "type": "string"
+                            },
+                            {
+                              "nullable": true,
+                              "enum": [
+                                null
+                              ]
+                            }
+                          ]
+                        },
                         "createdAt": {
                           "type": "string"
                         },
@@ -15648,6 +15861,7 @@
                         "notifyUserId",
                         "notifyContactName",
                         "notifyContactPhone",
+                        "createdBy",
                         "createdAt",
                         "updatedAt"
                       ],
@@ -16117,6 +16331,19 @@
                             }
                           ]
                         },
+                        "createdBy": {
+                          "anyOf": [
+                            {
+                              "type": "string"
+                            },
+                            {
+                              "nullable": true,
+                              "enum": [
+                                null
+                              ]
+                            }
+                          ]
+                        },
                         "createdAt": {
                           "type": "string"
                         },
@@ -16152,6 +16379,7 @@
                         "notifyUserId",
                         "notifyContactName",
                         "notifyContactPhone",
+                        "createdBy",
                         "createdAt",
                         "updatedAt"
                       ],
@@ -16326,6 +16554,36 @@
                           "updatedAt": {
                             "type": "string"
                           },
+                          "pendingPaymentRequest": {
+                            "anyOf": [
+                              {
+                                "type": "object",
+                                "properties": {
+                                  "id": {
+                                    "type": "string"
+                                  },
+                                  "status": {
+                                    "type": "string"
+                                  },
+                                  "createdAt": {
+                                    "type": "string"
+                                  }
+                                },
+                                "required": [
+                                  "id",
+                                  "status",
+                                  "createdAt"
+                                ],
+                                "additionalProperties": false
+                              },
+                              {
+                                "nullable": true,
+                                "enum": [
+                                  null
+                                ]
+                              }
+                            ]
+                          },
                           "transactionTitle": {
                             "type": "string"
                           },
@@ -16388,6 +16646,616 @@
                   },
                   "required": [
                     "splits"
+                  ],
+                  "additionalProperties": false
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/organizations/{slug}/split-payment-requests": {
+      "get": {
+        "operationId": "listSplitPaymentRequests",
+        "tags": [
+          "Splits"
+        ],
+        "description": "List pending split payment confirmation requests for the current user",
+        "parameters": [
+          {
+            "schema": {
+              "type": "string"
+            },
+            "in": "path",
+            "name": "slug",
+            "required": true
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Default Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "requests": {
+                      "type": "array",
+                      "items": {
+                        "type": "object",
+                        "properties": {
+                          "id": {
+                            "type": "string"
+                          },
+                          "organizationId": {
+                            "type": "string"
+                          },
+                          "transactionId": {
+                            "type": "string"
+                          },
+                          "splitId": {
+                            "type": "string"
+                          },
+                          "requestedByUserId": {
+                            "type": "string"
+                          },
+                          "recipientUserId": {
+                            "type": "string"
+                          },
+                          "amount": {
+                            "type": "string"
+                          },
+                          "note": {
+                            "anyOf": [
+                              {
+                                "type": "string"
+                              },
+                              {
+                                "nullable": true,
+                                "enum": [
+                                  null
+                                ]
+                              }
+                            ]
+                          },
+                          "status": {
+                            "type": "string"
+                          },
+                          "createdAt": {
+                            "type": "string"
+                          },
+                          "respondedAt": {
+                            "anyOf": [
+                              {
+                                "type": "string"
+                              },
+                              {
+                                "nullable": true,
+                                "enum": [
+                                  null
+                                ]
+                              }
+                            ]
+                          },
+                          "transactionTitle": {
+                            "type": "string"
+                          },
+                          "requesterName": {
+                            "type": "string"
+                          }
+                        },
+                        "required": [
+                          "id",
+                          "organizationId",
+                          "transactionId",
+                          "splitId",
+                          "requestedByUserId",
+                          "recipientUserId",
+                          "amount",
+                          "note",
+                          "status",
+                          "createdAt",
+                          "respondedAt"
+                        ],
+                        "additionalProperties": false
+                      }
+                    }
+                  },
+                  "required": [
+                    "requests"
+                  ],
+                  "additionalProperties": false
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/organizations/{slug}/split-payment-requests/{requestId}/accept": {
+      "post": {
+        "operationId": "acceptSplitPaymentRequest",
+        "tags": [
+          "Splits"
+        ],
+        "description": "Accept a split payment confirmation request and register the payment",
+        "parameters": [
+          {
+            "schema": {
+              "type": "string"
+            },
+            "in": "path",
+            "name": "slug",
+            "required": true
+          },
+          {
+            "schema": {
+              "type": "string"
+            },
+            "in": "path",
+            "name": "requestId",
+            "required": true
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Default Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "request": {
+                      "type": "object",
+                      "properties": {
+                        "id": {
+                          "type": "string"
+                        },
+                        "organizationId": {
+                          "type": "string"
+                        },
+                        "transactionId": {
+                          "type": "string"
+                        },
+                        "splitId": {
+                          "type": "string"
+                        },
+                        "requestedByUserId": {
+                          "type": "string"
+                        },
+                        "recipientUserId": {
+                          "type": "string"
+                        },
+                        "amount": {
+                          "type": "string"
+                        },
+                        "note": {
+                          "anyOf": [
+                            {
+                              "type": "string"
+                            },
+                            {
+                              "nullable": true,
+                              "enum": [
+                                null
+                              ]
+                            }
+                          ]
+                        },
+                        "status": {
+                          "type": "string"
+                        },
+                        "createdAt": {
+                          "type": "string"
+                        },
+                        "respondedAt": {
+                          "anyOf": [
+                            {
+                              "type": "string"
+                            },
+                            {
+                              "nullable": true,
+                              "enum": [
+                                null
+                              ]
+                            }
+                          ]
+                        },
+                        "transactionTitle": {
+                          "type": "string"
+                        },
+                        "requesterName": {
+                          "type": "string"
+                        }
+                      },
+                      "required": [
+                        "id",
+                        "organizationId",
+                        "transactionId",
+                        "splitId",
+                        "requestedByUserId",
+                        "recipientUserId",
+                        "amount",
+                        "note",
+                        "status",
+                        "createdAt",
+                        "respondedAt"
+                      ],
+                      "additionalProperties": false
+                    },
+                    "payment": {
+                      "type": "object",
+                      "properties": {
+                        "id": {
+                          "type": "string"
+                        },
+                        "splitId": {
+                          "type": "string"
+                        },
+                        "amount": {
+                          "type": "string"
+                        },
+                        "paidAt": {
+                          "type": "string"
+                        },
+                        "method": {
+                          "anyOf": [
+                            {
+                              "type": "string",
+                              "enum": [
+                                "pix",
+                                "cash",
+                                "transfer",
+                                "other"
+                              ]
+                            },
+                            {
+                              "nullable": true,
+                              "enum": [
+                                null
+                              ]
+                            }
+                          ]
+                        },
+                        "note": {
+                          "anyOf": [
+                            {
+                              "type": "string"
+                            },
+                            {
+                              "nullable": true,
+                              "enum": [
+                                null
+                              ]
+                            }
+                          ]
+                        },
+                        "createdAt": {
+                          "type": "string"
+                        }
+                      },
+                      "required": [
+                        "id",
+                        "splitId",
+                        "amount",
+                        "paidAt",
+                        "method",
+                        "note",
+                        "createdAt"
+                      ],
+                      "additionalProperties": false
+                    },
+                    "split": {
+                      "type": "object",
+                      "properties": {
+                        "id": {
+                          "type": "string"
+                        },
+                        "transactionId": {
+                          "type": "string"
+                        },
+                        "userId": {
+                          "anyOf": [
+                            {
+                              "type": "string"
+                            },
+                            {
+                              "nullable": true,
+                              "enum": [
+                                null
+                              ]
+                            }
+                          ]
+                        },
+                        "contactName": {
+                          "anyOf": [
+                            {
+                              "type": "string"
+                            },
+                            {
+                              "nullable": true,
+                              "enum": [
+                                null
+                              ]
+                            }
+                          ]
+                        },
+                        "contactPhone": {
+                          "anyOf": [
+                            {
+                              "type": "string"
+                            },
+                            {
+                              "nullable": true,
+                              "enum": [
+                                null
+                              ]
+                            }
+                          ]
+                        },
+                        "contactEmail": {
+                          "anyOf": [
+                            {
+                              "type": "string"
+                            },
+                            {
+                              "nullable": true,
+                              "enum": [
+                                null
+                              ]
+                            }
+                          ]
+                        },
+                        "amount": {
+                          "type": "string"
+                        },
+                        "description": {
+                          "anyOf": [
+                            {
+                              "type": "string"
+                            },
+                            {
+                              "nullable": true,
+                              "enum": [
+                                null
+                              ]
+                            }
+                          ]
+                        },
+                        "status": {
+                          "type": "string",
+                          "enum": [
+                            "pending",
+                            "partial",
+                            "paid",
+                            "forgiven"
+                          ]
+                        },
+                        "paidAmount": {
+                          "type": "string"
+                        },
+                        "paidAt": {
+                          "anyOf": [
+                            {
+                              "type": "string"
+                            },
+                            {
+                              "nullable": true,
+                              "enum": [
+                                null
+                              ]
+                            }
+                          ]
+                        },
+                        "isNotified": {
+                          "type": "boolean"
+                        },
+                        "lastNotifiedAt": {
+                          "anyOf": [
+                            {
+                              "type": "string"
+                            },
+                            {
+                              "nullable": true,
+                              "enum": [
+                                null
+                              ]
+                            }
+                          ]
+                        },
+                        "notifyEnabled": {
+                          "type": "boolean"
+                        },
+                        "collectLumpSum": {
+                          "type": "boolean"
+                        },
+                        "createdAt": {
+                          "type": "string"
+                        },
+                        "updatedAt": {
+                          "type": "string"
+                        },
+                        "pendingPaymentRequest": {
+                          "anyOf": [
+                            {
+                              "type": "object",
+                              "properties": {
+                                "id": {
+                                  "type": "string"
+                                },
+                                "status": {
+                                  "type": "string"
+                                },
+                                "createdAt": {
+                                  "type": "string"
+                                }
+                              },
+                              "required": [
+                                "id",
+                                "status",
+                                "createdAt"
+                              ],
+                              "additionalProperties": false
+                            },
+                            {
+                              "nullable": true,
+                              "enum": [
+                                null
+                              ]
+                            }
+                          ]
+                        }
+                      },
+                      "required": [
+                        "id",
+                        "transactionId",
+                        "userId",
+                        "contactName",
+                        "contactPhone",
+                        "contactEmail",
+                        "amount",
+                        "description",
+                        "status",
+                        "paidAmount",
+                        "paidAt",
+                        "isNotified",
+                        "lastNotifiedAt",
+                        "notifyEnabled",
+                        "collectLumpSum",
+                        "createdAt",
+                        "updatedAt"
+                      ],
+                      "additionalProperties": false
+                    }
+                  },
+                  "required": [
+                    "request",
+                    "payment",
+                    "split"
+                  ],
+                  "additionalProperties": false
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/organizations/{slug}/split-payment-requests/{requestId}/reject": {
+      "post": {
+        "operationId": "rejectSplitPaymentRequest",
+        "tags": [
+          "Splits"
+        ],
+        "description": "Reject a split payment confirmation request",
+        "parameters": [
+          {
+            "schema": {
+              "type": "string"
+            },
+            "in": "path",
+            "name": "slug",
+            "required": true
+          },
+          {
+            "schema": {
+              "type": "string"
+            },
+            "in": "path",
+            "name": "requestId",
+            "required": true
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Default Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "request": {
+                      "type": "object",
+                      "properties": {
+                        "id": {
+                          "type": "string"
+                        },
+                        "organizationId": {
+                          "type": "string"
+                        },
+                        "transactionId": {
+                          "type": "string"
+                        },
+                        "splitId": {
+                          "type": "string"
+                        },
+                        "requestedByUserId": {
+                          "type": "string"
+                        },
+                        "recipientUserId": {
+                          "type": "string"
+                        },
+                        "amount": {
+                          "type": "string"
+                        },
+                        "note": {
+                          "anyOf": [
+                            {
+                              "type": "string"
+                            },
+                            {
+                              "nullable": true,
+                              "enum": [
+                                null
+                              ]
+                            }
+                          ]
+                        },
+                        "status": {
+                          "type": "string"
+                        },
+                        "createdAt": {
+                          "type": "string"
+                        },
+                        "respondedAt": {
+                          "anyOf": [
+                            {
+                              "type": "string"
+                            },
+                            {
+                              "nullable": true,
+                              "enum": [
+                                null
+                              ]
+                            }
+                          ]
+                        },
+                        "transactionTitle": {
+                          "type": "string"
+                        },
+                        "requesterName": {
+                          "type": "string"
+                        }
+                      },
+                      "required": [
+                        "id",
+                        "organizationId",
+                        "transactionId",
+                        "splitId",
+                        "requestedByUserId",
+                        "recipientUserId",
+                        "amount",
+                        "note",
+                        "status",
+                        "createdAt",
+                        "respondedAt"
+                      ],
+                      "additionalProperties": false
+                    }
+                  },
+                  "required": [
+                    "request"
                   ],
                   "additionalProperties": false
                 }
@@ -16460,11 +17328,29 @@
                           },
                           "delegateName": {
                             "type": "string"
+                          },
+                          "debtorUserId": {
+                            "anyOf": [
+                              {
+                                "type": "string"
+                              },
+                              {
+                                "nullable": true,
+                                "enum": [
+                                  null
+                                ]
+                              }
+                            ]
+                          },
+                          "creditorName": {
+                            "type": "string"
                           }
                         },
                         "required": [
                           "transactionId",
-                          "delegateName"
+                          "delegateName",
+                          "debtorUserId",
+                          "creditorName"
                         ],
                         "additionalProperties": false
                       }
@@ -16485,13 +17371,31 @@
                           },
                           "transactionAmount": {
                             "type": "string"
+                          },
+                          "debtorUserId": {
+                            "anyOf": [
+                              {
+                                "type": "string"
+                              },
+                              {
+                                "nullable": true,
+                                "enum": [
+                                  null
+                                ]
+                              }
+                            ]
+                          },
+                          "creditorName": {
+                            "type": "string"
                           }
                         },
                         "required": [
                           "transactionId",
                           "splitWithName",
                           "splitAmount",
-                          "transactionAmount"
+                          "transactionAmount",
+                          "debtorUserId",
+                          "creditorName"
                         ],
                         "additionalProperties": false
                       }
@@ -16533,6 +17437,48 @@
                         ],
                         "additionalProperties": false
                       }
+                    },
+                    "receivableRemainingTotals": {
+                      "type": "array",
+                      "items": {
+                        "type": "object",
+                        "properties": {
+                          "transactionId": {
+                            "type": "string"
+                          },
+                          "remainingAmount": {
+                            "type": "string"
+                          }
+                        },
+                        "required": [
+                          "transactionId",
+                          "remainingAmount"
+                        ],
+                        "additionalProperties": false
+                      }
+                    },
+                    "viewerShareTotals": {
+                      "type": "array",
+                      "items": {
+                        "type": "object",
+                        "properties": {
+                          "transactionId": {
+                            "type": "string"
+                          },
+                          "amount": {
+                            "type": "string"
+                          },
+                          "remainingAmount": {
+                            "type": "string"
+                          }
+                        },
+                        "required": [
+                          "transactionId",
+                          "amount",
+                          "remainingAmount"
+                        ],
+                        "additionalProperties": false
+                      }
                     }
                   },
                   "required": [
@@ -16540,7 +17486,9 @@
                     "fullyDelegated",
                     "partiallyDivided",
                     "splitPaidTotals",
-                    "splitRemainingTotals"
+                    "splitRemainingTotals",
+                    "receivableRemainingTotals",
+                    "viewerShareTotals"
                   ],
                   "additionalProperties": false
                 }
@@ -16583,6 +17531,12 @@
                 "schema": {
                   "type": "object",
                   "properties": {
+                    "viewerIsCreditor": {
+                      "type": "boolean"
+                    },
+                    "viewerCanMutate": {
+                      "type": "boolean"
+                    },
                     "splits": {
                       "type": "array",
                       "items": {
@@ -16714,6 +17668,36 @@
                           },
                           "updatedAt": {
                             "type": "string"
+                          },
+                          "pendingPaymentRequest": {
+                            "anyOf": [
+                              {
+                                "type": "object",
+                                "properties": {
+                                  "id": {
+                                    "type": "string"
+                                  },
+                                  "status": {
+                                    "type": "string"
+                                  },
+                                  "createdAt": {
+                                    "type": "string"
+                                  }
+                                },
+                                "required": [
+                                  "id",
+                                  "status",
+                                  "createdAt"
+                                ],
+                                "additionalProperties": false
+                              },
+                              {
+                                "nullable": true,
+                                "enum": [
+                                  null
+                                ]
+                              }
+                            ]
                           }
                         },
                         "required": [
@@ -16740,6 +17724,8 @@
                     }
                   },
                   "required": [
+                    "viewerIsCreditor",
+                    "viewerCanMutate",
                     "splits"
                   ],
                   "additionalProperties": false
@@ -16999,6 +17985,36 @@
                         },
                         "updatedAt": {
                           "type": "string"
+                        },
+                        "pendingPaymentRequest": {
+                          "anyOf": [
+                            {
+                              "type": "object",
+                              "properties": {
+                                "id": {
+                                  "type": "string"
+                                },
+                                "status": {
+                                  "type": "string"
+                                },
+                                "createdAt": {
+                                  "type": "string"
+                                }
+                              },
+                              "required": [
+                                "id",
+                                "status",
+                                "createdAt"
+                              ],
+                              "additionalProperties": false
+                            },
+                            {
+                              "nullable": true,
+                              "enum": [
+                                null
+                              ]
+                            }
+                          ]
                         }
                       },
                       "required": [
@@ -17103,6 +18119,35 @@
                       ]
                     },
                     "currentTransactionAmount": {
+                      "anyOf": [
+                        {
+                          "type": "string"
+                        },
+                        {
+                          "nullable": true,
+                          "enum": [
+                            null
+                          ]
+                        }
+                      ]
+                    },
+                    "viewerIsCreditor": {
+                      "type": "boolean"
+                    },
+                    "viewerOwedTotal": {
+                      "anyOf": [
+                        {
+                          "type": "string"
+                        },
+                        {
+                          "nullable": true,
+                          "enum": [
+                            null
+                          ]
+                        }
+                      ]
+                    },
+                    "viewerRemainingTotal": {
                       "anyOf": [
                         {
                           "type": "string"
@@ -17227,6 +18272,9 @@
                               ],
                               "additionalProperties": false
                             }
+                          },
+                          "isViewer": {
+                            "type": "boolean"
                           }
                         },
                         "required": [
@@ -17239,7 +18287,8 @@
                           "totalPaid",
                           "totalRemaining",
                           "status",
-                          "installments"
+                          "installments",
+                          "isViewer"
                         ],
                         "additionalProperties": false
                       }
@@ -17252,6 +18301,9 @@
                     "installmentsTotal",
                     "currentInstallmentNumber",
                     "currentTransactionAmount",
+                    "viewerIsCreditor",
+                    "viewerOwedTotal",
+                    "viewerRemainingTotal",
                     "persons"
                   ],
                   "additionalProperties": false
@@ -17527,6 +18579,36 @@
                         },
                         "updatedAt": {
                           "type": "string"
+                        },
+                        "pendingPaymentRequest": {
+                          "anyOf": [
+                            {
+                              "type": "object",
+                              "properties": {
+                                "id": {
+                                  "type": "string"
+                                },
+                                "status": {
+                                  "type": "string"
+                                },
+                                "createdAt": {
+                                  "type": "string"
+                                }
+                              },
+                              "required": [
+                                "id",
+                                "status",
+                                "createdAt"
+                              ],
+                              "additionalProperties": false
+                            },
+                            {
+                              "nullable": true,
+                              "enum": [
+                                null
+                              ]
+                            }
+                          ]
                         }
                       },
                       "required": [
@@ -18013,6 +19095,36 @@
                         },
                         "updatedAt": {
                           "type": "string"
+                        },
+                        "pendingPaymentRequest": {
+                          "anyOf": [
+                            {
+                              "type": "object",
+                              "properties": {
+                                "id": {
+                                  "type": "string"
+                                },
+                                "status": {
+                                  "type": "string"
+                                },
+                                "createdAt": {
+                                  "type": "string"
+                                }
+                              },
+                              "required": [
+                                "id",
+                                "status",
+                                "createdAt"
+                              ],
+                              "additionalProperties": false
+                            },
+                            {
+                              "nullable": true,
+                              "enum": [
+                                null
+                              ]
+                            }
+                          ]
                         }
                       },
                       "required": [
@@ -18040,6 +19152,162 @@
                   "required": [
                     "payment",
                     "split"
+                  ],
+                  "additionalProperties": false
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/organizations/{slug}/transactions/{transactionId}/splits/{id}/payment-requests": {
+      "post": {
+        "operationId": "createSplitPaymentRequest",
+        "tags": [
+          "Splits"
+        ],
+        "description": "Request the expense creditor to confirm a split payment",
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "note": {
+                    "anyOf": [
+                      {
+                        "type": "string"
+                      },
+                      {
+                        "nullable": true,
+                        "enum": [
+                          null
+                        ]
+                      }
+                    ]
+                  }
+                }
+              }
+            }
+          }
+        },
+        "parameters": [
+          {
+            "schema": {
+              "type": "string"
+            },
+            "in": "path",
+            "name": "slug",
+            "required": true
+          },
+          {
+            "schema": {
+              "type": "string"
+            },
+            "in": "path",
+            "name": "transactionId",
+            "required": true
+          },
+          {
+            "schema": {
+              "type": "string"
+            },
+            "in": "path",
+            "name": "id",
+            "required": true
+          }
+        ],
+        "responses": {
+          "201": {
+            "description": "Default Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "request": {
+                      "type": "object",
+                      "properties": {
+                        "id": {
+                          "type": "string"
+                        },
+                        "organizationId": {
+                          "type": "string"
+                        },
+                        "transactionId": {
+                          "type": "string"
+                        },
+                        "splitId": {
+                          "type": "string"
+                        },
+                        "requestedByUserId": {
+                          "type": "string"
+                        },
+                        "recipientUserId": {
+                          "type": "string"
+                        },
+                        "amount": {
+                          "type": "string"
+                        },
+                        "note": {
+                          "anyOf": [
+                            {
+                              "type": "string"
+                            },
+                            {
+                              "nullable": true,
+                              "enum": [
+                                null
+                              ]
+                            }
+                          ]
+                        },
+                        "status": {
+                          "type": "string"
+                        },
+                        "createdAt": {
+                          "type": "string"
+                        },
+                        "respondedAt": {
+                          "anyOf": [
+                            {
+                              "type": "string"
+                            },
+                            {
+                              "nullable": true,
+                              "enum": [
+                                null
+                              ]
+                            }
+                          ]
+                        },
+                        "transactionTitle": {
+                          "type": "string"
+                        },
+                        "requesterName": {
+                          "type": "string"
+                        }
+                      },
+                      "required": [
+                        "id",
+                        "organizationId",
+                        "transactionId",
+                        "splitId",
+                        "requestedByUserId",
+                        "recipientUserId",
+                        "amount",
+                        "note",
+                        "status",
+                        "createdAt",
+                        "respondedAt"
+                      ],
+                      "additionalProperties": false
+                    }
+                  },
+                  "required": [
+                    "request"
                   ],
                   "additionalProperties": false
                 }
@@ -18227,6 +19495,36 @@
                         },
                         "updatedAt": {
                           "type": "string"
+                        },
+                        "pendingPaymentRequest": {
+                          "anyOf": [
+                            {
+                              "type": "object",
+                              "properties": {
+                                "id": {
+                                  "type": "string"
+                                },
+                                "status": {
+                                  "type": "string"
+                                },
+                                "createdAt": {
+                                  "type": "string"
+                                }
+                              },
+                              "required": [
+                                "id",
+                                "status",
+                                "createdAt"
+                              ],
+                              "additionalProperties": false
+                            },
+                            {
+                              "nullable": true,
+                              "enum": [
+                                null
+                              ]
+                            }
+                          ]
                         }
                       },
                       "required": [
@@ -23148,7 +24446,7 @@
         "tags": [
           "Reports"
         ],
-        "description": "Monthly income and expense trends",
+        "description": "Monthly income and personal expense (meu gasto) trends for the authenticated user",
         "parameters": [
           {
             "schema": {
@@ -25308,6 +26606,38 @@
                   },
                   "required": [
                     "notifications"
+                  ],
+                  "additionalProperties": false
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/notifications/read-informational": {
+      "patch": {
+        "operationId": "markInformationalNotificationsRead",
+        "tags": [
+          "Notifications"
+        ],
+        "description": "Mark all pending informational notifications as read (keeps decision requests unread)",
+        "responses": {
+          "200": {
+            "description": "Default Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "markedCount": {
+                      "type": "integer",
+                      "minimum": 0,
+                      "maximum": 9007199254740991
+                    }
+                  },
+                  "required": [
+                    "markedCount"
                   ],
                   "additionalProperties": false
                 }

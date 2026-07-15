@@ -44,7 +44,6 @@ import {
   cyclePendingSplitTransactionIds,
 } from '../lib/cycle-split-remaining'
 import { hasImportedInvoiceTotal } from '@/lib/credit-card-invoice-metrics'
-import type { PartialSplitBadgeInfo } from '@/features/transactions/lib/split-badge-label'
 
 interface CreditCardStatementSectionProps {
   accountId: string
@@ -154,14 +153,15 @@ export function CreditCardStatementSection({
 
   const transactionIds = useMemo(() => baseItems.map(item => item.id), [baseItems])
   const { data: splitData } = useSplitTransactionIds(slug, transactionIds)
-  const fullyDelegatedById = splitData?.fullyDelegatedById ?? new Map<string, string>()
-  const partiallyDividedById =
-    splitData?.partiallyDividedById ?? new Map<string, PartialSplitBadgeInfo>()
+  const fullyDelegatedById = splitData?.fullyDelegatedById ?? new Map()
+  const partiallyDividedById = splitData?.partiallyDividedById ?? new Map()
   const dividedTransactionIds = splitData?.transactionIds ?? new Set<string>()
   const splitRemainingById = splitData?.splitRemainingById ?? new Map<string, number>()
+  const receivableRemainingById =
+    splitData?.receivableRemainingById ?? new Map<string, number>()
   const pendingSplitTransactionIds = useMemo(
-    () => cyclePendingSplitTransactionIds(transactionIds, splitRemainingById),
-    [transactionIds, splitRemainingById]
+    () => cyclePendingSplitTransactionIds(transactionIds, receivableRemainingById),
+    [transactionIds, receivableRemainingById]
   )
 
   const filterCounts = useMemo(

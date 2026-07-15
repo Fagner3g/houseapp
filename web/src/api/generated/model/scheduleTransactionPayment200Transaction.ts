@@ -3,7 +3,7 @@
  * Do not edit manually.
  * HouseApp API
  * API for HouseApp
- * OpenAPI spec version: 2.0.0
+ * OpenAPI spec version: 2.2.1
  */
 import type { ScheduleTransactionPayment200TransactionAccountId } from "./scheduleTransactionPayment200TransactionAccountId";
 import type { ScheduleTransactionPayment200TransactionCardId } from "./scheduleTransactionPayment200TransactionCardId";
@@ -22,11 +22,13 @@ import type { ScheduleTransactionPayment200TransactionInstallmentNumber } from "
 import type { ScheduleTransactionPayment200TransactionInstallmentsTotal } from "./scheduleTransactionPayment200TransactionInstallmentsTotal";
 import type { ScheduleTransactionPayment200TransactionSource } from "./scheduleTransactionPayment200TransactionSource";
 import type { ScheduleTransactionPayment200TransactionTransferPairId } from "./scheduleTransactionPayment200TransactionTransferPairId";
+import type { ScheduleTransactionPayment200TransactionTransferPair } from "./scheduleTransactionPayment200TransactionTransferPair";
 import type { ScheduleTransactionPayment200TransactionNotifyTargetType } from "./scheduleTransactionPayment200TransactionNotifyTargetType";
 import type { ScheduleTransactionPayment200TransactionNotifyUserId } from "./scheduleTransactionPayment200TransactionNotifyUserId";
 import type { ScheduleTransactionPayment200TransactionNotifyContactName } from "./scheduleTransactionPayment200TransactionNotifyContactName";
 import type { ScheduleTransactionPayment200TransactionNotifyContactPhone } from "./scheduleTransactionPayment200TransactionNotifyContactPhone";
 import type { ScheduleTransactionPayment200TransactionNotifyOverdueConfig } from "./scheduleTransactionPayment200TransactionNotifyOverdueConfig";
+import type { ScheduleTransactionPayment200TransactionCreatedBy } from "./scheduleTransactionPayment200TransactionCreatedBy";
 
 export type ScheduleTransactionPayment200Transaction = {
   id: string;
@@ -51,6 +53,7 @@ export type ScheduleTransactionPayment200Transaction = {
   source: ScheduleTransactionPayment200TransactionSource;
   categoryIds: string[];
   transferPairId: ScheduleTransactionPayment200TransactionTransferPairId;
+  transferPair?: ScheduleTransactionPayment200TransactionTransferPair;
   notifyEnabled: boolean;
   notifyTargetType: (typeof ScheduleTransactionPayment200TransactionNotifyTargetType)[keyof typeof ScheduleTransactionPayment200TransactionNotifyTargetType];
   notifyUserId: ScheduleTransactionPayment200TransactionNotifyUserId;
@@ -58,6 +61,7 @@ export type ScheduleTransactionPayment200Transaction = {
   notifyContactPhone: ScheduleTransactionPayment200TransactionNotifyContactPhone;
   notifyDaysBefore?: number[];
   notifyOverdueConfig?: ScheduleTransactionPayment200TransactionNotifyOverdueConfig;
+  createdBy: ScheduleTransactionPayment200TransactionCreatedBy;
   createdAt: string;
   updatedAt: string;
 };

@@ -3,7 +3,7 @@
  * Do not edit manually.
  * HouseApp API
  * API for HouseApp
- * OpenAPI spec version: 2.0.0
+ * OpenAPI spec version: 2.2.1
  */
 import { useMutation, useQuery } from "@tanstack/react-query";
 import type {
@@ -22,6 +22,7 @@ import type {
 } from "@tanstack/react-query";
 
 import type {
+  AcceptSplitPaymentRequest200,
   AiChatBody,
   BlockCard200,
   BlockCardBody,
@@ -51,8 +52,12 @@ import type {
   CreateRecurringTransactionBody,
   CreateSplit201,
   CreateSplitBody,
+  CreateSplitPaymentRequest201,
+  CreateSplitPaymentRequestBody,
   CreateTransaction201,
   CreateTransactionBody,
+  CreateTransfer201,
+  CreateTransferBody,
   CreateUserWithInviteBody,
   DeleteCardBody,
   EvaluateAlertRules200,
@@ -98,6 +103,7 @@ import type {
   ImportStatement201,
   ImportStatementBody,
   ListAccounts200,
+  ListAccountsParams,
   ListAiProviders200,
   ListAlertRules200,
   ListAttachments200,
@@ -109,6 +115,7 @@ import type {
   ListPendingNotifications200,
   ListPendingSplits200,
   ListRecurringTransactions200,
+  ListSplitPaymentRequests200,
   ListSplitPayments200,
   ListSplitTransactionIds200,
   ListSplitTransactionIdsBody,
@@ -117,6 +124,7 @@ import type {
   ListTransactions200,
   ListTransactionsParams,
   ListUsersByOrg200,
+  MarkInformationalNotificationsRead200,
   MarkNotificationRead200,
   ParseStatementOfx200,
   ParseStatementOfxOrg200,
@@ -146,6 +154,7 @@ import type {
   RegisterSplitPaymentBody,
   RejectAiAction200,
   RejectAiActionBody,
+  RejectSplitPaymentRequest200,
   RenameOrg200,
   RenameOrgBody,
   ScheduleTransactionPayment200,
@@ -3223,22 +3232,44 @@ export function useGetInvite<
 /**
  * List organization accounts
  */
-export const getListAccountsUrl = (slug: string) => {
-  return `/organizations/${slug}/accounts`;
+export const getListAccountsUrl = (
+  slug: string,
+  params?: ListAccountsParams,
+) => {
+  const normalizedParams = new URLSearchParams();
+
+  Object.entries(params || {}).forEach(([key, value]) => {
+    if (value !== undefined) {
+      normalizedParams.append(key, value === null ? "null" : value.toString());
+    }
+  });
+
+  const stringifiedParams = normalizedParams.toString();
+
+  return stringifiedParams.length > 0
+    ? `/organizations/${slug}/accounts?${stringifiedParams}`
+    : `/organizations/${slug}/accounts`;
 };
 
 export const listAccounts = async (
   slug: string,
+  params?: ListAccountsParams,
   options?: RequestInit,
 ): Promise<ListAccounts200> => {
-  return http<ListAccounts200>(getListAccountsUrl(slug), {
+  return http<ListAccounts200>(getListAccountsUrl(slug, params), {
     ...options,
     method: "GET",
   });
 };
 
-export const getListAccountsQueryKey = (slug?: string) => {
-  return [`/organizations/${slug}/accounts`] as const;
+export const getListAccountsQueryKey = (
+  slug?: string,
+  params?: ListAccountsParams,
+) => {
+  return [
+    `/organizations/${slug}/accounts`,
+    ...(params ? [params] : []),
+  ] as const;
 };
 
 export const getListAccountsQueryOptions = <
@@ -3246,6 +3277,7 @@ export const getListAccountsQueryOptions = <
   TError = unknown,
 >(
   slug: string,
+  params?: ListAccountsParams,
   options?: {
     query?: Partial<
       UseQueryOptions<Awaited<ReturnType<typeof listAccounts>>, TError, TData>
@@ -3255,11 +3287,12 @@ export const getListAccountsQueryOptions = <
 ) => {
   const { query: queryOptions, request: requestOptions } = options ?? {};
 
-  const queryKey = queryOptions?.queryKey ?? getListAccountsQueryKey(slug);
+  const queryKey =
+    queryOptions?.queryKey ?? getListAccountsQueryKey(slug, params);
 
   const queryFn: QueryFunction<Awaited<ReturnType<typeof listAccounts>>> = ({
     signal,
-  }) => listAccounts(slug, { signal, ...requestOptions });
+  }) => listAccounts(slug, params, { signal, ...requestOptions });
 
   return {
     queryKey,
@@ -3283,6 +3316,7 @@ export function useListAccounts<
   TError = unknown,
 >(
   slug: string,
+  params: undefined | ListAccountsParams,
   options: {
     query: Partial<
       UseQueryOptions<Awaited<ReturnType<typeof listAccounts>>, TError, TData>
@@ -3306,6 +3340,7 @@ export function useListAccounts<
   TError = unknown,
 >(
   slug: string,
+  params?: ListAccountsParams,
   options?: {
     query?: Partial<
       UseQueryOptions<Awaited<ReturnType<typeof listAccounts>>, TError, TData>
@@ -3329,6 +3364,7 @@ export function useListAccounts<
   TError = unknown,
 >(
   slug: string,
+  params?: ListAccountsParams,
   options?: {
     query?: Partial<
       UseQueryOptions<Awaited<ReturnType<typeof listAccounts>>, TError, TData>
@@ -3345,6 +3381,7 @@ export function useListAccounts<
   TError = unknown,
 >(
   slug: string,
+  params?: ListAccountsParams,
   options?: {
     query?: Partial<
       UseQueryOptions<Awaited<ReturnType<typeof listAccounts>>, TError, TData>
@@ -3355,7 +3392,7 @@ export function useListAccounts<
 ): UseQueryResult<TData, TError> & {
   queryKey: DataTag<QueryKey, TData, TError>;
 } {
-  const queryOptions = getListAccountsQueryOptions(slug, options);
+  const queryOptions = getListAccountsQueryOptions(slug, params, options);
 
   const query = useQuery(queryOptions, queryClient) as UseQueryResult<
     TData,
@@ -6370,6 +6407,92 @@ export const useBulkReviewImport = <TError = unknown, TContext = unknown>(
 };
 
 /**
+ * Create a paired transfer between payment accounts (same or different orgs)
+ */
+export const getCreateTransferUrl = (slug: string) => {
+  return `/organizations/${slug}/transfers`;
+};
+
+export const createTransfer = async (
+  slug: string,
+  createTransferBody: CreateTransferBody,
+  options?: RequestInit,
+): Promise<CreateTransfer201> => {
+  return http<CreateTransfer201>(getCreateTransferUrl(slug), {
+    ...options,
+    method: "POST",
+    headers: { "Content-Type": "application/json", ...options?.headers },
+    body: JSON.stringify(createTransferBody),
+  });
+};
+
+export const getCreateTransferMutationOptions = <
+  TError = unknown,
+  TContext = unknown,
+>(options?: {
+  mutation?: UseMutationOptions<
+    Awaited<ReturnType<typeof createTransfer>>,
+    TError,
+    { slug: string; data: CreateTransferBody },
+    TContext
+  >;
+  request?: SecondParameter<typeof http>;
+}): UseMutationOptions<
+  Awaited<ReturnType<typeof createTransfer>>,
+  TError,
+  { slug: string; data: CreateTransferBody },
+  TContext
+> => {
+  const mutationKey = ["createTransfer"];
+  const { mutation: mutationOptions, request: requestOptions } = options
+    ? options.mutation &&
+      "mutationKey" in options.mutation &&
+      options.mutation.mutationKey
+      ? options
+      : { ...options, mutation: { ...options.mutation, mutationKey } }
+    : { mutation: { mutationKey }, request: undefined };
+
+  const mutationFn: MutationFunction<
+    Awaited<ReturnType<typeof createTransfer>>,
+    { slug: string; data: CreateTransferBody }
+  > = (props) => {
+    const { slug, data } = props ?? {};
+
+    return createTransfer(slug, data, requestOptions);
+  };
+
+  return { mutationFn, ...mutationOptions };
+};
+
+export type CreateTransferMutationResult = NonNullable<
+  Awaited<ReturnType<typeof createTransfer>>
+>;
+export type CreateTransferMutationBody = CreateTransferBody;
+export type CreateTransferMutationError = unknown;
+
+export const useCreateTransfer = <TError = unknown, TContext = unknown>(
+  options?: {
+    mutation?: UseMutationOptions<
+      Awaited<ReturnType<typeof createTransfer>>,
+      TError,
+      { slug: string; data: CreateTransferBody },
+      TContext
+    >;
+    request?: SecondParameter<typeof http>;
+  },
+  queryClient?: QueryClient,
+): UseMutationResult<
+  Awaited<ReturnType<typeof createTransfer>>,
+  TError,
+  { slug: string; data: CreateTransferBody },
+  TContext
+> => {
+  const mutationOptions = getCreateTransferMutationOptions(options);
+
+  return useMutation(mutationOptions, queryClient);
+};
+
+/**
  * List installment siblings for a transaction series
  */
 export const getGetInstallmentSeriesUrl = (slug: string, id: string) => {
@@ -7404,6 +7527,364 @@ export function useListPendingSplits<
 }
 
 /**
+ * List pending split payment confirmation requests for the current user
+ */
+export const getListSplitPaymentRequestsUrl = (slug: string) => {
+  return `/organizations/${slug}/split-payment-requests`;
+};
+
+export const listSplitPaymentRequests = async (
+  slug: string,
+  options?: RequestInit,
+): Promise<ListSplitPaymentRequests200> => {
+  return http<ListSplitPaymentRequests200>(
+    getListSplitPaymentRequestsUrl(slug),
+    {
+      ...options,
+      method: "GET",
+    },
+  );
+};
+
+export const getListSplitPaymentRequestsQueryKey = (slug?: string) => {
+  return [`/organizations/${slug}/split-payment-requests`] as const;
+};
+
+export const getListSplitPaymentRequestsQueryOptions = <
+  TData = Awaited<ReturnType<typeof listSplitPaymentRequests>>,
+  TError = unknown,
+>(
+  slug: string,
+  options?: {
+    query?: Partial<
+      UseQueryOptions<
+        Awaited<ReturnType<typeof listSplitPaymentRequests>>,
+        TError,
+        TData
+      >
+    >;
+    request?: SecondParameter<typeof http>;
+  },
+) => {
+  const { query: queryOptions, request: requestOptions } = options ?? {};
+
+  const queryKey =
+    queryOptions?.queryKey ?? getListSplitPaymentRequestsQueryKey(slug);
+
+  const queryFn: QueryFunction<
+    Awaited<ReturnType<typeof listSplitPaymentRequests>>
+  > = ({ signal }) =>
+    listSplitPaymentRequests(slug, { signal, ...requestOptions });
+
+  return {
+    queryKey,
+    queryFn,
+    enabled: !!slug,
+    ...queryOptions,
+  } as UseQueryOptions<
+    Awaited<ReturnType<typeof listSplitPaymentRequests>>,
+    TError,
+    TData
+  > & { queryKey: DataTag<QueryKey, TData, TError> };
+};
+
+export type ListSplitPaymentRequestsQueryResult = NonNullable<
+  Awaited<ReturnType<typeof listSplitPaymentRequests>>
+>;
+export type ListSplitPaymentRequestsQueryError = unknown;
+
+export function useListSplitPaymentRequests<
+  TData = Awaited<ReturnType<typeof listSplitPaymentRequests>>,
+  TError = unknown,
+>(
+  slug: string,
+  options: {
+    query: Partial<
+      UseQueryOptions<
+        Awaited<ReturnType<typeof listSplitPaymentRequests>>,
+        TError,
+        TData
+      >
+    > &
+      Pick<
+        DefinedInitialDataOptions<
+          Awaited<ReturnType<typeof listSplitPaymentRequests>>,
+          TError,
+          Awaited<ReturnType<typeof listSplitPaymentRequests>>
+        >,
+        "initialData"
+      >;
+    request?: SecondParameter<typeof http>;
+  },
+  queryClient?: QueryClient,
+): DefinedUseQueryResult<TData, TError> & {
+  queryKey: DataTag<QueryKey, TData, TError>;
+};
+export function useListSplitPaymentRequests<
+  TData = Awaited<ReturnType<typeof listSplitPaymentRequests>>,
+  TError = unknown,
+>(
+  slug: string,
+  options?: {
+    query?: Partial<
+      UseQueryOptions<
+        Awaited<ReturnType<typeof listSplitPaymentRequests>>,
+        TError,
+        TData
+      >
+    > &
+      Pick<
+        UndefinedInitialDataOptions<
+          Awaited<ReturnType<typeof listSplitPaymentRequests>>,
+          TError,
+          Awaited<ReturnType<typeof listSplitPaymentRequests>>
+        >,
+        "initialData"
+      >;
+    request?: SecondParameter<typeof http>;
+  },
+  queryClient?: QueryClient,
+): UseQueryResult<TData, TError> & {
+  queryKey: DataTag<QueryKey, TData, TError>;
+};
+export function useListSplitPaymentRequests<
+  TData = Awaited<ReturnType<typeof listSplitPaymentRequests>>,
+  TError = unknown,
+>(
+  slug: string,
+  options?: {
+    query?: Partial<
+      UseQueryOptions<
+        Awaited<ReturnType<typeof listSplitPaymentRequests>>,
+        TError,
+        TData
+      >
+    >;
+    request?: SecondParameter<typeof http>;
+  },
+  queryClient?: QueryClient,
+): UseQueryResult<TData, TError> & {
+  queryKey: DataTag<QueryKey, TData, TError>;
+};
+
+export function useListSplitPaymentRequests<
+  TData = Awaited<ReturnType<typeof listSplitPaymentRequests>>,
+  TError = unknown,
+>(
+  slug: string,
+  options?: {
+    query?: Partial<
+      UseQueryOptions<
+        Awaited<ReturnType<typeof listSplitPaymentRequests>>,
+        TError,
+        TData
+      >
+    >;
+    request?: SecondParameter<typeof http>;
+  },
+  queryClient?: QueryClient,
+): UseQueryResult<TData, TError> & {
+  queryKey: DataTag<QueryKey, TData, TError>;
+} {
+  const queryOptions = getListSplitPaymentRequestsQueryOptions(slug, options);
+
+  const query = useQuery(queryOptions, queryClient) as UseQueryResult<
+    TData,
+    TError
+  > & { queryKey: DataTag<QueryKey, TData, TError> };
+
+  query.queryKey = queryOptions.queryKey;
+
+  return query;
+}
+
+/**
+ * Accept a split payment confirmation request and register the payment
+ */
+export const getAcceptSplitPaymentRequestUrl = (
+  slug: string,
+  requestId: string,
+) => {
+  return `/organizations/${slug}/split-payment-requests/${requestId}/accept`;
+};
+
+export const acceptSplitPaymentRequest = async (
+  slug: string,
+  requestId: string,
+  options?: RequestInit,
+): Promise<AcceptSplitPaymentRequest200> => {
+  return http<AcceptSplitPaymentRequest200>(
+    getAcceptSplitPaymentRequestUrl(slug, requestId),
+    {
+      ...options,
+      method: "POST",
+    },
+  );
+};
+
+export const getAcceptSplitPaymentRequestMutationOptions = <
+  TError = unknown,
+  TContext = unknown,
+>(options?: {
+  mutation?: UseMutationOptions<
+    Awaited<ReturnType<typeof acceptSplitPaymentRequest>>,
+    TError,
+    { slug: string; requestId: string },
+    TContext
+  >;
+  request?: SecondParameter<typeof http>;
+}): UseMutationOptions<
+  Awaited<ReturnType<typeof acceptSplitPaymentRequest>>,
+  TError,
+  { slug: string; requestId: string },
+  TContext
+> => {
+  const mutationKey = ["acceptSplitPaymentRequest"];
+  const { mutation: mutationOptions, request: requestOptions } = options
+    ? options.mutation &&
+      "mutationKey" in options.mutation &&
+      options.mutation.mutationKey
+      ? options
+      : { ...options, mutation: { ...options.mutation, mutationKey } }
+    : { mutation: { mutationKey }, request: undefined };
+
+  const mutationFn: MutationFunction<
+    Awaited<ReturnType<typeof acceptSplitPaymentRequest>>,
+    { slug: string; requestId: string }
+  > = (props) => {
+    const { slug, requestId } = props ?? {};
+
+    return acceptSplitPaymentRequest(slug, requestId, requestOptions);
+  };
+
+  return { mutationFn, ...mutationOptions };
+};
+
+export type AcceptSplitPaymentRequestMutationResult = NonNullable<
+  Awaited<ReturnType<typeof acceptSplitPaymentRequest>>
+>;
+
+export type AcceptSplitPaymentRequestMutationError = unknown;
+
+export const useAcceptSplitPaymentRequest = <
+  TError = unknown,
+  TContext = unknown,
+>(
+  options?: {
+    mutation?: UseMutationOptions<
+      Awaited<ReturnType<typeof acceptSplitPaymentRequest>>,
+      TError,
+      { slug: string; requestId: string },
+      TContext
+    >;
+    request?: SecondParameter<typeof http>;
+  },
+  queryClient?: QueryClient,
+): UseMutationResult<
+  Awaited<ReturnType<typeof acceptSplitPaymentRequest>>,
+  TError,
+  { slug: string; requestId: string },
+  TContext
+> => {
+  const mutationOptions = getAcceptSplitPaymentRequestMutationOptions(options);
+
+  return useMutation(mutationOptions, queryClient);
+};
+
+/**
+ * Reject a split payment confirmation request
+ */
+export const getRejectSplitPaymentRequestUrl = (
+  slug: string,
+  requestId: string,
+) => {
+  return `/organizations/${slug}/split-payment-requests/${requestId}/reject`;
+};
+
+export const rejectSplitPaymentRequest = async (
+  slug: string,
+  requestId: string,
+  options?: RequestInit,
+): Promise<RejectSplitPaymentRequest200> => {
+  return http<RejectSplitPaymentRequest200>(
+    getRejectSplitPaymentRequestUrl(slug, requestId),
+    {
+      ...options,
+      method: "POST",
+    },
+  );
+};
+
+export const getRejectSplitPaymentRequestMutationOptions = <
+  TError = unknown,
+  TContext = unknown,
+>(options?: {
+  mutation?: UseMutationOptions<
+    Awaited<ReturnType<typeof rejectSplitPaymentRequest>>,
+    TError,
+    { slug: string; requestId: string },
+    TContext
+  >;
+  request?: SecondParameter<typeof http>;
+}): UseMutationOptions<
+  Awaited<ReturnType<typeof rejectSplitPaymentRequest>>,
+  TError,
+  { slug: string; requestId: string },
+  TContext
+> => {
+  const mutationKey = ["rejectSplitPaymentRequest"];
+  const { mutation: mutationOptions, request: requestOptions } = options
+    ? options.mutation &&
+      "mutationKey" in options.mutation &&
+      options.mutation.mutationKey
+      ? options
+      : { ...options, mutation: { ...options.mutation, mutationKey } }
+    : { mutation: { mutationKey }, request: undefined };
+
+  const mutationFn: MutationFunction<
+    Awaited<ReturnType<typeof rejectSplitPaymentRequest>>,
+    { slug: string; requestId: string }
+  > = (props) => {
+    const { slug, requestId } = props ?? {};
+
+    return rejectSplitPaymentRequest(slug, requestId, requestOptions);
+  };
+
+  return { mutationFn, ...mutationOptions };
+};
+
+export type RejectSplitPaymentRequestMutationResult = NonNullable<
+  Awaited<ReturnType<typeof rejectSplitPaymentRequest>>
+>;
+
+export type RejectSplitPaymentRequestMutationError = unknown;
+
+export const useRejectSplitPaymentRequest = <
+  TError = unknown,
+  TContext = unknown,
+>(
+  options?: {
+    mutation?: UseMutationOptions<
+      Awaited<ReturnType<typeof rejectSplitPaymentRequest>>,
+      TError,
+      { slug: string; requestId: string },
+      TContext
+    >;
+    request?: SecondParameter<typeof http>;
+  },
+  queryClient?: QueryClient,
+): UseMutationResult<
+  Awaited<ReturnType<typeof rejectSplitPaymentRequest>>,
+  TError,
+  { slug: string; requestId: string },
+  TContext
+> => {
+  const mutationOptions = getRejectSplitPaymentRequestMutationOptions(options);
+
+  return useMutation(mutationOptions, queryClient);
+};
+
+/**
  * List transaction ids that have splits
  */
 export const getListSplitTransactionIdsUrl = (slug: string) => {
@@ -8431,6 +8912,136 @@ export const useRegisterSplitPayment = <TError = unknown, TContext = unknown>(
   TContext
 > => {
   const mutationOptions = getRegisterSplitPaymentMutationOptions(options);
+
+  return useMutation(mutationOptions, queryClient);
+};
+
+/**
+ * Request the expense creditor to confirm a split payment
+ */
+export const getCreateSplitPaymentRequestUrl = (
+  slug: string,
+  transactionId: string,
+  id: string,
+) => {
+  return `/organizations/${slug}/transactions/${transactionId}/splits/${id}/payment-requests`;
+};
+
+export const createSplitPaymentRequest = async (
+  slug: string,
+  transactionId: string,
+  id: string,
+  createSplitPaymentRequestBody: CreateSplitPaymentRequestBody,
+  options?: RequestInit,
+): Promise<CreateSplitPaymentRequest201> => {
+  return http<CreateSplitPaymentRequest201>(
+    getCreateSplitPaymentRequestUrl(slug, transactionId, id),
+    {
+      ...options,
+      method: "POST",
+      headers: { "Content-Type": "application/json", ...options?.headers },
+      body: JSON.stringify(createSplitPaymentRequestBody),
+    },
+  );
+};
+
+export const getCreateSplitPaymentRequestMutationOptions = <
+  TError = unknown,
+  TContext = unknown,
+>(options?: {
+  mutation?: UseMutationOptions<
+    Awaited<ReturnType<typeof createSplitPaymentRequest>>,
+    TError,
+    {
+      slug: string;
+      transactionId: string;
+      id: string;
+      data: CreateSplitPaymentRequestBody;
+    },
+    TContext
+  >;
+  request?: SecondParameter<typeof http>;
+}): UseMutationOptions<
+  Awaited<ReturnType<typeof createSplitPaymentRequest>>,
+  TError,
+  {
+    slug: string;
+    transactionId: string;
+    id: string;
+    data: CreateSplitPaymentRequestBody;
+  },
+  TContext
+> => {
+  const mutationKey = ["createSplitPaymentRequest"];
+  const { mutation: mutationOptions, request: requestOptions } = options
+    ? options.mutation &&
+      "mutationKey" in options.mutation &&
+      options.mutation.mutationKey
+      ? options
+      : { ...options, mutation: { ...options.mutation, mutationKey } }
+    : { mutation: { mutationKey }, request: undefined };
+
+  const mutationFn: MutationFunction<
+    Awaited<ReturnType<typeof createSplitPaymentRequest>>,
+    {
+      slug: string;
+      transactionId: string;
+      id: string;
+      data: CreateSplitPaymentRequestBody;
+    }
+  > = (props) => {
+    const { slug, transactionId, id, data } = props ?? {};
+
+    return createSplitPaymentRequest(
+      slug,
+      transactionId,
+      id,
+      data,
+      requestOptions,
+    );
+  };
+
+  return { mutationFn, ...mutationOptions };
+};
+
+export type CreateSplitPaymentRequestMutationResult = NonNullable<
+  Awaited<ReturnType<typeof createSplitPaymentRequest>>
+>;
+export type CreateSplitPaymentRequestMutationBody =
+  CreateSplitPaymentRequestBody;
+export type CreateSplitPaymentRequestMutationError = unknown;
+
+export const useCreateSplitPaymentRequest = <
+  TError = unknown,
+  TContext = unknown,
+>(
+  options?: {
+    mutation?: UseMutationOptions<
+      Awaited<ReturnType<typeof createSplitPaymentRequest>>,
+      TError,
+      {
+        slug: string;
+        transactionId: string;
+        id: string;
+        data: CreateSplitPaymentRequestBody;
+      },
+      TContext
+    >;
+    request?: SecondParameter<typeof http>;
+  },
+  queryClient?: QueryClient,
+): UseMutationResult<
+  Awaited<ReturnType<typeof createSplitPaymentRequest>>,
+  TError,
+  {
+    slug: string;
+    transactionId: string;
+    id: string;
+    data: CreateSplitPaymentRequestBody;
+  },
+  TContext
+> => {
+  const mutationOptions = getCreateSplitPaymentRequestMutationOptions(options);
 
   return useMutation(mutationOptions, queryClient);
 };
@@ -10927,7 +11538,7 @@ export function useGetReportByCard<
 }
 
 /**
- * Monthly income and expense trends
+ * Monthly income and personal expense (meu gasto) trends for the authenticated user
  */
 export const getGetReportTrendsUrl = (
   slug: string,
@@ -13426,6 +14037,93 @@ export function useListPendingNotifications<
 
   return query;
 }
+
+/**
+ * Mark all pending informational notifications as read (keeps decision requests unread)
+ */
+export const getMarkInformationalNotificationsReadUrl = () => {
+  return `/notifications/read-informational`;
+};
+
+export const markInformationalNotificationsRead = async (
+  options?: RequestInit,
+): Promise<MarkInformationalNotificationsRead200> => {
+  return http<MarkInformationalNotificationsRead200>(
+    getMarkInformationalNotificationsReadUrl(),
+    {
+      ...options,
+      method: "PATCH",
+    },
+  );
+};
+
+export const getMarkInformationalNotificationsReadMutationOptions = <
+  TError = unknown,
+  TContext = unknown,
+>(options?: {
+  mutation?: UseMutationOptions<
+    Awaited<ReturnType<typeof markInformationalNotificationsRead>>,
+    TError,
+    void,
+    TContext
+  >;
+  request?: SecondParameter<typeof http>;
+}): UseMutationOptions<
+  Awaited<ReturnType<typeof markInformationalNotificationsRead>>,
+  TError,
+  void,
+  TContext
+> => {
+  const mutationKey = ["markInformationalNotificationsRead"];
+  const { mutation: mutationOptions, request: requestOptions } = options
+    ? options.mutation &&
+      "mutationKey" in options.mutation &&
+      options.mutation.mutationKey
+      ? options
+      : { ...options, mutation: { ...options.mutation, mutationKey } }
+    : { mutation: { mutationKey }, request: undefined };
+
+  const mutationFn: MutationFunction<
+    Awaited<ReturnType<typeof markInformationalNotificationsRead>>,
+    void
+  > = () => {
+    return markInformationalNotificationsRead(requestOptions);
+  };
+
+  return { mutationFn, ...mutationOptions };
+};
+
+export type MarkInformationalNotificationsReadMutationResult = NonNullable<
+  Awaited<ReturnType<typeof markInformationalNotificationsRead>>
+>;
+
+export type MarkInformationalNotificationsReadMutationError = unknown;
+
+export const useMarkInformationalNotificationsRead = <
+  TError = unknown,
+  TContext = unknown,
+>(
+  options?: {
+    mutation?: UseMutationOptions<
+      Awaited<ReturnType<typeof markInformationalNotificationsRead>>,
+      TError,
+      void,
+      TContext
+    >;
+    request?: SecondParameter<typeof http>;
+  },
+  queryClient?: QueryClient,
+): UseMutationResult<
+  Awaited<ReturnType<typeof markInformationalNotificationsRead>>,
+  TError,
+  void,
+  TContext
+> => {
+  const mutationOptions =
+    getMarkInformationalNotificationsReadMutationOptions(options);
+
+  return useMutation(mutationOptions, queryClient);
+};
 
 /**
  * Mark notification as read

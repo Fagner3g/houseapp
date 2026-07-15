@@ -3,7 +3,7 @@
  * Do not edit manually.
  * HouseApp API
  * API for HouseApp
- * OpenAPI spec version: 2.0.0
+ * OpenAPI spec version: 2.2.1
  */
 import type { UpdateSplit200SplitUserId } from "./updateSplit200SplitUserId";
 import type { UpdateSplit200SplitContactName } from "./updateSplit200SplitContactName";
@@ -13,6 +13,7 @@ import type { UpdateSplit200SplitDescription } from "./updateSplit200SplitDescri
 import type { UpdateSplit200SplitStatus } from "./updateSplit200SplitStatus";
 import type { UpdateSplit200SplitPaidAt } from "./updateSplit200SplitPaidAt";
 import type { UpdateSplit200SplitLastNotifiedAt } from "./updateSplit200SplitLastNotifiedAt";
+import type { UpdateSplit200SplitPendingPaymentRequest } from "./updateSplit200SplitPendingPaymentRequest";
 
 export type UpdateSplit200Split = {
   id: string;
@@ -32,4 +33,5 @@ export type UpdateSplit200Split = {
   collectLumpSum: boolean;
   createdAt: string;
   updatedAt: string;
+  pendingPaymentRequest?: UpdateSplit200SplitPendingPaymentRequest;
 };

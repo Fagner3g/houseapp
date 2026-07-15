@@ -80,6 +80,10 @@ describe('resolveSplitInstallmentRemainingReais', () => {
         debtSummary: {
           purchaseTotal: '900.00',
           myShareTotal: '450.00',
+          purchaseTotalIsEstimate: false,
+          viewerIsCreditor: true,
+          viewerOwedTotal: null,
+          viewerRemainingTotal: null,
           installmentsTotal: 3,
           currentInstallmentNumber: 1,
           currentTransactionAmount: '300.00',
@@ -94,6 +98,7 @@ describe('resolveSplitInstallmentRemainingReais', () => {
               totalPaid: '0.00',
               totalRemaining: '450.00',
               status: 'pending',
+              isViewer: false,
               installments: [
                 {
                   installmentNumber: 1,
@@ -128,6 +133,10 @@ describe('resolveSplitInstallmentRemainingReais', () => {
         debtSummary: {
           purchaseTotal: '900.00',
           myShareTotal: '450.00',
+          purchaseTotalIsEstimate: false,
+          viewerIsCreditor: true,
+          viewerOwedTotal: null,
+          viewerRemainingTotal: null,
           installmentsTotal: 3,
           currentInstallmentNumber: 1,
           currentTransactionAmount: '300.00',
@@ -142,6 +151,7 @@ describe('resolveSplitInstallmentRemainingReais', () => {
               totalPaid: '0.00',
               totalRemaining: '450.00',
               status: 'pending',
+              isViewer: false,
               installments: [
                 {
                   installmentNumber: 1,
@@ -176,6 +186,10 @@ describe('resolveSplitInstallmentRemainingReais', () => {
         debtSummary: {
           purchaseTotal: '900.00',
           myShareTotal: '450.00',
+          purchaseTotalIsEstimate: false,
+          viewerIsCreditor: true,
+          viewerOwedTotal: null,
+          viewerRemainingTotal: null,
           installmentsTotal: 3,
           currentInstallmentNumber: 1,
           currentTransactionAmount: '300.00',
@@ -190,6 +204,7 @@ describe('resolveSplitInstallmentRemainingReais', () => {
               totalPaid: '150.00',
               totalRemaining: '300.00',
               status: 'partial',
+              isViewer: false,
               installments: [
                 {
                   installmentNumber: 1,
@@ -222,6 +237,10 @@ describe('resolveSplitInstallmentRemainingReais', () => {
         debtSummary: {
           purchaseTotal: '900.00',
           myShareTotal: '450.00',
+          purchaseTotalIsEstimate: false,
+          viewerIsCreditor: true,
+          viewerOwedTotal: null,
+          viewerRemainingTotal: null,
           installmentsTotal: 3,
           currentInstallmentNumber: 1,
           currentTransactionAmount: '300.00',
@@ -236,6 +255,7 @@ describe('resolveSplitInstallmentRemainingReais', () => {
               totalPaid: '50.00',
               totalRemaining: '400.00',
               status: 'partial',
+              isViewer: false,
               installments: [
                 {
                   installmentNumber: 1,

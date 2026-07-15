@@ -5,7 +5,7 @@ type ImportedStatementTransactionLike = {
   source: string
   statementId: string | null
   title: string
-  amount: bigint
+  amount: bigint | null
   type: string
   date: Date
   competenceDate: Date | null

@@ -106,6 +106,13 @@ export function useAccountsHub(search: AccountsHubSearch) {
     })
   }
 
+  // biome-ignore lint/correctness/useExhaustiveDependencies: updateSearch is unstable from useNavigate
+  useEffect(() => {
+    if (currentView !== 'settings') return
+    if (!selectedAccount || selectedAccount.canManage !== false) return
+    updateSearch({ view: undefined })
+  }, [currentView, selectedAccount])
+
   const handleKindChange = (nextKind: AccountsHubKind) => {
     const nextList = nextKind === 'cards' ? creditCards : paymentAccounts
     updateSearch({
@@ -173,6 +180,7 @@ export function useAccountsHub(search: AccountsHubSearch) {
     updateSearch,
     handleKindChange,
     handleViewChange: (nextView: AccountsHubView) => {
+      if (nextView === 'settings' && selectedAccount?.canManage === false) return
       updateSearch({
         view: nextView === 'statement' ? undefined : nextView,
         invoiceFilter: nextView === 'statement' ? invoiceFilter : undefined,
@@ -180,6 +188,7 @@ export function useAccountsHub(search: AccountsHubSearch) {
     },
     handleCreate,
     handleOpenSettings: (account: ListAccounts200AccountsItem) => {
+      if (account.canManage === false) return
       updateSearch({
         kind: account.type === 'credit_card' ? 'cards' : 'accounts',
         accountId: account.id,

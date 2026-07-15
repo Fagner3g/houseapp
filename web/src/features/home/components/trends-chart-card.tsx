@@ -27,6 +27,7 @@ export function TrendsChartCard({ data, selectedMonthKey, onMonthSelect, isLoadi
       <CardHeader>
         <CardTitle className="text-base">Evolução mensal</CardTitle>
         <p className="text-sm text-slate-500">{subtitle}</p>
+        <p className="text-xs text-slate-400">Receitas e meu gasto (líquido de splits)</p>
       </CardHeader>
       <CardContent>
         {isLoading ? (

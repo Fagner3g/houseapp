@@ -3,7 +3,7 @@
  * Do not edit manually.
  * HouseApp API
  * API for HouseApp
- * OpenAPI spec version: 2.0.0
+ * OpenAPI spec version: 2.2.1
  */
 import type { GetReportByCard200TransactionsItemCardId } from "./getReportByCard200TransactionsItemCardId";
 import type { GetReportByCard200TransactionsItemCardLabel } from "./getReportByCard200TransactionsItemCardLabel";

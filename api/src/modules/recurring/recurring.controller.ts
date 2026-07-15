@@ -2,6 +2,7 @@ import type { FastifyReply, FastifyRequest } from 'fastify'
 import { StatusCodes } from 'http-status-codes'
 
 import { container } from '@/core/container'
+import { toTransactionViewer } from '@/modules/transactions/transaction-visibility'
 import type {
   CreateRecurringBody,
   PreviewUpdateRecurringBody,
@@ -15,6 +16,12 @@ export async function listRecurringController(
   request: FastifyRequest<{ Params: OrgParams }>,
   reply: FastifyReply
 ) {
+  const viewer = toTransactionViewer(request.user.sub, request.organization.ownerId)
+  // Recurring templates are household (owner) data until they get a per-user stamp.
+  if (!viewer.isOwner) {
+    return reply.send({ recurringTransactions: [] })
+  }
+
   const recurringTransactions = await container.recurringService.list(request.organization.id)
   return reply.send({ recurringTransactions })
 }

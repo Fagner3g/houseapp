@@ -79,6 +79,7 @@ export type MergeStatementData = {
   importSource?: StatementImportSource | null
   isClosed?: boolean
   isPaid?: boolean
+  importedBy?: string | null
 }
 
 export type ImportStatementContext = {
@@ -598,6 +599,7 @@ export class DrizzleStatementRepository implements StatementRepository {
             installmentsTotal: item.installmentsTotal ?? null,
             source: 'import',
             externalId: item.externalId ?? null,
+            createdBy: data.importedBy ?? existingStatement.importedBy ?? null,
           })
           .returning()
 
@@ -683,6 +685,7 @@ export class DrizzleStatementRepository implements StatementRepository {
                 paidAt: paymentDate,
                 paidAmount: remaining,
                 source: 'import',
+                createdBy: data.importedBy ?? existingStatement.importedBy ?? null,
               })
               .returning()
 
@@ -701,6 +704,7 @@ export class DrizzleStatementRepository implements StatementRepository {
                 paidAmount: remaining,
                 transferPairId: expense.id,
                 source: 'import',
+                createdBy: data.importedBy ?? existingStatement.importedBy ?? null,
               })
               .returning()
 
@@ -875,6 +879,7 @@ export class DrizzleStatementRepository implements StatementRepository {
             installmentsTotal: item.installmentsTotal ?? null,
             source: 'import',
             externalId: item.externalId ?? null,
+            createdBy: data.importedBy ?? null,
           })
           .returning()
 
@@ -921,6 +926,7 @@ export class DrizzleStatementRepository implements StatementRepository {
               paidAt: paymentDate,
               paidAmount: remaining,
               source: 'import',
+              createdBy: data.importedBy ?? null,
             })
             .returning()
 
@@ -939,6 +945,7 @@ export class DrizzleStatementRepository implements StatementRepository {
               paidAmount: remaining,
               transferPairId: expense.id,
               source: 'import',
+              createdBy: data.importedBy ?? null,
             })
             .returning()
 

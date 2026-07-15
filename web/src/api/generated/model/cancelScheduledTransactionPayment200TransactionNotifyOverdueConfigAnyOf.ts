@@ -3,7 +3,7 @@
  * Do not edit manually.
  * HouseApp API
  * API for HouseApp
- * OpenAPI spec version: 2.0.0
+ * OpenAPI spec version: 2.2.1
  */
 import type { CancelScheduledTransactionPayment200TransactionNotifyOverdueConfigAnyOfAnyOf } from "./cancelScheduledTransactionPayment200TransactionNotifyOverdueConfigAnyOfAnyOf";
 import type { CancelScheduledTransactionPayment200TransactionNotifyOverdueConfigAnyOfAnyOfTwo } from "./cancelScheduledTransactionPayment200TransactionNotifyOverdueConfigAnyOfAnyOfTwo";

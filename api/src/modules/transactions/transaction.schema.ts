@@ -68,6 +68,7 @@ export const transactionResponseSchema = z.object({
   notifyContactPhone: z.string().nullable(),
   notifyDaysBefore: z.array(z.number().int().min(0)).optional(),
   notifyOverdueConfig: notifyOverdueConfigSchema.optional(),
+  createdBy: z.string().nullable(),
   createdAt: z.string(),
   updatedAt: z.string(),
 })
@@ -136,6 +137,8 @@ const listTransactionsQuery = z.object({
   perPage: z.coerce.number().int().min(1).max(500).optional(),
   payableOnly: z.coerce.boolean().optional(),
   scheduledOnly: z.coerce.boolean().optional(),
+  /** Only transactions attributed to the current user as payer. */
+  ownedOnly: z.coerce.boolean().optional(),
 })
 
 export const listTransactionsSchema = {

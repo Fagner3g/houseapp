@@ -21,7 +21,6 @@ import { useInvoiceCycleTransactions } from '../hooks/use-invoice-cycle-transact
 import { useSplitTransactionIds } from '../hooks/use-split-transaction-ids'
 import { useAllowsManualCreditCardTransactions } from '../hooks/use-allows-manual-credit-card-transactions'
 import { filterAnalyticsGroupTransactions } from '../lib/filter-analytics-group-transactions'
-import type { PartialSplitBadgeInfo } from '@/features/transactions/lib/split-badge-label'
 import { CreditCardStatementGroups } from './credit-card-statement-groups'
 
 export function AnalyticsGroupDrawer() {
@@ -93,9 +92,8 @@ export function AnalyticsGroupDrawer() {
     [filteredTransactions]
   )
   const { data: splitData } = useSplitTransactionIds(slug, filteredTransactionIds)
-  const fullyDelegatedById = splitData?.fullyDelegatedById ?? new Map<string, string>()
-  const partiallyDividedById =
-    splitData?.partiallyDividedById ?? new Map<string, PartialSplitBadgeInfo>()
+  const fullyDelegatedById = splitData?.fullyDelegatedById ?? new Map()
+  const partiallyDividedById = splitData?.partiallyDividedById ?? new Map()
   const dividedTransactionIds = splitData?.transactionIds ?? new Set<string>()
   const splitRemainingById = splitData?.splitRemainingById ?? new Map<string, number>()
 

@@ -31,9 +31,13 @@ interface SplitListItemProps {
   installmentNumber?: number | null
   installmentsTotal?: number | null
   parcelInstallmentsTotal: number
+  viewerIsCreditor: boolean
+  viewerCanMutate: boolean
   onRegisterPayment: (splitId: string, remainingReais: number) => void
+  onRequestPaymentConfirmation: (splitId: string) => void
   onDelete: (splitId: string) => void
   isDeleting?: boolean
+  isRequestingPayment?: boolean
 }
 
 export function SplitListItem({
@@ -46,9 +50,13 @@ export function SplitListItem({
   installmentNumber,
   installmentsTotal,
   parcelInstallmentsTotal,
+  viewerIsCreditor,
+  viewerCanMutate,
   onRegisterPayment,
+  onRequestPaymentConfirmation,
   onDelete,
   isDeleting,
+  isRequestingPayment,
 }: SplitListItemProps) {
   const remainingReais = resolveSplitInstallmentRemainingReais(split, {
     debtSummary,
@@ -93,6 +101,9 @@ export function SplitListItem({
           }`
         : null
 
+  const isUnsettled = split.status !== 'paid' && split.status !== 'forgiven'
+  const hasPendingRequest = Boolean(split.pendingPaymentRequest)
+
   return (
     <div className="rounded-lg border border-slate-100 bg-slate-50/50 p-3">
       <div className="flex items-start justify-between gap-3">
@@ -132,6 +143,9 @@ export function SplitListItem({
             {split.notifyEnabled && (
               <p className="mt-1 text-xs text-slate-500">Lembretes ativos</p>
             )}
+            {hasPendingRequest && (
+              <p className="mt-1 text-xs text-amber-700">Aguardando confirmação</p>
+            )}
           </div>
         </div>
         <div className="flex shrink-0 flex-col items-end gap-2">
@@ -139,7 +153,7 @@ export function SplitListItem({
             {SPLIT_STATUS_LABELS[split.status]}
           </Badge>
           <div className="flex items-center gap-1">
-            {split.status !== 'paid' && split.status !== 'forgiven' && (
+            {isUnsettled && viewerIsCreditor && (
               <Button
                 type="button"
                 size="sm"
@@ -149,19 +163,37 @@ export function SplitListItem({
                 Registrar pagamento
               </Button>
             )}
-            {split.status === 'pending' && moneyStringToReais(split.paidAmount) === 0 && (
+            {isUnsettled && !viewerIsCreditor && !hasPendingRequest && (
               <Button
                 type="button"
-                size="icon"
-                variant="ghost"
-                className="size-8 text-slate-400 hover:text-rose-600"
-                disabled={isDeleting}
-                aria-label="Remover divisão"
-                onClick={() => onDelete(split.id)}
+                size="sm"
+                variant="outline"
+                disabled={isRequestingPayment}
+                onClick={() => onRequestPaymentConfirmation(split.id)}
               >
-                <Trash2 className="size-4" />
+                Avisar que paguei
               </Button>
             )}
+            {isUnsettled && !viewerIsCreditor && hasPendingRequest && (
+              <Badge variant="secondary" className="text-[10px] font-normal">
+                Aguardando confirmação
+              </Badge>
+            )}
+            {viewerCanMutate &&
+              split.status === 'pending' &&
+              moneyStringToReais(split.paidAmount) === 0 && (
+                <Button
+                  type="button"
+                  size="icon"
+                  variant="ghost"
+                  className="size-8 text-slate-400 hover:text-rose-600"
+                  disabled={isDeleting}
+                  aria-label="Remover divisão"
+                  onClick={() => onDelete(split.id)}
+                >
+                  <Trash2 className="size-4" />
+                </Button>
+              )}
           </div>
         </div>
       </div>

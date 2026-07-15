@@ -3,7 +3,7 @@
  * Do not edit manually.
  * HouseApp API
  * API for HouseApp
- * OpenAPI spec version: 2.0.0
+ * OpenAPI spec version: 2.2.1
  */
 import type { UpdateTransaction200TransactionAccountId } from "./updateTransaction200TransactionAccountId";
 import type { UpdateTransaction200TransactionCardId } from "./updateTransaction200TransactionCardId";
@@ -22,11 +22,13 @@ import type { UpdateTransaction200TransactionInstallmentNumber } from "./updateT
 import type { UpdateTransaction200TransactionInstallmentsTotal } from "./updateTransaction200TransactionInstallmentsTotal";
 import type { UpdateTransaction200TransactionSource } from "./updateTransaction200TransactionSource";
 import type { UpdateTransaction200TransactionTransferPairId } from "./updateTransaction200TransactionTransferPairId";
+import type { UpdateTransaction200TransactionTransferPair } from "./updateTransaction200TransactionTransferPair";
 import type { UpdateTransaction200TransactionNotifyTargetType } from "./updateTransaction200TransactionNotifyTargetType";
 import type { UpdateTransaction200TransactionNotifyUserId } from "./updateTransaction200TransactionNotifyUserId";
 import type { UpdateTransaction200TransactionNotifyContactName } from "./updateTransaction200TransactionNotifyContactName";
 import type { UpdateTransaction200TransactionNotifyContactPhone } from "./updateTransaction200TransactionNotifyContactPhone";
 import type { UpdateTransaction200TransactionNotifyOverdueConfig } from "./updateTransaction200TransactionNotifyOverdueConfig";
+import type { UpdateTransaction200TransactionCreatedBy } from "./updateTransaction200TransactionCreatedBy";
 
 export type UpdateTransaction200Transaction = {
   id: string;
@@ -51,6 +53,7 @@ export type UpdateTransaction200Transaction = {
   source: UpdateTransaction200TransactionSource;
   categoryIds: string[];
   transferPairId: UpdateTransaction200TransactionTransferPairId;
+  transferPair?: UpdateTransaction200TransactionTransferPair;
   notifyEnabled: boolean;
   notifyTargetType: (typeof UpdateTransaction200TransactionNotifyTargetType)[keyof typeof UpdateTransaction200TransactionNotifyTargetType];
   notifyUserId: UpdateTransaction200TransactionNotifyUserId;
@@ -58,6 +61,7 @@ export type UpdateTransaction200Transaction = {
   notifyContactPhone: UpdateTransaction200TransactionNotifyContactPhone;
   notifyDaysBefore?: number[];
   notifyOverdueConfig?: UpdateTransaction200TransactionNotifyOverdueConfig;
+  createdBy: UpdateTransaction200TransactionCreatedBy;
   createdAt: string;
   updatedAt: string;
 };

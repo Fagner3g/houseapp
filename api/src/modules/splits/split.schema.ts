@@ -3,6 +3,12 @@ import z from 'zod'
 const splitStatusSchema = z.enum(['pending', 'partial', 'paid', 'forgiven'])
 const splitPaymentMethodSchema = z.enum(['pix', 'cash', 'transfer', 'other'])
 
+export const pendingPaymentRequestSchema = z.object({
+  id: z.string(),
+  status: z.string(),
+  createdAt: z.string(),
+})
+
 export const splitResponseSchema = z.object({
   id: z.string(),
   transactionId: z.string(),
@@ -21,6 +27,7 @@ export const splitResponseSchema = z.object({
   collectLumpSum: z.boolean(),
   createdAt: z.string(),
   updatedAt: z.string(),
+  pendingPaymentRequest: pendingPaymentRequestSchema.nullable().optional(),
 })
 
 export const splitPaymentResponseSchema = z.object({
@@ -73,7 +80,11 @@ export const listSplitsSchema = {
   operationId: 'listSplits',
   params: transactionParams,
   response: {
-    200: z.object({ splits: z.array(splitResponseSchema) }),
+    200: z.object({
+      viewerIsCreditor: z.boolean(),
+      viewerCanMutate: z.boolean(),
+      splits: z.array(splitResponseSchema),
+    }),
   },
 }
 
@@ -170,6 +181,8 @@ export const listSplitTransactionIdsSchema = {
         z.object({
           transactionId: z.string(),
           delegateName: z.string(),
+          debtorUserId: z.string().nullable(),
+          creditorName: z.string(),
         })
       ),
       partiallyDivided: z.array(
@@ -178,6 +191,8 @@ export const listSplitTransactionIdsSchema = {
           splitWithName: z.string(),
           splitAmount: z.string(),
           transactionAmount: z.string(),
+          debtorUserId: z.string().nullable(),
+          creditorName: z.string(),
         })
       ),
       splitPaidTotals: z.array(
@@ -189,6 +204,21 @@ export const listSplitTransactionIdsSchema = {
       splitRemainingTotals: z.array(
         z.object({
           transactionId: z.string(),
+          remainingAmount: z.string(),
+        })
+      ),
+      /** Remaining amounts the current user can collect (creditor only). */
+      receivableRemainingTotals: z.array(
+        z.object({
+          transactionId: z.string(),
+          remainingAmount: z.string(),
+        })
+      ),
+      /** Debtor shares for the authenticated user on the given transactions. */
+      viewerShareTotals: z.array(
+        z.object({
+          transactionId: z.string(),
+          amount: z.string(),
           remainingAmount: z.string(),
         })
       ),
@@ -217,6 +247,7 @@ const splitDebtPersonSchema = z.object({
   totalRemaining: z.string(),
   status: splitStatusSchema,
   installments: z.array(splitDebtInstallmentSchema),
+  isViewer: z.boolean(),
 })
 
 export const getSplitDebtSummarySchema = {
@@ -232,6 +263,9 @@ export const getSplitDebtSummarySchema = {
       installmentsTotal: z.number().nullable(),
       currentInstallmentNumber: z.number().nullable(),
       currentTransactionAmount: z.string().nullable(),
+      viewerIsCreditor: z.boolean(),
+      viewerOwedTotal: z.string().nullable(),
+      viewerRemainingTotal: z.string().nullable(),
       persons: z.array(splitDebtPersonSchema),
     }),
   },

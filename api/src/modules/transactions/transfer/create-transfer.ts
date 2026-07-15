@@ -141,6 +141,7 @@ export async function createTransfer(params: {
       paidAt: date,
       paidAmount: amount,
       source: 'manual',
+      createdBy: userId,
     },
     {
       organizationId: toOrg.id,
@@ -154,6 +155,7 @@ export async function createTransfer(params: {
       paidAt: date,
       paidAmount: amount,
       source: 'manual',
+      createdBy: userId,
     }
   )
 

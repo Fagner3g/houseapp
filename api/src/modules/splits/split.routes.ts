@@ -16,6 +16,16 @@ import {
   updateSplitController,
 } from './split.controller'
 import {
+  acceptSplitPaymentRequestController,
+  createSplitPaymentRequestController,
+  listSplitPaymentRequestsController,
+  rejectSplitPaymentRequestController,
+  acceptSplitPaymentRequestSchema,
+  createSplitPaymentRequestSchema,
+  listSplitPaymentRequestsSchema,
+  rejectSplitPaymentRequestSchema,
+} from './payment-request'
+import {
   createSplitSchema,
   cancelSplitPaymentSchema,
   deleteSplitSchema,
@@ -34,6 +44,27 @@ export const splitsRoutes: FastifyPluginAsyncZod = async app => {
     preHandler: [verifyOrgAccessHook],
     schema: listPendingSplitsSchema,
     handler: listPendingSplitsController,
+  })
+
+  app.get('/organizations/:slug/split-payment-requests', {
+    onRequest: [authenticateUserHook],
+    preHandler: [verifyOrgAccessHook],
+    schema: listSplitPaymentRequestsSchema,
+    handler: listSplitPaymentRequestsController,
+  })
+
+  app.post('/organizations/:slug/split-payment-requests/:requestId/accept', {
+    onRequest: [authenticateUserHook],
+    preHandler: [verifyOrgAccessHook],
+    schema: acceptSplitPaymentRequestSchema,
+    handler: acceptSplitPaymentRequestController,
+  })
+
+  app.post('/organizations/:slug/split-payment-requests/:requestId/reject', {
+    onRequest: [authenticateUserHook],
+    preHandler: [verifyOrgAccessHook],
+    schema: rejectSplitPaymentRequestSchema,
+    handler: rejectSplitPaymentRequestController,
   })
 
   app.post('/organizations/:slug/splits/transaction-ids', {
@@ -91,6 +122,16 @@ export const splitsRoutes: FastifyPluginAsyncZod = async app => {
     schema: registerSplitPaymentSchema,
     handler: registerSplitPaymentController,
   })
+
+  app.post(
+    '/organizations/:slug/transactions/:transactionId/splits/:id/payment-requests',
+    {
+      onRequest: [authenticateUserHook],
+      preHandler: [verifyOrgAccessHook],
+      schema: createSplitPaymentRequestSchema,
+      handler: createSplitPaymentRequestController,
+    }
+  )
 
   app.delete('/organizations/:slug/transactions/:transactionId/splits/:id/payments/:paymentId', {
     onRequest: [authenticateUserHook],

@@ -20,6 +20,10 @@ import { ReportService } from '@/modules/reports/report.service'
 import { DashboardInsightsService } from '@/modules/reports/dashboard-insights'
 import { DrizzleSplitRepository } from '@/modules/splits/split.repository'
 import { SplitService } from '@/modules/splits/split.service'
+import {
+  DrizzleSplitPaymentRequestRepository,
+  SplitPaymentRequestService,
+} from '@/modules/splits/payment-request'
 import { DrizzleStatementRepository } from '@/modules/statements/statement.repository'
 import { StatementService } from '@/modules/statements/statement.service'
 import { DrizzleTransactionRepository } from '@/modules/transactions/transaction.repository'
@@ -35,6 +39,7 @@ const categoryRepository = new DrizzleCategoryRepository()
 const transactionRepository = new DrizzleTransactionRepository()
 const recurringRepository = new DrizzleRecurringRepository()
 const splitRepository = new DrizzleSplitRepository()
+const paymentRequestRepository = new DrizzleSplitPaymentRequestRepository()
 const attachmentRepository = new DrizzleAttachmentRepository()
 const reportRepository = new DrizzleReportRepository()
 const alertRuleRepository = new DrizzleAlertRuleRepository()
@@ -44,7 +49,18 @@ const statementRepository = new DrizzleStatementRepository()
 const cardService = new CardService(cardRepository, accountRepository)
 const accountService = new AccountService(accountRepository, cardService)
 const categoryService = new CategoryService(categoryRepository)
-const splitService = new SplitService(splitRepository, transactionRepository)
+const splitService = new SplitService(
+  splitRepository,
+  transactionRepository,
+  paymentRequestRepository
+)
+const splitPaymentRequestService = new SplitPaymentRequestService(
+  paymentRequestRepository,
+  splitRepository,
+  transactionRepository,
+  splitService,
+  notificationRepository
+)
 const transactionService = new TransactionService(
   transactionRepository,
   accountRepository,
@@ -109,6 +125,7 @@ export const container = {
   dashboardInsightsService,
   splitRepository,
   splitService,
+  splitPaymentRequestService,
   statementRepository,
   statementService,
   storageProvider,

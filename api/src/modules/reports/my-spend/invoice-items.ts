@@ -8,6 +8,10 @@ import { cards } from '@/db/schemas/cards'
 import { transactions } from '@/db/schemas/transactions'
 import { getBillingCycle } from '@/core/billing-cycle'
 import { userOwnsTransactionCondition } from '@/modules/splits/split-expense-attribution'
+import {
+  transactionVisibilityCondition,
+  type TransactionViewer,
+} from '@/modules/transactions/transaction-visibility'
 
 import type { ReportDateRange } from '../report.repository'
 import { purchaseDateExpr, reportExpenseAmountExpr } from '../report-spending'
@@ -37,7 +41,8 @@ async function sumInvoiceCycle(
   userId: string,
   accountId: string,
   periodStart: string,
-  periodEnd: string
+  periodEnd: string,
+  viewer?: TransactionViewer
 ) {
   const [row] = await db
     .select({
@@ -56,7 +61,8 @@ async function sumInvoiceCycle(
         inArray(transactions.status, ['paid', 'pending']),
         sql`${purchaseDateExpr} >= ${periodStart}::date`,
         sql`${purchaseDateExpr} <= ${periodEnd}::date`,
-        userOwnsTransactionCondition(userId)
+        userOwnsTransactionCondition(userId, viewer?.ownerId),
+        transactionVisibilityCondition(viewer)
       )
     )
 
@@ -76,7 +82,8 @@ export async function listInvoiceMySpendItems(
     name: string
     closingDay: number
     dueDay: number
-  }>
+  }>,
+  viewer?: TransactionViewer
 ): Promise<MySpendItemRow[]> {
   const items: MySpendItemRow[] = []
   const seenInvoices = new Set<string>()
@@ -92,7 +99,8 @@ export async function listInvoiceMySpendItems(
         userId,
         account.id,
         cycle.periodStart,
-        cycle.periodEnd
+        cycle.periodEnd,
+        viewer
       )
       if (totals.gross <= 0n) continue
 
@@ -108,7 +116,8 @@ export async function listInvoiceMySpendItems(
             sql`${purchaseDateExpr} >= ${cycle.periodStart}::date`,
             sql`${purchaseDateExpr} <= ${cycle.periodEnd}::date`,
             sql`${purchaseDateExpr} >= ${range.from.toISOString()}::timestamptz`,
-            sql`${purchaseDateExpr} <= ${range.to.toISOString()}::timestamptz`
+            sql`${purchaseDateExpr} <= ${range.to.toISOString()}::timestamptz`,
+            transactionVisibilityCondition(viewer)
           )
         )
         .limit(1)

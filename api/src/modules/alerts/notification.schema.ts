@@ -46,3 +46,13 @@ export const markNotificationReadSchema = {
     200: z.object({ notification: notificationResponseSchema }),
   },
 }
+
+export const markInformationalNotificationsReadSchema = {
+  tags: ['Notifications'],
+  description:
+    'Mark all pending informational notifications as read (keeps decision requests unread)',
+  operationId: 'markInformationalNotificationsRead',
+  response: {
+    200: z.object({ markedCount: z.number().int().nonnegative() }),
+  },
+}

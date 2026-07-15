@@ -3,12 +3,14 @@
  * Do not edit manually.
  * HouseApp API
  * API for HouseApp
- * OpenAPI spec version: 2.0.0
+ * OpenAPI spec version: 2.2.1
  */
 import type { ListSplitTransactionIds200FullyDelegatedItem } from "./listSplitTransactionIds200FullyDelegatedItem";
 import type { ListSplitTransactionIds200PartiallyDividedItem } from "./listSplitTransactionIds200PartiallyDividedItem";
 import type { ListSplitTransactionIds200SplitPaidTotalsItem } from "./listSplitTransactionIds200SplitPaidTotalsItem";
 import type { ListSplitTransactionIds200SplitRemainingTotalsItem } from "./listSplitTransactionIds200SplitRemainingTotalsItem";
+import type { ListSplitTransactionIds200ReceivableRemainingTotalsItem } from "./listSplitTransactionIds200ReceivableRemainingTotalsItem";
+import type { ListSplitTransactionIds200ViewerShareTotalsItem } from "./listSplitTransactionIds200ViewerShareTotalsItem";
 
 export type ListSplitTransactionIds200 = {
   transactionIds: string[];
@@ -16,4 +18,6 @@ export type ListSplitTransactionIds200 = {
   partiallyDivided: ListSplitTransactionIds200PartiallyDividedItem[];
   splitPaidTotals: ListSplitTransactionIds200SplitPaidTotalsItem[];
   splitRemainingTotals: ListSplitTransactionIds200SplitRemainingTotalsItem[];
+  receivableRemainingTotals: ListSplitTransactionIds200ReceivableRemainingTotalsItem[];
+  viewerShareTotals: ListSplitTransactionIds200ViewerShareTotalsItem[];
 };

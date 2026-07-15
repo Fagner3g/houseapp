@@ -130,7 +130,8 @@ export const byCardReportSchema = {
 
 export const trendsReportSchema = {
   tags: ['Reports'],
-  description: 'Monthly income and expense trends',
+  description:
+    'Monthly income and personal expense (meu gasto) trends for the authenticated user',
   operationId: 'getReportTrends',
   params: slugParams,
   querystring: z.object({

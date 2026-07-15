@@ -16,6 +16,7 @@ import type { RecurringRepository } from '@/modules/recurring/recurring.reposito
 import type { RecurringFrequency } from '@/db/schemas/recurringTransactions'
 
 import type { ReportRepository } from './report.repository'
+import type { TransactionViewer } from '@/modules/transactions/transaction-visibility'
 
 export type InsightsReportDto = {
   insights: DashboardInsight[]
@@ -70,7 +71,8 @@ export class DashboardInsightsService {
     organizationId: string,
     userId: string,
     dateFrom?: string,
-    dateTo?: string
+    dateTo?: string,
+    viewer?: TransactionViewer
   ): Promise<DashboardInsightsContext> {
     const range = {
       from: dateFrom ? dayjs(dateFrom).toDate() : dayjs().startOf('month').toDate(),
@@ -91,13 +93,29 @@ export class DashboardInsightsService {
       overdueTotal,
       recurring,
     ] = await Promise.all([
-      this.reportRepository.getSummary(organizationId, range, userId),
-      this.reportRepository.getSummary(organizationId, prevRange, userId),
-      this.reportRepository.getByCategory(organizationId, range, 'expense'),
-      this.reportRepository.getByCategory(organizationId, prevRange, 'expense'),
-      this.reportRepository.getTrends(organizationId, 3),
-      this.reportRepository.listTopPending(organizationId, 'expense', 5),
-      this.reportRepository.getOverdueTotal(organizationId),
+      this.reportRepository.getSummary(organizationId, range, userId, viewer),
+      this.reportRepository.getSummary(organizationId, prevRange, userId, viewer),
+      this.reportRepository.getByCategory(
+        organizationId,
+        range,
+        'expense',
+        userId,
+        false,
+        undefined,
+        viewer
+      ),
+      this.reportRepository.getByCategory(
+        organizationId,
+        prevRange,
+        'expense',
+        userId,
+        false,
+        undefined,
+        viewer
+      ),
+      this.reportRepository.getTrends(organizationId, 3, undefined, viewer),
+      this.reportRepository.listTopPending(organizationId, 'expense', 5, viewer),
+      this.reportRepository.getOverdueTotal(organizationId, viewer),
       this.recurringRepository.findAllByOrganization(organizationId),
     ])
 
@@ -169,7 +187,8 @@ export class DashboardInsightsService {
     organizationId: string,
     userId: string,
     dateFrom?: string,
-    dateTo?: string
+    dateTo?: string,
+    viewer?: TransactionViewer
   ): Promise<InsightsReportDto> {
     const monthKey = dayjs(dateFrom ?? undefined).format('YYYY-MM') || dayjs().format('YYYY-MM')
     const dateToKey = dateTo ? dayjs(dateTo).format('YYYY-MM-DD') : 'default'
@@ -180,7 +199,7 @@ export class DashboardInsightsService {
       return cached.data
     }
 
-    const context = await this.buildContext(organizationId, userId, dateFrom, dateTo)
+    const context = await this.buildContext(organizationId, userId, dateFrom, dateTo, viewer)
 
     try {
       const prompt = buildDashboardInsightsPrompt(context)

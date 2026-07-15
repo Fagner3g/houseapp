@@ -55,8 +55,11 @@ export function CreditCardKpiRow({
   const { data: splitData } = useSplitTransactionIds(slug, transactionIds)
   const pendingSplitRemaining = useMemo(
     () =>
-      sumCycleSplitRemaining(transactionIds, splitData?.splitRemainingById ?? new Map()),
-    [transactionIds, splitData?.splitRemainingById]
+      sumCycleSplitRemaining(
+        transactionIds,
+        splitData?.receivableRemainingById ?? new Map()
+      ),
+    [transactionIds, splitData?.receivableRemainingById]
   )
 
   const isInvoiceClosed =

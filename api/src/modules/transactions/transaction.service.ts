@@ -11,7 +11,7 @@ import type {
   NotifyTargetType,
   TransactionNotifyOverdueConfig,
 } from '@/db/schemas/transactions'
-import { badRequest, notFound } from '@/core/errors'
+import { badRequest, forbidden, notFound } from '@/core/errors'
 import { centavosToString, parseCentavos } from '@/core/money'
 import {
   computeTransactionStatus,
@@ -52,6 +52,10 @@ import {
 import { buildPeriodicInstallments } from './periodic-installments.logic'
 import { buildPeriodicInstallmentSeriesRepairPlan } from './periodic-installment-repair.logic'
 import { normalizeScheduledAt } from './schedule-payment'
+import {
+  canMutateTransaction,
+  type TransactionViewer,
+} from './transaction-visibility'
 
 export type CreateTransactionResult = {
   transaction: TransactionDto
@@ -98,6 +102,7 @@ export type TransactionDto = {
   notifyContactPhone: string | null
   notifyDaysBefore: number[] | null
   notifyOverdueConfig: TransactionNotifyOverdueConfig | null
+  createdBy: string | null
   createdAt: string
   updatedAt: string
 }
@@ -134,8 +139,9 @@ export function toTransactionDto(
     notifyUserId: transaction.notifyUserId,
     notifyContactName: transaction.notifyContactName,
     notifyContactPhone: transaction.notifyContactPhone,
-    notifyDaysBefore: transaction.notifyDaysBefore ?? undefined,
-    notifyOverdueConfig: transaction.notifyOverdueConfig ?? undefined,
+    notifyDaysBefore: transaction.notifyDaysBefore ?? null,
+    notifyOverdueConfig: transaction.notifyOverdueConfig ?? null,
+    createdBy: transaction.createdBy ?? null,
     createdAt: transaction.createdAt.toISOString(),
     updatedAt: transaction.updatedAt.toISOString(),
   }
@@ -252,8 +258,12 @@ export class TransactionService {
     }
   }
 
-  async get(organizationId: string, id: string): Promise<TransactionDto> {
-    let transaction = await this.transactionRepository.findById(organizationId, id)
+  async get(
+    organizationId: string,
+    id: string,
+    viewer?: TransactionViewer
+  ): Promise<TransactionDto> {
+    let transaction = await this.transactionRepository.findById(organizationId, id, viewer)
 
     if (!transaction) {
       throw notFound('Transaction not found')
@@ -265,7 +275,7 @@ export class TransactionService {
       transaction.accountId
     ) {
       await this.repairIncompleteInstallments(organizationId, transaction.accountId)
-      transaction = await this.transactionRepository.findById(organizationId, id)
+      transaction = await this.transactionRepository.findById(organizationId, id, viewer)
       if (!transaction) {
         throw notFound('Transaction not found')
       }
@@ -312,7 +322,8 @@ export class TransactionService {
 
   async create(
     organizationId: string,
-    input: CreateTransactionInput
+    input: CreateTransactionInput,
+    createdByUserId: string
   ): Promise<CreateTransactionResult> {
     await this.validateReferences(organizationId, input)
     if (input.accountId) {
@@ -327,7 +338,9 @@ export class TransactionService {
     const installmentRows = await this.buildCreditCardInstallmentRows(organizationId, input)
     if (installmentRows) {
       const createdRows = await this.transactionRepository.createMany(
-        installmentRows.map(row => this.toCreateData(organizationId, row, notifyTarget))
+        installmentRows.map(row =>
+          this.toCreateData(organizationId, row, notifyTarget, createdByUserId)
+        )
       )
 
       const categoryIds = input.categoryIds ?? []
@@ -345,7 +358,9 @@ export class TransactionService {
     const periodicRows = await this.buildPeriodicInstallmentRows(organizationId, input)
     if (periodicRows) {
       const createdRows = await this.transactionRepository.createMany(
-        periodicRows.map(row => this.toCreateData(organizationId, row, notifyTarget))
+        periodicRows.map(row =>
+          this.toCreateData(organizationId, row, notifyTarget, createdByUserId)
+        )
       )
 
       const categoryIds = input.categoryIds ?? []
@@ -361,7 +376,7 @@ export class TransactionService {
     }
 
     const created = await this.transactionRepository.create(
-      this.toCreateData(organizationId, input, notifyTarget)
+      this.toCreateData(organizationId, input, notifyTarget, createdByUserId)
     )
 
     if (input.type === 'income' && input.accountId && input.title) {
@@ -382,7 +397,8 @@ export class TransactionService {
 
   async bulkCreate(
     organizationId: string,
-    inputs: CreateTransactionInput[]
+    inputs: CreateTransactionInput[],
+    createdByUserId: string
   ): Promise<TransactionDto[]> {
     const notifyTargets: Awaited<ReturnType<typeof this.resolveNotifyFields>>[] = []
 
@@ -402,7 +418,7 @@ export class TransactionService {
       inputs.map((input, index) => {
         const notifyTarget = notifyTargets[index]
         if (!notifyTarget) throw badRequest('Missing notify target for transaction')
-        return this.toCreateData(organizationId, input, notifyTarget)
+        return this.toCreateData(organizationId, input, notifyTarget, createdByUserId)
       })
     )
 
@@ -412,13 +428,16 @@ export class TransactionService {
   async update(
     organizationId: string,
     id: string,
-    input: UpdateTransactionInput
+    input: UpdateTransactionInput,
+    viewer?: TransactionViewer
   ): Promise<TransactionDto> {
-    const existing = await this.transactionRepository.findById(organizationId, id)
+    const existing = await this.transactionRepository.findById(organizationId, id, viewer)
 
     if (!existing) {
       throw notFound('Transaction not found')
     }
+
+    this.assertCanMutate(viewer, existing.createdBy)
 
     if (existing.status === 'paid') {
       throw badRequest('Paid transactions cannot be edited. Cancel the payment first.')
@@ -481,23 +500,30 @@ export class TransactionService {
   async pay(
     organizationId: string,
     id: string,
-    input: PayTransactionInput
+    input: PayTransactionInput,
+    viewer?: TransactionViewer
   ): Promise<TransactionDto> {
     const advanceIds = input.advanceTransactionIds ?? []
 
     if (advanceIds.length > 0) {
-      return this.payWithAdvance(organizationId, id, input)
+      return this.payWithAdvance(organizationId, id, input, viewer)
     }
 
-    return this.paySingle(organizationId, id, input)
+    return this.paySingle(organizationId, id, input, viewer)
   }
 
-  async cancelPayment(organizationId: string, id: string): Promise<TransactionDto> {
-    const existing = await this.transactionRepository.findById(organizationId, id)
+  async cancelPayment(
+    organizationId: string,
+    id: string,
+    viewer?: TransactionViewer
+  ): Promise<TransactionDto> {
+    const existing = await this.transactionRepository.findById(organizationId, id, viewer)
 
     if (!existing) {
       throw notFound('Transaction not found')
     }
+
+    this.assertCanMutate(viewer, existing.createdBy)
 
     if (existing.status === 'canceled') {
       throw badRequest('Cannot cancel payment on a canceled transaction')
@@ -524,9 +550,14 @@ export class TransactionService {
 
   async getInstallmentSeries(
     organizationId: string,
-    transactionId: string
+    transactionId: string,
+    viewer?: TransactionViewer
   ): Promise<{ installments: InstallmentSeriesItem[] }> {
-    const anchor = await this.transactionRepository.findById(organizationId, transactionId)
+    const anchor = await this.transactionRepository.findById(
+      organizationId,
+      transactionId,
+      viewer
+    )
 
     if (!anchor) {
       throw notFound('Transaction not found')
@@ -550,13 +581,16 @@ export class TransactionService {
   private async paySingle(
     organizationId: string,
     id: string,
-    input: PayTransactionInput
+    input: PayTransactionInput,
+    viewer?: TransactionViewer
   ): Promise<TransactionDto> {
-    let transaction = await this.transactionRepository.findById(organizationId, id)
+    let transaction = await this.transactionRepository.findById(organizationId, id, viewer)
 
     if (!transaction) {
       throw notFound('Transaction not found')
     }
+
+    this.assertCanMutate(viewer, transaction.createdBy)
 
     if (
       transaction.installmentsTotal != null &&
@@ -565,7 +599,7 @@ export class TransactionService {
     ) {
       await this.repairIncompleteInstallments(organizationId, transaction.accountId)
       transaction =
-        (await this.transactionRepository.findById(organizationId, id)) ?? transaction
+        (await this.transactionRepository.findById(organizationId, id, viewer)) ?? transaction
     }
 
     if (transaction.status === 'canceled') {
@@ -632,13 +666,16 @@ export class TransactionService {
   async schedulePayment(
     organizationId: string,
     id: string,
-    input: { scheduledAt: string }
+    input: { scheduledAt: string },
+    viewer?: TransactionViewer
   ): Promise<TransactionDto> {
-    const existing = await this.transactionRepository.findById(organizationId, id)
+    const existing = await this.transactionRepository.findById(organizationId, id, viewer)
 
     if (!existing) {
       throw notFound('Transaction not found')
     }
+
+    this.assertCanMutate(viewer, existing.createdBy)
 
     if (existing.status === 'paid' || existing.status === 'canceled') {
       throw badRequest('Cannot schedule payment on a paid or canceled transaction')
@@ -655,12 +692,18 @@ export class TransactionService {
     return toTransactionDto(updated, categoryMap.get(updated.id) ?? [])
   }
 
-  async cancelScheduledPayment(organizationId: string, id: string): Promise<TransactionDto> {
-    const existing = await this.transactionRepository.findById(organizationId, id)
+  async cancelScheduledPayment(
+    organizationId: string,
+    id: string,
+    viewer?: TransactionViewer
+  ): Promise<TransactionDto> {
+    const existing = await this.transactionRepository.findById(organizationId, id, viewer)
 
     if (!existing) {
       throw notFound('Transaction not found')
     }
+
+    this.assertCanMutate(viewer, existing.createdBy)
 
     if (!existing.paymentScheduledAt) {
       throw badRequest('Transaction has no scheduled payment')
@@ -679,13 +722,16 @@ export class TransactionService {
   private async payWithAdvance(
     organizationId: string,
     id: string,
-    input: PayTransactionInput
+    input: PayTransactionInput,
+    viewer?: TransactionViewer
   ): Promise<TransactionDto> {
-    const anchor = await this.transactionRepository.findById(organizationId, id)
+    const anchor = await this.transactionRepository.findById(organizationId, id, viewer)
 
     if (!anchor) {
       throw notFound('Transaction not found')
     }
+
+    this.assertCanMutate(viewer, anchor.createdBy)
 
     if (anchor.status === 'canceled') {
       throw badRequest('Cannot pay a canceled transaction')
@@ -809,12 +855,18 @@ export class TransactionService {
     return toTransactionDto(updatedAnchor, categoryMap.get(updatedAnchor.id) ?? [])
   }
 
-  async delete(organizationId: string, id: string): Promise<void> {
-    const transaction = await this.transactionRepository.findById(organizationId, id)
+  async delete(
+    organizationId: string,
+    id: string,
+    viewer?: TransactionViewer
+  ): Promise<void> {
+    const transaction = await this.transactionRepository.findById(organizationId, id, viewer)
 
     if (!transaction) {
       throw notFound('Transaction not found')
     }
+
+    this.assertCanMutate(viewer, transaction.createdBy)
 
     if (isImportedStatementTransaction(transaction)) {
       throw badRequest('Imported statement lines cannot be deleted')
@@ -1071,6 +1123,7 @@ export class TransactionService {
           source: 'manual' as const,
           categoryIds,
           notifyEnabled: false,
+          createdBy: seed.createdBy,
         }))
       )
     }
@@ -1178,6 +1231,7 @@ export class TransactionService {
           source: 'manual' as const,
           categoryIds,
           notifyEnabled: false,
+          createdBy: seed.createdBy,
         }))
       )
     }
@@ -1252,10 +1306,21 @@ export class TransactionService {
     return {}
   }
 
+  private assertCanMutate(
+    viewer: TransactionViewer | undefined,
+    createdBy: string | null | undefined
+  ) {
+    if (!viewer) return
+    if (!canMutateTransaction(viewer, createdBy)) {
+      throw forbidden('You can only modify transactions you created')
+    }
+  }
+
   private toCreateData(
     organizationId: string,
     input: CreateTransactionInput,
-    notifyTarget: ReturnType<typeof resolveNotifyTarget>
+    notifyTarget: ReturnType<typeof resolveNotifyTarget>,
+    createdByUserId: string
   ) {
     return {
       organizationId,
@@ -1278,6 +1343,7 @@ export class TransactionService {
       source: input.source,
       categoryIds: input.categoryIds,
       transferPairId: input.transferPairId ?? null,
+      createdBy: createdByUserId,
       ...notifyTarget,
     }
   }

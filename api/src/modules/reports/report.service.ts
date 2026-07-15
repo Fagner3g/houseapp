@@ -16,6 +16,7 @@ import type {
   UpcomingTransactionRow,
 } from './report.repository'
 import type { MySpendItemRow } from './my-spend'
+import type { TransactionViewer } from '@/modules/transactions/transaction-visibility'
 
 export type UpcomingTransactionDto = {
   id: string
@@ -304,12 +305,13 @@ export class ReportService {
     organizationId: string,
     userId: string,
     dateFrom?: string,
-    dateTo?: string
+    dateTo?: string,
+    viewer?: TransactionViewer
   ): Promise<SummaryReportDto> {
     const range = parseDateRange(dateFrom, dateTo)
     const [summary, upcoming] = await Promise.all([
-      this.reportRepository.getSummary(organizationId, range, userId),
-      this.reportRepository.listUpcoming(organizationId, 7),
+      this.reportRepository.getSummary(organizationId, range, userId, viewer),
+      this.reportRepository.listUpcoming(organizationId, 7, viewer),
     ])
 
     return {
@@ -333,13 +335,15 @@ export class ReportService {
     organizationId: string,
     userId: string,
     dateFrom?: string,
-    dateTo?: string
+    dateTo?: string,
+    viewer?: TransactionViewer
   ): Promise<MySpendBreakdownDto> {
     const range = parseDateRange(dateFrom, dateTo)
     const breakdown = await this.reportRepository.getMySpendBreakdown(
       organizationId,
       range,
-      userId
+      userId,
+      viewer
     )
     return {
       items: breakdown.items.map(toMySpendItemDto),
@@ -352,10 +356,11 @@ export class ReportService {
   async getByAccount(
     organizationId: string,
     dateFrom?: string,
-    dateTo?: string
+    dateTo?: string,
+    viewer?: TransactionViewer
   ): Promise<AccountReportDto[]> {
     const range = parseDateRange(dateFrom, dateTo)
-    const rows = await this.reportRepository.getByAccount(organizationId, range)
+    const rows = await this.reportRepository.getByAccount(organizationId, range, viewer)
     return rows.map(toAccountDto)
   }
 
@@ -366,7 +371,8 @@ export class ReportService {
     dateTo?: string,
     personal = false,
     userId?: string,
-    scopeOptions?: ReportScopeOptions
+    scopeOptions?: ReportScopeOptions,
+    viewer?: TransactionViewer
   ): Promise<CategoryReportDto[]> {
     const range = parseDateRange(dateFrom, dateTo)
     const rows = await this.reportRepository.getByCategory(
@@ -375,7 +381,8 @@ export class ReportService {
       type,
       userId,
       personal,
-      scopeOptions
+      scopeOptions,
+      viewer
     )
     return toCategoryDtos(rows)
   }
@@ -383,25 +390,51 @@ export class ReportService {
   async getByCard(
     organizationId: string,
     dateFrom?: string,
-    dateTo?: string
+    dateTo?: string,
+    viewer?: TransactionViewer
   ): Promise<ByCardReportDto> {
     const range = parseDateRange(dateFrom, dateTo)
-    const result = await this.reportRepository.getByCard(organizationId, range)
+    const result = await this.reportRepository.getByCard(organizationId, range, viewer)
     return toCardTransactionDtos(result)
   }
 
-  async getTrends(organizationId: string, months = 6, endMonth?: string): Promise<TrendsReportDto> {
-    const rows = await this.reportRepository.getTrends(organizationId, months, endMonth)
-    return { months: toTrendDtos(rows) }
+  async getTrends(
+    organizationId: string,
+    months = 6,
+    endMonth?: string,
+    userId?: string,
+    viewer?: TransactionViewer
+  ): Promise<TrendsReportDto> {
+    const rows = await this.reportRepository.getTrends(organizationId, months, endMonth, viewer)
+    if (!userId) {
+      return { months: toTrendDtos(rows) }
+    }
+
+    const withMyExpense = await Promise.all(
+      rows.map(async row => {
+        const from = dayjs(`${row.month}-01`).startOf('month').toDate()
+        const to = dayjs(`${row.month}-01`).endOf('month').toDate()
+        const mySpend = await this.reportRepository.getMySpendBreakdown(
+          organizationId,
+          { from, to },
+          userId,
+          viewer
+        )
+        return { ...row, expense: mySpend.myTotal }
+      })
+    )
+
+    return { months: toTrendDtos(withMyExpense) }
   }
 
   async getDaily(
     organizationId: string,
     dateFrom?: string,
-    dateTo?: string
+    dateTo?: string,
+    viewer?: TransactionViewer
   ): Promise<DailyFlowReportDto> {
     const range = parseDateRange(dateFrom, dateTo)
-    const rows = await this.reportRepository.getDaily(organizationId, range)
+    const rows = await this.reportRepository.getDaily(organizationId, range, viewer)
     return { days: toDailyDtos(rows) }
   }
 
@@ -412,7 +445,8 @@ export class ReportService {
     dateTo?: string,
     limit = 15,
     personal = false,
-    scopeOptions?: ReportScopeOptions
+    scopeOptions?: ReportScopeOptions,
+    viewer?: TransactionViewer
   ): Promise<TopMerchantsReportDto> {
     const range = parseDateRange(dateFrom, dateTo)
     const result = await this.reportRepository.getTopMerchants(
@@ -421,7 +455,8 @@ export class ReportService {
       userId,
       limit,
       scopeOptions,
-      personal
+      personal,
+      viewer
     )
     return toTopMerchantsDto(result)
   }
@@ -431,14 +466,15 @@ export class ReportService {
     userId: string,
     personName?: string,
     dateFrom?: string,
-    dateTo?: string
+    dateTo?: string,
+    viewer?: TransactionViewer
   ): Promise<MonthlySummaryData> {
     const range = parseDateRange(dateFrom, dateTo)
     const [summary, topExpenses, topReceivables, overdueTotal] = await Promise.all([
-      this.reportRepository.getSummary(organizationId, range, userId),
-      this.reportRepository.listTopPending(organizationId, 'expense', 5),
-      this.reportRepository.listTopPending(organizationId, 'income', 5),
-      this.reportRepository.getOverdueTotal(organizationId),
+      this.reportRepository.getSummary(organizationId, range, userId, viewer),
+      this.reportRepository.listTopPending(organizationId, 'expense', 5, viewer),
+      this.reportRepository.listTopPending(organizationId, 'income', 5, viewer),
+      this.reportRepository.getOverdueTotal(organizationId, viewer),
     ])
 
     const parseAmount = (value: string | null | undefined) =>

@@ -3,7 +3,7 @@
  * Do not edit manually.
  * HouseApp API
  * API for HouseApp
- * OpenAPI spec version: 2.0.0
+ * OpenAPI spec version: 2.2.1
  */
 import type { UpdateCategory200CategoryType } from "./updateCategory200CategoryType";
 import type { UpdateCategory200CategoryColor } from "./updateCategory200CategoryColor";

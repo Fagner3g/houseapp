@@ -44,6 +44,8 @@ export function MonthlyTrendChart({ data, selectedMonthKey, onMonthSelect }: Mon
               const entry = data.find(d => d.month === payload.value)
               const isSelected = entry?.monthKey === selectedMonthKey
               return (
+                // SVG tick labels: role="button" is not recognized for <text> by a11y lint.
+                // biome-ignore lint/a11y/noStaticElementInteractions: chart month tick click target
                 <text
                   x={x}
                   y={y}
@@ -79,7 +81,7 @@ export function MonthlyTrendChart({ data, selectedMonthKey, onMonthSelect }: Mon
                       <div className="flex items-center gap-2">
                         <div className="h-2 w-2 rounded-full bg-rose-400" />
                         <span className="text-sm">
-                          Despesas: {formatCurrency(payload[1]?.value as number)}
+                          Meu gasto: {formatCurrency(payload[1]?.value as number)}
                         </span>
                       </div>
                     </div>

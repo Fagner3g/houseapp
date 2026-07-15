@@ -3,10 +3,13 @@
  * Do not edit manually.
  * HouseApp API
  * API for HouseApp
- * OpenAPI spec version: 2.0.0
+ * OpenAPI spec version: 2.2.1
  */
+import type { ListSplitTransactionIds200FullyDelegatedItemDebtorUserId } from "./listSplitTransactionIds200FullyDelegatedItemDebtorUserId";
 
 export type ListSplitTransactionIds200FullyDelegatedItem = {
   transactionId: string;
   delegateName: string;
+  debtorUserId: ListSplitTransactionIds200FullyDelegatedItemDebtorUserId;
+  creditorName: string;
 };

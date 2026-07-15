@@ -47,11 +47,13 @@ function groupNotifications(entries: NotificationWithPhone[]): NotificationWithP
   for (const entry of entries) {
     const metadata = entry.notification.metadata as Record<string, unknown>
     const kind = typeof metadata.kind === 'string' ? metadata.kind : null
+    const requestId = typeof metadata.requestId === 'string' ? metadata.requestId : null
     const groupKey = buildWhatsAppBatchGroupKey(
       entry.phone,
       entry.notification.userId,
       entry.notification.organizationId,
-      kind
+      kind,
+      requestId
     )
 
     const existing = groups.get(groupKey) ?? []

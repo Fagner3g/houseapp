@@ -1,4 +1,5 @@
 import { and, desc, eq, inArray, sql, sum } from 'drizzle-orm'
+import { alias } from 'drizzle-orm/pg-core'
 
 import { db } from '@/db'
 import { splitPayments, type SplitPaymentMethod } from '@/db/schemas/splitPayments'
@@ -8,6 +9,7 @@ import {
 } from '@/db/schemas/transactionSplits'
 import { accounts } from '@/db/schemas/accounts'
 import { cards } from '@/db/schemas/cards'
+import { organizations } from '@/db/schemas/organizations'
 import { transactions } from '@/db/schemas/transactions'
 import type { TransactionType } from '@/db/schemas/transactions'
 import { users } from '@/db/schemas/users'
@@ -15,6 +17,11 @@ import type { TransactionRecord } from '@/modules/transactions/transaction.repos
 import {
   userIsSplitCreditorCondition,
 } from '@/modules/splits/split-expense-attribution'
+
+const debtorUsers = alias(users, 'debtor_users')
+const cardUsers = alias(users, 'card_users')
+const creatorUsers = alias(users, 'creator_users')
+const orgOwnerUsers = alias(users, 'org_owner_users')
 
 export type SplitRecord = typeof transactionSplits.$inferSelect
 export type SplitPaymentRecord = typeof splitPayments.$inferSelect
@@ -70,7 +77,11 @@ export interface SplitRepository {
     split: SplitRecord
   }>
   deletePayment(splitId: string, paymentId: string): Promise<SplitRecord | null>
-  listPendingByOrganization(organizationId: string, userId: string): Promise<PendingSplitRow[]>
+  listPendingByOrganization(
+    organizationId: string,
+    userId: string,
+    ownerId?: string | null
+  ): Promise<PendingSplitRow[]>
   listActivePendingSplits(organizationId: string): Promise<PendingSplitNotifyRow[]>
   listNotifyEnabledPending(organizationId: string): Promise<PendingSplitNotifyRow[]>
   listTransactionIdsWithSplits(
@@ -80,7 +91,14 @@ export interface SplitRepository {
   listFullyDelegatedTransactions(
     organizationId: string,
     transactionIds: string[]
-  ): Promise<Array<{ transactionId: string; delegateName: string }>>
+  ): Promise<
+    Array<{
+      transactionId: string
+      delegateName: string
+      debtorUserId: string | null
+      creditorName: string
+    }>
+  >
   listPartiallyDividedTransactions(
     organizationId: string,
     transactionIds: string[]
@@ -90,6 +108,8 @@ export interface SplitRepository {
       splitWithName: string
       splitAmount: bigint
       transactionAmount: bigint
+      debtorUserId: string | null
+      creditorName: string
     }>
   >
   listSplitPaidTotals(
@@ -100,6 +120,17 @@ export interface SplitRepository {
     organizationId: string,
     transactionIds: string[]
   ): Promise<Array<{ transactionId: string; remainingTotal: bigint }>>
+  listReceivableRemainingTotals(
+    organizationId: string,
+    transactionIds: string[],
+    userId: string,
+    ownerId?: string | null
+  ): Promise<Array<{ transactionId: string; remainingTotal: bigint }>>
+  listViewerShareTotals(
+    organizationId: string,
+    transactionIds: string[],
+    userId: string
+  ): Promise<Array<{ transactionId: string; amount: bigint; remainingTotal: bigint }>>
   findSplitsWithTransactions(
     transactionIds: string[]
   ): Promise<
@@ -325,7 +356,8 @@ export class DrizzleSplitRepository implements SplitRepository {
 
   async listPendingByOrganization(
     organizationId: string,
-    userId: string
+    userId: string,
+    ownerId?: string | null
   ): Promise<PendingSplitRow[]> {
     const rows = await db
       .select({
@@ -337,13 +369,14 @@ export class DrizzleSplitRepository implements SplitRepository {
       })
       .from(transactionSplits)
       .innerJoin(transactions, eq(transactionSplits.transactionId, transactions.id))
+      .leftJoin(accounts, eq(transactions.accountId, accounts.id))
       .leftJoin(cards, eq(transactions.cardId, cards.id))
       .leftJoin(users, eq(transactionSplits.userId, users.id))
       .where(
         and(
           eq(transactions.organizationId, organizationId),
           inArray(transactionSplits.status, ['pending', 'partial']),
-          userIsSplitCreditorCondition(userId)
+          userIsSplitCreditorCondition(userId, ownerId)
         )
       )
       .orderBy(transactions.date)
@@ -435,19 +468,35 @@ export class DrizzleSplitRepository implements SplitRepository {
   async listFullyDelegatedTransactions(
     organizationId: string,
     transactionIds: string[]
-  ): Promise<Array<{ transactionId: string; delegateName: string }>> {
+  ): Promise<
+    Array<{
+      transactionId: string
+      delegateName: string
+      debtorUserId: string | null
+      creditorName: string
+    }>
+  > {
     if (transactionIds.length === 0) return []
 
     const rows = await db
       .select({
         transactionId: transactions.id,
         delegateName: sql<string>`(
-          array_agg(COALESCE(${users.name}, ${transactionSplits.contactName}) ORDER BY ${transactionSplits.amount} DESC)
+          array_agg(COALESCE(${debtorUsers.name}, ${transactionSplits.contactName}) ORDER BY ${transactionSplits.amount} DESC)
         )[1]`,
+        debtorUserId: sql<string | null>`(
+          array_agg(${transactionSplits.userId} ORDER BY ${transactionSplits.amount} DESC)
+        )[1]`,
+        creditorName: sql<string>`COALESCE(MAX(${cardUsers.name}), MAX(${creatorUsers.name}), MAX(${orgOwnerUsers.name}), '')`,
       })
       .from(transactions)
       .innerJoin(transactionSplits, eq(transactionSplits.transactionId, transactions.id))
-      .leftJoin(users, eq(transactionSplits.userId, users.id))
+      .leftJoin(debtorUsers, eq(transactionSplits.userId, debtorUsers.id))
+      .leftJoin(cards, eq(transactions.cardId, cards.id))
+      .leftJoin(cardUsers, eq(cards.userId, cardUsers.id))
+      .leftJoin(creatorUsers, eq(transactions.createdBy, creatorUsers.id))
+      .leftJoin(organizations, eq(transactions.organizationId, organizations.id))
+      .leftJoin(orgOwnerUsers, eq(organizations.ownerId, orgOwnerUsers.id))
       .where(
         and(
           eq(transactions.organizationId, organizationId),
@@ -462,6 +511,8 @@ export class DrizzleSplitRepository implements SplitRepository {
       .map(row => ({
         transactionId: row.transactionId,
         delegateName: row.delegateName,
+        debtorUserId: row.debtorUserId,
+        creditorName: row.creditorName,
       }))
   }
 
@@ -474,6 +525,8 @@ export class DrizzleSplitRepository implements SplitRepository {
       splitWithName: string
       splitAmount: bigint
       transactionAmount: bigint
+      debtorUserId: string | null
+      creditorName: string
     }>
   > {
     if (transactionIds.length === 0) return []
@@ -484,12 +537,21 @@ export class DrizzleSplitRepository implements SplitRepository {
         transactionAmount: transactions.amount,
         splitAmount: sql<bigint>`SUM(${transactionSplits.amount})`,
         splitWithName: sql<string>`(
-          array_agg(COALESCE(${users.name}, ${transactionSplits.contactName}) ORDER BY ${transactionSplits.amount} DESC)
+          array_agg(COALESCE(${debtorUsers.name}, ${transactionSplits.contactName}) ORDER BY ${transactionSplits.amount} DESC)
         )[1]`,
+        debtorUserId: sql<string | null>`(
+          array_agg(${transactionSplits.userId} ORDER BY ${transactionSplits.amount} DESC)
+        )[1]`,
+        creditorName: sql<string>`COALESCE(MAX(${cardUsers.name}), MAX(${creatorUsers.name}), MAX(${orgOwnerUsers.name}), '')`,
       })
       .from(transactions)
       .innerJoin(transactionSplits, eq(transactionSplits.transactionId, transactions.id))
-      .leftJoin(users, eq(transactionSplits.userId, users.id))
+      .leftJoin(debtorUsers, eq(transactionSplits.userId, debtorUsers.id))
+      .leftJoin(cards, eq(transactions.cardId, cards.id))
+      .leftJoin(cardUsers, eq(cards.userId, cardUsers.id))
+      .leftJoin(creatorUsers, eq(transactions.createdBy, creatorUsers.id))
+      .leftJoin(organizations, eq(transactions.organizationId, organizations.id))
+      .leftJoin(orgOwnerUsers, eq(organizations.ownerId, orgOwnerUsers.id))
       .where(
         and(
           eq(transactions.organizationId, organizationId),
@@ -508,6 +570,8 @@ export class DrizzleSplitRepository implements SplitRepository {
         splitWithName: row.splitWithName,
         splitAmount: BigInt(row.splitAmount),
         transactionAmount: row.transactionAmount ?? 0n,
+        debtorUserId: row.debtorUserId,
+        creditorName: row.creditorName,
       }))
   }
 
@@ -570,6 +634,86 @@ export class DrizzleSplitRepository implements SplitRepository {
 
     return rows.map(row => ({
       transactionId: row.transactionId,
+      remainingTotal: BigInt(row.remainingTotal),
+    }))
+  }
+
+  async listReceivableRemainingTotals(
+    organizationId: string,
+    transactionIds: string[],
+    userId: string,
+    ownerId?: string | null
+  ): Promise<Array<{ transactionId: string; remainingTotal: bigint }>> {
+    if (transactionIds.length === 0) return []
+
+    const rows = await db
+      .select({
+        transactionId: transactionSplits.transactionId,
+        remainingTotal: sql<bigint>`COALESCE(
+          SUM(
+            GREATEST(
+              ${transactionSplits.amount} - COALESCE(${transactionSplits.paidAmount}, 0),
+              0
+            )
+          ),
+          0
+        )`,
+      })
+      .from(transactionSplits)
+      .innerJoin(transactions, eq(transactionSplits.transactionId, transactions.id))
+      .leftJoin(accounts, eq(transactions.accountId, accounts.id))
+      .leftJoin(cards, eq(transactions.cardId, cards.id))
+      .where(
+        and(
+          eq(transactions.organizationId, organizationId),
+          inArray(transactionSplits.transactionId, transactionIds),
+          inArray(transactionSplits.status, ['pending', 'partial']),
+          userIsSplitCreditorCondition(userId, ownerId)
+        )
+      )
+      .groupBy(transactionSplits.transactionId)
+
+    return rows.map(row => ({
+      transactionId: row.transactionId,
+      remainingTotal: BigInt(row.remainingTotal),
+    }))
+  }
+
+  async listViewerShareTotals(
+    organizationId: string,
+    transactionIds: string[],
+    userId: string
+  ): Promise<Array<{ transactionId: string; amount: bigint; remainingTotal: bigint }>> {
+    if (transactionIds.length === 0) return []
+
+    const rows = await db
+      .select({
+        transactionId: transactionSplits.transactionId,
+        amount: sql<bigint>`COALESCE(SUM(${transactionSplits.amount}), 0)`,
+        remainingTotal: sql<bigint>`COALESCE(
+          SUM(
+            GREATEST(
+              ${transactionSplits.amount} - COALESCE(${transactionSplits.paidAmount}, 0),
+              0
+            )
+          ),
+          0
+        )`,
+      })
+      .from(transactionSplits)
+      .innerJoin(transactions, eq(transactionSplits.transactionId, transactions.id))
+      .where(
+        and(
+          eq(transactions.organizationId, organizationId),
+          inArray(transactionSplits.transactionId, transactionIds),
+          eq(transactionSplits.userId, userId)
+        )
+      )
+      .groupBy(transactionSplits.transactionId)
+
+    return rows.map(row => ({
+      transactionId: row.transactionId,
+      amount: BigInt(row.amount),
       remainingTotal: BigInt(row.remainingTotal),
     }))
   }

@@ -3,7 +3,7 @@
  * Do not edit manually.
  * HouseApp API
  * API for HouseApp
- * OpenAPI spec version: 2.0.0
+ * OpenAPI spec version: 2.2.1
  */
 import type { GetSplitDebtSummary200PersonsItemUserId } from "./getSplitDebtSummary200PersonsItemUserId";
 import type { GetSplitDebtSummary200PersonsItemContactName } from "./getSplitDebtSummary200PersonsItemContactName";
@@ -22,4 +22,5 @@ export type GetSplitDebtSummary200PersonsItem = {
   totalRemaining: string;
   status: GetSplitDebtSummary200PersonsItemStatus;
   installments: GetSplitDebtSummary200PersonsItemInstallmentsItem[];
+  isViewer: boolean;
 };

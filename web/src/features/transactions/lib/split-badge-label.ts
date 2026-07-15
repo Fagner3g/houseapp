@@ -1,9 +1,12 @@
 import { formatMoneyString, moneyStringToReais, reaisToCents } from '@/lib/currency'
 
+export type SplitBadgePerspective = 'creditor' | 'debtor'
+
 export type PartialSplitBadgeInfo = {
   splitWithName: string
   splitAmount: string
   transactionAmount: string
+  creditorName?: string
 }
 
 export type SplitBadgeSettlement = 'pending' | 'received'
@@ -23,10 +26,26 @@ export function resolveSplitBadgeSettlement(
   return remaining > 0 ? 'pending' : 'received'
 }
 
+export function resolveSplitBadgePerspective(
+  debtorUserId: string | null | undefined,
+  currentUserId: string | null | undefined
+): SplitBadgePerspective {
+  if (currentUserId && debtorUserId && currentUserId === debtorUserId) return 'debtor'
+  return 'creditor'
+}
+
 export function formatDelegatedSplitBadge(
   name: string,
-  settlement?: SplitBadgeSettlement
+  settlement?: SplitBadgeSettlement,
+  perspective: SplitBadgePerspective = 'creditor',
+  creditorName?: string
 ): string {
+  if (perspective === 'debtor') {
+    const other = creditorName?.trim()
+    if (settlement === 'received') return other ? `Pago · ${other}` : 'Pago'
+    if (settlement === 'pending') return other ? `A pagar · ${other}` : 'A pagar'
+    return other ? `Dividida · ${other}` : 'Dividida'
+  }
   if (settlement === 'received') return `Recebido · ${name}`
   if (settlement === 'pending') return `A receber · ${name}`
   return `Delegada · ${name}`
@@ -34,9 +53,21 @@ export function formatDelegatedSplitBadge(
 
 export function formatPartialSplitBadge(
   info: PartialSplitBadgeInfo,
-  settlement?: SplitBadgeSettlement
+  settlement?: SplitBadgeSettlement,
+  perspective: SplitBadgePerspective = 'creditor'
 ): string {
-  const { splitWithName, splitAmount, transactionAmount } = info
+  const { splitWithName, splitAmount, transactionAmount, creditorName } = info
+  if (perspective === 'debtor') {
+    const other = creditorName?.trim()
+    if (settlement === 'received') return other ? `Pago · ${other}` : 'Pago'
+    if (settlement === 'pending') return other ? `A pagar · ${other}` : 'A pagar'
+    if (isHalfSplit(splitAmount, transactionAmount)) {
+      return other ? `50/50 · ${other}` : '50/50'
+    }
+    return other
+      ? `Valor · ${formatMoneyString(splitAmount)} · ${other}`
+      : `Valor · ${formatMoneyString(splitAmount)}`
+  }
   if (settlement === 'received') return `Recebido · ${splitWithName}`
   if (settlement === 'pending') return `A receber · ${splitWithName}`
   if (isHalfSplit(splitAmount, transactionAmount)) {

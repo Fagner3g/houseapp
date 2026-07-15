@@ -6,10 +6,8 @@ import {
   useGetReportByAccount,
   useGetReportByCategory,
   useGetReportDaily,
-  useGetReportInsights,
   useGetReportSummary,
   useGetReportTrends,
-  useListPendingSplits,
   useListRecurringTransactions,
 } from '@/api/generated/api'
 import { LoadingErrorState } from '@/components/loading-error-state'
@@ -19,11 +17,9 @@ import { pageInset, pageShell, pageSubtitle } from '@/lib/ui-classes'
 import { useActiveOrganization } from '@/hooks/use-active-organization'
 
 import { AccountBalancesCard } from './components/account-balances-card'
-import { AttentionPanel } from './components/attention-panel'
 import { CategoryChartCard } from './components/category-chart-card'
 import { DailyFlowCard } from './components/daily-flow-card'
 import { DashboardKpiRow } from './components/dashboard-kpi-row'
-import { InsightsCard } from './components/insights-card'
 import { MonthPicker } from './components/month-picker'
 import { OpenInvoicesCard } from './components/open-invoices-card'
 import { RecurringCostCard } from './components/recurring-cost-card'
@@ -59,15 +55,11 @@ export function HomePage() {
   })
   const byCategory = useGetReportByCategory(
     slug,
-    { ...range, type: 'expense' },
+    { ...range, type: 'expense', personal: true },
     { query: { enabled: !!slug, retry: 1 } }
   )
   const byAccount = useGetReportByAccount(slug, range, { query: { enabled: !!slug } })
-  const pendingSplits = useListPendingSplits(slug, { query: { enabled: !!slug } })
   const recurring = useListRecurringTransactions(slug, { query: { enabled: !!slug } })
-  const insights = useGetReportInsights(slug, range, {
-    query: { enabled: !!slug, staleTime: 60 * 60 * 1000 },
-  })
   const cashFlow = usePeriodCashFlowKpis(monthKey)
 
   const isSummaryLoading = summary.isLoading && !summary.data
@@ -80,9 +72,7 @@ export function HomePage() {
     daily.refetch()
     byCategory.refetch()
     byAccount.refetch()
-    pendingSplits.refetch()
     recurring.refetch()
-    insights.refetch()
   }
 
   if (summaryError) {
@@ -143,29 +133,6 @@ export function HomePage() {
             isLoading={daily.isLoading}
             error={daily.error}
           />
-
-          <div className="grid gap-4 xl:grid-cols-2">
-            {summary.data ? (
-              <AttentionPanel
-                summary={summary.data}
-                splits={pendingSplits.data?.splits ?? []}
-              />
-            ) : (
-              <div className="finance-card rounded-xl border bg-white p-5 shadow-sm">
-                <div className="h-5 w-40 animate-pulse rounded bg-slate-200" />
-                <div className="mt-4 space-y-3">
-                  <div className="h-16 animate-pulse rounded-lg bg-slate-100" />
-                  <div className="h-16 animate-pulse rounded-lg bg-slate-100" />
-                </div>
-              </div>
-            )}
-            <InsightsCard
-              insights={insights.data?.insights}
-              source={insights.data?.source}
-              isLoading={insights.isLoading}
-              error={insights.error}
-            />
-          </div>
 
           <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-4">
             <RecurringIncomeCard

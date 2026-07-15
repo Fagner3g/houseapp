@@ -10,6 +10,8 @@ import {
   type CardStatus,
   type CardType,
 } from '@/db/schemas/cards'
+import { cardVisibilityCondition } from '@/modules/transactions/account-visibility'
+import type { TransactionViewer } from '@/modules/transactions/transaction-visibility'
 
 export type CardRecord = typeof cards.$inferSelect
 
@@ -35,14 +37,14 @@ export type CardAccountRef = {
 }
 
 export interface CardRepository {
-  findByAccountId(accountId: string): Promise<CardRecord[]>
+  findByAccountId(accountId: string, viewer?: TransactionViewer): Promise<CardRecord[]>
   findPrimaryByAccountIds(accountIds: string[]): Promise<Map<string, CardRecord>>
   countActiveByAccountIds(accountIds: string[]): Promise<Map<string, number>>
   findActiveAccountByLastFourDigits(
     organizationId: string,
     lastFourDigits: string
   ): Promise<CardAccountRef | null>
-  findById(accountId: string, id: string): Promise<CardRecord | null>
+  findById(accountId: string, id: string, viewer?: TransactionViewer): Promise<CardRecord | null>
   create(data: CreateCardData): Promise<CardRecord>
   update(id: string, data: UpdateCardData): Promise<CardRecord | null>
   setStatus(
@@ -58,11 +60,20 @@ export interface CardRepository {
 }
 
 export class DrizzleCardRepository implements CardRepository {
-  async findByAccountId(accountId: string): Promise<CardRecord[]> {
+  async findByAccountId(
+    accountId: string,
+    viewer?: TransactionViewer
+  ): Promise<CardRecord[]> {
     return db
       .select()
       .from(cards)
-      .where(and(eq(cards.accountId, accountId), ne(cards.status, 'canceled')))
+      .where(
+        and(
+          eq(cards.accountId, accountId),
+          ne(cards.status, 'canceled'),
+          cardVisibilityCondition(viewer)
+        )
+      )
       .orderBy(cards.createdAt)
   }
 
@@ -131,11 +142,21 @@ export class DrizzleCardRepository implements CardRepository {
     return new Map(rows.map(row => [row.accountId, Number(row.total)]))
   }
 
-  async findById(accountId: string, id: string): Promise<CardRecord | null> {
+  async findById(
+    accountId: string,
+    id: string,
+    viewer?: TransactionViewer
+  ): Promise<CardRecord | null> {
     const [card] = await db
       .select()
       .from(cards)
-      .where(and(eq(cards.id, id), eq(cards.accountId, accountId)))
+      .where(
+        and(
+          eq(cards.id, id),
+          eq(cards.accountId, accountId),
+          cardVisibilityCondition(viewer)
+        )
+      )
       .limit(1)
 
     return card ?? null

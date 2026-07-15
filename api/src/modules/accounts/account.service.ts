@@ -7,6 +7,8 @@ import { badRequest, conflict, notFound } from '@/core/errors'
 import { centavosToString, parseCentavos } from '@/core/money'
 import type { CardRecord } from '@/modules/cards/card.repository'
 import type { CardService } from '@/modules/cards/card.service'
+import type { TransactionViewer } from '@/modules/transactions/transaction-visibility'
+import { canManageAccount } from '@/modules/transactions/can-manage-account'
 
 import type { AccountRecord, AccountRepository } from './account.repository'
 import type { SuggestedCreditCardAccount } from '@/modules/statements/nubank-ofx-parser'
@@ -33,6 +35,8 @@ export type AccountDto = {
   ofxAccountId: string | null
   createdAt: string
   updatedAt: string
+  /** Permanent ownership — settings and destructive actions. */
+  canManage: boolean
   cards?: Array<{
     id: string
     label: string
@@ -47,7 +51,8 @@ export type AccountDto = {
 function toAccountDto(
   account: AccountRecord,
   cardRows?: CardRecord[],
-  cardCount?: number
+  cardCount?: number,
+  canManage = true
 ): AccountDto {
   return {
     id: account.id,
@@ -70,6 +75,7 @@ function toAccountDto(
     ofxAccountId: account.ofxAccountId,
     createdAt: account.createdAt.toISOString(),
     updatedAt: account.updatedAt.toISOString(),
+    canManage,
     ...(cardRows
       ? {
           cards: cardRows.map(card => ({
@@ -84,6 +90,24 @@ function toAccountDto(
       : {}),
     ...(cardCount != null ? { cardCount } : {}),
   }
+}
+
+function toAccountDtoForViewer(
+  account: AccountRecord,
+  viewer: TransactionViewer | undefined,
+  cardRows?: CardRecord[],
+  cardCount?: number
+): AccountDto {
+  return toAccountDto(
+    account,
+    cardRows,
+    cardCount,
+    canManageAccount(
+      viewer,
+      account,
+      cardRows?.map(card => card.userId) ?? []
+    )
+  )
 }
 
 export type CreateAccountInput = {
@@ -106,6 +130,7 @@ export type CreateAccountInput = {
   holderName?: string | null
   ofxAccountId?: string | null
   lastFourDigits?: string | null
+  createdBy?: string | null
 }
 
 export type UpdateAccountInput = Partial<
@@ -118,31 +143,66 @@ export class AccountService {
     private readonly cardService: CardService
   ) {}
 
-  async list(organizationId: string): Promise<AccountDto[]> {
-    const rows = await this.accountRepository.findAllByOrganization(organizationId)
+  async list(
+    organizationId: string,
+    viewer?: TransactionViewer,
+    options?: { ownedOnly?: boolean }
+  ): Promise<AccountDto[]> {
+    const rows = await this.accountRepository.findAllByOrganization(
+      organizationId,
+      viewer,
+      options
+    )
     const creditCardIds = rows.filter(row => row.type === 'credit_card').map(row => row.id)
+
+    if (creditCardIds.length === 0) {
+      return rows.map(row => toAccountDtoForViewer(row, viewer))
+    }
+
+    if (viewer && !viewer.isOwner) {
+      const memberCards = await Promise.all(
+        creditCardIds.map(async accountId => {
+          const cards = await this.cardService.listByAccount(accountId, viewer)
+          return [accountId, cards] as const
+        })
+      )
+      const cardsByAccount = new Map(memberCards)
+
+      return rows.map(row => {
+        if (row.type !== 'credit_card') return toAccountDtoForViewer(row, viewer)
+        const memberCardsForAccount = cardsByAccount.get(row.id) ?? []
+        return toAccountDtoForViewer(
+          row,
+          viewer,
+          memberCardsForAccount,
+          memberCardsForAccount.length
+        )
+      })
+    }
+
     const [cardCounts, primaryCards] = await Promise.all([
-      creditCardIds.length > 0
-        ? this.cardService.countActiveByAccountIds(creditCardIds)
-        : Promise.resolve(new Map<string, number>()),
-      creditCardIds.length > 0
-        ? this.cardService.findPrimaryByAccountIds(creditCardIds)
-        : Promise.resolve(new Map()),
+      this.cardService.countActiveByAccountIds(creditCardIds),
+      this.cardService.findPrimaryByAccountIds(creditCardIds),
     ])
 
     return rows.map(row => {
       const primaryCard = row.type === 'credit_card' ? primaryCards.get(row.id) : undefined
 
-      return toAccountDto(
+      return toAccountDtoForViewer(
         row,
+        viewer,
         primaryCard ? [primaryCard] : undefined,
         row.type === 'credit_card' ? cardCounts.get(row.id) ?? 0 : undefined
       )
     })
   }
 
-  async get(organizationId: string, id: string): Promise<AccountDto> {
-    const account = await this.accountRepository.findById(organizationId, id)
+  async get(
+    organizationId: string,
+    id: string,
+    viewer?: TransactionViewer
+  ): Promise<AccountDto> {
+    const account = await this.accountRepository.findById(organizationId, id, viewer)
 
     if (!account || !account.isActive) {
       throw notFound('Account not found')
@@ -150,14 +210,19 @@ export class AccountService {
 
     const cardRows =
       account.type === 'credit_card'
-        ? await this.cardService.listByAccount(account.id)
+        ? await this.cardService.listByAccount(account.id, viewer)
         : undefined
 
-    return toAccountDto(account, cardRows)
+    return toAccountDtoForViewer(account, viewer, cardRows)
   }
 
   async create(input: CreateAccountInput): Promise<AccountDto> {
-    const existing = await this.accountRepository.findByName(input.organizationId, input.name)
+    const createdBy = input.createdBy ?? null
+    const existing = await this.accountRepository.findByName(
+      input.organizationId,
+      input.name,
+      createdBy
+    )
 
     if (existing?.isActive) {
       throw conflict('Já existe uma conta com este nome')
@@ -191,6 +256,7 @@ export class AccountService {
           icon: input.icon ?? null,
           displayOrder: input.displayOrder ?? 0,
           ofxAccountId: input.ofxAccountId ?? null,
+          createdBy,
         })
         .returning()
 
@@ -206,6 +272,7 @@ export class AccountService {
             brand: input.brand ?? null,
             holderName: input.holderName ?? null,
             lastFourDigits: input.lastFourDigits ?? null,
+            userId: createdBy,
           })
           .returning()
 
@@ -222,7 +289,8 @@ export class AccountService {
     organizationId: string,
     ofxAccountId: string,
     suggested: SuggestedCreditCardAccount,
-    orgAccounts: AccountRecord[]
+    orgAccounts: AccountRecord[],
+    createdBy?: string | null
   ): Promise<AccountDto> {
     if (suggested.closingDay == null || suggested.dueDay == null) {
       throw badRequest('Não foi possível inferir fechamento e vencimento do OFX')
@@ -292,6 +360,7 @@ export class AccountService {
       dueDay: suggested.dueDay,
       paymentAccountId: paymentAccount?.id ?? null,
       ofxAccountId,
+      createdBy: createdBy ?? null,
     })
   }
 
@@ -307,7 +376,11 @@ export class AccountService {
     }
 
     if (input.name && input.name !== account.name) {
-      const duplicate = await this.accountRepository.findByName(organizationId, input.name)
+      const duplicate = await this.accountRepository.findByName(
+        organizationId,
+        input.name,
+        account.createdBy
+      )
       if (duplicate && duplicate.id !== id && duplicate.isActive) {
         throw conflict('Já existe uma conta com este nome')
       }

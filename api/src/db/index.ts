@@ -11,6 +11,7 @@ import { notifications } from './schemas/notifications'
 import { organizationMembers } from './schemas/organizationMembers'
 import { organizations } from './schemas/organizations'
 import { recurringTransactions } from './schemas/recurringTransactions'
+import { splitPaymentRequests } from './schemas/splitPaymentRequests'
 import { splitPayments } from './schemas/splitPayments'
 import { statements } from './schemas/statements'
 import { transactionAttachments } from './schemas/transactionAttachments'
@@ -32,6 +33,7 @@ const schema = {
   recurringTransactions,
   transactionSplits,
   splitPayments,
+  splitPaymentRequests,
   transactionCategories,
   statements,
   transactionAttachments,

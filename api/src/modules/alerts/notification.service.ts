@@ -66,4 +66,9 @@ export class NotificationService {
 
     return toNotificationDto(updated)
   }
+
+  async markInformationalRead(userId: string): Promise<{ markedCount: number }> {
+    const markedCount = await this.notificationRepository.markInformationalRead(userId)
+    return { markedCount }
+  }
 }

@@ -4,6 +4,7 @@ import {
   formatDelegatedSplitBadge,
   formatPartialSplitBadge,
   isHalfSplit,
+  resolveSplitBadgePerspective,
   resolveSplitBadgeSettlement,
 } from './split-badge-label'
 
@@ -27,6 +28,14 @@ describe('resolveSplitBadgeSettlement', () => {
   })
 })
 
+describe('resolveSplitBadgePerspective', () => {
+  it('marks current user as debtor when ids match', () => {
+    expect(resolveSplitBadgePerspective('u1', 'u1')).toBe('debtor')
+    expect(resolveSplitBadgePerspective('u1', 'u2')).toBe('creditor')
+    expect(resolveSplitBadgePerspective(null, 'u1')).toBe('creditor')
+  })
+})
+
 describe('formatPartialSplitBadge', () => {
   it('labels half splits as 50/50', () => {
     expect(
@@ -38,35 +47,44 @@ describe('formatPartialSplitBadge', () => {
     ).toBe('50/50 · Ana')
   })
 
-  it('labels custom amounts as Valor', () => {
-    const label = formatPartialSplitBadge({
-      splitWithName: 'Bruno',
-      splitAmount: '75.50',
-      transactionAmount: '200.00',
-    })
-    expect(label.startsWith('Valor ·')).toBe(true)
-    expect(label).toContain('75,50')
-    expect(label).toContain('Bruno')
-  })
-
-  it('uses settlement labels when provided', () => {
+  it('uses creditor language by default', () => {
     const info = {
       splitWithName: 'Ana',
-      splitAmount: '100.00',
+      splitAmount: '50.00',
       transactionAmount: '200.00',
     }
     expect(formatPartialSplitBadge(info, 'pending')).toBe('A receber · Ana')
     expect(formatPartialSplitBadge(info, 'received')).toBe('Recebido · Ana')
   })
+
+  it('uses debtor language for the split debtor', () => {
+    const info = {
+      splitWithName: 'Ana',
+      splitAmount: '100.00',
+      transactionAmount: '200.00',
+      creditorName: 'Fagner',
+    }
+    expect(formatPartialSplitBadge(info, 'pending', 'debtor')).toBe('A pagar · Fagner')
+    expect(formatPartialSplitBadge(info, 'received', 'debtor')).toBe('Pago · Fagner')
+  })
 })
 
 describe('formatDelegatedSplitBadge', () => {
-  it('labels full delegation', () => {
+  it('labels without settlement as Delegada', () => {
     expect(formatDelegatedSplitBadge('Carla')).toBe('Delegada · Carla')
   })
 
-  it('labels settlement states', () => {
+  it('uses settlement labels for creditor', () => {
     expect(formatDelegatedSplitBadge('Carla', 'pending')).toBe('A receber · Carla')
     expect(formatDelegatedSplitBadge('Carla', 'received')).toBe('Recebido · Carla')
+  })
+
+  it('uses settlement labels for debtor', () => {
+    expect(formatDelegatedSplitBadge('Carla', 'pending', 'debtor', 'Fagner')).toBe(
+      'A pagar · Fagner'
+    )
+    expect(formatDelegatedSplitBadge('Carla', 'received', 'debtor', 'Fagner')).toBe(
+      'Pago · Fagner'
+    )
   })
 })

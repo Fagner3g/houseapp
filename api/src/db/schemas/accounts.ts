@@ -4,6 +4,7 @@ import { bigint, boolean, index, integer, pgTable, text, timestamp, unique } fro
 import { sql } from 'drizzle-orm'
 
 import { organizations } from './organizations'
+import { users } from './users'
 
 export type AccountType = 'checking' | 'savings' | 'credit_card' | 'cash' | 'investment'
 export type PixKeyType = 'cpf' | 'cnpj' | 'email' | 'phone' | 'random'
@@ -35,11 +36,19 @@ export const accounts = pgTable(
     displayOrder: integer('display_order').notNull().default(0),
     ofxAccountId: text('ofx_account_id'),
     isActive: boolean('is_active').notNull().default(true),
+    createdBy: text('created_by').references(() => users.id, { onDelete: 'set null' }),
     createdAt: timestamp('created_at', { withTimezone: true }).notNull().defaultNow(),
     updatedAt: timestamp('updated_at', { withTimezone: true }).notNull().defaultNow(),
   },
   table => [
-    unique('accounts_organization_id_name_unique').on(table.organizationId, table.name),
+    unique('accounts_organization_id_created_by_name_unique').on(
+      table.organizationId,
+      table.createdBy,
+      table.name
+    ),
+    index('idx_accounts_created_by')
+      .on(table.createdBy)
+      .where(sql`${table.createdBy} IS NOT NULL`),
     index('idx_accounts_org_ofx_account_id')
       .on(table.organizationId, table.ofxAccountId)
       .where(sql`${table.ofxAccountId} IS NOT NULL`),

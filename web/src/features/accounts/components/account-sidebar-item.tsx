@@ -51,6 +51,8 @@ export function AccountSidebarItem({
         .join(' · ')
     : institutionLabel(account.institution)
 
+  const canManage = account.canManage !== false
+
   return (
     <div
       className={cn(
@@ -64,7 +66,7 @@ export function AccountSidebarItem({
       <button
         type="button"
         onClick={onSelect}
-        className="w-full cursor-pointer p-3 pr-10 text-left"
+        className={cn('w-full cursor-pointer p-3 text-left', canManage && 'pr-10')}
       >
         <div className="mb-2 flex items-start justify-between gap-2">
           <div
@@ -90,33 +92,35 @@ export function AccountSidebarItem({
         {subtitle ? <p className={cn('mt-1 text-xs', text.muted)}>{subtitle}</p> : null}
       </button>
 
-      <DropdownMenu>
-        <DropdownMenuTrigger asChild>
-          <Button
-            type="button"
-            variant="ghost"
-            size="icon"
-            className={cn(
-              'absolute right-1.5 top-1.5 size-7 opacity-0 transition-opacity group-hover:opacity-100 data-[state=open]:opacity-100',
-              text.menu
-            )}
-            aria-label={`Ações de ${account.name}`}
-            onClick={event => event.stopPropagation()}
-          >
-            <MoreVertical className="size-4" />
-          </Button>
-        </DropdownMenuTrigger>
-        <DropdownMenuContent align="end" className="w-40">
-          <DropdownMenuItem onClick={onOpenSettings}>
-            <Settings2 className="size-4" />
-            Configurações
-          </DropdownMenuItem>
-          <DropdownMenuItem variant="destructive" onClick={onDelete}>
-            <Trash2 className="size-4" />
-            Excluir
-          </DropdownMenuItem>
-        </DropdownMenuContent>
-      </DropdownMenu>
+      {canManage ? (
+        <DropdownMenu>
+          <DropdownMenuTrigger asChild>
+            <Button
+              type="button"
+              variant="ghost"
+              size="icon"
+              className={cn(
+                'absolute right-1.5 top-1.5 size-7 opacity-0 transition-opacity group-hover:opacity-100 data-[state=open]:opacity-100',
+                text.menu
+              )}
+              aria-label={`Ações de ${account.name}`}
+              onClick={event => event.stopPropagation()}
+            >
+              <MoreVertical className="size-4" />
+            </Button>
+          </DropdownMenuTrigger>
+          <DropdownMenuContent align="end" className="w-40">
+            <DropdownMenuItem onClick={onOpenSettings}>
+              <Settings2 className="size-4" />
+              Configurações
+            </DropdownMenuItem>
+            <DropdownMenuItem variant="destructive" onClick={onDelete}>
+              <Trash2 className="size-4" />
+              Excluir
+            </DropdownMenuItem>
+          </DropdownMenuContent>
+        </DropdownMenu>
+      ) : null}
     </div>
   )
 }

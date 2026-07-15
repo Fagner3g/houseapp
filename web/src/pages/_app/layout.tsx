@@ -46,11 +46,11 @@ function RouteComponent() {
   return (
     <SidebarProvider defaultOpen>
       <AppSidebar variant="inset" className="hidden md:flex" />
-      <SidebarInset className="app-content-panel m-2 border-0 bg-white md:my-3 md:mr-3 md:ml-0 md:rounded-lg md:peer-data-[state=collapsed]:ml-0">
+      <SidebarInset className="app-content-panel min-w-0 border-0 bg-white md:my-3 md:mr-3 md:ml-0 md:rounded-lg md:peer-data-[state=collapsed]:ml-0">
         <SidebarCollapseTrigger />
-        <div className="flex min-h-0 flex-1 flex-col overflow-hidden rounded-lg">
+        <div className="flex min-h-0 min-w-0 flex-1 flex-col overflow-hidden md:rounded-lg">
           <Header />
-          <div className="flex min-h-0 flex-1 flex-col overflow-auto">
+          <div className="flex min-h-0 min-w-0 flex-1 flex-col overflow-auto">
             {orgAccessBlocked ? (
               <div className="flex items-center justify-center p-12">
                 <div className="flex flex-col items-center gap-3">

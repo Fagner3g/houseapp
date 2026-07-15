@@ -3,7 +3,7 @@
  * Do not edit manually.
  * HouseApp API
  * API for HouseApp
- * OpenAPI spec version: 2.0.0
+ * OpenAPI spec version: 2.2.1
  */
 import type { ListAccounts200AccountsItemType } from "./listAccounts200AccountsItemType";
 import type { ListAccounts200AccountsItemInstitution } from "./listAccounts200AccountsItemInstitution";
@@ -45,4 +45,5 @@ export type ListAccounts200AccountsItem = {
    * @maximum 9007199254740991
    */
   cardCount?: number;
+  canManage: boolean;
 };

@@ -6,6 +6,7 @@ import type {
 } from '@/db/schemas/cards'
 import { badRequest, notFound } from '@/core/errors'
 import type { AccountRepository } from '@/modules/accounts/account.repository'
+import type { TransactionViewer } from '@/modules/transactions/transaction-visibility'
 
 import type { CardRecord, CardRepository } from './card.repository'
 
@@ -70,15 +71,24 @@ export class CardService {
     private readonly accountRepository: AccountRepository
   ) {}
 
-  async list(organizationId: string, accountId: string): Promise<CardDto[]> {
-    await this.ensureCreditCardAccount(organizationId, accountId)
-    const rows = await this.cards.findByAccountId(accountId)
+  async list(
+    organizationId: string,
+    accountId: string,
+    viewer?: TransactionViewer
+  ): Promise<CardDto[]> {
+    await this.ensureCreditCardAccount(organizationId, accountId, viewer)
+    const rows = await this.cards.findByAccountId(accountId, viewer)
     return rows.map(toCardDto)
   }
 
-  async get(organizationId: string, accountId: string, id: string): Promise<CardDto> {
-    await this.ensureCreditCardAccount(organizationId, accountId)
-    const card = await this.cards.findById(accountId, id)
+  async get(
+    organizationId: string,
+    accountId: string,
+    id: string,
+    viewer?: TransactionViewer
+  ): Promise<CardDto> {
+    await this.ensureCreditCardAccount(organizationId, accountId, viewer)
+    const card = await this.cards.findById(accountId, id, viewer)
 
     if (!card) {
       throw notFound('Card not found')
@@ -218,8 +228,11 @@ export class CardService {
     return toCardDto(updated)
   }
 
-  listByAccount(accountId: string): Promise<CardRecord[]> {
-    return this.cards.findByAccountId(accountId)
+  listByAccount(
+    accountId: string,
+    viewer?: TransactionViewer
+  ): Promise<CardRecord[]> {
+    return this.cards.findByAccountId(accountId, viewer)
   }
 
   countActiveByAccountIds(accountIds: string[]): Promise<Map<string, number>> {
@@ -247,9 +260,10 @@ export class CardService {
 
   private async ensureCreditCardAccount(
     organizationId: string,
-    accountId: string
+    accountId: string,
+    viewer?: TransactionViewer
   ): Promise<void> {
-    const account = await this.accountRepository.findById(organizationId, accountId)
+    const account = await this.accountRepository.findById(organizationId, accountId, viewer)
 
     if (!account || !account.isActive) {
       throw notFound('Account not found')

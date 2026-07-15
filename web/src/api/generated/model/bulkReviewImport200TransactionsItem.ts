@@ -3,7 +3,7 @@
  * Do not edit manually.
  * HouseApp API
  * API for HouseApp
- * OpenAPI spec version: 2.0.0
+ * OpenAPI spec version: 2.2.1
  */
 import type { BulkReviewImport200TransactionsItemAccountId } from "./bulkReviewImport200TransactionsItemAccountId";
 import type { BulkReviewImport200TransactionsItemCardId } from "./bulkReviewImport200TransactionsItemCardId";
@@ -22,11 +22,13 @@ import type { BulkReviewImport200TransactionsItemInstallmentNumber } from "./bul
 import type { BulkReviewImport200TransactionsItemInstallmentsTotal } from "./bulkReviewImport200TransactionsItemInstallmentsTotal";
 import type { BulkReviewImport200TransactionsItemSource } from "./bulkReviewImport200TransactionsItemSource";
 import type { BulkReviewImport200TransactionsItemTransferPairId } from "./bulkReviewImport200TransactionsItemTransferPairId";
+import type { BulkReviewImport200TransactionsItemTransferPair } from "./bulkReviewImport200TransactionsItemTransferPair";
 import type { BulkReviewImport200TransactionsItemNotifyTargetType } from "./bulkReviewImport200TransactionsItemNotifyTargetType";
 import type { BulkReviewImport200TransactionsItemNotifyUserId } from "./bulkReviewImport200TransactionsItemNotifyUserId";
 import type { BulkReviewImport200TransactionsItemNotifyContactName } from "./bulkReviewImport200TransactionsItemNotifyContactName";
 import type { BulkReviewImport200TransactionsItemNotifyContactPhone } from "./bulkReviewImport200TransactionsItemNotifyContactPhone";
 import type { BulkReviewImport200TransactionsItemNotifyOverdueConfig } from "./bulkReviewImport200TransactionsItemNotifyOverdueConfig";
+import type { BulkReviewImport200TransactionsItemCreatedBy } from "./bulkReviewImport200TransactionsItemCreatedBy";
 
 export type BulkReviewImport200TransactionsItem = {
   id: string;
@@ -51,6 +53,7 @@ export type BulkReviewImport200TransactionsItem = {
   source: BulkReviewImport200TransactionsItemSource;
   categoryIds: string[];
   transferPairId: BulkReviewImport200TransactionsItemTransferPairId;
+  transferPair?: BulkReviewImport200TransactionsItemTransferPair;
   notifyEnabled: boolean;
   notifyTargetType: (typeof BulkReviewImport200TransactionsItemNotifyTargetType)[keyof typeof BulkReviewImport200TransactionsItemNotifyTargetType];
   notifyUserId: BulkReviewImport200TransactionsItemNotifyUserId;
@@ -58,6 +61,7 @@ export type BulkReviewImport200TransactionsItem = {
   notifyContactPhone: BulkReviewImport200TransactionsItemNotifyContactPhone;
   notifyDaysBefore?: number[];
   notifyOverdueConfig?: BulkReviewImport200TransactionsItemNotifyOverdueConfig;
+  createdBy: BulkReviewImport200TransactionsItemCreatedBy;
   createdAt: string;
   updatedAt: string;
 };
