@@ -102,7 +102,8 @@ export function PayInstallmentScopeDialog({
           <div className="space-y-2.5">
             <AdvanceExtras
               kind={kind}
-              futureInstallments={scope.future}
+              currentInstallmentNumber={currentInstallmentNumber}
+              extraInstallments={scope.extras}
               selectedIds={scope.selectedIds}
               onSelectedIdsChange={scope.selectAdvances}
               open={scope.advanceOpen}

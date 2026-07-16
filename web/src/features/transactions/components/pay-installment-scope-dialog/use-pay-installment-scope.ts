@@ -6,16 +6,14 @@ import {
   buildPaymentAllocationPreview,
 } from '../../lib/payment-allocation-preview'
 import {
-  allReimbursementChoicesAnswered,
-  defaultReimbursementChoices,
-  type SplitReimbursementChoice,
-} from '../../lib/unified-settlement'
-import type { UnsettledSplitItem } from '../../split-debt-summary.utils'
-import {
-  computeAdvancePaymentTotalReais,
+  isSettlementExtraOverdue,
   listFutureUnpaidInstallments,
-} from '../advance-installments-picker'
+  listSettlementExtraInstallments,
+} from '../../lib/settlement-extra-installments'
+import type { UnsettledSplitItem } from '../../split-debt-summary.utils'
+import { computeAdvancePaymentTotalReais } from '../advance-installments-picker'
 import type { PayInstallmentScopeResult } from './types'
+import { useSettlementReimbursements } from './use-settlement-reimbursements'
 
 export function usePayInstallmentScope(params: {
   open: boolean
@@ -32,11 +30,17 @@ export function usePayInstallmentScope(params: {
     unsettledSplits,
   } = params
 
+  const extras = useMemo(
+    () => listSettlementExtraInstallments(installments, currentInstallmentNumber),
+    [installments, currentInstallmentNumber]
+  )
   const future = useMemo(
     () => listFutureUnpaidInstallments(installments, currentInstallmentNumber),
     [installments, currentInstallmentNumber]
   )
-
+  const hasOverdueExtras = extras.some(item =>
+    isSettlementExtraOverdue(item, currentInstallmentNumber)
+  )
   const currentItem = useMemo(
     () => installments.find(item => item.installmentNumber === currentInstallmentNumber),
     [installments, currentInstallmentNumber]
@@ -44,9 +48,8 @@ export function usePayInstallmentScope(params: {
 
   const [paidAmountReais, setPaidAmountReais] = useState(0)
   const [selectedIds, setSelectedIds] = useState<string[]>([])
-  const [reimbursements, setReimbursements] = useState<SplitReimbursementChoice[]>([])
   const [advanceOpen, setAdvanceOpen] = useState(false)
-  const [reimbursementOpen, setReimbursementOpen] = useState(false)
+  const reimbursement = useSettlementReimbursements(open, unsettledSplits)
 
   const allocationParcels = useMemo(() => {
     const current = {
@@ -54,29 +57,22 @@ export function usePayInstallmentScope(params: {
       installmentNumber: currentInstallmentNumber,
       remainingReais: currentRemainingReais,
     }
-    const futures = future.map(item => ({
-      id: item.id,
-      installmentNumber: item.installmentNumber,
-      remainingReais: Number.parseFloat(item.remaining),
-    }))
-    return [current, ...futures]
-  }, [currentItem?.id, currentInstallmentNumber, currentRemainingReais, future])
+    return [
+      current,
+      ...extras.map(item => ({
+        id: item.id,
+        installmentNumber: item.installmentNumber,
+        remainingReais: Number.parseFloat(item.remaining),
+      })),
+    ]
+  }, [currentItem?.id, currentInstallmentNumber, currentRemainingReais, extras])
 
   useEffect(() => {
     if (!open) return
     setPaidAmountReais(Math.max(0, currentRemainingReais))
     setSelectedIds([])
-    setAdvanceOpen(false)
-    setReimbursementOpen(unsettledSplits.length > 0)
-    setReimbursements(
-      defaultReimbursementChoices(
-        unsettledSplits.map(item => ({
-          splitId: item.split.id,
-          remainingReais: item.remainingReais,
-        }))
-      )
-    )
-  }, [open, currentRemainingReais, unsettledSplits])
+    setAdvanceOpen(hasOverdueExtras)
+  }, [open, currentRemainingReais, hasOverdueExtras])
 
   useEffect(() => {
     if (selectedIds.length > 0) setAdvanceOpen(true)
@@ -86,29 +82,26 @@ export function usePayInstallmentScope(params: {
     () => allocationParcels.reduce((sum, p) => sum + Math.max(0, p.remainingReais), 0),
     [allocationParcels]
   )
-
   const preview = useMemo(
     () => buildPaymentAllocationPreview(paidAmountReais, allocationParcels),
     [paidAmountReais, allocationParcels]
   )
 
-  const confirmAmount = paidAmountReais
-  const withSplits = unsettledSplits.length > 0
-  const reimbursementsAnswered =
-    !withSplits ||
-    (reimbursements.length === unsettledSplits.length &&
-      allReimbursementChoicesAnswered(reimbursements))
   const canConfirm =
-    confirmAmount > 0.005 &&
-    confirmAmount <= maxPayable + 0.005 &&
+    paidAmountReais > 0.005 &&
+    paidAmountReais <= maxPayable + 0.005 &&
     preview.length > 0 &&
-    reimbursementsAnswered
+    reimbursement.reimbursementsAnswered
 
   const setPaidAmountFromInput = (value: number) => {
     const next = Math.max(0, value)
     setPaidAmountReais(next)
-    const nextPreview = buildPaymentAllocationPreview(next, allocationParcels)
-    setSelectedIds(advanceIdsCoveredByPreview(nextPreview, currentInstallmentNumber))
+    setSelectedIds(
+      advanceIdsCoveredByPreview(
+        buildPaymentAllocationPreview(next, allocationParcels),
+        currentInstallmentNumber
+      )
+    )
   }
 
   const selectAdvances = (ids: string[]) => {
@@ -120,40 +113,32 @@ export function usePayInstallmentScope(params: {
     )
   }
 
-  const updateReimbursement = (
-    splitId: string,
-    patch: Partial<SplitReimbursementChoice>
-  ) => {
-    setReimbursements(prev =>
-      prev.map(choice => (choice.splitId === splitId ? { ...choice, ...patch } : choice))
-    )
-  }
-
   const buildResult = (): PayInstallmentScopeResult | null => {
     if (!canConfirm) return null
     return {
-      paidAmountReais: confirmAmount,
+      paidAmountReais,
       advanceTransactionIds: selectedIds,
-      reimbursements,
+      reimbursements: reimbursement.reimbursements,
     }
   }
 
   return {
+    extras,
     future,
     paidAmountReais,
     setPaidAmountFromInput,
     selectedIds,
     selectAdvances,
-    reimbursements,
-    updateReimbursement,
+    reimbursements: reimbursement.reimbursements,
+    updateReimbursement: reimbursement.updateReimbursement,
     preview,
-    confirmAmount,
+    confirmAmount: paidAmountReais,
     canConfirm,
-    withSplits,
+    withSplits: reimbursement.withSplits,
     advanceOpen,
     setAdvanceOpen,
-    reimbursementOpen,
-    setReimbursementOpen,
+    reimbursementOpen: reimbursement.reimbursementOpen,
+    setReimbursementOpen: reimbursement.setReimbursementOpen,
     buildResult,
   }
 }

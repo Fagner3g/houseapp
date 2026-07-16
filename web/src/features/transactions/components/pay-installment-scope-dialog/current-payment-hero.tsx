@@ -56,7 +56,7 @@ export function CurrentPaymentHero({
   const hint = isPartial
     ? 'Parcial — o restante soma na próxima parcela'
     : isOver
-      ? 'Acima do saldo — excedente vai para as próximas'
+      ? 'Acima do saldo — excedente vai para as outras parcelas abaixo'
       : `Saldo desta parcela: ${formatCurrency(remainingReais)}`
 
   return (
@@ -69,6 +69,9 @@ export function CurrentPaymentHero({
           <p className="mt-0.5 text-base font-semibold tracking-tight text-slate-900">
             {installmentNumber}
             <span className="font-normal text-slate-400"> / {installmentsTotal}</span>
+          </p>
+          <p className="mt-1 text-xs text-slate-500">
+            Você está nesta parcela · as demais ficam abaixo
           </p>
         </div>
         <div className="rounded-full bg-slate-100 px-3 py-1 text-xs font-medium tabular-nums text-slate-600">

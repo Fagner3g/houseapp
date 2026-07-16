@@ -1,18 +1,22 @@
-import dayjs from 'dayjs'
-
 import type { GetInstallmentSeries200InstallmentsItem } from '@/api/generated/model/getInstallmentSeries200InstallmentsItem'
-import { Checkbox } from '@/components/ui/checkbox'
 import { formatCentsString } from '@/lib/currency'
 import { cn } from '@/lib/utils'
 
-import type {
-  SettlementKind,
-} from '../lib/settlement-copy'
+import type { SettlementKind } from '../lib/settlement-copy'
 import {
   advancePickerAmountMismatch,
   advancePickerHint,
   advancePickerTitle,
 } from '../lib/settlement-advance-copy'
+import { listSettlementExtraInstallments } from '../lib/settlement-extra-installments'
+import { SettlementExtraRow } from './pay-installment-scope-dialog/settlement-extra-row'
+
+export {
+  listFutureUnpaidInstallments,
+  listPriorOverdueUnpaidInstallments,
+  listSettlementExtraInstallments,
+  isSettlementExtraOverdue,
+} from '../lib/settlement-extra-installments'
 
 type AdvanceInstallmentsPickerProps = {
   installments: GetInstallmentSeries200InstallmentsItem[]
@@ -34,19 +38,6 @@ export function canOfferInstallmentAdvance(
     installmentNumber != null &&
     (installmentsTotal ?? 0) > 1 &&
     installmentNumber < installmentsTotal
-  )
-}
-
-export function listFutureUnpaidInstallments(
-  installments: GetInstallmentSeries200InstallmentsItem[],
-  currentInstallmentNumber: number
-): GetInstallmentSeries200InstallmentsItem[] {
-  return installments.filter(
-    item =>
-      item.installmentNumber > currentInstallmentNumber &&
-      item.status !== 'paid' &&
-      item.status !== 'canceled' &&
-      Number.parseFloat(item.remaining) > 0
   )
 }
 
@@ -72,11 +63,10 @@ export function AdvanceInstallmentsPicker({
   kind = 'expense',
   className,
 }: AdvanceInstallmentsPickerProps) {
-  const futureInstallments = listFutureUnpaidInstallments(
+  const extras = listSettlementExtraInstallments(
     installments,
     currentInstallmentNumber
   )
-
   const selectedTotal = computeAdvancePaymentTotalReais(
     currentRemainingReais,
     installments,
@@ -84,19 +74,10 @@ export function AdvanceInstallmentsPicker({
   )
   const matchesPaidAmount = Math.abs(selectedTotal - paidAmountReais) < 0.005
 
-  const toggleInstallment = (id: string, checked: boolean) => {
-    if (checked) {
-      onSelectedIdsChange([...selectedIds, id])
-      return
-    }
-
-    onSelectedIdsChange(selectedIds.filter(itemId => itemId !== id))
-  }
-
-  if (futureInstallments.length === 0) {
+  if (extras.length === 0) {
     return (
       <p className={cn('text-sm text-amber-700', className)}>
-        Não há parcelas futuras disponíveis para adiantamento.
+        Não há parcelas disponíveis para incluir neste recebimento.
       </p>
     )
   }
@@ -109,32 +90,21 @@ export function AdvanceInstallmentsPicker({
       </div>
 
       <div className="space-y-2">
-        {futureInstallments.map(item => {
-          const checked = selectedIds.includes(item.id)
-
-          return (
-            // Radix Checkbox is not a native input; label still wraps the control.
-            // biome-ignore lint/a11y/noLabelWithoutControl: wraps Radix Checkbox
-            <label
-              key={item.id}
-              className="flex cursor-pointer items-start gap-3 rounded-md border border-slate-200 px-3 py-2 hover:bg-slate-50"
-            >
-              <Checkbox
-                checked={checked}
-                onCheckedChange={value => toggleInstallment(item.id, value === true)}
-              />
-              <div className="min-w-0 flex-1">
-                <p className="text-sm font-medium text-slate-900">
-                  Parcela {item.installmentNumber}
-                </p>
-                <p className="text-xs text-slate-500">
-                  {dayjs(item.date).format('DD/MM/YYYY')} · Saldo{' '}
-                  {formatCentsString(item.remaining)}
-                </p>
-              </div>
-            </label>
-          )
-        })}
+        {extras.map(item => (
+          <SettlementExtraRow
+            key={item.id}
+            item={item}
+            currentInstallmentNumber={currentInstallmentNumber}
+            checked={selectedIds.includes(item.id)}
+            onCheckedChange={checked =>
+              onSelectedIdsChange(
+                checked
+                  ? [...selectedIds, item.id]
+                  : selectedIds.filter(id => id !== item.id)
+              )
+            }
+          />
+        ))}
       </div>
 
       <div className="rounded-md bg-slate-50 px-3 py-2 text-sm text-slate-600">

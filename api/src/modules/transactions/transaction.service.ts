@@ -910,8 +910,8 @@ export class TransactionService {
       }
 
       const advanceNumber = advance.installmentNumber ?? 1
-      if (advanceNumber <= anchorNumber) {
-        throw badRequest('Advance installments must be after the current installment')
+      if (advanceNumber === anchorNumber) {
+        throw badRequest('Cannot include the current installment as an advance')
       }
 
       if (advance.status === 'canceled' || advance.status === 'paid') {

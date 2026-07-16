@@ -87,12 +87,12 @@ export function payInstallmentScopeDescription(
 ): string {
   if (options?.withSplits) {
     return kind === 'income'
-      ? 'Informe o valor na conta. Responda o reembolso abaixo; adiantar é opcional.'
-      : 'Informe o valor na conta. Responda o reembolso abaixo; adiantar é opcional.'
+      ? 'Informe o valor na conta. Responda o reembolso abaixo; incluir outras é opcional.'
+      : 'Informe o valor na conta. Responda o reembolso abaixo; incluir outras é opcional.'
   }
   return kind === 'income'
-    ? 'Informe o valor. Você pode receber parcial ou adiantar outras parcelas.'
-    : 'Informe o valor. Você pode pagar parcial ou adiantar outras parcelas.'
+    ? 'Informe o valor desta parcela. Você pode quitar vencidas ou adiantar outras.'
+    : 'Informe o valor desta parcela. Você pode quitar vencidas ou adiantar outras.'
 }
 
 export function payInstallmentScopeConfirmLabel(kind: SettlementKind): string {

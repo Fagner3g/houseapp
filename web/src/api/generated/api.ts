@@ -58,6 +58,7 @@ import type {
   CreateTransactionBody,
   CreateTransfer201,
   CreateTransferBody,
+  CreateUserWithInvite201,
   CreateUserWithInviteBody,
   DeleteCardBody,
   EvaluateAlertRules200,
@@ -2097,8 +2098,8 @@ export const createUserWithInvite = async (
   slug: string,
   createUserWithInviteBody: CreateUserWithInviteBody,
   options?: RequestInit,
-): Promise<void> => {
-  return http<void>(getCreateUserWithInviteUrl(slug), {
+): Promise<CreateUserWithInvite201> => {
+  return http<CreateUserWithInvite201>(getCreateUserWithInviteUrl(slug), {
     ...options,
     method: "POST",
     headers: { "Content-Type": "application/json", ...options?.headers },

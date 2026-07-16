@@ -98,7 +98,7 @@ export function formatAllocationPreviewLine(
     : `Parcela ${step.installmentNumber} · ${amount} · parcial (falta ${formatCurrency(step.remainingAfterReais)})`
 }
 
-/** Future parcel ids that receive payment in the allocation preview (not the current parcel). */
+/** Extra parcel ids touched by the payment (not the current parcel). */
 export function advanceIdsCoveredByPreview(
   preview: AllocationPreviewStep[],
   currentInstallmentNumber: number
@@ -106,7 +106,7 @@ export function advanceIdsCoveredByPreview(
   return preview
     .filter(
       step =>
-        step.installmentNumber > currentInstallmentNumber &&
+        step.installmentNumber !== currentInstallmentNumber &&
         (step.status === 'paid' || step.status === 'partial') &&
         step.id !== '__current__'
     )

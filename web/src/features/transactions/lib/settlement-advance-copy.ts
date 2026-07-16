@@ -21,16 +21,26 @@ export function payInstallmentScopeAllLabel(_kind: SettlementKind): string {
   return 'Selecionar todas'
 }
 
+export function payInstallmentScopeExtrasTitle(hasOverdue: boolean): string {
+  return hasOverdue ? 'Incluir também' : 'Adiantar também'
+}
+
+export function payInstallmentScopeExtrasHint(hasOverdue: boolean): string {
+  return hasOverdue
+    ? 'Vencidas anteriores ou parcelas seguintes — a atual permanece acima'
+    : 'Acompanha o valor pago ou marque para somar'
+}
+
 export function advancePickerTitle(kind: SettlementKind): string {
   return kind === 'income'
-    ? 'Selecione as parcelas a adiantar (recebimento)'
-    : 'Selecione as parcelas a adiantar'
+    ? 'Selecione outras parcelas (recebimento)'
+    : 'Selecione outras parcelas'
 }
 
 export function advancePickerHint(kind: SettlementKind): string {
   return kind === 'income'
-    ? 'Opcional: marcar preenche o valor com o saldo das parcelas escolhidas.'
-    : 'Opcional: marcar preenche o valor com o saldo das parcelas escolhidas.'
+    ? 'Opcional: vencidas anteriores ou adiantamentos. A parcela atual fica no valor acima.'
+    : 'Opcional: vencidas anteriores ou adiantamentos. A parcela atual fica no valor acima.'
 }
 
 export function advancePickerAmountMismatch(

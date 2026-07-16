@@ -1,44 +1,23 @@
 import { db } from '@/db'
-import { organizationMembers } from '@/db/schemas/organizationMembers'
 import { users } from '@/db/schemas/users'
-
-// Removido: não criar organização automática ao aceitar convite
 
 interface CreateNewUserRequest {
   name: string
   email: string
   phone: string
-  orgIdInvite: string
 }
 
-export async function createForUserInvite({
-  name,
-  email,
-  phone,
-  orgIdInvite,
-}: CreateNewUserRequest) {
+/** Creates a user account only. Org membership is handled by inviteService. */
+export async function createForUserInvite({ name, email, phone }: CreateNewUserRequest) {
   const [user] = await db
     .insert(users)
     .values({
-      name,
-      email,
+      name: name.trim(),
+      email: email.trim().toLowerCase(),
       phone,
       avatarUrl: `https://robohash.org/${Math.random().toString(36).slice(2)}?size=200x200`,
     })
     .returning()
 
-  await db.insert(organizationMembers).values({
-    userId: user.id,
-    organizationId: orgIdInvite,
-  })
-
-  await db
-    .insert(organizationMembers)
-    .values({
-      userId: user.id,
-      organizationId: orgIdInvite,
-    })
-    .onConflictDoNothing()
-
-  // TODO:  Send Mail
+  return user
 }

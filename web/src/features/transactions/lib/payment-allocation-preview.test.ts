@@ -47,6 +47,16 @@ describe('advanceIdsCoveredByPreview', () => {
     expect(advanceIdsCoveredByPreview(steps, 1)).toEqual(['2'])
   })
 
+  it('returns prior overdue parcels touched after the current one', () => {
+    const mixed = [
+      { id: '2', installmentNumber: 2, remainingReais: 100 },
+      { id: '1', installmentNumber: 1, remainingReais: 100 },
+      { id: '3', installmentNumber: 3, remainingReais: 100 },
+    ]
+    const steps = buildPaymentAllocationPreview(250, mixed)
+    expect(advanceIdsCoveredByPreview(steps, 2)).toEqual(['1', '3'])
+  })
+
   it('returns empty when payment stays on the current parcel', () => {
     const steps = buildPaymentAllocationPreview(100, parcels)
     expect(advanceIdsCoveredByPreview(steps, 1)).toEqual([])

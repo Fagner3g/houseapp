@@ -569,6 +569,7 @@ export * from "./createTransfer201ToTransferPairId";
 export * from "./createTransfer201ToType";
 export * from "./createTransferBody";
 export * from "./createTransferBodyDescription";
+export * from "./createUserWithInvite201";
 export * from "./createUserWithInviteBody";
 export * from "./deleteCardBody";
 export * from "./deleteCardBodyReason";
