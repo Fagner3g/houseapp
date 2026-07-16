@@ -6,7 +6,6 @@ import { useEffect, useLayoutEffect, useMemo, useRef, useState, useCallback } fr
 import { useForm, useFormState } from 'react-hook-form'
 import { z } from 'zod'
 
-import type { CreateTransactionBody } from '@/api/generated/model'
 import { calendarDateToIso, isoToCalendarDate } from '@/lib/date'
 import {
   getGetSplitDebtSummaryQueryKey,
@@ -162,6 +161,7 @@ import { RecurringContractDrawer } from '@/features/recurring/components/recurri
 import { CategorySelect } from '@/features/categories/components/category-select'
 import {
   isTransactionReminderWithoutValue,
+  resolveSettlementPrefillReais,
   resolveTransactionInstallmentAmountReais,
   resolveTransactionInstallmentRemainingReais,
 } from '@/features/transactions/installment-amount.utils'
@@ -173,8 +173,19 @@ import {
 import { InstallmentPreviewPanel } from './installment-preview-panel'
 import {
   AdvanceInstallmentsPicker,
+  canOfferInstallmentAdvance,
   computeAdvancePaymentTotalReais,
+  listFutureUnpaidInstallments,
 } from './advance-installments-picker'
+import {
+  PayInstallmentScopeDialog,
+  type PayInstallmentScopeResult,
+} from './pay-installment-scope-dialog'
+import { EditInstallmentDateScopeDialog } from './edit-installment-date-scope-dialog'
+import {
+  shouldAskInstallmentDateScope,
+  type InstallmentDateScope,
+} from '../lib/installment-date-scope'
 import { buildInstallmentPreview } from '../installment-preview'
 import {
   buildUnsettledSplitItems,
@@ -182,14 +193,40 @@ import {
 } from '../split-debt-summary.utils'
 import { useCreateTransfer } from '../api/create-transfer'
 import { TransferDestinationFields } from './transfer/transfer-destination-fields'
+import { SplitPaymentPayBanner } from './split-payment-pay-banner'
 import {
-  SplitPaymentConfirmDialog,
-  SplitPaymentPayBanner,
-} from './split-payment-confirm-dialog'
+  alreadySettledFragment,
+  amountToSettleAccountLabel,
+  amountToSettleLabel,
+  cancelSettlementLabel,
+  installmentSettlementHint,
+  installmentSettlementScopeNote,
+  payInstallmentScopeConfirmLabel,
+  registerSettlementButtonLabel,
+  settledAmountLabel,
+  settledToggleLabel,
+  settlementDateLabel,
+  settlementKindFromType,
+} from '../lib/settlement-copy'
+import { underpaymentCarryHint } from '../lib/settlement-advance-copy'
+import { runUnifiedSettlement } from '../lib/unified-settlement'
+import {
+  amountFieldValidationLabel,
+  amountMustMatchSelectionToast,
+  advancePromptDescription,
+  advancePromptTitle,
+  dateFieldValidationLabel,
+  enterAmountToast,
+  installmentConfirmedToast,
+  settlementRegisteredToast,
+  underpaymentCarryToast,
+} from '../lib/settlement-toasts'
 
 function hasPositiveAmount(amount: number | null | undefined): boolean {
   return amount != null && Number.isFinite(amount) && amount > 0
 }
+
+const EMPTY_UNSETTLED_SPLITS: UnsettledSplitItem[] = []
 
 function createTransactionSchema(options: { requireCategory: boolean }) {
   return z
@@ -344,19 +381,6 @@ function defaultFormValues(orgSlug?: string): TransactionFormValues {
   }
 }
 
-function buildNextCreateDraft(
-  values: TransactionFormValues,
-  lockedAccountId: string | null
-): Partial<CreateTransactionBody> {
-  return {
-    type: values.type === 'transfer' ? 'expense' : values.type,
-    accountId: lockedAccountId ?? values.accountId ?? undefined,
-    cardId: values.cardId ?? undefined,
-    date: calendarDateToIso(values.date),
-    status: 'pending',
-  }
-}
-
 type AccountOption = {
   id: string
   type: string
@@ -445,7 +469,6 @@ export function TransactionDrawer() {
   const lockedAccountId = useDrawerStore(s => s.lockedAccountId)
   const editingId = useDrawerStore(s => s.editingTransactionId)
   const close = useDrawerStore(s => s.closeTransactionDrawer)
-  const openTransactionDrawer = useDrawerStore(s => s.openTransactionDrawer)
   const openAccountDrawer = useDrawerStore(s => s.openAccountDrawer)
   const openRecurringContractDrawer = useDrawerStore(s => s.openRecurringContractDrawer)
   const openCategoryDrawer = useDrawerStore(s => s.openCategoryDrawer)
@@ -491,11 +514,14 @@ export function TransactionDrawer() {
   const [splitDraft, setSplitDraft] = useState<SplitDraftState>(defaultSplitDraftState())
   const [pendingFiles, setPendingFiles] = useState<File[]>([])
   const [advancePromptOpen, setAdvancePromptOpen] = useState(false)
+  const [payScopeDialogOpen, setPayScopeDialogOpen] = useState(false)
+  const [dateScopeDialogOpen, setDateScopeDialogOpen] = useState(false)
+  const pendingDateScopeSaveRef = useRef<
+    ((scope: InstallmentDateScope) => Promise<void>) | null
+  >(null)
   const [cancelPaymentDialogOpen, setCancelPaymentDialogOpen] = useState(false)
   const [showAdvancePicker, setShowAdvancePicker] = useState(false)
   const [selectedAdvanceIds, setSelectedAdvanceIds] = useState<string[]>([])
-  const [splitPaymentConfirmOpen, setSplitPaymentConfirmOpen] = useState(false)
-  const pendingPaymentRef = useRef<(() => Promise<void>) | null>(null)
   const fileInputRef = useRef<HTMLInputElement>(null)
 
   const isEdit = mode === 'edit'
@@ -596,7 +622,7 @@ export function TransactionDrawer() {
   const { data: installmentSeriesData, refetch: refetchInstallmentSeries } =
     useGetInstallmentSeries(slug, editingId ?? '', {
       query: {
-        enabled: !!slug && !!editingId && open && isPay && hasInstallmentContext,
+        enabled: !!slug && !!editingId && open && hasInstallmentContext && (isPay || isEdit),
       },
     })
 
@@ -672,8 +698,7 @@ export function TransactionDrawer() {
       setNotifyState(defaultNotifyState(orgNotifyDefaults))
       setSplitDraft(defaultSplitDraftState())
       setAdvancePromptOpen(false)
-      setSplitPaymentConfirmOpen(false)
-      pendingPaymentRef.current = null
+      setPayScopeDialogOpen(false)
       setShowAdvancePicker(false)
       setSelectedAdvanceIds([])
       form.reset(defaultFormValues())
@@ -691,14 +716,12 @@ export function TransactionDrawer() {
     })
 
     if (isPay) {
-      const remaining = resolveTransactionInstallmentRemainingReais(tx, installmentSummary)
-      const installmentAmount = resolveTransactionInstallmentAmountReais(tx, installmentSummary)
       form.reset({
         ...defaultFormValues(),
         title: tx.title,
         amount: apiAmountToFormReais(tx.amount),
         paidAt: dayjs().format('YYYY-MM-DD'),
-        paidAmount: remaining > 0 ? remaining : installmentAmount,
+        paidAmount: resolveSettlementPrefillReais(tx, installmentSummary),
         accountId,
       })
       return
@@ -857,11 +880,12 @@ export function TransactionDrawer() {
 
   useEffect(() => {
     if (!open || !isEdit || isPay || !tx) return
-    if (status !== 'paid' || tx.status === 'paid') return
+    if (tx.status === 'paid') return
+    if (status !== 'paid' && !isTransactionPartial(tx.status)) return
 
-    const remaining = resolveTransactionInstallmentRemainingReais(tx, installmentSummary)
-    if (remaining > 0 && (form.getValues('paidAmount') ?? 0) <= 0) {
-      form.setValue('paidAmount', remaining)
+    const prefill = resolveSettlementPrefillReais(tx, installmentSummary)
+    if (prefill > 0 && (form.getValues('paidAmount') ?? 0) <= 0) {
+      form.setValue('paidAmount', prefill)
     }
   }, [open, isEdit, isPay, status, tx, form, installmentSummary])
 
@@ -883,6 +907,106 @@ export function TransactionDrawer() {
       setSelectedAdvanceIds([])
     }
   }, [isPay, showAdvancePicker, paidAmountWatched, installmentRemainingReais])
+
+  useEffect(() => {
+    if (!showAdvancePicker || isPay) return
+    const installments = installmentSeriesData?.installments ?? []
+    form.setValue(
+      'paidAmount',
+      computeAdvancePaymentTotalReais(
+        installmentRemainingReais,
+        installments,
+        selectedAdvanceIds
+      )
+    )
+  }, [
+    showAdvancePicker,
+    isPay,
+    selectedAdvanceIds,
+    installmentRemainingReais,
+    installmentSeriesData?.installments,
+    form,
+  ])
+
+  const applyPayInstallmentScope = async (result: PayInstallmentScopeResult) => {
+    if (!slug || !editingId || !tx) return
+
+    const kind = settlementKindFromType(tx.type)
+    const paymentAmount = Math.max(0, result.paidAmountReais)
+    if (paymentAmount <= 0) {
+      toast.error(enterAmountToast(kind))
+      return
+    }
+
+    if (unsettledSplitItems.length > 0 && !viewerIsCreditor) {
+      toast.info(
+        'Peça confirmação do pagamento em "Divisões" (Avisar que paguei) antes de marcar a transação como paga.'
+      )
+      return
+    }
+
+    const paidAt =
+      form.getValues('paidAt') || dayjs().format('YYYY-MM-DD')
+
+    try {
+      await runUnifiedSettlement({
+        reimbursements: result.reimbursements,
+        registerSplitPayment: async input => {
+          await registerSplitPayment({
+            slug,
+            transactionId: editingId,
+            id: input.splitId,
+            data: {
+              amount: reaisToMoneyString(input.amountReais),
+              method: input.method,
+            },
+          })
+        },
+        payTransaction: async () => {
+          await payTransaction({
+            slug,
+            id: editingId,
+            data: {
+              paidAt: calendarDateToIso(paidAt),
+              paidAmount: reaisToMoneyString(paymentAmount),
+              ...(result.advanceTransactionIds.length > 0
+                ? { advanceTransactionIds: result.advanceTransactionIds }
+                : {}),
+            },
+          })
+          toast.success(
+            settlementRegisteredToast(kind, result.advanceTransactionIds.length > 0)
+          )
+          await invalidateAll()
+          close()
+        },
+      })
+      if (slug && editingId) {
+        queryClient.invalidateQueries({ queryKey: getListSplitsQueryKey(slug, editingId) })
+        queryClient.invalidateQueries({
+          queryKey: getGetSplitDebtSummaryQueryKey(slug, editingId),
+        })
+        queryClient.invalidateQueries({ queryKey: getSplitTransactionIdsQueryKey(slug) })
+      }
+    } catch (error) {
+      toast.error(await readHttpErrorMessage(error, 'Erro ao registrar'))
+    }
+  }
+
+  /** Debtor with open splits cannot settle; creditor must use the pay modal (reimbursement Qs). */
+  const assertCanSettleFromForm = (): boolean => {
+    if (unsettledSplitItems.length === 0) return true
+    if (!viewerIsCreditor) {
+      toast.info(
+        'Peça confirmação do pagamento em "Divisões" (Avisar que paguei) antes de marcar a transação como paga.'
+      )
+      return false
+    }
+    void refetchInstallmentSeries().finally(() => {
+      setPayScopeDialogOpen(true)
+    })
+    return false
+  }
 
   const installmentPaidReais = useMemo(
     () => moneyStringToReais(tx?.paidAmount),
@@ -927,6 +1051,76 @@ export function TransactionDrawer() {
   ])
 
   const isTransfer = txType === 'transfer'
+  const settlementKind = settlementKindFromType(isEdit || isPay ? tx?.type : txType)
+  const installmentSettlementHintText = installmentSettlementHint(
+    settlementKind,
+    installmentRemainingReais,
+    installmentPaidReais
+  )
+  const nextOpenInstallment = useMemo(() => {
+    if (!hasInstallmentContext || showAdvancePicker) return null
+    const future = listFutureUnpaidInstallments(
+      installmentSeriesData?.installments ?? [],
+      tx?.installmentNumber ?? 1
+    )
+    if (future[0]) {
+      return {
+        installmentNumber: future[0].installmentNumber,
+        amountReais: Number.parseFloat(future[0].amount),
+      }
+    }
+    if (canOfferInstallmentAdvance(tx?.installmentNumber, tx?.installmentsTotal)) {
+      return {
+        installmentNumber: (tx?.installmentNumber ?? 1) + 1,
+        amountReais: installmentRemainingReais,
+      }
+    }
+    return null
+  }, [
+    hasInstallmentContext,
+    showAdvancePicker,
+    installmentSeriesData?.installments,
+    tx?.installmentNumber,
+    tx?.installmentsTotal,
+    installmentRemainingReais,
+  ])
+  const underpaymentCarryHintText = useMemo(() => {
+    if (!nextOpenInstallment || showAdvancePicker) return null
+    return underpaymentCarryHint(
+      settlementKind,
+      paidAmountWatched ?? 0,
+      installmentRemainingReais,
+      nextOpenInstallment.installmentNumber,
+      nextOpenInstallment.amountReais
+    )
+  }, [
+    nextOpenInstallment,
+    showAdvancePicker,
+    settlementKind,
+    paidAmountWatched,
+    installmentRemainingReais,
+  ])
+  const resolveSettlementSuccessToast = (
+    paymentAmount: number,
+    withAdvance: boolean
+  ) => {
+    if (
+      !withAdvance &&
+      nextOpenInstallment &&
+      paymentAmount > 0 &&
+      paymentAmount < installmentRemainingReais
+    ) {
+      const shortfall = installmentRemainingReais - paymentAmount
+      return underpaymentCarryToast(
+        settlementKind,
+        paymentAmount,
+        shortfall,
+        nextOpenInstallment.installmentNumber,
+        nextOpenInstallment.amountReais + shortfall
+      )
+    }
+    return settlementRegisteredToast(settlementKind, withAdvance)
+  }
   const showSplitDraft =
     !isPay && !isTransfer && !isEdit && txType === 'expense' && recurrence !== 'recurring'
   const showCardField = !isTransfer && isCreditCard && selectableCards.length > 1
@@ -975,8 +1169,8 @@ export function TransactionDrawer() {
         errors,
         isPay
           ? {
-              paidAmount: 'valor pago',
-              paidAt: 'data do pagamento',
+              paidAmount: amountFieldValidationLabel(settlementKind),
+              paidAt: dateFieldValidationLabel(settlementKind),
             }
           : {
               title: 'descrição',
@@ -994,22 +1188,6 @@ export function TransactionDrawer() {
     if (!slug) return
     await invalidateTransactionQueries(queryClient, slug)
   }
-
-  const resetCreateDraft = useCallback(
-    (values: TransactionFormValues) => {
-      setPendingFiles([])
-      setNotesOpen(false)
-      setNotifyState(defaultNotifyState(orgNotifyDefaults))
-      setSplitDraft(defaultSplitDraftState())
-      openTransactionDrawer(
-        buildNextCreateDraft(values, effectiveLockedAccountId),
-        null,
-        effectiveLockedAccountId ? { lockAccountId: effectiveLockedAccountId } : undefined
-      )
-      form.clearErrors()
-    },
-    [openTransactionDrawer, effectiveLockedAccountId, orgNotifyDefaults, form]
-  )
 
   const uploadPendingFiles = async (transactionId: string) => {
     if (!slug) return
@@ -1074,63 +1252,8 @@ export function TransactionDrawer() {
     return created
   }
 
-  const invalidateSplits = () => {
-    if (!slug || !editingId) return
-    queryClient.invalidateQueries({ queryKey: getListSplitsQueryKey(slug, editingId) })
-    queryClient.invalidateQueries({ queryKey: getGetSplitDebtSummaryQueryKey(slug, editingId) })
-    queryClient.invalidateQueries({ queryKey: getSplitTransactionIdsQueryKey(slug) })
-  }
-
-  const registerUnsettledSplitPayments = async (items: UnsettledSplitItem[]) => {
-    if (!slug || !editingId) return
-    for (const item of items) {
-      await registerSplitPayment({
-        slug,
-        transactionId: editingId,
-        id: item.split.id,
-        data: {
-          amount: reaisToMoneyString(item.remainingReais),
-          method: 'pix',
-        },
-      })
-    }
-    invalidateSplits()
-  }
-
-  const executeWithSplitCheck = async (executePayment: () => Promise<void>) => {
-    if (unsettledSplitItems.length === 0) {
-      await executePayment()
-      return
-    }
-    if (!viewerIsCreditor) {
-      toast.info(
-        'Peça confirmação do pagamento em "Divisões" (Avisar que paguei) antes de marcar a transação como paga.'
-      )
-      return
-    }
-    pendingPaymentRef.current = executePayment
-    setSplitPaymentConfirmOpen(true)
-  }
-
-  const handleSplitPaymentConfirm = async () => {
-    const pending = pendingPaymentRef.current
-    try {
-      await registerUnsettledSplitPayments(unsettledSplitItems)
-      setSplitPaymentConfirmOpen(false)
-      pendingPaymentRef.current = null
-      if (pending) await pending()
-    } catch {
-      toast.error('Erro ao registrar pagamento da divisão')
-    }
-  }
-
-  const handleSplitPaymentDecline = () => {
-    setSplitPaymentConfirmOpen(false)
-    pendingPaymentRef.current = null
-    toast.info(
-      'Registre o pagamento da divisão em "Divisões" antes de marcar a transação como paga.'
-    )
-  }
+  const needsReimbursementStep =
+    viewerIsCreditor && unsettledSplitItems.length > 0
 
   const onSubmit = async (values: TransactionFormValues) => {
     if (!slug) return
@@ -1157,18 +1280,55 @@ export function TransactionDrawer() {
 
     try {
       if (isPay && editingId && tx) {
-        const remaining = installmentRemainingReais
         const paymentAmount = values.paidAmount ?? 0
-        const withoutValue = isTransactionReminderWithoutValue(tx.amount)
 
         if (paymentAmount <= 0) {
-          toast.error('Informe o valor pago')
+          toast.error(enterAmountToast(settlementKind))
           return
         }
 
-        if (!withoutValue && paymentAmount > remaining) {
+        if (unsettledSplitItems.length > 0 && !viewerIsCreditor) {
+          toast.info(
+            'Peça confirmação do pagamento em "Divisões" (Avisar que paguei) antes de marcar a transação como paga.'
+          )
+          return
+        }
+
+        void refetchInstallmentSeries().finally(() => {
+          setPayScopeDialogOpen(true)
+        })
+        return
+      }
+
+      if (isEdit && editingId && tx) {
+        const remaining = installmentRemainingReais
+        const paymentAmount = values.paidAmount ?? 0
+        const withoutValue = isTransactionReminderWithoutValue(tx.amount)
+        const registeringPayment =
+          tx.status !== 'paid' &&
+          paymentAmount > 0 &&
+          remaining > 0 &&
+          (values.status === 'paid' || isTransactionPartial(tx.status))
+
+        if (
+          values.status === 'paid' &&
+          tx.status !== 'paid' &&
+          paymentAmount <= 0 &&
+          remaining > 0
+        ) {
+          toast.error(enterAmountToast(settlementKind))
+          return
+        }
+
+        if (registeringPayment && !withoutValue && paymentAmount > remaining) {
           if (!showAdvancePicker) {
-            setAdvancePromptOpen(true)
+            if (canOfferInstallmentAdvance(tx.installmentNumber, tx.installmentsTotal)) {
+              void refetchInstallmentSeries().finally(() => {
+                setPayScopeDialogOpen(true)
+              })
+              return
+            }
+            toast.error(`Valor excede o saldo da parcela (${formatCurrency(remaining)})`)
             return
           }
 
@@ -1185,59 +1345,35 @@ export function TransactionDrawer() {
           }
 
           if (Math.abs(paymentAmount - expectedTotal) >= 0.005) {
-            toast.error('Selecione parcelas que fechem exatamente com o valor pago')
+            toast.error(amountMustMatchSelectionToast(settlementKind))
             return
           }
 
-          await executeWithSplitCheck(async () => {
-            await payTransaction({
-              slug,
-              id: editingId,
-              data: {
-                paidAt: calendarDateToIso(values.paidAt),
-                paidAmount: reaisToMoneyString(paymentAmount),
-                advanceTransactionIds: selectedAdvanceIds,
-              },
-            })
-            toast.success('Pagamento registrado com adiantamento de parcelas')
-            invalidateAll()
-            close()
-          })
-          return
-        }
+          if (!assertCanSettleFromForm()) return
 
-        await executeWithSplitCheck(async () => {
           await payTransaction({
             slug,
             id: editingId,
             data: {
               paidAt: calendarDateToIso(values.paidAt),
-              paidAmount: reaisToMoneyString(values.paidAmount ?? values.amount ?? 0),
+              paidAmount: reaisToMoneyString(paymentAmount),
+              advanceTransactionIds: selectedAdvanceIds,
             },
           })
-          toast.success('Pagamento registrado')
-          invalidateAll()
+
+          await updateTransaction({
+            slug,
+            id: editingId,
+            data: buildTransactionEditPayload(values, isImportedLocked, {
+              registeringPayment: true,
+              txStatus: tx.status,
+              notifyPayload,
+            }),
+          })
+          if (pendingFiles.length) await uploadPendingFiles(editingId)
+          toast.success(settlementRegisteredToast(settlementKind, true))
+          await invalidateAll()
           close()
-        })
-        return
-      }
-
-      if (isEdit && editingId && tx) {
-        const remaining = installmentRemainingReais
-        const paymentAmount = values.paidAmount ?? 0
-        const withoutValue = isTransactionReminderWithoutValue(tx.amount)
-        const registeringPayment =
-          tx.status !== 'paid' &&
-          paymentAmount > 0 &&
-          (values.status === 'paid' || isTransactionPartial(tx.status))
-
-        if (values.status === 'paid' && tx.status !== 'paid' && paymentAmount <= 0) {
-          toast.error('Informe o valor pago')
-          return
-        }
-
-        if (registeringPayment && !withoutValue && paymentAmount > remaining) {
-          toast.error(`Valor excede o saldo da parcela (${formatCurrency(remaining)})`)
           return
         }
 
@@ -1247,46 +1383,102 @@ export function TransactionDrawer() {
         }
 
         if (registeringPayment) {
-          await executeWithSplitCheck(async () => {
-            await payTransaction({
-              slug,
-              id: editingId,
-              data: {
-                paidAt: calendarDateToIso(values.paidAt),
-                paidAmount: reaisToMoneyString(paymentAmount),
-              },
-            })
+          if (!assertCanSettleFromForm()) return
 
-            await updateTransaction({
-              slug,
-              id: editingId,
-              data: buildTransactionEditPayload(values, isImportedLocked, {
-                registeringPayment: true,
-                txStatus: tx.status,
-                notifyPayload,
-              }),
-            })
-            if (pendingFiles.length) await uploadPendingFiles(editingId)
-            toast.success('Pagamento registrado')
-            await invalidateAll()
-            close()
+          await payTransaction({
+            slug,
+            id: editingId,
+            data: {
+              paidAt: calendarDateToIso(values.paidAt),
+              paidAmount: reaisToMoneyString(paymentAmount),
+              ...(showAdvancePicker && selectedAdvanceIds.length > 0
+                ? { advanceTransactionIds: selectedAdvanceIds }
+                : {}),
+            },
           })
+
+          await updateTransaction({
+            slug,
+            id: editingId,
+            data: buildTransactionEditPayload(values, isImportedLocked, {
+              registeringPayment: true,
+              txStatus: tx.status,
+              notifyPayload,
+            }),
+          })
+          if (pendingFiles.length) await uploadPendingFiles(editingId)
+          toast.success(
+            resolveSettlementSuccessToast(
+              paymentAmount,
+              showAdvancePicker && selectedAdvanceIds.length > 0
+            )
+          )
+          await invalidateAll()
+          close()
           return
         }
 
-        await updateTransaction({
-          slug,
-          id: editingId,
-          data: buildTransactionEditPayload(values, isImportedLocked, {
-            registeringPayment,
-            txStatus: tx.status,
-            notifyPayload,
-          }),
+        // Row fully covered but status not yet paid — confirm without a new payment.
+        if (values.status === 'paid' && tx.status !== 'paid' && remaining <= 0) {
+          await updateTransaction({
+            slug,
+            id: editingId,
+            data: {
+              ...buildTransactionEditPayload(values, isImportedLocked, {
+                registeringPayment: false,
+                txStatus: tx.status,
+                notifyPayload,
+              }),
+              status: 'paid',
+            },
+          })
+          if (pendingFiles.length) await uploadPendingFiles(editingId)
+          toast.success(installmentConfirmedToast(settlementKind))
+          await invalidateAll()
+          close()
+          return
+        }
+
+        const editPayload = buildTransactionEditPayload(values, isImportedLocked, {
+          registeringPayment,
+          txStatus: tx.status,
+          notifyPayload,
         })
-        if (pendingFiles.length) await uploadPendingFiles(editingId)
-        toast.success(registeringPayment ? 'Pagamento registrado' : 'Lançamento atualizado')
-        await invalidateAll()
-        close()
+
+        const finishEditSave = async (scope?: InstallmentDateScope) => {
+          await updateTransaction({
+            slug,
+            id: editingId,
+            data: {
+              ...editPayload,
+              ...(scope ? { installmentDateScope: scope } : {}),
+            },
+          })
+          if (pendingFiles.length) await uploadPendingFiles(editingId)
+          toast.success(
+            registeringPayment
+              ? resolveSettlementSuccessToast(paymentAmount, false)
+              : 'Lançamento atualizado'
+          )
+          await invalidateAll()
+          close()
+        }
+
+        if (
+          !registeringPayment &&
+          shouldAskInstallmentDateScope({
+            isCreditCardAccount: isCreditCard,
+            installmentsTotal: tx.installmentsTotal,
+            originalDateKey: isoToCalendarDate(tx.date),
+            nextDateKey: values.date,
+          })
+        ) {
+          pendingDateScopeSaveRef.current = finishEditSave
+          setDateScopeDialogOpen(true)
+          return
+        }
+
+        await finishEditSave()
         return
       }
 
@@ -1394,10 +1586,21 @@ export function TransactionDrawer() {
             : 'Lançamento criado'
       )
       invalidateAll()
-      resetCreateDraft(values)
+      close()
     } catch (error) {
       toast.error(await readHttpErrorMessage(error, 'Erro ao salvar lançamento'))
     }
+  }
+
+  const openSettlementFlow = () => {
+    const prefill = resolveSettlementPrefillReais(tx, installmentSummary)
+    if (prefill > 0) {
+      form.setValue('paidAmount', prefill)
+    }
+    form.setValue('status', 'paid')
+    void refetchInstallmentSeries().finally(() => {
+      setPayScopeDialogOpen(true)
+    })
   }
 
   const handleCancelPayment = async () => {
@@ -1405,7 +1608,9 @@ export function TransactionDrawer() {
 
     try {
       await cancelTransactionPayment({ slug, id: editingId })
-      toast.success('Pagamento cancelado')
+      toast.success(
+        settlementKind === 'income' ? 'Recebimento cancelado' : 'Pagamento cancelado'
+      )
       queryClient.invalidateQueries({ queryKey: getGetTransactionQueryKey(slug, editingId) })
       invalidateAll()
       setCancelPaymentDialogOpen(false)
@@ -1414,8 +1619,17 @@ export function TransactionDrawer() {
     }
   }
 
+  const showFooterSettleButton =
+    isEdit &&
+    !isPaidLocked &&
+    !isCreditCardExpense &&
+    !isTransfer &&
+    tx?.status !== 'paid'
+
   const drawerTitle = isPay
-    ? 'Registrar Pagamento'
+    ? registerSettlementButtonLabel(settlementKind, {
+        withSplits: needsReimbursementStep,
+      })
     : isEdit
       ? 'Editar Transação'
       : txType === 'income'
@@ -1424,7 +1638,7 @@ export function TransactionDrawer() {
           ? 'Nova Transferência'
           : 'Nova Despesa'
   const submitLabel = isPay
-    ? 'Confirmar Pagamento'
+    ? payInstallmentScopeConfirmLabel(settlementKind)
     : isEdit
       ? 'Salvar Alterações'
       : recurrence === 'recurring'
@@ -1532,6 +1746,7 @@ export function TransactionDrawer() {
                       transactionId={editingId}
                       dueDate={tx.date}
                       paymentScheduledAt={tx.paymentScheduledAt}
+                      kind={settlementKind}
                       disabled={isPending}
                     />
                   )}
@@ -1620,7 +1835,7 @@ export function TransactionDrawer() {
                       <p className="font-medium text-slate-900">{tx?.title}</p>
                       <p className="text-sm text-slate-500">
                         {isReminderWithoutValue
-                          ? 'Valor ainda não definido — informe o valor pago'
+                          ? `Valor ainda não definido — informe o ${settledAmountLabel(settlementKind).toLowerCase()}`
                           : `Valor da parcela: ${formatCurrency(installmentAmountReais)}`}
                       </p>
                       {hasInstallmentContext && (
@@ -1630,7 +1845,8 @@ export function TransactionDrawer() {
                       )}
                       {installmentPaidReais > 0 && (
                         <p className="text-sm text-amber-700">
-                          Já pago {formatCurrency(installmentPaidReais)} · Saldo{' '}
+                          {alreadySettledFragment(settlementKind)}{' '}
+                          {formatCurrency(installmentPaidReais)} · Saldo{' '}
                           {formatCurrency(installmentRemainingReais)}
                         </p>
                       )}
@@ -1642,7 +1858,7 @@ export function TransactionDrawer() {
                       render={({ field }) => (
                         <FormItem>
                           <FormLabel>
-                            Valor pago <FormRequiredMark />
+                            {amountToSettleAccountLabel(settlementKind)} <FormRequiredMark />
                           </FormLabel>
                           <FormControl>
                             <CurrencyInput value={field.value ?? 0} onValueChange={field.onChange} />
@@ -1661,7 +1877,7 @@ export function TransactionDrawer() {
                       render={({ field }) => (
                         <FormItem>
                           <FormLabel>
-                            Data do pagamento <FormRequiredMark />
+                            {settlementDateLabel(settlementKind)} <FormRequiredMark />
                           </FormLabel>
                           <FormControl>
                             <DatePickerInput
@@ -1681,6 +1897,7 @@ export function TransactionDrawer() {
                         onSelectedIdsChange={setSelectedAdvanceIds}
                         paidAmountReais={paidAmountWatched ?? 0}
                         currentRemainingReais={installmentRemainingReais}
+                        kind={settlementKind}
                       />
                     )}
                   </>
@@ -1990,7 +2207,7 @@ export function TransactionDrawer() {
                             )}
                           />
                         )}
-                        {!isCreditCardExpense && (
+                        {!isCreditCardExpense && !isEdit && (
                           <FormField
                             control={form.control}
                             name="status"
@@ -1999,35 +2216,20 @@ export function TransactionDrawer() {
                                 <div className={stackyDrawerFormLabelSlot}>
                                   <FormLabel>Status</FormLabel>
                                 </div>
-                                {isEdit && isTransactionPartial(tx?.status) && (
-                                  <p className="mb-2 text-xs text-amber-700">
-                                    Pagamento parcial · falta{' '}
-                                    {formatCurrency(installmentRemainingReais)}
-                                  </p>
-                                )}
                                 <ToggleGroup
                                   type="single"
-                                  value={tx?.status === 'paid' ? 'paid' : field.value}
+                                  value={field.value}
                                   onValueChange={v => {
-                                    if (!v || tx?.status === 'paid') return
-                                    if (v === 'pending' && installmentPaidReais > 0) return
+                                    if (!v) return
                                     field.onChange(v)
                                   }}
                                   className={stackySegmentedControl}
                                 >
-                                  <ToggleGroupItem
-                                    value="pending"
-                                    className={stackySegmentItem}
-                                    disabled={tx?.status === 'paid' || installmentPaidReais > 0}
-                                  >
+                                  <ToggleGroupItem value="pending" className={stackySegmentItem}>
                                     Pendente
                                   </ToggleGroupItem>
-                                  <ToggleGroupItem
-                                    value="paid"
-                                    className={stackySegmentItem}
-                                    disabled={tx?.status === 'paid'}
-                                  >
-                                    Pago
+                                  <ToggleGroupItem value="paid" className={stackySegmentItem}>
+                                    {settledToggleLabel(settlementKind)}
                                   </ToggleGroupItem>
                                 </ToggleGroup>
                               </FormItem>
@@ -2040,17 +2242,38 @@ export function TransactionDrawer() {
 
                     {isEdit && showPaymentFields && (
                       <div className={stackyDrawerFormRow}>
-                        {hasInstallmentContext && (
-                          <p className="col-span-12 text-xs text-slate-500">
-                            O pagamento será registrado apenas nesta parcela ({tx?.installmentNumber} de{' '}
-                            {tx?.installmentsTotal}).
+                        {installmentSettlementHintText && (
+                          <p className="col-span-12 text-xs text-amber-700">
+                            {installmentSettlementHintText}
                           </p>
                         )}
-                        {installmentPaidReais > 0 && (
-                          <p className="col-span-12 text-sm text-amber-700">
-                            Já pago {formatCurrency(installmentPaidReais)} · Saldo{' '}
-                            {formatCurrency(installmentRemainingReais)}
+                        {underpaymentCarryHintText && (
+                          <p className="col-span-12 text-xs text-amber-700">
+                            {underpaymentCarryHintText}
                           </p>
+                        )}
+                        {hasInstallmentContext && !showAdvancePicker && (
+                          <p className="col-span-12 text-xs text-slate-500">
+                            {installmentSettlementScopeNote(
+                              settlementKind,
+                              tx?.installmentNumber ?? 1,
+                              tx?.installmentsTotal ?? 1,
+                              installmentRemainingReais
+                            )}
+                          </p>
+                        )}
+                        {showAdvancePicker && hasInstallmentContext && (
+                          <div className="col-span-12">
+                            <AdvanceInstallmentsPicker
+                              installments={installmentSeriesData?.installments ?? []}
+                              currentInstallmentNumber={tx?.installmentNumber ?? 1}
+                              selectedIds={selectedAdvanceIds}
+                              onSelectedIdsChange={setSelectedAdvanceIds}
+                              paidAmountReais={paidAmountWatched ?? 0}
+                              currentRemainingReais={installmentRemainingReais}
+                              kind={settlementKind}
+                            />
+                          </div>
                         )}
                         <FormField
                           control={form.control}
@@ -2059,7 +2282,7 @@ export function TransactionDrawer() {
                             <FormItem className={cn(stackyDrawerFormItem, 'col-span-5')}>
                               <div className={stackyDrawerFormLabelSlot}>
                                 <FormLabel>
-                                  Valor a pagar <FormRequiredMark />
+                                  {amountToSettleLabel(settlementKind)} <FormRequiredMark />
                                 </FormLabel>
                               </div>
                               <FormControl>
@@ -2078,7 +2301,7 @@ export function TransactionDrawer() {
                             <FormItem className={cn(stackyDrawerFormItem, 'col-span-7')}>
                               <div className={stackyDrawerFormLabelSlot}>
                                 <FormLabel>
-                                  Data do pagamento <FormRequiredMark />
+                                  {settlementDateLabel(settlementKind)} <FormRequiredMark />
                                 </FormLabel>
                               </div>
                               <FormControl>
@@ -2521,28 +2744,33 @@ export function TransactionDrawer() {
                       Excluir
                     </Button>
                   )}
-                  <div className="flex flex-1 gap-2">
-                    <Button
-                      type="button"
-                      variant="outline"
-                      className={cn('flex-1', stackySecondaryButton)}
-                      onClick={close}
-                    >
-                      Cancelar
-                    </Button>
+                  <div className="ml-auto flex min-w-0 flex-1 justify-end gap-2">
+                    {showFooterSettleButton && (
+                      <Button
+                        type="button"
+                        variant="outline"
+                        className={cn('shrink-0', stackySecondaryButton)}
+                        disabled={isPending}
+                        onClick={openSettlementFlow}
+                      >
+                        {registerSettlementButtonLabel(settlementKind, {
+                          withSplits: needsReimbursementStep,
+                        })}
+                      </Button>
+                    )}
                     {isPaidLocked ? (
                       <Button
                         type="button"
-                        className={cn('flex-1', stackyPrimaryButton)}
+                        className={cn('shrink-0', stackyPrimaryButton)}
                         disabled={isPending}
                         onClick={() => setCancelPaymentDialogOpen(true)}
                       >
-                        Cancelar pagamento
+                        Cancelar {settlementKind === 'income' ? 'recebimento' : 'pagamento'}
                       </Button>
                     ) : (
                       <Button
                         type="submit"
-                        className={cn('flex-1', stackyPrimaryButton)}
+                        className={cn('min-w-0 flex-1 sm:flex-none sm:min-w-[10rem]', stackyPrimaryButton)}
                         disabled={isPending || (isPay && !canConfirmPay)}
                       >
                         {submitLabel}
@@ -2577,7 +2805,7 @@ export function TransactionDrawer() {
       <AlertDialog open={cancelPaymentDialogOpen} onOpenChange={setCancelPaymentDialogOpen}>
         <AlertDialogContent>
           <AlertDialogHeader>
-            <AlertDialogTitle>Cancelar pagamento?</AlertDialogTitle>
+            <AlertDialogTitle>{cancelSettlementLabel(settlementKind)}?</AlertDialogTitle>
             <AlertDialogDescription>
               A transação voltará para pendente e você poderá editá-la novamente.
             </AlertDialogDescription>
@@ -2591,7 +2819,7 @@ export function TransactionDrawer() {
                 void handleCancelPayment()
               }}
             >
-              Cancelar pagamento
+              {cancelSettlementLabel(settlementKind)}
             </AlertDialogAction>
           </AlertDialogFooter>
         </AlertDialogContent>
@@ -2599,10 +2827,9 @@ export function TransactionDrawer() {
       <AlertDialog open={advancePromptOpen} onOpenChange={setAdvancePromptOpen}>
         <AlertDialogContent>
           <AlertDialogHeader>
-            <AlertDialogTitle>Adiantar parcelas?</AlertDialogTitle>
+            <AlertDialogTitle>{advancePromptTitle(settlementKind)}</AlertDialogTitle>
             <AlertDialogDescription>
-              O valor informado é maior que o saldo desta parcela. Deseja adiantar outras parcelas
-              da mesma compra?
+              {advancePromptDescription(settlementKind)}
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>
@@ -2635,16 +2862,38 @@ export function TransactionDrawer() {
           </AlertDialogFooter>
         </AlertDialogContent>
       </AlertDialog>
-      <SplitPaymentConfirmDialog
-        open={splitPaymentConfirmOpen}
-        onOpenChange={open => {
-          setSplitPaymentConfirmOpen(open)
-          if (!open) pendingPaymentRef.current = null
+      <PayInstallmentScopeDialog
+        open={payScopeDialogOpen}
+        onOpenChange={setPayScopeDialogOpen}
+        kind={settlementKind}
+        currentInstallmentNumber={tx?.installmentNumber ?? 1}
+        installmentsTotal={tx?.installmentsTotal ?? 1}
+        currentInstallmentAmountReais={installmentAmountReais}
+        currentRemainingReais={installmentRemainingReais}
+        installments={installmentSeriesData?.installments ?? []}
+        unsettledSplits={
+          needsReimbursementStep ? unsettledSplitItems : EMPTY_UNSETTLED_SPLITS
+        }
+        onConfirm={result => {
+          void applyPayInstallmentScope(result)
         }}
-        items={unsettledSplitItems}
-        isPending={isRegisteringSplitPayment || isPaying}
-        onConfirm={handleSplitPaymentConfirm}
-        onDecline={handleSplitPaymentDecline}
+      />
+      <EditInstallmentDateScopeDialog
+        open={dateScopeDialogOpen}
+        onOpenChange={open => {
+          setDateScopeDialogOpen(open)
+          if (!open) pendingDateScopeSaveRef.current = null
+        }}
+        installmentNumber={tx?.installmentNumber ?? 1}
+        installmentsTotal={tx?.installmentsTotal ?? 1}
+        onConfirm={scope => {
+          const save = pendingDateScopeSaveRef.current
+          pendingDateScopeSaveRef.current = null
+          if (!save) return
+          void save(scope).catch(async error => {
+            toast.error(await readHttpErrorMessage(error, 'Erro ao salvar lançamento'))
+          })
+        }}
       />
     </Drawer>
   )

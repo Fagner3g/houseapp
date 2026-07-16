@@ -20,6 +20,7 @@ export function isFutureScheduled(tx: PayableStatusTx): boolean {
 
 export type PayableStatusOptions = {
   isPartiallyPaid?: boolean
+  settlementKind?: 'income' | 'expense'
 }
 
 export function isOverduePayable(tx: PayableStatusTx): boolean {
@@ -59,11 +60,12 @@ export function getPayableStatusBadges(
 
   const badges: PayableStatusBadge[] = []
   const isPartiallyPaid = options?.isPartiallyPaid || tx.status === 'partial'
+  const kind = options?.settlementKind ?? 'expense'
 
   if (isPartiallyPaid) {
     badges.push({
       key: 'partial',
-      label: 'Pagamento parcial',
+      label: kind === 'income' ? 'Recebimento parcial' : 'Pagamento parcial',
       className: 'border-amber-200 bg-amber-50 text-amber-800 hover:bg-amber-50',
     })
   }

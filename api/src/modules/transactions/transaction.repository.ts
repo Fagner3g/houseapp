@@ -759,7 +759,7 @@ export class DrizzleTransactionRepository implements TransactionRepository {
         and(
           eq(transactions.organizationId, organizationId),
           eq(transactions.accountId, accountId),
-          eq(transactions.type, 'expense'),
+          inArray(transactions.type, ['expense', 'income']),
           eq(transactions.source, 'manual'),
           gt(transactions.installmentsTotal, 1)
         )

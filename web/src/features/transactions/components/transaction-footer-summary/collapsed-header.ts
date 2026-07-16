@@ -1,5 +1,5 @@
 import type { GetSplitDebtSummary200 } from '@/api/generated/model'
-import { formatMoneyString, reaisToMoneyString } from '@/lib/currency'
+import { formatMoneyString, moneyStringToReais, reaisToMoneyString } from '@/lib/currency'
 
 import {
   countPendingForViewer,
@@ -26,6 +26,7 @@ export function collapsedHeader(
 ): SummaryHeader {
   if (splitDebtSummary) {
     const share = resolveViewerMyShare(splitDebtSummary)
+    const shareReais = moneyStringToReais(share.amount)
     const pendingCount = countPendingForViewer(splitDebtSummary)
     const current = splitDebtSummary.currentInstallmentNumber ?? installmentNumber ?? null
     const total = splitDebtSummary.installmentsTotal ?? installmentsTotal ?? null
@@ -43,6 +44,16 @@ export function collapsedHeader(
               : `${pendingCount} pendentes`,
         tone: 'warning',
       })
+    }
+    // Fully split to others: "Meu valor R$ 0" is noise — show purchase total instead.
+    if (shareReais < 0.005) {
+      return {
+        label: splitDebtSummary.purchaseTotalIsEstimate
+          ? 'Compra total (estimado)'
+          : 'Compra total',
+        primary: formatMoneyString(splitDebtSummary.purchaseTotal),
+        chips,
+      }
     }
     return {
       label: share.label,

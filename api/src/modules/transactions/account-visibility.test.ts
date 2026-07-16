@@ -10,8 +10,14 @@ import {
 import { toTransactionViewer } from './transaction-visibility'
 
 describe('account / card visibility', () => {
-  it('skips account filter for owners', () => {
-    expect(accountVisibilityCondition(toTransactionViewer('owner', 'owner'))).toBeUndefined()
+  it('skips filter only when viewer is missing', () => {
+    expect(accountVisibilityCondition(undefined)).toBeUndefined()
+    expect(cardVisibilityCondition(undefined)).toBeUndefined()
+  })
+
+  it('applies personal filter for org owners', () => {
+    expect(accountVisibilityCondition(toTransactionViewer('owner', 'owner'))).toBeDefined()
+    expect(cardVisibilityCondition(toTransactionViewer('owner', 'owner'))).toBeDefined()
   })
 
   it('applies accessible condition for members by default', () => {
@@ -24,6 +30,11 @@ describe('account / card visibility', () => {
   it('applies owned-only condition when requested', () => {
     expect(
       accountVisibilityCondition(toTransactionViewer('member', 'owner'), {
+        ownedOnly: true,
+      })
+    ).toBeDefined()
+    expect(
+      accountVisibilityCondition(toTransactionViewer('owner', 'owner'), {
         ownedOnly: true,
       })
     ).toBeDefined()
@@ -40,6 +51,5 @@ describe('account / card visibility', () => {
         ownedOnly: true,
       })
     ).toBeDefined()
-    expect(cardVisibilityCondition(toTransactionViewer('owner', 'owner'))).toBeUndefined()
   })
 })

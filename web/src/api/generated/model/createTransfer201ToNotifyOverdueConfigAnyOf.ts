@@ -3,7 +3,7 @@
  * Do not edit manually.
  * HouseApp API
  * API for HouseApp
- * OpenAPI spec version: 2.2.1
+ * OpenAPI spec version: 2.3.0
  */
 import type { CreateTransfer201ToNotifyOverdueConfigAnyOfAnyOf } from "./createTransfer201ToNotifyOverdueConfigAnyOfAnyOf";
 import type { CreateTransfer201ToNotifyOverdueConfigAnyOfAnyOfTwo } from "./createTransfer201ToNotifyOverdueConfigAnyOfAnyOfTwo";

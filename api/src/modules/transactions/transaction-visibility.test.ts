@@ -3,6 +3,7 @@ import { describe, expect, it } from 'vitest'
 import {
   canMutateTransaction,
   isOrgOwner,
+  memberVisibleTransactionCondition,
   toTransactionViewer,
   transactionVisibilityCondition,
 } from './transaction-visibility'
@@ -27,36 +28,41 @@ describe('transaction visibility', () => {
     })
   })
 
-  it('allows owner to mutate any transaction', () => {
+  it('allows anyone to mutate only own created transactions', () => {
     const owner = toTransactionViewer('owner', 'owner')
-    expect(canMutateTransaction(owner, null)).toBe(true)
-    expect(canMutateTransaction(owner, 'someone-else')).toBe(true)
-  })
+    expect(canMutateTransaction(owner, 'owner')).toBe(true)
+    expect(canMutateTransaction(owner, null)).toBe(false)
+    expect(canMutateTransaction(owner, 'someone-else')).toBe(false)
 
-  it('allows member to mutate only own created transactions', () => {
     const member = toTransactionViewer('member', 'owner')
     expect(canMutateTransaction(member, 'member')).toBe(true)
     expect(canMutateTransaction(member, 'owner')).toBe(false)
     expect(canMutateTransaction(member, null)).toBe(false)
   })
 
-  it('skips SQL visibility filter for owners and missing viewer', () => {
+  it('skips SQL visibility filter only for missing viewer', () => {
     expect(transactionVisibilityCondition(undefined)).toBeUndefined()
+  })
+
+  it('returns SQL condition for any present viewer including org owner', () => {
     expect(
       transactionVisibilityCondition({
         userId: 'owner',
         ownerId: 'owner',
         isOwner: true,
       })
-    ).toBeUndefined()
+    ).toBeDefined()
+    expect(
+      transactionVisibilityCondition({
+        userId: 'member',
+        ownerId: 'owner',
+        isOwner: false,
+      })
+    ).toBeDefined()
   })
 
-  it('returns SQL condition for non-owner members', () => {
-    const condition = transactionVisibilityCondition({
-      userId: 'member',
-      ownerId: 'owner',
-      isOwner: false,
-    })
-    expect(condition).toBeDefined()
+  it('includes account ownership path for imported / unattributed txs', () => {
+    expect(memberVisibleTransactionCondition('member')).toBeDefined()
+    expect(transactionVisibilityCondition(toTransactionViewer('member', 'owner'))).toBeDefined()
   })
 })

@@ -3,7 +3,7 @@
  * Do not edit manually.
  * HouseApp API
  * API for HouseApp
- * OpenAPI spec version: 2.2.1
+ * OpenAPI spec version: 2.3.0
  */
 import type { CreateRecurringTransaction201RecurringTransaction } from "./createRecurringTransaction201RecurringTransaction";
 import type { CreateRecurringTransaction201NextOccurrenceDate } from "./createRecurringTransaction201NextOccurrenceDate";

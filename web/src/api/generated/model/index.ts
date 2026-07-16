@@ -3,7 +3,7 @@
  * Do not edit manually.
  * HouseApp API
  * API for HouseApp
- * OpenAPI spec version: 2.2.1
+ * OpenAPI spec version: 2.3.0
  */
 
 export * from "./acceptSplitPaymentRequest200";
@@ -1457,6 +1457,7 @@ export * from "./updateTransactionBodyCardId";
 export * from "./updateTransactionBodyCompetenceDate";
 export * from "./updateTransactionBodyCounterparty";
 export * from "./updateTransactionBodyDescription";
+export * from "./updateTransactionBodyInstallmentDateScope";
 export * from "./updateTransactionBodyInstallmentNumber";
 export * from "./updateTransactionBodyInstallmentPeriodicity";
 export * from "./updateTransactionBodyInstallmentsTotal";

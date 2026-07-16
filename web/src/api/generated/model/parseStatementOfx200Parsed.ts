@@ -3,7 +3,7 @@
  * Do not edit manually.
  * HouseApp API
  * API for HouseApp
- * OpenAPI spec version: 2.2.1
+ * OpenAPI spec version: 2.3.0
  */
 import type { ParseStatementOfx200ParsedImportSource } from "./parseStatementOfx200ParsedImportSource";
 import type { ParseStatementOfx200ParsedTransactionsItem } from "./parseStatementOfx200ParsedTransactionsItem";

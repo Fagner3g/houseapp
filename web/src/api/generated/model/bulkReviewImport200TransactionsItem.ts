@@ -3,7 +3,7 @@
  * Do not edit manually.
  * HouseApp API
  * API for HouseApp
- * OpenAPI spec version: 2.2.1
+ * OpenAPI spec version: 2.3.0
  */
 import type { BulkReviewImport200TransactionsItemAccountId } from "./bulkReviewImport200TransactionsItemAccountId";
 import type { BulkReviewImport200TransactionsItemCardId } from "./bulkReviewImport200TransactionsItemCardId";

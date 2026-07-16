@@ -33,7 +33,6 @@ interface SplitListItemProps {
   parcelInstallmentsTotal: number
   viewerIsCreditor: boolean
   viewerCanMutate: boolean
-  onRegisterPayment: (splitId: string, remainingReais: number) => void
   onRequestPaymentConfirmation: (splitId: string) => void
   onDelete: (splitId: string) => void
   isDeleting?: boolean
@@ -52,7 +51,6 @@ export function SplitListItem({
   parcelInstallmentsTotal,
   viewerIsCreditor,
   viewerCanMutate,
-  onRegisterPayment,
   onRequestPaymentConfirmation,
   onDelete,
   isDeleting,
@@ -153,16 +151,6 @@ export function SplitListItem({
             {SPLIT_STATUS_LABELS[split.status]}
           </Badge>
           <div className="flex items-center gap-1">
-            {isUnsettled && viewerIsCreditor && (
-              <Button
-                type="button"
-                size="sm"
-                variant="outline"
-                onClick={() => onRegisterPayment(split.id, remainingReais)}
-              >
-                Registrar pagamento
-              </Button>
-            )}
             {isUnsettled && !viewerIsCreditor && !hasPendingRequest && (
               <Button
                 type="button"

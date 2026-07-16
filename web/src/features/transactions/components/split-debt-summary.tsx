@@ -1,10 +1,12 @@
+import { ChevronDown } from 'lucide-react'
+import { useState } from 'react'
+
 import type { GetSplitDebtSummary200PersonsItem } from '@/api/generated/model'
-import { Badge } from '@/components/ui/badge'
-import { formatCurrency, formatMoneyString, moneyStringToReais, reaisToMoneyString } from '@/lib/currency'
+import { formatCurrency, formatMoneyString, moneyStringToReais } from '@/lib/currency'
 import { cn } from '@/lib/utils'
 
 import { computeSplitDebtProgress } from '../split-debt-summary.utils'
-import { SPLIT_STATUS_LABELS, SPLIT_STATUS_VARIANT } from './splits/split-status'
+import { PersonInstallmentPlanList } from './person-installment-plan-list'
 
 interface SplitDebtSummaryProps {
   summary: {
@@ -16,6 +18,7 @@ interface SplitDebtSummaryProps {
 
 export function SplitDebtSummary({ summary }: SplitDebtSummaryProps) {
   const hasInstallments = (summary.installmentsTotal ?? 0) > 1
+  const showMyShare = moneyStringToReais(summary.myShareTotal) >= 0.005
 
   return (
     <div className="rounded-lg border border-slate-200 bg-white px-4 py-3">
@@ -31,12 +34,14 @@ export function SplitDebtSummary({ summary }: SplitDebtSummaryProps) {
             </p>
           )}
         </div>
-        <div className="text-right">
-          <p className="text-xs text-slate-500">Meu valor total</p>
-          <p className="text-base font-semibold tabular-nums text-slate-900">
-            {formatMoneyString(summary.myShareTotal)}
-          </p>
-        </div>
+        {showMyShare ? (
+          <div className="text-right">
+            <p className="text-xs text-slate-500">Meu valor total</p>
+            <p className="text-base font-semibold tabular-nums text-slate-900">
+              {formatMoneyString(summary.myShareTotal)}
+            </p>
+          </div>
+        ) : null}
       </div>
     </div>
   )
@@ -53,8 +58,10 @@ export function PersonSplitDebtDetails({
   currentTransactionId,
   installmentsTotal,
 }: PersonSplitDebtDetailsProps) {
+  const [planOpen, setPlanOpen] = useState(false)
   const progress = computeSplitDebtProgress(person.totalOwed, person.totalPaid)
   const showInstallmentPlan = (installmentsTotal ?? 0) > 1 && person.installments.length > 1
+  const planCount = person.installments.length
 
   return (
     <div className="mt-2 space-y-2 border-t border-slate-200 pt-2">
@@ -89,43 +96,37 @@ export function PersonSplitDebtDetails({
       </div>
 
       {showInstallmentPlan && (
-        <ul className="space-y-1.5">
-          {person.installments.map(installment => {
-            const isCurrent = installment.transactionId === currentTransactionId
-            const remaining =
-              moneyStringToReais(installment.amount) - moneyStringToReais(installment.paidAmount)
+        <div>
+          <button
+            type="button"
+            className="flex w-full cursor-pointer items-center justify-between gap-2 rounded-md py-1 text-left text-xs font-medium text-slate-600 hover:text-slate-900"
+            onClick={() => setPlanOpen(v => !v)}
+            aria-expanded={planOpen}
+          >
+            <span>{planOpen ? 'Ocultar parcelas' : `Ver parcelas (${planCount})`}</span>
+            <ChevronDown
+              className={cn(
+                'size-4 shrink-0 transition-transform duration-200',
+                planOpen && 'rotate-180'
+              )}
+            />
+          </button>
 
-            return (
-              <li
-                key={installment.splitId}
-                className={cn(
-                  'flex items-center justify-between gap-2 rounded-md px-2 py-1.5 text-sm',
-                  isCurrent && 'bg-white ring-1 ring-slate-200'
-                )}
-              >
-                <span className="text-slate-600">
-                  Parcela {installment.installmentNumber}/{installmentsTotal}
-                  {isCurrent && (
-                    <span className="ml-1 text-xs font-medium text-slate-500">(esta)</span>
-                  )}
-                </span>
-                <div className="flex items-center gap-2">
-                  <span className="tabular-nums text-slate-800">
-                    {formatMoneyString(installment.amount)}
-                  </span>
-                  <Badge
-                    variant={SPLIT_STATUS_VARIANT[installment.status]}
-                    className="text-[10px] uppercase"
-                  >
-                    {installment.status === 'partial'
-                      ? `Falta ${formatMoneyString(reaisToMoneyString(remaining))}`
-                      : SPLIT_STATUS_LABELS[installment.status]}
-                  </Badge>
-                </div>
-              </li>
-            )
-          })}
-        </ul>
+          <div
+            className={cn(
+              'grid transition-[grid-template-rows] duration-200 ease-out',
+              planOpen ? 'grid-rows-[1fr]' : 'grid-rows-[0fr]'
+            )}
+          >
+            <div className="min-h-0 overflow-hidden">
+              <PersonInstallmentPlanList
+                installments={person.installments}
+                installmentsTotal={installmentsTotal}
+                currentTransactionId={currentTransactionId}
+              />
+            </div>
+          </div>
+        </div>
       )}
     </div>
   )

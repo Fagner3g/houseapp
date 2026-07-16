@@ -878,7 +878,7 @@ export class DrizzleReportRepository implements ReportRepository {
     viewer?: TransactionViewer
   ): Promise<DailyReportRow[]> {
     const dateExpr = reportDayExpr()
-    const personal = Boolean(viewer && !viewer.isOwner)
+    const personal = Boolean(viewer)
     const expenseExpr = personal ? myExpenseAmountExpr() : reportExpenseAmountExpr
     const ownership =
       personal && viewer

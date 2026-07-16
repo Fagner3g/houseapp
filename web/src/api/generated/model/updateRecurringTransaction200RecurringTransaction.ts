@@ -3,7 +3,7 @@
  * Do not edit manually.
  * HouseApp API
  * API for HouseApp
- * OpenAPI spec version: 2.2.1
+ * OpenAPI spec version: 2.3.0
  */
 import type { UpdateRecurringTransaction200RecurringTransactionAccountId } from "./updateRecurringTransaction200RecurringTransactionAccountId";
 import type { UpdateRecurringTransaction200RecurringTransactionType } from "./updateRecurringTransaction200RecurringTransactionType";

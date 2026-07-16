@@ -4,16 +4,22 @@ import { canManageAccount } from './can-manage-account'
 import { toTransactionViewer } from './transaction-visibility'
 
 describe('canManageAccount', () => {
-  it('allows org owners and missing viewer', () => {
+  it('allows missing viewer (system callers)', () => {
     expect(canManageAccount(undefined, { createdBy: 'other' })).toBe(true)
-    expect(
-      canManageAccount(toTransactionViewer('owner', 'owner'), { createdBy: 'other' })
-    ).toBe(true)
   })
 
-  it('allows the account creator', () => {
+  it('denies org owner without personal ownership', () => {
+    expect(
+      canManageAccount(toTransactionViewer('owner', 'owner'), { createdBy: 'other' })
+    ).toBe(false)
+  })
+
+  it('allows the account creator including org owner', () => {
     expect(
       canManageAccount(toTransactionViewer('member', 'owner'), { createdBy: 'member' })
+    ).toBe(true)
+    expect(
+      canManageAccount(toTransactionViewer('owner', 'owner'), { createdBy: 'owner' })
     ).toBe(true)
   })
 
@@ -21,6 +27,11 @@ describe('canManageAccount', () => {
     expect(
       canManageAccount(toTransactionViewer('member', 'owner'), { createdBy: 'owner' }, [
         'member',
+      ])
+    ).toBe(true)
+    expect(
+      canManageAccount(toTransactionViewer('owner', 'owner'), { createdBy: 'member' }, [
+        'owner',
       ])
     ).toBe(true)
   })

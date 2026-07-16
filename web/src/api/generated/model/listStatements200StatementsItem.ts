@@ -3,7 +3,7 @@
  * Do not edit manually.
  * HouseApp API
  * API for HouseApp
- * OpenAPI spec version: 2.2.1
+ * OpenAPI spec version: 2.3.0
  */
 import type { ListStatements200StatementsItemPeriodStart } from "./listStatements200StatementsItemPeriodStart";
 import type { ListStatements200StatementsItemPeriodEnd } from "./listStatements200StatementsItemPeriodEnd";

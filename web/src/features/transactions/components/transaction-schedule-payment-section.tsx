@@ -24,6 +24,10 @@ import {
 } from '@/components/ui/dialog'
 import { readHttpErrorMessage } from '@/lib/http'
 import { calendarDateToIso, formatIsoDateLabel, isoToCalendarDate } from '@/lib/date'
+import {
+  scheduleSettlementButtonLabel,
+  type SettlementKind,
+} from '@/features/transactions/lib/settlement-copy'
 
 function defaultScheduleDate(dueDate: string, scheduledAt?: string | null): string {
   const today = dayjs().format('YYYY-MM-DD')
@@ -44,6 +48,7 @@ interface TransactionSchedulePaymentSectionProps {
   transactionId: string
   dueDate: string
   paymentScheduledAt: string | null | undefined
+  kind?: SettlementKind
   disabled?: boolean
 }
 
@@ -52,6 +57,7 @@ export function TransactionSchedulePaymentSection({
   transactionId,
   dueDate,
   paymentScheduledAt,
+  kind = 'expense',
   disabled = false,
 }: TransactionSchedulePaymentSectionProps) {
   const queryClient = useQueryClient()
@@ -136,20 +142,21 @@ export function TransactionSchedulePaymentSection({
         }}
       >
         <CalendarClock className="size-4" />
-        Agendar pagamento
+        {scheduleSettlementButtonLabel(kind)}
       </Button>
 
       <Dialog open={dialogOpen} onOpenChange={setDialogOpen}>
         <DialogContent>
           <DialogHeader>
-            <DialogTitle>Agendar pagamento</DialogTitle>
+            <DialogTitle>{scheduleSettlementButtonLabel(kind)}</DialogTitle>
             <DialogDescription>
-              Informe a data em que o débito está programado no banco. A transação continua pendente,
-              aparece nos lançamentos do mês do débito e some dos vencidos até essa data.
+              {kind === 'income'
+                ? 'Informe a data em que o crédito está programado no banco. A transação continua pendente, aparece nos lançamentos do mês do crédito e some dos vencidos até essa data.'
+                : 'Informe a data em que o débito está programado no banco. A transação continua pendente, aparece nos lançamentos do mês do débito e some dos vencidos até essa data.'}
             </DialogDescription>
           </DialogHeader>
           <div className="space-y-2">
-            <Label>Data do débito</Label>
+            <Label>{kind === 'income' ? 'Data do crédito' : 'Data do débito'}</Label>
             <DatePickerInput
               value={scheduledDate}
               onChange={setScheduledDate}

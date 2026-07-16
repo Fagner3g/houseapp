@@ -11,31 +11,14 @@ import {
   useDeleteSplit,
   useListSplits,
   useListUsersByOrg,
-  useRegisterSplitPayment,
 } from '@/api/generated/api'
 import type { GetSplitDebtSummary200, GetSplitDebtSummary200PersonsItem } from '@/api/generated/model'
 import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
-import { CurrencyInput } from '@/components/ui/currency-input'
-import {
-  Dialog,
-  DialogContent,
-  DialogFooter,
-  DialogHeader,
-  DialogTitle,
-} from '@/components/ui/dialog'
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from '@/components/ui/select'
 import { useActiveOrganization } from '@/hooks/use-active-organization'
 import { moneyStringToReais, reaisToMoneyString } from '@/lib/currency'
 import { getSplitEligibleOrgUsers } from '@/lib/org-users'
 import { normalizePhoneDigits } from '@/lib/phone'
-import { stackyPrimaryButton } from '@/lib/ui-classes'
 import { useAuthStore } from '@/stores/auth'
 import { getSplitTransactionIdsQueryKey } from '@/features/credit-cards/hooks/use-split-transaction-ids'
 
@@ -76,9 +59,6 @@ export function TransactionSplitsSection({
   const queryClient = useQueryClient()
   const [open, setOpen] = useState(false)
   const [showAddForm, setShowAddForm] = useState(false)
-  const [paymentSplitId, setPaymentSplitId] = useState<string | null>(null)
-  const [paymentAmount, setPaymentAmount] = useState(0)
-  const [paymentMethod, setPaymentMethod] = useState<'pix' | 'cash' | 'transfer' | 'other'>('pix')
 
   const { data: membersData } = useListUsersByOrg(slug, {
     query: { enabled: !!slug && open },
@@ -89,7 +69,6 @@ export function TransactionSplitsSection({
 
   const { mutateAsync: createSplit, isPending: isCreating } = useCreateSplit()
   const { mutateAsync: deleteSplit, isPending: isDeleting } = useDeleteSplit()
-  const { mutateAsync: registerPayment, isPending: isPaying } = useRegisterSplitPayment()
   const { mutateAsync: createPaymentRequest, isPending: isRequestingPayment } =
     useCreateSplitPaymentRequest()
 
@@ -264,24 +243,6 @@ export function TransactionSplitsSection({
     }
   }
 
-  const handleRegisterPayment = async () => {
-    if (!slug || !paymentSplitId || paymentAmount <= 0) return
-    try {
-      await registerPayment({
-        slug,
-        transactionId,
-        id: paymentSplitId,
-        data: { amount: reaisToMoneyString(paymentAmount), method: paymentMethod },
-      })
-      toast.success('Pagamento registrado')
-      setPaymentSplitId(null)
-      setPaymentAmount(0)
-      invalidate()
-    } catch {
-      toast.error('Erro ao registrar pagamento')
-    }
-  }
-
   const handleDeleteSplit = async (splitId: string) => {
     if (!slug) return
     try {
@@ -321,7 +282,6 @@ export function TransactionSplitsSection({
     ) : undefined
 
   return (
-    <>
       <DrawerCollapsibleSection
         icon={Wallet}
         title="Divisões"
@@ -360,11 +320,6 @@ export function TransactionSplitsSection({
                 parcelInstallmentsTotal={parcelCount}
                 viewerIsCreditor={viewerIsCreditor}
                 viewerCanMutate={viewerCanMutate}
-                onRegisterPayment={(id, remaining) => {
-                  setPaymentSplitId(id)
-                  setPaymentAmount(remaining)
-                  setPaymentMethod('pix')
-                }}
                 onRequestPaymentConfirmation={id =>
                   void handleRequestPaymentConfirmation(id)
                 }
@@ -414,51 +369,5 @@ export function TransactionSplitsSection({
           <SplitMyShareRow amountReais={myShareReais} />
         )}
       </DrawerCollapsibleSection>
-
-      <Dialog open={!!paymentSplitId} onOpenChange={v => !v && setPaymentSplitId(null)}>
-        <DialogContent>
-          <DialogHeader>
-            <DialogTitle>Registrar pagamento</DialogTitle>
-          </DialogHeader>
-          <div className="space-y-4 py-2">
-            <div>
-              <p className="mb-2 text-sm text-slate-600">Valor recebido</p>
-              <CurrencyInput value={paymentAmount} onValueChange={setPaymentAmount} />
-            </div>
-            <div>
-              <p className="mb-2 text-sm text-slate-600">Forma de pagamento</p>
-              <Select
-                value={paymentMethod}
-                onValueChange={v =>
-                  setPaymentMethod(v as 'pix' | 'cash' | 'transfer' | 'other')
-                }
-              >
-                <SelectTrigger>
-                  <SelectValue />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="pix">Pix</SelectItem>
-                  <SelectItem value="cash">Dinheiro</SelectItem>
-                  <SelectItem value="transfer">Transferência</SelectItem>
-                  <SelectItem value="other">Outro</SelectItem>
-                </SelectContent>
-              </Select>
-            </div>
-          </div>
-          <DialogFooter>
-            <Button variant="outline" onClick={() => setPaymentSplitId(null)}>
-              Cancelar
-            </Button>
-            <Button
-              className={stackyPrimaryButton}
-              disabled={isPaying}
-              onClick={() => void handleRegisterPayment()}
-            >
-              Confirmar
-            </Button>
-          </DialogFooter>
-        </DialogContent>
-      </Dialog>
-    </>
   )
 }

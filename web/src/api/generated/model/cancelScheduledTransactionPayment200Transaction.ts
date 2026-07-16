@@ -3,7 +3,7 @@
  * Do not edit manually.
  * HouseApp API
  * API for HouseApp
- * OpenAPI spec version: 2.2.1
+ * OpenAPI spec version: 2.3.0
  */
 import type { CancelScheduledTransactionPayment200TransactionAccountId } from "./cancelScheduledTransactionPayment200TransactionAccountId";
 import type { CancelScheduledTransactionPayment200TransactionCardId } from "./cancelScheduledTransactionPayment200TransactionCardId";

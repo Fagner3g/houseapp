@@ -3,7 +3,7 @@
  * Do not edit manually.
  * HouseApp API
  * API for HouseApp
- * OpenAPI spec version: 2.2.1
+ * OpenAPI spec version: 2.3.0
  */
 import type { BulkReviewImport200TransactionsItemNotifyOverdueConfigAnyOfAnyOf } from "./bulkReviewImport200TransactionsItemNotifyOverdueConfigAnyOfAnyOf";
 import type { BulkReviewImport200TransactionsItemNotifyOverdueConfigAnyOfAnyOfTwo } from "./bulkReviewImport200TransactionsItemNotifyOverdueConfigAnyOfAnyOfTwo";

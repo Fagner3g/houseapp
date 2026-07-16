@@ -13712,6 +13712,14 @@
                         ]
                       }
                     ]
+                  },
+                  "installmentDateScope": {
+                    "type": "string",
+                    "enum": [
+                      "current",
+                      "from_here",
+                      "all"
+                    ]
                   }
                 }
               }

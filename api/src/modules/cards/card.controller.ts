@@ -50,13 +50,20 @@ export async function createCardController(
   reply: FastifyReply
 ) {
   const viewer = viewerFromRequest(request)
+  const account = await container.accountService.get(
+    request.organization.id,
+    request.params.accountId,
+    viewer
+  )
+  // Account managers may assign the card to another member ("mencionar").
   const card = await container.cardService.create(
     request.organization.id,
     request.params.accountId,
     {
       ...request.body,
-      // Members can only create cards assigned to themselves.
-      userId: viewer.isOwner ? request.body.userId : viewer.userId,
+      userId: account.canManage
+        ? (request.body.userId ?? viewer.userId)
+        : viewer.userId,
     }
   )
 

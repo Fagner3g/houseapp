@@ -822,13 +822,13 @@ export class StatementService {
     return account
   }
 
-  /** Owners and permanent account holders see imported totals; split-only access does not. */
+  /** Permanent account holders see imported totals; split-only access does not. */
   private async canShowFullInvoiceTotals(
     organizationId: string,
     accountId: string,
     viewer?: TransactionViewer
   ): Promise<boolean> {
-    if (!viewer || viewer.isOwner) return true
+    if (!viewer) return true
     const owned = await this.accountRepository.findById(organizationId, accountId, viewer, {
       ownedOnly: true,
     })

@@ -707,6 +707,7 @@ function TransactionTable({
                           tx.paidAmount,
                           splitPaidById?.get(tx.id) ?? 0
                         ),
+                        settlementKind: tx.type === 'income' ? 'income' : 'expense',
                       }).map(badge => (
                         <Badge
                           key={badge.key}
@@ -756,7 +757,9 @@ function TransactionTable({
                         size="icon"
                         className="size-8 rounded-lg text-slate-500 hover:text-emerald-600"
                         onClick={() => openPayDrawer(tx.id)}
-                        aria-label="Confirmar pagamento"
+                        aria-label={
+                          tx.type === 'income' ? 'Confirmar recebimento' : 'Confirmar pagamento'
+                        }
                       >
                         <Check className="size-4" />
                       </Button>

@@ -3,7 +3,7 @@
  * Do not edit manually.
  * HouseApp API
  * API for HouseApp
- * OpenAPI spec version: 2.2.1
+ * OpenAPI spec version: 2.3.0
  */
 import type { UpdateTransactionBodyAccountId } from "./updateTransactionBodyAccountId";
 import type { UpdateTransactionBodyCardId } from "./updateTransactionBodyCardId";
@@ -28,6 +28,7 @@ import type { UpdateTransactionBodyNotifyContactName } from "./updateTransaction
 import type { UpdateTransactionBodyNotifyContactPhone } from "./updateTransactionBodyNotifyContactPhone";
 import type { UpdateTransactionBodyNotifyDaysBefore } from "./updateTransactionBodyNotifyDaysBefore";
 import type { UpdateTransactionBodyNotifyOverdueConfig } from "./updateTransactionBodyNotifyOverdueConfig";
+import type { UpdateTransactionBodyInstallmentDateScope } from "./updateTransactionBodyInstallmentDateScope";
 
 export type UpdateTransactionBody = {
   accountId?: UpdateTransactionBodyAccountId;
@@ -59,4 +60,5 @@ export type UpdateTransactionBody = {
   notifyContactPhone?: UpdateTransactionBodyNotifyContactPhone;
   notifyDaysBefore?: UpdateTransactionBodyNotifyDaysBefore;
   notifyOverdueConfig?: UpdateTransactionBodyNotifyOverdueConfig;
+  installmentDateScope?: UpdateTransactionBodyInstallmentDateScope;
 };
