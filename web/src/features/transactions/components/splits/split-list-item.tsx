@@ -20,6 +20,7 @@ import { PersonSplitDebtDetails } from '../split-debt-summary'
 import { SplitPaymentsList } from '../split-payments-list'
 import { SPLIT_STATUS_LABELS, SPLIT_STATUS_VARIANT } from './split-status'
 import { personInitials } from './person-initials'
+import { splitChargeModeBadge } from './split-charge-mode'
 
 interface SplitListItemProps {
   split: ListSplits200SplitsItem
@@ -71,7 +72,9 @@ export function SplitListItem({
       : null
 
   const currentInstallment = personDebt?.installments.find(item => item.splitId === split.id)
-  const showPersonDebtDetails = personDebt != null && parcelInstallmentsTotal > 1
+  const isCollectPlan = (split.collectInstallmentsTotal ?? 0) >= 2
+  const showPersonDebtDetails =
+    personDebt != null && (parcelInstallmentsTotal > 1 || isCollectPlan)
   const parcelNumber =
     currentInstallment?.installmentNumber ??
     installmentNumber ??
@@ -90,14 +93,21 @@ export function SplitListItem({
         })
       : split.amount
 
+  const amountMode = splitChargeModeBadge({
+    collectLumpSum: split.collectLumpSum,
+    collectInstallmentsTotal: split.collectInstallmentsTotal,
+    collectInstallmentNumber: split.collectInstallmentNumber,
+    purchaseInstallmentsTotal: showPersonDebtDetails ? parcelInstallmentsTotal : null,
+    purchaseInstallmentNumber: parcelNumber,
+  })
+
   const amountLabel =
-    split.collectLumpSum
-      ? 'Cobrança à vista'
-      : showPersonDebtDetails
-        ? `Valor desta parcela${
-            parcelInstallmentsTotal > 1 ? ` (${parcelNumber}/${parcelInstallmentsTotal})` : ''
-          }`
-        : null
+    amountMode?.caption ??
+    (showPersonDebtDetails
+      ? `Valor desta parcela${
+          parcelInstallmentsTotal > 1 ? ` (${parcelNumber}/${parcelInstallmentsTotal})` : ''
+        }`
+      : null)
 
   const isUnsettled = split.status !== 'paid' && split.status !== 'forgiven'
   const hasPendingRequest = Boolean(split.pendingPaymentRequest)
@@ -126,9 +136,9 @@ export function SplitListItem({
               )}
               <span className="inline-flex items-center gap-1.5">
                 {formatMoneyString(displayInstallmentAmount)}
-                {split.collectLumpSum && (
+                {amountMode && (
                   <Badge variant="secondary" className="text-[10px] font-normal">
-                    à vista
+                    {amountMode.badge}
                   </Badge>
                 )}
                 {split.status === 'partial' && (

@@ -5,6 +5,7 @@ import {
   DEFAULT_ALERT_PREFERENCES,
   organizationMembers,
 } from '@/db/schemas/organizationMembers'
+import { areSystemNotificationsEnabled } from '@/modules/system-settings/notifications-enabled'
 
 import { resolveAlertDedupeKey, shouldSkipAlertDedupe } from '../alert-dedupe'
 import { isAlertChannelEnabled } from '../alert-preferences'
@@ -15,6 +16,10 @@ export async function createNotificationsForUser(
   notificationRepository: NotificationRepository,
   params: CreateUserNotificationParams
 ): Promise<number> {
+  if (!(await areSystemNotificationsEnabled())) {
+    return 0
+  }
+
   const organizationId = params.organizationId || params.rule.organizationId
 
   const [membership] = await db

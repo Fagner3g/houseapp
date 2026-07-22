@@ -2,6 +2,7 @@ import { centavosToString } from '@/core/money'
 import type { SplitRepository } from '@/modules/splits/split.repository'
 
 import {
+  buildSplitChargeModeLabel,
   buildSplitDebtTitle,
   buildSplitUpcomingDedupeKey,
 } from '../../alert-utils'
@@ -48,10 +49,23 @@ export async function evaluateSplitReminders(
 
     const splitAmount = centavosToString(split.amount)
     const dueDate = resolveDueDateForSplit(split).toISOString()
-    const title = buildSplitDebtTitle(split.transactionTitle, daysUntilDue)
-    const body = splitAmount
-      ? `Valor: R$ ${splitAmount} · Vencimento: ${dueDate}`
-      : `Vencimento: ${dueDate}`
+    const title = buildSplitDebtTitle(split.transactionTitle, daysUntilDue, {
+      collectLumpSum: split.collectLumpSum,
+    })
+    const chargeMode = buildSplitChargeModeLabel({
+      collectLumpSum: split.collectLumpSum,
+      collectInstallmentNumber: split.collectInstallmentNumber,
+      collectInstallmentsTotal: split.collectInstallmentsTotal,
+      installmentNumber: split.installmentNumber,
+      installmentsTotal: split.installmentsTotal,
+    })
+    const body = [
+      splitAmount ? `Valor: R$ ${splitAmount}` : null,
+      chargeMode ? `Cobrança: ${chargeMode}` : null,
+      `Vencimento: ${dueDate}`,
+    ]
+      .filter(Boolean)
+      .join(' · ')
 
     if (split.userId) {
       created += await createNotificationsForUser(deps.notificationRepository, {

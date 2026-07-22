@@ -8,6 +8,7 @@ import { users } from '@/db/schemas/users'
 import { formatReport } from '@/domain/ai/report-formatter'
 import { normalizePhone, sendWhatsAppMessage } from '@/domain/whatsapp'
 import { logger } from '@/lib/logger'
+import { areSystemNotificationsEnabled } from '@/modules/system-settings/notifications-enabled'
 import { JOB_CONFIGS } from './config'
 import { jobManager } from './job-manager'
 import type { JobResult } from './types'
@@ -18,6 +19,16 @@ async function sendMonthlySummaryJob(): Promise<JobResult> {
   let errors = 0
 
   try {
+    if (!(await areSystemNotificationsEnabled())) {
+      logger.info('Monthly summary skipped: system notifications disabled')
+      return {
+        success: true,
+        processed: 0,
+        errors: 0,
+        duration: Date.now() - startTime,
+      }
+    }
+
     const orgRows = await db.select().from(organizations)
 
     for (const org of orgRows) {

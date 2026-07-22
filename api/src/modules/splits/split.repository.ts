@@ -36,6 +36,10 @@ export type CreateSplitData = {
   description?: string | null
   notifyEnabled?: boolean
   collectLumpSum?: boolean
+  dueAt?: Date | null
+  collectInstallmentNumber?: number | null
+  collectInstallmentsTotal?: number | null
+  collectPlanId?: string | null
 }
 
 export type UpdateSplitData = Partial<
@@ -67,7 +71,9 @@ export type PendingSplitRow = SplitRecord & {
 export interface SplitRepository {
   findByTransaction(transactionId: string): Promise<SplitRecord[]>
   findById(transactionId: string, id: string): Promise<SplitRecord | null>
+  findByCollectPlanId(collectPlanId: string): Promise<SplitRecord[]>
   create(data: CreateSplitData): Promise<SplitRecord>
+  deleteByCollectPlanId(collectPlanId: string): Promise<number>
   update(id: string, data: UpdateSplitData): Promise<SplitRecord | null>
   delete(id: string): Promise<SplitRecord | null>
   findPayments(splitId: string): Promise<SplitPaymentRecord[]>
@@ -256,6 +262,22 @@ export class DrizzleSplitRepository implements SplitRepository {
     return split ?? null
   }
 
+  async findByCollectPlanId(collectPlanId: string): Promise<SplitRecord[]> {
+    return db
+      .select()
+      .from(transactionSplits)
+      .where(eq(transactionSplits.collectPlanId, collectPlanId))
+      .orderBy(transactionSplits.collectInstallmentNumber)
+  }
+
+  async deleteByCollectPlanId(collectPlanId: string): Promise<number> {
+    const deleted = await db
+      .delete(transactionSplits)
+      .where(eq(transactionSplits.collectPlanId, collectPlanId))
+      .returning({ id: transactionSplits.id })
+    return deleted.length
+  }
+
   async create(data: CreateSplitData): Promise<SplitRecord> {
     const [created] = await db
       .insert(transactionSplits)
@@ -271,6 +293,10 @@ export class DrizzleSplitRepository implements SplitRepository {
         paidAmount: 0n,
         notifyEnabled: data.notifyEnabled ?? true,
         collectLumpSum: data.collectLumpSum ?? false,
+        dueAt: data.dueAt ?? null,
+        collectInstallmentNumber: data.collectInstallmentNumber ?? null,
+        collectInstallmentsTotal: data.collectInstallmentsTotal ?? null,
+        collectPlanId: data.collectPlanId ?? null,
       })
       .returning()
 

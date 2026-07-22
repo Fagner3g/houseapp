@@ -8,6 +8,12 @@ import {
   type TransactionViewer,
 } from '@/modules/transactions/transaction-visibility'
 
+import {
+  assertCanCreateCollectPlan,
+  buildCollectPlanCreateRows,
+  createCollectPlanSplits,
+  type CreateCollectPlanInput,
+} from './collect-plan'
 import { loadExpenseCreditorUserId } from './load-expense-creditor'
 import type { SplitPaymentRequestRepository } from './payment-request/repository'
 import type {
@@ -47,6 +53,10 @@ export type SplitDto = {
   lastNotifiedAt: string | null
   notifyEnabled: boolean
   collectLumpSum: boolean
+  dueAt: string | null
+  collectInstallmentNumber: number | null
+  collectInstallmentsTotal: number | null
+  collectPlanId: string | null
   createdAt: string
   updatedAt: string
   pendingPaymentRequest?: PendingPaymentRequestDto | null
@@ -96,6 +106,10 @@ function toSplitDto(split: SplitRecord): SplitDto {
     lastNotifiedAt: split.lastNotifiedAt?.toISOString() ?? null,
     notifyEnabled: split.notifyEnabled,
     collectLumpSum: split.collectLumpSum,
+    dueAt: split.dueAt?.toISOString() ?? null,
+    collectInstallmentNumber: split.collectInstallmentNumber,
+    collectInstallmentsTotal: split.collectInstallmentsTotal,
+    collectPlanId: split.collectPlanId,
     createdAt: split.createdAt.toISOString(),
     updatedAt: split.updatedAt.toISOString(),
   }
@@ -206,6 +220,22 @@ export class SplitService {
     return toSplitDto(created)
   }
 
+  async createCollectPlan(
+    organizationId: string,
+    transactionId: string,
+    input: CreateCollectPlanInput,
+    viewer?: TransactionViewer
+  ): Promise<SplitDto[]> {
+    const transaction = await this.ensureTransaction(organizationId, transactionId, viewer)
+    this.assertCanMutateSplits(viewer, transaction.createdBy)
+    this.validatePerson(input)
+    assertCanCreateCollectPlan(transaction)
+
+    const rows = buildCollectPlanCreateRows(transactionId, input)
+    const created = await createCollectPlanSplits(this.splitRepository, rows)
+    return created.map(toSplitDto)
+  }
+
   async update(
     organizationId: string,
     transactionId: string,
@@ -256,6 +286,30 @@ export class SplitService {
   ): Promise<void> {
     const transaction = await this.ensureTransaction(organizationId, transactionId, viewer)
     this.assertCanMutateSplits(viewer, transaction.createdBy)
+
+    const existing = await this.splitRepository.findById(transactionId, id)
+    if (!existing) {
+      throw notFound('Split not found')
+    }
+
+    if (
+      existing.collectPlanId &&
+      existing.paidAmount === 0n &&
+      existing.status === 'pending'
+    ) {
+      const planRows = await this.splitRepository.findByCollectPlanId(existing.collectPlanId)
+      const allUnpaid = planRows.every(
+        row => row.paidAmount === 0n && row.status === 'pending'
+      )
+      if (allUnpaid) {
+        const ids = planRows.map(row => row.id)
+        await this.splitRepository.deleteByCollectPlanId(existing.collectPlanId)
+        await Promise.all(
+          ids.map(splitId => this.paymentRequestRepository?.cancelPendingBySplitId(splitId))
+        )
+        return
+      }
+    }
 
     const deleted = await this.splitRepository.delete(id)
 

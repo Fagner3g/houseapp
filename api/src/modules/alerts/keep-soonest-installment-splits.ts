@@ -3,6 +3,10 @@ import { personKey } from '@/modules/splits/split-debt-summary.logic'
 import type { PendingSplitNotifyRow } from '@/modules/splits/split.repository'
 
 function upcomingInstallmentSeriesKey(split: PendingSplitNotifyRow): string | null {
+  if (split.collectPlanId && (split.collectInstallmentsTotal ?? 0) >= 2) {
+    return `collect:${personKey(split)}::${split.collectPlanId}`
+  }
+
   if (
     split.installmentNumber == null ||
     split.installmentsTotal == null ||
@@ -39,11 +43,16 @@ export function keepSoonestUpcomingInstallmentSplits(
     if (!key) continue
 
     const existing = bestBySeries.get(key)
+    const installmentNumber =
+      split.collectInstallmentNumber ?? split.installmentNumber ?? 0
     if (
       !existing ||
       days < existing.days ||
       (days === existing.days &&
-        (split.installmentNumber ?? 0) < (existing.split.installmentNumber ?? 0))
+        installmentNumber <
+          (existing.split.collectInstallmentNumber ??
+            existing.split.installmentNumber ??
+            0))
     ) {
       bestBySeries.set(key, { split, days })
     }

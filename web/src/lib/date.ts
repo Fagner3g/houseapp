@@ -97,6 +97,14 @@ function formatDueDateKey(dueDate: Date, timezone = TIMEZONE): string {
   }).format(dueDate)
 }
 
+/** Previous calendar day in the app timezone as UTC noon (for overdue `dateTo` filters). */
+export function overdueDateToIso(referenceDate = new Date(), timezone = TIMEZONE): string {
+  const todayKey = formatDueDateKey(referenceDate, timezone)
+  const [year, month, day] = todayKey.split('-').map(Number)
+  const previous = new Date(Date.UTC(year, month - 1, day - 1, 12, 0, 0, 0))
+  return previous.toISOString()
+}
+
 export function computeDaysUntilDue(
   dueDate: Date,
   referenceDate = new Date(),

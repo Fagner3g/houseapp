@@ -27,11 +27,12 @@ export function resolveDueDateForSplit(split: PendingSplitNotifyRow): Date {
   return resolveSplitAlertDueDate({
     transactionDate: split.transactionDate,
     competenceDate: split.competenceDate,
-    installmentNumber: split.installmentNumber,
+    installmentNumber: split.collectInstallmentNumber ?? split.installmentNumber,
     type: split.transactionType,
     accountType: split.accountType,
     closingDay: split.closingDay,
     dueDay: split.dueDay,
+    splitDueAt: split.dueAt,
   })
 }
 

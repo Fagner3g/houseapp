@@ -7,6 +7,7 @@ import { db } from '@/db'
 import { users } from '@/db/schemas/users'
 import { normalizePhone, sendWhatsAppMessage } from '@/domain/whatsapp'
 import { logger } from '@/lib/logger'
+import { areSystemNotificationsEnabled } from '@/modules/system-settings/notifications-enabled'
 
 import type { CreateAlertRuleBody, EvaluateAlertRulesBody, SendManualAlertBody, UpdateAlertRuleBody } from './alert-rule.schema'
 
@@ -94,6 +95,13 @@ export async function sendManualAlertController(
   }
 
   if (type === 'monthly-summary') {
+    if (!(await areSystemNotificationsEnabled())) {
+      return reply.status(StatusCodes.SERVICE_UNAVAILABLE).send({
+        error: 'NotificationsDisabled',
+        message: 'Notificações do sistema estão desativadas',
+      })
+    }
+
     if (!resolvedTargetKey.startsWith('user:')) {
       return reply.status(StatusCodes.BAD_REQUEST).send({
         error: 'Bad Request',

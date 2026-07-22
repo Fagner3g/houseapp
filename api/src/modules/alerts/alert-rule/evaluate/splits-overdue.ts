@@ -3,9 +3,11 @@ import type { SplitRepository } from '@/modules/splits/split.repository'
 
 import {
   buildOverdueTitle,
+  buildSplitChargeModeLabel,
   buildSplitOverdueDedupeKey,
   getOverduePeriodKey,
 } from '../../alert-utils'
+import { stripInstallmentBaseTitle } from '@/core/expense-title'
 import { isOverdueConfig } from '../../alert-rule.repository'
 import type { AlertRuleRecord } from '../../alert-rule.repository'
 import { resolveDaysUntilDueForSplit, resolveDueDateForSplit } from '../due'
@@ -47,10 +49,24 @@ export async function evaluateSplitOverdueReminders(
     const periodKey = getOverduePeriodKey(rule.config.frequency, rule.config.interval)
     const splitAmount = centavosToString(split.amount)
     const dueDate = resolveDueDateForSplit(split).toISOString()
-    const title = buildOverdueTitle(split.transactionTitle, overdueDays)
-    const body = splitAmount
-      ? `Valor: R$ ${splitAmount} · Vencimento: ${dueDate}`
-      : `Vencimento: ${dueDate}`
+    const displayTitle = split.collectLumpSum
+      ? stripInstallmentBaseTitle(split.transactionTitle)
+      : split.transactionTitle
+    const title = buildOverdueTitle(displayTitle, overdueDays)
+    const chargeMode = buildSplitChargeModeLabel({
+      collectLumpSum: split.collectLumpSum,
+      collectInstallmentNumber: split.collectInstallmentNumber,
+      collectInstallmentsTotal: split.collectInstallmentsTotal,
+      installmentNumber: split.installmentNumber,
+      installmentsTotal: split.installmentsTotal,
+    })
+    const body = [
+      splitAmount ? `Valor: R$ ${splitAmount}` : null,
+      chargeMode ? `Cobrança: ${chargeMode}` : null,
+      `Vencimento: ${dueDate}`,
+    ]
+      .filter(Boolean)
+      .join(' · ')
 
     if (split.userId) {
       created += await createNotificationsForUser(deps.notificationRepository, {

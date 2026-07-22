@@ -7,6 +7,7 @@ import { useCardOverdueInvoices } from '@/features/credit-cards/hooks/use-card-o
 import { useCreditCardCyclePending } from '@/features/credit-cards/hooks/use-credit-card-cycle-pending'
 import { useActiveOrganization } from '@/hooks/use-active-organization'
 import { formatCentsString, formatCurrency } from '@/lib/currency'
+import { overdueDateToIso } from '@/lib/date'
 import { cn } from '@/lib/utils'
 import type { BillingCycle } from '@/lib/billing-cycle'
 
@@ -41,7 +42,7 @@ export function CreditCardOverdueBanner({
     slug,
     {
       accountId,
-      dateTo: dayjs().subtract(1, 'day').endOf('day').toISOString(),
+      dateTo: overdueDateToIso(),
       payableOnly: true,
       perPage: 5,
     },

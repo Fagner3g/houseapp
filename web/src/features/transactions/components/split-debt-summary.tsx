@@ -13,11 +13,14 @@ interface SplitDebtSummaryProps {
     purchaseTotal: string
     installmentsTotal: number | null
     myShareTotal: string
+    /** True when N comes from the purchase card series, not a partner collect-plan. */
+    purchaseIsParceled?: boolean
   }
 }
 
 export function SplitDebtSummary({ summary }: SplitDebtSummaryProps) {
-  const hasInstallments = (summary.installmentsTotal ?? 0) > 1
+  const hasInstallments =
+    (summary.purchaseIsParceled ?? true) && (summary.installmentsTotal ?? 0) > 1
   const showMyShare = moneyStringToReais(summary.myShareTotal) >= 0.005
 
   return (
@@ -31,6 +34,11 @@ export function SplitDebtSummary({ summary }: SplitDebtSummaryProps) {
             <p className="mt-1 text-sm text-slate-600">
               Compra de {formatMoneyString(summary.purchaseTotal)} em{' '}
               {summary.installmentsTotal} parcelas
+            </p>
+          )}
+          {!hasInstallments && (
+            <p className="mt-1 text-sm text-slate-600">
+              Compra de {formatMoneyString(summary.purchaseTotal)}
             </p>
           )}
         </div>

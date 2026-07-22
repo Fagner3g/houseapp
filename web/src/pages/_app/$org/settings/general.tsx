@@ -4,6 +4,7 @@ import { Info } from 'lucide-react'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
 import { Separator } from '@/components/ui/separator'
 import { SettingsPageShell } from '@/features/settings/components/settings-page-shell'
+import { SystemNotificationsToggle } from '@/features/settings/components/system-notifications-toggle'
 import { getAppEnvironmentLabel, getAppVersion } from '@/lib/app-info'
 
 export const Route = createFileRoute('/_app/$org/settings/general')({
@@ -34,6 +35,8 @@ function SettingsGeneralPage() {
             <p className="font-medium">Ambiente</p>
             <p className="font-mono text-sm">{appEnvironment}</p>
           </div>
+          <Separator />
+          <SystemNotificationsToggle />
         </CardContent>
       </Card>
     </SettingsPageShell>

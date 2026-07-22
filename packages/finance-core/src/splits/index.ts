@@ -1,4 +1,8 @@
 export {
+  buildCollectInstallmentSchedule,
+  type CollectInstallmentScheduleItem,
+} from './collect-schedule'
+export {
   extrapolateInstallmentSeriesTotalCentavos,
   resolvePersonShareInstallmentAmountCentavos,
   shouldExtrapolateInstallmentSplitTotals,

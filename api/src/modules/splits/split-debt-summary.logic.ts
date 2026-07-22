@@ -23,6 +23,8 @@ export type SplitDebtInstallmentRow = {
   amount: string
   paidAmount: string
   status: SplitRecord['status']
+  dueAt?: string | null
+  collectLumpSum?: boolean
 }
 
 export type SplitDebtPersonRow = {
@@ -286,25 +288,41 @@ export function buildSplitDebtSummary(input: {
         status: aggregateStatus(personSplits.map(split => split.status)),
         installments: personSplits
           .map(split => ({
-            installmentNumber: split.installmentNumber ?? 1,
+            installmentNumber:
+              split.collectInstallmentNumber ?? split.installmentNumber ?? 1,
             transactionId: split.transactionId,
             transactionAmount: centavosToString(split.transactionAmount) ?? '0.00',
             splitId: split.id,
             amount: centavosToString(split.amount) ?? '0.00',
             paidAmount: centavosToString(split.paidAmount) ?? '0.00',
             status: split.status,
+            dueAt: split.dueAt?.toISOString() ?? null,
+            collectLumpSum: split.collectLumpSum,
           }))
           .sort((a, b) => a.installmentNumber - b.installmentNumber),
       },
     ]
   })
 
+  const collectPlanTotal = splits.find(
+    split => (split.collectInstallmentsTotal ?? 0) >= 2
+  )?.collectInstallmentsTotal
+
   return {
     purchaseTotal: centavosToString(purchaseTotalCentavos) ?? '0.00',
     purchaseTotalIsEstimate,
     myShareTotal: centavosToString(myShareTotalCentavos < 0n ? 0n : myShareTotalCentavos) ?? '0.00',
-    installmentsTotal: anchorTransaction.installmentsTotal,
-    currentInstallmentNumber: anchorTransaction.installmentNumber,
+    installmentsTotal: collectPlanTotal ?? anchorTransaction.installmentsTotal,
+    currentInstallmentNumber:
+      collectPlanTotal != null
+        ? (splits.find(
+            split =>
+              split.collectInstallmentsTotal === collectPlanTotal &&
+              split.status !== 'paid' &&
+              split.status !== 'forgiven'
+          )?.collectInstallmentNumber ??
+          1)
+        : anchorTransaction.installmentNumber,
     currentTransactionAmount: centavosToString(currentInstallmentAmountCentavos),
     persons,
   }

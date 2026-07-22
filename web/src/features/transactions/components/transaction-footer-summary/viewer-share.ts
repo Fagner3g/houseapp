@@ -52,10 +52,12 @@ export function resolveViewerInstallmentAmount(
         installmentNumber: current,
         currentSplitAmountReais: moneyStringToReais(currentSplit.amount),
         materializedInstallmentSplits: viewerPerson.installments.length,
+        collectLumpSum: currentSplit.collectLumpSum,
       })
+      const isLumpSum = Boolean(currentSplit.collectLumpSum)
       return {
         amount: reaisToMoneyString(shareReais),
-        label: `Minha parcela ${current} de ${total}`,
+        label: isLumpSum ? 'Minha cobrança à vista' : `Minha parcela ${current} de ${total}`,
       }
     }
   }

@@ -35,7 +35,6 @@ export async function evaluateOwnerResidualAlerts(
     .limit(1)
 
   if (!org?.ownerId) return 0
-  if (params.targetUserId && params.targetUserId !== org.ownerId) return 0
 
   const { markPurchasesPaidForPaidStatements } = await import(
     '@/modules/statements/settle-paid-statements'
@@ -56,14 +55,17 @@ export async function evaluateOwnerResidualAlerts(
     rules: params.rules,
     invoices: collected.invoices,
     transactions: collected.transactions,
+    orgOwnerId: org.ownerId,
     organizationName: org.name,
-  })
+  }).filter(
+    input => !params.targetUserId || input.recipientUserId === params.targetUserId
+  )
 
   let created = 0
   for (const input of inputs) {
     created += await createNotificationsForUser(deps.notificationRepository, {
       rule: input.rule,
-      userId: org.ownerId,
+      userId: input.recipientUserId,
       transactionId: input.transactionId,
       accountId: input.accountId,
       organizationId: params.organizationId,

@@ -99,6 +99,17 @@ export function SplitSummaryBody({
                     {personDisplayName(person)}
                   </span>
                   <div className="flex shrink-0 items-center gap-2">
+                    {person.installments.some(item => item.collectLumpSum) && (
+                      <Badge variant="secondary" className="text-[10px] font-normal">
+                        à vista
+                      </Badge>
+                    )}
+                    {!person.installments.some(item => item.collectLumpSum) &&
+                      person.installments.length > 1 && (
+                        <Badge variant="secondary" className="text-[10px] font-normal">
+                          parcelado
+                        </Badge>
+                      )}
                     {hasRemaining ? (
                       <span className="text-sm font-medium tabular-nums text-amber-700">
                         Falta {formatMoneyString(person.totalRemaining)}

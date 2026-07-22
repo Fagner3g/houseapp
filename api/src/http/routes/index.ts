@@ -1,5 +1,6 @@
 import type { FastifyInstance } from 'fastify'
 
+import { systemSettingsRoutes } from '@/modules/system-settings'
 import { accountsRoutes } from '@/modules/accounts/account.routes'
 import { alertRulesRoutes } from '@/modules/alerts/alert-rule.routes'
 import { alertSettingsRoutes } from '@/modules/alerts/alert-settings.routes'
@@ -65,4 +66,5 @@ export function createRoutes(app: FastifyInstance) {
   app.register(alertRulesRoutes)
   app.register(alertSettingsRoutes)
   app.register(notificationsRoutes)
+  app.register(systemSettingsRoutes)
 }

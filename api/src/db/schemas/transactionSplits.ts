@@ -1,5 +1,14 @@
 import { createId } from '@paralleldrive/cuid2'
-import { bigint, boolean, check, index, pgTable, text, timestamp } from 'drizzle-orm/pg-core'
+import {
+  bigint,
+  boolean,
+  check,
+  index,
+  integer,
+  pgTable,
+  text,
+  timestamp,
+} from 'drizzle-orm/pg-core'
 import { sql } from 'drizzle-orm'
 
 import { transactions } from './transactions'
@@ -28,6 +37,12 @@ export const transactionSplits = pgTable(
     notifyEnabled: boolean('notify_enabled').notNull().default(true),
     /** Debtor pays full share once on this parcel (purchase may still be installmentized). */
     collectLumpSum: boolean('collect_lump_sum').notNull().default(false),
+    /** Partner collect due date (collect-plan parcels; independent of purchase). */
+    dueAt: timestamp('due_at', { withTimezone: true }),
+    collectInstallmentNumber: integer('collect_installment_number'),
+    collectInstallmentsTotal: integer('collect_installments_total'),
+    /** Groups N collect-plan rows created together. */
+    collectPlanId: text('collect_plan_id'),
     isNotified: boolean('is_notified').notNull().default(false),
     lastNotifiedAt: timestamp('last_notified_at', { withTimezone: true }),
     createdAt: timestamp('created_at', { withTimezone: true }).notNull().defaultNow(),
@@ -35,6 +50,7 @@ export const transactionSplits = pgTable(
   },
   table => [
     index('idx_splits_transaction').on(table.transactionId),
+    index('idx_splits_collect_plan').on(table.collectPlanId),
     index('idx_splits_user_pending')
       .on(table.userId, table.status)
       .where(sql`${table.status} IN ('pending', 'partial')`),

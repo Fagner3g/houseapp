@@ -13,6 +13,10 @@ import type { ListPendingSplits200SplitsItemDescription } from "./listPendingSpl
 import type { ListPendingSplits200SplitsItemStatus } from "./listPendingSplits200SplitsItemStatus";
 import type { ListPendingSplits200SplitsItemPaidAt } from "./listPendingSplits200SplitsItemPaidAt";
 import type { ListPendingSplits200SplitsItemLastNotifiedAt } from "./listPendingSplits200SplitsItemLastNotifiedAt";
+import type { ListPendingSplits200SplitsItemDueAt } from "./listPendingSplits200SplitsItemDueAt";
+import type { ListPendingSplits200SplitsItemCollectInstallmentNumber } from "./listPendingSplits200SplitsItemCollectInstallmentNumber";
+import type { ListPendingSplits200SplitsItemCollectInstallmentsTotal } from "./listPendingSplits200SplitsItemCollectInstallmentsTotal";
+import type { ListPendingSplits200SplitsItemCollectPlanId } from "./listPendingSplits200SplitsItemCollectPlanId";
 import type { ListPendingSplits200SplitsItemPendingPaymentRequest } from "./listPendingSplits200SplitsItemPendingPaymentRequest";
 import type { ListPendingSplits200SplitsItemTransactionAmount } from "./listPendingSplits200SplitsItemTransactionAmount";
 import type { ListPendingSplits200SplitsItemPersonName } from "./listPendingSplits200SplitsItemPersonName";
@@ -33,6 +37,10 @@ export type ListPendingSplits200SplitsItem = {
   lastNotifiedAt: ListPendingSplits200SplitsItemLastNotifiedAt;
   notifyEnabled: boolean;
   collectLumpSum: boolean;
+  dueAt: ListPendingSplits200SplitsItemDueAt;
+  collectInstallmentNumber: ListPendingSplits200SplitsItemCollectInstallmentNumber;
+  collectInstallmentsTotal: ListPendingSplits200SplitsItemCollectInstallmentsTotal;
+  collectPlanId: ListPendingSplits200SplitsItemCollectPlanId;
   createdAt: string;
   updatedAt: string;
   pendingPaymentRequest?: ListPendingSplits200SplitsItemPendingPaymentRequest;

@@ -16580,6 +16580,58 @@
                           "collectLumpSum": {
                             "type": "boolean"
                           },
+                          "dueAt": {
+                            "anyOf": [
+                              {
+                                "type": "string"
+                              },
+                              {
+                                "nullable": true,
+                                "enum": [
+                                  null
+                                ]
+                              }
+                            ]
+                          },
+                          "collectInstallmentNumber": {
+                            "anyOf": [
+                              {
+                                "type": "number"
+                              },
+                              {
+                                "nullable": true,
+                                "enum": [
+                                  null
+                                ]
+                              }
+                            ]
+                          },
+                          "collectInstallmentsTotal": {
+                            "anyOf": [
+                              {
+                                "type": "number"
+                              },
+                              {
+                                "nullable": true,
+                                "enum": [
+                                  null
+                                ]
+                              }
+                            ]
+                          },
+                          "collectPlanId": {
+                            "anyOf": [
+                              {
+                                "type": "string"
+                              },
+                              {
+                                "nullable": true,
+                                "enum": [
+                                  null
+                                ]
+                              }
+                            ]
+                          },
                           "createdAt": {
                             "type": "string"
                           },
@@ -16665,6 +16717,10 @@
                           "lastNotifiedAt",
                           "notifyEnabled",
                           "collectLumpSum",
+                          "dueAt",
+                          "collectInstallmentNumber",
+                          "collectInstallmentsTotal",
+                          "collectPlanId",
                           "createdAt",
                           "updatedAt",
                           "transactionTitle",
@@ -17102,6 +17158,58 @@
                         "collectLumpSum": {
                           "type": "boolean"
                         },
+                        "dueAt": {
+                          "anyOf": [
+                            {
+                              "type": "string"
+                            },
+                            {
+                              "nullable": true,
+                              "enum": [
+                                null
+                              ]
+                            }
+                          ]
+                        },
+                        "collectInstallmentNumber": {
+                          "anyOf": [
+                            {
+                              "type": "number"
+                            },
+                            {
+                              "nullable": true,
+                              "enum": [
+                                null
+                              ]
+                            }
+                          ]
+                        },
+                        "collectInstallmentsTotal": {
+                          "anyOf": [
+                            {
+                              "type": "number"
+                            },
+                            {
+                              "nullable": true,
+                              "enum": [
+                                null
+                              ]
+                            }
+                          ]
+                        },
+                        "collectPlanId": {
+                          "anyOf": [
+                            {
+                              "type": "string"
+                            },
+                            {
+                              "nullable": true,
+                              "enum": [
+                                null
+                              ]
+                            }
+                          ]
+                        },
                         "createdAt": {
                           "type": "string"
                         },
@@ -17155,6 +17263,10 @@
                         "lastNotifiedAt",
                         "notifyEnabled",
                         "collectLumpSum",
+                        "dueAt",
+                        "collectInstallmentNumber",
+                        "collectInstallmentsTotal",
+                        "collectPlanId",
                         "createdAt",
                         "updatedAt"
                       ],
@@ -17695,6 +17807,58 @@
                           "collectLumpSum": {
                             "type": "boolean"
                           },
+                          "dueAt": {
+                            "anyOf": [
+                              {
+                                "type": "string"
+                              },
+                              {
+                                "nullable": true,
+                                "enum": [
+                                  null
+                                ]
+                              }
+                            ]
+                          },
+                          "collectInstallmentNumber": {
+                            "anyOf": [
+                              {
+                                "type": "number"
+                              },
+                              {
+                                "nullable": true,
+                                "enum": [
+                                  null
+                                ]
+                              }
+                            ]
+                          },
+                          "collectInstallmentsTotal": {
+                            "anyOf": [
+                              {
+                                "type": "number"
+                              },
+                              {
+                                "nullable": true,
+                                "enum": [
+                                  null
+                                ]
+                              }
+                            ]
+                          },
+                          "collectPlanId": {
+                            "anyOf": [
+                              {
+                                "type": "string"
+                              },
+                              {
+                                "nullable": true,
+                                "enum": [
+                                  null
+                                ]
+                              }
+                            ]
+                          },
                           "createdAt": {
                             "type": "string"
                           },
@@ -17748,6 +17912,10 @@
                           "lastNotifiedAt",
                           "notifyEnabled",
                           "collectLumpSum",
+                          "dueAt",
+                          "collectInstallmentNumber",
+                          "collectInstallmentsTotal",
+                          "collectPlanId",
                           "createdAt",
                           "updatedAt"
                         ],
@@ -18012,6 +18180,58 @@
                         "collectLumpSum": {
                           "type": "boolean"
                         },
+                        "dueAt": {
+                          "anyOf": [
+                            {
+                              "type": "string"
+                            },
+                            {
+                              "nullable": true,
+                              "enum": [
+                                null
+                              ]
+                            }
+                          ]
+                        },
+                        "collectInstallmentNumber": {
+                          "anyOf": [
+                            {
+                              "type": "number"
+                            },
+                            {
+                              "nullable": true,
+                              "enum": [
+                                null
+                              ]
+                            }
+                          ]
+                        },
+                        "collectInstallmentsTotal": {
+                          "anyOf": [
+                            {
+                              "type": "number"
+                            },
+                            {
+                              "nullable": true,
+                              "enum": [
+                                null
+                              ]
+                            }
+                          ]
+                        },
+                        "collectPlanId": {
+                          "anyOf": [
+                            {
+                              "type": "string"
+                            },
+                            {
+                              "nullable": true,
+                              "enum": [
+                                null
+                              ]
+                            }
+                          ]
+                        },
                         "createdAt": {
                           "type": "string"
                         },
@@ -18065,6 +18285,10 @@
                         "lastNotifiedAt",
                         "notifyEnabled",
                         "collectLumpSum",
+                        "dueAt",
+                        "collectInstallmentNumber",
+                        "collectInstallmentsTotal",
+                        "collectPlanId",
                         "createdAt",
                         "updatedAt"
                       ],
@@ -18291,6 +18515,22 @@
                                     "paid",
                                     "forgiven"
                                   ]
+                                },
+                                "dueAt": {
+                                  "anyOf": [
+                                    {
+                                      "type": "string"
+                                    },
+                                    {
+                                      "nullable": true,
+                                      "enum": [
+                                        null
+                                      ]
+                                    }
+                                  ]
+                                },
+                                "collectLumpSum": {
+                                  "type": "boolean"
                                 }
                               },
                               "required": [
@@ -18337,6 +18577,389 @@
                     "viewerOwedTotal",
                     "viewerRemainingTotal",
                     "persons"
+                  ],
+                  "additionalProperties": false
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/organizations/{slug}/transactions/{transactionId}/splits/collect-plan": {
+      "post": {
+        "operationId": "createCollectPlan",
+        "tags": [
+          "Splits"
+        ],
+        "description": "Create a partner collect installment plan on a one-shot purchase (N monthly parcels)",
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "userId": {
+                    "anyOf": [
+                      {
+                        "type": "string"
+                      },
+                      {
+                        "nullable": true,
+                        "enum": [
+                          null
+                        ]
+                      }
+                    ]
+                  },
+                  "contactName": {
+                    "anyOf": [
+                      {
+                        "type": "string"
+                      },
+                      {
+                        "nullable": true,
+                        "enum": [
+                          null
+                        ]
+                      }
+                    ]
+                  },
+                  "contactPhone": {
+                    "anyOf": [
+                      {
+                        "type": "string"
+                      },
+                      {
+                        "nullable": true,
+                        "enum": [
+                          null
+                        ]
+                      }
+                    ]
+                  },
+                  "contactEmail": {
+                    "anyOf": [
+                      {
+                        "type": "string"
+                      },
+                      {
+                        "nullable": true,
+                        "enum": [
+                          null
+                        ]
+                      }
+                    ]
+                  },
+                  "amount": {
+                    "type": "string"
+                  },
+                  "description": {
+                    "anyOf": [
+                      {
+                        "type": "string"
+                      },
+                      {
+                        "nullable": true,
+                        "enum": [
+                          null
+                        ]
+                      }
+                    ]
+                  },
+                  "notifyEnabled": {
+                    "type": "boolean"
+                  },
+                  "installmentsTotal": {
+                    "type": "integer",
+                    "minimum": 2,
+                    "maximum": 48
+                  },
+                  "startDate": {
+                    "type": "string",
+                    "minLength": 10
+                  }
+                },
+                "required": [
+                  "amount",
+                  "installmentsTotal",
+                  "startDate"
+                ]
+              }
+            }
+          }
+        },
+        "parameters": [
+          {
+            "schema": {
+              "type": "string"
+            },
+            "in": "path",
+            "name": "slug",
+            "required": true
+          },
+          {
+            "schema": {
+              "type": "string"
+            },
+            "in": "path",
+            "name": "transactionId",
+            "required": true
+          }
+        ],
+        "responses": {
+          "201": {
+            "description": "Default Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "splits": {
+                      "type": "array",
+                      "items": {
+                        "type": "object",
+                        "properties": {
+                          "id": {
+                            "type": "string"
+                          },
+                          "transactionId": {
+                            "type": "string"
+                          },
+                          "userId": {
+                            "anyOf": [
+                              {
+                                "type": "string"
+                              },
+                              {
+                                "nullable": true,
+                                "enum": [
+                                  null
+                                ]
+                              }
+                            ]
+                          },
+                          "contactName": {
+                            "anyOf": [
+                              {
+                                "type": "string"
+                              },
+                              {
+                                "nullable": true,
+                                "enum": [
+                                  null
+                                ]
+                              }
+                            ]
+                          },
+                          "contactPhone": {
+                            "anyOf": [
+                              {
+                                "type": "string"
+                              },
+                              {
+                                "nullable": true,
+                                "enum": [
+                                  null
+                                ]
+                              }
+                            ]
+                          },
+                          "contactEmail": {
+                            "anyOf": [
+                              {
+                                "type": "string"
+                              },
+                              {
+                                "nullable": true,
+                                "enum": [
+                                  null
+                                ]
+                              }
+                            ]
+                          },
+                          "amount": {
+                            "type": "string"
+                          },
+                          "description": {
+                            "anyOf": [
+                              {
+                                "type": "string"
+                              },
+                              {
+                                "nullable": true,
+                                "enum": [
+                                  null
+                                ]
+                              }
+                            ]
+                          },
+                          "status": {
+                            "type": "string",
+                            "enum": [
+                              "pending",
+                              "partial",
+                              "paid",
+                              "forgiven"
+                            ]
+                          },
+                          "paidAmount": {
+                            "type": "string"
+                          },
+                          "paidAt": {
+                            "anyOf": [
+                              {
+                                "type": "string"
+                              },
+                              {
+                                "nullable": true,
+                                "enum": [
+                                  null
+                                ]
+                              }
+                            ]
+                          },
+                          "isNotified": {
+                            "type": "boolean"
+                          },
+                          "lastNotifiedAt": {
+                            "anyOf": [
+                              {
+                                "type": "string"
+                              },
+                              {
+                                "nullable": true,
+                                "enum": [
+                                  null
+                                ]
+                              }
+                            ]
+                          },
+                          "notifyEnabled": {
+                            "type": "boolean"
+                          },
+                          "collectLumpSum": {
+                            "type": "boolean"
+                          },
+                          "dueAt": {
+                            "anyOf": [
+                              {
+                                "type": "string"
+                              },
+                              {
+                                "nullable": true,
+                                "enum": [
+                                  null
+                                ]
+                              }
+                            ]
+                          },
+                          "collectInstallmentNumber": {
+                            "anyOf": [
+                              {
+                                "type": "number"
+                              },
+                              {
+                                "nullable": true,
+                                "enum": [
+                                  null
+                                ]
+                              }
+                            ]
+                          },
+                          "collectInstallmentsTotal": {
+                            "anyOf": [
+                              {
+                                "type": "number"
+                              },
+                              {
+                                "nullable": true,
+                                "enum": [
+                                  null
+                                ]
+                              }
+                            ]
+                          },
+                          "collectPlanId": {
+                            "anyOf": [
+                              {
+                                "type": "string"
+                              },
+                              {
+                                "nullable": true,
+                                "enum": [
+                                  null
+                                ]
+                              }
+                            ]
+                          },
+                          "createdAt": {
+                            "type": "string"
+                          },
+                          "updatedAt": {
+                            "type": "string"
+                          },
+                          "pendingPaymentRequest": {
+                            "anyOf": [
+                              {
+                                "type": "object",
+                                "properties": {
+                                  "id": {
+                                    "type": "string"
+                                  },
+                                  "status": {
+                                    "type": "string"
+                                  },
+                                  "createdAt": {
+                                    "type": "string"
+                                  }
+                                },
+                                "required": [
+                                  "id",
+                                  "status",
+                                  "createdAt"
+                                ],
+                                "additionalProperties": false
+                              },
+                              {
+                                "nullable": true,
+                                "enum": [
+                                  null
+                                ]
+                              }
+                            ]
+                          }
+                        },
+                        "required": [
+                          "id",
+                          "transactionId",
+                          "userId",
+                          "contactName",
+                          "contactPhone",
+                          "contactEmail",
+                          "amount",
+                          "description",
+                          "status",
+                          "paidAmount",
+                          "paidAt",
+                          "isNotified",
+                          "lastNotifiedAt",
+                          "notifyEnabled",
+                          "collectLumpSum",
+                          "dueAt",
+                          "collectInstallmentNumber",
+                          "collectInstallmentsTotal",
+                          "collectPlanId",
+                          "createdAt",
+                          "updatedAt"
+                        ],
+                        "additionalProperties": false
+                      }
+                    }
+                  },
+                  "required": [
+                    "splits"
                   ],
                   "additionalProperties": false
                 }
@@ -18606,6 +19229,58 @@
                         "collectLumpSum": {
                           "type": "boolean"
                         },
+                        "dueAt": {
+                          "anyOf": [
+                            {
+                              "type": "string"
+                            },
+                            {
+                              "nullable": true,
+                              "enum": [
+                                null
+                              ]
+                            }
+                          ]
+                        },
+                        "collectInstallmentNumber": {
+                          "anyOf": [
+                            {
+                              "type": "number"
+                            },
+                            {
+                              "nullable": true,
+                              "enum": [
+                                null
+                              ]
+                            }
+                          ]
+                        },
+                        "collectInstallmentsTotal": {
+                          "anyOf": [
+                            {
+                              "type": "number"
+                            },
+                            {
+                              "nullable": true,
+                              "enum": [
+                                null
+                              ]
+                            }
+                          ]
+                        },
+                        "collectPlanId": {
+                          "anyOf": [
+                            {
+                              "type": "string"
+                            },
+                            {
+                              "nullable": true,
+                              "enum": [
+                                null
+                              ]
+                            }
+                          ]
+                        },
                         "createdAt": {
                           "type": "string"
                         },
@@ -18659,6 +19334,10 @@
                         "lastNotifiedAt",
                         "notifyEnabled",
                         "collectLumpSum",
+                        "dueAt",
+                        "collectInstallmentNumber",
+                        "collectInstallmentsTotal",
+                        "collectPlanId",
                         "createdAt",
                         "updatedAt"
                       ],
@@ -19122,6 +19801,58 @@
                         "collectLumpSum": {
                           "type": "boolean"
                         },
+                        "dueAt": {
+                          "anyOf": [
+                            {
+                              "type": "string"
+                            },
+                            {
+                              "nullable": true,
+                              "enum": [
+                                null
+                              ]
+                            }
+                          ]
+                        },
+                        "collectInstallmentNumber": {
+                          "anyOf": [
+                            {
+                              "type": "number"
+                            },
+                            {
+                              "nullable": true,
+                              "enum": [
+                                null
+                              ]
+                            }
+                          ]
+                        },
+                        "collectInstallmentsTotal": {
+                          "anyOf": [
+                            {
+                              "type": "number"
+                            },
+                            {
+                              "nullable": true,
+                              "enum": [
+                                null
+                              ]
+                            }
+                          ]
+                        },
+                        "collectPlanId": {
+                          "anyOf": [
+                            {
+                              "type": "string"
+                            },
+                            {
+                              "nullable": true,
+                              "enum": [
+                                null
+                              ]
+                            }
+                          ]
+                        },
                         "createdAt": {
                           "type": "string"
                         },
@@ -19175,6 +19906,10 @@
                         "lastNotifiedAt",
                         "notifyEnabled",
                         "collectLumpSum",
+                        "dueAt",
+                        "collectInstallmentNumber",
+                        "collectInstallmentsTotal",
+                        "collectPlanId",
                         "createdAt",
                         "updatedAt"
                       ],
@@ -19522,6 +20257,58 @@
                         "collectLumpSum": {
                           "type": "boolean"
                         },
+                        "dueAt": {
+                          "anyOf": [
+                            {
+                              "type": "string"
+                            },
+                            {
+                              "nullable": true,
+                              "enum": [
+                                null
+                              ]
+                            }
+                          ]
+                        },
+                        "collectInstallmentNumber": {
+                          "anyOf": [
+                            {
+                              "type": "number"
+                            },
+                            {
+                              "nullable": true,
+                              "enum": [
+                                null
+                              ]
+                            }
+                          ]
+                        },
+                        "collectInstallmentsTotal": {
+                          "anyOf": [
+                            {
+                              "type": "number"
+                            },
+                            {
+                              "nullable": true,
+                              "enum": [
+                                null
+                              ]
+                            }
+                          ]
+                        },
+                        "collectPlanId": {
+                          "anyOf": [
+                            {
+                              "type": "string"
+                            },
+                            {
+                              "nullable": true,
+                              "enum": [
+                                null
+                              ]
+                            }
+                          ]
+                        },
                         "createdAt": {
                           "type": "string"
                         },
@@ -19575,6 +20362,10 @@
                         "lastNotifiedAt",
                         "notifyEnabled",
                         "collectLumpSum",
+                        "dueAt",
+                        "collectInstallmentNumber",
+                        "collectInstallmentsTotal",
+                        "collectPlanId",
                         "createdAt",
                         "updatedAt"
                       ],
@@ -26832,6 +27623,114 @@
                   },
                   "required": [
                     "notification"
+                  ],
+                  "additionalProperties": false
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/organizations/{slug}/system-settings/notifications": {
+      "get": {
+        "operationId": "getSystemNotificationSettings",
+        "tags": [
+          "System"
+        ],
+        "description": "Get platform-wide notification kill switch",
+        "parameters": [
+          {
+            "schema": {
+              "type": "string",
+              "minLength": 1
+            },
+            "in": "path",
+            "name": "slug",
+            "required": true
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Default Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "notificationsEnabled": {
+                      "type": "boolean"
+                    },
+                    "updatedAt": {
+                      "type": "string",
+                      "format": "date-time"
+                    }
+                  },
+                  "required": [
+                    "notificationsEnabled",
+                    "updatedAt"
+                  ],
+                  "additionalProperties": false
+                }
+              }
+            }
+          }
+        }
+      },
+      "patch": {
+        "operationId": "updateSystemNotificationSettings",
+        "tags": [
+          "System"
+        ],
+        "description": "Enable or disable all system notifications (all orgs)",
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "notificationsEnabled": {
+                    "type": "boolean"
+                  }
+                },
+                "required": [
+                  "notificationsEnabled"
+                ]
+              }
+            }
+          }
+        },
+        "parameters": [
+          {
+            "schema": {
+              "type": "string",
+              "minLength": 1
+            },
+            "in": "path",
+            "name": "slug",
+            "required": true
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Default Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "notificationsEnabled": {
+                      "type": "boolean"
+                    },
+                    "updatedAt": {
+                      "type": "string",
+                      "format": "date-time"
+                    }
+                  },
+                  "required": [
+                    "notificationsEnabled",
+                    "updatedAt"
                   ],
                   "additionalProperties": false
                 }

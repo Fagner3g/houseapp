@@ -13,6 +13,7 @@ import { toTransactionListItem } from '@/features/transactions/types'
 import { useOverdueInvoiceSummaries } from '@/features/transactions/hooks/use-invoice-summary-rows'
 import { TransactionOverdueFilters } from '@/features/transactions/components/transaction-overdue-filters'
 import { TransactionOverdueHeader } from '@/features/transactions/components/transaction-overdue-header'
+import { overdueDateToIso } from '@/lib/date'
 import { pageShell } from '@/lib/ui-classes'
 import { useActiveOrganization } from '@/hooks/use-active-organization'
 
@@ -34,7 +35,7 @@ function OverdueTransactionsPage() {
     accountId,
     categoryId,
     type,
-    dateTo: dayjs().subtract(1, 'day').endOf('day').toISOString(),
+    dateTo: overdueDateToIso(),
     payableOnly: true,
     page: 1,
     perPage: 100,

@@ -6,6 +6,7 @@ import { useQueryClient } from '@tanstack/react-query'
 import {
   getListSplitsQueryKey,
   getGetSplitDebtSummaryQueryKey,
+  useCreateCollectPlan,
   useCreateSplit,
   useCreateSplitPaymentRequest,
   useDeleteSplit,
@@ -68,9 +69,12 @@ export function TransactionSplitsSection({
   })
 
   const { mutateAsync: createSplit, isPending: isCreating } = useCreateSplit()
+  const { mutateAsync: createCollectPlan, isPending: isCreatingCollectPlan } =
+    useCreateCollectPlan()
   const { mutateAsync: deleteSplit, isPending: isDeleting } = useDeleteSplit()
   const { mutateAsync: createPaymentRequest, isPending: isRequestingPayment } =
     useCreateSplitPaymentRequest()
+  const isSubmittingSplit = isCreating || isCreatingCollectPlan
 
   const splits = data?.splits ?? []
   const viewerIsCreditor = data?.viewerIsCreditor ?? false
@@ -183,6 +187,47 @@ export function TransactionSplitsSection({
     const collectLumpSum =
       values.amountMode === 'percent' && isParceledPurchase && !values.parcelCharge
 
+    if (values.collectPlan && !isParceledPurchase && values.amountMode === 'percent') {
+      const amountReais = (purchaseTotalReais * values.splitPercent) / 100
+      if (values.splitPercent <= 0 || values.splitPercent > 100) {
+        toast.error('Informe um percentual entre 1 e 100')
+        return
+      }
+      if (amountReais <= 0) {
+        toast.error('O valor da divisão deve ser maior que zero')
+        return
+      }
+      if (!values.collectStartDate) {
+        toast.error('Informe a data do 1º vencimento')
+        return
+      }
+      try {
+        await createCollectPlan({
+          slug,
+          transactionId,
+          data: {
+            userId: values.personMode === 'member' ? values.selectedUserId : null,
+            contactName: values.personMode === 'contact' ? values.contactName.trim() : null,
+            contactPhone:
+              values.personMode === 'contact'
+                ? normalizePhoneDigits(values.contactPhone) || null
+                : null,
+            description: 'Divisão da despesa',
+            notifyEnabled: values.notifyEnabled,
+            amount: reaisToMoneyString(amountReais),
+            installmentsTotal: values.collectInstallmentsTotal,
+            startDate: values.collectStartDate,
+          },
+        })
+        toast.success('Divisão parcelada adicionada')
+        setShowAddForm(false)
+        invalidate()
+      } catch {
+        toast.error('Erro ao adicionar divisão parcelada')
+      }
+      return
+    }
+
     const splitTargets =
       values.amountMode === 'percent' &&
       isParceledPurchase &&
@@ -273,13 +318,26 @@ export function TransactionSplitsSection({
   const headerSummary =
     splits.length > 0 ? (
       <span className="ml-1 flex flex-wrap gap-1">
-        {splits.map(split => (
-          <Badge key={split.id} variant="secondary" className="font-normal">
-            {splitPersonLabel(split)}
-          </Badge>
-        ))}
+        {[...new Map(splits.map(split => [splitPersonLabel(split), split])).values()].map(
+          split => (
+            <Badge key={split.id} variant="secondary" className="font-normal">
+              {splitPersonLabel(split)}
+            </Badge>
+          )
+        )}
       </span>
     ) : undefined
+
+  // One card per collect-plan (or per standalone split); details list the parcels.
+  const listSplits = (() => {
+    const seenPlans = new Set<string>()
+    return splits.filter(split => {
+      if (!split.collectPlanId) return true
+      if (seenPlans.has(split.collectPlanId)) return false
+      seenPlans.add(split.collectPlanId)
+      return true
+    })
+  })()
 
   return (
       <DrawerCollapsibleSection
@@ -294,6 +352,7 @@ export function TransactionSplitsSection({
             summary={{
               purchaseTotal: debtSummary.purchaseTotal,
               installmentsTotal: debtSummary.installmentsTotal,
+              purchaseIsParceled: isParceledPurchase,
               myShareTotal:
                 !debtSummary.viewerIsCreditor && debtSummary.viewerOwedTotal != null
                   ? debtSummary.viewerOwedTotal
@@ -306,7 +365,7 @@ export function TransactionSplitsSection({
           <p className="text-sm text-slate-500">Carregando...</p>
         ) : splits.length > 0 && slug ? (
           <SplitList>
-            {splits.map(split => (
+            {listSplits.map(split => (
               <SplitListItem
                 key={split.id}
                 split={split}
@@ -317,7 +376,11 @@ export function TransactionSplitsSection({
                 personDebt={findPersonForSplit(split)}
                 installmentNumber={installmentNumber}
                 installmentsTotal={installmentsTotal}
-                parcelInstallmentsTotal={parcelCount}
+                parcelInstallmentsTotal={
+                  split.collectInstallmentsTotal && split.collectInstallmentsTotal >= 2
+                    ? split.collectInstallmentsTotal
+                    : parcelCount
+                }
                 viewerIsCreditor={viewerIsCreditor}
                 viewerCanMutate={viewerCanMutate}
                 onRequestPaymentConfirmation={id =>
@@ -336,7 +399,7 @@ export function TransactionSplitsSection({
         {viewerCanMutate && !showAddForm && splits.length === 0 && (
           <SplitMemberChipList
             members={splitEligibleMembers}
-            disabled={isCreating}
+            disabled={isSubmittingSplit}
             onSelect={userId => void handleDelegateToMember(userId)}
           />
         )}
@@ -349,7 +412,7 @@ export function TransactionSplitsSection({
               isParceledPurchase={isParceledPurchase}
               parcelCount={parcelCount}
               currentParcelLabel={currentParcelLabel}
-              isSubmitting={isCreating}
+              isSubmitting={isSubmittingSplit}
               onSubmit={values => void handleAddSplit(values)}
               onCancel={() => setShowAddForm(false)}
             />

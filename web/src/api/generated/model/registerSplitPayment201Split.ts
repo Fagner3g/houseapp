@@ -13,6 +13,10 @@ import type { RegisterSplitPayment201SplitDescription } from "./registerSplitPay
 import type { RegisterSplitPayment201SplitStatus } from "./registerSplitPayment201SplitStatus";
 import type { RegisterSplitPayment201SplitPaidAt } from "./registerSplitPayment201SplitPaidAt";
 import type { RegisterSplitPayment201SplitLastNotifiedAt } from "./registerSplitPayment201SplitLastNotifiedAt";
+import type { RegisterSplitPayment201SplitDueAt } from "./registerSplitPayment201SplitDueAt";
+import type { RegisterSplitPayment201SplitCollectInstallmentNumber } from "./registerSplitPayment201SplitCollectInstallmentNumber";
+import type { RegisterSplitPayment201SplitCollectInstallmentsTotal } from "./registerSplitPayment201SplitCollectInstallmentsTotal";
+import type { RegisterSplitPayment201SplitCollectPlanId } from "./registerSplitPayment201SplitCollectPlanId";
 import type { RegisterSplitPayment201SplitPendingPaymentRequest } from "./registerSplitPayment201SplitPendingPaymentRequest";
 
 export type RegisterSplitPayment201Split = {
@@ -31,6 +35,10 @@ export type RegisterSplitPayment201Split = {
   lastNotifiedAt: RegisterSplitPayment201SplitLastNotifiedAt;
   notifyEnabled: boolean;
   collectLumpSum: boolean;
+  dueAt: RegisterSplitPayment201SplitDueAt;
+  collectInstallmentNumber: RegisterSplitPayment201SplitCollectInstallmentNumber;
+  collectInstallmentsTotal: RegisterSplitPayment201SplitCollectInstallmentsTotal;
+  collectPlanId: RegisterSplitPayment201SplitCollectPlanId;
   createdAt: string;
   updatedAt: string;
   pendingPaymentRequest?: RegisterSplitPayment201SplitPendingPaymentRequest;

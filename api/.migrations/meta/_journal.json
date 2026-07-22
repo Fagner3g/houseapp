@@ -64,6 +64,20 @@
       "when": 1784047680000,
       "tag": "0008_split_payment_requests",
       "breakpoints": true
+    },
+    {
+      "idx": 9,
+      "version": "7",
+      "when": 1784134080000,
+      "tag": "0009_system_settings",
+      "breakpoints": true
+    },
+    {
+      "idx": 10,
+      "version": "7",
+      "when": 1784220480000,
+      "tag": "0010_split_collect_plan",
+      "breakpoints": true
     }
   ]
 }

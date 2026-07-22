@@ -34,6 +34,17 @@ export function collapsedHeader(
     if (current != null && total != null && total > 1) {
       chips.push({ text: `${current} de ${total}` })
     }
+    const hasLumpSum = splitDebtSummary.persons.some(person =>
+      person.installments.some(item => item.collectLumpSum)
+    )
+    if (hasLumpSum) {
+      chips.push({ text: 'à vista' })
+    } else if (
+      splitDebtSummary.persons.some(person => person.installments.length > 1) &&
+      !chips.some(chip => chip.text.includes(' de '))
+    ) {
+      chips.push({ text: 'parcelado' })
+    }
     if (pendingCount > 0) {
       chips.push({
         text:

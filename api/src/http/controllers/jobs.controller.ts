@@ -22,6 +22,7 @@ import {
   JOB_CONFIGS,
 } from '@/jobs'
 import { logger } from '@/lib/logger'
+import { areSystemNotificationsEnabled } from '@/modules/system-settings/notifications-enabled'
 
 export async function listJobsController(_request: FastifyRequest, reply: FastifyReply) {
   try {
@@ -248,6 +249,12 @@ export const sendMonthlySummaryController: RouteHandler<SendMonthlySummaryRoute>
   reply
 ) => {
   try {
+    if (!(await areSystemNotificationsEnabled())) {
+      return reply
+        .status(503)
+        .send({ error: 'NotificationsDisabled', message: 'Notificações do sistema estão desativadas' })
+    }
+
     // Não precisamos do userId do solicitante para o resumo direcionado; usaremos o alvo
     const { id: orgId } = request.organization
     const { userId: targetUserId } = request.body

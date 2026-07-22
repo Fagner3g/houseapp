@@ -2,17 +2,16 @@ import { useId, useEffect, useState } from 'react'
 
 import type { SplitMode } from '@/features/accounts/components/import-review-types'
 import { Button } from '@/components/ui/button'
-import { CurrencyInput } from '@/components/ui/currency-input'
-import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
 import { Switch } from '@/components/ui/switch'
-import { ToggleGroup, ToggleGroupItem } from '@/components/ui/toggle-group'
-import { formatCurrency, formatMoneyString, reaisToMoneyString } from '@/lib/currency'
+import { formatCurrency } from '@/lib/currency'
 import { cn } from '@/lib/utils'
 import { stackyPrimaryButton } from '@/lib/ui-classes'
 
+import { SplitAddAmountFields } from './split-add-amount-fields'
+import { SplitAddChargeOptions } from './split-add-charge-options'
+import { defaultCollectStartDate } from './split-collect-plan-fields'
 import { SplitModePresets } from './split-mode-presets'
-import { SplitParcelChargeToggle } from './split-parcel-charge-toggle'
 import { SplitPersonFields } from './split-person-fields'
 
 type PersonMode = 'member' | 'contact'
@@ -24,8 +23,10 @@ export interface SplitAddFormValues {
   contactName: string
   contactPhone: string
   notifyEnabled: boolean
-  /** When true (default), % splits fan out across installment siblings. */
   parcelCharge: boolean
+  collectPlan: boolean
+  collectInstallmentsTotal: number
+  collectStartDate: string
   amountMode: AmountMode
   splitAmount: number
   splitPercent: number
@@ -61,6 +62,9 @@ export function SplitAddForm({
   const [contactPhone, setContactPhone] = useState('')
   const [notifyEnabled, setNotifyEnabled] = useState(true)
   const [parcelCharge, setParcelCharge] = useState(true)
+  const [collectPlan, setCollectPlan] = useState(false)
+  const [collectInstallmentsTotal, setCollectInstallmentsTotal] = useState(3)
+  const [collectStartDate, setCollectStartDate] = useState(defaultCollectStartDate)
   const [amountMode, setAmountMode] = useState<AmountMode>('fixed')
   const [splitAmount, setSplitAmount] = useState(0)
   const [splitPercent, setSplitPercent] = useState(50)
@@ -82,13 +86,13 @@ export function SplitAddForm({
   const previewSplitReais =
     amountMode === 'percent' ? (purchaseTotalReais * splitPercent) / 100 : splitAmount
   const showParcelChargeToggle = isParceledPurchase && amountMode === 'percent'
+  const showCollectPlanToggle = !isParceledPurchase && amountMode === 'percent'
   const chargePerInstallment = showParcelChargeToggle && parcelCharge
-  const previewInstallmentSplitReais =
-    chargePerInstallment ? previewSplitReais / parcelCount : previewSplitReais
-
+  const previewInstallmentSplitReais = chargePerInstallment
+    ? previewSplitReais / parcelCount
+    : previewSplitReais
   const showAmountFields = presetMode === 'custom' || presetMode === 'half'
   const showPercentOnly = presetMode === 'half'
-  const showFullDelegateHint = presetMode === 'full_other'
 
   return (
     <div className="space-y-4 rounded-lg border border-slate-100 bg-slate-50/50 p-4">
@@ -97,23 +101,27 @@ export function SplitAddForm({
         <SplitModePresets variant="add" value={presetMode} onChange={setPresetMode} />
       </div>
 
-      {isParceledPurchase && (
-        <p className="rounded-md bg-amber-50 px-3 py-2 text-xs text-amber-800">
-          Esta compra tem {parcelCount} parcelas
-          {currentParcelLabel ? ` — você está na parcela ${currentParcelLabel}` : ''}.
-          {amountMode === 'percent'
-            ? chargePerInstallment
-              ? ` A divisão em % será aplicada em todas as parcelas da compra (total estimado: ${formatCurrency(purchaseTotalReais)}).`
-              : ` A cobrança será à vista nesta parcela (valor total da divisão: ${formatCurrency(previewSplitReais)}).`
-            : ' A divisão em valor fixo vale apenas para esta parcela.'}
-        </p>
-      )}
+      <SplitAddChargeOptions
+        isParceledPurchase={isParceledPurchase}
+        parcelCount={parcelCount}
+        currentParcelLabel={currentParcelLabel}
+        amountMode={amountMode}
+        chargePerInstallment={chargePerInstallment}
+        purchaseTotalReais={purchaseTotalReais}
+        previewSplitReais={previewSplitReais}
+        showParcelChargeToggle={showParcelChargeToggle}
+        parcelCharge={parcelCharge}
+        onParcelChargeChange={setParcelCharge}
+        showCollectPlanToggle={showCollectPlanToggle}
+        collectPlan={collectPlan}
+        onCollectPlanChange={setCollectPlan}
+        collectInstallmentsTotal={collectInstallmentsTotal}
+        onCollectInstallmentsTotalChange={setCollectInstallmentsTotal}
+        collectStartDate={collectStartDate}
+        onCollectStartDateChange={setCollectStartDate}
+      />
 
-      {showParcelChargeToggle && (
-        <SplitParcelChargeToggle checked={parcelCharge} onCheckedChange={setParcelCharge} />
-      )}
-
-      {showFullDelegateHint && (
+      {presetMode === 'full_other' && (
         <p className="text-sm text-slate-600">
           Valor a delegar:{' '}
           <strong className="tabular-nums text-slate-900">{formatCurrency(remainingReais)}</strong>
@@ -131,94 +139,28 @@ export function SplitAddForm({
         onContactPhoneChange={setContactPhone}
       />
 
-      {showAmountFields && !showPercentOnly && (
-        <div className="space-y-2">
-          <Label className="text-sm font-medium text-slate-700">Valor da divisão</Label>
-          <ToggleGroup
-            type="single"
-            value={amountMode}
-            onValueChange={value => value && setAmountMode(value as AmountMode)}
-            className="grid w-full grid-cols-2 rounded-lg border border-slate-200 p-1"
-          >
-            <ToggleGroupItem
-              value="fixed"
-              className="rounded-md text-sm data-[state=on]:bg-slate-900 data-[state=on]:text-white"
-            >
-              R$
-            </ToggleGroupItem>
-            <ToggleGroupItem
-              value="percent"
-              className="rounded-md text-sm data-[state=on]:bg-slate-900 data-[state=on]:text-white"
-            >
-              %
-            </ToggleGroupItem>
-          </ToggleGroup>
-
-          {amountMode === 'fixed' ? (
-            <CurrencyInput value={splitAmount} onValueChange={setSplitAmount} />
-          ) : (
-            <div className="space-y-1">
-              <div className="relative">
-                <Input
-                  type="number"
-                  min={1}
-                  max={100}
-                  step={1}
-                  placeholder="50"
-                  value={splitPercent || ''}
-                  onChange={e => setSplitPercent(Number(e.target.value))}
-                  className="pr-8"
-                />
-                <span className="pointer-events-none absolute right-3 top-1/2 -translate-y-1/2 text-sm text-slate-500">
-                  %
-                </span>
-              </div>
-              {splitPercent > 0 && (
-                <p className="text-xs text-slate-500">
-                  = {formatMoneyString(reaisToMoneyString(previewSplitReais))}
-                  {chargePerInstallment && (
-                    <>
-                      {' '}
-                      da compra ·{' '}
-                      {formatMoneyString(reaisToMoneyString(previewInstallmentSplitReais))} por
-                      parcela
-                    </>
-                  )}
-                  {showParcelChargeToggle && !parcelCharge && ' da compra (à vista)'}
-                </p>
-              )}
-            </div>
-          )}
-        </div>
-      )}
-
-      {showPercentOnly && (
-        <p className="text-sm text-slate-500">
-          Valor da divisão:{' '}
-          <strong className="tabular-nums text-slate-800">
-            {formatMoneyString(reaisToMoneyString(previewSplitReais))}
-          </strong>
-          {chargePerInstallment && (
-            <span className="text-slate-500">
-              {' '}
-              · {formatMoneyString(reaisToMoneyString(previewInstallmentSplitReais))} por parcela
-            </span>
-          )}
-          {showParcelChargeToggle && !parcelCharge && (
-            <span className="text-slate-500"> · à vista nesta parcela</span>
-          )}
-        </p>
+      {showAmountFields && (
+        <SplitAddAmountFields
+          amountMode={amountMode}
+          onAmountModeChange={setAmountMode}
+          splitAmount={splitAmount}
+          onSplitAmountChange={setSplitAmount}
+          splitPercent={splitPercent}
+          onSplitPercentChange={setSplitPercent}
+          previewSplitReais={previewSplitReais}
+          previewInstallmentSplitReais={previewInstallmentSplitReais}
+          chargePerInstallment={chargePerInstallment}
+          showParcelChargeToggle={showParcelChargeToggle}
+          parcelCharge={parcelCharge}
+          showPercentOnly={showPercentOnly}
+        />
       )}
 
       <div className="flex items-center justify-between gap-3">
         <Label htmlFor={splitNotifyId} className="text-sm text-slate-600">
           Notificar esta pessoa
         </Label>
-        <Switch
-          id={splitNotifyId}
-          checked={notifyEnabled}
-          onCheckedChange={setNotifyEnabled}
-        />
+        <Switch id={splitNotifyId} checked={notifyEnabled} onCheckedChange={setNotifyEnabled} />
       </div>
 
       <div className="flex gap-2">
@@ -237,6 +179,9 @@ export function SplitAddForm({
               contactPhone,
               notifyEnabled,
               parcelCharge: showParcelChargeToggle ? parcelCharge : true,
+              collectPlan: showCollectPlanToggle ? collectPlan : false,
+              collectInstallmentsTotal,
+              collectStartDate,
               amountMode: showPercentOnly ? 'percent' : amountMode,
               splitAmount: presetMode === 'full_other' ? remainingReais : splitAmount,
               splitPercent: showPercentOnly ? 50 : splitPercent,

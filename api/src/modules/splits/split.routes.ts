@@ -4,6 +4,7 @@ import { authenticateUserHook } from '@/http/hooks/authenticate-user'
 import { verifyOrgAccessHook } from '@/http/hooks/verify-user-belongs-to-org'
 
 import {
+  createCollectPlanController,
   createSplitController,
   cancelSplitPaymentController,
   deleteSplitController,
@@ -26,6 +27,7 @@ import {
   rejectSplitPaymentRequestSchema,
 } from './payment-request'
 import {
+  createCollectPlanSchema,
   createSplitSchema,
   cancelSplitPaymentSchema,
   deleteSplitSchema,
@@ -93,6 +95,13 @@ export const splitsRoutes: FastifyPluginAsyncZod = async app => {
     preHandler: [verifyOrgAccessHook],
     schema: createSplitSchema,
     handler: createSplitController,
+  })
+
+  app.post('/organizations/:slug/transactions/:transactionId/splits/collect-plan', {
+    onRequest: [authenticateUserHook],
+    preHandler: [verifyOrgAccessHook],
+    schema: createCollectPlanSchema,
+    handler: createCollectPlanController,
   })
 
   app.patch('/organizations/:slug/transactions/:transactionId/splits/:id', {

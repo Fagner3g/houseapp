@@ -45,6 +45,8 @@ import type {
   CreateCardBody,
   CreateCategory201,
   CreateCategoryBody,
+  CreateCollectPlan201,
+  CreateCollectPlanBody,
   CreateInviteBody,
   CreateOrganization201,
   CreateOrganizationBody,
@@ -100,6 +102,7 @@ import type {
   GetReportTrendsParams,
   GetSplitDebtSummary200,
   GetStatement200,
+  GetSystemNotificationSettings200,
   GetTransaction200,
   ImportStatement201,
   ImportStatementBody,
@@ -180,6 +183,8 @@ import type {
   UpdateRecurringTransactionBody,
   UpdateSplit200,
   UpdateSplitBody,
+  UpdateSystemNotificationSettings200,
+  UpdateSystemNotificationSettingsBody,
   UpdateTransaction200,
   UpdateTransactionBody,
   UploadAttachment201,
@@ -8412,6 +8417,99 @@ export function useGetSplitDebtSummary<
 }
 
 /**
+ * Create a partner collect installment plan on a one-shot purchase (N monthly parcels)
+ */
+export const getCreateCollectPlanUrl = (
+  slug: string,
+  transactionId: string,
+) => {
+  return `/organizations/${slug}/transactions/${transactionId}/splits/collect-plan`;
+};
+
+export const createCollectPlan = async (
+  slug: string,
+  transactionId: string,
+  createCollectPlanBody: CreateCollectPlanBody,
+  options?: RequestInit,
+): Promise<CreateCollectPlan201> => {
+  return http<CreateCollectPlan201>(
+    getCreateCollectPlanUrl(slug, transactionId),
+    {
+      ...options,
+      method: "POST",
+      headers: { "Content-Type": "application/json", ...options?.headers },
+      body: JSON.stringify(createCollectPlanBody),
+    },
+  );
+};
+
+export const getCreateCollectPlanMutationOptions = <
+  TError = unknown,
+  TContext = unknown,
+>(options?: {
+  mutation?: UseMutationOptions<
+    Awaited<ReturnType<typeof createCollectPlan>>,
+    TError,
+    { slug: string; transactionId: string; data: CreateCollectPlanBody },
+    TContext
+  >;
+  request?: SecondParameter<typeof http>;
+}): UseMutationOptions<
+  Awaited<ReturnType<typeof createCollectPlan>>,
+  TError,
+  { slug: string; transactionId: string; data: CreateCollectPlanBody },
+  TContext
+> => {
+  const mutationKey = ["createCollectPlan"];
+  const { mutation: mutationOptions, request: requestOptions } = options
+    ? options.mutation &&
+      "mutationKey" in options.mutation &&
+      options.mutation.mutationKey
+      ? options
+      : { ...options, mutation: { ...options.mutation, mutationKey } }
+    : { mutation: { mutationKey }, request: undefined };
+
+  const mutationFn: MutationFunction<
+    Awaited<ReturnType<typeof createCollectPlan>>,
+    { slug: string; transactionId: string; data: CreateCollectPlanBody }
+  > = (props) => {
+    const { slug, transactionId, data } = props ?? {};
+
+    return createCollectPlan(slug, transactionId, data, requestOptions);
+  };
+
+  return { mutationFn, ...mutationOptions };
+};
+
+export type CreateCollectPlanMutationResult = NonNullable<
+  Awaited<ReturnType<typeof createCollectPlan>>
+>;
+export type CreateCollectPlanMutationBody = CreateCollectPlanBody;
+export type CreateCollectPlanMutationError = unknown;
+
+export const useCreateCollectPlan = <TError = unknown, TContext = unknown>(
+  options?: {
+    mutation?: UseMutationOptions<
+      Awaited<ReturnType<typeof createCollectPlan>>,
+      TError,
+      { slug: string; transactionId: string; data: CreateCollectPlanBody },
+      TContext
+    >;
+    request?: SecondParameter<typeof http>;
+  },
+  queryClient?: QueryClient,
+): UseMutationResult<
+  Awaited<ReturnType<typeof createCollectPlan>>,
+  TError,
+  { slug: string; transactionId: string; data: CreateCollectPlanBody },
+  TContext
+> => {
+  const mutationOptions = getCreateCollectPlanMutationOptions(options);
+
+  return useMutation(mutationOptions, queryClient);
+};
+
+/**
  * Update a split
  */
 export const getUpdateSplitUrl = (
@@ -14205,6 +14303,275 @@ export const useMarkNotificationRead = <TError = unknown, TContext = unknown>(
   TContext
 > => {
   const mutationOptions = getMarkNotificationReadMutationOptions(options);
+
+  return useMutation(mutationOptions, queryClient);
+};
+
+/**
+ * Get platform-wide notification kill switch
+ */
+export const getGetSystemNotificationSettingsUrl = (slug: string) => {
+  return `/organizations/${slug}/system-settings/notifications`;
+};
+
+export const getSystemNotificationSettings = async (
+  slug: string,
+  options?: RequestInit,
+): Promise<GetSystemNotificationSettings200> => {
+  return http<GetSystemNotificationSettings200>(
+    getGetSystemNotificationSettingsUrl(slug),
+    {
+      ...options,
+      method: "GET",
+    },
+  );
+};
+
+export const getGetSystemNotificationSettingsQueryKey = (slug?: string) => {
+  return [`/organizations/${slug}/system-settings/notifications`] as const;
+};
+
+export const getGetSystemNotificationSettingsQueryOptions = <
+  TData = Awaited<ReturnType<typeof getSystemNotificationSettings>>,
+  TError = unknown,
+>(
+  slug: string,
+  options?: {
+    query?: Partial<
+      UseQueryOptions<
+        Awaited<ReturnType<typeof getSystemNotificationSettings>>,
+        TError,
+        TData
+      >
+    >;
+    request?: SecondParameter<typeof http>;
+  },
+) => {
+  const { query: queryOptions, request: requestOptions } = options ?? {};
+
+  const queryKey =
+    queryOptions?.queryKey ?? getGetSystemNotificationSettingsQueryKey(slug);
+
+  const queryFn: QueryFunction<
+    Awaited<ReturnType<typeof getSystemNotificationSettings>>
+  > = ({ signal }) =>
+    getSystemNotificationSettings(slug, { signal, ...requestOptions });
+
+  return {
+    queryKey,
+    queryFn,
+    enabled: !!slug,
+    ...queryOptions,
+  } as UseQueryOptions<
+    Awaited<ReturnType<typeof getSystemNotificationSettings>>,
+    TError,
+    TData
+  > & { queryKey: DataTag<QueryKey, TData, TError> };
+};
+
+export type GetSystemNotificationSettingsQueryResult = NonNullable<
+  Awaited<ReturnType<typeof getSystemNotificationSettings>>
+>;
+export type GetSystemNotificationSettingsQueryError = unknown;
+
+export function useGetSystemNotificationSettings<
+  TData = Awaited<ReturnType<typeof getSystemNotificationSettings>>,
+  TError = unknown,
+>(
+  slug: string,
+  options: {
+    query: Partial<
+      UseQueryOptions<
+        Awaited<ReturnType<typeof getSystemNotificationSettings>>,
+        TError,
+        TData
+      >
+    > &
+      Pick<
+        DefinedInitialDataOptions<
+          Awaited<ReturnType<typeof getSystemNotificationSettings>>,
+          TError,
+          Awaited<ReturnType<typeof getSystemNotificationSettings>>
+        >,
+        "initialData"
+      >;
+    request?: SecondParameter<typeof http>;
+  },
+  queryClient?: QueryClient,
+): DefinedUseQueryResult<TData, TError> & {
+  queryKey: DataTag<QueryKey, TData, TError>;
+};
+export function useGetSystemNotificationSettings<
+  TData = Awaited<ReturnType<typeof getSystemNotificationSettings>>,
+  TError = unknown,
+>(
+  slug: string,
+  options?: {
+    query?: Partial<
+      UseQueryOptions<
+        Awaited<ReturnType<typeof getSystemNotificationSettings>>,
+        TError,
+        TData
+      >
+    > &
+      Pick<
+        UndefinedInitialDataOptions<
+          Awaited<ReturnType<typeof getSystemNotificationSettings>>,
+          TError,
+          Awaited<ReturnType<typeof getSystemNotificationSettings>>
+        >,
+        "initialData"
+      >;
+    request?: SecondParameter<typeof http>;
+  },
+  queryClient?: QueryClient,
+): UseQueryResult<TData, TError> & {
+  queryKey: DataTag<QueryKey, TData, TError>;
+};
+export function useGetSystemNotificationSettings<
+  TData = Awaited<ReturnType<typeof getSystemNotificationSettings>>,
+  TError = unknown,
+>(
+  slug: string,
+  options?: {
+    query?: Partial<
+      UseQueryOptions<
+        Awaited<ReturnType<typeof getSystemNotificationSettings>>,
+        TError,
+        TData
+      >
+    >;
+    request?: SecondParameter<typeof http>;
+  },
+  queryClient?: QueryClient,
+): UseQueryResult<TData, TError> & {
+  queryKey: DataTag<QueryKey, TData, TError>;
+};
+
+export function useGetSystemNotificationSettings<
+  TData = Awaited<ReturnType<typeof getSystemNotificationSettings>>,
+  TError = unknown,
+>(
+  slug: string,
+  options?: {
+    query?: Partial<
+      UseQueryOptions<
+        Awaited<ReturnType<typeof getSystemNotificationSettings>>,
+        TError,
+        TData
+      >
+    >;
+    request?: SecondParameter<typeof http>;
+  },
+  queryClient?: QueryClient,
+): UseQueryResult<TData, TError> & {
+  queryKey: DataTag<QueryKey, TData, TError>;
+} {
+  const queryOptions = getGetSystemNotificationSettingsQueryOptions(
+    slug,
+    options,
+  );
+
+  const query = useQuery(queryOptions, queryClient) as UseQueryResult<
+    TData,
+    TError
+  > & { queryKey: DataTag<QueryKey, TData, TError> };
+
+  query.queryKey = queryOptions.queryKey;
+
+  return query;
+}
+
+/**
+ * Enable or disable all system notifications (all orgs)
+ */
+export const getUpdateSystemNotificationSettingsUrl = (slug: string) => {
+  return `/organizations/${slug}/system-settings/notifications`;
+};
+
+export const updateSystemNotificationSettings = async (
+  slug: string,
+  updateSystemNotificationSettingsBody: UpdateSystemNotificationSettingsBody,
+  options?: RequestInit,
+): Promise<UpdateSystemNotificationSettings200> => {
+  return http<UpdateSystemNotificationSettings200>(
+    getUpdateSystemNotificationSettingsUrl(slug),
+    {
+      ...options,
+      method: "PATCH",
+      headers: { "Content-Type": "application/json", ...options?.headers },
+      body: JSON.stringify(updateSystemNotificationSettingsBody),
+    },
+  );
+};
+
+export const getUpdateSystemNotificationSettingsMutationOptions = <
+  TError = unknown,
+  TContext = unknown,
+>(options?: {
+  mutation?: UseMutationOptions<
+    Awaited<ReturnType<typeof updateSystemNotificationSettings>>,
+    TError,
+    { slug: string; data: UpdateSystemNotificationSettingsBody },
+    TContext
+  >;
+  request?: SecondParameter<typeof http>;
+}): UseMutationOptions<
+  Awaited<ReturnType<typeof updateSystemNotificationSettings>>,
+  TError,
+  { slug: string; data: UpdateSystemNotificationSettingsBody },
+  TContext
+> => {
+  const mutationKey = ["updateSystemNotificationSettings"];
+  const { mutation: mutationOptions, request: requestOptions } = options
+    ? options.mutation &&
+      "mutationKey" in options.mutation &&
+      options.mutation.mutationKey
+      ? options
+      : { ...options, mutation: { ...options.mutation, mutationKey } }
+    : { mutation: { mutationKey }, request: undefined };
+
+  const mutationFn: MutationFunction<
+    Awaited<ReturnType<typeof updateSystemNotificationSettings>>,
+    { slug: string; data: UpdateSystemNotificationSettingsBody }
+  > = (props) => {
+    const { slug, data } = props ?? {};
+
+    return updateSystemNotificationSettings(slug, data, requestOptions);
+  };
+
+  return { mutationFn, ...mutationOptions };
+};
+
+export type UpdateSystemNotificationSettingsMutationResult = NonNullable<
+  Awaited<ReturnType<typeof updateSystemNotificationSettings>>
+>;
+export type UpdateSystemNotificationSettingsMutationBody =
+  UpdateSystemNotificationSettingsBody;
+export type UpdateSystemNotificationSettingsMutationError = unknown;
+
+export const useUpdateSystemNotificationSettings = <
+  TError = unknown,
+  TContext = unknown,
+>(
+  options?: {
+    mutation?: UseMutationOptions<
+      Awaited<ReturnType<typeof updateSystemNotificationSettings>>,
+      TError,
+      { slug: string; data: UpdateSystemNotificationSettingsBody },
+      TContext
+    >;
+    request?: SecondParameter<typeof http>;
+  },
+  queryClient?: QueryClient,
+): UseMutationResult<
+  Awaited<ReturnType<typeof updateSystemNotificationSettings>>,
+  TError,
+  { slug: string; data: UpdateSystemNotificationSettingsBody },
+  TContext
+> => {
+  const mutationOptions =
+    getUpdateSystemNotificationSettingsMutationOptions(options);
 
   return useMutation(mutationOptions, queryClient);
 };

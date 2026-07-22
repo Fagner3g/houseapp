@@ -4,6 +4,7 @@ import { StatusCodes } from 'http-status-codes'
 import { container } from '@/core/container'
 import { toTransactionViewer } from '@/modules/transactions/transaction-visibility'
 import type {
+  CreateCollectPlanBody,
   CreateSplitBody,
   ListSplitTransactionIdsBody,
   RegisterPaymentBody,
@@ -44,6 +45,20 @@ export async function createSplitController(
   )
 
   return reply.status(StatusCodes.CREATED).send({ split })
+}
+
+export async function createCollectPlanController(
+  request: FastifyRequest<{ Params: TransactionParams; Body: CreateCollectPlanBody }>,
+  reply: FastifyReply
+) {
+  const splits = await container.splitService.createCollectPlan(
+    request.organization.id,
+    request.params.transactionId,
+    request.body,
+    viewerFromRequest(request)
+  )
+
+  return reply.status(StatusCodes.CREATED).send({ splits })
 }
 
 export async function updateSplitController(

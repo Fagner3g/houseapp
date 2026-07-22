@@ -8,13 +8,10 @@ import {
 import type { AlertRuleRecord } from '../../alert-rule.repository'
 import { resolveEffectiveOverdueNotify } from '../../resolve-effective-overdue-notify'
 import { resolveDueDateForTransaction } from '../due'
-import {
-  createExternalNotification,
-  createNotificationsForOrgMembers,
-  createNotificationsForUser,
-} from '../notifications'
+import { createExternalNotification, createNotificationsForUser } from '../notifications'
 import type { PendingTransactionRow } from '../types'
 import type { EvaluateNotifyDeps } from './deps'
+import { resolveTargetedMemberUserId } from './resolve-targeted-member'
 import { buildOverdueDispatchRule, resolveRule } from './resolve-rule'
 
 export async function evaluateTargetedOverdueTransaction(
@@ -61,37 +58,32 @@ export async function evaluateTargetedOverdueTransaction(
   const body = amount ? `Valor: R$ ${amount} · Vencimento: ${dueDate}` : `Vencimento: ${dueDate}`
 
   if (params.transaction.notifyTargetType === 'member') {
-    return createNotificationsForOrgMembers({
+    const targetUserId = resolveTargetedMemberUserId(
+      params.transaction.notifyUserId,
+      params.limitToUserId
+    )
+    if (!targetUserId) return 0
+
+    return createNotificationsForUser(deps.notificationRepository, {
+      rule,
+      userId: targetUserId,
+      transactionId: params.transaction.id,
+      accountId: params.transaction.accountId,
       organizationId: params.transaction.organizationId,
-      limitToUserId: params.limitToUserId,
-      createForUser: userId =>
-        createNotificationsForUser(deps.notificationRepository, {
-          rule,
-          userId,
-          transactionId: params.transaction.id,
-          accountId: params.transaction.accountId,
-          organizationId: params.transaction.organizationId,
-          title,
-          body,
-          daysUntilDue: params.daysUntilDue,
-          daysBefore: 0,
-          dedupeKeyBuilder: (memberId, channel) =>
-            buildOverdueRuleDedupeKey(
-              rule.id,
-              params.transaction.id,
-              periodKey,
-              memberId,
-              channel
-            ),
-          metadata: {
-            kind: 'overdue',
-            daysUntilDue: params.daysUntilDue,
-            overdueDays,
-            amount,
-            dueDate,
-          },
-          skipDedupe: params.skipDedupe,
-        }),
+      title,
+      body,
+      daysUntilDue: params.daysUntilDue,
+      daysBefore: 0,
+      dedupeKeyBuilder: (memberId, channel) =>
+        buildOverdueRuleDedupeKey(rule.id, params.transaction.id, periodKey, memberId, channel),
+      metadata: {
+        kind: 'overdue',
+        daysUntilDue: params.daysUntilDue,
+        overdueDays,
+        amount,
+        dueDate,
+      },
+      skipDedupe: params.skipDedupe,
     })
   }
 

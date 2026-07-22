@@ -2,6 +2,7 @@ import { and, eq, inArray } from 'drizzle-orm'
 
 import { db } from '@/db'
 import { accounts } from '@/db/schemas/accounts'
+import { cards } from '@/db/schemas/cards'
 import { transactions } from '@/db/schemas/transactions'
 import { UNPAID_TRANSACTION_STATUSES } from '@/core/transaction-payment'
 import { isNotScheduledForFutureCondition } from '@/modules/transactions/payable-transaction'
@@ -28,9 +29,14 @@ export async function loadResidualTransactions(
       closingDay: accounts.closingDay,
       dueDay: accounts.dueDay,
       notifyEnabled: transactions.notifyEnabled,
+      cardId: transactions.cardId,
+      cardUserId: cards.userId,
+      transactionCreatedBy: transactions.createdBy,
+      accountCreatedBy: accounts.createdBy,
     })
     .from(transactions)
     .leftJoin(accounts, eq(transactions.accountId, accounts.id))
+    .leftJoin(cards, eq(transactions.cardId, cards.id))
     .where(
       and(
         eq(transactions.organizationId, organizationId),

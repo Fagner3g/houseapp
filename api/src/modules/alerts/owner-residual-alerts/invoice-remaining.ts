@@ -20,6 +20,7 @@ export type InvoiceGroupSeed = {
   closingDay: number
   dueDay: number
   transactionIds: string[]
+  accountCreatedBy: string | null
 }
 
 export function resolveInvoiceRemainingCentavos(params: {
@@ -81,6 +82,7 @@ export function resolveOwnerInvoiceAlerts(params: {
       remainingCentavos,
       daysUntilDue: computeDaysUntilDue(dueDate, referenceDate),
       transactionIds: seed.transactionIds,
+      accountCreatedBy: seed.accountCreatedBy,
     })
   }
 
