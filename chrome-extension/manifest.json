@@ -1,10 +1,17 @@
 {
   "manifest_version": 3,
   "name": "HouseApp",
-  "version": "2.3.0",
+  "version": "2.3.1",
   "description": "Notificações e resumo financeiro do HouseApp",
-  "permissions": ["alarms", "notifications", "storage", "cookies"],
-  "host_permissions": ["*://*/"],
+  "permissions": [
+    "alarms",
+    "notifications",
+    "storage",
+    "cookies"
+  ],
+  "host_permissions": [
+    "*://*/"
+  ],
   "background": {
     "service_worker": "background.js"
   },
@@ -23,7 +30,9 @@
         "https://app.jarvis.dev.br/*",
         "https://app.homolog.jarvis.dev.br/*"
       ],
-      "js": ["content.js"],
+      "js": [
+        "content.js"
+      ],
       "run_at": "document_idle"
     }
   ],
