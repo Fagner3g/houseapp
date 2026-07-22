@@ -8,6 +8,8 @@ import { transactions } from '@/db/schemas/transactions'
 /**
  * Transaction is attributed to the user as payer:
  * - assigned card owner, or
+ * - credit-card account (imported txs often have null cardId): account creator /
+ *   org owner for legacy null createdBy, or
  * - checking / no card: createdBy (legacy null → org owner), or
  * - unassigned card: account.createdBy (legacy null → org owner).
  *
@@ -23,7 +25,15 @@ export function userOwnsTransactionCondition(
 
   const ownsChecking = and(
     isNull(transactions.cardId),
-    or(eq(transactions.createdBy, userId), legacyNullForOwner)
+    or(
+      eq(transactions.createdBy, userId),
+      legacyNullForOwner,
+      // Imported credit-card purchases often omit cardId; own via the account.
+      and(
+        eq(accounts.type, 'credit_card'),
+        or(eq(accounts.createdBy, userId), legacyNullAccountForOwner)
+      )
+    )
   )
 
   const ownsAssignedCard = eq(cards.userId, userId)

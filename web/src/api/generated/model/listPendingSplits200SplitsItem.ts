@@ -48,4 +48,7 @@ export type ListPendingSplits200SplitsItem = {
   transactionDate: string;
   transactionAmount: ListPendingSplits200SplitsItemTransactionAmount;
   personName: ListPendingSplits200SplitsItemPersonName;
+  accountId?: string | null;
+  accountType?: string | null;
+  competenceDate?: string | null;
 };

@@ -20,6 +20,7 @@ export function isTransactionReminderWithoutValue(
 export function resolveTransactionListAmountReais(
   amount: string | null | undefined,
   paidAmount: string | null | undefined,
+  /** Bank settlement only in list UIs; pass split reimbursements for KPI “net remaining”. */
   splitPaidReais = 0
 ): number {
   return Math.max(0, transactionRemainingReais(amount, paidAmount) - splitPaidReais)

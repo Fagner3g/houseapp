@@ -12,6 +12,7 @@ import {
   useDeleteSplit,
   useListSplits,
   useListUsersByOrg,
+  useRegisterSplitPayment,
 } from '@/api/generated/api'
 import type { GetSplitDebtSummary200, GetSplitDebtSummary200PersonsItem } from '@/api/generated/model'
 import { Badge } from '@/components/ui/badge'
@@ -24,6 +25,7 @@ import { useAuthStore } from '@/stores/auth'
 import { getSplitTransactionIdsQueryKey } from '@/features/credit-cards/hooks/use-split-transaction-ids'
 
 import { hasInstallmentSplitDebt } from '../split-debt-summary.utils'
+import { syncAfterSplitReceipt } from '../lib/sync-after-split-receipt'
 import { SplitDebtSummary } from './split-debt-summary'
 import {
   DrawerCollapsibleSection,
@@ -74,6 +76,8 @@ export function TransactionSplitsSection({
   const { mutateAsync: deleteSplit, isPending: isDeleting } = useDeleteSplit()
   const { mutateAsync: createPaymentRequest, isPending: isRequestingPayment } =
     useCreateSplitPaymentRequest()
+  const { mutateAsync: registerSplitPayment, isPending: isMarkingReceived } =
+    useRegisterSplitPayment()
   const isSubmittingSplit = isCreating || isCreatingCollectPlan
 
   const splits = data?.splits ?? []
@@ -315,6 +319,35 @@ export function TransactionSplitsSection({
     }
   }
 
+  const handleMarkReceived = async (splitId: string) => {
+    if (!slug) return
+    const split = splits.find(item => item.id === splitId)
+    if (!split) return
+
+    const remainingReais =
+      moneyStringToReais(split.amount) - moneyStringToReais(split.paidAmount)
+    if (remainingReais <= 0) {
+      toast.error('Esta divisão já está quitada')
+      return
+    }
+
+    try {
+      const result = await registerSplitPayment({
+        slug,
+        transactionId,
+        id: splitId,
+        data: {
+          amount: reaisToMoneyString(remainingReais),
+          method: 'other',
+        },
+      })
+      await syncAfterSplitReceipt(queryClient, slug, transactionId, result)
+      toast.success('Recebimento registrado')
+    } catch {
+      toast.error('Erro ao registrar recebimento')
+    }
+  }
+
   const headerSummary =
     splits.length > 0 ? (
       <span className="ml-1 flex flex-wrap gap-1">
@@ -386,9 +419,11 @@ export function TransactionSplitsSection({
                 onRequestPaymentConfirmation={id =>
                   void handleRequestPaymentConfirmation(id)
                 }
+                onMarkReceived={id => void handleMarkReceived(id)}
                 onDelete={id => void handleDeleteSplit(id)}
                 isDeleting={isDeleting}
                 isRequestingPayment={isRequestingPayment}
+                isMarkingReceived={isMarkingReceived}
               />
             ))}
           </SplitList>

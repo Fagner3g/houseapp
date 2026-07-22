@@ -84,6 +84,9 @@ export type PendingSplitDto = SplitDto & {
   transactionDate: string
   transactionAmount: string | null
   personName: string | null
+  accountId: string | null
+  accountType: string | null
+  competenceDate: string | null
 }
 
 export type { SplitDebtSummary } from './split-debt-summary.logic'
@@ -415,6 +418,9 @@ export class SplitService {
       transactionDate: row.transactionDate.toISOString(),
       transactionAmount: centavosToString(row.transactionAmount),
       personName: row.personName,
+      accountId: row.accountId,
+      accountType: row.accountType,
+      competenceDate: row.competenceDate?.toISOString() ?? null,
     }))
   }
 

@@ -17,6 +17,9 @@ import {
   resolveSplitInstallmentRemainingReais,
 } from '../../split-debt-summary.utils'
 import { PersonSplitDebtDetails } from '../split-debt-summary'
+import {
+  markSplitReceivedLabel,
+} from '../../lib/split-reimbursement-copy'
 import { SplitPaymentsList } from '../split-payments-list'
 import { SPLIT_STATUS_LABELS, SPLIT_STATUS_VARIANT } from './split-status'
 import { personInitials } from './person-initials'
@@ -35,9 +38,11 @@ interface SplitListItemProps {
   viewerIsCreditor: boolean
   viewerCanMutate: boolean
   onRequestPaymentConfirmation: (splitId: string) => void
+  onMarkReceived: (splitId: string) => void
   onDelete: (splitId: string) => void
   isDeleting?: boolean
   isRequestingPayment?: boolean
+  isMarkingReceived?: boolean
 }
 
 export function SplitListItem({
@@ -53,9 +58,11 @@ export function SplitListItem({
   viewerIsCreditor,
   viewerCanMutate,
   onRequestPaymentConfirmation,
+  onMarkReceived,
   onDelete,
   isDeleting,
   isRequestingPayment,
+  isMarkingReceived,
 }: SplitListItemProps) {
   const remainingReais = resolveSplitInstallmentRemainingReais(split, {
     debtSummary,
@@ -111,6 +118,10 @@ export function SplitListItem({
 
   const isUnsettled = split.status !== 'paid' && split.status !== 'forgiven'
   const hasPendingRequest = Boolean(split.pendingPaymentRequest)
+  const showPayments =
+    split.status === 'paid' ||
+    split.status === 'partial' ||
+    moneyStringToReais(split.paidAmount) > 0
 
   return (
     <div className="rounded-lg border border-slate-100 bg-slate-50/50 p-3">
@@ -161,6 +172,17 @@ export function SplitListItem({
             {SPLIT_STATUS_LABELS[split.status]}
           </Badge>
           <div className="flex items-center gap-1">
+            {isUnsettled && viewerIsCreditor && (
+              <Button
+                type="button"
+                size="sm"
+                variant="outline"
+                disabled={isMarkingReceived}
+                onClick={() => onMarkReceived(split.id)}
+              >
+                {markSplitReceivedLabel()}
+              </Button>
+            )}
             {isUnsettled && !viewerIsCreditor && !hasPendingRequest && (
               <Button
                 type="button"
@@ -204,8 +226,13 @@ export function SplitListItem({
         />
       )}
 
-      {moneyStringToReais(split.paidAmount) > 0 && (
-        <SplitPaymentsList slug={slug} transactionId={transactionId} splitId={split.id} />
+      {showPayments && (
+        <SplitPaymentsList
+          slug={slug}
+          transactionId={transactionId}
+          splitId={split.id}
+          canCancel={viewerIsCreditor}
+        />
       )}
     </div>
   )

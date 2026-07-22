@@ -133,6 +133,7 @@ function getPayableListDate(tx: TransactionRow) {
 function getStatusLabel(item: TransactionListItem): string {
   if (isInvoiceSummary(item)) {
     if (item.status === 'paid') return 'Paga'
+    if (item.overdueKind === 'receivable') return 'A receber'
     const remaining = Number(item.remaining ?? item.amount)
     const payments = Number(item.payments ?? 0)
     if (payments > 0 && remaining > 0) return 'Parcial'
@@ -474,7 +475,14 @@ function TransactionTable({
                 navigate({
                   to: '/$org/accounts',
                   params: { org: slug },
-                  search: { accountId: item.accountId, month: item.monthKey },
+                  search: {
+                    kind: 'cards' as const,
+                    accountId: item.accountId,
+                    month: item.monthKey,
+                    ...(item.overdueKind === 'receivable' || item.overdueKind === 'both'
+                      ? { invoiceFilter: 'a_receber' as const }
+                      : {}),
+                  },
                 })
 
               return (
@@ -521,7 +529,10 @@ function TransactionTable({
                           item.status === 'paid' &&
                             'border-emerald-200 bg-emerald-50 text-emerald-700 hover:bg-emerald-50',
                           item.status === 'pending' &&
-                            'border-violet-200 bg-white text-violet-800'
+                            item.overdueKind !== 'receivable' &&
+                            'border-violet-200 bg-white text-violet-800',
+                          item.overdueKind === 'receivable' &&
+                            'border-amber-200 bg-amber-50 text-amber-800 hover:bg-amber-50'
                         )}
                       >
                         {getStatusLabel(item)}
@@ -686,11 +697,9 @@ function TransactionTable({
                     tx.status === 'paid'
                       ? tx.amount
                       : reaisToMoneyString(
-                          resolveTransactionListAmountReais(
-                            tx.amount,
-                            tx.paidAmount,
-                            splitPaidById?.get(tx.id) ?? 0
-                          )
+                          // Purchase/bank remaining only — split reimbursements use badges
+                          // (A receber / Recebido), not a reduced list amount.
+                          resolveTransactionListAmountReais(tx.amount, tx.paidAmount)
                         )
                   )}
                 </span>

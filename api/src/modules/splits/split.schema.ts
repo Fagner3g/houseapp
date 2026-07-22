@@ -49,6 +49,9 @@ export const pendingSplitResponseSchema = splitResponseSchema.extend({
   transactionDate: z.string(),
   transactionAmount: z.string().nullable(),
   personName: z.string().nullable(),
+  accountId: z.string().nullable(),
+  accountType: z.string().nullable(),
+  competenceDate: z.string().nullable(),
 })
 
 const slugParams = z.object({ slug: z.string() })

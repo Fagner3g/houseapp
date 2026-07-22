@@ -1,5 +1,7 @@
 import type { ListTransactions200TransactionsItem } from '@/api/generated/model'
 
+export type InvoiceOverdueKind = 'bank' | 'receivable' | 'both'
+
 export type InvoiceSummaryRow = {
   kind: 'invoice_summary'
   id: string
@@ -13,6 +15,10 @@ export type InvoiceSummaryRow = {
   payments: string
   /** Saldo em aberto da fatura. */
   remaining: string
+  /** Remaining receivable split amounts for the cycle (creditor view). */
+  receivableRemaining?: string
+  /** Why this invoice still appears on the overdue list. */
+  overdueKind?: InvoiceOverdueKind
   type: 'expense'
   date: string
   status: 'pending' | 'paid'

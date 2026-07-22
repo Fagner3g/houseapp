@@ -16699,6 +16699,45 @@
                                 ]
                               }
                             ]
+                          },
+                          "accountId": {
+                            "anyOf": [
+                              {
+                                "type": "string"
+                              },
+                              {
+                                "nullable": true,
+                                "enum": [
+                                  null
+                                ]
+                              }
+                            ]
+                          },
+                          "accountType": {
+                            "anyOf": [
+                              {
+                                "type": "string"
+                              },
+                              {
+                                "nullable": true,
+                                "enum": [
+                                  null
+                                ]
+                              }
+                            ]
+                          },
+                          "competenceDate": {
+                            "anyOf": [
+                              {
+                                "type": "string"
+                              },
+                              {
+                                "nullable": true,
+                                "enum": [
+                                  null
+                                ]
+                              }
+                            ]
                           }
                         },
                         "required": [
@@ -16726,7 +16765,10 @@
                           "transactionTitle",
                           "transactionDate",
                           "transactionAmount",
-                          "personName"
+                          "personName",
+                          "accountId",
+                          "accountType",
+                          "competenceDate"
                         ],
                         "additionalProperties": false
                       }
