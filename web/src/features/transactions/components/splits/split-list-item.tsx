@@ -24,6 +24,7 @@ import { SplitPaymentsList } from '../split-payments-list'
 import { SPLIT_STATUS_LABELS, SPLIT_STATUS_VARIANT } from './split-status'
 import { personInitials } from './person-initials'
 import { splitChargeModeBadge } from './split-charge-mode'
+import { SplitPaymentProgress } from './split-payment-progress'
 
 interface SplitListItemProps {
   split: ListSplits200SplitsItem
@@ -217,6 +218,14 @@ export function SplitListItem({
           </div>
         </div>
       </div>
+
+      {!showPersonDebtDetails && (
+        <SplitPaymentProgress
+          className="mt-2"
+          totalOwed={split.amount}
+          totalPaid={split.paidAmount}
+        />
+      )}
 
       {showPersonDebtDetails && personDebt && debtSummary && (
         <PersonSplitDebtDetails

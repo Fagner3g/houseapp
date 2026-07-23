@@ -2,11 +2,11 @@ import { ChevronDown } from 'lucide-react'
 import { useState } from 'react'
 
 import type { GetSplitDebtSummary200PersonsItem } from '@/api/generated/model'
-import { formatCurrency, formatMoneyString, moneyStringToReais } from '@/lib/currency'
+import { formatMoneyString, moneyStringToReais } from '@/lib/currency'
 import { cn } from '@/lib/utils'
 
-import { computeSplitDebtProgress } from '../split-debt-summary.utils'
 import { PersonInstallmentPlanList } from './person-installment-plan-list'
+import { SplitPaymentProgress } from './splits/split-payment-progress'
 
 interface SplitDebtSummaryProps {
   summary: {
@@ -67,7 +67,6 @@ export function PersonSplitDebtDetails({
   installmentsTotal,
 }: PersonSplitDebtDetailsProps) {
   const [planOpen, setPlanOpen] = useState(false)
-  const progress = computeSplitDebtProgress(person.totalOwed, person.totalPaid)
   const showInstallmentPlan = (installmentsTotal ?? 0) > 1 && person.installments.length > 1
   const planCount = person.installments.length
 
@@ -80,28 +79,7 @@ export function PersonSplitDebtDetails({
         </strong>
       </p>
 
-      <div className="space-y-2">
-        <div className="flex h-2 overflow-hidden rounded-full bg-amber-100">
-          <div
-            className="h-full bg-emerald-500 transition-all"
-            style={{ width: `${progress.paidPercent}%` }}
-          />
-        </div>
-        <div className="flex flex-wrap justify-between gap-2 text-xs text-slate-600">
-          <span>
-            Pago:{' '}
-            <strong className="tabular-nums text-emerald-700">
-              {formatCurrency(progress.paidReais)}
-            </strong>
-          </span>
-          <span>
-            Falta:{' '}
-            <strong className="tabular-nums text-amber-700">
-              {formatCurrency(progress.remainingReais)}
-            </strong>
-          </span>
-        </div>
-      </div>
+      <SplitPaymentProgress totalOwed={person.totalOwed} totalPaid={person.totalPaid} />
 
       {showInstallmentPlan && (
         <div>

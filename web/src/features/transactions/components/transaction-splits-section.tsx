@@ -25,7 +25,10 @@ import { useAuthStore } from '@/stores/auth'
 import { getSplitTransactionIdsQueryKey } from '@/features/credit-cards/hooks/use-split-transaction-ids'
 
 import { hasInstallmentSplitDebt } from '../split-debt-summary.utils'
+import { markSplitReceivedSuccessToast } from '../lib/split-reimbursement-copy'
 import { syncAfterSplitReceipt } from '../lib/sync-after-split-receipt'
+import type { SplitPaymentMethod } from '../lib/unified-settlement'
+import { MarkSplitReceivedDialog } from './mark-split-received-dialog'
 import { SplitDebtSummary } from './split-debt-summary'
 import {
   DrawerCollapsibleSection,
@@ -62,6 +65,7 @@ export function TransactionSplitsSection({
   const queryClient = useQueryClient()
   const [open, setOpen] = useState(false)
   const [showAddForm, setShowAddForm] = useState(false)
+  const [markReceivedSplitId, setMarkReceivedSplitId] = useState<string | null>(null)
 
   const { data: membersData } = useListUsersByOrg(slug, {
     query: { enabled: !!slug && open },
@@ -93,6 +97,7 @@ export function TransactionSplitsSection({
   useEffect(() => {
     setOpen(false)
     setShowAddForm(false)
+    setMarkReceivedSplitId(null)
   }, [transactionId])
 
   // biome-ignore lint/correctness/useExhaustiveDependencies: reopen when splits load for a new transaction
@@ -319,30 +324,42 @@ export function TransactionSplitsSection({
     }
   }
 
-  const handleMarkReceived = async (splitId: string) => {
-    if (!slug) return
-    const split = splits.find(item => item.id === splitId)
-    if (!split) return
+  const markReceivedSplit = markReceivedSplitId
+    ? splits.find(item => item.id === markReceivedSplitId)
+    : undefined
+  const markReceivedRemainingReais = markReceivedSplit
+    ? Math.max(
+        0,
+        moneyStringToReais(markReceivedSplit.amount) -
+          moneyStringToReais(markReceivedSplit.paidAmount)
+      )
+    : 0
 
-    const remainingReais =
-      moneyStringToReais(split.amount) - moneyStringToReais(split.paidAmount)
-    if (remainingReais <= 0) {
+  const handleConfirmMarkReceived = async (input: {
+    amountReais: number
+    method: SplitPaymentMethod
+  }) => {
+    if (!slug || !markReceivedSplitId) return
+    if (input.amountReais <= 0 || markReceivedRemainingReais <= 0) {
       toast.error('Esta divisão já está quitada')
       return
     }
+
+    const isPartial = input.amountReais < markReceivedRemainingReais - 0.005
 
     try {
       const result = await registerSplitPayment({
         slug,
         transactionId,
-        id: splitId,
+        id: markReceivedSplitId,
         data: {
-          amount: reaisToMoneyString(remainingReais),
-          method: 'other',
+          amount: reaisToMoneyString(input.amountReais),
+          method: input.method,
         },
       })
       await syncAfterSplitReceipt(queryClient, slug, transactionId, result)
-      toast.success('Recebimento registrado')
+      setMarkReceivedSplitId(null)
+      toast.success(markSplitReceivedSuccessToast(isPartial))
     } catch {
       toast.error('Erro ao registrar recebimento')
     }
@@ -419,7 +436,7 @@ export function TransactionSplitsSection({
                 onRequestPaymentConfirmation={id =>
                   void handleRequestPaymentConfirmation(id)
                 }
-                onMarkReceived={id => void handleMarkReceived(id)}
+                onMarkReceived={id => setMarkReceivedSplitId(id)}
                 onDelete={id => void handleDeleteSplit(id)}
                 isDeleting={isDeleting}
                 isRequestingPayment={isRequestingPayment}
@@ -429,6 +446,19 @@ export function TransactionSplitsSection({
           </SplitList>
         ) : (
           <SplitEmptyState />
+        )}
+
+        {markReceivedSplit && (
+          <MarkSplitReceivedDialog
+            open={markReceivedSplitId != null}
+            onOpenChange={nextOpen => {
+              if (!nextOpen) setMarkReceivedSplitId(null)
+            }}
+            personLabel={splitPersonLabel(markReceivedSplit)}
+            remainingReais={markReceivedRemainingReais}
+            isPending={isMarkingReceived}
+            onConfirm={handleConfirmMarkReceived}
+          />
         )}
 
         {viewerCanMutate && !showAddForm && splits.length === 0 && (

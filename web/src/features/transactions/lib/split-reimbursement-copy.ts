@@ -17,6 +17,34 @@ export function markSplitReceivedLabel(): string {
   return 'Marcar como paga'
 }
 
+export function markSplitReceivedDialogTitle(): string {
+  return 'Registrar recebimento'
+}
+
+export function markSplitReceivedDialogDescription(personName: string): string {
+  return `Informe quanto ${personName} pagou. Valor parcial mantém a divisão em aberto com o saldo restante.`
+}
+
+export function markSplitReceivedAmountLabel(): string {
+  return 'Valor recebido'
+}
+
+export function markSplitReceivedRemainingHint(remainingLabel: string): string {
+  return `Em aberto: ${remainingLabel}`
+}
+
+export function markSplitReceivedConfirmLabel(): string {
+  return 'Registrar'
+}
+
+export function markSplitReceivedDismissLabel(): string {
+  return 'Cancelar'
+}
+
+export function markSplitReceivedSuccessToast(isPartial: boolean): string {
+  return isPartial ? 'Pagamento parcial registrado' : 'Recebimento registrado'
+}
+
 export function cancelSplitPaymentDialogTitle(): string {
   return 'Desfazer pagamento'
 }
