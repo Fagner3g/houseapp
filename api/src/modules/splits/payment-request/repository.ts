@@ -32,7 +32,8 @@ export interface SplitPaymentRequestRepository {
     status: Exclude<SplitPaymentRequestStatus, 'pending'>
   ): Promise<SplitPaymentRequestRecord | null>
   reopen(id: string): Promise<SplitPaymentRequestRecord | null>
-  cancelPendingBySplitId(splitId: string): Promise<number>
+  /** Cancels pending requests for the split and returns their IDs. */
+  cancelPendingBySplitId(splitId: string): Promise<string[]>
 }
 
 export class DrizzleSplitPaymentRequestRepository implements SplitPaymentRequestRepository {
@@ -135,7 +136,7 @@ export class DrizzleSplitPaymentRequestRepository implements SplitPaymentRequest
     return updated ?? null
   }
 
-  async cancelPendingBySplitId(splitId: string): Promise<number> {
+  async cancelPendingBySplitId(splitId: string): Promise<string[]> {
     const cancelled = await db
       .update(splitPaymentRequests)
       .set({
@@ -147,6 +148,6 @@ export class DrizzleSplitPaymentRequestRepository implements SplitPaymentRequest
       )
       .returning({ id: splitPaymentRequests.id })
 
-    return cancelled.length
+    return cancelled.map(row => row.id)
   }
 }

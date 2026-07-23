@@ -6,6 +6,7 @@ import {
   isHalfSplit,
   resolveSplitBadgePerspective,
   resolveSplitBadgeSettlement,
+  resolveTransactionSplitBadgeSettlement,
 } from './split-badge-label'
 
 describe('isHalfSplit', () => {
@@ -25,6 +26,41 @@ describe('resolveSplitBadgeSettlement', () => {
     expect(resolveSplitBadgeSettlement(undefined)).toBeUndefined()
     expect(resolveSplitBadgeSettlement(10)).toBe('pending')
     expect(resolveSplitBadgeSettlement(0)).toBe('received')
+  })
+})
+
+describe('resolveTransactionSplitBadgeSettlement', () => {
+  it('prefers viewer share remaining for the debtor', () => {
+    const remaining = new Map([['tx-1', 0]])
+    expect(
+      resolveTransactionSplitBadgeSettlement({
+        transactionId: 'tx-1',
+        hasSplit: true,
+        splitRemainingById: remaining,
+        viewerShareRemaining: 4000,
+      })
+    ).toBe('pending')
+  })
+
+  it('uses map remaining when present', () => {
+    const remaining = new Map([['tx-1', 0]])
+    expect(
+      resolveTransactionSplitBadgeSettlement({
+        transactionId: 'tx-1',
+        hasSplit: true,
+        splitRemainingById: remaining,
+      })
+    ).toBe('received')
+  })
+
+  it('defaults missing remaining to pending, not paid', () => {
+    expect(
+      resolveTransactionSplitBadgeSettlement({
+        transactionId: 'tx-1',
+        hasSplit: true,
+        splitRemainingById: new Map(),
+      })
+    ).toBe('pending')
   })
 })
 

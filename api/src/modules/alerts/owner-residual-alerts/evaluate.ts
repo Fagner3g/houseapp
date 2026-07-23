@@ -13,31 +13,25 @@ export function buildOwnerResidualCreateInputs(params: {
   rules: AlertRuleLike[]
   invoices: OwnerInvoiceAlert[]
   transactions: OwnerTxAlert[]
+  orgOwnerId: string
   organizationName?: string
 }): OwnerResidualCreateInput[] {
   const inputs: OwnerResidualCreateInput[] = []
   const organizationName = params.organizationName
+  const shared = {
+    rules: params.rules,
+    invoices: params.invoices,
+    transactions: params.transactions,
+    orgOwnerId: params.orgOwnerId,
+    organizationName,
+  }
 
   if (params.mode !== 'overdue') {
-    inputs.push(
-      ...buildOwnerResidualUpcomingInputs({
-        rules: params.rules,
-        invoices: params.invoices,
-        transactions: params.transactions,
-        organizationName,
-      })
-    )
+    inputs.push(...buildOwnerResidualUpcomingInputs(shared))
   }
 
   if (params.mode !== 'upcoming') {
-    inputs.push(
-      ...buildOwnerResidualOverdueInputs({
-        rules: params.rules,
-        invoices: params.invoices,
-        transactions: params.transactions,
-        organizationName,
-      })
-    )
+    inputs.push(...buildOwnerResidualOverdueInputs(shared))
   }
 
   return inputs

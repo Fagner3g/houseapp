@@ -40,6 +40,7 @@ describe('resolveInvoiceRemainingCentavos', () => {
         closingDay: 1,
         dueDay: 10,
         transactionIds: ['cc-1'],
+        accountCreatedBy: 'owner',
       },
       accountTransactions: [purchase],
       accountStatements: [statement],

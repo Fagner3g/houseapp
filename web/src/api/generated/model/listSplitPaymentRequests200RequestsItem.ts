@@ -3,7 +3,7 @@
  * Do not edit manually.
  * HouseApp API
  * API for HouseApp
- * OpenAPI spec version: 2.2.1
+ * OpenAPI spec version: 2.3.0
  */
 import type { ListSplitPaymentRequests200RequestsItemNote } from "./listSplitPaymentRequests200RequestsItemNote";
 import type { ListSplitPaymentRequests200RequestsItemRespondedAt } from "./listSplitPaymentRequests200RequestsItemRespondedAt";

@@ -37,12 +37,11 @@ export function getAttachmentDownloadUrl(
   ).toString()
 }
 
-export async function downloadTransactionAttachment(
+export async function fetchAttachmentBlob(
   slug: string,
   transactionId: string,
-  attachmentId: string,
-  fileName: string
-): Promise<void> {
+  attachmentId: string
+): Promise<Blob> {
   const token = getAuthToken()
   const url = getAttachmentDownloadUrl(slug, transactionId, attachmentId)
   const response = await fetch(url, {
@@ -53,11 +52,40 @@ export async function downloadTransactionAttachment(
     throw new Error(`Download failed: ${response.status}`)
   }
 
-  const blob = await response.blob()
+  return response.blob()
+}
+
+export async function downloadTransactionAttachment(
+  slug: string,
+  transactionId: string,
+  attachmentId: string,
+  fileName: string
+): Promise<void> {
+  const blob = await fetchAttachmentBlob(slug, transactionId, attachmentId)
   const objectUrl = URL.createObjectURL(blob)
   const anchor = document.createElement('a')
   anchor.href = objectUrl
   anchor.download = fileName
   anchor.click()
   URL.revokeObjectURL(objectUrl)
+}
+
+export type AttachmentPreviewKind = 'image' | 'pdf' | 'other'
+
+export function resolveAttachmentPreviewKind(
+  contentType: string | null | undefined,
+  fileName: string
+): AttachmentPreviewKind {
+  const type = (contentType ?? '').toLowerCase()
+  const extension = fileName.split('.').pop()?.toLowerCase() ?? ''
+
+  if (type.startsWith('image/') || ['jpg', 'jpeg', 'png', 'webp', 'gif'].includes(extension)) {
+    return 'image'
+  }
+
+  if (type === 'application/pdf' || extension === 'pdf') {
+    return 'pdf'
+  }
+
+  return 'other'
 }

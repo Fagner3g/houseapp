@@ -27,9 +27,29 @@ export function buildSplitShareSummaryLine(input: {
   purchaseTotalAmount?: string | null
   installmentNumber?: number | null
   installmentsTotal?: number | null
+  collectLumpSum?: boolean | null
 }): string | null {
   const shareAmount = formatAmountBRL(input.shareAmount)
   if (!shareAmount) return null
+
+  if (input.collectLumpSum) {
+    let line = `Sua parte: ${shareAmount} · à vista`
+    const shareTotalDigits = formatAmountDigitsBRL(input.shareTotalAmount)
+    const isFullPurchaseShare =
+      !!input.shareTotalAmount &&
+      !!input.purchaseTotalAmount &&
+      input.shareTotalAmount === input.purchaseTotalAmount
+    if (
+      shareTotalDigits &&
+      input.shareTotalAmount &&
+      input.shareAmount &&
+      input.shareTotalAmount !== input.shareAmount &&
+      !isFullPurchaseShare
+    ) {
+      line = `${line} · ${shareTotalDigits}`
+    }
+    return line
+  }
 
   const hasInstallments = !!(
     input.installmentNumber &&
@@ -38,7 +58,7 @@ export function buildSplitShareSummaryLine(input: {
   )
 
   let line = hasInstallments
-    ? `Sua parte: ${shareAmount} (${input.installmentNumber}/${input.installmentsTotal})`
+    ? `Sua parte: ${shareAmount} (${input.installmentNumber}/${input.installmentsTotal}) · parcelado`
     : `Sua parte: ${shareAmount}`
 
   // Trailing total is useful for partial splits (e.g. 50/50): "83,75 (1/10) · 837,50".
@@ -125,6 +145,7 @@ export function buildSummaryLine(input: {
     return (
       buildSplitShareSummaryLine({
         shareAmount: resolveDueShareAmount(input),
+        collectLumpSum: input.collectLumpSum,
       }) ?? dueAmount
     )
   }

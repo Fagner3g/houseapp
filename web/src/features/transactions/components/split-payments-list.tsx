@@ -1,19 +1,14 @@
 import dayjs from 'dayjs'
-import { Loader2 } from 'lucide-react'
 import { useState } from 'react'
-import { toast } from 'sonner'
 
-import {
-  getGetSplitDebtSummaryQueryKey,
-  getListSplitPaymentsQueryKey,
-  getListSplitsQueryKey,
-  useCancelSplitPayment,
-  useListSplitPayments,
-} from '@/api/generated/api'
+import { useListSplitPayments } from '@/api/generated/api'
 import type { ListSplitPayments200PaymentsItemMethod } from '@/api/generated/model'
 import { Button } from '@/components/ui/button'
 import { formatMoneyString } from '@/lib/currency'
-import { useQueryClient } from '@tanstack/react-query'
+import { Loader2 } from 'lucide-react'
+
+import { cancelSplitPaymentActionLabel } from '../lib/split-reimbursement-copy'
+import { CancelSplitPaymentDialog } from './cancel-split-payment-dialog'
 
 const METHOD_LABELS: Record<NonNullable<ListSplitPayments200PaymentsItemMethod>, string> = {
   pix: 'Pix',
@@ -26,47 +21,25 @@ interface SplitPaymentsListProps {
   slug: string
   transactionId: string
   splitId: string
+  canCancel?: boolean
 }
 
-export function SplitPaymentsList({ slug, transactionId, splitId }: SplitPaymentsListProps) {
-  const queryClient = useQueryClient()
-  const [cancelingPaymentId, setCancelingPaymentId] = useState<string | null>(null)
+export function SplitPaymentsList({
+  slug,
+  transactionId,
+  splitId,
+  canCancel = false,
+}: SplitPaymentsListProps) {
+  const [cancelTarget, setCancelTarget] = useState<{
+    paymentId: string
+    amount: string
+  } | null>(null)
 
   const { data, isLoading } = useListSplitPayments(slug, transactionId, splitId, {
     query: { enabled: !!slug && !!transactionId && !!splitId },
   })
 
-  const { mutateAsync: cancelPayment } = useCancelSplitPayment()
-
   const payments = data?.payments ?? []
-
-  const invalidate = () => {
-    queryClient.invalidateQueries({
-      queryKey: getListSplitPaymentsQueryKey(slug, transactionId, splitId),
-    })
-    queryClient.invalidateQueries({ queryKey: getListSplitsQueryKey(slug, transactionId) })
-    queryClient.invalidateQueries({
-      queryKey: getGetSplitDebtSummaryQueryKey(slug, transactionId),
-    })
-  }
-
-  const handleCancelPayment = async (paymentId: string, amount: string) => {
-    const confirmed = window.confirm(
-      `Cancelar o registro de pagamento de ${formatMoneyString(amount)}?`
-    )
-    if (!confirmed) return
-
-    setCancelingPaymentId(paymentId)
-    try {
-      await cancelPayment({ slug, transactionId, id: splitId, paymentId })
-      toast.success('Pagamento cancelado')
-      invalidate()
-    } catch {
-      toast.error('Erro ao cancelar pagamento')
-    } finally {
-      setCancelingPaymentId(null)
-    }
-  }
 
   if (isLoading) {
     return (
@@ -103,23 +76,36 @@ export function SplitPaymentsList({ slug, transactionId, splitId }: SplitPayment
                 </span>
               )}
             </div>
-            <Button
-              type="button"
-              size="sm"
-              variant="ghost"
-              className="h-7 shrink-0 px-2 text-xs text-rose-600 hover:bg-rose-50 hover:text-rose-700"
-              disabled={cancelingPaymentId != null}
-              onClick={() => void handleCancelPayment(payment.id, payment.amount)}
-            >
-              {cancelingPaymentId === payment.id ? (
-                <Loader2 className="size-3.5 animate-spin" />
-              ) : (
-                'Cancelar'
-              )}
-            </Button>
+            {canCancel && (
+              <Button
+                type="button"
+                size="sm"
+                variant="ghost"
+                className="h-7 shrink-0 px-2 text-xs text-rose-600 hover:bg-rose-50 hover:text-rose-700"
+                onClick={() =>
+                  setCancelTarget({ paymentId: payment.id, amount: payment.amount })
+                }
+              >
+                {cancelSplitPaymentActionLabel()}
+              </Button>
+            )}
           </li>
         ))}
       </ul>
+
+      {cancelTarget && (
+        <CancelSplitPaymentDialog
+          open
+          onOpenChange={open => {
+            if (!open) setCancelTarget(null)
+          }}
+          slug={slug}
+          transactionId={transactionId}
+          splitId={splitId}
+          paymentId={cancelTarget.paymentId}
+          amountDisplay={cancelTarget.amount}
+        />
+      )}
     </div>
   )
 }

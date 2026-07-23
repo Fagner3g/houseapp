@@ -17,9 +17,14 @@ import {
   resolveSplitInstallmentRemainingReais,
 } from '../../split-debt-summary.utils'
 import { PersonSplitDebtDetails } from '../split-debt-summary'
+import {
+  markSplitReceivedLabel,
+} from '../../lib/split-reimbursement-copy'
 import { SplitPaymentsList } from '../split-payments-list'
 import { SPLIT_STATUS_LABELS, SPLIT_STATUS_VARIANT } from './split-status'
 import { personInitials } from './person-initials'
+import { splitChargeModeBadge } from './split-charge-mode'
+import { SplitPaymentProgress } from './split-payment-progress'
 
 interface SplitListItemProps {
   split: ListSplits200SplitsItem
@@ -33,11 +38,12 @@ interface SplitListItemProps {
   parcelInstallmentsTotal: number
   viewerIsCreditor: boolean
   viewerCanMutate: boolean
-  onRegisterPayment: (splitId: string, remainingReais: number) => void
   onRequestPaymentConfirmation: (splitId: string) => void
+  onMarkReceived: (splitId: string) => void
   onDelete: (splitId: string) => void
   isDeleting?: boolean
   isRequestingPayment?: boolean
+  isMarkingReceived?: boolean
 }
 
 export function SplitListItem({
@@ -52,11 +58,12 @@ export function SplitListItem({
   parcelInstallmentsTotal,
   viewerIsCreditor,
   viewerCanMutate,
-  onRegisterPayment,
   onRequestPaymentConfirmation,
+  onMarkReceived,
   onDelete,
   isDeleting,
   isRequestingPayment,
+  isMarkingReceived,
 }: SplitListItemProps) {
   const remainingReais = resolveSplitInstallmentRemainingReais(split, {
     debtSummary,
@@ -73,7 +80,9 @@ export function SplitListItem({
       : null
 
   const currentInstallment = personDebt?.installments.find(item => item.splitId === split.id)
-  const showPersonDebtDetails = personDebt != null && parcelInstallmentsTotal > 1
+  const isCollectPlan = (split.collectInstallmentsTotal ?? 0) >= 2
+  const showPersonDebtDetails =
+    personDebt != null && (parcelInstallmentsTotal > 1 || isCollectPlan)
   const parcelNumber =
     currentInstallment?.installmentNumber ??
     installmentNumber ??
@@ -92,17 +101,28 @@ export function SplitListItem({
         })
       : split.amount
 
+  const amountMode = splitChargeModeBadge({
+    collectLumpSum: split.collectLumpSum,
+    collectInstallmentsTotal: split.collectInstallmentsTotal,
+    collectInstallmentNumber: split.collectInstallmentNumber,
+    purchaseInstallmentsTotal: showPersonDebtDetails ? parcelInstallmentsTotal : null,
+    purchaseInstallmentNumber: parcelNumber,
+  })
+
   const amountLabel =
-    split.collectLumpSum
-      ? 'Cobrança à vista'
-      : showPersonDebtDetails
-        ? `Valor desta parcela${
-            parcelInstallmentsTotal > 1 ? ` (${parcelNumber}/${parcelInstallmentsTotal})` : ''
-          }`
-        : null
+    amountMode?.caption ??
+    (showPersonDebtDetails
+      ? `Valor desta parcela${
+          parcelInstallmentsTotal > 1 ? ` (${parcelNumber}/${parcelInstallmentsTotal})` : ''
+        }`
+      : null)
 
   const isUnsettled = split.status !== 'paid' && split.status !== 'forgiven'
   const hasPendingRequest = Boolean(split.pendingPaymentRequest)
+  const showPayments =
+    split.status === 'paid' ||
+    split.status === 'partial' ||
+    moneyStringToReais(split.paidAmount) > 0
 
   return (
     <div className="rounded-lg border border-slate-100 bg-slate-50/50 p-3">
@@ -128,9 +148,9 @@ export function SplitListItem({
               )}
               <span className="inline-flex items-center gap-1.5">
                 {formatMoneyString(displayInstallmentAmount)}
-                {split.collectLumpSum && (
+                {amountMode && (
                   <Badge variant="secondary" className="text-[10px] font-normal">
-                    à vista
+                    {amountMode.badge}
                   </Badge>
                 )}
                 {split.status === 'partial' && (
@@ -158,9 +178,10 @@ export function SplitListItem({
                 type="button"
                 size="sm"
                 variant="outline"
-                onClick={() => onRegisterPayment(split.id, remainingReais)}
+                disabled={isMarkingReceived}
+                onClick={() => onMarkReceived(split.id)}
               >
-                Registrar pagamento
+                {markSplitReceivedLabel()}
               </Button>
             )}
             {isUnsettled && !viewerIsCreditor && !hasPendingRequest && (
@@ -198,6 +219,14 @@ export function SplitListItem({
         </div>
       </div>
 
+      {!showPersonDebtDetails && (
+        <SplitPaymentProgress
+          className="mt-2"
+          totalOwed={split.amount}
+          totalPaid={split.paidAmount}
+        />
+      )}
+
       {showPersonDebtDetails && personDebt && debtSummary && (
         <PersonSplitDebtDetails
           person={personDebt}
@@ -206,8 +235,13 @@ export function SplitListItem({
         />
       )}
 
-      {moneyStringToReais(split.paidAmount) > 0 && (
-        <SplitPaymentsList slug={slug} transactionId={transactionId} splitId={split.id} />
+      {showPayments && (
+        <SplitPaymentsList
+          slug={slug}
+          transactionId={transactionId}
+          splitId={split.id}
+          canCancel={viewerIsCreditor}
+        />
       )}
     </div>
   )

@@ -113,8 +113,9 @@ export function buildNotificationDisplay(notification: InboxNotification): Notif
   }
 }
 
+/** Web inbox shows only in-app; extension/whatsapp are delivery channels elsewhere. */
 export function isInboxChannel(channel: string): boolean {
-  return channel === 'in_app' || channel === 'extension'
+  return channel === 'in_app'
 }
 
 export function sortInboxNotifications<T extends InboxNotification>(items: T[]): T[] {

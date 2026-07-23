@@ -1,8 +1,10 @@
+import { sql } from 'drizzle-orm'
 import type { FastifyReply, FastifyRequest } from 'fastify'
 
+import { db } from '@/db'
+import { users } from '@/db/schemas/users'
 import { inviteService } from '@/domain/invite'
 import { createForUserInvite } from '@/domain/user/create-invite-for-user'
-import { getUser } from '@/domain/user/get-user'
 import type { CreateUserWithInviteBody } from '@/http/schemas/user/create-user-with-invite.schema'
 
 type Req = FastifyRequest<{ Body: CreateUserWithInviteBody }>
@@ -10,15 +12,32 @@ type Req = FastifyRequest<{ Body: CreateUserWithInviteBody }>
 export async function createUserWithInviteController(request: Req, reply: FastifyReply) {
   const { email, name, phone } = request.body
   const orgId = request.organization.id
+  const invitedBy = request.user.sub
+  const normalizedEmail = email.trim().toLowerCase()
 
-  const user = await getUser({ email })
+  const [existing] = await db
+    .select()
+    .from(users)
+    .where(sql`lower(${users.email}) = ${normalizedEmail}`)
+    .limit(1)
 
-  if (user) {
-    await inviteService.create({ email, orgId, userId: user.id })
-  } else {
-    await createForUserInvite({ name, email, phone, orgIdInvite: orgId })
-  }
-  // TODO: send email
+  const user =
+    existing ??
+    (await createForUserInvite({
+      name,
+      email: normalizedEmail,
+      phone,
+    }))
 
-  reply.status(201).send(null)
+  await inviteService.create({
+    email: normalizedEmail,
+    orgId,
+    userId: invitedBy,
+  })
+
+  return reply.status(201).send({
+    id: user.id,
+    name: user.name,
+    email: user.email,
+  })
 }

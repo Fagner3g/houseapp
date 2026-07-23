@@ -25,6 +25,10 @@ export const splitResponseSchema = z.object({
   lastNotifiedAt: z.string().nullable(),
   notifyEnabled: z.boolean(),
   collectLumpSum: z.boolean(),
+  dueAt: z.string().nullable(),
+  collectInstallmentNumber: z.number().nullable(),
+  collectInstallmentsTotal: z.number().nullable(),
+  collectPlanId: z.string().nullable(),
   createdAt: z.string(),
   updatedAt: z.string(),
   pendingPaymentRequest: pendingPaymentRequestSchema.nullable().optional(),
@@ -45,6 +49,9 @@ export const pendingSplitResponseSchema = splitResponseSchema.extend({
   transactionDate: z.string(),
   transactionAmount: z.string().nullable(),
   personName: z.string().nullable(),
+  accountId: z.string().nullable(),
+  accountType: z.string().nullable(),
+  competenceDate: z.string().nullable(),
 })
 
 const slugParams = z.object({ slug: z.string() })
@@ -61,6 +68,18 @@ const createSplitBody = z.object({
   description: z.string().nullable().optional(),
   notifyEnabled: z.boolean().optional(),
   collectLumpSum: z.boolean().optional(),
+})
+
+const createCollectPlanBody = z.object({
+  userId: z.string().nullable().optional(),
+  contactName: z.string().nullable().optional(),
+  contactPhone: z.string().nullable().optional(),
+  contactEmail: z.string().nullable().optional(),
+  amount: z.string(),
+  description: z.string().nullable().optional(),
+  notifyEnabled: z.boolean().optional(),
+  installmentsTotal: z.number().int().min(2).max(48),
+  startDate: z.string().min(10),
 })
 
 const updateSplitBody = createSplitBody
@@ -96,6 +115,18 @@ export const createSplitSchema = {
   body: createSplitBody,
   response: {
     201: z.object({ split: splitResponseSchema }),
+  },
+}
+
+export const createCollectPlanSchema = {
+  tags: ['Splits'],
+  description:
+    'Create a partner collect installment plan on a one-shot purchase (N monthly parcels)',
+  operationId: 'createCollectPlan',
+  params: transactionParams,
+  body: createCollectPlanBody,
+  response: {
+    201: z.object({ splits: z.array(splitResponseSchema) }),
   },
 }
 
@@ -234,6 +265,8 @@ const splitDebtInstallmentSchema = z.object({
   amount: z.string(),
   paidAmount: z.string(),
   status: splitStatusSchema,
+  dueAt: z.string().nullable().optional(),
+  collectLumpSum: z.boolean().optional(),
 })
 
 const splitDebtPersonSchema = z.object({
@@ -272,6 +305,7 @@ export const getSplitDebtSummarySchema = {
 }
 
 export type CreateSplitBody = z.infer<typeof createSplitBody>
+export type CreateCollectPlanBody = z.infer<typeof createCollectPlanBody>
 export type UpdateSplitBody = z.infer<typeof updateSplitBody>
 export type RegisterPaymentBody = z.infer<typeof registerPaymentBody>
 export type ListSplitTransactionIdsBody = z.infer<

@@ -1,6 +1,7 @@
 import { describe, expect, it } from 'vitest'
 
 import {
+  resolveSettlementPrefillReais,
   resolveTransactionInstallmentAmountReais,
   resolveTransactionInstallmentRemainingReais,
   resolveTransactionListAmountReais,
@@ -57,18 +58,68 @@ describe('resolveTransactionInstallmentAmountReais', () => {
 })
 
 describe('resolveTransactionInstallmentRemainingReais', () => {
-  it('subtracts paid amount from resolved installment amount', () => {
+  it('uses row remaining even when installment amount is a divided slice', () => {
     expect(
       resolveTransactionInstallmentRemainingReais(
         {
-          amount: '900.00',
-          paidAmount: '100.00',
+          amount: '400.00',
+          paidAmount: '200.00',
           installmentNumber: 1,
-          installmentsTotal: 3,
+          installmentsTotal: 2,
+          source: 'manual',
         },
-        { currentTransactionAmount: '300.00', purchaseTotal: '900.00' }
+        { currentTransactionAmount: '200.00', purchaseTotal: '400.00' }
       )
     ).toBe(200)
+  })
+
+  it('matches amount − paid for a materialized parcel row', () => {
+    expect(
+      resolveTransactionInstallmentRemainingReais({
+        amount: '300.00',
+        paidAmount: '100.00',
+        installmentNumber: 1,
+        installmentsTotal: 3,
+      })
+    ).toBe(200)
+  })
+})
+
+describe('resolveSettlementPrefillReais', () => {
+  it('prefers one parcel when the row still holds the purchase total', () => {
+    expect(
+      resolveSettlementPrefillReais({
+        amount: '400.00',
+        paidAmount: '0.00',
+        installmentNumber: 1,
+        installmentsTotal: 2,
+        source: 'manual',
+      })
+    ).toBe(200)
+  })
+
+  it('caps prefill at row remaining after a partial settlement', () => {
+    expect(
+      resolveSettlementPrefillReais({
+        amount: '400.00',
+        paidAmount: '200.00',
+        installmentNumber: 1,
+        installmentsTotal: 2,
+        source: 'manual',
+      })
+    ).toBe(200)
+  })
+
+  it('returns 0 when the row is fully settled', () => {
+    expect(
+      resolveSettlementPrefillReais({
+        amount: '400.00',
+        paidAmount: '400.00',
+        installmentNumber: 1,
+        installmentsTotal: 2,
+        source: 'manual',
+      })
+    ).toBe(0)
   })
 })
 

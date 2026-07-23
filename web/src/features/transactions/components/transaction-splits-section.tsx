@@ -6,6 +6,7 @@ import { useQueryClient } from '@tanstack/react-query'
 import {
   getListSplitsQueryKey,
   getGetSplitDebtSummaryQueryKey,
+  useCreateCollectPlan,
   useCreateSplit,
   useCreateSplitPaymentRequest,
   useDeleteSplit,
@@ -16,30 +17,18 @@ import {
 import type { GetSplitDebtSummary200, GetSplitDebtSummary200PersonsItem } from '@/api/generated/model'
 import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
-import { CurrencyInput } from '@/components/ui/currency-input'
-import {
-  Dialog,
-  DialogContent,
-  DialogFooter,
-  DialogHeader,
-  DialogTitle,
-} from '@/components/ui/dialog'
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from '@/components/ui/select'
 import { useActiveOrganization } from '@/hooks/use-active-organization'
 import { moneyStringToReais, reaisToMoneyString } from '@/lib/currency'
 import { getSplitEligibleOrgUsers } from '@/lib/org-users'
 import { normalizePhoneDigits } from '@/lib/phone'
-import { stackyPrimaryButton } from '@/lib/ui-classes'
 import { useAuthStore } from '@/stores/auth'
 import { getSplitTransactionIdsQueryKey } from '@/features/credit-cards/hooks/use-split-transaction-ids'
 
 import { hasInstallmentSplitDebt } from '../split-debt-summary.utils'
+import { markSplitReceivedSuccessToast } from '../lib/split-reimbursement-copy'
+import { syncAfterSplitReceipt } from '../lib/sync-after-split-receipt'
+import type { SplitPaymentMethod } from '../lib/unified-settlement'
+import { MarkSplitReceivedDialog } from './mark-split-received-dialog'
 import { SplitDebtSummary } from './split-debt-summary'
 import {
   DrawerCollapsibleSection,
@@ -76,9 +65,7 @@ export function TransactionSplitsSection({
   const queryClient = useQueryClient()
   const [open, setOpen] = useState(false)
   const [showAddForm, setShowAddForm] = useState(false)
-  const [paymentSplitId, setPaymentSplitId] = useState<string | null>(null)
-  const [paymentAmount, setPaymentAmount] = useState(0)
-  const [paymentMethod, setPaymentMethod] = useState<'pix' | 'cash' | 'transfer' | 'other'>('pix')
+  const [markReceivedSplitId, setMarkReceivedSplitId] = useState<string | null>(null)
 
   const { data: membersData } = useListUsersByOrg(slug, {
     query: { enabled: !!slug && open },
@@ -88,10 +75,14 @@ export function TransactionSplitsSection({
   })
 
   const { mutateAsync: createSplit, isPending: isCreating } = useCreateSplit()
+  const { mutateAsync: createCollectPlan, isPending: isCreatingCollectPlan } =
+    useCreateCollectPlan()
   const { mutateAsync: deleteSplit, isPending: isDeleting } = useDeleteSplit()
-  const { mutateAsync: registerPayment, isPending: isPaying } = useRegisterSplitPayment()
   const { mutateAsync: createPaymentRequest, isPending: isRequestingPayment } =
     useCreateSplitPaymentRequest()
+  const { mutateAsync: registerSplitPayment, isPending: isMarkingReceived } =
+    useRegisterSplitPayment()
+  const isSubmittingSplit = isCreating || isCreatingCollectPlan
 
   const splits = data?.splits ?? []
   const viewerIsCreditor = data?.viewerIsCreditor ?? false
@@ -106,6 +97,7 @@ export function TransactionSplitsSection({
   useEffect(() => {
     setOpen(false)
     setShowAddForm(false)
+    setMarkReceivedSplitId(null)
   }, [transactionId])
 
   // biome-ignore lint/correctness/useExhaustiveDependencies: reopen when splits load for a new transaction
@@ -204,6 +196,47 @@ export function TransactionSplitsSection({
     const collectLumpSum =
       values.amountMode === 'percent' && isParceledPurchase && !values.parcelCharge
 
+    if (values.collectPlan && !isParceledPurchase && values.amountMode === 'percent') {
+      const amountReais = (purchaseTotalReais * values.splitPercent) / 100
+      if (values.splitPercent <= 0 || values.splitPercent > 100) {
+        toast.error('Informe um percentual entre 1 e 100')
+        return
+      }
+      if (amountReais <= 0) {
+        toast.error('O valor da divisão deve ser maior que zero')
+        return
+      }
+      if (!values.collectStartDate) {
+        toast.error('Informe a data do 1º vencimento')
+        return
+      }
+      try {
+        await createCollectPlan({
+          slug,
+          transactionId,
+          data: {
+            userId: values.personMode === 'member' ? values.selectedUserId : null,
+            contactName: values.personMode === 'contact' ? values.contactName.trim() : null,
+            contactPhone:
+              values.personMode === 'contact'
+                ? normalizePhoneDigits(values.contactPhone) || null
+                : null,
+            description: 'Divisão da despesa',
+            notifyEnabled: values.notifyEnabled,
+            amount: reaisToMoneyString(amountReais),
+            installmentsTotal: values.collectInstallmentsTotal,
+            startDate: values.collectStartDate,
+          },
+        })
+        toast.success('Divisão parcelada adicionada')
+        setShowAddForm(false)
+        invalidate()
+      } catch {
+        toast.error('Erro ao adicionar divisão parcelada')
+      }
+      return
+    }
+
     const splitTargets =
       values.amountMode === 'percent' &&
       isParceledPurchase &&
@@ -264,24 +297,6 @@ export function TransactionSplitsSection({
     }
   }
 
-  const handleRegisterPayment = async () => {
-    if (!slug || !paymentSplitId || paymentAmount <= 0) return
-    try {
-      await registerPayment({
-        slug,
-        transactionId,
-        id: paymentSplitId,
-        data: { amount: reaisToMoneyString(paymentAmount), method: paymentMethod },
-      })
-      toast.success('Pagamento registrado')
-      setPaymentSplitId(null)
-      setPaymentAmount(0)
-      invalidate()
-    } catch {
-      toast.error('Erro ao registrar pagamento')
-    }
-  }
-
   const handleDeleteSplit = async (splitId: string) => {
     if (!slug) return
     try {
@@ -309,19 +324,72 @@ export function TransactionSplitsSection({
     }
   }
 
+  const markReceivedSplit = markReceivedSplitId
+    ? splits.find(item => item.id === markReceivedSplitId)
+    : undefined
+  const markReceivedRemainingReais = markReceivedSplit
+    ? Math.max(
+        0,
+        moneyStringToReais(markReceivedSplit.amount) -
+          moneyStringToReais(markReceivedSplit.paidAmount)
+      )
+    : 0
+
+  const handleConfirmMarkReceived = async (input: {
+    amountReais: number
+    method: SplitPaymentMethod
+  }) => {
+    if (!slug || !markReceivedSplitId) return
+    if (input.amountReais <= 0 || markReceivedRemainingReais <= 0) {
+      toast.error('Esta divisão já está quitada')
+      return
+    }
+
+    const isPartial = input.amountReais < markReceivedRemainingReais - 0.005
+
+    try {
+      const result = await registerSplitPayment({
+        slug,
+        transactionId,
+        id: markReceivedSplitId,
+        data: {
+          amount: reaisToMoneyString(input.amountReais),
+          method: input.method,
+        },
+      })
+      await syncAfterSplitReceipt(queryClient, slug, transactionId, result)
+      setMarkReceivedSplitId(null)
+      toast.success(markSplitReceivedSuccessToast(isPartial))
+    } catch {
+      toast.error('Erro ao registrar recebimento')
+    }
+  }
+
   const headerSummary =
     splits.length > 0 ? (
       <span className="ml-1 flex flex-wrap gap-1">
-        {splits.map(split => (
-          <Badge key={split.id} variant="secondary" className="font-normal">
-            {splitPersonLabel(split)}
-          </Badge>
-        ))}
+        {[...new Map(splits.map(split => [splitPersonLabel(split), split])).values()].map(
+          split => (
+            <Badge key={split.id} variant="secondary" className="font-normal">
+              {splitPersonLabel(split)}
+            </Badge>
+          )
+        )}
       </span>
     ) : undefined
 
+  // One card per collect-plan (or per standalone split); details list the parcels.
+  const listSplits = (() => {
+    const seenPlans = new Set<string>()
+    return splits.filter(split => {
+      if (!split.collectPlanId) return true
+      if (seenPlans.has(split.collectPlanId)) return false
+      seenPlans.add(split.collectPlanId)
+      return true
+    })
+  })()
+
   return (
-    <>
       <DrawerCollapsibleSection
         icon={Wallet}
         title="Divisões"
@@ -334,6 +402,7 @@ export function TransactionSplitsSection({
             summary={{
               purchaseTotal: debtSummary.purchaseTotal,
               installmentsTotal: debtSummary.installmentsTotal,
+              purchaseIsParceled: isParceledPurchase,
               myShareTotal:
                 !debtSummary.viewerIsCreditor && debtSummary.viewerOwedTotal != null
                   ? debtSummary.viewerOwedTotal
@@ -346,7 +415,7 @@ export function TransactionSplitsSection({
           <p className="text-sm text-slate-500">Carregando...</p>
         ) : splits.length > 0 && slug ? (
           <SplitList>
-            {splits.map(split => (
+            {listSplits.map(split => (
               <SplitListItem
                 key={split.id}
                 split={split}
@@ -357,20 +426,21 @@ export function TransactionSplitsSection({
                 personDebt={findPersonForSplit(split)}
                 installmentNumber={installmentNumber}
                 installmentsTotal={installmentsTotal}
-                parcelInstallmentsTotal={parcelCount}
+                parcelInstallmentsTotal={
+                  split.collectInstallmentsTotal && split.collectInstallmentsTotal >= 2
+                    ? split.collectInstallmentsTotal
+                    : parcelCount
+                }
                 viewerIsCreditor={viewerIsCreditor}
                 viewerCanMutate={viewerCanMutate}
-                onRegisterPayment={(id, remaining) => {
-                  setPaymentSplitId(id)
-                  setPaymentAmount(remaining)
-                  setPaymentMethod('pix')
-                }}
                 onRequestPaymentConfirmation={id =>
                   void handleRequestPaymentConfirmation(id)
                 }
+                onMarkReceived={id => setMarkReceivedSplitId(id)}
                 onDelete={id => void handleDeleteSplit(id)}
                 isDeleting={isDeleting}
                 isRequestingPayment={isRequestingPayment}
+                isMarkingReceived={isMarkingReceived}
               />
             ))}
           </SplitList>
@@ -378,10 +448,23 @@ export function TransactionSplitsSection({
           <SplitEmptyState />
         )}
 
+        {markReceivedSplit && (
+          <MarkSplitReceivedDialog
+            open={markReceivedSplitId != null}
+            onOpenChange={nextOpen => {
+              if (!nextOpen) setMarkReceivedSplitId(null)
+            }}
+            personLabel={splitPersonLabel(markReceivedSplit)}
+            remainingReais={markReceivedRemainingReais}
+            isPending={isMarkingReceived}
+            onConfirm={handleConfirmMarkReceived}
+          />
+        )}
+
         {viewerCanMutate && !showAddForm && splits.length === 0 && (
           <SplitMemberChipList
             members={splitEligibleMembers}
-            disabled={isCreating}
+            disabled={isSubmittingSplit}
             onSelect={userId => void handleDelegateToMember(userId)}
           />
         )}
@@ -394,7 +477,7 @@ export function TransactionSplitsSection({
               isParceledPurchase={isParceledPurchase}
               parcelCount={parcelCount}
               currentParcelLabel={currentParcelLabel}
-              isSubmitting={isCreating}
+              isSubmitting={isSubmittingSplit}
               onSubmit={values => void handleAddSplit(values)}
               onCancel={() => setShowAddForm(false)}
             />
@@ -414,51 +497,5 @@ export function TransactionSplitsSection({
           <SplitMyShareRow amountReais={myShareReais} />
         )}
       </DrawerCollapsibleSection>
-
-      <Dialog open={!!paymentSplitId} onOpenChange={v => !v && setPaymentSplitId(null)}>
-        <DialogContent>
-          <DialogHeader>
-            <DialogTitle>Registrar pagamento</DialogTitle>
-          </DialogHeader>
-          <div className="space-y-4 py-2">
-            <div>
-              <p className="mb-2 text-sm text-slate-600">Valor recebido</p>
-              <CurrencyInput value={paymentAmount} onValueChange={setPaymentAmount} />
-            </div>
-            <div>
-              <p className="mb-2 text-sm text-slate-600">Forma de pagamento</p>
-              <Select
-                value={paymentMethod}
-                onValueChange={v =>
-                  setPaymentMethod(v as 'pix' | 'cash' | 'transfer' | 'other')
-                }
-              >
-                <SelectTrigger>
-                  <SelectValue />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="pix">Pix</SelectItem>
-                  <SelectItem value="cash">Dinheiro</SelectItem>
-                  <SelectItem value="transfer">Transferência</SelectItem>
-                  <SelectItem value="other">Outro</SelectItem>
-                </SelectContent>
-              </Select>
-            </div>
-          </div>
-          <DialogFooter>
-            <Button variant="outline" onClick={() => setPaymentSplitId(null)}>
-              Cancelar
-            </Button>
-            <Button
-              className={stackyPrimaryButton}
-              disabled={isPaying}
-              onClick={() => void handleRegisterPayment()}
-            >
-              Confirmar
-            </Button>
-          </DialogFooter>
-        </DialogContent>
-      </Dialog>
-    </>
   )
 }

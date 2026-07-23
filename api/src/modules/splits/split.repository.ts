@@ -1,4 +1,4 @@
-import { and, desc, eq, inArray, sql, sum } from 'drizzle-orm'
+import { and, desc, eq, inArray, ne, sql, sum } from 'drizzle-orm'
 import { alias } from 'drizzle-orm/pg-core'
 
 import { db } from '@/db'
@@ -36,6 +36,10 @@ export type CreateSplitData = {
   description?: string | null
   notifyEnabled?: boolean
   collectLumpSum?: boolean
+  dueAt?: Date | null
+  collectInstallmentNumber?: number | null
+  collectInstallmentsTotal?: number | null
+  collectPlanId?: string | null
 }
 
 export type UpdateSplitData = Partial<
@@ -62,12 +66,17 @@ export type PendingSplitRow = SplitRecord & {
   transactionDate: Date
   transactionAmount: bigint | null
   personName: string | null
+  accountId: string | null
+  accountType: string | null
+  competenceDate: Date | null
 }
 
 export interface SplitRepository {
   findByTransaction(transactionId: string): Promise<SplitRecord[]>
   findById(transactionId: string, id: string): Promise<SplitRecord | null>
+  findByCollectPlanId(collectPlanId: string): Promise<SplitRecord[]>
   create(data: CreateSplitData): Promise<SplitRecord>
+  deleteByCollectPlanId(collectPlanId: string): Promise<number>
   update(id: string, data: UpdateSplitData): Promise<SplitRecord | null>
   delete(id: string): Promise<SplitRecord | null>
   findPayments(splitId: string): Promise<SplitPaymentRecord[]>
@@ -154,13 +163,10 @@ export interface SplitRepository {
 export type PendingSplitNotifyRow = PendingSplitRow & {
   transactionStatus: string
   organizationId: string
-  competenceDate: Date | null
   transactionType: TransactionType
   installmentNumber: number | null
   installmentsTotal: number | null
-  accountId: string | null
   cardId: string | null
-  accountType: string | null
   closingDay: number | null
   dueDay: number | null
 }
@@ -256,6 +262,22 @@ export class DrizzleSplitRepository implements SplitRepository {
     return split ?? null
   }
 
+  async findByCollectPlanId(collectPlanId: string): Promise<SplitRecord[]> {
+    return db
+      .select()
+      .from(transactionSplits)
+      .where(eq(transactionSplits.collectPlanId, collectPlanId))
+      .orderBy(transactionSplits.collectInstallmentNumber)
+  }
+
+  async deleteByCollectPlanId(collectPlanId: string): Promise<number> {
+    const deleted = await db
+      .delete(transactionSplits)
+      .where(eq(transactionSplits.collectPlanId, collectPlanId))
+      .returning({ id: transactionSplits.id })
+    return deleted.length
+  }
+
   async create(data: CreateSplitData): Promise<SplitRecord> {
     const [created] = await db
       .insert(transactionSplits)
@@ -271,6 +293,10 @@ export class DrizzleSplitRepository implements SplitRepository {
         paidAmount: 0n,
         notifyEnabled: data.notifyEnabled ?? true,
         collectLumpSum: data.collectLumpSum ?? false,
+        dueAt: data.dueAt ?? null,
+        collectInstallmentNumber: data.collectInstallmentNumber ?? null,
+        collectInstallmentsTotal: data.collectInstallmentsTotal ?? null,
+        collectPlanId: data.collectPlanId ?? null,
       })
       .returning()
 
@@ -365,6 +391,9 @@ export class DrizzleSplitRepository implements SplitRepository {
         transactionTitle: transactions.title,
         transactionDate: transactions.date,
         transactionAmount: transactions.amount,
+        competenceDate: transactions.competenceDate,
+        accountId: transactions.accountId,
+        accountType: accounts.type,
         userName: users.name,
       })
       .from(transactionSplits)
@@ -387,6 +416,9 @@ export class DrizzleSplitRepository implements SplitRepository {
       transactionDate: row.transactionDate,
       transactionAmount: row.transactionAmount,
       personName: row.userName ?? row.split.contactName,
+      accountId: row.accountId,
+      accountType: row.accountType,
+      competenceDate: row.competenceDate,
     }))
   }
 
@@ -627,7 +659,8 @@ export class DrizzleSplitRepository implements SplitRepository {
         and(
           eq(transactions.organizationId, organizationId),
           inArray(transactionSplits.transactionId, transactionIds),
-          inArray(transactionSplits.status, ['pending', 'partial'])
+          // Include paid (remaining 0) so clients do not treat "missing" as paid via ?? 0.
+          ne(transactionSplits.status, 'forgiven')
         )
       )
       .groupBy(transactionSplits.transactionId)

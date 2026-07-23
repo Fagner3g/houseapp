@@ -14,6 +14,10 @@ export type ResidualTransaction = {
   closingDay: number | null
   dueDay: number | null
   notifyEnabled: boolean
+  cardId: string | null
+  cardUserId: string | null
+  transactionCreatedBy: string | null
+  accountCreatedBy: string | null
 }
 
 export type OwnerInvoiceAlert = {
@@ -24,6 +28,7 @@ export type OwnerInvoiceAlert = {
   remainingCentavos: bigint
   daysUntilDue: number
   transactionIds: string[]
+  accountCreatedBy: string | null
 }
 
 export type OwnerTxAlert = {

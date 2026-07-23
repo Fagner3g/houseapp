@@ -11,6 +11,9 @@ import type { TransactionViewer } from '@/modules/transactions/transaction-visib
 import { loadExpenseCreditorUserId } from '../load-expense-creditor'
 import type { SplitRepository } from '../split.repository'
 import type { SplitPaymentDto, SplitDto, SplitService } from '../split.service'
+import {
+  dismissDecisionNotificationsForRequests,
+} from './dismiss-decision-notifications'
 import { loadUserName, notifySplitPaymentRequest, notifySplitPaymentRequestResolved } from './notify'
 import type {
   SplitPaymentRequestRecord,
@@ -166,6 +169,8 @@ export class SplitPaymentRequestService {
     const updated = await this.requestRepository.updateStatus(request.id, 'accepted')
     if (!updated) throw notFound('Payment request not found')
 
+    await dismissDecisionNotificationsForRequests([request.id])
+
     try {
       const result = await this.splitService.registerPayment(
         organizationId,
@@ -194,6 +199,7 @@ export class SplitPaymentRequestService {
     const updated = await this.requestRepository.updateStatus(requestId, 'rejected')
     if (!updated) throw notFound('Payment request not found')
 
+    await dismissDecisionNotificationsForRequests([requestId])
     await this.notifyRequester(request, 'rejected', viewer)
 
     return toDto(updated)

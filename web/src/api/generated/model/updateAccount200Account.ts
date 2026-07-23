@@ -3,7 +3,7 @@
  * Do not edit manually.
  * HouseApp API
  * API for HouseApp
- * OpenAPI spec version: 2.2.1
+ * OpenAPI spec version: 2.3.0
  */
 import type { UpdateAccount200AccountType } from "./updateAccount200AccountType";
 import type { UpdateAccount200AccountInstitution } from "./updateAccount200AccountInstitution";

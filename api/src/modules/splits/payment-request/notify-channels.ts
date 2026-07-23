@@ -7,6 +7,7 @@ import {
 } from '@/db/schemas/organizationMembers'
 import { isAlertChannelEnabled } from '@/modules/alerts/alert-preferences'
 import type { NotificationRepository } from '@/modules/alerts/notification.repository'
+import { areSystemNotificationsEnabled } from '@/modules/system-settings/notifications-enabled'
 
 const CHANNELS = ['in_app', 'whatsapp'] as const
 
@@ -23,6 +24,10 @@ export type NotifyChannelsParams = {
 }
 
 export async function createChannelNotifications(params: NotifyChannelsParams): Promise<void> {
+  if (!(await areSystemNotificationsEnabled())) {
+    return
+  }
+
   const [membership] = await db
     .select({
       notificationsEnabled: organizationMembers.notificationsEnabled,

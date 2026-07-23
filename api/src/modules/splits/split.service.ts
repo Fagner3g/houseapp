@@ -8,7 +8,14 @@ import {
   type TransactionViewer,
 } from '@/modules/transactions/transaction-visibility'
 
+import {
+  assertCanCreateCollectPlan,
+  buildCollectPlanCreateRows,
+  createCollectPlanSplits,
+  type CreateCollectPlanInput,
+} from './collect-plan'
 import { loadExpenseCreditorUserId } from './load-expense-creditor'
+import { dismissDecisionNotificationsForRequests } from './payment-request/dismiss-decision-notifications'
 import type { SplitPaymentRequestRepository } from './payment-request/repository'
 import type {
   SplitPaymentRecord,
@@ -47,6 +54,10 @@ export type SplitDto = {
   lastNotifiedAt: string | null
   notifyEnabled: boolean
   collectLumpSum: boolean
+  dueAt: string | null
+  collectInstallmentNumber: number | null
+  collectInstallmentsTotal: number | null
+  collectPlanId: string | null
   createdAt: string
   updatedAt: string
   pendingPaymentRequest?: PendingPaymentRequestDto | null
@@ -74,6 +85,9 @@ export type PendingSplitDto = SplitDto & {
   transactionDate: string
   transactionAmount: string | null
   personName: string | null
+  accountId: string | null
+  accountType: string | null
+  competenceDate: string | null
 }
 
 export type { SplitDebtSummary } from './split-debt-summary.logic'
@@ -96,6 +110,10 @@ function toSplitDto(split: SplitRecord): SplitDto {
     lastNotifiedAt: split.lastNotifiedAt?.toISOString() ?? null,
     notifyEnabled: split.notifyEnabled,
     collectLumpSum: split.collectLumpSum,
+    dueAt: split.dueAt?.toISOString() ?? null,
+    collectInstallmentNumber: split.collectInstallmentNumber,
+    collectInstallmentsTotal: split.collectInstallmentsTotal,
+    collectPlanId: split.collectPlanId,
     createdAt: split.createdAt.toISOString(),
     updatedAt: split.updatedAt.toISOString(),
   }
@@ -206,6 +224,22 @@ export class SplitService {
     return toSplitDto(created)
   }
 
+  async createCollectPlan(
+    organizationId: string,
+    transactionId: string,
+    input: CreateCollectPlanInput,
+    viewer?: TransactionViewer
+  ): Promise<SplitDto[]> {
+    const transaction = await this.ensureTransaction(organizationId, transactionId, viewer)
+    this.assertCanMutateSplits(viewer, transaction.createdBy)
+    this.validatePerson(input)
+    assertCanCreateCollectPlan(transaction)
+
+    const rows = buildCollectPlanCreateRows(transactionId, input)
+    const created = await createCollectPlanSplits(this.splitRepository, rows)
+    return created.map(toSplitDto)
+  }
+
   async update(
     organizationId: string,
     transactionId: string,
@@ -257,13 +291,35 @@ export class SplitService {
     const transaction = await this.ensureTransaction(organizationId, transactionId, viewer)
     this.assertCanMutateSplits(viewer, transaction.createdBy)
 
+    const existing = await this.splitRepository.findById(transactionId, id)
+    if (!existing) {
+      throw notFound('Split not found')
+    }
+
+    if (
+      existing.collectPlanId &&
+      existing.paidAmount === 0n &&
+      existing.status === 'pending'
+    ) {
+      const planRows = await this.splitRepository.findByCollectPlanId(existing.collectPlanId)
+      const allUnpaid = planRows.every(
+        row => row.paidAmount === 0n && row.status === 'pending'
+      )
+      if (allUnpaid) {
+        const ids = planRows.map(row => row.id)
+        await this.splitRepository.deleteByCollectPlanId(existing.collectPlanId)
+        await this.cancelPendingPaymentRequests(ids)
+        return
+      }
+    }
+
     const deleted = await this.splitRepository.delete(id)
 
     if (!deleted) {
       throw notFound('Split not found')
     }
 
-    await this.paymentRequestRepository?.cancelPendingBySplitId(id)
+    await this.cancelPendingPaymentRequests([id])
   }
 
   async listPayments(
@@ -312,7 +368,7 @@ export class SplitService {
       note: input.note ?? null,
     })
 
-    await this.paymentRequestRepository?.cancelPendingBySplitId(splitId)
+    await this.cancelPendingPaymentRequests([splitId])
 
     return {
       payment: toPaymentDto(result.payment),
@@ -361,6 +417,9 @@ export class SplitService {
       transactionDate: row.transactionDate.toISOString(),
       transactionAmount: centavosToString(row.transactionAmount),
       personName: row.personName,
+      accountId: row.accountId,
+      accountType: row.accountType,
+      competenceDate: row.competenceDate?.toISOString() ?? null,
     }))
   }
 
@@ -490,6 +549,19 @@ export class SplitService {
       viewerUserId: viewer?.userId,
       viewerIsCreditor,
     })
+  }
+
+  private async cancelPendingPaymentRequests(splitIds: string[]): Promise<void> {
+    const paymentRequestRepository = this.paymentRequestRepository
+    if (!paymentRequestRepository || splitIds.length === 0) return
+
+    const cancelledIds = (
+      await Promise.all(
+        splitIds.map(splitId => paymentRequestRepository.cancelPendingBySplitId(splitId))
+      )
+    ).flat()
+
+    await dismissDecisionNotificationsForRequests(cancelledIds)
   }
 
   private validatePerson(input: { userId?: string | null; contactName?: string | null }): void {

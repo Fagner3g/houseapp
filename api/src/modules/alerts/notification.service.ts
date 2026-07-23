@@ -1,5 +1,13 @@
 import { notFound } from '@/core/errors'
+import {
+  dismissDecisionNotificationsForRequests,
+  findPendingPaymentRequestIds,
+} from '@/modules/splits/payment-request/dismiss-decision-notifications'
 
+import {
+  collectDecisionRequestIds,
+  keepActiveDecisionNotifications,
+} from './filter-stale-decision-notifications'
 import type { NotificationRecord, NotificationRepository } from './notification.repository'
 
 export type NotificationDto = {
@@ -48,7 +56,23 @@ export class NotificationService {
 
   async listPending(userId: string): Promise<NotificationDto[]> {
     const rows = await this.notificationRepository.findPendingByUser(userId)
-    return rows.map(toNotificationDto)
+    const active = await this.dropStaleDecisionNotifications(rows)
+    return active.map(toNotificationDto)
+  }
+
+  /** Hides (and dismisses) decision notifications whose payment request is no longer pending. */
+  private async dropStaleDecisionNotifications(
+    rows: NotificationRecord[]
+  ): Promise<NotificationRecord[]> {
+    const requestIds = collectDecisionRequestIds(rows)
+    if (requestIds.length === 0) return rows
+
+    const pendingIds = await findPendingPaymentRequestIds(requestIds)
+    const { active, staleRequestIds } = keepActiveDecisionNotifications(rows, pendingIds)
+    if (staleRequestIds.length > 0) {
+      await dismissDecisionNotificationsForRequests(staleRequestIds)
+    }
+    return active
   }
 
   async markRead(userId: string, id: string): Promise<NotificationDto> {

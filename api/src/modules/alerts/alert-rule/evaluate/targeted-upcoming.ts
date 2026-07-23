@@ -11,13 +11,10 @@ import {
 import { isUpcomingConfig } from '../../alert-rule.repository'
 import type { AlertRuleRecord } from '../../alert-rule.repository'
 import { resolveDueDateForTransaction } from '../due'
-import {
-  createExternalNotification,
-  createNotificationsForOrgMembers,
-  createNotificationsForUser,
-} from '../notifications'
+import { createExternalNotification, createNotificationsForUser } from '../notifications'
 import type { PendingTransactionRow } from '../types'
 import type { EvaluateNotifyDeps } from './deps'
+import { resolveTargetedMemberUserId } from './resolve-targeted-member'
 import { resolveRule } from './resolve-rule'
 
 export async function dispatchTargetedNotification(
@@ -37,37 +34,38 @@ export async function dispatchTargetedNotification(
   const body = amount ? `Valor: R$ ${amount} · Vencimento: ${dueDate}` : `Vencimento: ${dueDate}`
 
   if (params.transaction.notifyTargetType === 'member') {
-    return createNotificationsForOrgMembers({
+    const targetUserId = resolveTargetedMemberUserId(
+      params.transaction.notifyUserId,
+      params.limitToUserId
+    )
+    if (!targetUserId) return 0
+
+    return createNotificationsForUser(deps.notificationRepository, {
+      rule: params.rule,
+      userId: targetUserId,
+      transactionId: params.transaction.id,
+      accountId: params.transaction.accountId,
       organizationId: params.transaction.organizationId,
-      limitToUserId: params.limitToUserId,
-      createForUser: userId =>
-        createNotificationsForUser(deps.notificationRepository, {
-          rule: params.rule,
-          userId,
-          transactionId: params.transaction.id,
-          accountId: params.transaction.accountId,
-          organizationId: params.transaction.organizationId,
-          title,
-          body,
-          daysUntilDue: params.daysUntilDue,
-          daysBefore: params.daysBefore,
-          dedupeKeyBuilder: (memberId, channel) =>
-            buildUpcomingRuleDedupeKey(
-              params.rule.id,
-              params.transaction.id,
-              params.daysBefore,
-              memberId,
-              channel
-            ),
-          metadata: {
-            kind: 'targeted_upcoming',
-            daysUntilDue: params.daysUntilDue,
-            daysBefore: params.daysBefore,
-            amount,
-            dueDate,
-          },
-          skipDedupe: params.skipDedupe,
-        }),
+      title,
+      body,
+      daysUntilDue: params.daysUntilDue,
+      daysBefore: params.daysBefore,
+      dedupeKeyBuilder: (memberId, channel) =>
+        buildUpcomingRuleDedupeKey(
+          params.rule.id,
+          params.transaction.id,
+          params.daysBefore,
+          memberId,
+          channel
+        ),
+      metadata: {
+        kind: 'targeted_upcoming',
+        daysUntilDue: params.daysUntilDue,
+        daysBefore: params.daysBefore,
+        amount,
+        dueDate,
+      },
+      skipDedupe: params.skipDedupe,
     })
   }
 

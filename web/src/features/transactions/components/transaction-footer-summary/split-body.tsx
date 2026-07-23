@@ -36,6 +36,7 @@ export function SplitSummaryBody({
     splitDebtSummary.currentInstallmentNumber ?? installmentNumber ?? null
   const totalInstallments = splitDebtSummary.installmentsTotal ?? installmentsTotal ?? null
   const share = resolveViewerMyShare(splitDebtSummary)
+  const showMyShare = moneyStringToReais(share.amount) >= 0.005
   const installmentMetric = resolveViewerInstallmentAmount(
     {
       ...splitDebtSummary,
@@ -49,16 +50,19 @@ export function SplitSummaryBody({
   return (
     <div className="space-y-3">
       <div className="grid grid-cols-2 gap-2 sm:grid-cols-3">
-        <SummaryMetric
-          label={share.label}
-          value={formatMoneyString(share.amount)}
-          emphasize
-        />
+        {showMyShare ? (
+          <SummaryMetric
+            label={share.label}
+            value={formatMoneyString(share.amount)}
+            emphasize
+          />
+        ) : null}
         <SummaryMetric
           label={
             splitDebtSummary.purchaseTotalIsEstimate ? 'Compra total (estimado)' : 'Compra total'
           }
           value={formatMoneyString(splitDebtSummary.purchaseTotal)}
+          emphasize={!showMyShare}
         />
         {installmentMetric ? (
           <SummaryMetric
@@ -95,6 +99,17 @@ export function SplitSummaryBody({
                     {personDisplayName(person)}
                   </span>
                   <div className="flex shrink-0 items-center gap-2">
+                    {person.installments.some(item => item.collectLumpSum) && (
+                      <Badge variant="secondary" className="text-[10px] font-normal">
+                        à vista
+                      </Badge>
+                    )}
+                    {!person.installments.some(item => item.collectLumpSum) &&
+                      person.installments.length > 1 && (
+                        <Badge variant="secondary" className="text-[10px] font-normal">
+                          parcelado
+                        </Badge>
+                      )}
                     {hasRemaining ? (
                       <span className="text-sm font-medium tabular-nums text-amber-700">
                         Falta {formatMoneyString(person.totalRemaining)}

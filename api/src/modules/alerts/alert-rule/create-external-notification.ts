@@ -3,6 +3,7 @@ import { eq } from 'drizzle-orm'
 import { db } from '@/db'
 import { organizations } from '@/db/schemas/organizations'
 import { transactions } from '@/db/schemas/transactions'
+import { areSystemNotificationsEnabled } from '@/modules/system-settings/notifications-enabled'
 
 import { resolveAlertDedupeKey, shouldSkipAlertDedupe } from '../alert-dedupe'
 import type { NotificationRepository } from '../notification.repository'
@@ -12,6 +13,10 @@ export async function createExternalNotification(
   notificationRepository: NotificationRepository,
   params: CreateExternalNotificationParams
 ): Promise<number> {
+  if (!(await areSystemNotificationsEnabled())) {
+    return 0
+  }
+
   if (!params.rule.channels.includes('whatsapp')) {
     return 0
   }

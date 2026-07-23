@@ -110,5 +110,8 @@ export function useSplitTransactionIds(slug: string | undefined, transactionIds:
       }),
     enabled: !!slug && transactionIds.length > 0,
     select: toSplitTransactionIdsResult,
+    // Split settlement changes when another member registers/cancels payment.
+    staleTime: 0,
+    refetchOnMount: 'always',
   })
 }

@@ -91,7 +91,11 @@ export function mapPendingSplitKpiItems(input: {
       title: pendingSplitDisplayTitle(split.transactionTitle, split.collectLumpSum),
       meta: [
         dayjs(split.transactionDate).format('DD/MM/YYYY'),
-        split.collectLumpSum ? 'à vista' : null,
+        split.collectLumpSum
+          ? 'à vista'
+          : (split.collectInstallmentsTotal ?? 0) >= 2
+            ? 'parcelado'
+            : null,
         split.status === 'partial' ? 'parcial' : null,
       ]
         .filter(Boolean)

@@ -107,7 +107,12 @@ const createTransactionBody = z.object({
   ...notifyFieldsSchema,
 })
 
-const updateTransactionBody = createTransactionBody.partial()
+const installmentDateScopeSchema = z.enum(['current', 'from_here', 'all'])
+
+const updateTransactionBody = createTransactionBody.partial().extend({
+  installmentDateScope: installmentDateScopeSchema.optional(),
+})
+
 
 const payTransactionBody = z.object({
   paidAmount: z.string().nullable().optional(),

@@ -20,6 +20,7 @@ export function isTransactionReminderWithoutValue(
 export function resolveTransactionListAmountReais(
   amount: string | null | undefined,
   paidAmount: string | null | undefined,
+  /** Bank settlement only in list UIs; pass split reimbursements for KPI “net remaining”. */
   splitPaidReais = 0
 ): number {
   return Math.max(0, transactionRemainingReais(amount, paidAmount) - splitPaidReais)
@@ -70,19 +71,33 @@ export function resolveTransactionInstallmentAmountReais(
   return perInstallment[index] ?? moneyStringToReais(tx.amount)
 }
 
+/**
+ * Open balance on this transaction row (amount − paidAmount).
+ *
+ * Must match API status (`partial` when 0 < paid < amount). Do not subtract paid
+ * from a divided parcel slice — manual income/expense rows can store the full
+ * purchase on one row, which made the UI say "parcela quitada" while status stayed partial.
+ */
 export function resolveTransactionInstallmentRemainingReais(
   tx: Pick<
     GetTransaction200Transaction,
     'amount' | 'paidAmount' | 'installmentNumber' | 'installmentsTotal' | 'source'
   > | null | undefined,
-  summary?: Pick<GetSplitDebtSummary200, 'currentTransactionAmount' | 'purchaseTotal'> | null
+  _summary?: Pick<GetSplitDebtSummary200, 'currentTransactionAmount' | 'purchaseTotal'> | null
 ): number {
   if (!tx) return 0
+  return transactionRemainingReais(tx.amount, tx.paidAmount)
+}
 
+/** Prefill pay amount: one parcel when helpful, never more than row remaining. */
+export function resolveSettlementPrefillReais(
+  tx: Parameters<typeof resolveTransactionInstallmentAmountReais>[0],
+  summary?: Parameters<typeof resolveTransactionInstallmentAmountReais>[1]
+): number {
+  const remaining = resolveTransactionInstallmentRemainingReais(tx, summary)
+  if (remaining <= 0) return 0
   const installmentAmount = resolveTransactionInstallmentAmountReais(tx, summary)
-  const paidReais = moneyStringToReais(tx.paidAmount)
-
-  return Math.max(0, installmentAmount - paidReais)
+  return Math.min(installmentAmount, remaining)
 }
 
 export function formatTransactionInstallmentAmount(

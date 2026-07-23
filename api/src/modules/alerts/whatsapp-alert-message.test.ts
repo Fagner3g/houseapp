@@ -93,7 +93,7 @@ describe('whatsapp-alert-message', () => {
         isSplit: true,
         splitParticipantCount: 2,
       })
-    ).toBe('Sua parte: R$ 150,00 (1/3) · 450,00')
+    ).toBe('Sua parte: R$ 150,00 (1/3) · parcelado · 450,00')
 
     expect(
       buildSummaryLine({
@@ -108,7 +108,7 @@ describe('whatsapp-alert-message', () => {
         isSplit: true,
         splitParticipantCount: 2,
       })
-    ).toBe('Sua parte: R$ 83,75 (1/10) · 837,50')
+    ).toBe('Sua parte: R$ 83,75 (1/10) · parcelado · 837,50')
 
     // 100% delegated installment: don't append purchase total (reads as if 1/10 = R$ 1.000)
     expect(
@@ -124,7 +124,7 @@ describe('whatsapp-alert-message', () => {
         isSplit: true,
         splitParticipantCount: 1,
       })
-    ).toBe('Sua parte: R$ 100,00 (1/10)')
+    ).toBe('Sua parte: R$ 100,00 (1/10) · parcelado')
 
     expect(
       buildSummaryLine({
@@ -138,7 +138,7 @@ describe('whatsapp-alert-message', () => {
         collectLumpSum: true,
         splitParticipantCount: 2,
       })
-    ).toBe('Sua parte: R$ 412,19')
+    ).toBe('Sua parte: R$ 412,19 · à vista')
   })
 
   it('formats credit card invoice due line', () => {
@@ -259,7 +259,7 @@ describe('whatsapp-alert-message', () => {
         '',
         '⏰ *PRESTES A VENCER*',
         '📅 *Pia da cozinha* · *R$ 900,00*',
-        'Sua parte: *R$ 150,00* (1/3) · 450,00',
+        'Sua parte: *R$ 150,00* (1/3) · parcelado · 450,00',
         '*Vence hoje · 06/07/2026*',
       ].join('\n')
     )
@@ -298,7 +298,7 @@ describe('whatsapp-alert-message', () => {
         '*Fatura vence em 9 dias · 17/07/2026*',
         '',
         '🧾 *Casas Bahia - NuPay* · *R$ 1.675,10*',
-        'Sua parte: *R$ 83,75* (1/10) · 837,50',
+        'Sua parte: *R$ 83,75* (1/10) · parcelado · 837,50',
       ].join('\n')
     )
   })
@@ -336,7 +336,7 @@ describe('whatsapp-alert-message', () => {
         '*Fatura vencida há 24 dias · 17/06/2026*',
         '',
         '⚠️ *Supermercados Bh* · *R$ 824,37*',
-        'Sua parte: *R$ 412,19*',
+        'Sua parte: *R$ 412,19* · à vista',
       ].join('\n')
     )
   })
@@ -408,7 +408,7 @@ describe('whatsapp-alert-message', () => {
         WHATSAPP_BATCH_SEPARATOR,
         '',
         '🧾 *Marmori cozinha* · *R$ 850,00*',
-        'Sua parte: *R$ 141,67* (1/3) · 424,99',
+        'Sua parte: *R$ 141,67* (1/3) · parcelado · 424,99',
         '*Vence em 6 dias · 17/07/2026*',
         '',
         '💰 Total da sua parte: *R$ 291,57*',
@@ -680,7 +680,7 @@ describe('whatsapp-alert-message', () => {
         '*Fatura vence em 9 dias · 17/07/2026*',
         '',
         '🧾 *Casas Bahia - NuPay* · *R$ 1.675,10*',
-        'Sua parte: *R$ 83,75* (1/10) · 837,50',
+        'Sua parte: *R$ 83,75* (1/10) · parcelado · 837,50',
         '',
         '🧾 *Marcio Parafusos* · *R$ 7,90*',
         'Sua parte: *R$ 3,95*',

@@ -19,6 +19,7 @@ import {
 import type { InvoiceSummaryRow } from '@/features/transactions/types'
 import { useActiveOrganization } from '@/hooks/use-active-organization'
 import { formatCurrency, moneyStringToReais } from '@/lib/currency'
+import { overdueDateToIso } from '@/lib/date'
 import { computeTransactionKpis } from '@/lib/transaction-kpi'
 import { useDrawerStore } from '@/stores/drawers'
 import { useTransactionListQueryStore } from '@/stores/transaction-list-query'
@@ -102,7 +103,7 @@ export function useTransactionKpiRow() {
     { query: { enabled: !!slug && openKpi === 'mySpend' } }
   )
 
-  const overdueDateTo = dayjs().subtract(1, 'day').endOf('day').toISOString()
+  const overdueDateTo = overdueDateToIso()
   const overdueListParams = {
     dateTo: overdueDateTo,
     payableOnly: true as const,

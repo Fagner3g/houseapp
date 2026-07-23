@@ -3,7 +3,7 @@ import { describe, expect, it } from 'vitest'
 import { stripSharedAccessInvoiceTotals } from './strip-shared-access-invoice-totals'
 
 describe('stripSharedAccessInvoiceTotals', () => {
-  it('clears owner money fields and paid flag, keeps period and import metadata', () => {
+  it('clears owner money fields, keeps paid/closed and period for cycle matching', () => {
     const stripped = stripSharedAccessInvoiceTotals({
       id: 'st-1',
       periodStart: '2026-05-27T00:00:00.000Z',
@@ -25,7 +25,7 @@ describe('stripSharedAccessInvoiceTotals', () => {
     expect(stripped.purchasesTotal).toBeNull()
     expect(stripped.paymentsReceived).toBeNull()
     expect(stripped.previousBalance).toBeNull()
-    expect(stripped.isPaid).toBe(false)
+    expect(stripped.isPaid).toBe(true)
     expect(stripped.periodStart).toBe('2026-05-27T00:00:00.000Z')
     expect(stripped.periodEnd).toBe('2026-06-30T00:00:00.000Z')
     expect(stripped.importSource).toBe('ofx')

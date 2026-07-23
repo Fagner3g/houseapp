@@ -1,9 +1,8 @@
 import { AlertCircle, Bell, CheckCircle2, Clock3 } from 'lucide-react'
-import type { MouseEvent } from 'react'
+import type { MouseEvent, ReactNode } from 'react'
 
 import type { ListPendingNotifications200NotificationsItem } from '@/api/generated/model'
 import { Button } from '@/components/ui/button'
-import { DropdownMenuItem } from '@/components/ui/dropdown-menu'
 import { cn } from '@/lib/utils'
 
 import {
@@ -55,6 +54,29 @@ function ToneIcon({ display }: { display: NotificationDisplay }) {
   )
 }
 
+function RowShell({
+  interactive,
+  onOpen,
+  children,
+}: {
+  interactive: boolean
+  onOpen: () => void
+  children: ReactNode
+}) {
+  const className = cn(
+    'flex w-full items-start gap-2.5 rounded-xl px-2 py-2.5 text-left',
+    interactive && 'cursor-pointer hover:bg-slate-50'
+  )
+  if (interactive) {
+    return (
+      <button type="button" className={className} onClick={onOpen}>
+        {children}
+      </button>
+    )
+  }
+  return <div className={className}>{children}</div>
+}
+
 export function NotificationItem({
   notification,
   isResponding,
@@ -63,21 +85,10 @@ export function NotificationItem({
   onReject,
 }: Props) {
   const metadata = readNotificationMetadata(notification.metadata)
-  const display = buildNotificationDisplay({
-    ...notification,
-    metadata,
-  })
+  const display = buildNotificationDisplay({ ...notification, metadata })
 
   return (
-    <DropdownMenuItem
-      className="flex cursor-pointer items-start gap-2.5 rounded-xl px-2 py-2.5 focus:bg-slate-50"
-      onClick={() => {
-        if (!display.isDecision) onOpen(notification)
-      }}
-      onSelect={event => {
-        if (display.isDecision) event.preventDefault()
-      }}
-    >
+    <RowShell interactive={!display.isDecision} onOpen={() => onOpen(notification)}>
       <ToneIcon display={display} />
       <div className="min-w-0 flex-1 space-y-1">
         <div className="flex items-start justify-between gap-2">
@@ -117,6 +128,6 @@ export function NotificationItem({
           </div>
         )}
       </div>
-    </DropdownMenuItem>
+    </RowShell>
   )
 }

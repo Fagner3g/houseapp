@@ -8,6 +8,7 @@ import { categories } from '@/db/schemas/categories'
 import { transactionCategories } from '@/db/schemas/transactionCategories'
 import { transactionSplits } from '@/db/schemas/transactionSplits'
 import { transactions } from '@/db/schemas/transactions'
+import { startOfTodayInAppTimezone } from '@/core/app-timezone'
 import { isPayableTransactionCondition, isNotScheduledForFutureCondition } from '@/modules/transactions/payable-transaction'
 import { UNPAID_TRANSACTION_STATUSES } from '@/core/transaction-payment'
 import {
@@ -355,7 +356,7 @@ export class DrizzleReportRepository implements ReportRepository {
     userId: string,
     viewer?: TransactionViewer
   ): Promise<SummaryRow> {
-    const todayStart = dayjs().startOf('day').toDate()
+    const todayStart = startOfTodayInAppTimezone()
     const visible = visibilityCondition(viewer)
 
     const [incomeRow] = await db
@@ -474,7 +475,7 @@ export class DrizzleReportRepository implements ReportRepository {
     days: number,
     viewer?: TransactionViewer
   ): Promise<UpcomingTransactionRow[]> {
-    const todayStart = dayjs().startOf('day').toDate()
+    const todayStart = startOfTodayInAppTimezone()
     const until = dayjs().add(days, 'day').endOf('day').toDate()
 
     return db
@@ -801,7 +802,7 @@ export class DrizzleReportRepository implements ReportRepository {
     organizationId: string,
     viewer?: TransactionViewer
   ): Promise<bigint> {
-    const todayStart = dayjs().startOf('day').toDate()
+    const todayStart = startOfTodayInAppTimezone()
 
     const [row] = await db
       .select({ total: sum(sql<bigint>`COALESCE(${transactions.amount}, 0)`) })
@@ -878,7 +879,7 @@ export class DrizzleReportRepository implements ReportRepository {
     viewer?: TransactionViewer
   ): Promise<DailyReportRow[]> {
     const dateExpr = reportDayExpr()
-    const personal = Boolean(viewer && !viewer.isOwner)
+    const personal = Boolean(viewer)
     const expenseExpr = personal ? myExpenseAmountExpr() : reportExpenseAmountExpr
     const ownership =
       personal && viewer

@@ -26,6 +26,30 @@ export function resolveSplitBadgeSettlement(
   return remaining > 0 ? 'pending' : 'received'
 }
 
+/**
+ * Prefer the viewer's own share remaining when they are the debtor; otherwise use
+ * the transaction remaining map. Avoid `?? 0` — missing remaining used to mark
+ * cancelled debts as paid for members with a stale or partial payload.
+ */
+export function resolveTransactionSplitBadgeSettlement(input: {
+  transactionId: string
+  hasSplit: boolean
+  splitRemainingById?: Map<string, number>
+  viewerShareRemaining?: number
+}): SplitBadgeSettlement | undefined {
+  if (!input.hasSplit) return undefined
+
+  if (input.viewerShareRemaining !== undefined) {
+    return resolveSplitBadgeSettlement(input.viewerShareRemaining)
+  }
+
+  if (input.splitRemainingById?.has(input.transactionId)) {
+    return resolveSplitBadgeSettlement(input.splitRemainingById.get(input.transactionId))
+  }
+
+  return 'pending'
+}
+
 export function resolveSplitBadgePerspective(
   debtorUserId: string | null | undefined,
   currentUserId: string | null | undefined

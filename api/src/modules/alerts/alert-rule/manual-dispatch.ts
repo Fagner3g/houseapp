@@ -1,5 +1,6 @@
 import type { SplitRepository } from '@/modules/splits/split.repository'
 import { sendWhatsAppMessage } from '@/domain/whatsapp'
+import { areSystemNotificationsEnabled } from '@/modules/system-settings/notifications-enabled'
 
 import {
   buildWhatsAppBatchMessageForTransactions,
@@ -18,6 +19,10 @@ export async function sendManualAlertsForTarget(
     type: Extract<ManualAlertType, 'overdue' | 'upcoming'>
   }
 ): Promise<{ sent: number; errors: number; type: string }> {
+  if (!(await areSystemNotificationsEnabled())) {
+    return { sent: 0, errors: 0, type: params.type }
+  }
+
   const mode = params.type === 'overdue' ? 'overdue' : 'upcoming'
   const items = await collectManualAlertItems(
     splitRepository,

@@ -133,4 +133,43 @@ describe('computeInvoiceMetrics remaining for net OFX LEDGERBAL', () => {
 
     expect(metrics.remaining).toBe(503035n)
   })
+
+  it('deducts open-invoice bookkeeping payments after OFX import', () => {
+    const cycle = getBillingCycle(10, 17, '2026-04')
+    const statement = {
+      id: 'st-april',
+      totalAmount: '5828.83',
+      previousBalance: '0.00',
+      purchasesTotal: '5836.51',
+      paymentsReceived: '0',
+      isClosed: true,
+      isPaid: false,
+      periodStart: '2026-03-01',
+      periodEnd: '2026-04-01',
+      dueDate: '2026-04-08',
+    }
+
+    const metrics = computeInvoiceMetrics(
+      cycle,
+      statement,
+      [
+        {
+          type: 'income',
+          title: 'Pagamento fatura',
+          amount: '5828.83',
+          date: '2026-04-08',
+          source: 'manual',
+          statementId: null,
+        },
+      ],
+      {
+        closingDay: 10,
+        dueDay: 17,
+        previousStatement: null,
+      }
+    )
+
+    expect(metrics.payments).toBe(582883n)
+    expect(metrics.remaining).toBe(0n)
+  })
 })

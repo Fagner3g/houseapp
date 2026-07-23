@@ -159,24 +159,19 @@ export class AccountService {
       return rows.map(row => toAccountDtoForViewer(row, viewer))
     }
 
-    if (viewer && !viewer.isOwner) {
-      const memberCards = await Promise.all(
+    if (viewer) {
+      const visibleCards = await Promise.all(
         creditCardIds.map(async accountId => {
           const cards = await this.cardService.listByAccount(accountId, viewer)
           return [accountId, cards] as const
         })
       )
-      const cardsByAccount = new Map(memberCards)
+      const cardsByAccount = new Map(visibleCards)
 
       return rows.map(row => {
         if (row.type !== 'credit_card') return toAccountDtoForViewer(row, viewer)
-        const memberCardsForAccount = cardsByAccount.get(row.id) ?? []
-        return toAccountDtoForViewer(
-          row,
-          viewer,
-          memberCardsForAccount,
-          memberCardsForAccount.length
-        )
+        const cardsForAccount = cardsByAccount.get(row.id) ?? []
+        return toAccountDtoForViewer(row, viewer, cardsForAccount, cardsForAccount.length)
       })
     }
 

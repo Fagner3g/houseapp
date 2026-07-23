@@ -14,6 +14,7 @@ import { recurringTransactions } from './schemas/recurringTransactions'
 import { splitPaymentRequests } from './schemas/splitPaymentRequests'
 import { splitPayments } from './schemas/splitPayments'
 import { statements } from './schemas/statements'
+import { systemSettings } from './schemas/systemSettings'
 import { transactionAttachments } from './schemas/transactionAttachments'
 import { transactionCategories } from './schemas/transactionCategories'
 import { transactionSplits } from './schemas/transactionSplits'
@@ -39,6 +40,7 @@ const schema = {
   transactionAttachments,
   alertRules,
   notifications,
+  systemSettings,
 }
 
 const { baseUrl } = getDatabaseString()

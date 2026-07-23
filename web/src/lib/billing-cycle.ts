@@ -348,3 +348,14 @@ export function findPreviousStatementForCycle<T extends StatementLike>(
   const previousCycle = getBillingCycle(closingDay, dueDay, previousMonthKey)
   return findStatementForCycle(statements, previousCycle, { closingDay, dueDay })
 }
+
+export function findNextStatementForCycle<T extends StatementLike>(
+  statements: T[],
+  cycle: BillingCycle,
+  closingDay: number,
+  dueDay: number
+): T | null {
+  const nextMonthKey = shiftBillingMonth(cycle.monthKey, 1)
+  const nextCycle = getBillingCycle(closingDay, dueDay, nextMonthKey)
+  return findStatementForCycle(statements, nextCycle, { closingDay, dueDay })
+}

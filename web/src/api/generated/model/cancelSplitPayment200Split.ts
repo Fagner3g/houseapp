@@ -3,7 +3,7 @@
  * Do not edit manually.
  * HouseApp API
  * API for HouseApp
- * OpenAPI spec version: 2.2.1
+ * OpenAPI spec version: 2.3.0
  */
 import type { CancelSplitPayment200SplitUserId } from "./cancelSplitPayment200SplitUserId";
 import type { CancelSplitPayment200SplitContactName } from "./cancelSplitPayment200SplitContactName";
@@ -13,6 +13,10 @@ import type { CancelSplitPayment200SplitDescription } from "./cancelSplitPayment
 import type { CancelSplitPayment200SplitStatus } from "./cancelSplitPayment200SplitStatus";
 import type { CancelSplitPayment200SplitPaidAt } from "./cancelSplitPayment200SplitPaidAt";
 import type { CancelSplitPayment200SplitLastNotifiedAt } from "./cancelSplitPayment200SplitLastNotifiedAt";
+import type { CancelSplitPayment200SplitDueAt } from "./cancelSplitPayment200SplitDueAt";
+import type { CancelSplitPayment200SplitCollectInstallmentNumber } from "./cancelSplitPayment200SplitCollectInstallmentNumber";
+import type { CancelSplitPayment200SplitCollectInstallmentsTotal } from "./cancelSplitPayment200SplitCollectInstallmentsTotal";
+import type { CancelSplitPayment200SplitCollectPlanId } from "./cancelSplitPayment200SplitCollectPlanId";
 import type { CancelSplitPayment200SplitPendingPaymentRequest } from "./cancelSplitPayment200SplitPendingPaymentRequest";
 
 export type CancelSplitPayment200Split = {
@@ -31,6 +35,10 @@ export type CancelSplitPayment200Split = {
   lastNotifiedAt: CancelSplitPayment200SplitLastNotifiedAt;
   notifyEnabled: boolean;
   collectLumpSum: boolean;
+  dueAt: CancelSplitPayment200SplitDueAt;
+  collectInstallmentNumber: CancelSplitPayment200SplitCollectInstallmentNumber;
+  collectInstallmentsTotal: CancelSplitPayment200SplitCollectInstallmentsTotal;
+  collectPlanId: CancelSplitPayment200SplitCollectPlanId;
   createdAt: string;
   updatedAt: string;
   pendingPaymentRequest?: CancelSplitPayment200SplitPendingPaymentRequest;

@@ -1,9 +1,22 @@
-import dayjs from 'dayjs'
-
 import type { GetInstallmentSeries200InstallmentsItem } from '@/api/generated/model/getInstallmentSeries200InstallmentsItem'
-import { Checkbox } from '@/components/ui/checkbox'
 import { formatCentsString } from '@/lib/currency'
 import { cn } from '@/lib/utils'
+
+import type { SettlementKind } from '../lib/settlement-copy'
+import {
+  advancePickerAmountMismatch,
+  advancePickerHint,
+  advancePickerTitle,
+} from '../lib/settlement-advance-copy'
+import { listSettlementExtraInstallments } from '../lib/settlement-extra-installments'
+import { SettlementExtraRow } from './pay-installment-scope-dialog/settlement-extra-row'
+
+export {
+  listFutureUnpaidInstallments,
+  listPriorOverdueUnpaidInstallments,
+  listSettlementExtraInstallments,
+  isSettlementExtraOverdue,
+} from '../lib/settlement-extra-installments'
 
 type AdvanceInstallmentsPickerProps = {
   installments: GetInstallmentSeries200InstallmentsItem[]
@@ -12,7 +25,20 @@ type AdvanceInstallmentsPickerProps = {
   onSelectedIdsChange: (ids: string[]) => void
   paidAmountReais: number
   currentRemainingReais: number
+  kind?: SettlementKind
   className?: string
+}
+
+/** True when this occurrence can still advance later parcels in the series. */
+export function canOfferInstallmentAdvance(
+  installmentNumber: number | null | undefined,
+  installmentsTotal: number | null | undefined
+): boolean {
+  return (
+    installmentNumber != null &&
+    (installmentsTotal ?? 0) > 1 &&
+    installmentNumber < installmentsTotal
+  )
 }
 
 export function computeAdvancePaymentTotalReais(
@@ -34,16 +60,13 @@ export function AdvanceInstallmentsPicker({
   onSelectedIdsChange,
   paidAmountReais,
   currentRemainingReais,
+  kind = 'expense',
   className,
 }: AdvanceInstallmentsPickerProps) {
-  const futureInstallments = installments.filter(
-    item =>
-      item.installmentNumber > currentInstallmentNumber &&
-      item.status !== 'paid' &&
-      item.status !== 'canceled' &&
-      Number.parseFloat(item.remaining) > 0
+  const extras = listSettlementExtraInstallments(
+    installments,
+    currentInstallmentNumber
   )
-
   const selectedTotal = computeAdvancePaymentTotalReais(
     currentRemainingReais,
     installments,
@@ -51,19 +74,10 @@ export function AdvanceInstallmentsPicker({
   )
   const matchesPaidAmount = Math.abs(selectedTotal - paidAmountReais) < 0.005
 
-  const toggleInstallment = (id: string, checked: boolean) => {
-    if (checked) {
-      onSelectedIdsChange([...selectedIds, id])
-      return
-    }
-
-    onSelectedIdsChange(selectedIds.filter(itemId => itemId !== id))
-  }
-
-  if (futureInstallments.length === 0) {
+  if (extras.length === 0) {
     return (
       <p className={cn('text-sm text-amber-700', className)}>
-        Não há parcelas futuras disponíveis para adiantamento.
+        Não há parcelas disponíveis para incluir neste recebimento.
       </p>
     )
   }
@@ -71,37 +85,26 @@ export function AdvanceInstallmentsPicker({
   return (
     <div className={cn('space-y-3 rounded-lg border border-slate-200 bg-white p-4', className)}>
       <div>
-        <p className="text-sm font-medium text-slate-900">Selecione as parcelas a adiantar</p>
-        <p className="text-xs text-slate-500">
-          O valor pago deve fechar com o saldo desta parcela mais as parcelas selecionadas.
-        </p>
+        <p className="text-sm font-medium text-slate-900">{advancePickerTitle(kind)}</p>
+        <p className="text-xs text-slate-500">{advancePickerHint(kind)}</p>
       </div>
 
       <div className="space-y-2">
-        {futureInstallments.map(item => {
-          const checked = selectedIds.includes(item.id)
-
-          return (
-            <label
-              key={item.id}
-              className="flex cursor-pointer items-start gap-3 rounded-md border border-slate-200 px-3 py-2 hover:bg-slate-50"
-            >
-              <Checkbox
-                checked={checked}
-                onCheckedChange={value => toggleInstallment(item.id, value === true)}
-              />
-              <div className="min-w-0 flex-1">
-                <p className="text-sm font-medium text-slate-900">
-                  Parcela {item.installmentNumber}
-                </p>
-                <p className="text-xs text-slate-500">
-                  {dayjs(item.date).format('DD/MM/YYYY')} · Saldo{' '}
-                  {formatCentsString(item.remaining)}
-                </p>
-              </div>
-            </label>
-          )
-        })}
+        {extras.map(item => (
+          <SettlementExtraRow
+            key={item.id}
+            item={item}
+            currentInstallmentNumber={currentInstallmentNumber}
+            checked={selectedIds.includes(item.id)}
+            onCheckedChange={checked =>
+              onSelectedIdsChange(
+                checked
+                  ? [...selectedIds, item.id]
+                  : selectedIds.filter(id => id !== item.id)
+              )
+            }
+          />
+        ))}
       </div>
 
       <div className="rounded-md bg-slate-50 px-3 py-2 text-sm text-slate-600">
@@ -113,7 +116,10 @@ export function AdvanceInstallmentsPicker({
         </p>
         {!matchesPaidAmount && (
           <p className="mt-1 text-xs text-amber-700">
-            Ajuste a seleção para igualar o valor pago de {formatCentsString(paidAmountReais.toFixed(2))}.
+            {advancePickerAmountMismatch(
+              kind,
+              formatCentsString(paidAmountReais.toFixed(2))
+            )}
           </p>
         )}
       </div>

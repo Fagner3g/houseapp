@@ -8,6 +8,7 @@ import type { OwnerInvoiceAlert, OwnerTxAlert } from './types'
 export type OwnerResidualCreateInput = {
   transactionId: string | null
   accountId: string | null
+  recipientUserId: string
   title: string
   body: string
   daysUntilDue: number

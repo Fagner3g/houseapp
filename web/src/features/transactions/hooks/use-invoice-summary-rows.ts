@@ -11,11 +11,12 @@ import {
 import type { ListAccounts200 } from '@/api/generated/model'
 import {
   buildInvoiceSummariesForRange,
-  buildOverdueInvoiceSummaries,
   mergeTransactionsWithInvoices,
 } from '@/lib/credit-card-invoice-rows'
 import { useActiveOrganization } from '@/hooks/use-active-organization'
 import { http } from '@/lib/http'
+
+export { useOverdueInvoiceSummaries } from './use-overdue-invoice-summaries'
 
 function useAccountsForInvoices(
   slug: string | undefined,
@@ -91,56 +92,6 @@ export function useInvoiceSummaryRows(
 
     return { summaries, hiddenTransactionIds }
   }, [creditCards, statementQueries, extendedTxData?.transactions, dateFrom, dateTo])
-}
-
-export function useOverdueInvoiceSummaries(enabled = true) {
-  const { slug } = useActiveOrganization()
-  const ownedOnly = true
-  const accountsQuery = useAccountsForInvoices(slug, enabled, ownedOnly)
-
-  const creditCards = useMemo(
-    () => (accountsQuery.data?.accounts ?? []).filter(a => a.type === 'credit_card'),
-    [accountsQuery.data?.accounts]
-  )
-
-  const extendedFrom = dayjs().subtract(14, 'month').startOf('day').toISOString()
-  const extendedTo = dayjs().endOf('day').toISOString()
-
-  const { data: extendedTxData } = useListTransactions(
-    slug,
-    {
-      dateFrom: extendedFrom,
-      dateTo: extendedTo,
-      perPage: 500,
-      ownedOnly: true,
-    },
-    { query: { enabled: !!slug && enabled && creditCards.length > 0 } }
-  )
-
-  const statementQueries = useQueries({
-    queries: creditCards.map(card => ({
-      queryKey: [...getListStatementsQueryKey(slug, card.id), 'owned-overdue'] as const,
-      queryFn: () => listStatements(slug, card.id),
-      enabled: !!slug && enabled,
-    })),
-  })
-
-  return useMemo(() => {
-    const statementsByAccountId: Record<
-      string,
-      NonNullable<(typeof statementQueries)[0]['data']>['statements']
-    > = {}
-
-    creditCards.forEach((card, index) => {
-      statementsByAccountId[card.id] = statementQueries[index]?.data?.statements ?? []
-    })
-
-    return buildOverdueInvoiceSummaries({
-      creditCards,
-      statementsByAccountId,
-      transactions: extendedTxData?.transactions ?? [],
-    })
-  }, [creditCards, statementQueries, extendedTxData?.transactions])
 }
 
 export function useMergedTransactionList(

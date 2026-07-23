@@ -12,12 +12,17 @@ import {
   resolveOrgRule,
   type OwnerResidualCreateInput,
 } from './helpers'
+import {
+  resolveResidualInvoiceRecipientUserId,
+  resolveResidualTxRecipientUserId,
+} from './resolve-residual-recipient'
 import type { OwnerInvoiceAlert, OwnerTxAlert } from './types'
 
 export function buildOwnerResidualOverdueInputs(params: {
   rules: AlertRuleLike[]
   invoices: OwnerInvoiceAlert[]
   transactions: OwnerTxAlert[]
+  orgOwnerId: string
   organizationName?: string
 }): OwnerResidualCreateInput[] {
   const overdueRule = resolveOrgRule(params.rules, 'overdue')
@@ -36,10 +41,15 @@ export function buildOwnerResidualOverdueInputs(params: {
 
     const overdueDays = Math.abs(invoice.daysUntilDue)
     const amount = amountString(invoice.remainingCentavos)
+    const recipientUserId = resolveResidualInvoiceRecipientUserId(
+      invoice.accountCreatedBy,
+      params.orgOwnerId
+    )
     inputs.push({
       rule: overdueRule,
       transactionId: null,
       accountId: invoice.accountId,
+      recipientUserId,
       title: buildInvoiceTitle(invoice, invoice.daysUntilDue),
       body: amountBody(invoice.remainingCentavos, invoice.dueDate),
       daysUntilDue: invoice.daysUntilDue,
@@ -72,10 +82,15 @@ export function buildOwnerResidualOverdueInputs(params: {
 
     const overdueDays = Math.abs(alert.daysUntilDue)
     const amount = amountString(alert.remainingCentavos)
+    const recipientUserId = resolveResidualTxRecipientUserId(
+      alert.transaction,
+      params.orgOwnerId
+    )
     inputs.push({
       rule: overdueRule,
       transactionId: alert.transaction.id,
       accountId: alert.transaction.accountId,
+      recipientUserId,
       title: buildTxTitle(alert),
       body: amountBody(alert.remainingCentavos, alert.dueDate),
       daysUntilDue: alert.daysUntilDue,

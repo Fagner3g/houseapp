@@ -49,6 +49,7 @@ export function CreditCardPeriodViews({
         dueDay={dueDay}
         isCurrentCycle={billingMonthKey === currentBillingMonthKey()}
         canGoNextMonth={canGoNextMonth}
+        canManage={account.canManage !== false}
         onPrevMonth={() => onMonthChange(shiftBillingMonth(billingMonthKey, -1))}
         onNextMonth={() => onMonthChange(shiftBillingMonth(billingMonthKey, 1))}
         onGoToday={() => onMonthChange(currentBillingMonthKey())}
@@ -71,6 +72,7 @@ export function CreditCardPeriodViews({
             cycle={cycle}
             closingDay={closingDay}
             dueDay={dueDay}
+            canManage={account.canManage !== false}
             onViewAReceber={() => onInvoiceFilterChange('a_receber')}
           />
           <CreditCardStatementSection

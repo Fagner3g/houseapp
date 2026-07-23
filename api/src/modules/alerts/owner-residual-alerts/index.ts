@@ -20,3 +20,7 @@ export {
   type OwnerResidualCreateInput,
 } from './evaluate'
 export { resolveOwnerInvoiceAlerts, resolveInvoiceRemainingCentavos } from './invoice-remaining'
+export {
+  resolveResidualInvoiceRecipientUserId,
+  resolveResidualTxRecipientUserId,
+} from './resolve-residual-recipient'

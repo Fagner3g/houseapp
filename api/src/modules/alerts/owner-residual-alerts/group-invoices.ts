@@ -42,6 +42,7 @@ export function collectInvoiceGroupSeeds(
       closingDay: tx.closingDay,
       dueDay: tx.dueDay,
       transactionIds: [tx.id],
+      accountCreatedBy: tx.accountCreatedBy,
     })
   }
 

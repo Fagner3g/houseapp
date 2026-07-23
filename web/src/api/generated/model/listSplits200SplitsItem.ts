@@ -3,7 +3,7 @@
  * Do not edit manually.
  * HouseApp API
  * API for HouseApp
- * OpenAPI spec version: 2.2.1
+ * OpenAPI spec version: 2.3.0
  */
 import type { ListSplits200SplitsItemUserId } from "./listSplits200SplitsItemUserId";
 import type { ListSplits200SplitsItemContactName } from "./listSplits200SplitsItemContactName";
@@ -13,6 +13,10 @@ import type { ListSplits200SplitsItemDescription } from "./listSplits200SplitsIt
 import type { ListSplits200SplitsItemStatus } from "./listSplits200SplitsItemStatus";
 import type { ListSplits200SplitsItemPaidAt } from "./listSplits200SplitsItemPaidAt";
 import type { ListSplits200SplitsItemLastNotifiedAt } from "./listSplits200SplitsItemLastNotifiedAt";
+import type { ListSplits200SplitsItemDueAt } from "./listSplits200SplitsItemDueAt";
+import type { ListSplits200SplitsItemCollectInstallmentNumber } from "./listSplits200SplitsItemCollectInstallmentNumber";
+import type { ListSplits200SplitsItemCollectInstallmentsTotal } from "./listSplits200SplitsItemCollectInstallmentsTotal";
+import type { ListSplits200SplitsItemCollectPlanId } from "./listSplits200SplitsItemCollectPlanId";
 import type { ListSplits200SplitsItemPendingPaymentRequest } from "./listSplits200SplitsItemPendingPaymentRequest";
 
 export type ListSplits200SplitsItem = {
@@ -31,6 +35,10 @@ export type ListSplits200SplitsItem = {
   lastNotifiedAt: ListSplits200SplitsItemLastNotifiedAt;
   notifyEnabled: boolean;
   collectLumpSum: boolean;
+  dueAt: ListSplits200SplitsItemDueAt;
+  collectInstallmentNumber: ListSplits200SplitsItemCollectInstallmentNumber;
+  collectInstallmentsTotal: ListSplits200SplitsItemCollectInstallmentsTotal;
+  collectPlanId: ListSplits200SplitsItemCollectPlanId;
   createdAt: string;
   updatedAt: string;
   pendingPaymentRequest?: ListSplits200SplitsItemPendingPaymentRequest;

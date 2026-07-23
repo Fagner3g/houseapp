@@ -62,7 +62,7 @@ describe('normalizeScheduledAt', () => {
 
 describe('TransactionService schedule payment', () => {
   it('schedules payment on a pending transaction', async () => {
-    const scheduledAt = new Date('2026-07-20T23:59:59.999Z')
+    const scheduledAt = new Date('2026-12-31T23:59:59.999Z')
     const updated = { ...pendingTx, paymentScheduledAt: scheduledAt }
 
     const transactionRepository = {
@@ -73,7 +73,7 @@ describe('TransactionService schedule payment', () => {
 
     const service = buildService(transactionRepository)
     const result = await service.schedulePayment('org-1', 'tx-1', {
-      scheduledAt: '2026-07-20T12:00:00.000Z',
+      scheduledAt: '2026-12-31T12:00:00.000Z',
     })
 
     expect(transactionRepository.update).toHaveBeenCalledWith('tx-1', {
@@ -90,12 +90,12 @@ describe('TransactionService schedule payment', () => {
     const service = buildService(transactionRepository)
 
     await expect(
-      service.schedulePayment('org-1', 'tx-1', { scheduledAt: '2026-07-20T12:00:00.000Z' })
+      service.schedulePayment('org-1', 'tx-1', { scheduledAt: '2026-12-31T12:00:00.000Z' })
     ).rejects.toMatchObject({ statusCode: 400 })
   })
 
   it('cancels scheduled payment', async () => {
-    const scheduled = { ...pendingTx, paymentScheduledAt: new Date('2026-07-20T23:59:59.999Z') }
+    const scheduled = { ...pendingTx, paymentScheduledAt: new Date('2026-12-31T23:59:59.999Z') }
     const cleared = { ...pendingTx, paymentScheduledAt: null }
 
     const transactionRepository = {
@@ -116,7 +116,7 @@ describe('TransactionService schedule payment', () => {
   it('clears scheduled payment when paying', async () => {
     const scheduled = {
       ...pendingTx,
-      paymentScheduledAt: new Date('2026-07-20T23:59:59.999Z'),
+      paymentScheduledAt: new Date('2026-12-31T23:59:59.999Z'),
       title: 'Conta',
       type: 'expense' as const,
       description: null,

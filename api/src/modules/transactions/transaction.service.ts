@@ -14,6 +14,11 @@ import type {
 import { badRequest, forbidden, notFound } from '@/core/errors'
 import { centavosToString, parseCentavos } from '@/core/money'
 import {
+  allocateOverpaymentWaterfall,
+  allocateUnderpaymentCarry,
+  nextAmountAfterUnderpaymentCarry,
+} from '@houseapp/finance-core'
+import {
   computeTransactionStatus,
   isReminderWithoutValue,
   resolveTransactionPaidAt,
@@ -44,6 +49,7 @@ import {
   assertImportedStatementUpdateAllowed,
   isImportedStatementTransaction,
 } from './imported-statement-transaction.logic'
+import { pickNextOpenInstallment } from './pick-next-open-installment'
 import {
   buildInstallmentSeriesRepairPlan,
   groupManualInstallmentSeries,
@@ -51,6 +57,12 @@ import {
 } from './credit-card-installment-repair.logic'
 import { buildPeriodicInstallments } from './periodic-installments.logic'
 import { buildPeriodicInstallmentSeriesRepairPlan } from './periodic-installment-repair.logic'
+import {
+  selectInstallmentDateCascadeTargets,
+  shiftUtcCalendarDays,
+  utcCalendarDaysDelta,
+  type InstallmentDateScope,
+} from './installment-date-scope'
 import { normalizeScheduledAt } from './schedule-payment'
 import {
   canMutateTransaction,
@@ -170,7 +182,9 @@ export type CreateTransactionInput = {
   transferPairId?: string | null
 } & NotifyTargetInput
 
-export type UpdateTransactionInput = Partial<CreateTransactionInput>
+export type UpdateTransactionInput = Partial<CreateTransactionInput> & {
+  installmentDateScope?: InstallmentDateScope
+}
 
 export type BulkNotifyTargetInput = {
   transactionId: string
@@ -437,7 +451,25 @@ export class TransactionService {
       throw notFound('Transaction not found')
     }
 
-    this.assertCanMutate(viewer, existing.createdBy)
+    const canMutate = !viewer || canMutateTransaction(viewer, existing.createdBy)
+
+    if (!canMutate) {
+      if (existing.status === 'paid') {
+        throw badRequest('Paid transactions cannot be edited. Cancel the payment first.')
+      }
+
+      // Viewers may still add notes; attachments use a separate endpoint.
+      const updated = await this.transactionRepository.update(id, {
+        description: input.description,
+      })
+
+      if (!updated) {
+        throw notFound('Transaction not found')
+      }
+
+      const categoryMap = await this.transactionRepository.getCategoryIds([updated.id])
+      return toTransactionDto(updated, categoryMap.get(updated.id) ?? [])
+    }
 
     if (existing.status === 'paid') {
       throw badRequest('Paid transactions cannot be edited. Cancel the payment first.')
@@ -491,6 +523,8 @@ export class TransactionService {
     if (!updated) {
       throw notFound('Transaction not found')
     }
+
+    await this.cascadeInstallmentDateShift(organizationId, existing, updated, input)
 
     const categoryMap = await this.transactionRepository.getCategoryIds([updated.id])
 
@@ -629,13 +663,121 @@ export class TransactionService {
       throw badRequest('Payment amount must be greater than zero')
     }
 
+    const paymentDate = input.paidAt ? new Date(input.paidAt) : new Date()
+
+    // Overpay on a series: cascade payment onto open subsequent parcels (last may be partial).
+    if (
+      !withoutValue &&
+      paymentAmount > remaining &&
+      (transaction.installmentsTotal ?? 0) >= 2
+    ) {
+      const siblings = await this.findInstallmentSiblings(organizationId, transaction)
+      const openFromCurrent = siblings
+        .filter(row => {
+          const number = row.installmentNumber ?? 0
+          if (number < (transaction.installmentNumber ?? 1)) return false
+          return row.status !== 'paid' && row.status !== 'canceled'
+        })
+        .sort((a, b) => (a.installmentNumber ?? 0) - (b.installmentNumber ?? 0))
+
+      const waterfall = allocateOverpaymentWaterfall({
+        payment: paymentAmount,
+        parcels: openFromCurrent.map(row => ({
+          id: row.id,
+          remaining: transactionRemainingAmount(row.amount, row.paidAmount),
+        })),
+      })
+
+      if (!waterfall) {
+        throw badRequest(
+          `Payment exceeds remaining amount (${centavosToString(remaining)})`
+        )
+      }
+
+      const byId = new Map(openFromCurrent.map(row => [row.id, row]))
+      let updatedAnchor: TransactionRecord | null = null
+
+      for (const step of waterfall) {
+        const target = byId.get(step.id)
+        if (!target) continue
+        const existingPaidOnTarget = target.paidAmount ?? 0n
+        const newPaidAmount = existingPaidOnTarget + step.apply
+        const status = computeTransactionStatus(target.amount, newPaidAmount, target.status)
+        const paidAt = resolveTransactionPaidAt(status, paymentDate, target.paidAt)
+        const updated = await this.transactionRepository.update(target.id, {
+          status,
+          paidAt,
+          paidAmount: newPaidAmount,
+          paymentScheduledAt: null,
+        })
+        if (!updated) throw notFound('Transaction not found')
+        if (target.id === id) updatedAnchor = updated
+      }
+
+      if (!updatedAnchor) {
+        throw notFound('Transaction not found')
+      }
+
+      const categoryMap = await this.transactionRepository.getCategoryIds([updatedAnchor.id])
+      return toTransactionDto(updatedAnchor, categoryMap.get(updatedAnchor.id) ?? [])
+    }
+
     if (!withoutValue && paymentAmount > remaining) {
       throw badRequest(
         `Payment exceeds remaining amount (${centavosToString(remaining)})`
       )
     }
 
+    // Underpay on a series: close current at paid total; add shortfall onto next parcel.
+    const carry =
+      !withoutValue && transaction.amount != null
+        ? allocateUnderpaymentCarry({
+            currentAmount: transaction.amount,
+            currentPaid: existingPaid,
+            payment: paymentAmount,
+          })
+        : null
+
+    if (carry && (transaction.installmentsTotal ?? 0) >= 2) {
+      const siblings = await this.findInstallmentSiblings(organizationId, transaction)
+      const next = pickNextOpenInstallment(
+        siblings,
+        transaction.installmentNumber ?? 1
+      )
+
+      if (next && next.id !== transaction.id) {
+        const paidAt = resolveTransactionPaidAt('paid', paymentDate, transaction.paidAt)
+        const updated = await this.transactionRepository.update(id, {
+          status: 'paid',
+          paidAt,
+          paidAmount: carry.currentPaidAmount,
+          amount: carry.currentAmount,
+          paymentScheduledAt: null,
+        })
+
+        if (!updated) {
+          throw notFound('Transaction not found')
+        }
+
+        const nextAmount = nextAmountAfterUnderpaymentCarry(
+          next.amount ?? 0n,
+          carry.shortfall
+        )
+        const nextPaid = next.paidAmount ?? 0n
+        const nextStatus = computeTransactionStatus(nextAmount, nextPaid, next.status)
+        await this.transactionRepository.update(next.id, {
+          amount: nextAmount,
+          status: nextStatus,
+          paidAt: resolveTransactionPaidAt(nextStatus, paymentDate, next.paidAt),
+        })
+
+        const categoryMap = await this.transactionRepository.getCategoryIds([updated.id])
+        return toTransactionDto(updated, categoryMap.get(updated.id) ?? [])
+      }
+    }
+
     // Reminder-without-value: the paid amount becomes the known bill amount.
+    // Last installment / non-series underpay: keep classic partial on current.
     const settledAmount = withoutValue ? paymentAmount : transaction.amount
     const newPaidAmount = withoutValue ? paymentAmount : existingPaid + paymentAmount
     const status = computeTransactionStatus(
@@ -643,7 +785,6 @@ export class TransactionService {
       newPaidAmount,
       transaction.status
     )
-    const paymentDate = input.paidAt ? new Date(input.paidAt) : new Date()
     const paidAt = resolveTransactionPaidAt(status, paymentDate, transaction.paidAt)
 
     const updated = await this.transactionRepository.update(id, {
@@ -787,8 +928,8 @@ export class TransactionService {
       }
 
       const advanceNumber = advance.installmentNumber ?? 1
-      if (advanceNumber <= anchorNumber) {
-        throw badRequest('Advance installments must be after the current installment')
+      if (advanceNumber === anchorNumber) {
+        throw badRequest('Cannot include the current installment as an advance')
       }
 
       if (advance.status === 'canceled' || advance.status === 'paid') {
@@ -796,31 +937,46 @@ export class TransactionService {
       }
     }
 
-    const advanceRemainingTotal = advanceTransactions.reduce(
-      (sum, row) => sum + transactionRemainingAmount(row.amount, row.paidAmount),
-      0n
-    )
-    const expectedTotal = anchorRemaining + advanceRemainingTotal
-
-    if (paymentAmount !== expectedTotal) {
-      throw badRequest(
-        `Payment amount must equal current and selected installments (${centavosToString(expectedTotal)})`
-      )
-    }
-
-    const paymentDate = input.paidAt ? new Date(input.paidAt) : new Date()
     const targets = [
       currentAnchor,
       ...advanceTransactions.sort((a, b) => (a.installmentNumber ?? 0) - (b.installmentNumber ?? 0)),
     ]
 
-    await db.transaction(async tx => {
-      for (const target of targets) {
-        const existingPaid = target.paidAmount ?? 0n
-        const remaining = transactionRemainingAmount(target.amount, existingPaid)
-        if (remaining <= 0n) continue
+    const parcels = targets.map(row => ({
+      id: row.id,
+      remaining: transactionRemainingAmount(row.amount, row.paidAmount),
+    }))
+    const totalRemaining = parcels.reduce((sum, p) => sum + p.remaining, 0n)
 
-        const newPaidAmount = existingPaid + remaining
+    if (paymentAmount > totalRemaining) {
+      throw badRequest(
+        `Payment exceeds remaining amount (${centavosToString(totalRemaining)})`
+      )
+    }
+
+    const paymentDate = input.paidAt ? new Date(input.paidAt) : new Date()
+
+    // Exact full settlement of selected parcels, or cascade when amount is smaller.
+    const waterfall =
+      paymentAmount === totalRemaining
+        ? parcels
+            .filter(p => p.remaining > 0n)
+            .map(p => ({ id: p.id, apply: p.remaining, status: 'paid' as const }))
+        : allocateOverpaymentWaterfall({ payment: paymentAmount, parcels })
+
+    if (!waterfall || waterfall.length === 0) {
+      // Amount fits only the current parcel — fall through to single pay.
+      return this.paySingle(organizationId, id, input, viewer)
+    }
+
+    const byId = new Map(targets.map(row => [row.id, row]))
+
+    await db.transaction(async tx => {
+      for (const step of waterfall) {
+        const target = byId.get(step.id)
+        if (!target) continue
+        const existingPaid = target.paidAmount ?? 0n
+        const newPaidAmount = existingPaid + step.apply
         const status = computeTransactionStatus(target.amount, newPaidAmount, target.status)
         const paidAt = resolveTransactionPaidAt(status, paymentDate, target.paidAt)
 
@@ -1022,7 +1178,7 @@ export class TransactionService {
   ): Promise<CreateTransactionInput[] | null> {
     const installmentsTotal = input.installmentsTotal
     if (!installmentsTotal || installmentsTotal < 2) return null
-    if (input.type !== 'expense') return null
+    if (input.type !== 'expense' && input.type !== 'income') return null
     if (input.installmentNumber != null && input.installmentNumber !== 1) return null
 
     let accountId = input.accountId ?? null
@@ -1048,16 +1204,28 @@ export class TransactionService {
       periodicity: input.installmentPeriodicity,
     })
 
-    return rows.map(row => ({
-      ...input,
-      accountId,
-      title: row.title,
-      amount: centavosToString(row.amount) ?? '0.00',
-      date: row.date.toISOString(),
-      competenceDate: row.competenceDate.toISOString(),
-      installmentNumber: row.installmentNumber,
-      installmentsTotal: row.installmentsTotal,
-    }))
+    // Settlement applies per parcel — if create is already paid, only parcel 1 is settled.
+    const settleFirst =
+      input.status === 'paid' && input.amount != null
+    const paidAtIso = input.paidAt ?? input.date
+
+    return rows.map(row => {
+      const isFirst = row.installmentNumber === 1
+      const amountStr = centavosToString(row.amount) ?? '0.00'
+      return {
+        ...input,
+        accountId,
+        title: row.title,
+        amount: amountStr,
+        date: row.date.toISOString(),
+        competenceDate: row.competenceDate.toISOString(),
+        installmentNumber: row.installmentNumber,
+        installmentsTotal: row.installmentsTotal,
+        status: settleFirst && isFirst ? ('paid' as const) : ('pending' as const),
+        paidAmount: settleFirst && isFirst ? amountStr : null,
+        paidAt: settleFirst && isFirst ? paidAtIso : null,
+      }
+    })
   }
 
   private async repairIncompleteInstallments(
@@ -1095,6 +1263,8 @@ export class TransactionService {
       const categoryIds = categoryMap.get(seed.id) ?? []
 
       for (const update of plan.updates) {
+        const existing = group.rows.find(row => row.id === update.id)
+        const payment = plan.paymentAllocations?.get(update.row.installmentNumber)
         await this.transactionRepository.update(update.id, {
           title: update.row.title,
           amount: update.row.amount,
@@ -1102,29 +1272,47 @@ export class TransactionService {
           competenceDate: update.row.competenceDate,
           installmentNumber: update.row.installmentNumber,
           installmentsTotal: update.row.installmentsTotal,
+          ...(payment
+            ? {
+                paidAmount: payment.paidAmount,
+                status: payment.status,
+                paidAt: payment.paidAt,
+              }
+            : {
+                status: computeTransactionStatus(
+                  update.row.amount,
+                  existing?.paidAmount ?? 0n,
+                  existing?.status ?? 'pending'
+                ),
+              }),
         })
       }
 
       if (plan.creates.length === 0) continue
 
       await this.transactionRepository.createMany(
-        plan.creates.map(row => ({
-          organizationId,
-          accountId,
-          cardId: seed.cardId,
-          title: row.title,
-          amount: row.amount,
-          type: 'expense' as const,
-          date: row.date,
-          competenceDate: row.competenceDate,
-          installmentNumber: row.installmentNumber,
-          installmentsTotal: row.installmentsTotal,
-          status: seed.status,
-          source: 'manual' as const,
-          categoryIds,
-          notifyEnabled: false,
-          createdBy: seed.createdBy,
-        }))
+        plan.creates.map(row => {
+          const payment = plan.paymentAllocations?.get(row.installmentNumber)
+          return {
+            organizationId,
+            accountId,
+            cardId: seed.cardId,
+            title: row.title,
+            amount: row.amount,
+            type: seed.type,
+            date: row.date,
+            competenceDate: row.competenceDate,
+            installmentNumber: row.installmentNumber,
+            installmentsTotal: row.installmentsTotal,
+            status: payment?.status ?? 'pending',
+            paidAmount: payment?.paidAmount ?? null,
+            paidAt: payment?.paidAt ?? null,
+            source: 'manual' as const,
+            categoryIds,
+            notifyEnabled: false,
+            createdBy: seed.createdBy,
+          }
+        })
       )
     }
   }
@@ -1159,6 +1347,35 @@ export class TransactionService {
     const siblings = selectInstallmentSeriesSiblings(candidates, anchor)
 
     return siblings.length > 0 ? siblings : [anchor]
+  }
+
+  private async cascadeInstallmentDateShift(
+    organizationId: string,
+    existing: TransactionRecord,
+    updated: TransactionRecord,
+    input: UpdateTransactionInput
+  ): Promise<void> {
+    const scope = input.installmentDateScope ?? 'current'
+    if (scope === 'current' || !input.date) return
+    if (existing.installmentsTotal == null || existing.installmentsTotal < 2) return
+
+    const accountId = updated.accountId ?? existing.accountId
+    if (!accountId) return
+
+    const account = await this.accountRepository.findById(organizationId, accountId)
+    if (!account || account.type === 'credit_card') return
+
+    const deltaDays = utcCalendarDaysDelta(existing.date, new Date(input.date))
+    if (deltaDays === 0) return
+
+    const siblings = await this.findInstallmentSiblings(organizationId, existing)
+    const targets = selectInstallmentDateCascadeTargets(siblings, existing, scope)
+
+    for (const target of targets) {
+      await this.transactionRepository.update(target.id, {
+        date: shiftUtcCalendarDays(target.date, deltaDays),
+      })
+    }
   }
 
   private toInstallmentSeriesItem(transaction: TransactionRecord): InstallmentSeriesItem {

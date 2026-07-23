@@ -4,7 +4,7 @@ import { CircleMinus, Clock } from 'lucide-react'
 import { useMemo } from 'react'
 
 import { useListTransactions } from '@/api/generated/api'
-import { formatCentsString } from '@/lib/currency'
+import { centsToReais, formatCurrency, moneyStringToCents } from '@/lib/currency'
 import { useActiveOrganization } from '@/hooks/use-active-organization'
 import { cn } from '@/lib/utils'
 
@@ -12,6 +12,12 @@ interface AccountKpiRowProps {
   accountId: string
   dateFrom: string
   dateTo: string
+}
+
+function sumAmountsCents(
+  transactions: { amount?: string | null }[]
+): number {
+  return transactions.reduce((sum, tx) => sum + moneyStringToCents(tx.amount), 0)
 }
 
 export function AccountKpiRow({ accountId, dateFrom, dateTo }: AccountKpiRowProps) {
@@ -35,15 +41,13 @@ export function AccountKpiRow({ accountId, dateFrom, dateTo }: AccountKpiRowProp
 
   const metrics = useMemo(() => {
     const transactions = data?.transactions ?? []
-    const expense = transactions.reduce((sum, tx) => sum + Number(tx.amount ?? 0), 0)
     const pendingTransactions = transactions.filter(
       tx => tx.status === 'pending' || tx.status === 'partial'
     )
-    const pending = pendingTransactions.reduce((sum, tx) => sum + Number(tx.amount ?? 0), 0)
 
     return {
-      expense,
-      pending,
+      expenseCents: sumAmountsCents(transactions),
+      pendingCents: sumAmountsCents(pendingTransactions),
       pendingCount: pendingTransactions.length,
     }
   }, [data?.transactions])
@@ -51,14 +55,14 @@ export function AccountKpiRow({ accountId, dateFrom, dateTo }: AccountKpiRowProp
   const cards = [
     {
       label: 'Despesas do mês',
-      value: formatCentsString(String(metrics.expense)),
+      value: formatCurrency(centsToReais(metrics.expenseCents)),
       icon: CircleMinus,
       iconClass: 'text-rose-500',
       valueClass: 'text-slate-900',
     },
     {
       label: 'A pagar',
-      value: formatCentsString(String(metrics.pending)),
+      value: formatCurrency(centsToReais(metrics.pendingCents)),
       subtitle:
         metrics.pendingCount > 0
           ? `${metrics.pendingCount} lançamento${metrics.pendingCount > 1 ? 's' : ''}`

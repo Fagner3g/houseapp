@@ -4,7 +4,7 @@ import type { ListAccounts200AccountsItem } from '@/api/generated/model'
 import type { ListStatements200StatementsItem } from '@/api/generated/model'
 import type { ListTransactions200TransactionsItem } from '@/api/generated/model'
 import type { InvoiceSummaryRow } from '@/features/transactions/types'
-import { findStatementForCycle, findPreviousStatementForCycle, getBillingCycle } from '@/lib/billing-cycle'
+import { findStatementForCycle, findPreviousStatementForCycle, findNextStatementForCycle, getBillingCycle } from '@/lib/billing-cycle'
 import { computeInvoiceMetrics, resolvePaymentPeriod, resolvePurchasesPeriod, isWithinBillingRange, isInvoicePayment, transactionPurchaseDate } from '@/lib/credit-card-invoice-metrics'
 import { reaisToMoneyString } from '@/lib/currency'
 
@@ -113,7 +113,13 @@ export function buildInvoiceSummariesForRange({
         closing,
         due
       )
-      const paymentContext = { previousStatement, closingDay: closing, dueDay: due }
+      const nextStatement = findNextStatementForCycle(accountStatements, cycle, closing, due)
+      const paymentContext = {
+        previousStatement,
+        nextStatement,
+        closingDay: closing,
+        dueDay: due,
+      }
       const metrics = computeInvoiceMetrics(cycle, statement, accountTx, paymentContext)
       const purchasesPeriod = resolvePurchasesPeriod(cycle, statement)
       const paymentPeriod = resolvePaymentPeriod(cycle, statement, paymentContext)
@@ -169,81 +175,7 @@ export function buildInvoiceSummariesForRange({
   return { summaries, hiddenTransactionIds }
 }
 
-function recentMonthKeys(monthsBack = 13) {
-  const keys: string[] = []
-  let cursor = dayjs().startOf('month')
-
-  for (let index = 0; index < monthsBack; index++) {
-    keys.push(cursor.format('YYYY-MM'))
-    cursor = cursor.subtract(1, 'month')
-  }
-
-  return keys
-}
-
-export function buildOverdueInvoiceSummaries({
-  creditCards,
-  statementsByAccountId,
-  transactions,
-}: {
-  creditCards: CreditCardAccount[]
-  statementsByAccountId: Record<string, ListStatements200StatementsItem[]>
-  transactions: ListTransactions200TransactionsItem[]
-}): InvoiceSummaryRow[] {
-  const summaries: InvoiceSummaryRow[] = []
-  const today = dayjs().startOf('day')
-
-  for (const account of creditCards) {
-    if (!hasConfiguredBillingCycle(account)) continue
-
-    const closing = account.closingDay as number
-    const due = account.dueDay as number
-    const accountTx = transactions.filter(t => t.accountId === account.id)
-    const accountStatements = statementsByAccountId[account.id] ?? []
-
-    for (const monthKey of recentMonthKeys()) {
-      const cycle = getBillingCycle(closing, due, monthKey)
-      if (!dayjs(cycle.dueDate).isBefore(today)) continue
-
-      const statement = findStatementForCycle(accountStatements, cycle, {
-        closingDay: closing,
-        dueDay: due,
-      })
-      const previousStatement = findPreviousStatementForCycle(
-        accountStatements,
-        cycle,
-        closing,
-        due
-      )
-      const paymentContext = { previousStatement, closingDay: closing, dueDay: due }
-      const metrics = computeInvoiceMetrics(cycle, statement, accountTx, paymentContext)
-      const paymentPeriod = resolvePaymentPeriod(cycle, statement, paymentContext)
-      const invoiceAmount = resolveInvoiceAmount(metrics)
-      const remaining = metrics.remaining
-
-      if (invoiceAmount <= 0 || remaining <= 0) continue
-
-      summaries.push({
-        kind: 'invoice_summary',
-        id: `invoice-${account.id}-${monthKey}`,
-        accountId: account.id,
-        accountName: account.name,
-        monthKey,
-        title: `Fatura ${account.name} — ${cycle.label}`,
-        amount: reaisToMoneyString(invoiceAmount),
-        payments: reaisToMoneyString(metrics.payments),
-        remaining: reaisToMoneyString(remaining),
-        type: 'expense',
-        date: dayjs(paymentPeriod.end).hour(12).minute(0).second(0).millisecond(0).toISOString(),
-        status: 'pending',
-      })
-    }
-  }
-
-  summaries.sort((a, b) => dayjs(a.date).valueOf() - dayjs(b.date).valueOf())
-
-  return summaries
-}
+export { buildOverdueInvoiceSummaries } from './credit-card-overdue-invoice-rows'
 
 export function mergeTransactionsWithInvoices(
   transactions: ListTransactions200TransactionsItem[],

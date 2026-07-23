@@ -110,6 +110,35 @@ describe('collapsedHeader', () => {
     expect(header.primary).toBe(formatMoneyString('1350.00'))
     expect(header.chips).toEqual([{ text: 'A pagar', tone: 'warning' }])
   })
+
+  it('falls back to purchase total when viewer share is zero', () => {
+    const header = collapsedHeader(
+      summary({
+        myShareTotal: '0.00',
+        viewerIsCreditor: true,
+        persons: [
+          {
+            key: 'user:m',
+            name: 'Marly',
+            userId: 'm',
+            contactName: null,
+            contactPhone: null,
+            totalOwed: '1350.00',
+            totalPaid: '0.00',
+            totalRemaining: '1350.00',
+            status: 'pending',
+            installments: [],
+            isViewer: false,
+          },
+        ],
+      }),
+      undefined,
+      1350
+    )
+    expect(header.label).toBe('Compra total')
+    expect(header.primary).toBe(formatMoneyString('1350.00'))
+    expect(header.chips).toEqual([{ text: '1 pendente', tone: 'warning' }])
+  })
 })
 
 describe('resolveViewerInstallmentAmount', () => {

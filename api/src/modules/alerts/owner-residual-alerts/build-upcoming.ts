@@ -9,6 +9,10 @@ import {
   shouldEmitUpcoming,
   type OwnerResidualCreateInput,
 } from './helpers'
+import {
+  resolveResidualInvoiceRecipientUserId,
+  resolveResidualTxRecipientUserId,
+} from './resolve-residual-recipient'
 import type { OwnerInvoiceAlert, OwnerTxAlert } from './types'
 import type { AlertRuleLike } from '../alert-rule-config'
 
@@ -16,6 +20,7 @@ export function buildOwnerResidualUpcomingInputs(params: {
   rules: AlertRuleLike[]
   invoices: OwnerInvoiceAlert[]
   transactions: OwnerTxAlert[]
+  orgOwnerId: string
   organizationName?: string
 }): OwnerResidualCreateInput[] {
   const upcomingRule = resolveOrgRule(params.rules, 'upcoming')
@@ -33,10 +38,15 @@ export function buildOwnerResidualUpcomingInputs(params: {
     if (matchingDay === null) continue
 
     const amount = amountString(invoice.remainingCentavos)
+    const recipientUserId = resolveResidualInvoiceRecipientUserId(
+      invoice.accountCreatedBy,
+      params.orgOwnerId
+    )
     inputs.push({
       rule: upcomingRule,
       transactionId: null,
       accountId: invoice.accountId,
+      recipientUserId,
       title: buildInvoiceTitle(invoice, invoice.daysUntilDue),
       body: amountBody(invoice.remainingCentavos, invoice.dueDate),
       daysUntilDue: invoice.daysUntilDue,
@@ -68,10 +78,15 @@ export function buildOwnerResidualUpcomingInputs(params: {
     if (matchingDay === null) continue
 
     const amount = amountString(alert.remainingCentavos)
+    const recipientUserId = resolveResidualTxRecipientUserId(
+      alert.transaction,
+      params.orgOwnerId
+    )
     inputs.push({
       rule: upcomingRule,
       transactionId: alert.transaction.id,
       accountId: alert.transaction.accountId,
+      recipientUserId,
       title: buildTxTitle(alert),
       body: amountBody(alert.remainingCentavos, alert.dueDate),
       daysUntilDue: alert.daysUntilDue,

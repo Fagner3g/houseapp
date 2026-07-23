@@ -99,7 +99,13 @@ export function isInvoicePayment(
 ) {
   if (tx.type !== 'income') return false
   if (cycle && isForeignManualInvoicePayment(tx, cycle)) return false
-  if (hasImportedInvoiceTotal(statement ?? null) && isAppBookkeepingInvoicePayment(tx)) {
+  // Hide duplicate bookkeeping once the invoice is settled; while open, count it
+  // toward remaining (manual "Pagamento fatura" after an OFX import).
+  if (
+    hasImportedInvoiceTotal(statement ?? null) &&
+    isAppBookkeepingInvoicePayment(tx) &&
+    statement?.isPaid
+  ) {
     return false
   }
   if (!isWithinBillingRange(tx.date, paymentPeriod.start, paymentPeriod.end)) return false

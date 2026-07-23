@@ -113,8 +113,42 @@ export function buildDebtReminderTitle(title: string, daysUntilDue: number): str
   return `Pague em ${daysUntilDue} dias: ${title}`
 }
 
-export function buildSplitDebtTitle(transactionTitle: string, daysUntilDue: number): string {
-  if (daysUntilDue === 0) return `Você deve hoje: ${transactionTitle}`
-  if (daysUntilDue === 1) return `Você deve amanhã: ${transactionTitle}`
-  return `Você deve em ${daysUntilDue} dias: ${transactionTitle}`
+import { stripInstallmentBaseTitle } from '@/core/expense-title'
+
+export function buildSplitDebtTitle(
+  transactionTitle: string,
+  daysUntilDue: number,
+  options?: { collectLumpSum?: boolean }
+): string {
+  const title = options?.collectLumpSum
+    ? stripInstallmentBaseTitle(transactionTitle)
+    : transactionTitle
+  if (daysUntilDue === 0) return `Você deve hoje: ${title}`
+  if (daysUntilDue === 1) return `Você deve amanhã: ${title}`
+  return `Você deve em ${daysUntilDue} dias: ${title}`
+}
+
+export function buildSplitChargeModeLabel(input: {
+  collectLumpSum?: boolean | null
+  collectInstallmentNumber?: number | null
+  collectInstallmentsTotal?: number | null
+  installmentNumber?: number | null
+  installmentsTotal?: number | null
+}): string | null {
+  if (input.collectLumpSum) return 'à vista'
+  if (
+    input.collectInstallmentsTotal != null &&
+    input.collectInstallmentsTotal >= 2 &&
+    input.collectInstallmentNumber != null
+  ) {
+    return `parcelado (${input.collectInstallmentNumber}/${input.collectInstallmentsTotal})`
+  }
+  if (
+    input.installmentsTotal != null &&
+    input.installmentsTotal >= 2 &&
+    input.installmentNumber != null
+  ) {
+    return `parcelado (${input.installmentNumber}/${input.installmentsTotal})`
+  }
+  return null
 }

@@ -1,6 +1,7 @@
 import type { AccountRepository } from '@/modules/accounts/account.repository'
 import type { RecurringRepository } from '@/modules/recurring/recurring.repository'
 import type { SplitRepository } from '@/modules/splits/split.repository'
+import { areSystemNotificationsEnabled } from '@/modules/system-settings/notifications-enabled'
 
 import { hasReachedNotifyTime } from '../alert-utils'
 import type { AlertRuleRecord, AlertRuleRepository } from '../alert-rule.repository'
@@ -68,6 +69,10 @@ export class AlertRuleService {
   }
 
   async evaluateAll(): Promise<{ processed: number; errors: number }> {
+    if (!(await areSystemNotificationsEnabled())) {
+      return { processed: 0, errors: 0 }
+    }
+
     const activeRules = await this.alertRuleRepository.findAllActive()
     const rulesByOrg = new Map<string, AlertRuleRecord[]>()
 
@@ -97,6 +102,10 @@ export class AlertRuleService {
     mode: AlertEvaluateMode = 'all',
     options?: EvaluateOrganizationOptions
   ): Promise<{ processed: number; errors: number }> {
+    if (!(await areSystemNotificationsEnabled())) {
+      return { processed: 0, errors: 0 }
+    }
+
     if (!options?.skipTimeCheck) {
       const settings = await this.alertSettingsService.get(organizationId)
       if (!hasReachedNotifyTime(settings.defaultNotifyHour, settings.defaultNotifyMinute)) {

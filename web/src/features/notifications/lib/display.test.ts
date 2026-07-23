@@ -2,6 +2,7 @@ import { describe, expect, it } from 'vitest'
 
 import {
   buildNotificationDisplay,
+  isInboxChannel,
   notificationTitle,
   sortInboxNotifications,
 } from './display'
@@ -60,6 +61,12 @@ describe('notification display', () => {
         readAt: null,
       })
     ).toBe('DAS')
+  })
+
+  it('inbox shows only in_app channel', () => {
+    expect(isInboxChannel('in_app')).toBe(true)
+    expect(isInboxChannel('extension')).toBe(false)
+    expect(isInboxChannel('whatsapp')).toBe(false)
   })
 
   it('sorts decision notifications first', () => {

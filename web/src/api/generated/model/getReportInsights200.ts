@@ -3,7 +3,7 @@
  * Do not edit manually.
  * HouseApp API
  * API for HouseApp
- * OpenAPI spec version: 2.2.1
+ * OpenAPI spec version: 2.3.0
  */
 import type { GetReportInsights200InsightsItem } from "./getReportInsights200InsightsItem";
 import type { GetReportInsights200Source } from "./getReportInsights200Source";

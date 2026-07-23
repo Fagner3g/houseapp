@@ -24,9 +24,13 @@ export type SplitAlertDueDateInput = {
   accountType?: string | null
   closingDay?: number | null
   dueDay?: number | null
+  /** Partner collect-plan due date overrides purchase/card due logic. */
+  splitDueAt?: Date | null
 }
 
 export function resolveSplitAlertDueDate(input: SplitAlertDueDateInput): Date {
+  if (input.splitDueAt) return input.splitDueAt
+
   return resolveTransactionAlertDueDate({
     date: input.transactionDate,
     competenceDate: input.competenceDate,

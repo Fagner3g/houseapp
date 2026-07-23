@@ -5,11 +5,7 @@ import { toast } from 'sonner'
 import { useHookFormMask } from 'use-mask-input'
 import type z from 'zod'
 
-import {
-  getListUsersByOrgQueryKey,
-  listUsersByOrg,
-  useCreateUserWithInvite,
-} from '@/api/generated/api'
+import { getListUsersByOrgQueryKey, useCreateUserWithInvite } from '@/api/generated/api'
 import { Button } from '@/components/ui/button'
 import {
   Dialog,
@@ -51,21 +47,20 @@ export function NewUserDialog({ open, onOpenChange, onCreated }: NewUserDialogPr
     if (!slug) return
 
     try {
-      await createUser({ data, slug })
-      const refreshed = await queryClient.fetchQuery({
-        queryKey: getListUsersByOrgQueryKey(slug),
-        queryFn: () => listUsersByOrg(slug),
+      const created = await createUser({
+        data: {
+          ...data,
+          email: data.email.trim().toLowerCase(),
+        },
+        slug,
       })
-      const created = refreshed.users.find(
-        user => user.email.toLowerCase() === data.email.toLowerCase()
-      )
+      // Await refetch so MemberSelect options include the new member before selection.
+      await queryClient.invalidateQueries({ queryKey: getListUsersByOrgQueryKey(slug) })
 
       toast.success('Convite enviado!')
       form.reset({ phone: '' })
+      onCreated?.(created.id)
       handleOpenChange(false)
-      if (created) {
-        onCreated?.(created.id)
-      }
     } catch (error) {
       toast.error(await readHttpErrorMessage(error, 'Erro ao criar usuário'))
     }

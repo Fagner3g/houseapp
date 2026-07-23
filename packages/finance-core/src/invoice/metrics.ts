@@ -14,6 +14,7 @@ import {
   parseStatementMoney,
   resolveComputedInvoiceTotal,
 } from './reconciliation'
+import { isPriorInvoiceSettledByNextBalance } from './next-statement-settlement'
 import { resolveRemainingDeductions } from './remaining'
 import { hasStoredInvoiceSummary } from './scope'
 import { sumAmounts, sumManualPurchasesInPeriod, transactionsOwnedByInvoiceCycle } from './filters'
@@ -118,8 +119,12 @@ export function computeInvoiceMetrics(
     isNetImportedTotal,
   })
 
+  const settledByNextStatement = isPriorInvoiceSettledByNextBalance(
+    context?.nextStatement?.previousBalance
+  )
+
   const remaining =
-    statement?.isClosed && statement?.isPaid
+    (statement?.isClosed && statement?.isPaid) || settledByNextStatement
       ? 0n
       : (() => {
           const value = resolvedInvoiceTotal - paymentsToDeduct - settlementCreditsToDeduct

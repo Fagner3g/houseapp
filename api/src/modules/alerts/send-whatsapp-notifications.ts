@@ -4,6 +4,7 @@ import { db } from '@/db'
 import { users } from '@/db/schemas/users'
 import { sendWhatsAppMessage, normalizePhone } from '@/domain/whatsapp'
 import { logger } from '@/lib/logger'
+import { areSystemNotificationsEnabled } from '@/modules/system-settings/notifications-enabled'
 
 import type { NotificationRecord, NotificationRepository } from './notification.repository'
 import {
@@ -68,6 +69,10 @@ export async function sendWhatsappForNotifications(
   notificationRepository: NotificationRepository,
   notifications: NotificationRecord[]
 ): Promise<SendWhatsappNotificationsResult> {
+  if (!(await areSystemNotificationsEnabled())) {
+    return { sent: 0, errors: 0 }
+  }
+
   let sent = 0
   let errors = 0
   const sentInBatch = new Set<string>()

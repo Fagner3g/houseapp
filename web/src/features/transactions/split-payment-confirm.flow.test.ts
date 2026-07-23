@@ -6,6 +6,10 @@ import {
   buildUnsettledSplitItems,
   getSplitRemainingReais,
 } from './split-debt-summary.utils'
+import {
+  defaultReimbursementChoices,
+  runUnifiedSettlement,
+} from './lib/unified-settlement'
 
 function makeSplit(
   overrides: Partial<ListSplits200SplitsItem> = {}
@@ -32,46 +36,64 @@ function makeSplit(
   }
 }
 
-describe('split payment confirmation flow', () => {
-  it('registers remaining split payments before executing transaction pay', async () => {
+describe('unified quitação flow', () => {
+  it('registers reimbursements before executing transaction pay', async () => {
     const splits = [makeSplit()]
     const items = buildUnsettledSplitItems(splits, split => split.contactName ?? 'Contato')
     const registerSplitPayment = vi.fn().mockResolvedValue(undefined)
     const payTransaction = vi.fn().mockResolvedValue(undefined)
 
-    for (const item of items) {
-      await registerSplitPayment({
-        transactionId: 'tx-1',
-        id: item.split.id,
-        amount: item.remainingReais.toFixed(2),
-        method: 'pix',
-      })
-    }
-    await payTransaction({ id: 'tx-1' })
+    await runUnifiedSettlement({
+      reimbursements: items.map(item => ({
+        splitId: item.split.id,
+        reimbursed: true,
+        amountReais: item.remainingReais,
+        method: 'pix' as const,
+      })),
+      registerSplitPayment,
+      payTransaction,
+    })
 
     expect(registerSplitPayment).toHaveBeenCalledWith({
-      transactionId: 'tx-1',
-      id: 'split-1',
-      amount: '150.00',
+      splitId: 'split-1',
+      amountReais: 150,
       method: 'pix',
     })
-    expect(registerSplitPayment).toHaveBeenCalledTimes(1)
     expect(payTransaction).toHaveBeenCalledTimes(1)
-    expect(registerSplitPayment.mock.invocationCallOrder[0]).toBeLessThan(
-      payTransaction.mock.invocationCallOrder[0] as number
-    )
   })
 
-  it('skips split registration when all splits are settled', async () => {
+  it('still pays the bank when reimbursement is skipped (Ainda não)', async () => {
+    const splits = [makeSplit()]
+    const items = buildUnsettledSplitItems(splits, split => split.contactName ?? 'Contato')
+    const registerSplitPayment = vi.fn()
+    const payTransaction = vi.fn().mockResolvedValue(undefined)
+
+    await runUnifiedSettlement({
+      reimbursements: defaultReimbursementChoices(
+        items.map(item => ({
+          splitId: item.split.id,
+          remainingReais: item.remainingReais,
+        }))
+      ).map(choice => ({ ...choice, reimbursed: false })),
+      registerSplitPayment,
+      payTransaction,
+    })
+
+    expect(registerSplitPayment).not.toHaveBeenCalled()
+    expect(payTransaction).toHaveBeenCalledTimes(1)
+  })
+
+  it('skips reimbursement step when all splits are settled', async () => {
     const splits = [makeSplit({ status: 'paid', paidAmount: '150.00' })]
     const items = buildUnsettledSplitItems(splits, split => split.contactName ?? 'Contato')
     const registerSplitPayment = vi.fn()
     const payTransaction = vi.fn().mockResolvedValue(undefined)
 
     if (items.length === 0) {
-      await payTransaction({ id: 'tx-1' })
+      await payTransaction()
     }
 
+    expect(items).toHaveLength(0)
     expect(registerSplitPayment).not.toHaveBeenCalled()
     expect(payTransaction).toHaveBeenCalled()
   })

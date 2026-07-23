@@ -54,11 +54,12 @@ export type AccountVisibilityOptions = {
   ownedOnly?: boolean
 }
 
+/** Missing viewer skips filtering (system callers); any present viewer is personal. */
 export function accountVisibilityCondition(
   viewer: TransactionViewer | undefined,
   options?: AccountVisibilityOptions
 ): SQL | undefined {
-  if (!viewer || viewer.isOwner) return undefined
+  if (!viewer) return undefined
   if (options?.ownedOnly) return memberOwnedAccountCondition(viewer.userId)
   return memberAccessibleAccountCondition(viewer.userId)
 }
@@ -92,11 +93,12 @@ export function memberAccessibleCardCondition(userId: string): SQL {
   ) as SQL
 }
 
+/** Missing viewer skips filtering (system callers); any present viewer is personal. */
 export function cardVisibilityCondition(
   viewer: TransactionViewer | undefined,
   options?: AccountVisibilityOptions
 ): SQL | undefined {
-  if (!viewer || viewer.isOwner) return undefined
+  if (!viewer) return undefined
   if (options?.ownedOnly) return memberOwnedCardCondition(viewer.userId)
   return memberAccessibleCardCondition(viewer.userId)
 }

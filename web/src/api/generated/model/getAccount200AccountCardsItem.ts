@@ -3,7 +3,7 @@
  * Do not edit manually.
  * HouseApp API
  * API for HouseApp
- * OpenAPI spec version: 2.2.1
+ * OpenAPI spec version: 2.3.0
  */
 import type { GetAccount200AccountCardsItemBrand } from "./getAccount200AccountCardsItemBrand";
 import type { GetAccount200AccountCardsItemLastFourDigits } from "./getAccount200AccountCardsItemLastFourDigits";

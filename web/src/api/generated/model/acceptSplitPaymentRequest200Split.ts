@@ -3,7 +3,7 @@
  * Do not edit manually.
  * HouseApp API
  * API for HouseApp
- * OpenAPI spec version: 2.2.1
+ * OpenAPI spec version: 2.3.0
  */
 import type { AcceptSplitPaymentRequest200SplitUserId } from "./acceptSplitPaymentRequest200SplitUserId";
 import type { AcceptSplitPaymentRequest200SplitContactName } from "./acceptSplitPaymentRequest200SplitContactName";
@@ -13,6 +13,10 @@ import type { AcceptSplitPaymentRequest200SplitDescription } from "./acceptSplit
 import type { AcceptSplitPaymentRequest200SplitStatus } from "./acceptSplitPaymentRequest200SplitStatus";
 import type { AcceptSplitPaymentRequest200SplitPaidAt } from "./acceptSplitPaymentRequest200SplitPaidAt";
 import type { AcceptSplitPaymentRequest200SplitLastNotifiedAt } from "./acceptSplitPaymentRequest200SplitLastNotifiedAt";
+import type { AcceptSplitPaymentRequest200SplitDueAt } from "./acceptSplitPaymentRequest200SplitDueAt";
+import type { AcceptSplitPaymentRequest200SplitCollectInstallmentNumber } from "./acceptSplitPaymentRequest200SplitCollectInstallmentNumber";
+import type { AcceptSplitPaymentRequest200SplitCollectInstallmentsTotal } from "./acceptSplitPaymentRequest200SplitCollectInstallmentsTotal";
+import type { AcceptSplitPaymentRequest200SplitCollectPlanId } from "./acceptSplitPaymentRequest200SplitCollectPlanId";
 import type { AcceptSplitPaymentRequest200SplitPendingPaymentRequest } from "./acceptSplitPaymentRequest200SplitPendingPaymentRequest";
 
 export type AcceptSplitPaymentRequest200Split = {
@@ -31,6 +35,10 @@ export type AcceptSplitPaymentRequest200Split = {
   lastNotifiedAt: AcceptSplitPaymentRequest200SplitLastNotifiedAt;
   notifyEnabled: boolean;
   collectLumpSum: boolean;
+  dueAt: AcceptSplitPaymentRequest200SplitDueAt;
+  collectInstallmentNumber: AcceptSplitPaymentRequest200SplitCollectInstallmentNumber;
+  collectInstallmentsTotal: AcceptSplitPaymentRequest200SplitCollectInstallmentsTotal;
+  collectPlanId: AcceptSplitPaymentRequest200SplitCollectPlanId;
   createdAt: string;
   updatedAt: string;
   pendingPaymentRequest?: AcceptSplitPaymentRequest200SplitPendingPaymentRequest;

@@ -3,7 +3,7 @@
  * Do not edit manually.
  * HouseApp API
  * API for HouseApp
- * OpenAPI spec version: 2.2.1
+ * OpenAPI spec version: 2.3.0
  */
 import type { UpdateSplit200SplitUserId } from "./updateSplit200SplitUserId";
 import type { UpdateSplit200SplitContactName } from "./updateSplit200SplitContactName";
@@ -13,6 +13,10 @@ import type { UpdateSplit200SplitDescription } from "./updateSplit200SplitDescri
 import type { UpdateSplit200SplitStatus } from "./updateSplit200SplitStatus";
 import type { UpdateSplit200SplitPaidAt } from "./updateSplit200SplitPaidAt";
 import type { UpdateSplit200SplitLastNotifiedAt } from "./updateSplit200SplitLastNotifiedAt";
+import type { UpdateSplit200SplitDueAt } from "./updateSplit200SplitDueAt";
+import type { UpdateSplit200SplitCollectInstallmentNumber } from "./updateSplit200SplitCollectInstallmentNumber";
+import type { UpdateSplit200SplitCollectInstallmentsTotal } from "./updateSplit200SplitCollectInstallmentsTotal";
+import type { UpdateSplit200SplitCollectPlanId } from "./updateSplit200SplitCollectPlanId";
 import type { UpdateSplit200SplitPendingPaymentRequest } from "./updateSplit200SplitPendingPaymentRequest";
 
 export type UpdateSplit200Split = {
@@ -31,6 +35,10 @@ export type UpdateSplit200Split = {
   lastNotifiedAt: UpdateSplit200SplitLastNotifiedAt;
   notifyEnabled: boolean;
   collectLumpSum: boolean;
+  dueAt: UpdateSplit200SplitDueAt;
+  collectInstallmentNumber: UpdateSplit200SplitCollectInstallmentNumber;
+  collectInstallmentsTotal: UpdateSplit200SplitCollectInstallmentsTotal;
+  collectPlanId: UpdateSplit200SplitCollectPlanId;
   createdAt: string;
   updatedAt: string;
   pendingPaymentRequest?: UpdateSplit200SplitPendingPaymentRequest;

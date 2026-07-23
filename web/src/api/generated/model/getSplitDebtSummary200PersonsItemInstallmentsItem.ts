@@ -3,9 +3,10 @@
  * Do not edit manually.
  * HouseApp API
  * API for HouseApp
- * OpenAPI spec version: 2.2.1
+ * OpenAPI spec version: 2.3.0
  */
 import type { GetSplitDebtSummary200PersonsItemInstallmentsItemStatus } from "./getSplitDebtSummary200PersonsItemInstallmentsItemStatus";
+import type { GetSplitDebtSummary200PersonsItemInstallmentsItemDueAt } from "./getSplitDebtSummary200PersonsItemInstallmentsItemDueAt";
 
 export type GetSplitDebtSummary200PersonsItemInstallmentsItem = {
   installmentNumber: number;
@@ -15,4 +16,6 @@ export type GetSplitDebtSummary200PersonsItemInstallmentsItem = {
   amount: string;
   paidAmount: string;
   status: GetSplitDebtSummary200PersonsItemInstallmentsItemStatus;
+  dueAt?: GetSplitDebtSummary200PersonsItemInstallmentsItemDueAt;
+  collectLumpSum?: boolean;
 };

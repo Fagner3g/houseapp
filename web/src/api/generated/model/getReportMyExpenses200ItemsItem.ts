@@ -3,7 +3,7 @@
  * Do not edit manually.
  * HouseApp API
  * API for HouseApp
- * OpenAPI spec version: 2.2.1
+ * OpenAPI spec version: 2.3.0
  */
 import type { GetReportMyExpenses200ItemsItemKind } from "./getReportMyExpenses200ItemsItemKind";
 import type { GetReportMyExpenses200ItemsItemSubtitle } from "./getReportMyExpenses200ItemsItemSubtitle";

@@ -3,7 +3,7 @@
  * Do not edit manually.
  * HouseApp API
  * API for HouseApp
- * OpenAPI spec version: 2.2.1
+ * OpenAPI spec version: 2.3.0
  */
 import type { CreateCard201CardLastFourDigits } from "./createCard201CardLastFourDigits";
 import type { CreateCard201CardType } from "./createCard201CardType";

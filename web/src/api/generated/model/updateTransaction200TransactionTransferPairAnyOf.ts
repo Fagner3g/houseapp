@@ -3,7 +3,7 @@
  * Do not edit manually.
  * HouseApp API
  * API for HouseApp
- * OpenAPI spec version: 2.2.1
+ * OpenAPI spec version: 2.3.0
  */
 import type { UpdateTransaction200TransactionTransferPairAnyOfAccountId } from "./updateTransaction200TransactionTransferPairAnyOfAccountId";
 import type { UpdateTransaction200TransactionTransferPairAnyOfAccountName } from "./updateTransaction200TransactionTransferPairAnyOfAccountName";

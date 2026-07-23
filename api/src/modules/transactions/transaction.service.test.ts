@@ -357,3 +357,480 @@ describe('TransactionService pay reminder-without-value', () => {
     expect(result.status).toBe('paid')
   })
 })
+
+describe('TransactionService pay underpayment carry', () => {
+  const baseTx = {
+    organizationId: 'org-1',
+    accountId: 'acc-1',
+    cardId: null,
+    recurringTransactionId: null,
+    statementId: null,
+    description: null,
+    type: 'income' as const,
+    date: new Date('2026-07-01T12:00:00.000Z'),
+    competenceDate: null,
+    paidAt: null,
+    paymentScheduledAt: null,
+    counterparty: null,
+    source: 'manual' as const,
+    externalId: null,
+    transferPairId: null,
+    notifyEnabled: false,
+    notifyTargetType: null,
+    notifyUserId: null,
+    notifyContactName: null,
+    notifyContactPhone: null,
+    notifyDaysBefore: null,
+    notifyOverdueConfig: null,
+    notifyLastNotifiedAt: null,
+    createdAt: new Date(),
+    updatedAt: new Date(),
+    createdBy: 'user-1',
+  }
+
+  it('closes current at paid amount and adds shortfall onto next parcel', async () => {
+    const current = {
+      ...baseTx,
+      id: 'tx-1',
+      title: 'Aluguel 1/3',
+      amount: 40000n,
+      status: 'pending' as const,
+      paidAmount: null,
+      installmentNumber: 1,
+      installmentsTotal: 3,
+    }
+    const next = {
+      ...baseTx,
+      id: 'tx-2',
+      title: 'Aluguel 2/3',
+      amount: 40000n,
+      status: 'pending' as const,
+      paidAmount: null,
+      installmentNumber: 2,
+      installmentsTotal: 3,
+    }
+    const updatedCurrent = {
+      ...current,
+      amount: 25000n,
+      paidAmount: 25000n,
+      status: 'paid' as const,
+      paidAt: new Date('2026-07-15T12:00:00.000Z'),
+    }
+
+    const transactionRepository = {
+      findById: vi.fn().mockResolvedValue(current),
+      update: vi
+        .fn()
+        .mockResolvedValueOnce(updatedCurrent)
+        .mockResolvedValueOnce({ ...next, amount: 15000n }),
+      getCategoryIds: vi.fn().mockResolvedValue(new Map()),
+    } as unknown as TransactionRepository
+
+    const service = buildService({
+      transactionRepository,
+      accountRepository: { findById: vi.fn() } as unknown as AccountRepository,
+    })
+
+    vi.spyOn(
+      service as unknown as {
+        repairIncompleteInstallments: () => Promise<void>
+      },
+      'repairIncompleteInstallments'
+    ).mockResolvedValue(undefined)
+
+    vi.spyOn(
+      service as unknown as {
+        findInstallmentSiblings: () => Promise<typeof current[]>
+      },
+      'findInstallmentSiblings'
+    ).mockResolvedValue([current, next])
+
+    const result = await service.pay('org-1', 'tx-1', { paidAmount: '250.00' })
+
+    expect(transactionRepository.update).toHaveBeenNthCalledWith(
+      1,
+      'tx-1',
+      expect.objectContaining({
+        amount: 25000n,
+        paidAmount: 25000n,
+        status: 'paid',
+      })
+    )
+    expect(transactionRepository.update).toHaveBeenNthCalledWith(
+      2,
+      'tx-2',
+      expect.objectContaining({
+        amount: 55000n,
+        status: 'pending',
+      })
+    )
+    expect(result.status).toBe('paid')
+    expect(result.amount).toBe('250.00')
+  })
+
+  it('keeps classic partial when there is no next open installment', async () => {
+    const last = {
+      ...baseTx,
+      id: 'tx-3',
+      title: 'Aluguel 3/3',
+      amount: 40000n,
+      status: 'pending' as const,
+      paidAmount: null,
+      installmentNumber: 3,
+      installmentsTotal: 3,
+    }
+    const updated = {
+      ...last,
+      paidAmount: 25000n,
+      status: 'partial' as const,
+      paidAt: new Date('2026-07-15T12:00:00.000Z'),
+    }
+
+    const transactionRepository = {
+      findById: vi.fn().mockResolvedValue(last),
+      update: vi.fn().mockResolvedValue(updated),
+      getCategoryIds: vi.fn().mockResolvedValue(new Map()),
+    } as unknown as TransactionRepository
+
+    const service = buildService({
+      transactionRepository,
+      accountRepository: { findById: vi.fn() } as unknown as AccountRepository,
+    })
+
+    vi.spyOn(
+      service as unknown as {
+        repairIncompleteInstallments: () => Promise<void>
+      },
+      'repairIncompleteInstallments'
+    ).mockResolvedValue(undefined)
+
+    vi.spyOn(
+      service as unknown as {
+        findInstallmentSiblings: () => Promise<typeof last[]>
+      },
+      'findInstallmentSiblings'
+    ).mockResolvedValue([last])
+
+    await service.pay('org-1', 'tx-3', { paidAmount: '250.00' })
+
+    expect(transactionRepository.update).toHaveBeenCalledTimes(1)
+    expect(transactionRepository.update).toHaveBeenCalledWith(
+      'tx-3',
+      expect.objectContaining({
+        paidAmount: 25000n,
+        status: 'partial',
+      })
+    )
+  })
+})
+
+describe('TransactionService pay overpayment waterfall', () => {
+  const baseTx = {
+    organizationId: 'org-1',
+    accountId: 'acc-1',
+    cardId: null,
+    recurringTransactionId: null,
+    statementId: null,
+    description: null,
+    type: 'expense' as const,
+    date: new Date('2026-07-01T12:00:00.000Z'),
+    competenceDate: null,
+    paidAt: null,
+    paymentScheduledAt: null,
+    counterparty: null,
+    source: 'manual' as const,
+    externalId: null,
+    transferPairId: null,
+    notifyEnabled: false,
+    notifyTargetType: null,
+    notifyUserId: null,
+    notifyContactName: null,
+    notifyContactPhone: null,
+    notifyDaysBefore: null,
+    notifyOverdueConfig: null,
+    notifyLastNotifiedAt: null,
+    createdAt: new Date(),
+    updatedAt: new Date(),
+    createdBy: 'user-1',
+  }
+
+  it('cascades overpay onto next installment as partial', async () => {
+    const current = {
+      ...baseTx,
+      id: 'tx-1',
+      title: 'Marmori 1/3',
+      amount: 28380n,
+      status: 'pending' as const,
+      paidAmount: null,
+      installmentNumber: 1,
+      installmentsTotal: 3,
+    }
+    const next = {
+      ...baseTx,
+      id: 'tx-2',
+      title: 'Marmori 2/3',
+      amount: 28380n,
+      status: 'pending' as const,
+      paidAmount: null,
+      installmentNumber: 2,
+      installmentsTotal: 3,
+      date: new Date('2026-08-01T12:00:00.000Z'),
+    }
+    const third = {
+      ...baseTx,
+      id: 'tx-3',
+      title: 'Marmori 3/3',
+      amount: 28380n,
+      status: 'pending' as const,
+      paidAmount: null,
+      installmentNumber: 3,
+      installmentsTotal: 3,
+      date: new Date('2026-09-01T12:00:00.000Z'),
+    }
+    const updatedCurrent = {
+      ...current,
+      paidAmount: 28380n,
+      status: 'paid' as const,
+      paidAt: new Date('2026-07-15T12:00:00.000Z'),
+    }
+
+    const transactionRepository = {
+      findById: vi.fn().mockResolvedValue(current),
+      update: vi
+        .fn()
+        .mockResolvedValueOnce(updatedCurrent)
+        .mockResolvedValueOnce({
+          ...next,
+          paidAmount: 21620n,
+          status: 'partial',
+          paidAt: new Date('2026-07-15T12:00:00.000Z'),
+        }),
+      getCategoryIds: vi.fn().mockResolvedValue(new Map()),
+    } as unknown as TransactionRepository
+
+    const service = buildService({
+      transactionRepository,
+      accountRepository: { findById: vi.fn() } as unknown as AccountRepository,
+    })
+
+    vi.spyOn(
+      service as unknown as {
+        repairIncompleteInstallments: () => Promise<void>
+      },
+      'repairIncompleteInstallments'
+    ).mockResolvedValue(undefined)
+
+    vi.spyOn(
+      service as unknown as {
+        findInstallmentSiblings: () => Promise<typeof current[]>
+      },
+      'findInstallmentSiblings'
+    ).mockResolvedValue([current, next, third])
+
+    const result = await service.pay('org-1', 'tx-1', { paidAmount: '500.00' })
+
+    expect(transactionRepository.update).toHaveBeenNthCalledWith(
+      1,
+      'tx-1',
+      expect.objectContaining({
+        paidAmount: 28380n,
+        status: 'paid',
+      })
+    )
+    expect(transactionRepository.update).toHaveBeenNthCalledWith(
+      2,
+      'tx-2',
+      expect.objectContaining({
+        paidAmount: 21620n,
+        status: 'partial',
+      })
+    )
+    expect(result.status).toBe('paid')
+  })
+})
+
+describe('TransactionService installment date scope cascade', () => {
+  const checkingAccount = {
+    id: 'acc-1',
+    type: 'checking' as const,
+    isActive: true,
+  }
+
+  const parcel1 = {
+    id: 'tx-1',
+    organizationId: 'org-1',
+    accountId: 'acc-1',
+    cardId: null,
+    recurringTransactionId: null,
+    statementId: null,
+    title: 'Teste - Parcela 1/3',
+    description: null,
+    amount: 20000n,
+    type: 'income' as const,
+    date: new Date('2026-06-28T12:00:00.000Z'),
+    competenceDate: new Date('2026-07-07T12:00:00.000Z'),
+    status: 'pending' as const,
+    paidAt: null,
+    paidAmount: null,
+    paymentScheduledAt: null,
+    counterparty: null,
+    installmentNumber: 1,
+    installmentsTotal: 3,
+    source: 'manual' as const,
+    externalId: null,
+    transferPairId: null,
+    notifyEnabled: false,
+    notifyTargetType: null,
+    notifyUserId: null,
+    notifyContactName: null,
+    notifyContactPhone: null,
+    notifyDaysBefore: null,
+    notifyOverdueConfig: null,
+    notifyLastNotifiedAt: null,
+    createdBy: null,
+    createdAt: new Date(),
+    updatedAt: new Date(),
+  }
+
+  const parcel2 = {
+    ...parcel1,
+    id: 'tx-2',
+    title: 'Teste - Parcela 2/3',
+    date: new Date('2026-07-28T12:00:00.000Z'),
+    competenceDate: new Date('2026-08-07T12:00:00.000Z'),
+    installmentNumber: 2,
+  }
+
+  const parcel3 = {
+    ...parcel1,
+    id: 'tx-3',
+    title: 'Teste - Parcela 3/3',
+    date: new Date('2026-08-28T12:00:00.000Z'),
+    competenceDate: new Date('2026-09-07T12:00:00.000Z'),
+    installmentNumber: 3,
+  }
+
+  function setupUpdateMocks() {
+    const updatedParcel2 = {
+      ...parcel2,
+      date: new Date('2026-08-05T12:00:00.000Z'),
+      updatedAt: new Date(),
+    }
+
+    const transactionRepository = {
+      findById: vi.fn().mockResolvedValue(parcel2),
+      update: vi.fn().mockImplementation(async (id: string, data: { date?: Date }) => {
+        if (id === 'tx-2') return { ...updatedParcel2, ...data }
+        if (id === 'tx-1') return { ...parcel1, ...data }
+        if (id === 'tx-3') return { ...parcel3, ...data }
+        return null
+      }),
+      getCategoryIds: vi.fn().mockResolvedValue(new Map([['tx-2', []]])),
+    } as unknown as TransactionRepository
+
+    const accountRepository = {
+      findById: vi.fn().mockResolvedValue(checkingAccount),
+    } as unknown as AccountRepository
+
+    const service = buildService({ transactionRepository, accountRepository })
+
+    vi.spyOn(
+      service as unknown as {
+        findInstallmentSiblings: () => Promise<typeof parcel1[]>
+      },
+      'findInstallmentSiblings'
+    ).mockResolvedValue([parcel1, parcel2, parcel3])
+
+    return { service, transactionRepository, accountRepository }
+  }
+
+  it('does not cascade when scope is current', async () => {
+    const { service, transactionRepository } = setupUpdateMocks()
+
+    await service.update('org-1', 'tx-2', {
+      date: '2026-08-05T12:00:00.000Z',
+      installmentDateScope: 'current',
+    })
+
+    expect(transactionRepository.update).toHaveBeenCalledTimes(1)
+    expect(transactionRepository.update).toHaveBeenCalledWith(
+      'tx-2',
+      expect.objectContaining({ date: new Date('2026-08-05T12:00:00.000Z') })
+    )
+  })
+
+  it('shifts following unpaid parcels for from_here', async () => {
+    const { service, transactionRepository } = setupUpdateMocks()
+
+    await service.update('org-1', 'tx-2', {
+      date: '2026-08-05T12:00:00.000Z',
+      installmentDateScope: 'from_here',
+    })
+
+    expect(transactionRepository.update).toHaveBeenCalledTimes(2)
+    expect(transactionRepository.update).toHaveBeenNthCalledWith(
+      2,
+      'tx-3',
+      expect.objectContaining({ date: new Date('2026-09-05T12:00:00.000Z') })
+    )
+  })
+
+  it('shifts all unpaid parcels for all', async () => {
+    const { service, transactionRepository } = setupUpdateMocks()
+
+    await service.update('org-1', 'tx-2', {
+      date: '2026-08-05T12:00:00.000Z',
+      installmentDateScope: 'all',
+    })
+
+    expect(transactionRepository.update).toHaveBeenCalledTimes(3)
+    expect(transactionRepository.update).toHaveBeenCalledWith(
+      'tx-1',
+      expect.objectContaining({ date: new Date('2026-07-06T12:00:00.000Z') })
+    )
+    expect(transactionRepository.update).toHaveBeenCalledWith(
+      'tx-3',
+      expect.objectContaining({ date: new Date('2026-09-05T12:00:00.000Z') })
+    )
+  })
+
+  it('skips cascade on credit_card accounts', async () => {
+    const { service, transactionRepository, accountRepository } = setupUpdateMocks()
+    ;(accountRepository.findById as ReturnType<typeof vi.fn>).mockResolvedValue({
+      ...checkingAccount,
+      type: 'credit_card',
+    })
+
+    await service.update('org-1', 'tx-2', {
+      date: '2026-08-05T12:00:00.000Z',
+      installmentDateScope: 'all',
+    })
+
+    expect(transactionRepository.update).toHaveBeenCalledTimes(1)
+  })
+
+  it('skips paid siblings when cascading', async () => {
+    const { service, transactionRepository } = setupUpdateMocks()
+    vi.spyOn(
+      service as unknown as {
+        findInstallmentSiblings: () => Promise<typeof parcel1[]>
+      },
+      'findInstallmentSiblings'
+    ).mockResolvedValue([{ ...parcel1, status: 'paid' }, parcel2, parcel3])
+
+    await service.update('org-1', 'tx-2', {
+      date: '2026-08-05T12:00:00.000Z',
+      installmentDateScope: 'all',
+    })
+
+    expect(transactionRepository.update).toHaveBeenCalledTimes(2)
+    expect(transactionRepository.update).toHaveBeenCalledWith(
+      'tx-3',
+      expect.objectContaining({ date: new Date('2026-09-05T12:00:00.000Z') })
+    )
+    expect(transactionRepository.update).not.toHaveBeenCalledWith(
+      'tx-1',
+      expect.anything()
+    )
+  })
+})
