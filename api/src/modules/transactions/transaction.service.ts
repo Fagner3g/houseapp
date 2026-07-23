@@ -27,11 +27,13 @@ import {
 import type { CategoryRepository } from '@/modules/categories/category.repository'
 import type { AccountRepository } from '@/modules/accounts/account.repository'
 import type { SplitService } from '@/modules/splits/split.service'
+import { loadExpenseCreditorUserId } from '@/modules/splits/load-expense-creditor'
 import type { StatementRepository } from '@/modules/statements/statement.repository'
 import {
   matchesInstallmentSeries,
   selectInstallmentSeriesSiblings,
 } from '@/modules/splits/split-debt-summary.logic'
+import { canSettleTransaction } from './can-settle-transaction'
 
 import type {
   ListTransactionsFilter,
@@ -568,7 +570,7 @@ export class TransactionService {
       throw notFound('Transaction not found')
     }
 
-    this.assertCanMutate(viewer, existing.createdBy)
+    await this.assertCanSettle(existing, viewer)
 
     if (existing.status === 'canceled') {
       throw badRequest('Cannot cancel payment on a canceled transaction')
@@ -635,8 +637,6 @@ export class TransactionService {
       throw notFound('Transaction not found')
     }
 
-    this.assertCanMutate(viewer, transaction.createdBy)
-
     if (
       transaction.installmentsTotal != null &&
       transaction.installmentsTotal >= 2 &&
@@ -646,6 +646,8 @@ export class TransactionService {
       transaction =
         (await this.transactionRepository.findById(organizationId, id, viewer)) ?? transaction
     }
+
+    await this.assertCanSettle(transaction, viewer)
 
     if (transaction.status === 'canceled') {
       throw badRequest('Cannot pay a canceled transaction')
@@ -827,7 +829,7 @@ export class TransactionService {
       throw notFound('Transaction not found')
     }
 
-    this.assertCanMutate(viewer, existing.createdBy)
+    await this.assertCanSettle(existing, viewer)
 
     if (existing.status === 'paid' || existing.status === 'canceled') {
       throw badRequest('Cannot schedule payment on a paid or canceled transaction')
@@ -855,7 +857,7 @@ export class TransactionService {
       throw notFound('Transaction not found')
     }
 
-    this.assertCanMutate(viewer, existing.createdBy)
+    await this.assertCanSettle(existing, viewer)
 
     if (!existing.paymentScheduledAt) {
       throw badRequest('Transaction has no scheduled payment')
@@ -883,7 +885,7 @@ export class TransactionService {
       throw notFound('Transaction not found')
     }
 
-    this.assertCanMutate(viewer, anchor.createdBy)
+    await this.assertCanSettle(anchor, viewer)
 
     if (anchor.status === 'canceled') {
       throw badRequest('Cannot pay a canceled transaction')
@@ -1556,6 +1558,22 @@ export class TransactionService {
     if (!viewer) return
     if (!canMutateTransaction(viewer, createdBy)) {
       throw forbidden('You can only modify transactions you created')
+    }
+  }
+
+  /** Pay / cancel / schedule — creator or expense creditor (legacy null createdBy). */
+  private async assertCanSettle(
+    transaction: {
+      cardId: string | null
+      accountId: string | null
+      createdBy: string | null
+    },
+    viewer?: TransactionViewer
+  ) {
+    if (!viewer) return
+    const creditorId = await loadExpenseCreditorUserId(transaction, viewer.ownerId)
+    if (!canSettleTransaction(viewer, transaction.createdBy, creditorId)) {
+      throw forbidden('You can only settle transactions you created or manage')
     }
   }
 
