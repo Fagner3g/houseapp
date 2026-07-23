@@ -1,7 +1,7 @@
 import { zodResolver } from '@hookform/resolvers/zod'
 import { Link, useNavigate, useRouterState } from '@tanstack/react-router'
 import dayjs from 'dayjs'
-import { ChevronDown, Download, ExternalLink, FileText, Plus, RefreshCw, Trash2, X } from 'lucide-react'
+import { ChevronDown, Download, ExternalLink, Eye, FileText, Plus, RefreshCw, Trash2, X } from 'lucide-react'
 import { useEffect, useLayoutEffect, useMemo, useRef, useState, useCallback } from 'react'
 import { useForm, useFormState } from 'react-hook-form'
 import { z } from 'zod'
@@ -91,6 +91,7 @@ import {
   isOnCanonicalInvoiceView,
   resolveInvoicePaymentTarget,
 } from '@/lib/invoice-payment'
+import { useAuthStore } from '@/stores/auth'
 import { selectNestedDrawerOpen, useDrawerStore } from '@/stores/drawers'
 import { cn } from '@/lib/utils'
 import {
@@ -171,6 +172,7 @@ import {
   TRANSACTION_PERIODICITY_OPTIONS,
 } from '../constants'
 import { InstallmentPreviewPanel } from './installment-preview-panel'
+import { AttachmentViewerDialog, type AttachmentViewerTarget } from './attachment-viewer-dialog'
 import {
   AdvanceInstallmentsPicker,
   canOfferInstallmentAdvance,
@@ -418,8 +420,13 @@ function buildTransactionEditPayload(
     registeringPayment: boolean
     txStatus: string | undefined
     notifyPayload: ReturnType<typeof buildNotifyApiPayload>
+    annotationOnly?: boolean
   }
 ) {
+  if (options.annotationOnly) {
+    return { description: values.description || null }
+  }
+
   const metadata = {
     description: values.description || null,
     categoryIds: values.categoryId ? [values.categoryId] : [],
@@ -458,6 +465,7 @@ function buildTransactionEditPayload(
 
 export function TransactionDrawer() {
   const { slug } = useActiveOrganization()
+  const currentUserId = useAuthStore(s => s.user?.id)
   const navigate = useNavigate()
   const pathname = useRouterState({ select: state => state.location.pathname })
   const routeSearch = useRouterState({
@@ -513,6 +521,7 @@ export function TransactionDrawer() {
   const [notifyState, setNotifyState] = useState<TransactionNotifyState>(defaultNotifyState())
   const [splitDraft, setSplitDraft] = useState<SplitDraftState>(defaultSplitDraftState())
   const [pendingFiles, setPendingFiles] = useState<File[]>([])
+  const [viewingAttachment, setViewingAttachment] = useState<AttachmentViewerTarget | null>(null)
   const [advancePromptOpen, setAdvancePromptOpen] = useState(false)
   const [payScopeDialogOpen, setPayScopeDialogOpen] = useState(false)
   const [dateScopeDialogOpen, setDateScopeDialogOpen] = useState(false)
@@ -687,13 +696,19 @@ export function TransactionDrawer() {
 
   const isAccountLocked = !!effectiveLockedAccountId
   const isImportedLocked = isEdit && isImportedStatementTransaction(tx)
-  const isAccountFieldLocked = isAccountLocked || isImportedLocked
-  const isBankFieldsLocked = isImportedLocked
+  const isAnnotationOnly =
+    isEdit &&
+    !!tx &&
+    currentUserId != null &&
+    (tx.createdBy == null || tx.createdBy !== currentUserId)
+  const isAccountFieldLocked = isAccountLocked || isImportedLocked || isAnnotationOnly
+  const isBankFieldsLocked = isImportedLocked || isAnnotationOnly
   const waitingForTransaction = (isEdit || isPay) && (isLoadingTx || (!tx && !isTxError))
 
   useEffect(() => {
     if (!open) {
       setPendingFiles([])
+      setViewingAttachment(null)
       setNotesOpen(false)
       setNotifyState(defaultNotifyState(orgNotifyDefaults))
       setSplitDraft(defaultSplitDraftState())
@@ -1368,6 +1383,7 @@ export function TransactionDrawer() {
               registeringPayment: true,
               txStatus: tx.status,
               notifyPayload,
+              annotationOnly: isAnnotationOnly,
             }),
           })
           if (pendingFiles.length) await uploadPendingFiles(editingId)
@@ -1404,6 +1420,7 @@ export function TransactionDrawer() {
               registeringPayment: true,
               txStatus: tx.status,
               notifyPayload,
+              annotationOnly: isAnnotationOnly,
             }),
           })
           if (pendingFiles.length) await uploadPendingFiles(editingId)
@@ -1428,6 +1445,7 @@ export function TransactionDrawer() {
                 registeringPayment: false,
                 txStatus: tx.status,
                 notifyPayload,
+                annotationOnly: isAnnotationOnly,
               }),
               status: 'paid',
             },
@@ -1443,6 +1461,7 @@ export function TransactionDrawer() {
           registeringPayment,
           txStatus: tx.status,
           notifyPayload,
+          annotationOnly: isAnnotationOnly,
         })
 
         const finishEditSave = async (scope?: InstallmentDateScope) => {
@@ -1694,10 +1713,21 @@ export function TransactionDrawer() {
               className="flex min-h-0 flex-1 flex-col overflow-hidden"
             >
               <div className={cn('min-h-0 flex-1 space-y-5 overflow-y-auto p-6', stackyDrawerForm)}>
-                {isImportedLocked && (
+                {isAnnotationOnly && !isImportedLocked && (
+                  <div className="rounded-lg border border-slate-200 bg-slate-50/80 px-4 py-3 text-sm text-slate-700">
+                    Você pode editar observações e anexos. Demais campos só podem ser alterados por
+                    quem criou o lançamento.
+                  </div>
+                )}
+                {isImportedLocked && !isAnnotationOnly && (
                   <div className="rounded-lg border border-slate-200 bg-slate-50/80 px-4 py-3 text-sm text-slate-700">
                     Lançamento importado do extrato. Descrição, valor, data e conta vêm do banco e
                     não podem ser alterados. Você pode editar categoria, divisões e observações.
+                  </div>
+                )}
+                {isImportedLocked && isAnnotationOnly && (
+                  <div className="rounded-lg border border-slate-200 bg-slate-50/80 px-4 py-3 text-sm text-slate-700">
+                    Lançamento importado do extrato. Você pode editar observações e anexos.
                   </div>
                 )}
                 {isPaidLocked && (
@@ -1747,7 +1777,7 @@ export function TransactionDrawer() {
                       dueDate={tx.date}
                       paymentScheduledAt={tx.paymentScheduledAt}
                       kind={settlementKind}
-                      disabled={isPending}
+                      disabled={isPending || isAnnotationOnly}
                     />
                   )}
                 <fieldset
@@ -2324,7 +2354,11 @@ export function TransactionDrawer() {
                         render={({ field }) => (
                           <FormItem>
                             <FormLabel>Cartão</FormLabel>
-                            <Select value={field.value} onValueChange={field.onChange} disabled={isImportedLocked}>
+                            <Select
+                              value={field.value}
+                              onValueChange={field.onChange}
+                              disabled={isImportedLocked || isAnnotationOnly}
+                            >
                               <FormControl>
                                 <SelectTrigger>
                                   <SelectValue placeholder="Selecione o cartão" />
@@ -2455,25 +2489,55 @@ export function TransactionDrawer() {
                               {attachmentsData?.attachments?.map(att => (
                                 <div
                                   key={att.id}
-                                  className="flex items-center justify-between rounded-lg border border-slate-200 px-3 py-2 text-sm"
+                                  className="flex items-center justify-between gap-2 rounded-lg border border-slate-200 px-3 py-2 text-sm"
                                 >
-                                  <span className="truncate">{att.fileName}</span>
-                                  <Button
+                                  <button
                                     type="button"
-                                    variant="ghost"
-                                    size="icon"
-                                    onClick={() => {
-                                      if (!slug || !editingId) return
-                                      downloadTransactionAttachment(
-                                        slug,
-                                        editingId,
-                                        att.id,
-                                        att.fileName
-                                      ).catch(() => toast.error('Erro ao baixar anexo'))
-                                    }}
+                                    className="min-w-0 flex-1 truncate text-left text-slate-800 hover:underline"
+                                    onClick={() =>
+                                      setViewingAttachment({
+                                        id: att.id,
+                                        fileName: att.fileName,
+                                        contentType: att.contentType,
+                                      })
+                                    }
                                   >
-                                    <Download className="size-4" />
-                                  </Button>
+                                    {att.fileName}
+                                  </button>
+                                  <div className="flex shrink-0 items-center">
+                                    <Button
+                                      type="button"
+                                      variant="ghost"
+                                      size="icon"
+                                      title="Visualizar"
+                                      onClick={() =>
+                                        setViewingAttachment({
+                                          id: att.id,
+                                          fileName: att.fileName,
+                                          contentType: att.contentType,
+                                        })
+                                      }
+                                    >
+                                      <Eye className="size-4" />
+                                    </Button>
+                                    <Button
+                                      type="button"
+                                      variant="ghost"
+                                      size="icon"
+                                      title="Baixar"
+                                      onClick={() => {
+                                        if (!slug || !editingId) return
+                                        downloadTransactionAttachment(
+                                          slug,
+                                          editingId,
+                                          att.id,
+                                          att.fileName
+                                        ).catch(() => toast.error('Erro ao baixar anexo'))
+                                      }}
+                                    >
+                                      <Download className="size-4" />
+                                    </Button>
+                                  </div>
                                 </div>
                               ))}
                             </div>
@@ -2802,6 +2866,17 @@ export function TransactionDrawer() {
         onOpenChange={setDeleteDialogOpen}
         onDeleted={close}
       />
+      {slug && editingId && (
+        <AttachmentViewerDialog
+          open={viewingAttachment != null}
+          onOpenChange={open => {
+            if (!open) setViewingAttachment(null)
+          }}
+          slug={slug}
+          transactionId={editingId}
+          attachment={viewingAttachment}
+        />
+      )}
       <AlertDialog open={cancelPaymentDialogOpen} onOpenChange={setCancelPaymentDialogOpen}>
         <AlertDialogContent>
           <AlertDialogHeader>

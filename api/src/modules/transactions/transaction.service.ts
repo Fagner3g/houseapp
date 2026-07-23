@@ -451,7 +451,25 @@ export class TransactionService {
       throw notFound('Transaction not found')
     }
 
-    this.assertCanMutate(viewer, existing.createdBy)
+    const canMutate = !viewer || canMutateTransaction(viewer, existing.createdBy)
+
+    if (!canMutate) {
+      if (existing.status === 'paid') {
+        throw badRequest('Paid transactions cannot be edited. Cancel the payment first.')
+      }
+
+      // Viewers may still add notes; attachments use a separate endpoint.
+      const updated = await this.transactionRepository.update(id, {
+        description: input.description,
+      })
+
+      if (!updated) {
+        throw notFound('Transaction not found')
+      }
+
+      const categoryMap = await this.transactionRepository.getCategoryIds([updated.id])
+      return toTransactionDto(updated, categoryMap.get(updated.id) ?? [])
+    }
 
     if (existing.status === 'paid') {
       throw badRequest('Paid transactions cannot be edited. Cancel the payment first.')

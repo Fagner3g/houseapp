@@ -70,6 +70,7 @@ export function transactionVisibilityCondition(
   return memberVisibleTransactionCondition(viewer.userId)
 }
 
+/** Full edits (amount, date, status, …). Description/notes are allowed separately in update(). */
 export function canMutateTransaction(
   viewer: TransactionViewer,
   createdBy: string | null | undefined
