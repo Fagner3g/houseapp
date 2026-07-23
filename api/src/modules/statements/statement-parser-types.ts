@@ -6,6 +6,8 @@ export type ParsedLineTransaction = {
   installmentNumber?: number
   installmentsTotal?: number
   externalId?: string
+  /** Legacy OFX hashes (date-in-fingerprint) used only for reimport matching. */
+  alternateExternalIds?: string[]
   cardLastFour?: string
 }
 

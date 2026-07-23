@@ -12,6 +12,8 @@ import {
   sumInvoiceSettlementInPeriod,
 } from './cross-invoice-payment'
 import { shouldMarkImportedIncomePaid } from './invoice-status'
+import { decideImportedTransaction } from './statement-import-dedupe'
+import type { ExistingTransactionCandidate } from './statement-duplicate-detection'
 
 export type StatementRecord = typeof statements.$inferSelect
 
@@ -57,6 +59,7 @@ export type ImportTransactionData = {
   installmentNumber?: number | null
   installmentsTotal?: number | null
   externalId?: string | null
+  alternateExternalIds?: string[]
   categoryIds?: string[]
   counterparty?: string | null
 }
@@ -530,29 +533,61 @@ export class DrizzleStatementRepository implements StatementRepository {
       paymentOptions?.isClosed === true && paymentOptions?.isPaid === true
 
     return db.transaction(async tx => {
-      const externalIds = transactionsData
-        .map(item => item.externalId)
-        .filter((id): id is string => !!id)
+      const lookupIds = [
+        ...new Set(
+          transactionsData.flatMap(item =>
+            [item.externalId, ...(item.alternateExternalIds ?? [])].filter(
+              (id): id is string => !!id
+            )
+          )
+        ),
+      ]
 
-      const existingExternalIds = new Set<string>()
+      const existingByExternalId = new Map<string, ExistingTransactionCandidate>()
 
-      if (externalIds.length > 0) {
+      if (lookupIds.length > 0) {
         const rows = await tx
-          .select({ externalId: transactions.externalId })
+          .select({
+            id: transactions.id,
+            title: transactions.title,
+            amount: transactions.amount,
+            date: transactions.date,
+            externalId: transactions.externalId,
+          })
           .from(transactions)
           .where(
             and(
               eq(transactions.accountId, existingStatement.accountId),
-              inArray(transactions.externalId, externalIds)
+              inArray(transactions.externalId, lookupIds)
             )
           )
 
         for (const row of rows) {
-          if (row.externalId) {
-            existingExternalIds.add(row.externalId)
-          }
+          if (!row.externalId) continue
+          existingByExternalId.set(row.externalId, {
+            id: row.id,
+            title: row.title,
+            amount: row.amount ?? 0n,
+            date: row.date,
+            externalId: row.externalId,
+          })
         }
       }
+
+      const fuzzyCandidates = await this.findPotentialDuplicates(
+        existingStatement.accountId,
+        transactionsData.map(item => ({ amount: item.amount, date: item.date }))
+      ).then(rows =>
+        rows.map(row => ({
+          id: row.id,
+          title: row.title,
+          amount: row.amount ?? 0n,
+          date: row.date,
+          externalId: row.externalId,
+        }))
+      )
+
+      const claimedExistingIds = new Set<string>()
 
       const periodEnd = data.periodEnd
       const dueDate = data.dueDate ?? existingStatement.dueDate ?? data.periodEnd
@@ -569,7 +604,35 @@ export class DrizzleStatementRepository implements StatementRepository {
       const transactionIds: string[] = []
 
       for (const item of transactionsData) {
-        if (item.externalId && existingExternalIds.has(item.externalId)) {
+        const decision = decideImportedTransaction(
+          item,
+          existingByExternalId,
+          fuzzyCandidates,
+          claimedExistingIds
+        )
+
+        if (decision.action === 'skip') {
+          claimedExistingIds.add(decision.existingId)
+          if (decision.patch) {
+            await tx
+              .update(transactions)
+              .set({
+                date: decision.patch.date,
+                externalId: decision.patch.externalId,
+                updatedAt: new Date(),
+              })
+              .where(eq(transactions.id, decision.existingId))
+
+            if (decision.patch.externalId) {
+              existingByExternalId.set(decision.patch.externalId, {
+                id: decision.existingId,
+                title: item.title,
+                amount: item.amount,
+                date: decision.patch.date,
+                externalId: decision.patch.externalId,
+              })
+            }
+          }
           skipped += 1
           continue
         }
@@ -632,9 +695,16 @@ export class DrizzleStatementRepository implements StatementRepository {
         }
 
         if (item.externalId) {
-          existingExternalIds.add(item.externalId)
+          existingByExternalId.set(item.externalId, {
+            id: createdTx.id,
+            title: item.title,
+            amount: item.amount,
+            date: item.date,
+            externalId: item.externalId,
+          })
         }
 
+        claimedExistingIds.add(createdTx.id)
         transactionIds.push(createdTx.id)
         created += 1
       }
@@ -778,33 +848,65 @@ export class DrizzleStatementRepository implements StatementRepository {
     paymentOptions?: ImportStatementPaymentOptions,
     context?: ImportStatementContext
   ): Promise<{ statement: StatementRecord; created: number; skipped: number; transactionIds: string[] }> {
-    const externalIds = transactionsData
-      .map(item => item.externalId)
-      .filter((id): id is string => !!id)
-
     const markPaymentsAsPaid =
       paymentOptions?.isClosed === true && paymentOptions?.isPaid === true
 
     return db.transaction(async tx => {
-      const existingExternalIds = new Set<string>()
+      const lookupIds = [
+        ...new Set(
+          transactionsData.flatMap(item =>
+            [item.externalId, ...(item.alternateExternalIds ?? [])].filter(
+              (id): id is string => !!id
+            )
+          )
+        ),
+      ]
 
-      if (externalIds.length > 0) {
+      const existingByExternalId = new Map<string, ExistingTransactionCandidate>()
+
+      if (lookupIds.length > 0) {
         const rows = await tx
-          .select({ externalId: transactions.externalId })
+          .select({
+            id: transactions.id,
+            title: transactions.title,
+            amount: transactions.amount,
+            date: transactions.date,
+            externalId: transactions.externalId,
+          })
           .from(transactions)
           .where(
             and(
               eq(transactions.accountId, data.accountId),
-              inArray(transactions.externalId, externalIds)
+              inArray(transactions.externalId, lookupIds)
             )
           )
 
         for (const row of rows) {
-          if (row.externalId) {
-            existingExternalIds.add(row.externalId)
-          }
+          if (!row.externalId) continue
+          existingByExternalId.set(row.externalId, {
+            id: row.id,
+            title: row.title,
+            amount: row.amount ?? 0n,
+            date: row.date,
+            externalId: row.externalId,
+          })
         }
       }
+
+      const fuzzyCandidates = (
+        await this.findPotentialDuplicates(
+          data.accountId,
+          transactionsData.map(item => ({ amount: item.amount, date: item.date }))
+        )
+      ).map(row => ({
+        id: row.id,
+        title: row.title,
+        amount: row.amount ?? 0n,
+        date: row.date,
+        externalId: row.externalId,
+      }))
+
+      const claimedExistingIds = new Set<string>()
 
       const [statement] = await tx
         .insert(statements)
@@ -845,7 +947,35 @@ export class DrizzleStatementRepository implements StatementRepository {
       }
 
       for (const item of transactionsData) {
-        if (item.externalId && existingExternalIds.has(item.externalId)) {
+        const decision = decideImportedTransaction(
+          item,
+          existingByExternalId,
+          fuzzyCandidates,
+          claimedExistingIds
+        )
+
+        if (decision.action === 'skip') {
+          claimedExistingIds.add(decision.existingId)
+          if (decision.patch) {
+            await tx
+              .update(transactions)
+              .set({
+                date: decision.patch.date,
+                externalId: decision.patch.externalId,
+                updatedAt: new Date(),
+              })
+              .where(eq(transactions.id, decision.existingId))
+
+            if (decision.patch.externalId) {
+              existingByExternalId.set(decision.patch.externalId, {
+                id: decision.existingId,
+                title: item.title,
+                amount: item.amount,
+                date: decision.patch.date,
+                externalId: decision.patch.externalId,
+              })
+            }
+          }
           skipped += 1
           continue
         }
@@ -912,9 +1042,16 @@ export class DrizzleStatementRepository implements StatementRepository {
         }
 
         if (item.externalId) {
-          existingExternalIds.add(item.externalId)
+          existingByExternalId.set(item.externalId, {
+            id: createdTx.id,
+            title: item.title,
+            amount: item.amount,
+            date: item.date,
+            externalId: item.externalId,
+          })
         }
 
+        claimedExistingIds.add(createdTx.id)
         transactionIds.push(createdTx.id)
         created += 1
       }

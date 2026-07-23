@@ -89,8 +89,10 @@ interface TransactionListProps {
   splitRemainingById?: Map<string, number>
   /** Map of transaction id → current user's debtor share amounts. */
   viewerShareById?: Map<string, ViewerShareEntry>
-  /** When false, hides the inline create row (e.g. credit card after first statement import). */
+  /** When false, hides inline create row (e.g. credit card after first statement import). */
   allowInlineCreate?: boolean
+  /** When false, bulk/category edits are locked (e.g. paid invoice). */
+  categoriesEditable?: boolean
   containerClassName?: string
 }
 
@@ -176,6 +178,7 @@ function TransactionTable({
   splitRemainingById,
   viewerShareById,
   allowInlineCreate = true,
+  categoriesEditable = true,
   containerClassName,
 }: TransactionListProps) {
   const isCreditCardStatement = variant === 'credit_card_statement'
@@ -256,6 +259,10 @@ function TransactionTable({
 
   const applyBulkCategory = async () => {
     if (!slug || selectedTransactions.length === 0) return
+    if (!categoriesEditable) {
+      toast.error('Fatura paga — categorias não podem ser alteradas')
+      return
+    }
     if (!bulkCategoryId) {
       toast.error('Selecione uma categoria')
       return
@@ -265,9 +272,15 @@ function TransactionTable({
       return
     }
 
+    const editableTargets = selectedTransactions.filter(item => item.status !== 'paid')
+    if (editableTargets.length === 0) {
+      toast.error('Lançamentos pagos não podem ter a categoria alterada')
+      return
+    }
+
     try {
       await Promise.all(
-        selectedTransactions.map(item =>
+        editableTargets.map(item =>
           updateTransaction({
             slug,
             id: item.id,
@@ -277,9 +290,9 @@ function TransactionTable({
       )
       await invalidateQueries()
       toast.success(
-        selectedTransactions.length === 1
+        editableTargets.length === 1
           ? 'Categoria aplicada'
-          : `Categoria aplicada em ${selectedTransactions.length} lançamentos`
+          : `Categoria aplicada em ${editableTargets.length} lançamentos`
       )
       setSelected(new Set())
     } catch {
@@ -401,35 +414,41 @@ function TransactionTable({
             ? '1 lançamento selecionado'
             : `${selectedTransactions.length} lançamentos selecionados`}
         </p>
-        <div className="min-w-[160px] flex-1 space-y-1 sm:max-w-xs">
-          <Label className="text-xs text-slate-600">Aplicar categoria</Label>
-          <CategorySelect
-            value={bulkCategoryId || undefined}
-            type={bulkCategoryType ?? 'expense'}
-            onChange={setBulkCategoryId}
-            enabled={bulkCategoryType != null}
-            placeholder={
-              bulkCategoryType ? 'Selecione' : 'Tipos mistos'
-            }
-          />
-        </div>
-        <Button
-          type="button"
-          variant="outline"
-          size="sm"
-          className="border-violet-200 bg-white"
-          disabled={isUpdatingCategory || bulkCategoryType == null}
-          onClick={applyBulkCategory}
-        >
-          {isUpdatingCategory ? (
-            <>
-              <Loader2 className="mr-1.5 size-3.5 animate-spin" />
-              Aplicando...
-            </>
-          ) : (
-            'Aplicar categoria'
-          )}
-        </Button>
+        {categoriesEditable ? (
+          <>
+            <div className="min-w-[160px] flex-1 space-y-1 sm:max-w-xs">
+              <Label className="text-xs text-slate-600">Aplicar categoria</Label>
+              <CategorySelect
+                value={bulkCategoryId || undefined}
+                type={bulkCategoryType ?? 'expense'}
+                onChange={setBulkCategoryId}
+                enabled={bulkCategoryType != null}
+                placeholder={
+                  bulkCategoryType ? 'Selecione' : 'Tipos mistos'
+                }
+              />
+            </div>
+            <Button
+              type="button"
+              variant="outline"
+              size="sm"
+              className="border-violet-200 bg-white"
+              disabled={isUpdatingCategory || bulkCategoryType == null}
+              onClick={applyBulkCategory}
+            >
+              {isUpdatingCategory ? (
+                <>
+                  <Loader2 className="mr-1.5 size-3.5 animate-spin" />
+                  Aplicando...
+                </>
+              ) : (
+                'Aplicar categoria'
+              )}
+            </Button>
+          </>
+        ) : (
+          <p className="text-xs text-violet-700">Fatura paga — categorias bloqueadas</p>
+        )}
         {deletableSelected.length > 0 ? (
           <Button
             type="button"
@@ -899,6 +918,7 @@ export function TransactionList({
   splitRemainingById: splitRemainingByIdProp,
   viewerShareById: viewerShareByIdProp,
   allowInlineCreate = true,
+  categoriesEditable = true,
   containerClassName,
 }: TransactionListProps) {
   const { slug } = useActiveOrganization()
@@ -964,6 +984,7 @@ export function TransactionList({
       splitRemainingById={splitRemainingById}
       viewerShareById={viewerShareById}
       allowInlineCreate={allowInlineCreate}
+      categoriesEditable={categoriesEditable}
       containerClassName={containerClassName}
     />
   )

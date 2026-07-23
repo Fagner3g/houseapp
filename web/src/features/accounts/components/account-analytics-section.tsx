@@ -82,6 +82,7 @@ export function AccountAnalyticsSection({
       purchasesLabel,
       purchasesPeriod: { start: dateFrom, end: dateTo },
       statementId: null,
+      invoicePaid: false,
       groupType,
       groupKey: item.id,
       label: item.label,

@@ -669,9 +669,9 @@ export class StatementService {
       categorizedTransactions
     )
 
-    const externalIds = transactionsWithSplits
-      .map(tx => tx.externalId)
-      .filter((id): id is string => !!id)
+    const externalIds = transactionsWithSplits.flatMap(tx =>
+      [tx.externalId, ...(tx.alternateExternalIds ?? [])].filter((id): id is string => !!id)
+    )
 
     let annotatedTransactions = transactionsWithSplits
 
@@ -890,6 +890,7 @@ export class StatementService {
         installmentNumber: item.installmentNumber ?? null,
         installmentsTotal: item.installmentsTotal ?? null,
         externalId: item.externalId ?? null,
+        alternateExternalIds: item.alternateExternalIds,
         categoryIds: item.categoryIds,
         counterparty: item.counterparty ?? null,
       })

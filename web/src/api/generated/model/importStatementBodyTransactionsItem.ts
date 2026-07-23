@@ -35,6 +35,7 @@ export type ImportStatementBodyTransactionsItem = {
    */
   installmentsTotal?: number;
   externalId?: string;
+  alternateExternalIds?: string[];
   categoryIds?: string[];
   counterparty?: string;
   splitHint?: ImportStatementBodyTransactionsItemSplitHint;

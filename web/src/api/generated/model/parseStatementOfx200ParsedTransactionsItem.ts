@@ -35,6 +35,7 @@ export type ParseStatementOfx200ParsedTransactionsItem = {
    */
   installmentsTotal?: number;
   externalId?: string;
+  alternateExternalIds?: string[];
   categoryIds?: string[];
   counterparty?: string;
   splitHint?: ParseStatementOfx200ParsedTransactionsItemSplitHint;

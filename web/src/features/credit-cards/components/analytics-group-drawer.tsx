@@ -99,6 +99,13 @@ export function AnalyticsGroupDrawer() {
 
   const { allowsManual } = useAllowsManualCreditCardTransactions(context?.accountId ?? '')
 
+  const categoriesEditable = useMemo(() => {
+    if (!context || context.invoicePaid) return false
+    return filteredTransactions.some(
+      transaction => transaction.type === 'expense' && transaction.status !== 'paid'
+    )
+  }, [context, filteredTransactions])
+
   return (
     <Dialog
       open={open && !!context}
@@ -195,6 +202,7 @@ export function AnalyticsGroupDrawer() {
                   partiallyDividedById={partiallyDividedById}
                   splitRemainingById={splitRemainingById}
                   dividedTransactionIds={dividedTransactionIds}
+                  categoriesEditable={categoriesEditable}
                 />
               ) : (
                 <TransactionList
@@ -206,6 +214,7 @@ export function AnalyticsGroupDrawer() {
                   partiallyDividedById={partiallyDividedById}
                   splitRemainingById={splitRemainingById}
                   containerClassName="mx-4 overflow-x-auto lg:mx-6"
+                  categoriesEditable={categoriesEditable}
                 />
               )}
             </div>

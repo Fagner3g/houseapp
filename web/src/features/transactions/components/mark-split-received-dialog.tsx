@@ -3,6 +3,7 @@ import { Loader2 } from 'lucide-react'
 
 import { Button } from '@/components/ui/button'
 import { CurrencyInput } from '@/components/ui/currency-input'
+import { DatePickerInput } from '@/components/ui/date-picker-field'
 import {
   Dialog,
   DialogContent,
@@ -20,11 +21,13 @@ import {
   SelectValue,
 } from '@/components/ui/select'
 import { formatCurrency } from '@/lib/currency'
+import { dateToCalendarDate } from '@/lib/date'
 
 import type { SplitPaymentMethod } from '../lib/unified-settlement'
 import {
   markSplitReceivedAmountLabel,
   markSplitReceivedConfirmLabel,
+  markSplitReceivedDateLabel,
   markSplitReceivedDialogDescription,
   markSplitReceivedDialogTitle,
   markSplitReceivedDismissLabel,
@@ -34,6 +37,8 @@ import {
 export type MarkSplitReceivedConfirm = {
   amountReais: number
   method: SplitPaymentMethod
+  /** Local calendar date `YYYY-MM-DD`. */
+  paidAt: string
 }
 
 type MarkSplitReceivedDialogProps = {
@@ -55,23 +60,30 @@ export function MarkSplitReceivedDialog({
 }: MarkSplitReceivedDialogProps) {
   const [amountReais, setAmountReais] = useState(remainingReais)
   const [method, setMethod] = useState<SplitPaymentMethod>('other')
+  const [paidAt, setPaidAt] = useState(() => dateToCalendarDate(new Date()))
   const amountInputId = useId()
+  const dateInputId = useId()
 
   useEffect(() => {
     if (!open) return
     setAmountReais(remainingReais)
     setMethod('other')
+    setPaidAt(dateToCalendarDate(new Date()))
   }, [open, remainingReais])
 
   const maxReais = Math.max(0, remainingReais)
   const isValid =
-    amountReais > 0.005 && amountReais <= maxReais + 0.005 && maxReais > 0
+    amountReais > 0.005 &&
+    amountReais <= maxReais + 0.005 &&
+    maxReais > 0 &&
+    /^\d{4}-\d{2}-\d{2}$/.test(paidAt)
 
   const handleConfirm = async () => {
     if (!isValid) return
     await onConfirm({
       amountReais: Math.min(amountReais, maxReais),
       method,
+      paidAt,
     })
   }
 
@@ -98,6 +110,17 @@ export function MarkSplitReceivedDialog({
               value={amountReais}
               onValueChange={value => setAmountReais(value ?? 0)}
               disabled={isPending}
+            />
+          </div>
+          <div className="space-y-1.5">
+            <Label htmlFor={dateInputId}>{markSplitReceivedDateLabel()}</Label>
+            <DatePickerInput
+              id={dateInputId}
+              value={paidAt}
+              onChange={setPaidAt}
+              placeholder="dd/mm/aaaa"
+              disabled={isPending}
+              maxDate={new Date()}
             />
           </div>
           <div className="space-y-1.5">

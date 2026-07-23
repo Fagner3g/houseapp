@@ -475,6 +475,17 @@ export class TransactionService {
       throw badRequest('Paid transactions cannot be edited. Cancel the payment first.')
     }
 
+    if (input.categoryIds !== undefined && existing.statementId && existing.accountId) {
+      const statement = await this.statementRepository.findById(
+        organizationId,
+        existing.accountId,
+        existing.statementId
+      )
+      if (statement?.isPaid) {
+        throw badRequest('Paid invoices cannot change transaction categories.')
+      }
+    }
+
     assertImportedStatementUpdateAllowed(existing, input)
 
     await this.validateReferences(organizationId, {
@@ -1099,6 +1110,21 @@ export class TransactionService {
       )
 
       if (update.categoryIds !== undefined) {
+        if (existing.status === 'paid') {
+          throw badRequest('Paid transactions cannot be edited. Cancel the payment first.')
+        }
+
+        if (existing.statementId && existing.accountId) {
+          const statement = await this.statementRepository.findById(
+            organizationId,
+            existing.accountId,
+            existing.statementId
+          )
+          if (statement?.isPaid) {
+            throw badRequest('Paid invoices cannot change transaction categories.')
+          }
+        }
+
         await this.validateReferences(organizationId, {
           categoryIds: update.categoryIds,
           type: existing.type,

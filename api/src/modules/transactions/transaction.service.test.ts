@@ -266,6 +266,7 @@ describe('TransactionService update on credit_card', () => {
 
     const statementRepository = {
       hasAnyForAccount: vi.fn().mockResolvedValue(true),
+      findById: vi.fn().mockResolvedValue({ id: 'stmt-1', isPaid: false }),
     } as unknown as StatementRepository
 
     const service = buildService({
@@ -281,6 +282,65 @@ describe('TransactionService update on credit_card', () => {
 
     expect(result.id).toBe('tx-imported')
     expect(transactionRepository.update).toHaveBeenCalled()
+  })
+
+  it('rejects category update when the invoice is paid', async () => {
+    const existing = {
+      id: 'tx-imported',
+      organizationId: 'org-1',
+      accountId: 'acc-card',
+      cardId: null,
+      recurringTransactionId: null,
+      statementId: 'stmt-1',
+      title: '99*',
+      description: null,
+      amount: 765n,
+      type: 'expense' as const,
+      date: new Date('2025-06-27'),
+      competenceDate: new Date('2025-06-27'),
+      status: 'pending' as const,
+      paidAt: null,
+      paidAmount: null,
+      counterparty: null,
+      installmentNumber: null,
+      installmentsTotal: null,
+      source: 'import' as const,
+      externalId: 'ext-99',
+      transferPairId: null,
+      notifyEnabled: false,
+      notifyTargetType: null,
+      notifyUserId: null,
+      notifyContactName: null,
+      notifyContactPhone: null,
+      notifyDaysBefore: null,
+      notifyLastNotifiedAt: null,
+      createdAt: new Date(),
+      updatedAt: new Date(),
+    }
+
+    const transactionRepository = {
+      findById: vi.fn().mockResolvedValue(existing),
+      update: vi.fn(),
+    } as unknown as TransactionRepository
+
+    const statementRepository = {
+      hasAnyForAccount: vi.fn().mockResolvedValue(true),
+      findById: vi.fn().mockResolvedValue({ id: 'stmt-1', isPaid: true }),
+    } as unknown as StatementRepository
+
+    const service = buildService({
+      transactionRepository,
+      accountRepository: {
+        findById: vi.fn().mockResolvedValue(creditCardAccount),
+      } as unknown as AccountRepository,
+      statementRepository,
+    })
+
+    await expect(
+      service.update('org-1', 'tx-imported', { categoryIds: ['cat-1'] })
+    ).rejects.toMatchObject({ statusCode: 400 })
+
+    expect(transactionRepository.update).not.toHaveBeenCalled()
   })
 })
 

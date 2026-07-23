@@ -29,6 +29,10 @@ export function markSplitReceivedAmountLabel(): string {
   return 'Valor recebido'
 }
 
+export function markSplitReceivedDateLabel(): string {
+  return 'Data do recebimento'
+}
+
 export function markSplitReceivedRemainingHint(remainingLabel: string): string {
   return `Em aberto: ${remainingLabel}`
 }
