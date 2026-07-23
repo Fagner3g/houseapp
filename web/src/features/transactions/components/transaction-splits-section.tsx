@@ -19,6 +19,7 @@ import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
 import { useActiveOrganization } from '@/hooks/use-active-organization'
 import { moneyStringToReais, reaisToMoneyString } from '@/lib/currency'
+import { calendarDateToIso } from '@/lib/date'
 import { getSplitEligibleOrgUsers } from '@/lib/org-users'
 import { normalizePhoneDigits } from '@/lib/phone'
 import { useAuthStore } from '@/stores/auth'
@@ -27,8 +28,10 @@ import { getSplitTransactionIdsQueryKey } from '@/features/credit-cards/hooks/us
 import { hasInstallmentSplitDebt } from '../split-debt-summary.utils'
 import { markSplitReceivedSuccessToast } from '../lib/split-reimbursement-copy'
 import { syncAfterSplitReceipt } from '../lib/sync-after-split-receipt'
-import type { SplitPaymentMethod } from '../lib/unified-settlement'
-import { MarkSplitReceivedDialog } from './mark-split-received-dialog'
+import {
+  MarkSplitReceivedDialog,
+  type MarkSplitReceivedConfirm,
+} from './mark-split-received-dialog'
 import { SplitDebtSummary } from './split-debt-summary'
 import {
   DrawerCollapsibleSection,
@@ -335,10 +338,7 @@ export function TransactionSplitsSection({
       )
     : 0
 
-  const handleConfirmMarkReceived = async (input: {
-    amountReais: number
-    method: SplitPaymentMethod
-  }) => {
+  const handleConfirmMarkReceived = async (input: MarkSplitReceivedConfirm) => {
     if (!slug || !markReceivedSplitId) return
     if (input.amountReais <= 0 || markReceivedRemainingReais <= 0) {
       toast.error('Esta divisão já está quitada')
@@ -355,6 +355,7 @@ export function TransactionSplitsSection({
         data: {
           amount: reaisToMoneyString(input.amountReais),
           method: input.method,
+          paidAt: calendarDateToIso(input.paidAt),
         },
       })
       await syncAfterSplitReceipt(queryClient, slug, transactionId, result)
