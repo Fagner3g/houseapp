@@ -18,13 +18,17 @@ deploy/env/
 ## 🚀 Produção (VPS)
 
 ### API (`api.env`)
-- **Localização na VPS:** `/opt/stacks/houseapp/api.env`
-- **Banco:** PostgreSQL na VPS (`postgres:5432`)
+- **Localização na VPS:** `/opt/stacks/houseapp/prod/api.env` (ou `homolog/api.env`)
+- **Banco:** PostgreSQL na VPS (`postgres:5432`) — compartilhado entre prod e homolog
 - **URLs:** Domínios de produção (`api.jarvis.dev.br`, `app.jarvis.dev.br`)
 
 ### Web (`web.env`)
-- **Localização na VPS:** `/opt/stacks/houseapp/web.env`
+- **Localização na VPS:** `/opt/stacks/houseapp/prod/web.env` (ou `homolog/web.env`)
 - **API Host:** `https://api.jarvis.dev.br`
+
+### Homolog (wake on demand)
+
+A stack `houseapp-homolog` usa um **gate** sempre ligado que sobe API/web no primeiro acesso e desliga após **10 minutos** ociosos. Postgres **não** é desligado. Detalhes: [`deploy/stacks/homolog/README.md`](../stacks/homolog/README.md).
 
 ## 💻 Desenvolvimento Local
 

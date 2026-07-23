@@ -31,8 +31,20 @@ jobs:
     runs-on: [self-hosted, linux, ARM64]
     strategy:
       matrix:
-        app: [api, web]
-      max-parallel: 2
+        include:
+          - app: api
+            image: houseapp-api
+            context: .
+            file: ./api/Dockerfile
+          - app: web
+            image: houseapp-web
+            context: .
+            file: ./web/Dockerfile
+          - app: gate
+            image: houseapp-homolog-gate
+            context: ./deploy/stacks/homolog/gate
+            file: ./deploy/stacks/homolog/gate/Dockerfile
+      max-parallel: 3
     steps:
       - uses: actions/checkout@v4
 
@@ -73,13 +85,13 @@ jobs:
       - name: Build and push Docker image
         uses: docker/build-push-action@v5
         with:
-          context: .
-          file: ./${{ matrix.app }}/Dockerfile
+          context: ${{ matrix.context }}
+          file: ${{ matrix.file }}
           push: true
           tags: |
-            ghcr.io/fagner3g/houseapp-${{ matrix.app }}:${{ steps.version.outputs.version }}
-          cache-from: type=registry,ref=ghcr.io/fagner3g/houseapp-${{ matrix.app }}:buildcache
-          cache-to: type=registry,ref=ghcr.io/fagner3g/houseapp-${{ matrix.app }}:buildcache,mode=max
+            ghcr.io/fagner3g/${{ matrix.image }}:${{ steps.version.outputs.version }}
+          cache-from: type=registry,ref=ghcr.io/fagner3g/${{ matrix.image }}:buildcache
+          cache-to: type=registry,ref=ghcr.io/fagner3g/${{ matrix.image }}:buildcache,mode=max
           platforms: linux/arm64
           build-args: |
             VITE_API_HOST=${{ matrix.app == 'web' && (github.ref_name == 'main' && 'https://api.jarvis.dev.br' || 'https://api.homolog.jarvis.dev.br') || '' }}
@@ -90,7 +102,7 @@ jobs:
           echo "### Build Summary" >> $GITHUB_STEP_SUMMARY
           echo "- **App:** ${{ matrix.app }}" >> $GITHUB_STEP_SUMMARY
           echo "- **Version:** ${{ steps.version.outputs.version }}" >> $GITHUB_STEP_SUMMARY
-          echo "- **Image:** ghcr.io/fagner3g/houseapp-${{ matrix.app }}:${{ steps.version.outputs.version }}" >> $GITHUB_STEP_SUMMARY
+          echo "- **Image:** ghcr.io/fagner3g/${{ matrix.image }}:${{ steps.version.outputs.version }}" >> $GITHUB_STEP_SUMMARY
 
   deploy:
     needs: build-and-push
@@ -260,6 +272,9 @@ jobs:
             # Pull images
             docker pull ghcr.io/fagner3g/houseapp-api:$TAG
             docker pull ghcr.io/fagner3g/houseapp-web:$TAG
+            if [ "$BRANCH" != "main" ]; then
+              docker pull ghcr.io/fagner3g/houseapp-homolog-gate:$TAG
+            fi
 
             # Run database migrations before starting API traffic.
             # network_swarm_public is a Swarm overlay and is not manually attachable, so
@@ -322,7 +337,12 @@ jobs:
           printf "**Version:** %s\n" "${{ steps.version.outputs.version }}" >> "$GITHUB_STEP_SUMMARY"
           printf "**TAG:** %s\n" "${{ steps.version.outputs.version }}" >> "$GITHUB_STEP_SUMMARY"
           printf "**Target:** Swarm stack houseapp\n" >> "$GITHUB_STEP_SUMMARY"
-          printf "**Services:** houseapp_api, houseapp_web\n" >> "$GITHUB_STEP_SUMMARY"
+          if [ "${{ github.ref_name }}" = "main" ]; then
+            printf "**Services:** houseapp_api, houseapp_web\n" >> "$GITHUB_STEP_SUMMARY"
+          else
+            printf "**Services:** houseapp-homolog_gate (always on), api/web (wake on demand, idle 10m)\n" >> "$GITHUB_STEP_SUMMARY"
+          fi
+
 
       - name: Deploy skipped - validation failed
         if: steps.check.outputs.skip == 'false' && steps.validate.outputs.valid != 'true'
