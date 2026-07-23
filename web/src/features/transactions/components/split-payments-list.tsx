@@ -7,6 +7,7 @@ import { Button } from '@/components/ui/button'
 import { formatMoneyString } from '@/lib/currency'
 import { Loader2 } from 'lucide-react'
 
+import { cancelSplitPaymentActionLabel } from '../lib/split-reimbursement-copy'
 import { CancelSplitPaymentDialog } from './cancel-split-payment-dialog'
 
 const METHOD_LABELS: Record<NonNullable<ListSplitPayments200PaymentsItemMethod>, string> = {
@@ -85,7 +86,7 @@ export function SplitPaymentsList({
                   setCancelTarget({ paymentId: payment.id, amount: payment.amount })
                 }
               >
-                Cancelar
+                {cancelSplitPaymentActionLabel()}
               </Button>
             )}
           </li>

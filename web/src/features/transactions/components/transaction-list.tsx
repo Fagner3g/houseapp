@@ -42,16 +42,19 @@ import { useDrawerStore } from '@/stores/drawers'
 import { cn } from '@/lib/utils'
 import { CategorySelect } from '@/features/categories/components/category-select'
 import { useSplitTransactionIds } from '@/features/credit-cards/hooks/use-split-transaction-ids'
+import type {
+  DelegatedSplitBadgeInfo,
+  ViewerShareEntry,
+} from '@/features/credit-cards/hooks/use-split-transaction-ids'
 import {
   formatDelegatedSplitBadge,
   formatPartialSplitBadge,
   partialSplitBadgeClassName,
   resolveSplitBadgePerspective,
-  resolveSplitBadgeSettlement,
+  resolveTransactionSplitBadgeSettlement,
   splitBadgeClassName,
   type PartialSplitBadgeInfo,
 } from '@/features/transactions/lib/split-badge-label'
-import type { DelegatedSplitBadgeInfo } from '@/features/credit-cards/hooks/use-split-transaction-ids'
 import { useAuthStore } from '@/stores/auth'
 import { isInvoiceSummary, type TransactionListItem } from '@/features/transactions/types'
 import { TransactionInlineCreateBar } from './transaction-inline-create-bar'
@@ -84,6 +87,8 @@ interface TransactionListProps {
   splitPaidById?: Map<string, number>
   /** Map of transaction id → remaining split amount still to collect. */
   splitRemainingById?: Map<string, number>
+  /** Map of transaction id → current user's debtor share amounts. */
+  viewerShareById?: Map<string, ViewerShareEntry>
   /** When false, hides the inline create row (e.g. credit card after first statement import). */
   allowInlineCreate?: boolean
   containerClassName?: string
@@ -169,6 +174,7 @@ function TransactionTable({
   partiallyDividedById,
   splitPaidById,
   splitRemainingById,
+  viewerShareById,
   allowInlineCreate = true,
   containerClassName,
 }: TransactionListProps) {
@@ -602,9 +608,12 @@ function TransactionTable({
                     {(() => {
                       const hasSplit =
                         fullyDelegatedById?.has(tx.id) || partiallyDividedById?.has(tx.id)
-                      const settlement = hasSplit
-                        ? resolveSplitBadgeSettlement(splitRemainingById?.get(tx.id) ?? 0)
-                        : undefined
+                      const settlement = resolveTransactionSplitBadgeSettlement({
+                        transactionId: tx.id,
+                        hasSplit: Boolean(hasSplit),
+                        splitRemainingById,
+                        viewerShareRemaining: viewerShareById?.get(tx.id)?.remainingAmount,
+                      })
                       const delegated = fullyDelegatedById?.get(tx.id)
                       if (delegated) {
                         const perspective = resolveSplitBadgePerspective(
@@ -888,6 +897,7 @@ export function TransactionList({
   fullyDelegatedById: fullyDelegatedByIdProp,
   partiallyDividedById: partiallyDividedByIdProp,
   splitRemainingById: splitRemainingByIdProp,
+  viewerShareById: viewerShareByIdProp,
   allowInlineCreate = true,
   containerClassName,
 }: TransactionListProps) {
@@ -938,6 +948,7 @@ export function TransactionList({
   const partiallyDividedById = partiallyDividedByIdProp ?? splitData?.partiallyDividedById
   const splitPaidById = splitData?.splitPaidById
   const splitRemainingById = splitRemainingByIdProp ?? splitData?.splitRemainingById
+  const viewerShareById = viewerShareByIdProp ?? splitData?.viewerShareById
 
   return (
     <TransactionTable
@@ -951,6 +962,7 @@ export function TransactionList({
       partiallyDividedById={partiallyDividedById}
       splitPaidById={splitPaidById}
       splitRemainingById={splitRemainingById}
+      viewerShareById={viewerShareById}
       allowInlineCreate={allowInlineCreate}
       containerClassName={containerClassName}
     />

@@ -15,6 +15,7 @@ import {
   type CreateCollectPlanInput,
 } from './collect-plan'
 import { loadExpenseCreditorUserId } from './load-expense-creditor'
+import { dismissDecisionNotificationsForRequests } from './payment-request/dismiss-decision-notifications'
 import type { SplitPaymentRequestRepository } from './payment-request/repository'
 import type {
   SplitPaymentRecord,
@@ -307,9 +308,7 @@ export class SplitService {
       if (allUnpaid) {
         const ids = planRows.map(row => row.id)
         await this.splitRepository.deleteByCollectPlanId(existing.collectPlanId)
-        await Promise.all(
-          ids.map(splitId => this.paymentRequestRepository?.cancelPendingBySplitId(splitId))
-        )
+        await this.cancelPendingPaymentRequests(ids)
         return
       }
     }
@@ -320,7 +319,7 @@ export class SplitService {
       throw notFound('Split not found')
     }
 
-    await this.paymentRequestRepository?.cancelPendingBySplitId(id)
+    await this.cancelPendingPaymentRequests([id])
   }
 
   async listPayments(
@@ -369,7 +368,7 @@ export class SplitService {
       note: input.note ?? null,
     })
 
-    await this.paymentRequestRepository?.cancelPendingBySplitId(splitId)
+    await this.cancelPendingPaymentRequests([splitId])
 
     return {
       payment: toPaymentDto(result.payment),
@@ -550,6 +549,19 @@ export class SplitService {
       viewerUserId: viewer?.userId,
       viewerIsCreditor,
     })
+  }
+
+  private async cancelPendingPaymentRequests(splitIds: string[]): Promise<void> {
+    const paymentRequestRepository = this.paymentRequestRepository
+    if (!paymentRequestRepository || splitIds.length === 0) return
+
+    const cancelledIds = (
+      await Promise.all(
+        splitIds.map(splitId => paymentRequestRepository.cancelPendingBySplitId(splitId))
+      )
+    ).flat()
+
+    await dismissDecisionNotificationsForRequests(cancelledIds)
   }
 
   private validatePerson(input: { userId?: string | null; contactName?: string | null }): void {

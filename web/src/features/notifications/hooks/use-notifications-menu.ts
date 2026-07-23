@@ -14,6 +14,7 @@ import {
 } from '@/api/generated/api'
 import type { ListPendingNotifications200NotificationsItem } from '@/api/generated/model'
 import { useActiveOrganization } from '@/hooks/use-active-organization'
+import { readHttpErrorMessage } from '@/lib/http'
 import { useDrawerStore } from '@/stores/drawers'
 
 import {
@@ -114,7 +115,14 @@ export function useNotificationsMenu() {
       await markRead({ id: notification.id })
       toast.success(action === 'accept' ? 'Pagamento confirmado' : 'Pedido recusado')
       invalidateAfterResponse(notification.transactionId)
-    } catch {
+    } catch (error) {
+      const message = await readHttpErrorMessage(error, '')
+      if (message.includes('no longer pending')) {
+        await markRead({ id: notification.id }).catch(() => undefined)
+        invalidatePending()
+        toast.message('Este pedido já foi resolvido')
+        return
+      }
       toast.error(action === 'accept' ? 'Erro ao confirmar pagamento' : 'Erro ao recusar pedido')
     }
   }

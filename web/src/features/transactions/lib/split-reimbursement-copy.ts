@@ -18,15 +18,23 @@ export function markSplitReceivedLabel(): string {
 }
 
 export function cancelSplitPaymentDialogTitle(): string {
-  return 'Cancelar pagamento'
+  return 'Desfazer pagamento'
 }
 
 export function cancelSplitPaymentDialogDescription(): string {
   return 'A divisão voltará para pendente e você poderá registrar o recebimento de novo.'
 }
 
+export function cancelSplitPaymentDialogDismissLabel(): string {
+  return 'Manter'
+}
+
 export function cancelSplitPaymentDialogConfirmLabel(): string {
-  return 'Sim, cancelar'
+  return 'Desfazer pagamento'
+}
+
+export function cancelSplitPaymentActionLabel(): string {
+  return 'Desfazer'
 }
 
 export function splitPaymentPayBannerHint(): string {

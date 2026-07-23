@@ -20,12 +20,13 @@ import {
   formatPartialSplitBadge,
   partialSplitBadgeClassName,
   resolveSplitBadgePerspective,
-  resolveSplitBadgeSettlement,
+  resolveTransactionSplitBadgeSettlement,
   splitBadgeClassName,
 } from '@/features/transactions/lib/split-badge-label'
 import type {
   DelegatedSplitBadgeInfo,
   PartialSplitBadgeEntry,
+  ViewerShareEntry,
 } from '@/features/credit-cards/hooks/use-split-transaction-ids'
 import { formatCentsString } from '@/lib/currency'
 import { transactionPurchaseDate } from '@/lib/credit-card-invoice-metrics'
@@ -51,6 +52,7 @@ type CreditCardStatementGroupsProps = {
   fullyDelegatedById?: Map<string, DelegatedSplitBadgeInfo>
   partiallyDividedById?: Map<string, PartialSplitBadgeEntry>
   splitRemainingById?: Map<string, number>
+  viewerShareById?: Map<string, ViewerShareEntry>
   dividedTransactionIds?: Set<string>
 }
 
@@ -75,6 +77,7 @@ function StatementCompactRow({
   fullyDelegatedById,
   partiallyDividedById,
   splitRemainingById,
+  viewerShareById,
   currentUserId,
   onOpen,
 }: {
@@ -86,15 +89,18 @@ function StatementCompactRow({
   fullyDelegatedById?: Map<string, DelegatedSplitBadgeInfo>
   partiallyDividedById?: Map<string, PartialSplitBadgeEntry>
   splitRemainingById?: Map<string, number>
+  viewerShareById?: Map<string, ViewerShareEntry>
   currentUserId?: string | null
   onOpen: () => void
 }) {
   const hasSplit =
     fullyDelegatedById?.has(transaction.id) || partiallyDividedById?.has(transaction.id)
-  const settlement = hasSplit
-    ? resolveSplitBadgeSettlement(splitRemainingById?.get(transaction.id) ?? 0)
-    : undefined
-
+  const settlement = resolveTransactionSplitBadgeSettlement({
+    transactionId: transaction.id,
+    hasSplit: Boolean(hasSplit),
+    splitRemainingById,
+    viewerShareRemaining: viewerShareById?.get(transaction.id)?.remainingAmount,
+  })
   return (
     // biome-ignore lint/a11y/useSemanticElements: nested split control must remain a button
     <div
@@ -220,6 +226,7 @@ function StatementMerchantGroupCard({
   fullyDelegatedById,
   partiallyDividedById,
   splitRemainingById,
+  viewerShareById,
   currentUserId,
   expanded,
   selectedIds,
@@ -237,6 +244,7 @@ function StatementMerchantGroupCard({
   fullyDelegatedById?: Map<string, DelegatedSplitBadgeInfo>
   partiallyDividedById?: Map<string, PartialSplitBadgeEntry>
   splitRemainingById?: Map<string, number>
+  viewerShareById?: Map<string, ViewerShareEntry>
   currentUserId?: string | null
   expanded: boolean
   selectedIds: Set<string>
@@ -384,6 +392,7 @@ function StatementMerchantGroupCard({
               fullyDelegatedById={fullyDelegatedById}
               partiallyDividedById={partiallyDividedById}
               splitRemainingById={splitRemainingById}
+              viewerShareById={viewerShareById}
               currentUserId={currentUserId}
               onOpen={() => onOpenTransaction(transaction)}
             />
@@ -401,6 +410,7 @@ export function CreditCardStatementGroups({
   fullyDelegatedById,
   partiallyDividedById,
   splitRemainingById,
+  viewerShareById,
   dividedTransactionIds = new Set(),
 }: CreditCardStatementGroupsProps) {
   const { slug } = useActiveOrganization()
@@ -590,6 +600,7 @@ export function CreditCardStatementGroups({
             fullyDelegatedById={fullyDelegatedById}
             partiallyDividedById={partiallyDividedById}
             splitRemainingById={splitRemainingById}
+            viewerShareById={viewerShareById}
             currentUserId={currentUserId}
             expanded={expandedGroupKeys.has(group.key)}
             selectedIds={selectedIds}

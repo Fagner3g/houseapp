@@ -1,4 +1,4 @@
-import { and, desc, eq, inArray, sql, sum } from 'drizzle-orm'
+import { and, desc, eq, inArray, ne, sql, sum } from 'drizzle-orm'
 import { alias } from 'drizzle-orm/pg-core'
 
 import { db } from '@/db'
@@ -659,7 +659,8 @@ export class DrizzleSplitRepository implements SplitRepository {
         and(
           eq(transactions.organizationId, organizationId),
           inArray(transactionSplits.transactionId, transactionIds),
-          inArray(transactionSplits.status, ['pending', 'partial'])
+          // Include paid (remaining 0) so clients do not treat "missing" as paid via ?? 0.
+          ne(transactionSplits.status, 'forgiven')
         )
       )
       .groupBy(transactionSplits.transactionId)

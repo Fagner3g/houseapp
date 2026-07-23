@@ -24,6 +24,7 @@ import { formatMoneyString } from '@/lib/currency'
 import {
   cancelSplitPaymentDialogConfirmLabel,
   cancelSplitPaymentDialogDescription,
+  cancelSplitPaymentDialogDismissLabel,
   cancelSplitPaymentDialogTitle,
 } from '../lib/split-reimbursement-copy'
 
@@ -50,6 +51,7 @@ export function CancelSplitPaymentDialog({
 }: CancelSplitPaymentDialogProps) {
   const queryClient = useQueryClient()
   const { mutateAsync: cancelPayment, isPending } = useCancelSplitPayment()
+  const amountLabel = formatMoneyString(amountDisplay)
 
   const handleConfirm = async () => {
     try {
@@ -62,11 +64,11 @@ export function CancelSplitPaymentDialog({
         queryKey: getGetSplitDebtSummaryQueryKey(slug, transactionId),
       })
       queryClient.invalidateQueries({ queryKey: getSplitTransactionIdsQueryKey(slug) })
-      toast.success('Pagamento cancelado')
+      toast.success('Pagamento desfeito')
       onOpenChange(false)
       onCanceled?.()
     } catch {
-      toast.error('Erro ao cancelar pagamento')
+      toast.error('Erro ao desfazer pagamento')
     }
   }
 
@@ -75,7 +77,7 @@ export function CancelSplitPaymentDialog({
       <AlertDialogContent className="sm:max-w-md">
         <AlertDialogHeader className="space-y-3">
           <div className="flex items-center gap-3">
-            <div className="flex size-10 items-center justify-center rounded-full bg-red-100 dark:bg-red-950">
+            <div className="flex size-10 shrink-0 items-center justify-center rounded-full bg-red-100 dark:bg-red-950">
               <Undo2 className="size-5 text-red-600 dark:text-red-400" />
             </div>
             <div>
@@ -89,17 +91,18 @@ export function CancelSplitPaymentDialog({
           </div>
         </AlertDialogHeader>
 
-        <p className="text-sm text-foreground">
-          Cancelar o registro de{' '}
-          <span className="font-semibold tabular-nums">
-            {formatMoneyString(amountDisplay)}
-          </span>
-          ?
-        </p>
+        <div className="rounded-lg border border-border bg-muted/40 px-4 py-3">
+          <p className="text-xs font-medium uppercase tracking-wide text-muted-foreground">
+            Valor registrado
+          </p>
+          <p className="mt-1 text-lg font-semibold tabular-nums text-foreground">
+            {amountLabel}
+          </p>
+        </div>
 
         <AlertDialogFooter className="flex flex-col gap-2 sm:flex-row sm:justify-end">
           <AlertDialogCancel className="w-full sm:w-auto" disabled={isPending}>
-            Voltar
+            {cancelSplitPaymentDialogDismissLabel()}
           </AlertDialogCancel>
           <AlertDialogAction
             onClick={async event => {
@@ -112,7 +115,7 @@ export function CancelSplitPaymentDialog({
             {isPending ? (
               <>
                 <Loader2 className="mr-2 size-4 animate-spin" />
-                Cancelando...
+                Desfazendo...
               </>
             ) : (
               <>

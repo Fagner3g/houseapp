@@ -1,12 +1,20 @@
 import dayjs from 'dayjs'
 import { ChevronLeft, ChevronRight } from 'lucide-react'
+import { useMemo } from 'react'
 
 import type { BillingCycle } from '@/lib/billing-cycle'
 import { formatInvoiceLabel } from '@/lib/billing-cycle'
 import { useCardOverdueInvoices } from '@/features/credit-cards/hooks/use-card-overdue-invoices'
 import { useCreditCardInvoiceMetrics } from '@/features/credit-cards/hooks/use-credit-card-invoice-metrics'
+import { useSplitTransactionIds } from '@/features/credit-cards/hooks/use-split-transaction-ids'
+import { resolveDebtorInvoiceHero } from '@/features/credit-cards/lib/debtor-invoice-hero'
+import {
+  sumCycleViewerShareAmount,
+  sumCycleViewerShareRemaining,
+} from '@/features/credit-cards/lib/cycle-split-remaining'
 import { Button } from '@/components/ui/button'
 import { CreditCardDueBadgeSkeleton } from '@/features/credit-cards/components/credit-card-invoice-skeletons'
+import { useActiveOrganization } from '@/hooks/use-active-organization'
 import { cn } from '@/lib/utils'
 
 interface CreditCardPageHeaderProps {
@@ -16,6 +24,7 @@ interface CreditCardPageHeaderProps {
   dueDay: number
   isCurrentCycle: boolean
   canGoNextMonth: boolean
+  canManage?: boolean
   onPrevMonth: () => void
   onNextMonth: () => void
   onGoToday: () => void
@@ -29,18 +38,44 @@ export function CreditCardPageHeader({
   dueDay,
   isCurrentCycle,
   canGoNextMonth,
+  canManage = true,
   onPrevMonth,
   onNextMonth,
   onGoToday,
   onNavigateToMonth,
 }: CreditCardPageHeaderProps) {
+  const { slug } = useActiveOrganization()
+  const isDebtorView = canManage === false
   const overdueInvoices = useCardOverdueInvoices(accountId)
-  const { isOverdue, isPaid, isPending } = useCreditCardInvoiceMetrics(
-    accountId,
-    cycle,
-    closingDay,
-    dueDay
+  const {
+    isOverdue: bankIsOverdue,
+    isPaid: bankIsPaid,
+    isPending,
+    dueDate,
+    cycleTransactions,
+  } = useCreditCardInvoiceMetrics(accountId, cycle, closingDay, dueDay)
+
+  const transactionIds = useMemo(
+    () => cycleTransactions.map(transaction => transaction.id),
+    [cycleTransactions]
   )
+  const { data: splitData } = useSplitTransactionIds(
+    slug,
+    isDebtorView ? transactionIds : []
+  )
+
+  const debtorHero = useMemo(() => {
+    if (!isDebtorView) return null
+    const viewerShareById = splitData?.viewerShareById ?? new Map()
+    return resolveDebtorInvoiceHero({
+      dueDate,
+      shareTotal: sumCycleViewerShareAmount(transactionIds, viewerShareById),
+      shareRemaining: sumCycleViewerShareRemaining(transactionIds, viewerShareById),
+    })
+  }, [isDebtorView, splitData?.viewerShareById, transactionIds, dueDate])
+
+  const isOverdue = debtorHero?.isOverdue ?? bankIsOverdue
+  const isPaid = debtorHero?.isPaid ?? bankIsPaid
 
   const overdueCount = overdueInvoices.length
   const oldestOverdue = overdueInvoices[0]

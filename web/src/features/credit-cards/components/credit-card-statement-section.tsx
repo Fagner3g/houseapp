@@ -157,6 +157,7 @@ export function CreditCardStatementSection({
   const partiallyDividedById = splitData?.partiallyDividedById ?? new Map()
   const dividedTransactionIds = splitData?.transactionIds ?? new Set<string>()
   const splitRemainingById = splitData?.splitRemainingById ?? new Map<string, number>()
+  const viewerShareById = splitData?.viewerShareById ?? new Map()
   const receivableRemainingById =
     splitData?.receivableRemainingById ?? new Map<string, number>()
   const pendingSplitTransactionIds = useMemo(
@@ -282,6 +283,7 @@ export function CreditCardStatementSection({
           fullyDelegatedById={fullyDelegatedById}
           partiallyDividedById={partiallyDividedById}
           splitRemainingById={splitRemainingById}
+          viewerShareById={viewerShareById}
           dividedTransactionIds={dividedTransactionIds}
         />
       ) : (
@@ -294,6 +296,7 @@ export function CreditCardStatementSection({
           fullyDelegatedById={fullyDelegatedById}
           partiallyDividedById={partiallyDividedById}
           splitRemainingById={splitRemainingById}
+          viewerShareById={viewerShareById}
         />
       )}
     </section>

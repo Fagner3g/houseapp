@@ -7,12 +7,14 @@ type SharedAccessStatementTotals = {
   otherCharges: string | null
   nextInvoiceBalance: string | null
   totalOpenBalance: string | null
-  isPaid: boolean
 }
 
 /**
  * Members with temporary split access must not see the owner's imported
  * invoice totals — keep period bounds for cycle matching only.
+ *
+ * Preserve `isPaid` / `isClosed`: forcing unpaid made debtors see a false
+ * overdue balance computed only from their visible share (no bill payment).
  */
 export function stripSharedAccessInvoiceTotals<T extends SharedAccessStatementTotals>(
   statement: T
@@ -27,6 +29,5 @@ export function stripSharedAccessInvoiceTotals<T extends SharedAccessStatementTo
     otherCharges: null,
     nextInvoiceBalance: null,
     totalOpenBalance: null,
-    isPaid: false,
   }
 }
