@@ -52,6 +52,8 @@ export type CreditCardReportScope = {
 
 export type PaymentPeriodContext = {
   previousStatement?: InvoiceStatementLike | null
+  /** Next cycle statement — previousBalance 0 means this invoice was paid at the bank. */
+  nextStatement?: InvoiceStatementLike | null
   closingDay?: number
   dueDay?: number
 }

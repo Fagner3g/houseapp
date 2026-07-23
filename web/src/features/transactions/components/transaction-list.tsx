@@ -480,7 +480,7 @@ function TransactionTable({
                     accountId: item.accountId,
                     month: item.monthKey,
                     ...(item.overdueKind === 'receivable' || item.overdueKind === 'both'
-                      ? { invoiceFilter: 'a_receber' as const }
+                      ? { invoiceFilter: 'divided' as const }
                       : {}),
                   },
                 })

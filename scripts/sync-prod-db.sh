@@ -16,7 +16,7 @@ ROOT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
 ENV_FILE="${ENV_FILE:-$ROOT_DIR/api/.env}"
 
 SSH_HOST="${SSH_HOST:-jarvis}"
-REMOTE_DB="${REMOTE_DB:-houseapp}"
+REMOTE_DB="${REMOTE_DB:-houseapp_v2}"
 REMOTE_PG_USER="${REMOTE_PG_USER:-postgres}"
 REMOTE_CONTAINER_FILTER="${REMOTE_CONTAINER_FILTER:-postgres_postgres}"
 

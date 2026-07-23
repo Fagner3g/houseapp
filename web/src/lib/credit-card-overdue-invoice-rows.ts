@@ -7,6 +7,7 @@ import type { InvoiceOverdueKind, InvoiceSummaryRow } from '@/features/transacti
 import {
   findStatementForCycle,
   findPreviousStatementForCycle,
+  findNextStatementForCycle,
   getBillingCycle,
 } from '@/lib/billing-cycle'
 import {
@@ -78,7 +79,7 @@ export function buildOverdueInvoiceSummaries({
     const due = account.dueDay as number
     const accountTx = transactions.filter(t => t.accountId === account.id)
     const accountStatements = statementsByAccountId[account.id] ?? []
-    const receivableMonths = receivableByMonthKey(account, receivables)
+    const receivableMonths = receivableByMonthKey(account, receivables, accountStatements)
 
     for (const monthKey of new Set([...recentMonthKeys(), ...receivableMonths.keys()])) {
       const cycle = getBillingCycle(closing, due, monthKey)
@@ -95,13 +96,25 @@ export function buildOverdueInvoiceSummaries({
         closing,
         due
       )
-      const paymentContext = { previousStatement, closingDay: closing, dueDay: due }
+      const nextStatement = findNextStatementForCycle(
+        accountStatements,
+        cycle,
+        closing,
+        due
+      )
+      const paymentContext = {
+        previousStatement,
+        nextStatement,
+        closingDay: closing,
+        dueDay: due,
+      }
       const metrics = computeInvoiceMetrics(cycle, statement, accountTx, paymentContext)
       const paymentPeriod = resolvePaymentPeriod(cycle, statement, paymentContext)
       const invoiceAmount = resolveInvoiceAmount(metrics)
       const remaining = metrics.remaining
       const receivableRemaining = receivableMonths.get(monthKey) ?? 0
 
+      // Bank debt open OR unpaid split reimbursements on a past-due cycle.
       if (invoiceAmount <= 0 && receivableRemaining <= 0) continue
       if (remaining <= 0 && receivableRemaining <= 0) continue
 

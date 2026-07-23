@@ -313,6 +313,25 @@ export class DrizzleStatementRepository implements StatementRepository {
       }
 
       await this.reconcileStatementPaidStatus(previous.id)
+
+      // Next cycle with previousBalance 0 means the prior invoice was paid at the bank
+      // (Nubank often omits that settlement line from the following OFX).
+      if (
+        !previous.isPaid &&
+        current.previousBalance != null &&
+        current.previousBalance <= 0n
+      ) {
+        await db
+          .update(statements)
+          .set({ isPaid: true })
+          .where(eq(statements.id, previous.id))
+        const { markPurchasesPaidForStatement } = await import('./settle-paid-statements')
+        await markPurchasesPaidForStatement({
+          organizationId: previous.organizationId,
+          statementId: previous.id,
+          paidAt: previous.dueDate ?? new Date(),
+        })
+      }
     }
 
     const closedStatements = await db

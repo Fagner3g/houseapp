@@ -67,6 +67,33 @@ describe('receivablesFromPendingSplits', () => {
     expect(rows).toHaveLength(1)
     expect(rows[0]?.remainingReais).toBe(1350)
   })
+
+  it('infers accountId from loaded card transactions when pending split omits it', () => {
+    const rows = receivablesFromPendingSplits(
+      [
+        {
+          transactionId: 'tx-karol',
+          accountId: null,
+          accountType: null,
+          transactionDate: '2026-06-16T12:00:00.000Z',
+          amount: '1350.00',
+          paidAmount: '0.00',
+        },
+      ],
+      (amount, paidAmount) => getSplitRemainingReais({ amount, paidAmount }),
+      new Set(['cc-empresa']),
+      new Map([['tx-karol', 'cc-empresa']])
+    )
+
+    expect(rows).toEqual([
+      {
+        transactionId: 'tx-karol',
+        accountId: 'cc-empresa',
+        purchaseDate: '2026-06-16T12:00:00.000Z',
+        remainingReais: 1350,
+      },
+    ])
+  })
 })
 
 describe('receivableByMonthKey', () => {

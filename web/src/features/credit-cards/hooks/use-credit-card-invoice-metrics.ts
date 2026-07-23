@@ -6,6 +6,7 @@ import type { BillingCycle } from '@/lib/billing-cycle'
 import {
   findPreviousStatementForCycle,
   findStatementForCycle,
+  findNextStatementForCycle,
 } from '@/lib/billing-cycle'
 import {
   computeInvoiceMetrics,
@@ -53,9 +54,20 @@ export function useCreditCardInvoiceMetrics(
     [statementsData?.statements, cycle, closingDay, dueDay]
   )
 
+  const nextStatement = useMemo(
+    () =>
+      findNextStatementForCycle(
+        statementsData?.statements ?? [],
+        cycle,
+        closingDay,
+        dueDay
+      ),
+    [statementsData?.statements, cycle, closingDay, dueDay]
+  )
+
   const paymentContext = useMemo(
-    () => ({ previousStatement, closingDay, dueDay }),
-    [previousStatement, closingDay, dueDay]
+    () => ({ previousStatement, nextStatement, closingDay, dueDay }),
+    [previousStatement, nextStatement, closingDay, dueDay]
   )
 
   const purchasesPeriod = useMemo(

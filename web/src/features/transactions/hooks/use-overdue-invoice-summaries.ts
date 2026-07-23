@@ -19,20 +19,18 @@ import { useActiveOrganization } from '@/hooks/use-active-organization'
 import { getSplitRemainingReais } from '../split-debt-summary.utils'
 
 /**
- * Overdue credit-card invoice rows for owned cards.
+ * Overdue credit-card invoice rows for accessible cards.
  * Bank balance open OR receivable from pending splits on a past-due invoice.
  *
- * Receivable path uses listPendingSplits (with accountId) and does not depend on
- * loading every card purchase into the cycle window.
+ * Receivables come from listPendingSplits (creditor view). Account id is taken from
+ * the split payload or inferred from loaded card transactions.
  */
 export function useOverdueInvoiceSummaries(enabled = true) {
   const { slug } = useActiveOrganization()
 
-  const { data: accountsData } = useListAccounts(
-    slug,
-    { ownedOnly: true },
-    { query: { enabled: !!slug && enabled } }
-  )
+  const { data: accountsData } = useListAccounts(slug, undefined, {
+    query: { enabled: !!slug && enabled },
+  })
 
   const creditCards = useMemo(
     () => (accountsData?.accounts ?? []).filter(a => a.type === 'credit_card'),
@@ -89,10 +87,16 @@ export function useOverdueInvoiceSummaries(enabled = true) {
       NonNullable<(typeof statementQueries)[0]['data']>['statements']
     > = {}
     const transactions = []
+    const accountIdByTransactionId = new Map<string, string>()
+    const creditCardAccountIds = new Set(creditCards.map(card => card.id))
 
     creditCards.forEach((card, index) => {
       statementsByAccountId[card.id] = statementsLoaded[index] ?? []
-      transactions.push(...(transactionsLoaded[index] ?? []))
+      const cardTransactions = transactionsLoaded[index] ?? []
+      transactions.push(...cardTransactions)
+      for (const transaction of cardTransactions) {
+        accountIdByTransactionId.set(transaction.id, card.id)
+      }
     })
 
     return buildOverdueInvoiceSummaries({
@@ -102,7 +106,8 @@ export function useOverdueInvoiceSummaries(enabled = true) {
       receivables: receivablesFromPendingSplits(
         pendingSplits ?? [],
         (amount, paidAmount) => getSplitRemainingReais({ amount, paidAmount }),
-        new Set(creditCards.map(card => card.id))
+        creditCardAccountIds,
+        accountIdByTransactionId
       ),
     })
   }, [creditCards, statementsLoaded, transactionsLoaded, pendingSplits])

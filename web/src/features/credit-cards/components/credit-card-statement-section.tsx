@@ -90,7 +90,6 @@ export function CreditCardStatementSection({
     quickFilter: initialQuickFilter ?? 'all',
   }))
   const [viewMode, setViewMode] = useState<ListViewMode>('list')
-  const autoSelectedAReceberKey = useRef<string | null>(null)
 
   const { data: statementsData } = useListStatements(slug, accountId, {
     query: { enabled: !!slug && !!accountId },
@@ -187,26 +186,11 @@ export function CreditCardStatementSection({
 
   // biome-ignore lint/correctness/useExhaustiveDependencies: reset filters when account or billing cycle changes
   useEffect(() => {
-    autoSelectedAReceberKey.current = null
     setFilters({
       ...defaultInvoiceStatementFilters(),
       quickFilter: initialQuickFilter ?? 'all',
     })
   }, [accountId, cycle.monthKey, initialQuickFilter])
-
-  // Default to "A receber" when the cycle has pending reimbursements and no filter was requested.
-  useEffect(() => {
-    if (initialQuickFilter) return
-    if (filterCounts.aReceber <= 0) return
-    const key = `${accountId}:${cycle.monthKey}`
-    if (autoSelectedAReceberKey.current === key) return
-    autoSelectedAReceberKey.current = key
-    setFilters(current =>
-      current.quickFilter === 'all'
-        ? { ...current, quickFilter: 'a_receber' }
-        : current
-    )
-  }, [filterCounts.aReceber, initialQuickFilter, accountId, cycle.monthKey])
 
   // biome-ignore lint/correctness/useExhaustiveDependencies: scroll when navigating to divided/a_receber filter on another cycle
   useEffect(() => {

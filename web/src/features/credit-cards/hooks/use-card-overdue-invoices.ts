@@ -6,7 +6,11 @@ export function useCardOverdueInvoices(accountId: string, enabled = true) {
   const overdueInvoices = useOverdueInvoiceSummaries(enabled)
 
   return useMemo(
-    () => overdueInvoices.filter(invoice => invoice.accountId === accountId),
+    () =>
+      overdueInvoices.filter(
+        invoice =>
+          invoice.accountId === accountId && invoice.overdueKind !== 'receivable'
+      ),
     [overdueInvoices, accountId]
   )
 }
