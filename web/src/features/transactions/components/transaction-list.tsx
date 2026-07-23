@@ -573,6 +573,15 @@ function TransactionTable({
             const overdue = mode === 'overdue' && isOverdue(tx)
             const payableListDate = !isCreditCardStatement ? getPayableListDate(tx) : null
             const creditCardExpense = isCreditCardExpense(tx, accounts?.accounts)
+            const hasSplit =
+              Boolean(fullyDelegatedById?.has(tx.id)) || Boolean(partiallyDividedById?.has(tx.id))
+            const splitSettlement = resolveTransactionSplitBadgeSettlement({
+              transactionId: tx.id,
+              hasSplit,
+              splitRemainingById,
+              viewerShareRemaining: viewerShareById?.get(tx.id)?.remainingAmount,
+            })
+            const reimbursementReceived = splitSettlement === 'received'
             const showRecurringContractButton = tx.recurringTransactionId != null
             const showPayButton =
               showPayActionColumn && tx.status === 'pending' && !creditCardExpense
@@ -625,14 +634,7 @@ function TransactionTable({
                       {tx.title}
                     </span>
                     {(() => {
-                      const hasSplit =
-                        fullyDelegatedById?.has(tx.id) || partiallyDividedById?.has(tx.id)
-                      const settlement = resolveTransactionSplitBadgeSettlement({
-                        transactionId: tx.id,
-                        hasSplit: Boolean(hasSplit),
-                        splitRemainingById,
-                        viewerShareRemaining: viewerShareById?.get(tx.id)?.remainingAmount,
-                      })
+                      const settlement = splitSettlement
                       const delegated = fullyDelegatedById?.get(tx.id)
                       if (delegated) {
                         const perspective = resolveSplitBadgePerspective(
@@ -745,6 +747,7 @@ function TransactionTable({
                           splitPaidById?.get(tx.id) ?? 0
                         ),
                         settlementKind: tx.type === 'income' ? 'income' : 'expense',
+                        reimbursementReceived,
                       }).map(badge => (
                         <Badge
                           key={badge.key}

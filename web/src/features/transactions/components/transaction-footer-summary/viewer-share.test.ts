@@ -85,6 +85,91 @@ describe('countPendingForViewer', () => {
       )
     ).toBe(1)
   })
+
+  it('scopes creditor pending to the current installment only', () => {
+    expect(
+      countPendingForViewer(
+        summary({
+          myShareTotal: '0.00',
+          viewerIsCreditor: true,
+          installmentsTotal: 10,
+          currentInstallmentNumber: 6,
+          persons: [
+            {
+              key: 'user:k',
+              name: 'Karoline',
+              userId: 'k',
+              contactName: null,
+              contactPhone: null,
+              totalOwed: '5560.90',
+              totalPaid: '3336.54',
+              totalRemaining: '2224.36',
+              status: 'partial',
+              isViewer: false,
+              installments: [
+                {
+                  installmentNumber: 6,
+                  transactionId: 'tx-6',
+                  transactionAmount: '556.09',
+                  splitId: 's-6',
+                  amount: '556.09',
+                  paidAmount: '556.09',
+                  status: 'paid',
+                },
+                {
+                  installmentNumber: 7,
+                  transactionId: 'tx-7',
+                  transactionAmount: '556.09',
+                  splitId: 's-7',
+                  amount: '556.09',
+                  paidAmount: '0.00',
+                  status: 'pending',
+                },
+              ],
+            },
+          ],
+        })
+      )
+    ).toBe(0)
+  })
+
+  it('counts creditor pending when the current installment is still open', () => {
+    expect(
+      countPendingForViewer(
+        summary({
+          myShareTotal: '0.00',
+          viewerIsCreditor: true,
+          installmentsTotal: 10,
+          currentInstallmentNumber: 7,
+          persons: [
+            {
+              key: 'user:k',
+              name: 'Karoline',
+              userId: 'k',
+              contactName: null,
+              contactPhone: null,
+              totalOwed: '5560.90',
+              totalPaid: '3336.54',
+              totalRemaining: '2224.36',
+              status: 'partial',
+              isViewer: false,
+              installments: [
+                {
+                  installmentNumber: 7,
+                  transactionId: 'tx-7',
+                  transactionAmount: '556.09',
+                  splitId: 's-7',
+                  amount: '556.09',
+                  paidAmount: '0.00',
+                  status: 'pending',
+                },
+              ],
+            },
+          ],
+        })
+      )
+    ).toBe(1)
+  })
 })
 
 describe('personDisplayName', () => {
