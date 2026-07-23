@@ -21,6 +21,8 @@ export function isFutureScheduled(tx: PayableStatusTx): boolean {
 export type PayableStatusOptions = {
   isPartiallyPaid?: boolean
   settlementKind?: 'income' | 'expense'
+  /** Split reimbursement settled; bank payable may still be open. */
+  reimbursementReceived?: boolean
 }
 
 export function isOverduePayable(tx: PayableStatusTx): boolean {
@@ -28,7 +30,11 @@ export function isOverduePayable(tx: PayableStatusTx): boolean {
   return dayjs(tx.date).isBefore(dayjs().startOf('day'))
 }
 
-export function formatOverdueDays(days: number): string {
+export function formatOverdueDays(days: number, options?: { bankBill?: boolean }): string {
+  if (options?.bankBill) {
+    if (days === 1) return 'Conta vencida há 1 dia'
+    return `Conta vencida há ${days} dias`
+  }
   if (days === 1) return 'Vencida há 1 dia'
   return `Vencida há ${days} dias`
 }
@@ -90,7 +96,9 @@ export function getPayableStatusBadges(
     if (overdueDays != null) {
       badges.push({
         key: 'overdue',
-        label: formatOverdueDays(overdueDays),
+        label: formatOverdueDays(overdueDays, {
+          bankBill: options?.reimbursementReceived,
+        }),
         className: 'border-red-200 bg-red-50 text-red-800 hover:bg-red-50',
       })
     }
@@ -99,7 +107,13 @@ export function getPayableStatusBadges(
     if (daysUntilDue != null) {
       badges.push({
         key: 'upcoming',
-        label: formatUpcomingDays(daysUntilDue),
+        label: options?.reimbursementReceived
+          ? daysUntilDue === 0
+            ? 'Pagar conta hoje'
+            : daysUntilDue === 1
+              ? 'Pagar conta amanhã'
+              : `Pagar conta em ${daysUntilDue} dias`
+          : formatUpcomingDays(daysUntilDue),
         className: 'border-yellow-200 bg-yellow-50 text-yellow-800 hover:bg-yellow-50',
       })
     }
@@ -108,7 +122,7 @@ export function getPayableStatusBadges(
   if (badges.length === 0) {
     badges.push({
       key: 'pending',
-      label: 'Pendente',
+      label: options?.reimbursementReceived ? 'Pagar na conta' : 'Pendente',
       className: 'border-slate-200 bg-white text-slate-700',
     })
   }

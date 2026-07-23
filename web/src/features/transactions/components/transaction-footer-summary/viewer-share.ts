@@ -3,6 +3,15 @@ import { moneyStringToReais, reaisToMoneyString } from '@/lib/currency'
 
 import { resolvePersonShareInstallmentAmountReais } from '../../split-debt-summary.utils'
 
+function installmentHasOpenBalance(item: {
+  amount: string
+  paidAmount: string
+  status: string
+}): boolean {
+  if (item.status === 'paid' || item.status === 'forgiven') return false
+  return moneyStringToReais(item.amount) - moneyStringToReais(item.paidAmount) > 0.005
+}
+
 /** Primary “Meu valor” for the authenticated viewer (creditor residual vs debtor share). */
 export function resolveViewerMyShare(summary: GetSplitDebtSummary200): {
   amount: string
@@ -68,12 +77,31 @@ export function resolveViewerInstallmentAmount(
   }
 }
 
+/**
+ * Pending chip for the collapsed footer — scoped to the current installment when
+ * known, so a paid parcel 6 does not show “1 pendente” for future parcels 7–10.
+ */
 export function countPendingForViewer(summary: GetSplitDebtSummary200): number {
+  const current = summary.currentInstallmentNumber
+
   if (!summary.viewerIsCreditor) {
+    if (current != null) {
+      const viewer = summary.persons.find(person => person.isViewer)
+      const row = viewer?.installments.find(item => item.installmentNumber === current)
+      if (row) return installmentHasOpenBalance(row) ? 1 : 0
+    }
     const remaining = summary.viewerRemainingTotal
     if (remaining == null) return 0
     return moneyStringToReais(remaining) > 0 ? 1 : 0
   }
+
+  if (current != null) {
+    return summary.persons.filter(person => {
+      const row = person.installments.find(item => item.installmentNumber === current)
+      return row ? installmentHasOpenBalance(row) : false
+    }).length
+  }
+
   return summary.persons.filter(person => moneyStringToReais(person.totalRemaining) > 0).length
 }
 

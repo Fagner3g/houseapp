@@ -61,6 +61,27 @@ describe('payable-status', () => {
   it('formats overdue days', () => {
     assert.equal(formatOverdueDays(1), 'Vencida há 1 dia')
     assert.equal(formatOverdueDays(5), 'Vencida há 5 dias')
+    assert.equal(formatOverdueDays(6, { bankBill: true }), 'Conta vencida há 6 dias')
+  })
+
+  it('clarifies bank overdue when reimbursement already received', () => {
+    const tx = {
+      status: 'pending',
+      date: '2026-07-17T00:00:00.000Z',
+    }
+    const badges = getPayableStatusBadges(tx, { reimbursementReceived: true })
+    assert.equal(badges[0].key, 'overdue')
+    assert.match(badges[0].label, /^Conta vencida há/)
+  })
+
+  it('shows Pagar na conta when reimbursement received and not overdue', () => {
+    const tx = {
+      status: 'pending',
+      date: dayjs().startOf('day').toISOString(),
+    }
+    const badges = getPayableStatusBadges(tx, { reimbursementReceived: true })
+    assert.equal(badges[0].key, 'upcoming')
+    assert.equal(badges[0].label, 'Pagar conta hoje')
   })
 
   it('shows upcoming badge for pending due in the future', () => {
