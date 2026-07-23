@@ -54,6 +54,8 @@ type CreditCardStatementGroupsProps = {
   splitRemainingById?: Map<string, number>
   viewerShareById?: Map<string, ViewerShareEntry>
   dividedTransactionIds?: Set<string>
+  /** When false, category selects become read-only (e.g. paid invoice). */
+  categoriesEditable?: boolean
 }
 
 function getCategorizableGroupTransactions(
@@ -231,6 +233,7 @@ function StatementMerchantGroupCard({
   expanded,
   selectedIds,
   isUpdatingCategory,
+  categoriesEditable,
   onToggleExpand,
   onToggleSelectGroup,
   onApplyGroupCategory,
@@ -249,6 +252,7 @@ function StatementMerchantGroupCard({
   expanded: boolean
   selectedIds: Set<string>
   isUpdatingCategory: boolean
+  categoriesEditable: boolean
   onToggleExpand: () => void
   onToggleSelectGroup: (checked: boolean) => void
   onApplyGroupCategory: (categoryId: string | null) => void
@@ -262,6 +266,10 @@ function StatementMerchantGroupCard({
   const signedTotal = getStatementGroupSignedAmount(transactions, group)
   const showCardLabel = !!cards?.length
   const categorizableTransactions = getCategorizableGroupTransactions(group, transactions)
+  const editableCategoryTargets = categorizableTransactions.filter(
+    transaction => transaction.status !== 'paid'
+  )
+  const canEditGroupCategory = categoriesEditable && editableCategoryTargets.length > 0
   const showGroupCategory = group.uniformType === 'expense' && categorizableTransactions.length > 0
   const groupCategoryId = resolveStatementGroupCategoryId(group, transactions)
   const statusLabel = statementGroupStatusLabel(group)
@@ -269,6 +277,22 @@ function StatementMerchantGroupCard({
     groupTransactions.length > 0 && groupTransactions.every(transaction => selectedIds.has(transaction.id))
   const someSelected =
     groupTransactions.some(transaction => selectedIds.has(transaction.id)) && !allSelected
+
+  const categoryControl = showGroupCategory ? (
+    canEditGroupCategory ? (
+      <CategorySelect
+        value={groupCategoryId}
+        type="expense"
+        className="h-8 w-full min-w-0"
+        enabled={!isUpdatingCategory}
+        onChange={onApplyGroupCategory}
+      />
+    ) : (
+      <div className="flex h-8 items-center truncate rounded-md border border-slate-200 bg-slate-50 px-2 text-xs text-slate-600">
+        {categoryLabel(groupCategoryId ? [groupCategoryId] : null) ?? '—'}
+      </div>
+    )
+  ) : null
 
   return (
     <div
@@ -344,15 +368,7 @@ function StatementMerchantGroupCard({
         </button>
 
         {showGroupCategory ? (
-          <div className="hidden w-40 shrink-0 sm:block">
-            <CategorySelect
-              value={groupCategoryId}
-              type="expense"
-              className="h-8 w-full min-w-0"
-              enabled={!isUpdatingCategory}
-              onChange={onApplyGroupCategory}
-            />
-          </div>
+          <div className="hidden w-40 shrink-0 sm:block">{categoryControl}</div>
         ) : null}
 
         <span className="inline-block size-8 shrink-0 sm:hidden" />
@@ -368,15 +384,7 @@ function StatementMerchantGroupCard({
       </div>
 
       {showGroupCategory ? (
-        <div className="border-t border-slate-100 px-3 py-2 sm:hidden">
-          <CategorySelect
-            value={groupCategoryId}
-            type="expense"
-            className="h-8 w-full min-w-0"
-            enabled={!isUpdatingCategory}
-            onChange={onApplyGroupCategory}
-          />
-        </div>
+        <div className="border-t border-slate-100 px-3 py-2 sm:hidden">{categoryControl}</div>
       ) : null}
 
       {expanded ? (
@@ -412,6 +420,7 @@ export function CreditCardStatementGroups({
   splitRemainingById,
   viewerShareById,
   dividedTransactionIds = new Set(),
+  categoriesEditable = true,
 }: CreditCardStatementGroupsProps) {
   const { slug } = useActiveOrganization()
   const currentUserId = useAuthStore(s => s.user?.id)
@@ -464,10 +473,20 @@ export function CreditCardStatementGroups({
     categoryId: string | null
   ) => {
     if (!slug || targets.length === 0 || !categoryId) return
+    if (!categoriesEditable) {
+      toast.error('Fatura paga — categorias não podem ser alteradas')
+      return
+    }
+
+    const editableTargets = targets.filter(transaction => transaction.status !== 'paid')
+    if (editableTargets.length === 0) {
+      toast.error('Lançamentos pagos não podem ter a categoria alterada')
+      return
+    }
 
     try {
       await Promise.all(
-        targets.map(transaction =>
+        editableTargets.map(transaction =>
           updateTransaction({
             slug,
             id: transaction.id,
@@ -477,9 +496,9 @@ export function CreditCardStatementGroups({
       )
       await invalidateQueries()
       toast.success(
-        targets.length === 1
+        editableTargets.length === 1
           ? 'Categoria aplicada'
-          : `Categoria aplicada em ${targets.length} lançamentos`
+          : `Categoria aplicada em ${editableTargets.length} lançamentos`
       )
     } catch {
       toast.error('Erro ao aplicar categoria')
@@ -550,33 +569,39 @@ export function CreditCardStatementGroups({
               ? '1 lançamento selecionado'
               : `${selectedTransactions.length} lançamentos selecionados`}
           </p>
-          <div className="min-w-[160px] flex-1 space-y-1 sm:max-w-xs">
-            <Label className="text-xs text-slate-600">Aplicar categoria</Label>
-            <CategorySelect
-              value={bulkCategoryId || undefined}
-              type={bulkCategoryType ?? 'expense'}
-              enabled={bulkCategoryType != null}
-              placeholder={bulkCategoryType ? 'Selecione' : 'Tipos mistos'}
-              onChange={id => setBulkCategoryId(id ?? '')}
-            />
-          </div>
-          <Button
-            type="button"
-            variant="outline"
-            size="sm"
-            className="border-violet-200 bg-white"
-            disabled={isUpdatingCategory || bulkCategoryType == null}
-            onClick={applyBulkCategory}
-          >
-            {isUpdatingCategory ? (
-              <>
-                <Loader2 className="mr-1.5 size-3.5 animate-spin" />
-                Aplicando...
-              </>
-            ) : (
-              'Aplicar categoria'
-            )}
-          </Button>
+          {categoriesEditable ? (
+            <>
+              <div className="min-w-[160px] flex-1 space-y-1 sm:max-w-xs">
+                <Label className="text-xs text-slate-600">Aplicar categoria</Label>
+                <CategorySelect
+                  value={bulkCategoryId || undefined}
+                  type={bulkCategoryType ?? 'expense'}
+                  enabled={bulkCategoryType != null}
+                  placeholder={bulkCategoryType ? 'Selecione' : 'Tipos mistos'}
+                  onChange={id => setBulkCategoryId(id ?? '')}
+                />
+              </div>
+              <Button
+                type="button"
+                variant="outline"
+                size="sm"
+                className="border-violet-200 bg-white"
+                disabled={isUpdatingCategory || bulkCategoryType == null}
+                onClick={applyBulkCategory}
+              >
+                {isUpdatingCategory ? (
+                  <>
+                    <Loader2 className="mr-1.5 size-3.5 animate-spin" />
+                    Aplicando...
+                  </>
+                ) : (
+                  'Aplicar categoria'
+                )}
+              </Button>
+            </>
+          ) : (
+            <p className="text-xs text-violet-700">Fatura paga — categorias bloqueadas</p>
+          )}
           <Button
             type="button"
             variant="ghost"
@@ -605,6 +630,7 @@ export function CreditCardStatementGroups({
             expanded={expandedGroupKeys.has(group.key)}
             selectedIds={selectedIds}
             isUpdatingCategory={isUpdatingCategory}
+            categoriesEditable={categoriesEditable}
             onToggleExpand={() => toggleExpand(group.key)}
             onToggleSelectGroup={checked => toggleSelectGroup(group, checked)}
             onApplyGroupCategory={categoryId =>

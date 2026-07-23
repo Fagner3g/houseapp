@@ -22,6 +22,7 @@ const importTransactionBody = z.object({
   installmentNumber: z.number().int().positive().optional(),
   installmentsTotal: z.number().int().positive().optional(),
   externalId: z.string().optional(),
+  alternateExternalIds: z.array(z.string()).optional(),
   categoryIds: z.array(z.string()).optional(),
   counterparty: z.string().optional(),
   splitHint: importSplitHintSchema.optional(),

@@ -3,7 +3,7 @@
   "info": {
     "title": "HouseApp API",
     "description": "API for HouseApp",
-    "version": "2.3.1"
+    "version": "2.3.2"
   },
   "components": {
     "securitySchemes": {
@@ -21195,6 +21195,12 @@
                         "externalId": {
                           "type": "string"
                         },
+                        "alternateExternalIds": {
+                          "type": "array",
+                          "items": {
+                            "type": "string"
+                          }
+                        },
                         "categoryIds": {
                           "type": "array",
                           "items": {
@@ -21740,6 +21746,12 @@
                               },
                               "externalId": {
                                 "type": "string"
+                              },
+                              "alternateExternalIds": {
+                                "type": "array",
+                                "items": {
+                                  "type": "string"
+                                }
                               },
                               "categoryIds": {
                                 "type": "array",
@@ -22632,6 +22644,12 @@
                               },
                               "externalId": {
                                 "type": "string"
+                              },
+                              "alternateExternalIds": {
+                                "type": "array",
+                                "items": {
+                                  "type": "string"
+                                }
                               },
                               "categoryIds": {
                                 "type": "array",
@@ -23532,6 +23550,12 @@
                               },
                               "externalId": {
                                 "type": "string"
+                              },
+                              "alternateExternalIds": {
+                                "type": "array",
+                                "items": {
+                                  "type": "string"
+                                }
                               },
                               "categoryIds": {
                                 "type": "array",

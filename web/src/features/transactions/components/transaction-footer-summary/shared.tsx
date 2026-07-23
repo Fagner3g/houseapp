@@ -3,11 +3,13 @@ import type { ReactNode } from 'react'
 import { Badge } from '@/components/ui/badge'
 import { cn } from '@/lib/utils'
 
-export const TRANSACTION_STATUS_LABELS = {
+export type TransactionStatus = 'paid' | 'partial' | 'pending'
+
+export const TRANSACTION_STATUS_LABELS: Record<TransactionStatus, string> = {
   paid: 'Pago',
   partial: 'Parcial',
   pending: 'Pendente',
-} as const
+}
 
 const TRANSACTION_STATUS_VARIANT = {
   paid: 'default',
@@ -15,7 +17,7 @@ const TRANSACTION_STATUS_VARIANT = {
   pending: 'warning',
 } as const
 
-export function TransactionStatusBadge({ status }: { status: 'paid' | 'partial' | 'pending' }) {
+export function TransactionStatusBadge({ status }: { status: TransactionStatus }) {
   return (
     <Badge variant={TRANSACTION_STATUS_VARIANT[status]} className="mt-0.5 text-[10px] uppercase">
       {TRANSACTION_STATUS_LABELS[status]}
@@ -67,5 +69,31 @@ export function SummaryChip({
     >
       {children}
     </span>
+  )
+}
+
+export function SummaryHeaderContent({
+  label,
+  primary,
+  chips,
+}: {
+  label: string
+  primary: string
+  chips: { text: string; tone?: 'neutral' | 'warning' | 'success' }[]
+}) {
+  return (
+    <div className="min-w-0 flex-1">
+      <p className="text-[11px] font-medium uppercase tracking-wide text-slate-500">{label}</p>
+      <div className="mt-0.5 flex min-w-0 flex-wrap items-center gap-1.5">
+        <p className="truncate text-base font-semibold tracking-tight tabular-nums text-slate-900">
+          {primary}
+        </p>
+        {chips.map(chip => (
+          <SummaryChip key={chip.text} tone={chip.tone}>
+            {chip.text}
+          </SummaryChip>
+        ))}
+      </div>
+    </div>
   )
 }

@@ -285,6 +285,7 @@ export function CreditCardStatementSection({
           splitRemainingById={splitRemainingById}
           viewerShareById={viewerShareById}
           dividedTransactionIds={dividedTransactionIds}
+          categoriesEditable={!matchedStatement?.isPaid}
         />
       ) : (
         <TransactionList
@@ -297,6 +298,7 @@ export function CreditCardStatementSection({
           partiallyDividedById={partiallyDividedById}
           splitRemainingById={splitRemainingById}
           viewerShareById={viewerShareById}
+          categoriesEditable={!matchedStatement?.isPaid}
         />
       )}
     </section>

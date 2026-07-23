@@ -892,6 +892,9 @@ export function CreditCardAnalyticsSection({
         purchasesLabel,
         purchasesPeriod,
         statementId: matchedStatement?.id ?? null,
+        invoicePaid:
+          Boolean(matchedStatement?.isPaid) ||
+          (metrics.remaining <= 0 && metrics.invoiceTotal > 0),
         groupType,
         groupKey: item.id,
         label: item.label,

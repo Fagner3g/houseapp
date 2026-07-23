@@ -27,6 +27,8 @@ export type AnalyticsGroupContext = {
   }
   /** Matched invoice statement id, or null when there is no imported statement. */
   statementId: string | null
+  /** When true, category edits are locked (paid invoice). */
+  invoicePaid: boolean
   groupType: 'category' | 'merchant'
   groupKey: string
   label: string

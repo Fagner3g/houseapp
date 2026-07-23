@@ -7,6 +7,10 @@ import { badRequest } from '@/core/errors'
 
 import { getBillingCycle } from '@/core/billing-cycle'
 
+import {
+  buildLegacyOfxExternalIdsNearDate,
+  buildOfxExternalId,
+} from './nubank-ofx-external-id'
 import type { ParsedLineTransaction } from './statement-parser-types'
 import { toIsoDateFromYmd } from './statement-parser-types'
 import type { ImportStatementBody } from './statement.schema'
@@ -70,10 +74,6 @@ function isIncomeTransaction(trnType: string, memo: string): boolean {
   return /pagamento recebido|estorno|reversão|reversao|crédito de confiança|credito de confianca|iof de volta/i.test(
     memo
   )
-}
-
-function buildOfxExternalId(fitId: string, memo: string, amount: string, date: string): string {
-  return createHash('sha256').update(`${fitId}|${memo}|${amount}|${date}`).digest('hex')
 }
 
 function extractDueDateFromFileName(fileName: string): string | null {
@@ -148,7 +148,8 @@ function parseTransactionsFromOfx(content: string): ParsedLineTransaction[] {
       amount,
       date,
       type: isIncome ? 'income' : 'expense',
-      externalId: buildOfxExternalId(fitId, memo, amount, date),
+      externalId: buildOfxExternalId(fitId),
+      alternateExternalIds: buildLegacyOfxExternalIdsNearDate(fitId, memo, amount, date),
       ...parseInstallment(memo),
     })
   }

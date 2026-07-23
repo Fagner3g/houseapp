@@ -2790,7 +2790,6 @@ export function TransactionDrawer() {
                     amount={amount ?? 0}
                     status={displayStatus}
                     showStatus={!isTransfer && !isCreditCardExpense}
-                    accountName={selectedAccount && !isTransfer ? selectedAccount.name : undefined}
                     installmentNumber={tx?.installmentNumber}
                     installmentsTotal={tx?.installmentsTotal}
                     isEdit={isEdit}
