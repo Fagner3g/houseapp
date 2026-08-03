@@ -3,6 +3,7 @@ import { centavosToString } from '@/core/money'
 import {
   collectExternalIdLookups,
   findFuzzyDuplicateCandidate,
+  normalizeImportTitle,
   type ExistingTransactionCandidate,
 } from './statement-duplicate-detection'
 
@@ -32,6 +33,9 @@ export function decideImportedTransaction(
   for (const id of lookupIds) {
     const existing = existingByExternalId.get(id)
     if (!existing || claimedExistingIds.has(existing.id)) continue
+    // FITID-only hashes are ambiguous across STMTTRN rows; require title+amount.
+    if (normalizeImportTitle(existing.title) !== normalizeImportTitle(item.title)) continue
+    if (existing.amount !== item.amount) continue
 
     const needsPatch =
       existing.date.getTime() !== item.date.getTime() ||

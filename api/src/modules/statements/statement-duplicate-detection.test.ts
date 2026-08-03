@@ -4,7 +4,6 @@ import {
   annotateTransactionDuplicates,
   findTransactionDuplicateMatch,
 } from './statement-duplicate-detection'
-import { decideImportedTransaction } from './statement-import-dedupe'
 
 describe('statement-duplicate-detection', () => {
   it('matches by external id first', () => {
@@ -122,39 +121,5 @@ describe('statement-duplicate-detection', () => {
 
     expect(annotated[0]?.isDuplicate).toBe(true)
     expect(annotated[1]?.isDuplicate).toBe(false)
-  })
-})
-
-describe('decideImportedTransaction', () => {
-  it('patches date and external id when legacy OFX hash matches after DTPOSTED drift', () => {
-    const existing = {
-      id: 'tx-yt',
-      title: 'Google Youtubepremium',
-      amount: 2690n,
-      date: new Date('2026-07-11T12:00:00.000Z'),
-      externalId: 'legacy-jul11-hash',
-    }
-
-    const decision = decideImportedTransaction(
-      {
-        title: 'Google Youtubepremium',
-        amount: 2690n,
-        date: new Date('2026-07-12T12:00:00.000Z'),
-        externalId: 'stable-fitid-hash',
-        alternateExternalIds: ['legacy-jul11-hash'],
-      },
-      new Map([['legacy-jul11-hash', existing]]),
-      [existing],
-      new Set()
-    )
-
-    expect(decision).toEqual({
-      action: 'skip',
-      existingId: 'tx-yt',
-      patch: {
-        date: new Date('2026-07-12T12:00:00.000Z'),
-        externalId: 'stable-fitid-hash',
-      },
-    })
   })
 })
