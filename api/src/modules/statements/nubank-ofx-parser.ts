@@ -8,7 +8,7 @@ import { badRequest } from '@/core/errors'
 import { getBillingCycle } from '@/core/billing-cycle'
 
 import {
-  buildLegacyOfxExternalIdsNearDate,
+  buildOfxAlternateExternalIds,
   buildOfxExternalId,
 } from './nubank-ofx-external-id'
 import type { ParsedLineTransaction } from './statement-parser-types'
@@ -148,8 +148,8 @@ function parseTransactionsFromOfx(content: string): ParsedLineTransaction[] {
       amount,
       date,
       type: isIncome ? 'income' : 'expense',
-      externalId: buildOfxExternalId(fitId),
-      alternateExternalIds: buildLegacyOfxExternalIdsNearDate(fitId, memo, amount, date),
+      externalId: buildOfxExternalId(fitId, memo, amount),
+      alternateExternalIds: buildOfxAlternateExternalIds(fitId, memo, amount, date),
       ...parseInstallment(memo),
     })
   }

@@ -5,14 +5,28 @@ import utc from 'dayjs/plugin/utc'
 
 dayjs.extend(utc)
 
-/** Stable across Nubank posting-date corrections (FITID does not change). */
-export function buildOfxExternalId(fitId: string): string {
+/**
+ * Stable across Nubank posting-date corrections.
+ * Includes memo + amount because Nubank reuses the same FITID across distinct
+ * STMTTRN rows (purchase + IOF, purchase + refund, etc.).
+ */
+export function buildOfxExternalId(fitId: string, memo: string, amount: string): string {
+  return createHash('sha256')
+    .update(`nubank-ofx|${fitId}|${memo}|${amount}`)
+    .digest('hex')
+}
+
+/**
+ * Previous stable format (FITID only). Ambiguous when Nubank reuses FITID.
+ * Kept as an alternate so reimports can migrate rows created with that format.
+ */
+export function buildOfxFitIdOnlyExternalId(fitId: string): string {
   return createHash('sha256').update(`nubank-ofx|${fitId}`).digest('hex')
 }
 
 /**
  * Pre-stability format that included DTPOSTED.
- * Kept so reimports can match rows created before FITID-only ids.
+ * Kept so reimports can match rows created before FITID-based ids.
  */
 export function buildLegacyOfxExternalId(
   fitId: string,
@@ -39,4 +53,18 @@ export function buildLegacyOfxExternalIdsNearDate(
   }
 
   return ids
+}
+
+/** Alternates used to match rows imported under older external-id formats. */
+export function buildOfxAlternateExternalIds(
+  fitId: string,
+  memo: string,
+  amount: string,
+  date: string,
+  dayWindow = 2
+): string[] {
+  return [
+    buildOfxFitIdOnlyExternalId(fitId),
+    ...buildLegacyOfxExternalIdsNearDate(fitId, memo, amount, date, dayWindow),
+  ]
 }

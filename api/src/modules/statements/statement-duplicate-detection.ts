@@ -71,14 +71,32 @@ export function findTransactionDuplicateMatch(
   candidates: ExistingTransactionCandidate[]
 ): StatementTransactionDuplicateMatch {
   const lookupIds = collectExternalIdLookups(item)
+  const amount = parseCentavos(item.amount)
 
   for (const id of lookupIds) {
     if (!existingExternalIds.has(id)) continue
-    const byExternalId = candidates.find(candidate => candidate.externalId === id)
+    const sameId = candidates.filter(candidate => candidate.externalId === id)
+    if (sameId.length === 0) {
+      return {
+        isDuplicate: true,
+        duplicateTransactionId: null,
+        duplicateTransactionTitle: null,
+      }
+    }
+
+    const byExternalId = sameId.find(candidate => {
+      // FITID-only hashes are ambiguous across STMTTRN rows; require title+amount.
+      if (item.title && normalizeImportTitle(candidate.title) !== normalizeImportTitle(item.title)) {
+        return false
+      }
+      if (candidate.amount !== amount) return false
+      return true
+    })
+    if (!byExternalId) continue
     return {
       isDuplicate: true,
-      duplicateTransactionId: byExternalId?.id ?? null,
-      duplicateTransactionTitle: byExternalId?.title ?? null,
+      duplicateTransactionId: byExternalId.id,
+      duplicateTransactionTitle: byExternalId.title,
     }
   }
 

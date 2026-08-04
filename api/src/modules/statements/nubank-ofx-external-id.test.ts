@@ -3,7 +3,9 @@ import { describe, expect, it } from 'vitest'
 import {
   buildLegacyOfxExternalId,
   buildLegacyOfxExternalIdsNearDate,
+  buildOfxAlternateExternalIds,
   buildOfxExternalId,
+  buildOfxFitIdOnlyExternalId,
 } from './nubank-ofx-external-id'
 
 describe('nubank-ofx-external-id', () => {
@@ -12,8 +14,37 @@ describe('nubank-ofx-external-id', () => {
   const amount = '26.90'
 
   it('keeps external id stable when posting date changes', () => {
-    expect(buildOfxExternalId(fitId)).toBe(buildOfxExternalId(fitId))
-    expect(buildOfxExternalId(fitId)).toHaveLength(64)
+    expect(buildOfxExternalId(fitId, memo, amount)).toBe(
+      buildOfxExternalId(fitId, memo, amount)
+    )
+    expect(buildOfxExternalId(fitId, memo, amount)).toHaveLength(64)
+  })
+
+  it('disambiguates distinct STMTTRN rows that share a FITID', () => {
+    const purchase = buildOfxExternalId(fitId, 'Pousada Estalagem da S - Parcela 1/3', '271.34')
+    const refund = buildOfxExternalId(
+      fitId,
+      'Estorno de compra (Pousada Estalagem da S)',
+      '271.34'
+    )
+    const iof = buildOfxExternalId(fitId, 'IOF de "Claude.Ai Subscription"', '3.91')
+
+    expect(purchase).not.toBe(refund)
+    expect(purchase).not.toBe(iof)
+  })
+
+  it('exposes FITID-only hash as an alternate for reimport migration', () => {
+    const alternates = buildOfxAlternateExternalIds(
+      fitId,
+      memo,
+      amount,
+      '2026-07-12T12:00:00.000Z'
+    )
+
+    expect(alternates[0]).toBe(buildOfxFitIdOnlyExternalId(fitId))
+    expect(alternates).toContain(
+      buildLegacyOfxExternalId(fitId, memo, amount, '2026-07-11T12:00:00.000Z')
+    )
   })
 
   it('changes legacy id when posting date changes', () => {

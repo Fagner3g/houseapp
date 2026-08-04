@@ -29,6 +29,17 @@ describe('parseNubankOfx', () => {
     expect(result.parsed.purchasesTotal).toBe('5836.51')
     expect(result.parsed.previousBalance).toBe('0.00')
     expect(result.parsed.paymentsReceived).toBe('0.00')
+
+    const byExternalId = new Map<string, string[]>()
+    for (const tx of result.parsed.transactions) {
+      const id = tx.externalId
+      if (!id) continue
+      const titles = byExternalId.get(id) ?? []
+      titles.push(tx.title)
+      byExternalId.set(id, titles)
+    }
+    const collisions = [...byExternalId.entries()].filter(([, titles]) => titles.length > 1)
+    expect(collisions).toEqual([])
   })
 
   it('extracts credit limit when OFX includes CREDITLIM', () => {
