@@ -278,21 +278,27 @@ function StatementMerchantGroupCard({
   const someSelected =
     groupTransactions.some(transaction => selectedIds.has(transaction.id)) && !allSelected
 
-  const categoryControl = showGroupCategory ? (
-    canEditGroupCategory ? (
+  const renderCategoryControl = (layoutKey: 'desktop' | 'mobile') => {
+    if (!showGroupCategory) return null
+    if (!canEditGroupCategory) {
+      return (
+        <div className="flex h-8 items-center truncate rounded-md border border-slate-200 bg-slate-50 px-2 text-xs text-slate-600">
+          {categoryLabel(groupCategoryId ? [groupCategoryId] : null) ?? '—'}
+        </div>
+      )
+    }
+    return (
       <CategorySelect
+        key={layoutKey}
         value={groupCategoryId}
         type="expense"
         className="h-8 w-full min-w-0"
         enabled={!isUpdatingCategory}
+        instanceKey={`${group.key}-${layoutKey}`}
         onChange={onApplyGroupCategory}
       />
-    ) : (
-      <div className="flex h-8 items-center truncate rounded-md border border-slate-200 bg-slate-50 px-2 text-xs text-slate-600">
-        {categoryLabel(groupCategoryId ? [groupCategoryId] : null) ?? '—'}
-      </div>
     )
-  ) : null
+  }
 
   return (
     <div
@@ -368,7 +374,7 @@ function StatementMerchantGroupCard({
         </button>
 
         {showGroupCategory ? (
-          <div className="hidden w-40 shrink-0 sm:block">{categoryControl}</div>
+          <div className="hidden w-40 shrink-0 sm:block">{renderCategoryControl('desktop')}</div>
         ) : null}
 
         <span className="inline-block size-8 shrink-0 sm:hidden" />
@@ -384,7 +390,9 @@ function StatementMerchantGroupCard({
       </div>
 
       {showGroupCategory ? (
-        <div className="border-t border-slate-100 px-3 py-2 sm:hidden">{categoryControl}</div>
+        <div className="border-t border-slate-100 px-3 py-2 sm:hidden">
+          {renderCategoryControl('mobile')}
+        </div>
       ) : null}
 
       {expanded ? (
