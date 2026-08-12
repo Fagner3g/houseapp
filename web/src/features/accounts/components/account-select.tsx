@@ -72,13 +72,7 @@ export function AccountSelect({
     return groupAccountsForSelect(list).filter(section => section.accounts.length > 0)
   }, [accounts, excludeAccountId, paymentOnly, value])
 
-  const optionCount = useMemo(
-    () => sections.reduce((count, section) => count + section.accounts.length, 0),
-    [sections]
-  )
-
   const selectValue = nullable ? (value ?? NONE_VALUE) : (value ?? allOption?.value)
-  const selectKey = `${instanceKey ?? 'default'}-${selectValue ?? NONE_VALUE}-${optionCount}`
 
   const handleChange = (next: string) => {
     if (nullable) {
@@ -88,8 +82,14 @@ export function AccountSelect({
     onValueChange(next)
   }
 
+  // Keep key stable — remounting on value/options fights Radix portal unmount.
   return (
-    <Select key={selectKey} value={selectValue} onValueChange={handleChange} disabled={disabled}>
+    <Select
+      key={instanceKey ?? 'default'}
+      value={selectValue}
+      onValueChange={handleChange}
+      disabled={disabled}
+    >
       <SelectTrigger id={id} className={className}>
         <SelectValue placeholder={placeholder} />
       </SelectTrigger>

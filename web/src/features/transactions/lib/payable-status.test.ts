@@ -45,6 +45,15 @@ describe('payable-status', () => {
     assert.match(badges[1].className, /slate/)
   })
 
+  it('treats a payment scheduled for today as still scheduled', () => {
+    const tx = {
+      status: 'pending',
+      date: '2026-06-17T00:00:00.000Z',
+      paymentScheduledAt: dayjs().endOf('day').toISOString(),
+    }
+    assert.equal(isFutureScheduled(tx), true)
+  })
+
   it('shows overdue only when schedule date has passed', () => {
     const tx = {
       status: 'pending',

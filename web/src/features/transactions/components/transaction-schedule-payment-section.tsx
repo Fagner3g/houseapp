@@ -96,9 +96,10 @@ export function TransactionSchedulePaymentSection({
 
   return (
     <>
-      {isScheduled && paymentScheduledAt ? (
+      {paymentScheduledAt ? (
         <ScheduledPaymentBanner
           scheduledAt={paymentScheduledAt}
+          expired={!isScheduled}
           disabled={disabled}
           isScheduling={isScheduling}
           isCanceling={isCanceling}
@@ -123,7 +124,7 @@ export function TransactionSchedulePaymentSection({
         open={dialogOpen}
         onOpenChange={setDialogOpen}
         kind={kind}
-        title={isScheduled ? 'Reagendar pagamento' : scheduleSettlementButtonLabel(kind)}
+        title={paymentScheduledAt ? 'Reagendar pagamento' : scheduleSettlementButtonLabel(kind)}
         scheduledDate={scheduledDate}
         onScheduledDateChange={setScheduledDate}
         minDate={today.toDate()}

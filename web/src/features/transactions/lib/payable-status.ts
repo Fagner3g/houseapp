@@ -1,5 +1,7 @@
 import dayjs from 'dayjs'
 
+import { computeDaysUntilDue } from '@/lib/date'
+
 export type PayableStatusTx = {
   status: string
   date: string
@@ -15,7 +17,7 @@ export type PayableStatusBadge = {
 export function isFutureScheduled(tx: PayableStatusTx): boolean {
   if (!tx.paymentScheduledAt) return false
   if (tx.status !== 'pending' && tx.status !== 'partial') return false
-  return dayjs(tx.paymentScheduledAt).isAfter(dayjs())
+  return computeDaysUntilDue(new Date(tx.paymentScheduledAt)) >= 0
 }
 
 export type PayableStatusOptions = {
