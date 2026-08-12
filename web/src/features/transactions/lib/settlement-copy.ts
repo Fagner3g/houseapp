@@ -62,9 +62,15 @@ export function installmentSettlementScopeNote(
   kind: SettlementKind,
   installmentNumber: number,
   installmentsTotal: number,
-  remainingReais = Number.POSITIVE_INFINITY
+  remainingReais = Number.POSITIVE_INFINITY,
+  options?: { withoutValue?: boolean }
 ): string {
   if (remainingReais <= 0) {
+    if (options?.withoutValue) {
+      return kind === 'income'
+        ? `Informe o valor a receber nesta parcela (${installmentNumber} de ${installmentsTotal}).`
+        : `Informe o valor a pagar nesta parcela (${installmentNumber} de ${installmentsTotal}).`
+    }
     return kind === 'income'
       ? `Esta parcela (${installmentNumber} de ${installmentsTotal}) já está recebida; as demais podem ser adiantadas.`
       : `Esta parcela (${installmentNumber} de ${installmentsTotal}) já está quitada; as demais podem ser adiantadas.`

@@ -267,9 +267,14 @@ function createTransactionSchema(options: { requireCategory: boolean }) {
     })
     .superRefine((values, ctx) => {
       const amountRequired =
-        values.type === 'transfer' ||
-        values.recurrence === 'installment' ||
-        values.status === 'paid'
+        (values.type === 'transfer' ||
+          values.recurrence === 'installment' ||
+          values.status === 'paid') &&
+        !(
+          values.status === 'paid' &&
+          hasPositiveAmount(values.paidAmount) &&
+          !hasPositiveAmount(values.amount)
+        )
 
       if (amountRequired && !hasPositiveAmount(values.amount)) {
         ctx.addIssue({
@@ -1034,7 +1039,9 @@ export function TransactionDrawer() {
     (isPay ||
       (isEdit &&
         tx?.status !== 'paid' &&
-        (status === 'paid' || isTransactionPartial(tx?.status))))
+        (status === 'paid' ||
+          isTransactionPartial(tx?.status) ||
+          isReminderWithoutValue)))
 
   const installmentPreview = useMemo(() => {
     if (recurrence !== 'installment') return null
@@ -1322,8 +1329,10 @@ export function TransactionDrawer() {
         const registeringPayment =
           tx.status !== 'paid' &&
           paymentAmount > 0 &&
-          remaining > 0 &&
-          (values.status === 'paid' || isTransactionPartial(tx.status))
+          (remaining > 0 || withoutValue) &&
+          (values.status === 'paid' ||
+            isTransactionPartial(tx.status) ||
+            withoutValue)
 
         if (
           values.status === 'paid' &&
@@ -1616,7 +1625,6 @@ export function TransactionDrawer() {
     if (prefill > 0) {
       form.setValue('paidAmount', prefill)
     }
-    form.setValue('status', 'paid')
     void refetchInstallmentSeries().finally(() => {
       setPayScopeDialogOpen(true)
     })
@@ -2288,7 +2296,8 @@ export function TransactionDrawer() {
                               settlementKind,
                               tx?.installmentNumber ?? 1,
                               tx?.installmentsTotal ?? 1,
-                              installmentRemainingReais
+                              installmentRemainingReais,
+                              { withoutValue: isReminderWithoutValue }
                             )}
                           </p>
                         )}
@@ -2944,6 +2953,7 @@ export function TransactionDrawer() {
         installmentsTotal={tx?.installmentsTotal ?? 1}
         currentInstallmentAmountReais={installmentAmountReais}
         currentRemainingReais={installmentRemainingReais}
+        isReminderWithoutValue={isReminderWithoutValue}
         installments={installmentSeriesData?.installments ?? []}
         unsettledSplits={
           needsReimbursementStep ? unsettledSplitItems : EMPTY_UNSETTLED_SPLITS

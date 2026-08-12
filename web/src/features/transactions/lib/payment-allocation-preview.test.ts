@@ -39,6 +39,37 @@ describe('buildPaymentAllocationPreview', () => {
       },
     ])
   })
+
+  it('assigns payment to current parcel when it has no remaining balance yet', () => {
+    const steps = buildPaymentAllocationPreview(241.39, [
+      { id: '1', installmentNumber: 1, remainingReais: 0 },
+    ])
+    expect(steps).toEqual([
+      {
+        id: '1',
+        installmentNumber: 1,
+        applyReais: 241.39,
+        status: 'paid',
+        remainingAfterReais: 0,
+      },
+    ])
+  })
+
+  it('skips a settled current parcel and pays the next open one', () => {
+    const steps = buildPaymentAllocationPreview(241.39, [
+      { id: '1', installmentNumber: 1, remainingReais: 0 },
+      { id: '2', installmentNumber: 2, remainingReais: 241.39 },
+    ])
+    expect(steps).toEqual([
+      {
+        id: '2',
+        installmentNumber: 2,
+        applyReais: 241.39,
+        status: 'paid',
+        remainingAfterReais: 0,
+      },
+    ])
+  })
 })
 
 describe('advanceIdsCoveredByPreview', () => {
