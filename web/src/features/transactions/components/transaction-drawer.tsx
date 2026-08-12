@@ -1777,7 +1777,7 @@ export function TransactionDrawer() {
                       dueDate={tx.date}
                       paymentScheduledAt={tx.paymentScheduledAt}
                       kind={settlementKind}
-                      disabled={isPending || isAnnotationOnly}
+                      disabled={isPending}
                     />
                   )}
                 <fieldset

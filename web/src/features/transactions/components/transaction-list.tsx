@@ -36,7 +36,8 @@ import {
 } from '@/components/ui/table'
 import { formatCentsString, reaisToMoneyString } from '@/lib/currency'
 import { transactionPurchaseDate } from '@/lib/credit-card-invoice-metrics'
-import { formatIsoDateLabel, isoToCalendarDate } from '@/lib/date'
+import { formatIsoDateLabel } from '@/lib/date'
+import { getPayableListDate } from '@/features/transactions/lib/payable-list-date'
 import { useActiveOrganization } from '@/hooks/use-active-organization'
 import { useDrawerStore } from '@/stores/drawers'
 import { cn } from '@/lib/utils'
@@ -106,35 +107,6 @@ function isCreditCardExpense(
 
 function isOverdue(tx: Extract<TransactionListItem, { kind: 'transaction' }>) {
   return isOverduePayable(tx) && !isFutureScheduled(tx)
-}
-
-function getPayableListDate(tx: TransactionRow) {
-  const dueKey = isoToCalendarDate(tx.date)
-  const scheduledKey = tx.paymentScheduledAt
-    ? isoToCalendarDate(tx.paymentScheduledAt)
-    : null
-
-  if (scheduledKey && scheduledKey !== dueKey) {
-    return {
-      displayDay: scheduledKey,
-      dueSubtext: `Venc. ${formatIsoDateLabel(tx.date)}`,
-      showScheduledBadge: true,
-    }
-  }
-
-  if (scheduledKey) {
-    return {
-      displayDay: scheduledKey,
-      dueSubtext: null,
-      showScheduledBadge: false,
-    }
-  }
-
-  return {
-    displayDay: dueKey,
-    dueSubtext: null,
-    showScheduledBadge: false,
-  }
 }
 
 function getStatusLabel(item: TransactionListItem): string {
