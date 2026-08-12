@@ -35,6 +35,7 @@ type PayInstallmentScopeDialogProps = {
   installmentsTotal: number
   currentInstallmentAmountReais: number
   currentRemainingReais: number
+  isReminderWithoutValue?: boolean
   installments: GetInstallmentSeries200InstallmentsItem[]
   unsettledSplits?: UnsettledSplitItem[]
   onConfirm: (result: PayInstallmentScopeResult) => void
@@ -48,6 +49,7 @@ export function PayInstallmentScopeDialog({
   installmentsTotal,
   currentInstallmentAmountReais,
   currentRemainingReais,
+  isReminderWithoutValue = false,
   installments,
   unsettledSplits = EMPTY_UNSETTLED,
   onConfirm,
@@ -56,6 +58,7 @@ export function PayInstallmentScopeDialog({
     open,
     currentInstallmentNumber,
     currentRemainingReais,
+    isReminderWithoutValue,
     installments,
     unsettledSplits,
   })

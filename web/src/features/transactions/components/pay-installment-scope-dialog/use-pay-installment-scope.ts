@@ -19,6 +19,7 @@ export function usePayInstallmentScope(params: {
   open: boolean
   currentInstallmentNumber: number
   currentRemainingReais: number
+  isReminderWithoutValue?: boolean
   installments: GetInstallmentSeries200InstallmentsItem[]
   unsettledSplits: UnsettledSplitItem[]
 }) {
@@ -26,6 +27,7 @@ export function usePayInstallmentScope(params: {
     open,
     currentInstallmentNumber,
     currentRemainingReais,
+    isReminderWithoutValue = false,
     installments,
     unsettledSplits,
   } = params
@@ -89,8 +91,8 @@ export function usePayInstallmentScope(params: {
 
   const canConfirm =
     paidAmountReais > 0.005 &&
-    paidAmountReais <= maxPayable + 0.005 &&
-    preview.length > 0 &&
+    (isReminderWithoutValue ||
+      (paidAmountReais <= maxPayable + 0.005 && preview.length > 0)) &&
     reimbursement.reimbursementsAnswered
 
   const setPaidAmountFromInput = (value: number) => {

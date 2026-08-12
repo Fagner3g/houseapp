@@ -36,14 +36,31 @@ export function buildPaymentAllocationPreview(
 ): AllocationPreviewStep[] {
   if (paymentReais <= 0 || parcels.length === 0) return []
 
+  const first = parcels[0]
+  const firstRemaining = first ? Math.max(0, first.remainingReais) : 0
+
+  if (firstRemaining <= 0.005) {
+    const openParcels = parcels.filter(p => p.remainingReais > 0.005)
+    if (openParcels.length === 0) {
+      if (!first) return []
+      return [
+        {
+          id: first.id,
+          installmentNumber: first.installmentNumber,
+          applyReais: paymentReais,
+          status: 'paid',
+          remainingAfterReais: 0,
+        },
+      ]
+    }
+    return buildPaymentAllocationPreview(paymentReais, openParcels)
+  }
+
   const payment = toCentavos(paymentReais)
   const kernelParcels = parcels.map(p => ({
     id: p.id,
     remaining: toCentavos(Math.max(0, p.remainingReais)),
   }))
-
-  const first = parcels[0]
-  const firstRemaining = first ? Math.max(0, first.remainingReais) : 0
 
   if (paymentReais <= firstRemaining + 0.005) {
     if (!first) return []
