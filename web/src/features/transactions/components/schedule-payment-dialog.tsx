@@ -18,6 +18,7 @@ import { formatIsoDateLabel } from '@/lib/date'
 
 export function ScheduledPaymentBanner({
   scheduledAt,
+  expired,
   disabled,
   isScheduling,
   isCanceling,
@@ -25,26 +26,44 @@ export function ScheduledPaymentBanner({
   onCancel,
 }: {
   scheduledAt: string
+  expired?: boolean
   disabled: boolean
   isScheduling: boolean
   isCanceling: boolean
   onReschedule: () => void
   onCancel: () => void
 }) {
+  const dateLabel = formatIsoDateLabel(scheduledAt)
   return (
-    <div className="flex flex-wrap items-center justify-between gap-2 rounded-lg border border-sky-200 bg-sky-50/80 px-4 py-3">
+    <div
+      className={
+        expired
+          ? 'flex flex-wrap items-center justify-between gap-2 rounded-lg border border-amber-200 bg-amber-50/80 px-4 py-3'
+          : 'flex flex-wrap items-center justify-between gap-2 rounded-lg border border-sky-200 bg-sky-50/80 px-4 py-3'
+      }
+    >
       <div className="flex min-w-0 items-center gap-2">
-        <CalendarClock className="size-4 shrink-0 text-sky-600" />
-        <Badge variant="outline" className="border-sky-200 bg-white text-sky-800">
-          Pagamento agendado para {formatIsoDateLabel(scheduledAt)}
+        <CalendarClock
+          className={expired ? 'size-4 shrink-0 text-amber-700' : 'size-4 shrink-0 text-sky-600'}
+        />
+        <Badge
+          variant="outline"
+          className={
+            expired
+              ? 'border-amber-200 bg-white text-amber-900'
+              : 'border-sky-200 bg-white text-sky-800'
+          }
+        >
+          {expired
+            ? `Agendamento expirou em ${dateLabel}`
+            : `Pagamento agendado para ${dateLabel}`}
         </Badge>
       </div>
-      <div className="flex flex-wrap items-center gap-1">
+      <div className="flex shrink-0 flex-wrap items-center gap-1">
         <Button
           type="button"
-          variant="ghost"
+          variant="outline"
           size="sm"
-          className="text-sky-800 hover:text-sky-950"
           disabled={disabled || isScheduling}
           onClick={onReschedule}
         >
@@ -54,11 +73,10 @@ export function ScheduledPaymentBanner({
           type="button"
           variant="ghost"
           size="sm"
-          className="text-sky-800 hover:text-sky-950"
           disabled={disabled || isCanceling}
           onClick={onCancel}
         >
-          Cancelar agendamento
+          Cancelar
         </Button>
       </div>
     </div>
