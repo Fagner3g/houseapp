@@ -14,7 +14,7 @@ import type {
   TransactionRecord,
   TransactionRepository,
 } from '@/modules/transactions/transaction.repository'
-
+import { materializationHorizon } from './materialization-horizon'
 import type { RecurringRecord, RecurringRepository } from './recurring.repository'
 import { RecurringService } from './recurring.service'
 
@@ -335,6 +335,39 @@ describe('RecurringService', () => {
 
     expect(generated).toBe(0)
     expect(createMany).not.toHaveBeenCalled()
+
+    vi.useRealTimers()
+  })
+
+  it('materializes this month before the due date so the calendar and upcoming alerts can see it', async () => {
+    const row = makeRecurring({
+      title: 'Contador',
+      amount: 17500n,
+      type: 'expense',
+      startDate: new Date('2026-07-10T12:00:00.000Z'),
+      lastGeneratedDate: new Date('2026-09-10T12:00:00.000Z'),
+    })
+
+    const createMany = vi.fn().mockResolvedValue([])
+    const update = vi.fn().mockResolvedValue(row)
+
+    const service = buildService({
+      recurringRepository: { update },
+      transactionRepository: { createMany },
+    })
+
+    vi.useFakeTimers({ toFake: ['Date'] })
+    vi.setSystemTime(new Date('2026-10-06T15:00:00.000Z'))
+
+    const generated = await service.materializeOne(row, {
+      horizonDate: materializationHorizon(new Date()),
+    })
+
+    expect(generated).toBe(1)
+    const createdRows = createMany.mock.calls[0]?.[0] ?? []
+    expect(
+      createdRows.map((item: { date: Date }) => startOfDay(item.date).toISOString().slice(0, 10))
+    ).toEqual(['2026-10-10'])
 
     vi.useRealTimers()
   })

@@ -2,10 +2,11 @@ import { and, eq, isNull, lt, lte, or } from 'drizzle-orm'
 
 import { db } from '@/db'
 import {
-  recurringTransactions,
   type RecurringFrequency,
   type RecurringTransactionType,
+  recurringTransactions,
 } from '@/db/schemas/recurringTransactions'
+import { materializationHorizon } from './materialization-horizon'
 
 export type RecurringRecord = typeof recurringTransactions.$inferSelect
 
@@ -70,7 +71,7 @@ export class DrizzleRecurringRepository implements RecurringRepository {
   }
 
   async findActiveForMaterialization(): Promise<RecurringRecord[]> {
-    const today = startOfDay(new Date())
+    const horizon = materializationHorizon(new Date())
 
     return db
       .select()
@@ -78,10 +79,10 @@ export class DrizzleRecurringRepository implements RecurringRepository {
       .where(
         and(
           eq(recurringTransactions.isActive, true),
-          lte(recurringTransactions.startDate, today),
+          lte(recurringTransactions.startDate, horizon),
           or(
             isNull(recurringTransactions.lastGeneratedDate),
-            lt(recurringTransactions.lastGeneratedDate, today)
+            lt(recurringTransactions.lastGeneratedDate, horizon)
           )
         )
       )
@@ -131,10 +132,4 @@ export class DrizzleRecurringRepository implements RecurringRepository {
 
     return updated ?? null
   }
-}
-
-function startOfDay(date: Date): Date {
-  return new Date(
-    Date.UTC(date.getUTCFullYear(), date.getUTCMonth(), date.getUTCDate(), 12, 0, 0, 0)
-  )
 }

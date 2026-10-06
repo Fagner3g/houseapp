@@ -1,17 +1,20 @@
-import type {
-  RecurringFrequency,
-  RecurringTransactionType,
-} from '@/db/schemas/recurringTransactions'
 import { eq } from 'drizzle-orm'
+
 import { badRequest, notFound } from '@/core/errors'
 import { centavosToString, parseCentavos } from '@/core/money'
 import { db } from '@/db'
 import { organizations } from '@/db/schemas/organizations'
+import type {
+  RecurringFrequency,
+  RecurringTransactionType,
+} from '@/db/schemas/recurringTransactions'
 import type { AccountRepository } from '@/modules/accounts/account.repository'
 import type { CategoryRepository } from '@/modules/categories/category.repository'
-import type { TransactionRepository } from '@/modules/transactions/transaction.repository'
-import type { TransactionRecord } from '@/modules/transactions/transaction.repository'
-
+import type {
+  TransactionRecord,
+  TransactionRepository,
+} from '@/modules/transactions/transaction.repository'
+import { materializationHorizon } from './materialization-horizon'
 import type { RecurringRecord, RecurringRepository } from './recurring.repository'
 
 export type RecurringDto = {
@@ -159,12 +162,12 @@ export class RecurringService {
       installmentsTotal: input.installmentsTotal ?? null,
     })
 
-    // Catch up through today so the UI shows due parcels immediately.
-    // If start_date is in the future, still materialize that first occurrence now.
-    const today = startOfDay(new Date())
+    // Fill the open month (and the upcoming-alert window). A start date past that
+    // horizon still materializes its first occurrence now.
+    const horizon = materializationHorizon(new Date())
     const startDate = startOfDay(created.startDate)
     const materializedCount = await this.materializeOne(created, {
-      horizonDate: startDate > today ? startDate : today,
+      horizonDate: startDate > horizon ? startDate : horizon,
     })
 
     const refreshed = await this.recurringRepository.findById(organizationId, created.id)
@@ -268,12 +271,13 @@ export class RecurringService {
 
   async materializeOccurrences(): Promise<MaterializeResult> {
     const rows = await this.recurringRepository.findActiveForMaterialization()
+    const horizonDate = materializationHorizon(new Date())
     let generated = 0
     let errors = 0
 
     for (const row of rows) {
       try {
-        generated += await this.materializeOne(row, { horizonDate: startOfDay(new Date()) })
+        generated += await this.materializeOne(row, { horizonDate })
       } catch {
         errors += 1
       }
